@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   parseTriggerConfig,
@@ -5,13 +7,17 @@ import {
   getTriggerCategoryMeta,
   getTriggerCategories,
   getTriggerTypeOptions,
+  getRateLimitWindowOptions,
+  getTriggerTemplates,
   TRIGGER_CATEGORY_I18N,
   TRIGGER_CATEGORIES,
+  TRIGGER_TEMPLATES,
   TRIGGER_KINDS,
   isLoopbackUrl,
   getTriggerTypeLabel,
 } from '../platform/triggerConstants';
 import { en } from '@/i18n/en';
+import type { Translations } from '@/i18n/generated/types';
 
 describe('parseTriggerConfig — raw config coercion', () => {
   // Regression guard: `JSON.parse('null')` returns null, and the previous
@@ -166,4 +172,128 @@ describe('isLoopbackUrl — dev-affordance gate', () => {
     expect(isLoopbackUrl('')).toBe(false);
     expect(isLoopbackUrl('localhost:9420')).toBe(false);
   });
+});
+
+/**
+ * The two halves of this module's vocabulary - a frozen English constant and a
+ * `get*(t)` accessor for the same words - and the rule about which half a
+ * component may render.
+ *
+ * Every one of the trigger pickers used to import the frozen half, so 31
+ * already-translated `triggers.*` keys rendered nowhere and a Spanish user
+ * chose between "Watch" and "Listen". The accessors were sitting in the same
+ * file the whole time.
+ */
+describe('translated accessors vs the frozen English constants', () => {
+  // `es.json` is the whole-bundle catalogue for one locale, shaped by the same
+  // generator as `en`; the accessors only ever index `.triggers`, so the part
+  // this test exercises is structurally identical. Read from disk rather than
+  // imported so the assertion is about the shipped catalogue.
+  const es = JSON.parse(
+    readFileSync(resolve(process.cwd(), 'src/i18n/locales/es.json'), 'utf-8'),
+  ) as Translations;
+
+  it('renders category copy from the catalogue, not the frozen label', () => {
+    const translated = getTriggerCategories(es);
+    for (const [i, cat] of translated.entries()) {
+      const frozen = TRIGGER_CATEGORIES[i]!;
+      expect(cat.id).toBe(frozen.id);
+      expect(cat.types).toEqual(frozen.types);
+      // The non-copy fields are what the frozen constant is still FOR.
+      expect(cat.color).toBe(frozen.color);
+      expect(cat.label, `category ${cat.id}`).not.toBe(frozen.label);
+      expect(cat.description, `category ${cat.id}`).not.toBe(frozen.description);
+    }
+  });
+
+  it('renders type copy from the catalogue, not the frozen label', () => {
+    const translated = getTriggerTypeOptions(es);
+    expect(translated).toHaveLength(TRIGGER_KINDS.length);
+    const english = getTriggerTypeOptions(en);
+    const differing = translated.filter((o, i) => o.label !== english[i]!.label);
+    // Not every kind's name necessarily differs across languages (a proper noun
+    // like "Webhook" travels), so the assertion is that the catalogue is
+    // genuinely being read, not that all ten words change.
+    expect(differing.length).toBeGreaterThan(TRIGGER_KINDS.length / 2);
+  });
+
+  it('renders rate-limit windows and templates from the catalogue', () => {
+    expect(getRateLimitWindowOptions(es).map((o) => o.label))
+      .not.toEqual(getRateLimitWindowOptions(en).map((o) => o.label));
+    expect(getTriggerTemplates(es).map((tpl) => tpl.label))
+      .not.toEqual(getTriggerTemplates(en).map((tpl) => tpl.label));
+  });
+
+  it('keeps the templates addressable by id and type while translating the copy', () => {
+    // TriggerAddForm resolves the applied template by id against the frozen
+    // constant, so translation must not disturb identity or config.
+    const translated = getTriggerTemplates(es);
+    expect(translated.map((tpl) => tpl.id)).toEqual(TRIGGER_TEMPLATES.map((tpl) => tpl.id));
+    expect(translated.map((tpl) => tpl.triggerType))
+      .toEqual(TRIGGER_TEMPLATES.map((tpl) => tpl.triggerType));
+    expect(translated.map((tpl) => tpl.config)).toEqual(TRIGGER_TEMPLATES.map((tpl) => tpl.config));
+  });
+
+  /**
+   * The regression guard proper. A component that IMPORTS one of these
+   * identifiers is rendering the English fallback copy - which is exactly the
+   * state this module was in, in four render sites at once, while the
+   * translations existed and were complete.
+   *
+   * Structural, not a substring test over the whole file: the first version of
+   * this check was `expect(source).not.toContain(name)` and it failed on three
+   * of the four files the moment they were fixed, because the comments
+   * explaining the fix name the constants they replaced. A guard that a
+   * correct file cannot satisfy is not a guard.
+   */
+  const TRIGGER_CONSTANTS_IMPORT =
+    /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*'@\/lib\/utils\/platform\/triggerConstants'/;
+
+  const RENDER_SITES: readonly {
+    file: string;
+    forbidden: readonly string[];
+    required: readonly string[];
+  }[] = [
+    {
+      file: 'src/features/triggers/sub_triggers/TriggerCategorySelector.tsx',
+      forbidden: ['TRIGGER_CATEGORIES'],
+      required: ['getTriggerCategories'],
+    },
+    {
+      file: 'src/features/triggers/sub_triggers/TriggerTypeSelector.tsx',
+      forbidden: ['TRIGGER_CATEGORIES', 'TRIGGER_TYPE_OPTIONS'],
+      required: ['getTriggerCategories', 'getTriggerTypeOptions'],
+    },
+    {
+      file: 'src/features/triggers/sub_triggers/TriggerQuickTemplates.tsx',
+      forbidden: ['TRIGGER_TEMPLATES'],
+      required: ['getTriggerTemplates'],
+    },
+    {
+      file: 'src/features/triggers/sub_triggers/RateLimitControls.tsx',
+      forbidden: ['RATE_LIMIT_WINDOW_OPTIONS'],
+      required: ['getRateLimitWindowOptions'],
+    },
+  ];
+
+  it.each(RENDER_SITES)(
+    '$file imports the translated accessors, not the frozen vocabulary',
+    ({ file, forbidden, required }) => {
+      const source = readFileSync(resolve(process.cwd(), file), 'utf-8');
+      const match = TRIGGER_CONSTANTS_IMPORT.exec(source);
+      // Guards the guard: a renamed, moved or restructured component would
+      // otherwise pass by presenting nothing to inspect.
+      expect(match, `${file}: no import from triggerConstants to inspect`).not.toBeNull();
+      const imported = match![1]!.split(',').map((name) => name.trim().split(/\s+/)[0]!);
+      expect(source, `${file} renders copy without useTranslation`).toContain('useTranslation');
+
+      for (const name of forbidden) {
+        expect(imported, `${file} imports ${name}, the English fallback copy`)
+          .not.toContain(name);
+      }
+      for (const name of required) {
+        expect(imported, `${file} should read ${name}`).toContain(name);
+      }
+    },
+  );
 });

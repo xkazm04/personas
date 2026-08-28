@@ -1,4 +1,5 @@
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES } from '@/lib/utils/platform/triggerConstants';
+import { useMemo } from 'react';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, getTriggerTemplates } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerQuickTemplatesProps {
@@ -7,13 +8,18 @@ export interface TriggerQuickTemplatesProps {
 
 export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplatesProps) {
   const { t } = useTranslation();
+  // `getTriggerTemplates(t)` rather than the frozen `TRIGGER_TEMPLATES`, whose
+  // labels are the English fallback; the `triggers.tpl_*` keys already exist in
+  // every locale. Template ids and configs are unchanged, so `onApplyTemplate`
+  // still resolves against the same constant in TriggerAddForm.
+  const templates = useMemo(() => getTriggerTemplates(t), [t]);
   return (
     <div>
       <label className="block typo-body font-medium text-foreground mb-1.5">
         {t.triggers.quick_templates_label}
       </label>
       <div className="grid grid-cols-2 gap-1.5">
-        {TRIGGER_TEMPLATES.map((tpl) => {
+        {templates.map((tpl) => {
           const meta = TRIGGER_TYPE_META[tpl.triggerType] || DEFAULT_TRIGGER_META;
           const Icon = meta.Icon;
           return (

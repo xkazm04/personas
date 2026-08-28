@@ -1,7 +1,7 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR, ProtocolCapability, AdoptionRequirement, AdoptionQuestion } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 // -- Difficulty levels ------------------------------------------------
 
@@ -63,10 +63,10 @@ function extractSignals(review: PersonaDesignReview): ComplexitySignals {
   const cached = signalsCache.get(review);
   if (cached) return cached;
 
-  const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-  const flows: UseCaseFlow[] = parseJsonSafe(review.use_case_flows, []);
-  const triggerTypes: string[] = parseJsonSafe(review.trigger_types, []);
-  const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+  const connectors: string[] = parseJsonOrDefault(review.connectors_used, []);
+  const flows: UseCaseFlow[] = parseJsonOrDefault(review.use_case_flows, []);
+  const triggerTypes: string[] = parseJsonOrDefault(review.trigger_types, []);
+  const designResult = parseJsonOrDefault<AgentIR | null>(review.design_result, null);
 
   const capabilities: ProtocolCapability[] = designResult?.protocol_capabilities ?? [];
   const requirements: AdoptionRequirement[] = designResult?.adoption_requirements ?? [];

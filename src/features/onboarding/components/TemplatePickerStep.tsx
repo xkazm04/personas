@@ -8,7 +8,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { DimensionRadial } from '@/features/templates/sub_generated/shared/DimensionRadial';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo } from 'react';
@@ -116,8 +116,8 @@ export function TemplatePickerStep({
       )}
       <div className="grid grid-cols-1 gap-3">
         {ranked.map(({ review, score, matchedApps }) => {
-          const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
-          const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
+          const designResult = parseJsonOrDefault<AgentIR | null>(review.design_result, null);
+          const connectors = parseJsonOrDefault<string[]>(review.connectors_used, []);
           const isSelected = selectedId === review.id;
           const isRecommended = score > 0;
 

@@ -14,7 +14,7 @@ import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBounda
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 // ============================================================================
 // Main Component
@@ -107,10 +107,10 @@ export default function DesignReviewsPage() {
 
       {/* Activity diagram modal */}
       {diagramReview && (() => {
-        // parseJsonSafe only falls back to [] on parse error; a stored "null"
+        // parseJsonOrDefault only falls back to [] on parse error; a stored "null"
         // or object parses successfully into a non-array, which would crash
         // flows[0]/flows.length. Guard array-ness here.
-        const parsed = parseJsonSafe<UseCaseFlow[]>(diagramReview.use_case_flows, []);
+        const parsed = parseJsonOrDefault<UseCaseFlow[]>(diagramReview.use_case_flows, []);
         const flows = Array.isArray(parsed) ? parsed : [];
         return (
           <ErrorBoundary name="Activity Diagram">

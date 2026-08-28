@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Variants } from 'framer-motion';
+import { MOTION } from '@/lib/utils/designTokens';
 import {
   useMotion,
   useMotionVariants,
@@ -26,27 +27,35 @@ export const REDUCED_FRAMER = { duration: 0.01, ease: 'linear' as const };
 const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 // -- Framer Motion transition presets ---------------------------------
-// instant (100ms) -> tooltips, micro-interactions
+// Framer counts in SECONDS, the rest of the app counts in milliseconds, and
+// that unit change is the only reason these numbers were ever re-typed. `sec`
+// makes the conversion the single difference, so `MOTION.duration` in
+// designTokens.ts is the one place a JS-side rung changes.
+//
+// instant (50ms)  -> tooltips, micro-interactions
 // fast    (150ms) -> dropdowns, toggles, small state changes
 // normal  (250ms) -> panels, modals, drawers, standard transitions
 // slow    (400ms) -> page transitions, wizard steps, large reveals
-export const TRANSITION_NORMAL = { duration: 0.25, ease: EASE_CURVE };
-export const TRANSITION_SLOW = { duration: 0.4, ease: EASE_CURVE };
+const sec = (ms: number) => ms / 1000;
 
-// Named MOTION_PRESETS (not MOTION) to avoid colliding with the unrelated
-// MOTION duration/delay registry exported by `@/lib/utils/designTokens` --
+export const TRANSITION_NORMAL = { duration: sec(MOTION.duration.normal), ease: EASE_CURVE };
+export const TRANSITION_SLOW = { duration: sec(MOTION.duration.slow), ease: EASE_CURVE };
+
+// Named MOTION_PRESETS (not MOTION) to avoid colliding with the MOTION
+// duration/delay registry exported by `@/lib/utils/designTokens`, which these
+// presets now READ (they used to re-type its four numbers in seconds) --
 // see refactor-bughunt-2026-07-10 finding #6.
 export const MOTION_PRESETS = {
   snappy: {
-    framer: { duration: 0.15, ease: 'easeOut' as const },
+    framer: { duration: sec(MOTION.duration.fast), ease: 'easeOut' as const },
     css: CSS_DURATION_CLASS.snappy,
   },
   smooth: {
-    framer: { duration: 0.25, ease: 'easeOut' as const },
+    framer: { duration: sec(MOTION.duration.normal), ease: 'easeOut' as const },
     css: CSS_DURATION_CLASS.smooth,
   },
   gentle: {
-    framer: { duration: 0.4, ease: 'easeOut' as const },
+    framer: { duration: sec(MOTION.duration.slow), ease: 'easeOut' as const },
     css: CSS_DURATION_CLASS.gentle,
   },
 } as const;
@@ -71,8 +80,12 @@ export const MOTION_TIMING = {
 /**
  * Physics-driven alternative to the timed ladder — deliberately NOT a member of
  * `MOTION_TIMING`, because it has no duration and so belongs to no rung.
+ *
+ * The numbers live in `MOTION.spring.snappy`, not here: this was one of two
+ * byte-identical declarations of 300/25 (the other in `useMotion`), with
+ * nothing saying they were meant to be the same spring.
  */
-export const MOTION_SPRING = { type: 'spring' as const, stiffness: 300, damping: 25 };
+export const MOTION_SPRING = { type: 'spring' as const, ...MOTION.spring.snappy };
 
 /** Stagger container -- wrap the list/grid parent with this variant. */
 export const staggerContainer: Variants = {

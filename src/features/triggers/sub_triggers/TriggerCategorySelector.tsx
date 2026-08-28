@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Zap } from 'lucide-react';
 import {
-  TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_CATEGORIES,
+  TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, getTriggerCategories,
   type TriggerCategory,
 } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,13 +16,17 @@ export function TriggerCategorySelector({
   selectedCategory, onSelectCategory, onSelectTriggerType,
 }: TriggerCategorySelectorProps) {
   const { t } = useTranslation();
+  // `getTriggerCategories(t)`, not the frozen `TRIGGER_CATEGORIES`: the constant
+  // holds the English fallback copy, and rendering it here left the
+  // already-translated `triggers.category_*` keys unread in 13 locales.
+  const categories = useMemo(() => getTriggerCategories(t), [t]);
   return (
     <div>
       <label className="block typo-body font-medium text-foreground mb-1.5">
         {t.triggers.category_section_label}
       </label>
       <div className="grid grid-cols-2 gap-2">
-        {TRIGGER_CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const isActive = selectedCategory === cat.id;
           const firstType = cat.types[0];
           const CatIcon = firstType ? (TRIGGER_TYPE_META[firstType] || DEFAULT_TRIGGER_META).Icon : Zap;

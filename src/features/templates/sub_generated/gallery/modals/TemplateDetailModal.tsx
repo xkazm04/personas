@@ -30,7 +30,7 @@ import {
 import { computeDifficulty, estimateSetupMinutes, DIFFICULTY_META } from '../../shared/templateComplexity';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
 import { UseCasesTab } from './UseCasesTab';
@@ -73,7 +73,7 @@ export function TemplateDetailModal({
   const TAB_CONFIG = useTabConfig();
 
   const flows = useMemo(
-    () => (review ? parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []) : []),
+    () => (review ? parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []) : []),
     [review],
   );
   // Hide the use-cases tab when the template has no flows; if the active tab
@@ -122,7 +122,7 @@ export function TemplateDetailModal({
   if (!isOpen || !review) return null;
 
   const designResult = getCachedDesignResult(review);
-  const adjustment = parseJsonSafe<{
+  const adjustment = parseJsonOrDefault<{
     suggestion: string;
     reason: string;
     appliedFixes: string[];

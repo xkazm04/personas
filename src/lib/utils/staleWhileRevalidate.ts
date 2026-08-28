@@ -16,7 +16,10 @@ const _cache = new Map<string, CacheEntry<unknown>>();
 const _inflight = new Map<string, Promise<unknown>>();
 
 /**
- * Identity of the request currently owning each key.
+ * Identity of the request currently owning each key. The sibling
+ * `deduplicateFetch` mints the same token for the same reason;
+ * `__tests__/inflightCoalescing.parity.test.ts` drives both through one
+ * lifecycle script so the two cannot drift apart unnoticed again.
  *
  * A request must be able to ask "am I still the current one?" when it settles,
  * because `invalidateSWRCache` can fire while it is in the air. Without that

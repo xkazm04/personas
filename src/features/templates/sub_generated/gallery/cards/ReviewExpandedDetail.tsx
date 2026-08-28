@@ -6,7 +6,7 @@ import { DesignConnectorGrid } from '@/features/shared/components/display/Design
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from './reviewParseCache';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
@@ -30,12 +30,12 @@ export function ReviewExpandedDetail({
   const [showJson, setShowJson] = useState(false);
 
   const designResult = getCachedDesignResult(review);
-  const adjustment = parseJsonSafe<{
+  const adjustment = parseJsonOrDefault<{
     suggestion: string;
     reason: string;
     appliedFixes: string[];
   } | null>(review.suggested_adjustment, null);
-  const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+  const flows = parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []);
 
   if (!designResult) {
     return (

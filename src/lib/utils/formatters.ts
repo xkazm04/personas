@@ -182,8 +182,17 @@ function getNumberFormat(locale: string, options?: Intl.NumberFormatOptions): In
  * @param usd        The cost in US dollars.
  * @param opts.precision
  *   - `2`  (default): two decimals, `<$0.01` for sub-penny, `$0.00` for null/zero.
- *   - `4`:  four decimals, `<$0.001` for tiny values, `—` for null.
- *   - `'auto'`: adaptive — 4 decimals below $0.01, 3 below $1, 2 otherwise.
+ *   - `4`:  four decimals, `<$0.001` for tiny values, `$0.0000` for zero, `—` for null.
+ *   - `'auto'`: adaptive — 4 decimals below $0.01, 3 below $1, 2 otherwise;
+ *     `$0.00` for zero.
+ *
+ * An exact zero is never rendered as a sub-threshold value. Only the
+ * `precision: 2` branch used to know that, so a run on a local model — where
+ * `estimateCost` returns 0 — showed `$0.0000` in the Cost tile (a `<Numeric
+ * precision={4}>`) and `Total: <$0.001` in the breakdown bar three lines below
+ * it, two renderings of the same zero on one screen, one of them asserting a
+ * nonzero amount. Zero is exactly representable; `<` means "too small to show
+ * at this precision", which is a different claim.
  */
 export function formatCost(
   usd: number | null | undefined,
@@ -204,8 +213,11 @@ export function formatCost(
     }).format(amount);
 
   if (usd == null) return precision === 2 ? fmt(0, 2) : '\u2014';
+  // Hoisted above the precision branches so all three agree about zero. It used
+  // to live inside the `precision === 2` branch alone, and the two branches
+  // below reached their `< threshold` case for an exact 0.
+  if (usd === 0) return fmt(0, precision === 4 ? 4 : 2);
   if (precision === 2) {
-    if (usd === 0) return fmt(0, 2);
     if (usd < 0.01) return `<${fmt(0.01, 2)}`;
     return fmt(usd, 2);
   }

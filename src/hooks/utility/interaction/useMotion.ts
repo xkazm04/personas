@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import type { Variants } from 'framer-motion';
+import { MOTION } from '@/lib/utils/designTokens';
 
 const MQ = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -72,7 +73,9 @@ export interface MotionConfig {
 const FULL_MOTION: MotionConfig = {
   shouldAnimate: true,
   duration: 0.25,
-  spring: { type: 'spring', stiffness: 300, damping: 25 },
+  // The same object `MOTION_SPRING` exports. It cannot import that export —
+  // animationPresets imports THIS module — so both read the token instead.
+  spring: { type: 'spring', ...MOTION.spring.snappy },
   transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
   staggerDelay: 0.04,
 };

@@ -1,7 +1,7 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   TRIGGER_TYPE_META, DEFAULT_TRIGGER_META,
-  TRIGGER_CATEGORIES, TRIGGER_TYPE_OPTIONS,
+  getTriggerCategories, getTriggerTypeOptions,
   type TriggerCategory,
 } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -17,13 +17,19 @@ export function TriggerTypeSelector({
 }: TriggerTypeSelectorProps) {
   const { t } = useTranslation();
   const triggerTypeRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // The `get*(t)` accessors, not the frozen English constants beside them:
+  // every `triggers.type_*` / `triggers.desc_*` key this picker renders is
+  // already translated, and reading the constants meant none of them shipped.
+  // Both memos sit above the early returns — they are hooks.
+  const categories = useMemo(() => getTriggerCategories(t), [t]);
+  const allTypeOptions = useMemo(() => getTriggerTypeOptions(t), [t]);
 
   if (!selectedCategory || selectedCategory === 'manual') return null;
 
-  const cat = TRIGGER_CATEGORIES.find((c) => c.id === selectedCategory);
+  const cat = categories.find((c) => c.id === selectedCategory);
   if (!cat) return null;
 
-  const typeOptions = TRIGGER_TYPE_OPTIONS.filter((o) => cat.types.includes(o.type));
+  const typeOptions = allTypeOptions.filter((o) => cat.types.includes(o.type));
 
   return (
     <div>
