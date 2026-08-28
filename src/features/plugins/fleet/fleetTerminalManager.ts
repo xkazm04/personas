@@ -23,8 +23,9 @@
  *     not running ones.
  *   - Many panes can attach different sessions at once → grid view (P2).
  *   - Renderer (WebGL) is attach-scoped so N background terminals don't hold
- *     N live GL contexts, AND bounded by a fleet-wide budget (MAX_WEBGL) so N
- *     *attached* ones can't either; unicode11 / web-links load once.
+ *     N live GL contexts, AND bounded fleet-wide by its own LRU (MAX_WEBGL)
+ *     so N simultaneously *attached* panes can't either; unicode11 /
+ *     web-links load once.
  *   - A shared `config` (font size, copy-on-select, theme) is applied to
  *     every live terminal and to all future ones (P4).
  *
@@ -147,6 +148,21 @@ interface ManagedTerminal {
   /** Detached-by-default element the terminal is `open()`'d into; moved
    *  between pane containers on attach/detach. */
   holder: HTMLDivElement;
+  /**
+   * The pane container the holder currently lives in — the OWNER token.
+   *
+   * There is one holder per session, so a second pane attaching the same
+   * session re-parents it and the first pane goes blank. That much is inherent
+   * to a single DOM node. What was not inherent is the teardown: whichever pane
+   * unmounted FIRST ran the full detach — unsubscribe, dispose the renderer,
+   * remove the holder — on the terminal the OTHER pane was still showing.
+   *
+   * The last attacher wins the token, and a detach from anyone else is a no-op.
+   * Today's surfaces are mutually exclusive (FleetGridPage renders the overlay
+   * or a single pane, never both), so this fires on no current path — it is the
+   * invariant the multiplexer needs before a surface makes it reachable.
+   */
+  owner: HTMLElement | null;
   resizeObs: ResizeObserver;
   disposables: IDisposable[];
   onMouseUp: () => void;
@@ -228,6 +244,71 @@ const parked: string[] =
 const MAX_PARKED = 6;
 
 /**
+ * Max terminals holding a live accelerated (WebGL) renderer AT THE SAME TIME.
+ *
+ * MAX_PARKED bounds only the parked side of the ladder; attached terminals were
+ * unbounded, and every attach calls `loadWebgl()`. The grid overlay mounts a
+ * live pane for the focused tile AND for every session that needs the operator
+ * (`needsLiveAttention`), and `gridDim` tiles up to 4x4 — so a 16-session fleet
+ * sitting on `awaiting_input` asks for 16 contexts at once, before counting the
+ * panes that live outside the overlay (the mastermind preview, the passport
+ * modal, the monitor's fullscreen pane). Fleet is this app's ONLY WebGL
+ * consumer — the charts are SVG — so that number IS the app's context count.
+ *
+ * GPU contexts are COUNTED, not metered: crossing the platform cap makes the
+ * browser revoke the OLDEST context — which may belong to the terminal the
+ * operator is reading, and is not necessarily the one that caused the overrun.
+ *
+ * So the budget is enforced here instead, on the one door through which
+ * renderers are created, which makes the demotion deterministic and
+ * recent-first. Past the cap the least-recently-used accelerated terminal drops
+ * its addon and xterm falls back to the DOM renderer automatically — slower to
+ * paint, identical output, no revocation from under a live pane, and the same
+ * fallback `onContextLoss` already exercises (and that a machine with no WebGL
+ * at all runs on permanently).
+ *
+ * 6 leaves headroom beneath the ~16-context floor browsers implement, for the
+ * charts and canvases the rest of the app may hold at the same time.
+ */
+const MAX_WEBGL = 6;
+
+// Sessions holding a live WebGL addon, least-recently-loaded first.
+//
+// Two parallel builds each landed this ledger under a name of its own, and both
+// vocabularies now have readers (the stats object exposes both spellings for the
+// same reason). ONE array is published under BOTH keys, so a devtools console —
+// or a test — reaches the same object either way; aliasing beats picking a
+// winner and silently leaving the other name reading `undefined`.
+const WEBGL_LRU_KEY = '__fleetTerminalWebglLru__';
+const WEBGL_ORDER_KEY = '__fleetTerminalWebglOrder__';
+const webglLru: string[] =
+  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ??
+  ((globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] as string[] | undefined) ??
+  [];
+(globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] = webglLru;
+(globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] = webglLru;
+
+/** Renderers dropped BECAUSE of MAX_WEBGL — the same instrument logic as
+ *  `bumpEvictions()` below: a cap set too low and a renderer bug both read as
+ *  "the terminal got slow", and only this counter separates them. */
+const WEBGL_EVICTIONS_KEY = '__fleetTerminalWebglEvictions__';
+function bumpWebglEvictions(): void {
+  const g = globalThis as Record<string, unknown>;
+  g[WEBGL_EVICTIONS_KEY] = ((g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
+}
+
+function unGl(sessionId: string): void {
+  const i = webglLru.indexOf(sessionId);
+  if (i !== -1) webglLru.splice(i, 1);
+}
+
+/** Move a session to the most-recent end of the accelerated-renderer LRU. */
+function touchGl(sessionId: string): void {
+  unGl(sessionId);
+  webglLru.push(sessionId);
+}
+
+/**
  * Budget evictions are counted, because a budget set too low and a bug in the
  * replay handshake produce the SAME user report — "my terminals keep going
  * blank and replaying" — and nothing else in the app can tell them apart.
@@ -245,42 +326,6 @@ function bumpEvictions(): void {
   g[EVICTIONS_KEY] = ((g[EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
 }
 
-/**
- * Fleet-wide budget on LIVE WebGL renderer contexts.
- *
- * MAX_PARKED bounds *detached* terminals; nothing bounded attached ones, and
- * WebGL is per-ATTACH. The grid mounts a live terminal for the focused tile
- * plus every session that needs the operator (`needsLiveAttention`), and
- * `gridDim` tiles up to 4x4 — so a 16-session fleet sitting on `awaiting_input`
- * asks for 16 GL contexts at once, before counting the panes that live outside
- * the overlay (the mastermind preview, the passport modal, the monitor's
- * fullscreen pane). Fleet is this app's ONLY WebGL consumer — the charts are
- * SVG — so that number IS the app's context count.
- *
- * Past the WebView's own cap the browser silently kills the OLDEST context and
- * the terminal that loses it is not the one that caused the overrun. Choosing
- * the victim here instead makes the demotion deterministic and recent-first:
- * beyond the budget the least-recently-attached terminal drops to the DOM
- * renderer — the same fallback `onContextLoss` already exercises, and the same
- * one a machine with no WebGL at all runs on permanently.
- */
-const MAX_WEBGL = 8;
-
-/** Attach-ordered ids of the terminals currently holding a GL context. */
-const WEBGL_ORDER_KEY = '__fleetTerminalWebglOrder__';
-const webglOrder: string[] =
-  ((globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] as string[] | undefined) ?? [];
-(globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] = webglOrder;
-
-/** Renderers demoted to DOM by the budget — the same instrument argument as
- *  `bumpEvictions`: a budget set too low and a broken renderer produce the same
- *  user report ("the grid went sluggish"), and only a counter separates them. */
-const WEBGL_EVICTIONS_KEY = '__fleetTerminalWebglEvictions__';
-function bumpWebglEvictions(): void {
-  const g = globalThis as Record<string, unknown>;
-  g[WEBGL_EVICTIONS_KEY] = ((g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
-}
-
 export interface FleetTerminalStats {
   /** Terminals alive right now (attached + parked). */
   live: number;
@@ -290,9 +335,13 @@ export interface FleetTerminalStats {
   maxParked: number;
   /** Terminals disposed BECAUSE of that budget, since app start. */
   evictions: number;
-  /** Live WebGL renderer contexts held right now, fleet-wide. */
+  /** Terminals holding a live accelerated (WebGL) renderer right now. */
+  webgl: number;
+  /** The same count under the other name the parallel builds gave it. Both
+   *  spellings already have readers; they are one number read from one
+   *  ledger, so they cannot disagree. */
   webglContexts: number;
-  /** The budget those contexts are bounded by. */
+  /** The budget those GL contexts are bounded by. */
   maxWebgl: number;
   /** Renderers demoted to the DOM fallback BECAUSE of that budget. */
   webglEvictions: number;
@@ -309,7 +358,8 @@ export function getFleetTerminalStats(): FleetTerminalStats {
     parked: parked.length,
     maxParked: MAX_PARKED,
     evictions: (g[EVICTIONS_KEY] as number | undefined) ?? 0,
-    webglContexts: webglOrder.length,
+    webgl: webglLru.length,
+    webglContexts: webglLru.length,
     maxWebgl: MAX_WEBGL,
     webglEvictions: (g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0,
   };
@@ -359,16 +409,42 @@ function handleLink(_event: MouseEvent, uri: string): void {
   openExternalUrl(safe).catch(silentCatch('fleetTerminal:openLink'));
 }
 
-/** Read the WebView clipboard and write it straight to the session's PTY. */
+/**
+ * Read the WebView clipboard and deliver it to the session's PTY *as a paste*.
+ *
+ * Writing the text straight to the PTY was wrong in the one way that matters: a
+ * terminal's input is keystrokes, not text, and the typed-versus-pasted
+ * distinction is what decides whether a newline inserts a line or SUBMITS one.
+ * The framing that carries that distinction is bracketed paste
+ * (`ESC[200~ … ESC[201~`, DECSET 2004) and this path never emitted it — so a
+ * multi-line clipboard payload arrived as a sequence of submitted lines, and in
+ * a shell that means every line after the first EXECUTES. The old comment here
+ * ("terminals handle that") named the mechanism that was missing.
+ *
+ * `term.paste()` is that mechanism: it normalizes CRLF/LF to CR, wraps the
+ * payload in the brackets whenever the child has actually enabled the mode, and
+ * emits through `onData` — the same door a keystroke takes, so it still lands
+ * in `writeInput`.
+ *
+ * The trailing-newline strip stays, but ONLY for a child that has not enabled
+ * bracketed paste: there it is the sole thing between a copied line (which
+ * almost always ends in a newline) and an unintended submit. Under bracketed
+ * paste the child decides what to do with that newline, and swallowing it would
+ * corrupt the payload the operator actually copied.
+ */
 function pasteFromClipboard(sessionId: string): void {
   navigator.clipboard
     .readText()
     .then((textRaw) => {
       if (!textRaw) return;
-      // Strip a trailing newline so pasting a single line doesn't auto-submit;
-      // multi-line pastes keep their internal newlines (terminals handle that).
-      const cleaned = textRaw.replace(/\r?\n$/, '');
-      return writeInput(sessionId, cleaned);
+      const m = registry.get(sessionId);
+      if (!m || !m.opened) {
+        // No live emulator to frame the paste through — fall back to the raw
+        // write, trailing newline stripped, exactly as before.
+        return writeInput(sessionId, textRaw.replace(/\r?\n$/, ''));
+      }
+      m.term.paste(m.term.modes.bracketedPasteMode ? textRaw : textRaw.replace(/\r?\n$/, ''));
+      return undefined;
     })
     .catch(silentCatch('fleetTerminal:paste'));
 }
@@ -396,28 +472,23 @@ function scheduleFit(m: ManagedTerminal): void {
   });
 }
 
-/** Drop `sessionId` out of the GL holder order (no-op if it holds none). */
-function releaseWebglSlot(sessionId: string): void {
-  const i = webglOrder.indexOf(sessionId);
-  if (i !== -1) webglOrder.splice(i, 1);
-}
-
 /**
- * Free GL slots until one is available, demoting least-recently-attached first.
+ * Drop the least-recently-loaded accelerated renderers until at most MAX_WEBGL
+ * remain. `keepId` is the terminal that just asked for one and is never its own
+ * victim. A dropped terminal keeps rendering through xterm's DOM fallback.
  *
- * Termination is by construction, not by luck: `disposeWebgl` ALWAYS releases
- * the slot, and the two inconsistent entries (a ghost id whose terminal was
- * disposed elsewhere, an id whose context was already lost) are shifted by
- * hand. The parked LRU below spun forever on exactly that hole.
+ * Termination is by construction, not by luck: `disposeWebgl` ALWAYS un-lists
+ * the session, and the inconsistent heads (a ghost id whose terminal is gone,
+ * an id whose context was already lost) are shifted by hand — counting those
+ * as demotions would make the instrument lie, the same argument
+ * `bumpEvictions` documents. The parked LRU spun forever on exactly that hole.
  */
-function enforceWebglBudget(): void {
-  while (webglOrder.length >= MAX_WEBGL) {
-    const oldest = webglOrder[0]!;
+function enforceWebglBudget(keepId: string): void {
+  while (webglLru.length > MAX_WEBGL) {
+    const oldest = webglLru[0]!;
     const victim = registry.get(oldest);
-    if (!victim || !victim.webgl) {
-      // Bookkeeping repair, not a budget demotion — counting it would make the
-      // instrument lie, the same argument `bumpEvictions` documents.
-      webglOrder.shift();
+    if (!victim || !victim.webgl || oldest === keepId) {
+      webglLru.shift();
       continue;
     }
     bumpWebglEvictions();
@@ -426,9 +497,12 @@ function enforceWebglBudget(): void {
 }
 
 function loadWebgl(m: ManagedTerminal): void {
-  if (m.webgl) return;
-  // Make room BEFORE minting, so a fresh attach can never evict itself.
-  enforceWebglBudget();
+  if (m.webgl) {
+    // Already accelerated — a re-attach is still a use, so it refreshes this
+    // session's place in the LRU instead of leaving it as the next victim.
+    touchGl(m.sessionId);
+    return;
+  }
   try {
     const addon = new WebglAddon();
     // On GL context loss, drop the addon — xterm falls back to the DOM
@@ -441,24 +515,28 @@ function loadWebgl(m: ManagedTerminal): void {
       }
       if (m.webgl === addon) {
         m.webgl = null;
-        releaseWebglSlot(m.sessionId);
+        unGl(m.sessionId);
       }
     });
     m.term.loadAddon(addon);
     m.webgl = addon;
-    webglOrder.push(m.sessionId);
+    touchGl(m.sessionId);
+    // Make room only AFTER minting, with this session pinned: a fresh attach
+    // can never evict itself.
+    enforceWebglBudget(m.sessionId);
   } catch (e) {
     // WebGL unavailable (software WebView, blocked context) — DOM renderer is
     // the built-in fallback, so this is non-fatal.
     m.webgl = null;
+    unGl(m.sessionId);
     silentCatch('fleetTerminal:webgl')(e);
   }
 }
 
 function disposeWebgl(m: ManagedTerminal): void {
-  // Release unconditionally — the slot must go even if the addon is already
+  // Un-list unconditionally — the slot must go even if the addon is already
   // gone, or `enforceWebglBudget` would have a head it can never move past.
-  releaseWebglSlot(m.sessionId);
+  unGl(m.sessionId);
   if (!m.webgl) return;
   try {
     m.webgl.dispose();
@@ -509,6 +587,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     term,
     fit,
     holder,
+    owner: null,
     resizeObs: undefined as unknown as ResizeObserver, // set below
     disposables,
     onMouseUp: () => {},
@@ -579,11 +658,15 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   return managed;
 }
 
-/** Mount `sessionId`'s terminal into `container` (creating it if needed). */
+/**
+ * Mount `sessionId`'s terminal into `container` (creating it if needed) and
+ * make `container` the owner — the only pane whose detach may tear it down.
+ */
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
   ensureSharedOutputListener();
   unpark(sessionId);
   const m = getOrCreate(sessionId);
+  m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
   }
@@ -643,12 +726,23 @@ function hydrate(m: ManagedTerminal): void {
     });
 }
 
-/** Unmount `sessionId`'s terminal from the DOM but keep it (and its buffer)
- *  alive. Disposes the attach-scoped WebGL context and unsubscribes from live
- *  output (the backend keeps buffering into its ring for a later re-attach). */
-export function detachTerminal(sessionId: string): void {
+/**
+ * Unmount `sessionId`'s terminal from the DOM but keep it (and its buffer)
+ * alive. Disposes the attach-scoped WebGL context and unsubscribes from live
+ * output (the backend keeps buffering into its ring for a later re-attach).
+ *
+ * `owner` is the container the caller attached with. Pass it and the detach is
+ * a NO-OP unless the caller still owns the terminal — a pane that has already
+ * lost the holder to another pane must not tear down what that pane is
+ * showing. Omitting it detaches unconditionally, which is what a caller
+ * tearing the session down wholesale (not a pane) wants.
+ */
+export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   const m = registry.get(sessionId);
   if (!m) return;
+  // Someone else took the holder — theirs to detach, not ours.
+  if (owner && m.owner !== owner) return;
+  m.owner = null;
   if (m.rafId !== null) {
     cancelAnimationFrame(m.rafId);
     m.rafId = null;
@@ -699,6 +793,7 @@ export function disposeTerminal(sessionId: string): void {
   if (!m) return;
   registry.delete(sessionId);
   unpark(sessionId);
+  m.owner = null;
   // Disposing an ATTACHED terminal (gcTerminals on a session the roster
   // dropped while a pane still showed it) otherwise leaves the backend
   // streaming this session over IPC forever: the map entry is gone, so the

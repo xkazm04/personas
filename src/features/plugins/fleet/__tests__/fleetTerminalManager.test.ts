@@ -24,7 +24,22 @@ class FakeTerminal {
   hasSelection = vi.fn(() => false);
   getSelection = vi.fn(() => '');
   attachCustomKeyEventHandler = vi.fn();
-  onData = vi.fn(() => ({ dispose: vi.fn() }));
+  /** The child's DECSET 2004 state — what decides whether a paste is framed. */
+  modes = { bracketedPasteMode: false };
+  dataHandler: ((data: string) => void) | null = null;
+  onData = vi.fn((handler: (data: string) => void) => {
+    this.dataHandler = handler;
+    return { dispose: vi.fn() };
+  });
+  /** Mirrors xterm's own `paste()` — normalize CRLF/LF to CR, bracket when the
+   *  child enabled the mode, emit through onData — so a test can prove the
+   *  manager routes through it rather than writing raw bytes to the PTY. */
+  paste(data: string) {
+    const normalized = data.replace(/\r?\n/g, '\r');
+    this.dataHandler?.(
+      this.modes.bracketedPasteMode ? `\x1b[200~${normalized}\x1b[201~` : normalized,
+    );
+  }
   write(chunk: string) {
     this.written.push(chunk);
   }
@@ -99,7 +114,11 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
+  // Both keys alias the SAME array (the two budget implementations that landed
+  // in parallel each named it), so splicing either clears it; splice both so a
+  // future rename of one can't silently leave the ledger dirty between tests.
   (g.__fleetTerminalWebglOrder__ as string[] | undefined)?.splice(0);
+  (g.__fleetTerminalWebglLru__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalEvictions__ = 0;
   g.__fleetTerminalWebglEvictions__ = 0;
 }
@@ -108,7 +127,13 @@ const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminal
 const registryMap = () =>
   (globalThis as Record<string, unknown>).__fleetTerminalRegistry__ as Map<
     string,
-    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal }
+    {
+      attached: boolean;
+      deadNoticeShown: boolean;
+      term: FakeTerminal;
+      webgl: { dispose: () => void } | null;
+      holder: HTMLDivElement;
+    }
   >;
 
 function attach(id: string): HTMLDivElement {
@@ -512,6 +537,194 @@ describe('disposeTerminal', () => {
     disposeTerminal('done');
 
     expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
+    host.remove();
+  });
+});
+
+describe('accelerated-renderer budget', () => {
+  const glLru = () => (globalThis as Record<string, unknown>).__fleetTerminalWebglLru__ as string[];
+
+  it('bounds how many ATTACHED terminals hold a GL context at once', () => {
+    // Eight panes live at once — the grid overlay does exactly this when many
+    // sessions go `awaiting_input` together. Before the budget every one of
+    // them loaded a renderer and the PLATFORM decided which context to revoke.
+    const hosts = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'].map((id) => attach(id));
+
+    const stats = getFleetTerminalStats();
+    expect(stats.maxWebgl).toBe(6);
+    expect(stats.webgl).toBe(6);
+    expect(glLru()).toEqual(['g3', 'g4', 'g5', 'g6', 'g7', 'g8']);
+    // The two oldest were dropped to the DOM fallback, deliberately, and counted.
+    expect(registryMap().get('g1')?.webgl).toBeNull();
+    expect(registryMap().get('g2')?.webgl).toBeNull();
+    expect(stats.webglEvictions).toBe(2);
+    // The terminal that just asked is never its own victim.
+    expect(registryMap().get('g8')?.webgl).not.toBeNull();
+
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('disposes the evicted addon rather than orphaning the context', () => {
+    const hosts = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'].map((id) => attach(id));
+    const victim = registryMap().get('d1')?.webgl;
+    expect(victim).toBeTruthy();
+    const disposeSpy = vi.spyOn(victim!, 'dispose');
+
+    hosts.push(attach('d7'));
+
+    expect(disposeSpy).toHaveBeenCalled();
+    expect(registryMap().get('d1')?.webgl).toBeNull();
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('re-attaching an accelerated session refreshes its place in the LRU', () => {
+    const hosts = ['t1', 't2', 't3', 't4', 't5', 't6'].map((id) => attach(id));
+    // t1 is the oldest — touch it, and t2 becomes the next victim instead.
+    hosts.push(attach('t1'));
+    hosts.push(attach('t7'));
+
+    expect(registryMap().get('t1')?.webgl).not.toBeNull();
+    expect(registryMap().get('t2')?.webgl).toBeNull();
+    expect(glLru()).toEqual(['t3', 't4', 't5', 't6', 't1', 't7']);
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('returns the budget when a pane detaches, so parked terminals cost no context', () => {
+    const hosts = ['p1', 'p2'].map((id) => attach(id));
+    expect(getFleetTerminalStats().webgl).toBe(2);
+
+    detachTerminal('p1');
+
+    expect(getFleetTerminalStats().webgl).toBe(1);
+    expect(glLru()).toEqual(['p2']);
+    hosts.forEach((h) => h.remove());
+  });
+});
+
+describe('attach ownership', () => {
+  it('ignores a detach from a pane that no longer holds the terminal', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('owned', paneA);
+    attachTerminal('owned', paneB); // B takes the holder
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    // A unmounts first. Without an owner token this ran the FULL teardown on
+    // the terminal B is still showing: unsubscribe, drop the renderer, unparent.
+    detachTerminal('owned', paneA);
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
+    expect(registryMap().get('owned')?.attached).toBe(true);
+    expect(registryMap().get('owned')?.holder.parentElement).toBe(paneB);
+    expect(parkedList()).not.toContain('owned');
+
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('still tears down when the owning pane detaches', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('owned2', paneA);
+    attachTerminal('owned2', paneB);
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('owned2', paneB);
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('owned2');
+    expect(registryMap().get('owned2')?.attached).toBe(false);
+    expect(parkedList()).toContain('owned2');
+
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('detaches unconditionally when no owner token is passed', () => {
+    const host = attach('unowned');
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('unowned');
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('unowned');
+    expect(registryMap().get('unowned')?.attached).toBe(false);
+    host.remove();
+  });
+});
+
+describe('clipboard paste framing', () => {
+  const readText = vi.fn<() => Promise<string>>();
+
+  beforeEach(() => {
+    readText.mockReset();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText, writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+    vi.mocked(fleetApi.writeInput).mockClear();
+  });
+
+  /** Right-click is one of the two paste doors (Ctrl+Shift+V / Cmd+V is the
+   *  other, and both land in the same function). */
+  function rightClickPaste(id: string): void {
+    registryMap().get(id)!.holder.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
+  }
+
+  /** Let the clipboard promise chain settle. */
+  const flushMicrotasks = () => new Promise<void>((r) => setTimeout(r, 0));
+
+  it('frames a multi-line paste so the shell inserts the lines instead of running them', async () => {
+    const host = attach('paste-bracketed');
+    registryMap().get('paste-bracketed')!.term.modes.bracketedPasteMode = true;
+    readText.mockResolvedValue('foo\nbar\nbaz');
+
+    rightClickPaste('paste-bracketed');
+    await flushMicrotasks();
+
+    // Every line after the first used to EXECUTE, because a bare newline at a
+    // shell prompt is a submit. The brackets are what make it an insert.
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith(
+      'paste-bracketed',
+      '\x1b[200~foo\rbar\rbaz\x1b[201~',
+    );
+    host.remove();
+  });
+
+  it('keeps the trailing newline the operator copied when the child brackets pastes', async () => {
+    const host = attach('paste-trailing');
+    registryMap().get('paste-trailing')!.term.modes.bracketedPasteMode = true;
+    readText.mockResolvedValue('deploy --prod\n');
+
+    rightClickPaste('paste-trailing');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith(
+      'paste-trailing',
+      '\x1b[200~deploy --prod\r\x1b[201~',
+    );
+    host.remove();
+  });
+
+  it('still strips the trailing newline for a child that has NOT enabled bracketed paste', async () => {
+    const host = attach('paste-plain');
+    readText.mockResolvedValue('echo hi\n');
+
+    rightClickPaste('paste-plain');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith('paste-plain', 'echo hi');
+    host.remove();
+  });
+
+  it('does nothing for an empty clipboard', async () => {
+    const host = attach('paste-empty');
+    readText.mockResolvedValue('');
+
+    rightClickPaste('paste-empty');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).not.toHaveBeenCalled();
     host.remove();
   });
 });
