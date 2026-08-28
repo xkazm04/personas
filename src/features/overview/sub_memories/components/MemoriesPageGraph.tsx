@@ -376,6 +376,18 @@ function GraphGhost() {
   );
 }
 
+/**
+ * A node is the entire point of this view, and it used to be pointer-only: a
+ * `motion.g` carrying onClick + onMouseEnter, no tabIndex, no role and no key
+ * handler. Keyboard users could not open a memory or raise its persona thread
+ * at all, and the census rule that exists for this (`unfocusable-click-target`)
+ * anchors on HTML tags, so it cannot see an SVG element — the violation was
+ * invisible to the gate as well as unreachable to the user.
+ *
+ * Focus doubles as hover so the persona-thread highlight follows the caret, and
+ * the focus ring is drawn rather than left to the UA, whose default outline
+ * around an SVG group is unreliable.
+ */
 function GraphNode({
   memory, position, isSelected, isHighlighted, isDimmed, onSelect, onHover,
 }: {
@@ -384,16 +396,35 @@ function GraphNode({
 }) {
   const color = categoryColor(memory.category).hex;
   const size = 12 + (memory.importance / 5) * 16;
+  const [focused, setFocused] = useState(false);
+
+  const handleKeyDown = (e: React.KeyboardEvent<SVGGElement>) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    // Space scrolls the canvas container otherwise, which moves the graph out
+    // from under the node the user was about to open.
+    e.preventDefault();
+    onSelect(memory);
+  };
 
   return (
     <motion.g
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: isDimmed ? 0.25 : 1, scale: 1 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', outline: 'none' }}
+      tabIndex={0}
+      role="button"
+      aria-label={stripHtml(memory.title)}
+      aria-pressed={isSelected}
       onClick={() => onSelect(memory)}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => onHover(memory)}
+      onFocus={() => { setFocused(true); onHover(memory); }}
+      onBlur={() => setFocused(false)}
     >
+      {focused && (
+        <circle cx={position.x} cy={position.y} r={size / 2 + 8} fill="none" stroke="currentColor" className="text-primary" strokeWidth={2} />
+      )}
       {(isSelected || isHighlighted) && (
         <circle cx={position.x} cy={position.y} r={size / 2 + 5} fill="none" stroke={color} strokeWidth={1.5} opacity={0.5} />
       )}
