@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
@@ -58,7 +58,15 @@ export function CapabilitySigil({
   const present = new Set(uc.dimensions);
   const isDisabled = uc.health === 'disabled';
   const isAttention = uc.health === 'needs-attention';
-  const health = getHealthMeta(t)[uc.health];
+  // `getHealthMeta` builds its full three-entry Record on every call, and this
+  // component renders on every hover / active / size change while reading
+  // exactly one field off it (the label, for the aria-label below). Keyed on
+  // the two things the label actually depends on so the interaction-driven
+  // renders — the frequent ones — cost nothing.
+  const healthLabel = useMemo(
+    () => getHealthMeta(t)[uc.health].label,
+    [t, uc.health],
+  );
 
   const corePct = 0.20;
   const innerPct = 0.30;
@@ -115,7 +123,7 @@ export function CapabilitySigil({
       viewBox={`0 0 ${size} ${size}`}
       className="block"
       style={{ opacity: isDisabled ? 0.65 : 1 }}
-      aria-label={`${uc.title} — ${health.label}`}
+      aria-label={`${uc.title} — ${healthLabel}`}
     >
       <defs>
         <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
