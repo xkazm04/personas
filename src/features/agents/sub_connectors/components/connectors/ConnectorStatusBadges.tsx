@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
-import { isStaleResult, STATUS_CONFIG } from '../../libs/connectorTypes';
+import { isStaleResult, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 interface LinkPickerProps {
@@ -15,8 +15,12 @@ interface LinkPickerProps {
 
 export function LinkPicker({ isLinking, status, credentials, onLinkCredential }: LinkPickerProps) {
   const { t } = useTranslation();
-  const matchingCreds = credentials.filter((c) => c.service_type === status.name);
-  const otherCreds = credentials.filter((c) => c.service_type !== status.name);
+  // Same predicate the hooks that produced `status.name` use. A slot may name a
+  // CATEGORY (`source_control`), not a service, and a strict service_type test
+  // matches nothing there -- so the one viable credential was demoted out of
+  // "Best match" into the unstarred "Other credentials" list.
+  const matchingCreds = credentials.filter((c) => credentialMatchesConnector(c, status.name));
+  const otherCreds = credentials.filter((c) => !credentialMatchesConnector(c, status.name));
 
   return (
     <>

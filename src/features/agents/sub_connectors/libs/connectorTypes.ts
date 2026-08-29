@@ -1,3 +1,4 @@
+import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 export type HealthProbeState = 'verified' | 'unverifiable' | 'failed';
@@ -120,6 +121,28 @@ export function matchesHealthFilter(status: ConnectorStatus, filter: ConnectorHe
 /** True when the connector is stored but nothing could actually verify it. */
 export function isUnverifiable(status: ConnectorStatus): boolean {
   return deriveReadiness(status) === 'unverifiable';
+}
+
+/**
+ * Can this credential satisfy a connector slot named `connectorName`?
+ *
+ * Two paths, and BOTH are needed: a slot may name a concrete service
+ * (`github`) or a category (`source_control`), because templates routinely
+ * declare requirements at the category level. All 100 builtin connectors carry
+ * at least one category tag — `github` alone answers to four (`source_control`,
+ * `development`, `ci_cd`, `devops`) — so a strict `service_type === name` test
+ * finds nothing at all for a category-shaped slot.
+ *
+ * `useConnectorStatuses` and `useUnfulfilledCredentials` already resolved both
+ * paths; this is the same rule, named once, for the surfaces that only had the
+ * strict half.
+ */
+export function credentialMatchesConnector(
+  cred: Pick<CredentialMetadata, 'service_type'>,
+  connectorName: string,
+): boolean {
+  return cred.service_type === connectorName
+    || connectorCategoryTags(cred.service_type).includes(connectorName);
 }
 
 // -- UI status config -------------------------------------------------
