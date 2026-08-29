@@ -152,6 +152,31 @@ describe('layoutStore — DB boundary', () => {
     expect(doc.notes).toHaveLength(1);
   });
 
+  it('never downgrades a document written by a NEWER build', async () => {
+    vi.useFakeTimers();
+    // Version skew runs in both directions: rollbacks, old installers, a synced
+    // profile. A v3 doc carries a field this build has no parser for.
+    dbValue = JSON.stringify({
+      version: 3,
+      positions: { a: { x: 1, y: 2 } },
+      groups: [],
+      links: [],
+      notes: [],
+      hidden: [],
+      lanes: [{ id: 'lane-1' }],
+    });
+    await hydrateLayout();
+    expect(loadPositions()).toEqual({ a: { x: 1, y: 2 } });
+
+    savePositions({ a: { x: 9, y: 9 } });
+    await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
+
+    // Preserve-and-default: run on what this build understands, and leave the
+    // newer build's payload untouched rather than re-saving it as v2.
+    expect(writes).toHaveLength(0);
+    expect(JSON.parse(dbValue!)).toMatchObject({ version: 3, lanes: [{ id: 'lane-1' }] });
+  });
+
   it('IPC unavailable → hydrate + writes fall back to localStorage, no crash', async () => {
     vi.useFakeTimers();
     failIpc = true;
