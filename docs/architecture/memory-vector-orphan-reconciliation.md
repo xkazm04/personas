@@ -45,9 +45,10 @@ One new module, `db/src/repos/core/memory_reaper.rs`, feature-gate-neutral
    entry. The ml `delete_memory_embeddings` delegates to the same registry
    entry (one implementation of the delete).
 2. **Durable orphan ledger** — `memory_reaper_ledger` table in the **main DB**,
-   created lazily (`CREATE TABLE IF NOT EXISTS`, mirroring how the vec tables
-   are provisioned at runtime), carrying **no foreign keys** so no entity
-   cascade can reach it: `memory_id PRIMARY KEY, display_name, pending`
+   owned by the migration chain (`migrations/incremental/e15_memory_reaper_ledger.rs`
+   — moved there from a lazy repo-layer CREATE during implementation, per the
+   hand-rolled-fixture-ddl census rule: schema lives with the schema owners),
+   carrying **no foreign keys** so no entity cascade can reach it: `memory_id PRIMARY KEY, display_name, pending`
    (JSON array of owed reaper names), `attempts, first_recorded_at,
    last_attempt_at`. Re-recording merges (upsert); an empty `pending` set
    resolves (row deleted). **Write-ahead adaptation:** because the reapers are
@@ -64,7 +65,12 @@ One new module, `db/src/repos/core/memory_reaper.rs`, feature-gate-neutral
    the victim ids/titles before deleting), `personas::delete` (captures the
    persona's memory ids before the FK cascade destroys them), and
    `cleanup_orphan_rows` (records owed cleanup for the `persona_memories` rows
-   it scrubs — record-only there; the sweep drains it). Each invocation first
+   it scrubs — record-only there; the sweep drains it). **Implementation
+   deviation, deliberate:** the archive door runs the reapers *unledgered*
+   (`run_memory_reapers_unledgered`) because its parent row SURVIVES — an
+   orphan-ledger record would be resolved by the drain's existence check
+   without deleting the vector; the parent-first archived-GC sweep is the
+   correct repair direction when the relational row still exists. Each invocation first
    **piggybacks a bounded ledger drain** (existence-checked re-run of owed
    reapers) so transient outages self-heal on the next delete without a
    scheduler.
