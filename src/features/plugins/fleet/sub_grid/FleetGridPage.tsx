@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock,
   Ban,
+  Flag,
   Sparkle,
   Bell,
   BellOff,
@@ -60,22 +61,33 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 
 // Visual order + label + icon + accent for the per-state group headers
 // in the left list. Attention-grabbing first; terminal states last.
-const GROUP_ORDER: ReadonlyArray<{
+interface FleetGroupMeta {
   id: FleetSessionState;
   /** plugins.fleet key for the group header label. */
   labelKey: FleetLabelKey;
   icon: typeof Hourglass;
   /** Tailwind text-color class for the icon + count badge. */
   accent: string;
-}> = [
+}
+
+export const GROUP_ORDER = [
   { id: 'awaiting_input', labelKey: 'state_awaiting_input', icon: Hourglass,    accent: 'text-violet-400' },
   { id: 'running',        labelKey: 'state_working',        icon: Loader2,      accent: 'text-blue-400' },
   { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
   { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
   { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'finished',       labelKey: 'state_finished',       icon: Flag,         accent: 'text-teal-400' },
   { id: 'hibernated',     labelKey: 'state_hibernated',     icon: Moon,         accent: 'text-indigo-400' },
   { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
-];
+] as const satisfies ReadonlyArray<FleetGroupMeta>;
+
+// One authority per vocabulary: the grid is a consumer of FleetSessionState,
+// so a state added to the binding without a row above must be a compile
+// error here rather than a group that silently never renders (a `finished`
+// session was unreachable on this page while the summary pill counted it).
+type _StatesWithoutAGroup = Exclude<FleetSessionState, (typeof GROUP_ORDER)[number]['id']>;
+const _groupOrderIsExhaustive: _StatesWithoutAGroup extends never ? true : never = true;
+void _groupOrderIsExhaustive;
 
 /**
  * Sessions view — the only Fleet tab the user navigates between (Settings
