@@ -456,6 +456,9 @@ macro_rules! lab_crud {
                 current_status
                     .validate_transition(status)
                     .map_err($crate::personas_core::error::AppError::Validation)?;
+                // CAS: `AND status = ?7` closes the TOCTOU gap between the
+                // SELECT above and this UPDATE (same spelling as
+                // repos/communication/events.rs::update_status).
                 let rows = conn.execute(
                     concat!(
                         "UPDATE ",
@@ -466,7 +469,7 @@ macro_rules! lab_crud {
                         " summary = COALESCE(?3, summary),",
                         " error = COALESCE(?4, error),",
                         " completed_at = COALESCE(?5, completed_at)",
-                        " WHERE id = ?6"
+                        " WHERE id = ?6 AND status = ?7"
                     ),
                     rusqlite::params![
                         status.as_str(),
@@ -474,10 +477,22 @@ macro_rules! lab_crud {
                         summary,
                         error,
                         completed_at,
-                        id
+                        id,
+                        current
                     ],
                 )?;
-                Ok(rows > 0)
+                if rows == 0 {
+                    // The row existed at SELECT time, so 0 rows means a
+                    // concurrent transition — reject the stale write.
+                    return Err($crate::personas_core::error::AppError::Validation(format!(
+                        concat!(
+                            $run_entity,
+                            " {} status changed concurrently (expected '{}')"
+                        ),
+                        id, current
+                    )));
+                }
+                Ok(true)
             })
         }
 
