@@ -4166,7 +4166,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "update_run_status TOCTOU closed: lab_crud macro CAS 12668c625 + hand-written twins (test_runs, genome) be121cf18; events/manual_reviews already carried the CAS predicate",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "analytics-store-design",
