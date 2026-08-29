@@ -538,18 +538,21 @@ function _invokeCore<T>(
 
 /**
  * Returns true when an IPC rejection is the backend's "invalid session token"
- * response. Tauri serialises `AppError` as `{ error, kind }` so we match on
- * either the explicit message string or the JSON-stringified payload.
+ * response. The guard rejects with a serialised `AppError` (`{ error, kind,
+ * category, ... }`, kind `"forbidden"`), so branch on the typed `kind` plus the
+ * guard's specific message — not on a bare substring probe over any error.
  */
 function isIpcAuthFailure(err: unknown): boolean {
   if (!err) return false;
-  const probe = (s: string) => s.includes("IPC authentication failed");
-  if (typeof err === "string") return probe(err);
-  if (err instanceof Error) return probe(err.message);
   if (typeof err === "object") {
     const obj = err as Record<string, unknown>;
-    if (typeof obj.error === "string" && probe(obj.error)) return true;
-    if (typeof obj.message === "string" && probe(obj.message)) return true;
+    return (
+      obj.kind === "forbidden" &&
+      typeof obj.error === "string" &&
+      obj.error.includes("IPC authentication failed")
+    );
   }
-  return false;
+  // String/Error fallbacks (e.g. a transport that stringifies the payload).
+  const s = typeof err === "string" ? err : err instanceof Error ? err.message : "";
+  return s.includes("IPC authentication failed");
 }
