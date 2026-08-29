@@ -2,7 +2,11 @@
  * Typed Tauri Event Registry.
  *
  * Single source of truth for every Tauri event name used between
- * Rust and React. Mirrors `src-tauri/src/engine/event_registry.rs`.
+ * Rust and React. Mirrors `src-tauri/core/src/events.rs` — which is the file
+ * `scripts/check-event-registry.mjs` actually diffs this one against. (This
+ * comment previously named `src-tauri/src/engine/event_registry.rs`, a path
+ * that does not exist: the declared authority has to be findable, or the
+ * mirror has no master.)
  *
  * ## Adding a new event
  * 1. Add the name constant to `EventName`.
