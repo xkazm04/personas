@@ -189,6 +189,13 @@ jobs:
         if: always()
         run: npm run test -- --run
 
+      # The e2e lane is a separate configuration (own reporter, own budget) and
+      # is no longer swept up by the default lane's discovery, so it needs its
+      # own invocation or its 179 tests stop being gated by anything.
+      - name: Run CLI e2e lane
+        if: always()
+        run: npm run test:e2e:cli
+
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
   # ─── Job B0: Rust formatting ────────────────────────────────────────
   # Deliberately NOT a step inside rust-tests. Formatting needs no dependency
