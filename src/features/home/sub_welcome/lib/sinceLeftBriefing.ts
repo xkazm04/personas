@@ -36,10 +36,24 @@ export interface BriefingInput {
   approvalsWaiting: number;
 }
 
+/**
+ * Why this render is what it is. Silence has two causes and only one of them
+ * is acceptable: `quiet` is a derivation that ran over loaded inputs and found
+ * nothing above threshold; `not-derived` is a derivation that could not run
+ * because an input had not loaded. Both render nothing, so a bare empty
+ * `lines` conflates them and a briefing that has silently stopped working
+ * looks exactly like a peaceful week. Nobody files a bug against an absence.
+ */
+export type BriefingOutcome = 'first-run' | 'briefed' | 'quiet' | 'not-derived';
+
 export interface SinceLeftBriefing {
   lines: BriefingLine[];
   /** True when there's no prior anchor (first ever run) — render nothing. */
   firstRun: boolean;
+  /** Discriminated cause of what was rendered — never inferred from `lines`. */
+  outcome: BriefingOutcome;
+  /** Inputs the derivation wanted and did not have. Empty on a healthy run. */
+  unavailable: readonly BriefingKind[];
 }
 
 /**
@@ -51,11 +65,14 @@ export function computeSinceLeftBriefing(
   input: BriefingInput,
   lastSeen: number | null,
 ): SinceLeftBriefing {
-  if (lastSeen == null) return { lines: [], firstRun: true };
+  if (lastSeen == null) return { lines: [], firstRun: true, outcome: 'first-run', unavailable: [] };
 
   const lines: BriefingLine[] = [];
+  const unavailable: BriefingKind[] = [];
 
-  // Runs since last visit (+ how many failed).
+  // Runs since last visit (+ how many failed). A null sample is the store not
+  // having loaded — recorded, not silently dropped.
+  if (input.runs == null) unavailable.push('runs');
   if (input.runs) {
     let runs = 0;
     let failed = 0;
@@ -81,7 +98,12 @@ export function computeSinceLeftBriefing(
     lines.push({ kind: 'approvals', count: input.approvalsWaiting });
   }
 
-  return { lines, firstRun: false };
+  return {
+    lines,
+    firstRun: false,
+    outcome: lines.length > 0 ? 'briefed' : unavailable.length > 0 ? 'not-derived' : 'quiet',
+    unavailable,
+  };
 }
 
 export function readLastSeen(): number | null {

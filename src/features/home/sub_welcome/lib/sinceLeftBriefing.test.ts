@@ -80,4 +80,29 @@ describe('computeSinceLeftBriefing', () => {
     const r = computeSinceLeftBriefing(input({ runs: null, approvalsWaiting: 1 }), LAST_SEEN);
     expect(r.lines).toEqual([{ kind: 'approvals', count: 1 }]);
   });
+
+  it('distinguishes a quiet week from a derivation that could not run', () => {
+    // Both render nothing. That is the whole trap: a briefing that has
+    // silently stopped working looks exactly like a peaceful week, and nobody
+    // files a bug against an absence. The two must be different observations.
+    const quiet = computeSinceLeftBriefing(input(), LAST_SEEN);
+    const notDerived = computeSinceLeftBriefing(input({ runs: null }), LAST_SEEN);
+
+    expect(quiet.lines).toEqual([]);
+    expect(notDerived.lines).toEqual([]);
+
+    expect(quiet.outcome).toBe('quiet');
+    expect(quiet.unavailable).toEqual([]);
+    expect(notDerived.outcome).toBe('not-derived');
+    expect(notDerived.unavailable).toEqual(['runs']);
+  });
+
+  it('names the outcome even when it did render, and on first run', () => {
+    expect(computeSinceLeftBriefing(input({ approvalsWaiting: 2 }), LAST_SEEN).outcome).toBe('briefed');
+    expect(computeSinceLeftBriefing(input(), null).outcome).toBe('first-run');
+    // A partial render still reports the input it never saw.
+    const partial = computeSinceLeftBriefing(input({ runs: null, approvalsWaiting: 2 }), LAST_SEEN);
+    expect(partial.outcome).toBe('briefed');
+    expect(partial.unavailable).toEqual(['runs']);
+  });
 });
