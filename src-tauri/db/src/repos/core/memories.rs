@@ -943,8 +943,11 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
         // Chunk deletes into batches of 500 to stay well under the limit.
         const CHUNK_SIZE: usize = 500;
-        let conn = pool.conn("memories::batch_delete")?;
-        let tx = conn.unchecked_transaction()?;
+        let mut conn = pool.conn("memories::batch_delete")?;
+        // BEGIN IMMEDIATE: the victim SELECT below informs the DELETE, and a
+        // deferred snapshot cannot upgrade past a concurrent committer
+        // (transaction-boundary golden path).
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let mut total_deleted: i64 = 0;
 
         // Capture the victims (id + contemporaneous title) BEFORE the rows
@@ -958,7 +961,10 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
                 "SELECT id, title FROM persona_memories WHERE id IN ({ph})"
             ))?;
             let rows = stmt.query_map(ps.as_slice(), |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
             })?;
             for r in rows {
                 victims.push(r?);
@@ -1186,7 +1192,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             .query_row(
                 "SELECT title FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| r.get(0),
+                |r| r.get("title"),
             )
             .optional()?;
         let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;
@@ -1210,7 +1216,7 @@ pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             .query_row(
                 "SELECT title FROM persona_memories WHERE id = ?1 AND tier != 'core'",
                 params![id],
-                |r| r.get(0),
+                |r| r.get("title"),
             )
             .optional()?;
         let affected = conn.execute(
@@ -1233,15 +1239,21 @@ pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// No FK children. Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_all", {
-        let conn = pool.conn("memories::delete_all")?;
-        let tx = conn.unchecked_transaction()?;
+        let mut conn = pool.conn("memories::delete_all")?;
+        // BEGIN IMMEDIATE: the victim SELECT informs the DELETE
+        // (transaction-boundary golden path — a deferred snapshot cannot
+        // upgrade past a concurrent committer).
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         // Capture the victims BEFORE the unscoped delete destroys the only
         // handle the reaper ledger could record.
         let victims: Vec<(String, Option<String>)> = {
             let mut stmt =
                 tx.prepare("SELECT id, title FROM persona_memories WHERE tier != 'core'")?;
             let rows = stmt.query_map([], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
             })?;
             rows.collect::<Result<Vec<_>, _>>()?
         };

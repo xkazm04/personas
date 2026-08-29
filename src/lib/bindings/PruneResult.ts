@@ -27,4 +27,4 @@ casualties: Array<TableImpact>,
 /**
  * Sum over `casualties` — the honest total the confirm copy shows.
  */
-totalRows: bigint, };
+totalRows: number, };

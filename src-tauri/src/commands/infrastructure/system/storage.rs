@@ -45,7 +45,9 @@ pub struct StorageReport {
 pub struct TableImpact {
     /// Table name (a code identifier, shown verbatim).
     pub table: String,
-    /// Rows this table lost when the delete executed.
+    /// Rows this table lost when the delete executed. Bounded far under 2^53
+    /// (a single prune's casualties), so the wire carries a JS number.
+    #[ts(type = "number")]
     pub rows: u64,
 }
 
@@ -66,6 +68,8 @@ pub struct PruneResult {
     /// diverge by construction. Largest first.
     pub casualties: Vec<TableImpact>,
     /// Sum over `casualties` — the honest total the confirm copy shows.
+    /// Same bound as [`TableImpact::rows`]; a JS number on the wire.
+    #[ts(type = "number")]
     pub total_rows: u64,
 }
 
@@ -85,8 +89,8 @@ pub fn storage_usage(
     // Both counts PROPAGATE failure — a probe swallowed into zero would render
     // as "nothing to remove", which a safety surface must never fabricate.
     let total_executions: u64 = conn
-        .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| {
-            r.get::<_, i64>(0)
+        .query_row("SELECT COUNT(*) AS n FROM persona_executions", [], |r| {
+            r.get::<_, i64>("n")
         })?
         .max(0) as u64;
 
@@ -94,11 +98,11 @@ pub fn storage_usage(
     let prunable_executions: u64 = conn
         .query_row(
             &format!(
-                "SELECT COUNT(*) FROM persona_executions \
+                "SELECT COUNT(*) AS n FROM persona_executions \
                  WHERE status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1"
             ),
             [&cutoff],
-            |r| r.get::<_, i64>(0),
+            |r| r.get::<_, i64>("n"),
         )?
         .max(0) as u64;
 
@@ -131,7 +135,7 @@ fn countable_tables(conn: &rusqlite::Connection) -> Result<Vec<String>, AppError
            AND name NOT LIKE '%_fts_%'
          ORDER BY name",
     )?;
-    let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+    let rows = stmt.query_map([], |r| r.get::<_, String>("name"))?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
@@ -144,9 +148,10 @@ fn table_counts(
 ) -> Result<Vec<(String, u64)>, AppError> {
     let mut out = Vec::with_capacity(tables.len());
     for table in tables {
-        let n: i64 = conn.query_row(&format!("SELECT COUNT(*) FROM \"{table}\""), [], |r| {
-            r.get(0)
-        })?;
+        let n: i64 =
+            conn.query_row(&format!("SELECT COUNT(*) AS n FROM \"{table}\""), [], |r| {
+                r.get("n")
+            })?;
         out.push((table.clone(), n.max(0) as u64));
     }
     Ok(out)
@@ -160,14 +165,18 @@ fn table_counts(
 /// trigger, unlike any count on the target table — and the mode decides only
 /// the final verb: ROLLBACK for a dry-run, COMMIT for the act.
 pub fn prune_executions(
-    conn: &rusqlite::Connection,
+    conn: &mut rusqlite::Connection,
     cutoff: &str,
     dry_run: bool,
 ) -> Result<(u64, Vec<TableImpact>), AppError> {
     let where_clause =
         format!("status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1");
     let tables = countable_tables(conn)?;
-    let tx = conn.unchecked_transaction()?;
+    // BEGIN IMMEDIATE: the before-counts inform the delete's accounting, and
+    // the preview's honesty depends on counts and delete seeing one world
+    // (transaction-boundary golden path - a deferred snapshot cannot upgrade
+    // past a concurrent committer).
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
     let before = table_counts(&tx, &tables)?;
     let pruned_executions = tx.execute(
         &format!("DELETE FROM persona_executions WHERE {where_clause}"),
@@ -208,9 +217,9 @@ pub fn prune_storage(
         .unwrap_or(MIN_PRUNE_AGE_HOURS)
         .max(MIN_PRUNE_AGE_HOURS);
     let cutoff = cutoff_rfc3339(age_hours);
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
 
-    let (pruned_executions, casualties) = prune_executions(&conn, &cutoff, dry_run)?;
+    let (pruned_executions, casualties) = prune_executions(&mut conn, &cutoff, dry_run)?;
     let total_rows = casualties.iter().map(|c| c.rows).sum();
 
     Ok(PruneResult {
@@ -254,8 +263,10 @@ mod prune_tests {
     }
 
     fn count(conn: &rusqlite::Connection, table: &str) -> i64 {
-        conn.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
-            .unwrap()
+        conn.query_row(&format!("SELECT COUNT(*) AS n FROM {table}"), [], |r| {
+            r.get("n")
+        })
+        .unwrap()
     }
 
     fn casualty(casualties: &[TableImpact], table: &str) -> Option<u64> {
@@ -267,11 +278,11 @@ mod prune_tests {
     #[test]
     fn dry_run_sees_the_cascade_and_deletes_nothing() {
         let pool = init_test_db().unwrap();
-        let conn = pool.conn("storage::prune_tests").unwrap();
+        let mut conn = pool.conn("storage::prune_tests").unwrap();
         seed(&conn);
         let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
 
-        let (pruned, casualties) = prune_executions(&conn, &cutoff, true).unwrap();
+        let (pruned, casualties) = prune_executions(&mut conn, &cutoff, true).unwrap();
         assert_eq!(pruned, 2);
         assert_eq!(casualty(&casualties, "persona_executions"), Some(2));
         assert_eq!(
@@ -290,12 +301,12 @@ mod prune_tests {
     #[test]
     fn act_receipt_matches_the_dry_run_prediction() {
         let pool = init_test_db().unwrap();
-        let conn = pool.conn("storage::prune_tests").unwrap();
+        let mut conn = pool.conn("storage::prune_tests").unwrap();
         seed(&conn);
         let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
 
-        let (predicted, predicted_casualties) = prune_executions(&conn, &cutoff, true).unwrap();
-        let (actual, actual_casualties) = prune_executions(&conn, &cutoff, false).unwrap();
+        let (predicted, predicted_casualties) = prune_executions(&mut conn, &cutoff, true).unwrap();
+        let (actual, actual_casualties) = prune_executions(&mut conn, &cutoff, false).unwrap();
         assert_eq!(predicted, actual);
         assert_eq!(predicted_casualties, actual_casualties);
 
@@ -303,7 +314,7 @@ mod prune_tests {
         assert_eq!(count(&conn, "persona_tool_usage"), 1);
 
         // Idempotent: a second act finds nothing prunable.
-        let (again, again_casualties) = prune_executions(&conn, &cutoff, false).unwrap();
+        let (again, again_casualties) = prune_executions(&mut conn, &cutoff, false).unwrap();
         assert_eq!(again, 0);
         assert!(again_casualties.is_empty());
     }

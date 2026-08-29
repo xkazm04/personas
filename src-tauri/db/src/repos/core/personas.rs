@@ -1827,7 +1827,10 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             let mut stmt =
                 tx.prepare("SELECT id, title FROM persona_memories WHERE persona_id = ?1")?;
             let rows = stmt.query_map(params![id], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
             })?;
             rows.collect::<Result<Vec<_>, _>>()?
         };

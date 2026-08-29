@@ -80,47 +80,40 @@ pub fn reap_vector_embeddings(vec_pool: &UserDbPool, ids: &[String]) -> Result<u
     if ids.is_empty() {
         return Ok(0);
     }
-    let conn = vec_pool.conn("memory_reaper::reap_vector_embeddings")?;
-    const CHUNK: usize = 400;
-    let mut removed = 0usize;
-    for table in ["persona_memory_embedding", "persona_memory_embedding_meta"] {
-        if !table_exists(&conn, table)? {
-            continue;
+    timed_query!(
+        "persona_memory_embedding",
+        "persona_memory_embedding::reap",
+        {
+            let conn = vec_pool.conn("memory_reaper::reap_vector_embeddings")?;
+            const CHUNK: usize = 400;
+            let mut removed = 0usize;
+            for table in ["persona_memory_embedding", "persona_memory_embedding_meta"] {
+                if !table_exists(&conn, table)? {
+                    continue;
+                }
+                for chunk in ids.chunks(CHUNK) {
+                    let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+                    let params: Vec<&dyn rusqlite::ToSql> =
+                        chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+                    removed += conn.execute(
+                        &format!("DELETE FROM {table} WHERE memory_id IN ({placeholders})"),
+                        params.as_slice(),
+                    )?;
+                }
+            }
+            Ok(removed)
         }
-        for chunk in ids.chunks(CHUNK) {
-            let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-            let params: Vec<&dyn rusqlite::ToSql> =
-                chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
-            removed += conn.execute(
-                &format!("DELETE FROM {table} WHERE memory_id IN ({placeholders})"),
-                params.as_slice(),
-            )?;
-        }
-    }
-    Ok(removed)
+    )
 }
 
 // ---------------------------------------------------------------------------
 // The ledger
 // ---------------------------------------------------------------------------
 
-/// Ledger DDL. Lives in the MAIN database, created lazily (the same
-/// provision-at-runtime pattern as the vec tables themselves), and carries no
-/// foreign keys: no entity's deletion can cascade into the record of that
-/// deletion's own unfinished business.
-const LEDGER_DDL: &str = "CREATE TABLE IF NOT EXISTS memory_reaper_ledger (
-    memory_id         TEXT PRIMARY KEY,
-    display_name      TEXT,
-    pending           TEXT NOT NULL,
-    attempts          INTEGER NOT NULL DEFAULT 0,
-    first_recorded_at TEXT NOT NULL,
-    last_attempt_at   TEXT
-)";
-
-pub fn ensure_ledger_table(conn: &Connection) -> Result<(), AppError> {
-    conn.execute(LEDGER_DDL, [])?;
-    Ok(())
-}
+// The ledger table itself (`memory_reaper_ledger`) is owned by the migration
+// chain — `migrations/incremental/e15_memory_reaper_ledger.rs` — main DB, no
+// foreign keys, so no entity's deletion can cascade into the record of that
+// deletion's own unfinished business.
 
 /// A ledger row: a destroyed memory whose dependent-store cleanup is still
 /// owed (in part or in full).
@@ -145,20 +138,25 @@ pub fn record_owed(
     if victims.is_empty() {
         return Ok(());
     }
-    ensure_ledger_table(conn)?;
-    let pending = all_reaper_names_json();
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut stmt = conn.prepare_cached(
+    timed_query!(
+        "memory_reaper_ledger",
+        "memory_reaper_ledger::record_owed",
+        {
+            let pending = all_reaper_names_json();
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut stmt = conn.prepare_cached(
         "INSERT INTO memory_reaper_ledger (memory_id, display_name, pending, attempts, first_recorded_at)
          VALUES (?1, ?2, ?3, 0, ?4)
          ON CONFLICT(memory_id) DO UPDATE SET
              pending = excluded.pending,
              display_name = COALESCE(excluded.display_name, display_name)",
     )?;
-    for (id, title) in victims {
-        stmt.execute(params![id, title, pending, now])?;
-    }
-    Ok(())
+            for (id, title) in victims {
+                stmt.execute(params![id, title, pending, now])?;
+            }
+            Ok(())
+        }
+    )
 }
 
 /// One reaper finished for these ids: shrink each row's pending set and
@@ -168,32 +166,37 @@ pub fn resolve_reaper(conn: &Connection, reaper: &str, ids: &[String]) -> Result
     if ids.is_empty() {
         return Ok(());
     }
-    ensure_ledger_table(conn)?;
-    const CHUNK: usize = 400;
-    for chunk in ids.chunks(CHUNK) {
-        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let mut params: Vec<&dyn rusqlite::ToSql> = vec![&reaper as &dyn rusqlite::ToSql];
-        params.extend(chunk.iter().map(|s| s as &dyn rusqlite::ToSql));
-        conn.execute(
-            &format!(
-                "UPDATE memory_reaper_ledger
+    timed_query!(
+        "memory_reaper_ledger",
+        "memory_reaper_ledger::resolve_reaper",
+        {
+            const CHUNK: usize = 400;
+            for chunk in ids.chunks(CHUNK) {
+                let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+                let mut params: Vec<&dyn rusqlite::ToSql> = vec![&reaper as &dyn rusqlite::ToSql];
+                params.extend(chunk.iter().map(|s| s as &dyn rusqlite::ToSql));
+                conn.execute(
+                    &format!(
+                        "UPDATE memory_reaper_ledger
                  SET pending = (SELECT COALESCE(json_group_array(value), '[]')
                                 FROM json_each(pending) WHERE value <> ?1)
                  WHERE memory_id IN ({placeholders})"
-            ),
-            params.as_slice(),
-        )?;
-        let params_ids: Vec<&dyn rusqlite::ToSql> =
-            chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
-        conn.execute(
-            &format!(
-                "DELETE FROM memory_reaper_ledger
+                    ),
+                    params.as_slice(),
+                )?;
+                let params_ids: Vec<&dyn rusqlite::ToSql> =
+                    chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+                conn.execute(
+                    &format!(
+                        "DELETE FROM memory_reaper_ledger
                  WHERE pending = '[]' AND memory_id IN ({placeholders})"
-            ),
-            params_ids.as_slice(),
-        )?;
-    }
-    Ok(())
+                    ),
+                    params_ids.as_slice(),
+                )?;
+            }
+            Ok(())
+        }
+    )
 }
 
 /// Resolve entire rows regardless of their pending set — used when the
@@ -203,18 +206,25 @@ pub fn resolve_rows(conn: &Connection, ids: &[String]) -> Result<(), AppError> {
     if ids.is_empty() {
         return Ok(());
     }
-    ensure_ledger_table(conn)?;
-    const CHUNK: usize = 400;
-    for chunk in ids.chunks(CHUNK) {
-        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let params: Vec<&dyn rusqlite::ToSql> =
-            chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
-        conn.execute(
-            &format!("DELETE FROM memory_reaper_ledger WHERE memory_id IN ({placeholders})"),
-            params.as_slice(),
-        )?;
-    }
-    Ok(())
+    timed_query!(
+        "memory_reaper_ledger",
+        "memory_reaper_ledger::resolve_rows",
+        {
+            const CHUNK: usize = 400;
+            for chunk in ids.chunks(CHUNK) {
+                let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+                let params: Vec<&dyn rusqlite::ToSql> =
+                    chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+                conn.execute(
+                    &format!(
+                        "DELETE FROM memory_reaper_ledger WHERE memory_id IN ({placeholders})"
+                    ),
+                    params.as_slice(),
+                )?;
+            }
+            Ok(())
+        }
+    )
 }
 
 /// A reap attempt failed for these ids: count it and stamp the time, keeping
@@ -223,52 +233,75 @@ pub fn record_attempt(conn: &Connection, ids: &[String]) -> Result<(), AppError>
     if ids.is_empty() {
         return Ok(());
     }
-    ensure_ledger_table(conn)?;
-    let now = chrono::Utc::now().to_rfc3339();
-    const CHUNK: usize = 400;
-    for chunk in ids.chunks(CHUNK) {
-        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let mut params: Vec<&dyn rusqlite::ToSql> = vec![&now as &dyn rusqlite::ToSql];
-        params.extend(chunk.iter().map(|s| s as &dyn rusqlite::ToSql));
-        conn.execute(
-            &format!(
-                "UPDATE memory_reaper_ledger
+    timed_query!(
+        "memory_reaper_ledger",
+        "memory_reaper_ledger::record_attempt",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            const CHUNK: usize = 400;
+            for chunk in ids.chunks(CHUNK) {
+                let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+                let mut params: Vec<&dyn rusqlite::ToSql> = vec![&now as &dyn rusqlite::ToSql];
+                params.extend(chunk.iter().map(|s| s as &dyn rusqlite::ToSql));
+                conn.execute(
+                    &format!(
+                        "UPDATE memory_reaper_ledger
                  SET attempts = attempts + 1, last_attempt_at = ?1
                  WHERE memory_id IN ({placeholders})"
-            ),
-            params.as_slice(),
-        )?;
-    }
-    Ok(())
+                    ),
+                    params.as_slice(),
+                )?;
+            }
+            Ok(())
+        }
+    )
 }
 
 /// Oldest-debt-first page of unresolved ledger rows.
 pub fn pending_rows(conn: &Connection, limit: usize) -> Result<Vec<LedgerRow>, AppError> {
-    ensure_ledger_table(conn)?;
-    let mut stmt = conn.prepare_cached(
-        "SELECT memory_id, display_name, pending, attempts FROM memory_reaper_ledger
+    timed_query!(
+        "memory_reaper_ledger",
+        "memory_reaper_ledger::pending_rows",
+        {
+            let mut stmt = conn.prepare_cached(
+                "SELECT memory_id, display_name, pending, attempts FROM memory_reaper_ledger
          ORDER BY first_recorded_at ASC LIMIT ?1",
-    )?;
-    let rows = stmt.query_map(params![limit as i64], |r| {
-        Ok((
-            r.get::<_, String>("memory_id")?,
-            r.get::<_, Option<String>>("display_name")?,
-            r.get::<_, String>("pending")?,
-            r.get::<_, i64>("attempts")?,
-        ))
-    })?;
-    let mut out = Vec::new();
-    for row in rows {
-        let (memory_id, display_name, pending_json, attempts) = row?;
-        let pending: Vec<String> = serde_json::from_str(&pending_json).unwrap_or_default();
-        out.push(LedgerRow {
-            memory_id,
-            display_name,
-            pending,
-            attempts,
-        });
-    }
-    Ok(out)
+            )?;
+            let rows = stmt.query_map(params![limit as i64], |r| {
+                Ok((
+                    r.get::<_, String>("memory_id")?,
+                    r.get::<_, Option<String>>("display_name")?,
+                    r.get::<_, String>("pending")?,
+                    r.get::<_, i64>("attempts")?,
+                ))
+            })?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (memory_id, display_name, pending_json, attempts) = row?;
+                // A corrupt pending set must FAIL SAFE: defaulting to [] would read as
+                // "nothing owed" (fabricated empty success on the exact record whose
+                // job is remembering the debt) — assume every reaper owed instead.
+                let pending: Vec<String> = match serde_json::from_str(&pending_json) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        tracing::warn!(
+                            memory_id = %memory_id,
+                            error = %e,
+                            "corrupt ledger pending set; assuming every reaper owed"
+                        );
+                        MEMORY_REAPERS.iter().map(|r| r.name.to_string()).collect()
+                    }
+                };
+                out.push(LedgerRow {
+                    memory_id,
+                    display_name,
+                    pending,
+                    attempts,
+                });
+            }
+            Ok(out)
+        }
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -422,65 +455,67 @@ pub fn drain_ledger(
     vec_pool: &UserDbPool,
     limit: usize,
 ) -> Result<LedgerDrainReceipt, AppError> {
-    let conn = main_pool.conn("memory_reaper::drain_ledger")?;
-    let rows = pending_rows(&conn, limit)?;
-    let mut receipt = LedgerDrainReceipt {
-        examined: rows.len(),
-        ..Default::default()
-    };
-    if rows.is_empty() {
-        return Ok(receipt);
-    }
+    timed_query!("memory_reaper_ledger", "memory_reaper_ledger::drain", {
+        let conn = main_pool.conn("memory_reaper::drain_ledger")?;
+        let rows = pending_rows(&conn, limit)?;
+        let mut receipt = LedgerDrainReceipt {
+            examined: rows.len(),
+            ..Default::default()
+        };
+        if rows.is_empty() {
+            return Ok(receipt);
+        }
 
-    // Existence check: a parent that exists means nothing is orphaned — drop
-    // the record, run no delete.
-    let mut alive: Vec<String> = Vec::new();
-    let mut owed: Vec<LedgerRow> = Vec::new();
-    {
-        let mut stmt =
-            conn.prepare_cached("SELECT 1 FROM persona_memories WHERE id = ?1 LIMIT 1")?;
-        for row in rows {
-            let exists = stmt
-                .query_row(params![row.memory_id], |_| Ok(()))
-                .optional()?
-                .is_some();
-            if exists {
-                alive.push(row.memory_id);
-            } else {
-                owed.push(row);
+        // Existence check: a parent that exists means nothing is orphaned — drop
+        // the record, run no delete.
+        let mut alive: Vec<String> = Vec::new();
+        let mut owed: Vec<LedgerRow> = Vec::new();
+        {
+            let mut stmt =
+                conn.prepare_cached("SELECT 1 FROM persona_memories WHERE id = ?1 LIMIT 1")?;
+            for row in rows {
+                let exists = stmt
+                    .query_row(params![row.memory_id], |_| Ok(()))
+                    .optional()?
+                    .is_some();
+                if exists {
+                    alive.push(row.memory_id);
+                } else {
+                    owed.push(row);
+                }
             }
         }
-    }
-    resolve_rows(&conn, &alive)?;
-    receipt.resolved_alive = alive.len();
+        resolve_rows(&conn, &alive)?;
+        receipt.resolved_alive = alive.len();
 
-    for entry in MEMORY_REAPERS {
-        let ids: Vec<String> = owed
-            .iter()
-            .filter(|r| r.pending.iter().any(|p| p == entry.name))
-            .map(|r| r.memory_id.clone())
-            .collect();
-        if ids.is_empty() {
-            continue;
-        }
-        match (entry.run)(vec_pool, &ids) {
-            Ok(_removed) => {
-                resolve_reaper(&conn, entry.name, &ids)?;
-                receipt.reaped += ids.len();
+        for entry in MEMORY_REAPERS {
+            let ids: Vec<String> = owed
+                .iter()
+                .filter(|r| r.pending.iter().any(|p| p == entry.name))
+                .map(|r| r.memory_id.clone())
+                .collect();
+            if ids.is_empty() {
+                continue;
             }
-            Err(e) => {
-                record_attempt(&conn, &ids)?;
-                receipt.failed += ids.len();
-                tracing::warn!(
-                    reaper = entry.name,
-                    count = ids.len(),
-                    error = %e,
-                    "ledger drain reap failed; debt kept"
-                );
+            match (entry.run)(vec_pool, &ids) {
+                Ok(_removed) => {
+                    resolve_reaper(&conn, entry.name, &ids)?;
+                    receipt.reaped += ids.len();
+                }
+                Err(e) => {
+                    record_attempt(&conn, &ids)?;
+                    receipt.failed += ids.len();
+                    tracing::warn!(
+                        reaper = entry.name,
+                        count = ids.len(),
+                        error = %e,
+                        "ledger drain reap failed; debt kept"
+                    );
+                }
             }
         }
-    }
-    Ok(receipt)
+        Ok(receipt)
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -525,82 +560,89 @@ pub fn reconcile_memory_vector_orphans(
     mode: SweepMode,
     ledger_limit: usize,
 ) -> Result<OrphanSweepReport, AppError> {
-    let applied = mode == SweepMode::Apply;
-    let mut report = OrphanSweepReport {
-        applied,
-        ..Default::default()
-    };
+    timed_query!(
+        "persona_memory_embedding",
+        "persona_memory_embedding::orphan_sweep",
+        {
+            let applied = mode == SweepMode::Apply;
+            let mut report = OrphanSweepReport {
+                applied,
+                ..Default::default()
+            };
 
-    // Ledger first: recorded debt is cheaper and better-attributed than a
-    // discovered orphan. Report mode only counts it.
-    if applied {
-        report.ledger = drain_ledger(main_pool, vec_pool, ledger_limit)?;
-    } else {
-        let conn = main_pool.conn("memory_reaper::sweep_ledger_count")?;
-        report.ledger.examined = pending_rows(&conn, ledger_limit)?.len();
-    }
-
-    // Enumerate the DEPENDENT side: every distinct memory_id holding vector
-    // data, from both the KNN table and its sidecar (either can exist alone
-    // after a partial cleanup).
-    let dependent_ids: Vec<String> = {
-        let conn = vec_pool.conn("memory_reaper::sweep_enumerate")?;
-        let mut arms: Vec<&str> = Vec::new();
-        if table_exists(&conn, "persona_memory_embedding")? {
-            arms.push("SELECT memory_id FROM persona_memory_embedding");
-        }
-        if table_exists(&conn, "persona_memory_embedding_meta")? {
-            arms.push("SELECT memory_id FROM persona_memory_embedding_meta");
-        }
-        if arms.is_empty() {
-            Vec::new()
-        } else {
-            let sql = arms.join(" UNION ");
-            let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
-            rows.collect::<Result<Vec<_>, _>>()?
-        }
-    };
-    report.dependents_scanned = dependent_ids.len();
-
-    // Existence-check each dependent id against the authoritative table,
-    // chunked; in apply mode reap immediately after each chunk's check so the
-    // check-to-delete window stays minimal.
-    const CHUNK: usize = 400;
-    let main_conn = main_pool.conn("memory_reaper::sweep_check")?;
-    for chunk in dependent_ids.chunks(CHUNK) {
-        let ids_json = serde_json::to_string(chunk)
-            .map_err(|e| AppError::Internal(format!("orphan sweep ids serialize: {e}")))?;
-        let orphans: Vec<String> = {
-            let mut stmt = main_conn.prepare_cached(
-                "SELECT value FROM json_each(?1)
-                 WHERE value NOT IN (SELECT id FROM persona_memories)",
-            )?;
-            let rows = stmt.query_map(params![ids_json], |r| r.get::<_, String>(0))?;
-            rows.collect::<Result<Vec<_>, _>>()?
-        };
-        report.orphaned += orphans.len();
-        if applied && !orphans.is_empty() {
-            for entry in MEMORY_REAPERS {
-                report.rows_removed += (entry.run)(vec_pool, &orphans)?;
+            // Ledger first: recorded debt is cheaper and better-attributed than a
+            // discovered orphan. Report mode only counts it.
+            if applied {
+                report.ledger = drain_ledger(main_pool, vec_pool, ledger_limit)?;
+            } else {
+                let conn = main_pool.conn("memory_reaper::sweep_ledger_count")?;
+                report.ledger.examined = pending_rows(&conn, ledger_limit)?.len();
             }
-            // These orphans may also have ledger rows; their debt is now paid.
-            resolve_rows(&main_conn, &orphans)?;
-        }
-    }
 
-    tracing::info!(
-        applied = report.applied,
-        dependents_scanned = report.dependents_scanned,
-        orphaned = report.orphaned,
-        rows_removed = report.rows_removed,
-        ledger_examined = report.ledger.examined,
-        ledger_resolved_alive = report.ledger.resolved_alive,
-        ledger_reaped = report.ledger.reaped,
-        ledger_failed = report.ledger.failed,
-        "memory vector orphan sweep"
-    );
-    Ok(report)
+            // Enumerate the DEPENDENT side: every distinct memory_id holding vector
+            // data, from both the KNN table and its sidecar (either can exist alone
+            // after a partial cleanup).
+            let dependent_ids: Vec<String> = {
+                let conn = vec_pool.conn("memory_reaper::sweep_enumerate")?;
+                let mut arms: Vec<&str> = Vec::new();
+                if table_exists(&conn, "persona_memory_embedding")? {
+                    arms.push("SELECT memory_id FROM persona_memory_embedding");
+                }
+                if table_exists(&conn, "persona_memory_embedding_meta")? {
+                    arms.push("SELECT memory_id FROM persona_memory_embedding_meta");
+                }
+                if arms.is_empty() {
+                    Vec::new()
+                } else {
+                    let sql = arms.join(" UNION ");
+                    let mut stmt = conn.prepare(&sql)?;
+                    let rows = stmt.query_map([], |r| r.get::<_, String>("memory_id"))?;
+                    rows.collect::<Result<Vec<_>, _>>()?
+                }
+            };
+            report.dependents_scanned = dependent_ids.len();
+
+            // Existence-check each dependent id against the authoritative table,
+            // chunked; in apply mode reap immediately after each chunk's check so the
+            // check-to-delete window stays minimal.
+            const CHUNK: usize = 400;
+            let main_conn = main_pool.conn("memory_reaper::sweep_check")?;
+            for chunk in dependent_ids.chunks(CHUNK) {
+                let ids_json = serde_json::to_string(chunk)
+                    .map_err(|e| AppError::Internal(format!("orphan sweep ids serialize: {e}")))?;
+                let orphans: Vec<String> = {
+                    let mut stmt = main_conn.prepare_cached(
+                        "SELECT value FROM json_each(?1)
+                 WHERE value NOT IN (SELECT id FROM persona_memories)",
+                    )?;
+                    let rows =
+                        stmt.query_map(params![ids_json], |r| r.get::<_, String>("value"))?;
+                    rows.collect::<Result<Vec<_>, _>>()?
+                };
+                report.orphaned += orphans.len();
+                if applied && !orphans.is_empty() {
+                    for entry in MEMORY_REAPERS {
+                        report.rows_removed += (entry.run)(vec_pool, &orphans)?;
+                    }
+                    // These orphans may also have ledger rows; their debt is now paid.
+                    resolve_rows(&main_conn, &orphans)?;
+                }
+            }
+
+            tracing::info!(
+                applied = report.applied,
+                dependents_scanned = report.dependents_scanned,
+                orphaned = report.orphaned,
+                rows_removed = report.rows_removed,
+                ledger_examined = report.ledger.examined,
+                ledger_resolved_alive = report.ledger.resolved_alive,
+                ledger_reaped = report.ledger.reaped,
+                ledger_failed = report.ledger.failed,
+                "memory vector orphan sweep"
+            );
+            Ok(report)
+        }
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -618,9 +660,13 @@ mod tests {
     fn vec_pool_with_stand_ins() -> UserDbPool {
         let pool = init_test_user_db().unwrap();
         let conn = pool.conn("memory_reaper::tests").unwrap();
+        // NOT standing in for migrated schema: the production twin is a
+        // runtime-provisioned sqlite-vec VIRTUAL table (memories.rs
+        // ensure_memory_vec_table) that cannot exist without the ml feature;
+        // these plain twins carry the same columns for the sweep's SQL.
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS persona_memory_embedding (
-                 memory_id TEXT, embedding BLOB);
+                 memory_id TEXT NOT NULL, embedding BLOB);
              CREATE TABLE IF NOT EXISTS persona_memory_embedding_meta (
                  memory_id TEXT PRIMARY KEY,
                  embedding_model TEXT NOT NULL,
@@ -649,9 +695,10 @@ mod tests {
         let conn = pool.conn("memory_reaper::tests").unwrap();
         conn.query_row(
             "SELECT (SELECT COUNT(*) FROM persona_memory_embedding WHERE memory_id = ?1)
-                  + (SELECT COUNT(*) FROM persona_memory_embedding_meta WHERE memory_id = ?1)",
+                  + (SELECT COUNT(*) FROM persona_memory_embedding_meta WHERE memory_id = ?1)
+                  AS total",
             params![memory_id],
-            |r| r.get(0),
+            |r| r.get("total"),
         )
         .unwrap()
     }
@@ -703,7 +750,6 @@ mod tests {
 
     fn ledger_row(pool: &DbPool, id: &str) -> Option<LedgerRow> {
         let conn = pool.conn("memory_reaper::tests").unwrap();
-        ensure_ledger_table(&conn).unwrap();
         pending_rows(&conn, 10_000)
             .unwrap()
             .into_iter()

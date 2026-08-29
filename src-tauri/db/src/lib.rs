@@ -507,7 +507,10 @@ fn cleanup_orphan_rows(conn: &rusqlite::Connection) {
                      AND persona_id NOT IN (SELECT id FROM personas)",
                 )?;
                 let rows = stmt.query_map([], |r| {
-                    Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                    Ok((
+                        r.get::<_, String>("id")?,
+                        r.get::<_, Option<String>>("title")?,
+                    ))
                 })?;
                 rows.collect()
             })()

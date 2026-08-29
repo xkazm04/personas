@@ -11,4 +11,4 @@ table: string,
 /**
  * Rows this table lost when the delete executed.
  */
-rows: bigint, };
+rows: number, };
