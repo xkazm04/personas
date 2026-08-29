@@ -1,8 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import type { DevScan } from '@/lib/bindings/DevScan';
 
-import { groupScansByProject, mapWithConcurrency, failStatus } from '../lib/sceneStore';
+import { groupScansByProject, mapWithConcurrency, failStatus, useSceneStore } from '../lib/sceneStore';
+
+const listScansMock = vi.fn();
+vi.mock('@/api/devTools/devTools', () => ({
+  getCrossProjectMetadata: vi.fn(),
+  listAllGoals: vi.fn(),
+  listTasks: vi.fn(),
+  listScans: (...args: unknown[]) => listScansMock(...args),
+}));
 
 const scan = (id: string, projectId: string | null, createdAt: string): DevScan => ({
   id,
@@ -80,5 +88,33 @@ describe('sceneStore — mapWithConcurrency', () => {
 
   it('handles an empty list', async () => {
     expect(await mapWithConcurrency([], 4, async () => 1)).toEqual([]);
+  });
+});
+
+describe('sceneStore — latest-wins per family', () => {
+  it('a superseded scans load cannot overwrite the newer answer', async () => {
+    const defer = () => {
+      let resolve!: (rows: DevScan[]) => void;
+      const promise = new Promise<DevScan[]>((r) => { resolve = r; });
+      return { promise, resolve };
+    };
+    const stale = defer();
+    const fresh = defer();
+    listScansMock.mockReset();
+    listScansMock.mockReturnValueOnce(stale.promise).mockReturnValueOnce(fresh.promise);
+
+    const store = useSceneStore.getState();
+    const first = store.loadScans();
+    const second = store.loadScans();
+
+    // The SECOND request answers first; the first one lands afterwards with an
+    // older view of the world. Nothing about the store's design orders these.
+    fresh.resolve([scan('new', 'p', '2026-07-10T00:00:00Z')]);
+    await second;
+    stale.resolve([scan('old', 'p', '2026-07-01T00:00:00Z')]);
+    await first;
+
+    expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['new']);
+    expect(useSceneStore.getState().scansStatus).toBe('loaded');
   });
 });
