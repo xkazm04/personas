@@ -1,9 +1,9 @@
-import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle, Clock, ShieldQuestion } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
-import { isStaleResult } from '../../libs/connectorTypes';
+import { isStaleResult, STATUS_CONFIG } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 interface LinkPickerProps {
@@ -132,6 +132,13 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
   const translated = status.result && !status.result.success
     ? translateHealthcheckMessage(status.result.message, t, tx)
     : null;
+  // `success` is `state != Failed` on the Rust side (engine/healthcheck.rs:58),
+  // so an UNVERIFIABLE probe arrives with success === true. Keying the panel on
+  // `success` alone therefore painted it emerald with a check mark -- exactly
+  // the green "Ready" claim the three-valued state was introduced to stop the
+  // UI from making. The badge above already distinguishes it; the panel does
+  // now too.
+  const unverifiable = status.result?.state === 'unverifiable';
 
   return (
     <>
@@ -154,14 +161,17 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
 
       {status.result && !status.testing && (
         <div className={`mt-2.5 px-3 py-2 rounded-modal typo-body ${
-          status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-            : 'bg-red-500/10 border border-red-500/20 text-red-400'
+          unverifiable ? `${STATUS_CONFIG.unverifiable.bg} border ${STATUS_CONFIG.unverifiable.color}`
+            : status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+              : 'bg-red-500/10 border border-red-500/20 text-red-400'
         }`}>
           {status.result.success ? (
             <div className="space-y-1">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-                <span>{status.result.message || t.agents.connectors.status_ready}</span>
+                {unverifiable
+                  ? <ShieldQuestion className="w-3 h-3 flex-shrink-0" />
+                  : <CheckCircle2 className="w-3 h-3 flex-shrink-0" />}
+                <span>{status.result.message || t.agents.connectors[unverifiable ? 'status_unverifiable' : 'status_ready']}</span>
               </div>
               <LastCheckedNote result={status.result} onRetest={onRetest} />
             </div>
