@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setAnalyticsSink, sentrySink, type ConversionEvent, type AnalyticsSink } from './sink';
+import { setAnalyticsSink, sentrySink, noopSink, type ConversionEvent, type AnalyticsSink } from './sink';
 import {
   ACTIVATION_FUNNEL,
   getInstallId,
@@ -92,13 +92,23 @@ describe('activation funnel', () => {
   });
 
   it('routes through the active sink, so telemetry-off (noop) fires nothing', () => {
-    setAnalyticsSink({
-      feature: () => {},
-      interaction: () => {},
-      session: () => {},
-      conversion: () => {},
-    });
-    expect(markActivation('shared')).toBe(true); // dedupe state still advances
+    setAnalyticsSink(noopSink);
+    expect(markActivation('shared')).toBe(true); // reached-state still advances
     expect(captured).toHaveLength(0); // ...but nothing reached the capturing sink
+  });
+
+  it('does not consume the funnel latch while telemetry is off — it reports on the first pass after opt-in', () => {
+    setAnalyticsSink(noopSink);
+    markActivation('persona_created');
+    expect(hasReachedActivation('persona_created')).toBe(true);
+    expect(captured).toHaveLength(0);
+
+    // User turns telemetry back on; the next time the milestone is observed it
+    // reports, exactly once, so this install keeps its row in the funnel.
+    setAnalyticsSink(capturingSink);
+    expect(markActivation('persona_created')).toBe(false); // not a new milestone
+    expect(captured.map((c) => c.step)).toEqual(['persona_created']);
+    markActivation('persona_created');
+    expect(captured).toHaveLength(1); // ...and never twice
   });
 });

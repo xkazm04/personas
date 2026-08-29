@@ -13,11 +13,12 @@
  * not derived from anything personal, never a user/account id. No persona
  * content, prompts, or credentials are ever attached.
  */
-import { getAnalyticsSink } from './sink';
+import { getAnalyticsSink, isSinkDelivering } from './sink';
 import { silentCatch } from '@/lib/silentCatch';
 
 const INSTALL_ID_KEY = 'personas.install_id';
 const REACHED_KEY = 'personas.activation_reached';
+const REPORTED_KEY = 'personas.activation_reported';
 const REFERRER_KEY = 'personas.referrer';
 
 /**
@@ -79,11 +80,11 @@ export function getInstallId(): string {
   return id;
 }
 
-function readReached(): Set<string> {
+function readSet(key: string): Set<string> {
   const store = ls();
   if (!store) return new Set();
   try {
-    const raw = store.getItem(REACHED_KEY);
+    const raw = store.getItem(key);
     if (!raw) return new Set();
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? new Set(arr.filter((x) => typeof x === 'string')) : new Set();
@@ -92,15 +93,18 @@ function readReached(): Set<string> {
   }
 }
 
-function writeReached(reached: Set<string>): void {
+function writeSet(key: string, values: Set<string>): void {
   const store = ls();
   if (!store) return;
   try {
-    store.setItem(REACHED_KEY, JSON.stringify([...reached]));
+    store.setItem(key, JSON.stringify([...values]));
   } catch (err) {
     silentCatch('activation:writeReached')(err);
   }
 }
+
+const readReached = () => readSet(REACHED_KEY);
+const writeReached = (reached: Set<string>) => writeSet(REACHED_KEY, reached);
 
 /** Which activation milestones this install has already reached. */
 export function getReachedActivations(): ActivationStep[] {
@@ -120,17 +124,29 @@ export function hasReachedActivation(step: ActivationStep): boolean {
  */
 export function markActivation(step: ActivationStep): boolean {
   const reached = readReached();
-  if (reached.has(step)) return false;
-  reached.add(step);
-  writeReached(reached);
-  try {
-    getAnalyticsSink().conversion({ step, ordinal: ordinalOf(step), installId: getInstallId() });
-  } catch (err) {
-    silentCatch('activation:markActivation')(err);
+  const first = !reached.has(step);
+  if (first) {
+    reached.add(step);
+    writeReached(reached);
+  }
+  // Two facts, two latches. `reached` is local product state (nudges read it)
+  // and is written the moment the milestone happens. `reported` is the funnel
+  // latch, and it records DELIVERY, not intent: a milestone reached while
+  // telemetry is off must not be consumed by a sink that discards by design,
+  // or that install is a permanently missing row in the funnel's denominator.
+  const reported = readSet(REPORTED_KEY);
+  if (!reported.has(step) && isSinkDelivering()) {
+    try {
+      getAnalyticsSink().conversion({ step, ordinal: ordinalOf(step), installId: getInstallId() });
+      reported.add(step);
+      writeSet(REPORTED_KEY, reported);
+    } catch (err) {
+      silentCatch('activation:markActivation')(err);
+    }
   }
   // A referred install is only credited once it reaches a real milestone.
-  recordReferralOnce();
-  return true;
+  if (first) recordReferralOnce();
+  return first;
 }
 
 let referralRecorded = false;
