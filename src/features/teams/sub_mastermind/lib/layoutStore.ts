@@ -201,7 +201,9 @@ function parsePanels(value: unknown): Record<string, AthenaPanel> {
 
 /** Parse a serialized layout doc, coercing each field to its expected shape and
  *  falling back to empty on malformed / non-object input (never throws). Any
- *  version parses: v1 docs gain `author: 'user'` + an empty panel map here. */
+ *  version parses: v1 docs gain `author: 'user'` + an empty panel map here.
+ *  A version this build does not know is PRESERVED rather than coerced down —
+ *  see `isLayoutFromNewerBuild`. */
 function parseLayout(raw: string | null): MastermindLayout | null {
   if (!raw) return null;
   let obj: unknown;
@@ -213,7 +215,10 @@ function parseLayout(raw: string | null): MastermindLayout | null {
   if (!obj || typeof obj !== 'object') return null;
   const p = obj as Partial<MastermindLayout>;
   return {
-    version: LAYOUT_DOC_VERSION,
+    // Skew runs in both directions. Stamping the current version onto whatever
+    // was parsed turns a rollback into data loss: a v3 doc would be re-saved as
+    // v2 with every field this build has no parser for silently dropped.
+    version: typeof p.version === 'number' && p.version > LAYOUT_DOC_VERSION ? p.version : LAYOUT_DOC_VERSION,
     positions: p.positions && typeof p.positions === 'object' ? (p.positions as PositionMap) : {},
     groups: migrateAuthored<GroupRect>(p.groups),
     links: migrateAuthored<UserLink>(p.links),
@@ -249,6 +254,10 @@ function readLegacyLocal(): MastermindLayout | null {
 /** Persist the in-memory doc now. Prefers the DB; on IPC failure (or when IPC
  *  is already known-unavailable) falls back to the single localStorage key. */
 async function writeThroughNow(): Promise<void> {
+  // Preserve-and-default: this session renders the fields it understands, but a
+  // payload from a newer build is never written back — its author is the only
+  // code that can serialize it without loss.
+  if (isLayoutFromNewerBuild()) return;
   const json = JSON.stringify(doc);
   if (ipcAvailable) {
     try {
@@ -320,6 +329,14 @@ export function hydrateLayout(): Promise<void> {
     emit();
   })();
   return hydrating;
+}
+
+/** True when the stored doc was written by a build newer than this one. The
+ *  canvas is then read-only against storage: edits live for the session and are
+ *  not persisted, and a surface can disclose that instead of silently losing
+ *  them. Distinguishable from a first run, which is what the law asks for. */
+export function isLayoutFromNewerBuild(): boolean {
+  return doc.version > LAYOUT_DOC_VERSION;
 }
 
 /** True once `hydrateLayout()` has completed — lets the page skip the async
