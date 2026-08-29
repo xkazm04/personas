@@ -7700,7 +7700,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:146-166 - one latest-wins token per family, a per-project keyed slot for invalidateScans (:217-227, peeking the family generation so a full reload owns the map), and an in-flight dedup registry for the argument-less loads (join by default; fresh:true replaces after a world-changing event); stale completions are inert, not errors; guards live at the data-operation layer.",
+          "evaluatedAt": "2026-08-30",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "multi-project",
@@ -7764,10 +7767,10 @@
           ],
           "grounding": "use_when",
           "confidence": "strong",
-          "state": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:109-118 dispatches family loads with no latest-wins token and no in-flight dedup, so a slow first load landing after a newer one silently repaints the canvas with superseded data — and src/features/teams/sub_mastermind/lib/layoutStore.ts:216 re-stamps any future-version document as the current version, destroying fields a newer build wrote.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
+          "state": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:100-231 witnesses the whole guard family: N mounts share one IPC, a settled flight clears its entry, a stale scoped refresh is inert after a newer full reload, same-project invalidations supersede in either landing order, distinct projects never cancel, and a failed refresh keeps the cache without wedging the slot.",
+          "evaluatedAt": "2026-08-30",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "canvas-graph",
@@ -13120,7 +13123,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/stores/util/latestWins.ts (createLatestWins + createKeyedLatestWins) and src/stores/util/inFlight.ts centralize the mint/compare pair and the in-flight registry - one authority for each guard; dedup entries are removed on settlement success AND failure (inFlight.ts:31-38) and 'replace' repoints the key without letting the superseded flight's cleanup evict it.",
+          "evaluatedAt": "2026-08-30",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "embedded-db",
