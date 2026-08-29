@@ -26,6 +26,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 import { loadMonitoringSummaries, type MonitoringSummary } from './liveState';
 
@@ -130,6 +131,21 @@ const LLM_SPEND_MIN_INTERVAL = 300_000;
 let lastLlmSpendAt = 0;
 let lastLlmSpendInputs: { projects: readonly DevProject[]; credentials: readonly PersonaCredential[] } | null = null;
 
+/** One latest-wins token per FAMILY — the slot a response competes for is the
+ *  family, keyed exactly like the status machine it protects. A single global
+ *  token would make every family's fetch a canceller of every other. Responses
+ *  arrive in an order the canvas did not choose (retryFailed racing an event
+ *  invalidation, a `force: true` refresh jumping the throttle), and a superseded
+ *  answer landing second is INERT, not an error. */
+const guards: Record<SceneFamily, ReturnType<typeof createLatestWins>> = {
+  relations: createLatestWins(),
+  scans: createLatestWins(),
+  sentry: createLatestWins(),
+  goals: createLatestWins(),
+  llmSpend: createLatestWins(),
+  runners: createLatestWins(),
+};
+
 export const useSceneStore = create<SceneStore>((set, get) => ({
   meta: null,
   metaStatus: 'idle',
@@ -145,23 +161,29 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   llmSpendStatus: 'idle',
 
   loadMeta: async () => {
+    const token = guards.relations.next();
     set({ metaStatus: 'loading' });
     try {
       const meta = await getCrossProjectMetadata();
+      if (!guards.relations.isCurrent(token)) return;
       set({ meta, metaStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadMeta')(err);
+      if (!guards.relations.isCurrent(token)) return;
       set((s) => ({ metaStatus: failStatus(s.metaStatus) }));
     }
   },
 
   loadScans: async () => {
+    const token = guards.scans.next();
     set({ scansStatus: 'loading' });
     try {
       const rows = await listScans(undefined, SCAN_LIMIT);
+      if (!guards.scans.isCurrent(token)) return;
       set({ scans: groupScansByProject(rows), scansStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadScans')(err);
+      if (!guards.scans.isCurrent(token)) return;
       set((s) => ({ scansStatus: failStatus(s.scansStatus) }));
     }
   },
@@ -186,17 +208,21 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     if (!force && now - lastSentryAt < MONITOR_MIN_INTERVAL && get().sentryStatus === 'loaded') return;
     lastSentryAt = now;
     lastSentryInputs = { projects, credentials };
+    const token = guards.sentry.next();
     set({ sentryStatus: 'loading' });
     try {
       const map = await loadMonitoringSummaries(projects, credentials);
+      if (!guards.sentry.isCurrent(token)) return;
       set({ sentry: map, sentryStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadSentry')(err);
+      if (!guards.sentry.isCurrent(token)) return;
       set((s) => ({ sentryStatus: failStatus(s.sentryStatus) }));
     }
   },
 
   loadGoals: async () => {
+    const token = guards.goals.next();
     set({ goalsStatus: 'loading' });
     try {
       const rows = await listAllGoals();
@@ -206,14 +232,17 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
         if (list) list.push(g);
         else m.set(g.project_id, [g]);
       }
+      if (!guards.goals.isCurrent(token)) return;
       set({ goals: m, goalsStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadGoals')(err);
+      if (!guards.goals.isCurrent(token)) return;
       set((s) => ({ goalsStatus: failStatus(s.goalsStatus) }));
     }
   },
 
   loadRunners: async () => {
+    const token = guards.runners.next();
     set({ runnersStatus: 'loading' });
     try {
       // One unfiltered list call, filtered + grouped here: `dev_tools_list_tasks`
@@ -227,9 +256,11 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
         if (list) list.push(task);
         else m.set(task.project_id, [task]);
       }
+      if (!guards.runners.isCurrent(token)) return;
       set({ runners: m, runnersStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadRunners')(err);
+      if (!guards.runners.isCurrent(token)) return;
       set((s) => ({ runnersStatus: failStatus(s.runnersStatus) }));
     }
   },
@@ -239,14 +270,17 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     if (!force && now - lastLlmSpendAt < LLM_SPEND_MIN_INTERVAL && get().llmSpendStatus === 'loaded') return;
     lastLlmSpendAt = now;
     lastLlmSpendInputs = { projects, credentials };
+    const token = guards.llmSpend.next();
     set({ llmSpendStatus: 'loading' });
     try {
       // Late import keeps the tracing adapters out of the canvas's first chunk.
       const { loadLlmSpendMap } = await import('./llmSpend');
       const map = await loadLlmSpendMap(projects, credentials);
+      if (!guards.llmSpend.isCurrent(token)) return;
       set({ llmSpend: map, llmSpendStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadLlmSpend')(err);
+      if (!guards.llmSpend.isCurrent(token)) return;
       set((s) => ({ llmSpendStatus: failStatus(s.llmSpendStatus) }));
     }
   },

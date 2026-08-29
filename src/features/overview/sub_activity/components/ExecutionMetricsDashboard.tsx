@@ -91,7 +91,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className={SUMMARY_GRID}>
         <KpiTile icon={Zap} label={t.overview.activity.total_executions} color="blue" numericValue={m.data.total_executions} compact language={language} />
         <KpiTile icon={DollarSign} label={t.overview.activity.total_cost} color="violet" numericValue={m.data.total_cost} format={fmtCost} />
-        <KpiTile icon={CheckCircle} label={t.overview.activity.success_rate} color="emerald" numericValue={m.overallSuccessRatePct} format={(v) => `${v.toFixed(1)}%`} />
+        <KpiTile icon={CheckCircle} label={t.overview.activity.success_rate} color="emerald" numericValue={m.overallSuccessRatePct ?? undefined} value="—" format={(v) => `${v.toFixed(1)}%`} />
         <KpiTile icon={Clock} label={t.overview.activity.avg_latency} color="amber" numericValue={m.data.avg_latency_ms} format={fmtMs} />
       </div>
 

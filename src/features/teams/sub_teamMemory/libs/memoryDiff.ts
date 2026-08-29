@@ -43,16 +43,42 @@ function avgImportance(memories: TeamMemory[]): number {
   return memories.reduce((sum, m) => sum + m.importance, 0) / memories.length;
 }
 
+/** The one key a memory can be aligned on ACROSS runs. `id` cannot serve: a row
+ *  carries exactly one `run_id` and a freshly minted uuid, so run A's ids and
+ *  run B's ids are disjoint by construction and an id-set difference reports two
+ *  substantively identical runs as everything-added plus everything-removed.
+ *  `added`/`removed` are claims about CONTENT, so content is what they align on;
+ *  importance is a property of the aligned memory, not part of its identity. */
+function contentKey(m: TeamMemory): string {
+  return JSON.stringify([m.category, m.title, m.content]);
+}
+
+/** Members of `source` with no counterpart left in `other`, as a MULTISET: two
+ *  identical memories in A and one in B leaves exactly one unmatched, not zero. */
+export function unmatchedByContent(source: TeamMemory[], other: TeamMemory[]): TeamMemory[] {
+  const remaining = new Map<string, number>();
+  for (const m of other) {
+    const k = contentKey(m);
+    remaining.set(k, (remaining.get(k) ?? 0) + 1);
+  }
+  return source.filter((m) => {
+    const k = contentKey(m);
+    const n = remaining.get(k) ?? 0;
+    if (n === 0) return true;
+    remaining.set(k, n - 1);
+    return false;
+  });
+}
+
 /**
  * Compute a diff between two sets of memories from different runs.
- * Matching is by memory ID -- memories created in different runs have different IDs.
+ * Matching is by CONTENT (see `contentKey`), because the panel's vocabulary --
+ * "new learnings", "no longer present" -- is a claim about content, and an
+ * alignment weaker than the vocabulary is a fabricated claim, not arithmetic.
  */
 export function computeMemoryDiff(memoriesA: TeamMemory[], memoriesB: TeamMemory[]): MemoryRunDiff {
-  const idsA = new Set(memoriesA.map((m) => m.id));
-  const idsB = new Set(memoriesB.map((m) => m.id));
-
-  const added = memoriesB.filter((m) => !idsA.has(m.id));
-  const removed = memoriesA.filter((m) => !idsB.has(m.id));
+  const added = unmatchedByContent(memoriesB, memoriesA);
+  const removed = unmatchedByContent(memoriesA, memoriesB);
 
   const catA = groupByCategory(memoriesA);
   const catB = groupByCategory(memoriesB);

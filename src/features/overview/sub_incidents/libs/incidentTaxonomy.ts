@@ -52,8 +52,28 @@ export function sourceTableLabel(t: Translations, source: string): string {
   }
 }
 
+/**
+ * The four classified rungs, and the one door for everything else.
+ *
+ * An incident whose severity the promoter could not classify is the healing
+ * layer's LEAST understood output. It used to rank 0 — below `low` — while
+ * being painted `medium` and shaped `neutral`, so the same token got three
+ * different answers to "how bad is this" and the ledger sort
+ * (`useIncidentLedger`) pushed it under every classified row. That is the
+ * inverse of the rule this taxonomy exists to serve: what the machine could
+ * not classify must get LOUDER, not quieter. Unclassified therefore takes the
+ * top rung and the critical paint, and `isUnclassifiedSeverity` is the marker
+ * that keeps the loud default honest — the row is at the top because nobody
+ * could read it, not because its content is critical.
+ */
+export function isUnclassifiedSeverity(severity: string): boolean {
+  return severityRank(severity) === UNCLASSIFIED_RANK;
+}
+
+const UNCLASSIFIED_RANK = 5;
+
 export function severityBadgeClass(severity: string): string {
-  const config = SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.medium!;
+  const config = SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.critical!;
   return `${config.bg} ${config.text} ${config.border}`;
 }
 
@@ -63,7 +83,7 @@ export function severityRank(severity: string): number {
     case 'high': return 3;
     case 'medium': return 2;
     case 'low': return 1;
-    default: return 0;
+    default: return UNCLASSIFIED_RANK;
   }
 }
 
@@ -80,8 +100,10 @@ export function severityShapeStatus(severity: string): StatusKey {
       return 'error';
     case 'medium':
       return 'warning';
-    default:
+    case 'low':
       return 'neutral';
+    default:
+      return 'error';
   }
 }
 
@@ -94,7 +116,9 @@ export function severityUrgencyLabel(t: Translations, severity: string): string 
     case 'critical': return t.overview.incidents.urgency_critical;
     case 'high': return t.overview.incidents.urgency_high;
     case 'medium': return t.overview.incidents.urgency_medium;
-    default: return t.overview.incidents.urgency_low;
+    case 'low': return t.overview.incidents.urgency_low;
+    // Unclassified: read out at the top rung, matching rank/paint/shape.
+    default: return t.overview.incidents.urgency_critical;
   }
 }
 

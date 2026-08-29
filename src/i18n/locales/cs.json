@@ -13367,7 +13367,9 @@
       "publish_failed": "Publikování selhalo",
       "quarantined": "Spouštěč v karanténě",
       "healing_abandoned": "Opravy se vzdaly",
-      "healing_capped": "Pokusy o opravu vyčerpány"
+      "healing_capped": "Pokusy o opravu vyčerpány",
+      "lookup_failed": "Načtení triggeru selhalo",
+      "cost_ceiling_corrupt": "Nečitelný cenový strop"
     },
     "build": {
       "analyzing": "Analyzuje se",

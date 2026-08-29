@@ -13367,7 +13367,9 @@
       "publish_failed": "Échec de la publication",
       "quarantined": "Déclencheur en quarantaine",
       "healing_abandoned": "Réparation abandonnée",
-      "healing_capped": "Tentatives de réparation épuisées"
+      "healing_capped": "Tentatives de réparation épuisées",
+      "lookup_failed": "Échec de la recherche du déclencheur",
+      "cost_ceiling_corrupt": "Plafond de coût illisible"
     },
     "build": {
       "analyzing": "Analyse en cours",

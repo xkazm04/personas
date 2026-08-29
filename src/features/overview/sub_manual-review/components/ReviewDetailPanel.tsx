@@ -9,7 +9,7 @@ import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { SEVERITY_LABELS, parseSuggestedActions, detectAutoResolution } from '../libs/reviewHelpers';
+import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
@@ -113,7 +113,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <h3 className="typo-heading text-foreground truncate">{review.persona_name || t.overview.review.unknown_persona}</h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <SeverityIndicator severity={review.severity} />
-                <span className="typo-body text-foreground">{SEVERITY_LABELS[review.severity] ?? 'Info'} {t.overview.review.severity_label}</span>
+                <span className="typo-body text-foreground">{resolveReviewSeverity(review.severity).label} {t.overview.review.severity_label}{resolveReviewSeverity(review.severity).defaulted ? ' — payload unreadable' : ''}</span>
                 <span className="typo-body text-foreground">·</span>
                 <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
                 {isCloud && (<><span className="typo-body text-foreground">·</span><StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>{t.overview.review.cloud_badge}</StatusBadge></>)}

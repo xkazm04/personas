@@ -13367,7 +13367,9 @@
       "publish_failed": "Error al publicar",
       "quarantined": "Activador en cuarentena",
       "healing_abandoned": "Reparación abandonada",
-      "healing_capped": "Reintentos de reparación agotados"
+      "healing_capped": "Reintentos de reparación agotados",
+      "lookup_failed": "Fallo al buscar el disparador",
+      "cost_ceiling_corrupt": "Límite de coste ilegible"
     },
     "build": {
       "analyzing": "Analizando",

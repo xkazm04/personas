@@ -43,6 +43,28 @@ describe('isMutationQuery', () => {
     expect(isMutationQuery('WITH d AS (SELECT 1) SELECT * FROM d')).toBe(false);
   });
 
+  it('refuses a batch — in safe mode a request is one statement', () => {
+    // `SELECT 1; DROP TABLE audit_log` grants read-only status on its leading
+    // keyword and ships the second statement to a connector that honours
+    // stacked statements. Refusing the whole request needs no statement
+    // splitter (itself dialect-shaped and easy to fool).
+    expect(isMutationQuery('SELECT 1; DROP TABLE audit_log')).toBe(true);
+    expect(isMutationQuery('SELECT 1; SELECT 2')).toBe(true);
+    // One trailing terminator is not a batch, and a separator inside a literal
+    // is not a separator.
+    expect(isMutationQuery('SELECT 1;')).toBe(false);
+    expect(isMutationQuery("SELECT * FROM t WHERE note = 'a; b'")).toBe(false);
+  });
+
+  it('classifies session-state statements as their own class, not as reads', () => {
+    // These mutate nothing in the user's tables but change connection or engine
+    // state the next caller inherits, so they are not reads.
+    expect(isMutationQuery('PRAGMA journal_mode = WAL')).toBe(true);
+    expect(isMutationQuery('ANALYZE users')).toBe(true);
+    // EXPLAIN still leads, so the EXPLAIN ANALYZE read stays a read.
+    expect(isMutationQuery('EXPLAIN ANALYZE SELECT * FROM users')).toBe(false);
+  });
+
   it('does not fire on a mutation verb that only appears inside a string literal', () => {
     expect(isMutationQuery("WITH c AS (SELECT 1) SELECT * FROM t WHERE msg = 'please delete this'")).toBe(false);
   });

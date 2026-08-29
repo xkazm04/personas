@@ -26,7 +26,16 @@ export interface HealthFixProposalAction {
 
 export interface DryRunIssue {
   id: string;
-  severity: 'error' | 'warning' | 'info';
+  /**
+   * `error` / `warning` / `info` are claims about the PERSONA — the check ran
+   * and observed something. `undetermined` is a claim about the CHECK: a
+   * sub-check could not be run at all (backend unreachable, config-warning
+   * fetch failed), so nothing is being asserted about the persona. It is never
+   * scored (`computeHealthScore` penalises only the first three) and it is
+   * counted in its own digest bucket, because folding "never probed" into
+   * `info` charges the persona 2 points for the prober's own failure.
+   */
+  severity: 'error' | 'warning' | 'info' | 'undetermined';
   description: string;
   proposal: DryRunProposal | null;
   resolved: boolean;
@@ -91,5 +100,7 @@ export interface AgentHealthDigest {
   errorCount: number;
   warningCount: number;
   infoCount: number;
+  /** Sub-checks that could not run. Not part of `totalIssues` and not scored. */
+  undeterminedCount: number;
 }
 

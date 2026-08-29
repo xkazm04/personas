@@ -15,6 +15,43 @@ export const MIN_PERSONA_TIMEOUT_MS = 10_000;
 /** Upper UI bound matching the engine hard ceiling (30 min). */
 export const MAX_PERSONA_TIMEOUT_MS = 1_800_000;
 
+/**
+ * Bounds for `maxConcurrent`, stated once, here, beside the field they govern.
+ *
+ * The authority is the engine validator (`core/src/validation/persona.rs`,
+ * `MAX_CONCURRENT_MIN`/`MAX_CONCURRENT_MAX`), which rejects a persona outside
+ * this range on create and update. Before these constants existed the number
+ * lived in two other places on one screen: the settings tab's field hint
+ * advertised "1--10" while the stepper beside it accepted 50, so the range the
+ * user was told and the range the app enforced disagreed, and neither had a
+ * definition to disagree WITH.
+ */
+export const MIN_PERSONA_MAX_CONCURRENT = 1;
+export const MAX_PERSONA_MAX_CONCURRENT = 50;
+
+const clampNumber = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+/**
+ * The patch door's clamp. Every writer into the draft passes through
+ * `useEditorDraft`'s `patch`, so bounds enforced here cannot be missed by the
+ * writer added next — which per-control enforcement always eventually is.
+ * Only bounded fields present in the patch are touched.
+ */
+export function clampDraftPatch(updates: Partial<PersonaDraft>): Partial<PersonaDraft> {
+  const out = { ...updates };
+  if (typeof out.maxConcurrent === 'number') {
+    out.maxConcurrent = clampNumber(
+      Math.round(out.maxConcurrent),
+      MIN_PERSONA_MAX_CONCURRENT,
+      MAX_PERSONA_MAX_CONCURRENT,
+    );
+  }
+  if (typeof out.timeout === 'number') {
+    out.timeout = clampNumber(out.timeout, MIN_PERSONA_TIMEOUT_MS, MAX_PERSONA_TIMEOUT_MS);
+  }
+  return out;
+}
+
 // -- Draft type for all editable persona fields --
 
 export interface PersonaDraft {

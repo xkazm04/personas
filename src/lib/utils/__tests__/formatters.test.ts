@@ -272,9 +272,15 @@ describe('formatCost', () => {
   });
 
   it('keeps null distinct from zero', () => {
-    // A cost that was never measured is not a cost of zero.
-    expect(formatCost(null, { precision: 2, language: 'en' })).toBe('$0.00');
+    // A cost that was never measured is not a cost of zero -- at EVERY
+    // precision. The default precision (2) rendered an unmeasured cost as
+    // `$0.00`, the one rendering that cannot be told apart from a genuinely
+    // free run -- and the default is what the nullable callers reach
+    // (CloudExecution.costUsd, CloudTriggerFiring.costUsd).
+    expect(formatCost(null, { precision: 2, language: 'en' })).toBe('\u2014');
     expect(formatCost(null, { precision: 4, language: 'en' })).toBe('\u2014');
     expect(formatCost(undefined, { precision: 'auto', language: 'en' })).toBe('\u2014');
+    // ...and an exact zero is still a measurement at that same precision.
+    expect(formatCost(0, { precision: 2, language: 'en' })).toBe('$0.00');
   });
 });

@@ -61,6 +61,18 @@ describe('buildParentIndex', () => {
     const index = buildParentIndex([span('root', undefined as unknown as null)]);
     expect(index.get('root')).toBeNull();
   });
+
+  it('lets the FIRST occurrence of a colliding span id own the parent link', () => {
+    // Two events reporting one span id are two distinct calls that collided,
+    // not one call seen twice. Producers batch and retry, so arrival order
+    // must not decide where the children of that id hang.
+    const seenAsChildOfRoot = [span('root', null), span('a', 'root'), span('dup', 'root'), span('dup', 'a')];
+    const sameEventsReordered = [span('root', null), span('a', 'root'), span('dup', 'a'), span('dup', 'root')];
+    expect(buildParentIndex(seenAsChildOfRoot).get('dup')).toBe('root');
+    expect(buildParentIndex(sameEventsReordered).get('dup')).toBe('a');
+    // ...and the collision does not inflate the index: still one entry per id.
+    expect(buildParentIndex(seenAsChildOfRoot).size).toBe(3);
+  });
 });
 
 describe('computeVisibleNodes', () => {
