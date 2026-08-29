@@ -1133,7 +1133,10 @@
             "score"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_health/types.ts:66 — the verdict vocabulary is ready|partial|blocked with grade healthy|degraded|unhealthy and no unverifiable state, so useHealthCheck.ts:406 turns 'the config-warning sub-check could not run' into a 2-point info penalty on the dependency's score.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -1379,7 +1382,10 @@
             "platform"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:57 runs the 'deployment smoke test' through executePersona (the LOCAL path) rather than the deployed endpoint the card advertises at DeploymentCard.tsx:44, so the only verdict a user can obtain about a live deployment is a verdict about a different system.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "cicd-monitoring",
@@ -1449,7 +1455,10 @@
             "tool"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_design/DesignTab.tsx:5 drives ONE design conversation for one persona at a time; the subject's precondition - many concurrent sessions whose existence, state, capacity and collective product must be tracked - never holds, so this is single-session lifecycle, the sibling subject the golden path explicitly draws the line against.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -1531,7 +1540,10 @@
             "debounced"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:209-212 `clearAll()` clears the dirty map without reverting the draft to baseline, so after a Discard every indicator reads clean while the buffer still holds the edits, and the next patch autosaves them.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "long-form-reading-surface",
@@ -1613,7 +1625,10 @@
             "list"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/CostSparkline.tsx:9-15 types its input number[] but is fed nullable cost_usd (ExecutionListRow.tsx:145), so an unpriced execution is coerced to 0 and plotted as a free run - the cost trend dips exactly where the newest, least-vetted models run.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:8762443ec12ebd54"
         },
         {
           "subject": "diff-comparison",
@@ -1695,7 +1710,10 @@
             "queue"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:369-373 has no identity tiebreak, so equal-weight equal-timestamp items have no defined position and a poll can reorder the deck under the reviewer; everything else in the subject is realized unusually well",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -1707,7 +1725,10 @@
             "chips"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:1-23 is a human-review triage deck over pre-existing queue items; the subject's precondition (a resident companion whose model-authored turn outlives the user's attention) does not hold anywhere in this context.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "chat-transcript",
@@ -1994,7 +2015,10 @@
             "server"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:88-91 mints one per-persona execute scope instead of a blanket grant and defaults to a 90-day expiry (:49); every applicable technique here is realized",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "settings",
@@ -2006,7 +2030,10 @@
             "keys"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:86-93 deletes a key with no settings-audit record while create, revoke and pair all write one, so the single irreversible mutation is the only one absent from the history the surface advertises.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -2018,7 +2045,10 @@
             "key"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "This context is a management-API key CRUD surface with an HTTP request audit trail (ApiKeyAuditDrawer.tsx:2-5: method/path/status/origin/time); no LLM call event, token counter, cost field or ingest path exists in any listed file, so none of the subject's five field families has a record to live on.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:8762443ec12ebd54"
         },
         {
           "subject": "device-pairing",
@@ -2306,7 +2336,10 @@
             "acquisition"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:15-27 sends clientId/clientSecret across IPC in plaintext while every credential field value crosses session-encrypted (src/api/vault/credentials.ts:112-121), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -2351,7 +2384,10 @@
             "density"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/styles/globals.css:832 applies the brightness axis as `filter: brightness()` on <html> — the whole-surface pixel filter the standard names as a trap — so every contrast number the product computes (CustomThemeCreator.tsx:33) describes declarations that never reach the screen, and the compensation list it forces (globals.css:852-857) is already growing.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "settings",
@@ -2394,7 +2430,10 @@
             "model"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:113 — the provider audit record carries provider/model/persona/status/cost/duration and a failover bit but never the class asserted, the rule that decided, or the policy version, so it audits outcomes rather than decisions; and useByomSettings.ts:161 applies a policy edit with no diff, blast radius, approver or version.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -2721,7 +2760,10 @@
             "action"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:276 binds executors by string match with an `other => Err` fallback, so a catalog kind with no executor is a runtime shrug rather than a startup failure; combined with the retired set-equality parity test the five-copy vocabulary drifts unchecked.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-identity",
@@ -2733,7 +2775,10 @@
             "brain"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:102 accepts a full `content` replacement of identity.md through the same update_identity op, and approval_autopilot.rs:11 auto-fires every proposed action under autonomous mode — so the self-model can be rewritten wholesale with no human seeing a diff.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -2791,7 +2836,10 @@
             "blast"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:632-645 returns a preview whose probes swallow query errors into zero and count only active dependents (src-tauri/db/src/repos/core/personas.rs:1969-1978) while the delete takes every row — a failed or narrower probe reads to the user as 'safe to delete'.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -3047,7 +3095,10 @@
             "transcript"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:28 spawns a session with a cwd and no declared write set, so N sessions share one repo with no disjointness check; and src-tauri/src/commands/fleet/stale.rs:640 writes session.state inline instead of through one transition door.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "terminal-multiplexing",
@@ -3239,7 +3290,10 @@
             "brain"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/disk.rs:87 replaces the user's constitution.md whenever the embedded CONSTITUTION_VERSION bumps (now 59), and dev_mode.rs:24 hands the companion an approval-gated coding dispatch rooted at the checkout with no path exclusion — together a complete amendment path to a document only the human may author.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-runtime",
@@ -3251,7 +3305,10 @@
             "model"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/disk.rs:22-26 and 85 further `use crate::db::` sites across the module import the host application directly, so the runtime has one host forever; the offsetting strength is a real second consumer at src-tauri/src/companion/remote_jobs.rs:1-32 that calls the runtime rather than re-implementing it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -3297,7 +3354,10 @@
             "synthesis"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/backlog.rs:114 writes status/resolved_at (and :198 reminded_count) only into the SQL sidecar while the markdown is written once at creation, so the index holds state the documents cannot express and a rebuild would resurrect every resolved item.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-runtime",
@@ -3309,7 +3369,10 @@
             "operative"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/cockpit.rs:1-7 and dashboard.rs:1-9 let a model-composed spec overwrite the singleton with no reset-to-known-good action, so the worst arrangement the model produces is permanent for a user who never chose the previous one.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -3355,7 +3418,10 @@
             "tts"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/companionPluginSlice.ts:294 defaults speech capture to the browser engine, which on WebView2 ships raw microphone audio to the OS vendor's cloud — the residency default is inverted, and the preview channel in sub_voice/voiceEngineShared.tsx:314 can start speaking after the user pressed stop.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -3424,7 +3490,10 @@
             "conversation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/companionStore.ts:583,1296 - resetStreamingNarration drops the in-flight trail without promoting on the error/interrupt paths (called at chat/athenaChatStream.ts:180 and :144), so a failed or interrupted turn keeps no account of the tool work it got through, which the technique names as the most valuable trail in the product.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-runtime",
@@ -3436,7 +3505,10 @@
             "turns"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/athenaLabels.ts:13-16 documents a manual three-step procedure for adding each backend action slug to a frontend switch, making the rendering surface a fourth hand-maintained copy of the action vocabulary that no check compares to the backend table.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-identity",
@@ -3494,7 +3566,10 @@
             "narration"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/RecallChip.tsx:98 - a disclosed memory's only action is onOpen into the Brain Viewer, so the strip is inspectable but carries no correction door ('this is wrong' / 'forget this') reaching the memory store's write path, and the highest-quality signal the memory system could receive is lost to a read-only disclosure.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-runtime",
@@ -3552,7 +3627,10 @@
             "quiet"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:72-80 swallows every evaluator error with unwrap_or_default(), so a proactive system that has gone dark is spelled exactly like a quiet week.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "voice-io",
@@ -3610,7 +3688,10 @@
             "cycle"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:18-20 and every sibling spec require a real running Tauri app, so the technique's acceptance test — the runtime exercised with no interface, no network and no real model — has no lane in this context.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -3622,7 +3703,10 @@
             "conversation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:90-93 asserts the glow rect tracks the live anchor rect and :99-103 that Stop leaves nothing behind, and tests/playwright/companion-stream-phase.spec.ts:53-59 pins the honest-fallback rule; no spec in this context asserts behaviour that contradicts a technique.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "schema-driven-ui",
@@ -4618,7 +4702,10 @@
             "build"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:177-179 interpolates the per-call intent, language preamble and user reference context into the first line, ahead of ~500 lines of standing framework text, so no two builds share a byte-stable prefix and the opening also spends the primacy position on an expertise claim.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "fleet-orchestration",
@@ -4630,7 +4717,10 @@
             "sessions"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:100 instructs each dispatched sub-agent to 'pick sensible defaults' instead of asking, which is the silent-inference outcome the brief technique exists to convert into a question; note the whole fan-out module is still #![allow(dead_code)] and unwired (fanout.rs:13-15), so its conformances are designed but not yet running.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "voice-io",
@@ -4642,7 +4732,10 @@
             "transcript"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/ contains no audio capture, synthesis, engine adapter or transcript; every technique's precondition fails, and the match is lexical resonance on 'voice' as persona tone (fanout.rs:395) and 'synthesize' as gate-question generation (gates.rs:886).",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "deployment-contract",
@@ -4654,7 +4747,10 @@
             "promotion"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:102-109 restates the model-tier rule that session_prompt.rs:651-667 owns and drops its two hard constraints, so the same intent resolves model_override differently depending on which of the two builders ran.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "quality-gates",
@@ -4666,7 +4762,10 @@
             "gate"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:1-6 has a scratch Claude CLI compose the test plan, and oneshot.rs:215 re-runs it after every fix pass, so the oracle is re-authored by a model inside the repair loop it is meant to judge.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -4782,7 +4881,10 @@
             "named"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/watchers/git.rs:59 a watcher that cannot read its project returns Ok(vec![]) and src-tauri/src/engine/project_tracking/scheduler.rs:177 stamps last_pulse_at anyway, so a blind project is stored and rendered identically to a quiet one — and its unread window is skipped forever.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "sync-replication",
@@ -4840,7 +4942,10 @@
             "span"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/inspectorShared.tsx:48 calls formatCost(execution.cost_usd) with no precision, which formatters.ts:215 renders as $0.00 for null - so the inspector strip reports an unpriced run as free three files from TraceSummary.tsx:41-45, which is scrupulously correct about the same value.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:8762443ec12ebd54"
         },
         {
           "subject": "tracing",
@@ -4884,7 +4989,10 @@
             "accrual"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:83 gives every log line an evenly-apportioned timestamp instead of its recorded one, so dead air is smeared away, no gap can render as disclosed silence, and the whole playback asserts a tempo the record never contained.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -5000,7 +5108,10 @@
             "model"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 drives a multi-round debate as the default path for team decisions with every seat on one model family, which the panel technique names as a sampling run in costume; and channels/types.ts:21 adds a third informal persona-state vocabulary beside the store's closed one.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -5054,7 +5165,10 @@
             "dispatch"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:130 widens the store's closed ActiveProcessStatus union to string and defaults an unknown status to `running`, so a status added upstream renders as a live pulsing process instead of failing the build.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -5088,7 +5202,10 @@
             "kill"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:69 - GROUP_ORDER enumerates 7 of the 8 lifecycle states and omits `finished`, and the session list is built only from GROUP_ORDER, so a session that declared FLEET:DONE vanishes from the Sessions list while its Finished pill still counts it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -5118,7 +5235,10 @@
             "attach"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:137 concatenates the operator's text and a carriage return into one PTY write, collapsing the typed-versus-pasted distinction that the manager's own paste path (fleetTerminalManager.ts:598-613) implements correctly — two authorities for how input reaches a session.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "fleet-orchestration",
@@ -5350,7 +5470,10 @@
             "surface"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 renders a build-completeness percentage and nothing else numeric — the twelve files carry no cost, budget, token, spend, margin or limit value at all, so the subject's entry precondition (a report layer over an LLM spend store) fails on both sides of its builder/operator boundary.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:8762443ec12ebd54"
         },
         {
           "subject": "conversation-orchestration",
@@ -5396,7 +5519,10 @@
             "text"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx:55-78 hand-rolls its buttons instead of consuming the shared `Button` primitive, so eleven of the twelve widgets sit outside the door that carries focus-ring, aria-busy and the 44px coarse-pointer target.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "fleet-orchestration",
@@ -5408,7 +5534,10 @@
             "decision"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:25 and its siblings are inline chat cards Athena emits into a cockpit; none of them creates, tracks, dispatches or harvests a session, so no technique in this subject has an implementation site.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "conversation-orchestration",
@@ -5466,7 +5595,10 @@
             "registry"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:1 and src/features/home/sub_learning/HomeLearning.tsx:1 are a what's-new roadmap view and a guided-tour catalogue; there is no session, roster, dispatch or harvest anywhere in the context.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "guided-tours",
@@ -5478,7 +5610,10 @@
             "guided"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/home/sub_learning/HomeLearning.tsx:116-140 and useComposedTours.ts:47-60 realize the registry as a two-directional coverage surface where a drifted tour is retired to a visible, non-startable state rather than deleted or silently played.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "retrieval",
@@ -5548,7 +5683,10 @@
             "last"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:132-144 implements the anchor's heartbeat/departure/acknowledgment protocol correctly, but the interval beat is not presence-gated and the derivation returns no 'could not derive' outcome - so an overnight minimized window silently erases the delta and a cold store is indistinguishable from a quiet week.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "app-shell",
@@ -5758,7 +5896,10 @@
             "event"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/realtime/useRealtimeEvents.ts:112 builds the displayed list and its derived stats purely from pushed payloads with no authoritative read path, so a counted drop or a late mount produces a confidently wrong events-per-minute and success rate that nothing heals",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "webhook-ingestion",
@@ -5910,7 +6051,10 @@
             "reveal"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:131-153 strips `delay` and collapses to exact `duration: 0` in the reduced clone, so timing-load-bearing invisibility windows vanish and zero-duration completion events may never fire for awaiting code.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "draft-editing",
@@ -5992,7 +6136,10 @@
             "strings"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/errors/errorRegistry.ts:60-80 stores user-facing message and suggestion sentences in a constant table instead of catalog keys, and src/i18n/useTranslatedError.ts:227-240 chains into it as a final fallback — every rule without a paired key renders English in all 14 locales.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -6017,7 +6164,10 @@
             "parity"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:15-29 diffs the catalog against a hand-copied replica of the Rust stop_reason vocabulary rather than the vocabulary itself, so a chain.rs edit that skips the copy ships an untranslated raw token in 14 locales with a green board.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "agent-chaining",
@@ -6029,7 +6179,10 @@
             "reason"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/generated/types.ts:13467 — the chain_stop vocabulary is thirteen error-shaped tokens with no success-shaped stop (no completed), no cancelled, and no condition_unevaluable distinct from predicate_unmet, so a chain that ended naturally and a chain whose predicate could not be evaluated are not spellable.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "hash-pinned-translation-pipeline",
@@ -6304,7 +6457,10 @@
             "activation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/analytics/activation.ts:125-127 writes the fire-once latch before the emission, so every milestone reached while telemetry is off is permanently consumed and never reported - a missing row in the funnel's denominator, per installation, forever.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -6497,7 +6653,10 @@
             "system"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/harness/types.ts:3 declares an autonomous Plan -> Execute -> Verify loop over a codebase; its 'scenario' is a set of quality goals with gate commands (scenario-parser.ts:23-56), not an input with an expected property, and nothing here scores a model's output, runs a cell N times, or pins a judge.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "test-harness",
@@ -6719,7 +6878,10 @@
             "preset"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:66-76 resolves reduced motion from the OS media query alone, ignoring the in-app Appearance toggle that useMotion.ts:9-19 documents as the app's second signal — a user who enables Reduce Motion in the app's own settings still gets full spring travel from every scripted animation.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "design-tokens",
@@ -7011,7 +7173,10 @@
             "suite"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "vitest.config.ts:17 includes src/**/*.test.{ts,tsx} with no exclude, so the e2e suite's own files (src/test/e2e/cli-*.e2e.test.ts, declared at vitest.e2e.config.ts:15) are also discovered by the default unit run — the partition is not disjoint and `npm test` runs them at the unit tier's budget.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "client-state",
@@ -7023,7 +7188,10 @@
             "tests"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:109-118 dispatches family loads with no latest-wins token and no in-flight dedup, so a slow first load landing after a newer one silently repaints the canvas with superseded data — and src/features/teams/sub_mastermind/lib/layoutStore.ts:216 re-stamps any future-version document as the current version, destroying fields a newer build wrote.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "canvas-graph",
@@ -7065,7 +7233,10 @@
             "tools"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth.rs:86 exact-matches `personas:execute` while the HTTP surface honours resource-scoped grants, so least-privilege keys cannot call any MCP tool and the only working token is the never-expiring blanket grant install.rs:67-74 mints",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -7077,7 +7248,10 @@
             "walk"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1466 emits frontmatter by replacing quotes rather than escaping and writes with a truncating std::fs::write at :1471, so a note the AI writes can be torn or silently mis-keyed in the human's own vault.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -7272,7 +7446,10 @@
             "crash"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/tool_usage.rs:15,24 record and aggregate tool invocations with no success/error dimension, so the usage ledger cannot distinguish a working tool from a failing one even though the audit ledger beside it can",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -7352,7 +7529,10 @@
             "markdown"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 counts orphans with no exemption while lint.rs:118 exempts entry points, so two surfaces report different orphan counts for one vault; and graph.rs:778 leaks an unreapable debounce thread past stop_watcher at :816.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -7386,7 +7566,10 @@
             "guided"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/tourSlice.ts:1401 hardcodes `defaultTourId = 'getting-started'` at slice construction, so the resume pair loses its 'which tour' half — a user interrupted mid-teams-orchestration returns to a different tour at its own saved step, with their real position intact on disk and unreachable.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -7584,7 +7767,10 @@
             "eval"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/bindings/Judge.ts:10 - the judge read-model carries dims, personas and notes but no model, version, rubric or parameters, and JudgePanel.tsx:64 renders scores without them, so RunHistoryView's cross-run trend cannot distinguish a system change from a judge upgrade.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "test-harness",
@@ -7792,7 +7978,10 @@
             "animation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32,40 inlines an off-ladder 1.1s duration and a fourth call-site spring (320/22); the folder is per-component keyframes with no preset, no ladder reference and no declared reduced fallback.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "async-ui-states",
@@ -7804,7 +7993,10 @@
             "state"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:19-22 keys the empty-state variant by module rather than by cause and EmptyStateContent (:46-55) carries no cause discriminator, so a no-match empty renders the same hero-scale first-run treatment as a genuine first run.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -7920,7 +8112,10 @@
             "failure"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:64 ranks an unrecognized severity at 0 - below `low` - and groupIncidents.ts:33 uses that rank to pick a group's worst severity, so unclassifiable incidents sort quieter than everything else instead of louder.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "error-handling",
@@ -8034,7 +8229,10 @@
             "bulk"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:426 renders a failed fetch as the celebratory empty state because `reviewQueue.error` is never read, telling the operator there is nothing to do when the queue could not be loaded",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "hitl-approval",
@@ -8046,7 +8244,10 @@
             "approval"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "Five independent sites default an unrecognized severity to the mildest bucket (ReviewListItem.tsx:11, ReviewDetailPanel.tsx:116, reviewFocusHelpers.tsx:107 and :143, ReviewFocusFlow.tsx:46) with no marker, and this repo auto-resolves reviews unattended overnight - the exact composition fail-loud-classification-default warns about.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -8080,7 +8281,10 @@
             "state"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:141-143 the merge resolution hard-deletes both originals after conflictHelpers.tsx:58-60 concatenates their bodies, so a two-item family is replaced by a machine-written summary with no supersedence link and no surviving members to audit.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "sync-replication",
@@ -8168,7 +8372,10 @@
             "detail"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:431 keys the cooldown on rule.id alone while the evaluation window is not a rule field at all, and :460 ships a payload with no contributors — the same rule deduped across two different windows, and a 'cost is $12.34' alert that hands the diagnosis back to the operator.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:8762443ec12ebd54"
         },
         {
           "subject": "sync-replication",
@@ -8318,7 +8525,10 @@
             "chart"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:104-106 derives the sparkline's floor from the sample's own minimum, so a metric moving 99.1→99.3 fills the tile and every tile in a KPI row uses a different scale — the one scale defect no reviewer's eye can catch.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "fleet-orchestration",
@@ -8376,7 +8586,10 @@
             "comparison"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position on a series that only carries non-empty buckets (pivotToolUsage.ts:49 keys off observed dates), so a quiet interval silently labels part of the current period as the baseline.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "metrics-rollups",
@@ -8442,7 +8655,10 @@
             "networking"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/types.rs:12 auto_connect is read by nothing, retry_count is written 0 at connection.rs:500 and never incremented, and mdns.rs:470 DELETEs absent peers instead of demoting them to stale — three knobs promising reconnection that does not exist, over a peer list with no stale state.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -8472,7 +8688,10 @@
             "peer"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/exposure.rs:101 carries no peer identity on the grant and src-tauri/src/commands/network/exposure.rs:94 returns the whole exposure set from one un-scoped command, so the allowlist is global rather than per-peer.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -8955,7 +9174,10 @@
             "dag"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:153-164 and :199-206 return true for a malformed condition and an unknown operator — documented at :143-144 as 'fail-open is the safe default' — so a typo in a predicate runs the branch the condition existed to gate, side effects included, and the run still completes green.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "voice-io",
@@ -9162,7 +9384,10 @@
             "timeline"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:58-59 subscribes the authoritative clock straight into React state un-throttled, re-rendering the whole preview subtree at frame rate — the exact wound hooks/useTimelinePlayback.ts:3-12 says the ref-based clock exists to prevent.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -9196,7 +9421,10 @@
             "audio"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts:131 awaits the export and then waits on backend events with no deadline anywhere in the file, so a wedged ffmpeg leaves status 'exporting' with a frozen progress bar forever.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "undo-history",
@@ -9242,7 +9470,10 @@
             "decision"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/guidance/useGuidanceRunner.ts:53 - a missing anchor resolves to null silently with no count and no signal, so a walkthrough degrading to a centre-screen orb on half its steps is a broken anchor contract nothing in the product reports.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-runtime",
@@ -9254,7 +9485,10 @@
             "memory"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:70-80 keeps `LOW_RISK_ACTIONS`, a hand-maintained subset of the backend action vocabulary that decides what Athena recommends approving; a new low-risk kind silently falls to the cautious branch.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-identity",
@@ -9312,7 +9546,10 @@
             "catalog"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:51-52 and :105 present `inboxCount` as a total while documenting it as post-cap-of-50, so the badge silently understates the backlog exactly when it is largest.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "companion-identity",
@@ -9324,7 +9561,10 @@
             "agent"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/types.ts:40 — this context is a tagged-union normalizer for approvals/messages/outputs/health issues; no constitution, self-model, profile, memory substrate, brain probe or capability inventory appears in any of its files, so companion-identity does not govern it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "agent-cli-transport",
@@ -9624,7 +9864,10 @@
             "cross"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:244 the wall's columns are name/members/tech/status/created — no liveness, no pulse fragment, no attention flag — so the portfolio's face cannot answer 'which project needs me?' and cannot render a blind project as broken even though the engine maintains a per-project pulse.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "embedded-preview",
@@ -9764,7 +10007,10 @@
             "verify"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:106,109 and :157-160 run the passport and KPI emitters with no failure boundary, so one throw inside an emitter takes down a sweep whose other seven sensors are individually isolated.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "fleet-orchestration",
@@ -10032,7 +10278,10 @@
             "graph"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:210 renders a bare 'Orphans' stat beside a differently-exempted orphan list, so the number the user reads carries no predicate.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "app-shell",
@@ -10654,7 +10903,10 @@
             "continuation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:855 returns a bare String with no budget and no seal — assemble.rs:810-812 states there is no prompt-level budget by design, and a caller appends the memory layer after the door closes (src-tauri/src/commands/execution/executions.rs:547), so memory rides outside the budget, the trust classifier and the fingerprint.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -11001,7 +11253,10 @@
             "fire"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/schedules/components/EventTooltip.tsx:6 - the only component that explains a calendar fire (exact time, kind, the unverified_tooltip reason text, overlap partners) is imported by nothing, so the calendar's non-fire disclosure renders as an unlabeled dashed chip and 'why didn't this fire?' is unanswerable on the surface built to answer it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "analytics-time-windows",
@@ -11013,7 +11268,10 @@
             "month"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/schedules/components/ScheduleRowHistoryPanel.tsx:161-165 builds day buckets from local midnight but keys them with toISOString().slice(0,10) (UTC) while labelling them locally, so for any non-zero offset the key and the label describe different days and runs land in the wrong bucket.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -11045,7 +11303,10 @@
             "dataset"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/scraper/useScrapeForm.ts:13-23 has no failure-semantics member on a rule, so no field can be required and extraction collapse is indistinguishable from a quiet day — and ScrapeEditorWizard.tsx:84 lets an unpreviewed rule set save armed",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -11079,7 +11340,10 @@
             "exposure"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:126-131 creates an exposure with an access level but no peer selection and fields_exposed hardcoded empty, so the UI can express neither the per-peer allowlist nor the field enumeration the model already supports.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "signed-artifacts",
@@ -11242,7 +11506,10 @@
             "section"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:68 — the top level is derived from the navigation registry (:44) but twelve sub-destination vocabularies below it are hand-maintained arrays in the same file, and the comment at :173 records a shipped blank-page bug caused by exactly that gap.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "long-form-reading-surface",
@@ -11254,7 +11521,10 @@
             "section"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:93-104 fires exactly the technique's in-place-navigation effect — a prevSectionRef guard on content swap — but restores scroll position instead of moving focus, so a keyboard reader stays on the sidebar button while the entire content region is replaced.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -11288,7 +11558,10 @@
             "error"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/DirectoryPickerInput.tsx:45-51 (and TableSelector.tsx:67-72, DesignInput.tsx:177-187) ship placeholder-only inputs with no label and no error wiring, forking the field vocabulary inside the folder that owns it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "connector-catalog",
@@ -11334,7 +11607,10 @@
             "section"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:54-64 defines the reading position as the last section past a single 28px edge rather than a band, so the highlight flips on any nudge near a boundary and there is no unchanged-when-nothing-intersects rule.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "app-shell",
@@ -11798,7 +12074,10 @@
             "credential"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:82 declares healthcheckCredential as Promise<{success, message}> and :291-296 persists only healthcheck_last_success, so the wire's three-state probe verdict is flattened to a boolean at the store and at rest — 'could not verify' becomes 'broken' for every consumer downstream.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "client-state",
@@ -11934,7 +12213,10 @@
             "tabs"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/studio/StudioTabBar.tsx:15-18,137,153 plus src/features/studio/studioHistory.ts:44-45,74-103 realize the persisted, ordered, identity-keyed working set with per-tab live status — including the technique's workbench-tab exception, where close is the named reaper and reopening re-attaches to still-running work.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "versioning-snapshots",
@@ -12008,7 +12290,10 @@
             "tombstone"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:407 propagates persona deletes from a tombstone table that nothing ever writes — grep over the workspace finds only the DDL (db/src/migrations/incremental/e06_teams_and_sync.rs:239) and the reader (rows.rs:907) — so a locally deleted persona lives in the cloud forever while the machinery reads as shipped.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "embedded-db",
@@ -12144,7 +12429,10 @@
             "item"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:117-128,142-153 retires beliefs by hard delete and corrects them by in-place overwrite, so this shared ledger keeps neither a demotion tier nor a supersedence link — the sibling memories surface already refuses exactly this (MemoryConflictReview.tsx:102-117), so the machinery exists and is not used here.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "diff-comparison",
@@ -12156,7 +12444,10 @@
             "header"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/memoryDiff.ts:50-55 aligns two runs by memory id, but `get_by_run` selects `WHERE run_id = ?1` (src-tauri/db/src/repos/resources/team_memories.rs:99), so the two sets are disjoint by construction — every run diff reports 100% of B as 'new learnings' and 100% of A as 'no longer present'.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "public-claim-provenance",
@@ -12202,7 +12493,10 @@
             "edge"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "unknown",
+          "evidence": "All twelve of this context's paths are gone - src/features/teams/sub_canvas/ does not exist (src/features/teams/ holds sub_assignments, sub_collab, sub_deliberations, sub_factory, sub_goals, sub_kpis, sub_mastermind, sub_teamMemory, sub_teamWorkspace and no canvas), so there is no code to judge and any verdict would be about a surface that has been removed or renamed.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -12774,7 +13068,10 @@
             "dimension"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14-45 is a template-instantiation wizard's prop contract — 'adoption' here means a user configuring one persona from a template, not measuring a population's uptake of a practice",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "templates-scaffolding",
@@ -12786,7 +13083,10 @@
             "template"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:76 maps an 'hourly' trigger onto the picker's 'daily' frequency, so reopening the schedule picker on an hourly capability shows daily and applying it silently rewrites the trigger the template declared.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -12820,7 +13120,10 @@
             "template"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67 is the single option-normalization door that preserves value-vs-label identity and drops malformed options, and questionnaireGlyphRow.ts:45-54 makes the category vocabulary a compile-checked table; note 5 of the 12 paths this row lists no longer exist in the tree.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "adoption-measurement",
@@ -12832,7 +13135,10 @@
             "dimension"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10-36 summarizes one user's answers in a template-configuration questionnaire; no uptake signal, population or ledger exists in this context",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -12866,7 +13172,10 @@
             "template"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 defaults allowCustom to true and QuestionnaireFormGridParts.tsx:447 passes an undefined question.allow_custom, so every closed option list grows an 'Other...' free-text pill and the interview produces answers the parameter surface never declared.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "adoption-measurement",
@@ -13032,7 +13341,10 @@
             "filter"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:56 orders with localeCompare while :64-69 matches with raw toLowerCase/includes — the matching policy is re-derived per call site with no diacritic folding, in an app shipping 14 locales.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "templates-scaffolding",
@@ -13044,7 +13356,10 @@
             "template"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 sorts and labels templates 'Ready to Deploy' from shared/adoptionReadiness.ts:48, a local score the adoption gate never computes, so the browse badge and the gate disagree on exactly the entries that matter.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -13160,7 +13475,10 @@
             "adoption"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:28-30 renders a 'Verified' integrity claim derived from lib/templates/templateVerification.ts:176, where integrityValid is set from origin alone and the content hash computed at :171-173 is never compared to anything.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -13194,7 +13512,10 @@
             "tab"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts:89-105 saves `state.designResultJson` when it is non-empty, so on the refetch completion path every edit made in DraftEditStep is silently excluded from the payload; even the fallback branch omits seven fields the Settings tab lets the user edit.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "wizard-flows",
@@ -13264,7 +13585,10 @@
             "picker"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:246-247 runs the picker's delivery Test through mockTestDelivery imported from MessagingPickerShared.tsx:2-3 (a @ts-nocheck prototype whose own header says it is not wired to production), so the surface reports a successful delivery that never happened.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "adoption-measurement",
@@ -13308,7 +13632,10 @@
             "adoption"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:118 resumes an in-flight adoption by matching the template's DISPLAY NAME, the exact key-by-name miss the technique measured, while its sibling handleResumeDraft at :126 correctly keys on the review id.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "codegen",
@@ -13354,7 +13681,10 @@
             "entity"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "There is no loss ledger: N8nParserResults.tsx:57-59 counts only the tools, triggers and connectors that survived, never reconciling them against the element count the detector found, and the IR (src/lib/types/designTypes.ts:70-94) carries neither a conversion grade nor provenance.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "wizard-flows",
@@ -13400,7 +13730,10 @@
             "template"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:240 stamps only source_recipe_id (its own header at :39-41 declares AdoptionMetadata unpersisted), so recipeStaleness.ts:39-41 — which reads source_recipe_version — can never fire and the whole Update-available apparatus is permanently dark.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "adoption-measurement",
@@ -13520,7 +13853,10 @@
             "assertion"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:607 pins the judge to DEFAULT_BALANCED, which is an alias for SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44), so the pin moves whenever the alias is bumped and no run records which judge produced it; and eval.rs:380 folds three metrics into one weighted composite scored from a single run.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "rate-limiting",
@@ -13745,7 +14081,10 @@
             "live"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:72 — 'routing' in this context means wiring one agent's completion to another agent's start (a `chain` trigger), not selecting a model; no tier, effort, provider, class or decision record appears in any of its files, so model-routing does not govern it.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "codegen",
@@ -13757,7 +14096,10 @@
             "trigger"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:22 — the whole context is hand-authored React that maps a user's draft link to a CreateTriggerInput database row; no file under it is generated, none writes to the filesystem, and none of the 16 tasks in scripts/run-codegen.mjs:22-82 declares an output root here, so no derived-artifact invariant exists to govern.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "streaming-output",
@@ -13880,7 +14222,10 @@
             "dead"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerStatusSummary.tsx:54-76 shows this context configures user-authored cron/polling/webhook/event-listener rules that execute a persona - rule-authority automation, the alerting side of the boundary the golden path draws, not machine-initiated contact with a human.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "credential-vault",
@@ -13892,7 +14237,10 @@
             "rate"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 and TriggerDetailDrawer.tsx:20 consume only credentialEventsList entries of shape {id, name}; the golden path's precondition — code that retains a foreign secret and uses it unattended — does not hold anywhere in this context.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "hitl-approval",
@@ -13962,7 +14310,10 @@
             "automated"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "The whole gate lives in component state: AutoCredPanel.tsx:70-83 kills the browser session on unmount and handleCancel resets it, so a guided runbook the operator navigates away from loses its position, the values already supplied, and any record that consent was ever given. One root cause, three unmet obligations.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "connector-catalog",
@@ -13974,7 +14325,10 @@
             "credential"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before spending a live discovery run, and the derived declaration is persisted and surfaced on the entry - the 'declarations can be learned' clause realized end to end.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -13986,7 +14340,10 @@
             "root"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:18 — this 'vault' is the credential vault (connector auth capture), not a markdown note store; every technique's precondition (a directory of markdown records) fails.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "credential-vault",
@@ -13998,7 +14355,10 @@
             "setup"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 masks a captured field only when the connector template declares it type 'password', so a captured API key typed 'text' renders in cleartext on the review screen of a capture flow where every field is by definition a secret.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "sql-console",
@@ -14044,7 +14404,10 @@
             "features"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 — a connector/credential picker grid; no markdown record store exists in this context, so no technique's precondition holds.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "credential-vault",
@@ -14056,7 +14419,10 @@
             "setup"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:261-313 classifies probe/refresh failures by substring-matching the backend's prose (raw.includes('skipped automatic healthcheck'), 'Run Test Connection') and :254 pulls an HTTP status out of the message by regex, even though the wire already carries a typed state — the taxonomy dies at the boundary and breaks on the first reworded message.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "connector-catalog",
@@ -14068,7 +14434,10 @@
             "credential"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:102-121 filters the gallery on the scalar category only and applies no lifecycle predicate, so a straddling connector is findable under one axis and a retired one is offered forever.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "design-tokens",
@@ -14126,7 +14495,10 @@
             "connector"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:227 mints an operator connector's identity from the user-typed display name, so two differently-labelled connectors collapse onto one key and a rename cannot be expressed.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -14160,7 +14532,10 @@
             "rotation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:6-17 keys REMEDIATION_LABELS on snake_case while Remediation serializes PascalCase, so every lookup misses and `?? REMEDIATION_LABELS.healthy` renders a Disable-level credential as a green 'Healthy' badge.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14205,7 +14580,10 @@
             "setup"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6,13,24 accepts only {success, message}, so an 'unverifiable' probe (offline, provider outage) renders with the red XCircle failure treatment — the exact collapse that teaches an operator to ignore red.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14217,7 +14595,10 @@
             "delete"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 imports @/api/vault/credentials — credential entry forms and OAuth flows, not a markdown store; every precondition fails.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "connector-catalog",
@@ -14229,7 +14610,10 @@
             "connector"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:88 reads a null healthcheck_config as 'no probe needed' and drops the save gate at :201, so a row that declares credential fields but has no probe recipe admits any typed value unverified.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "form",
@@ -14364,7 +14748,10 @@
             "introspection"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:182-213 never looks for a statement separator, so `SELECT 1; DROP TABLE audit_log` classifies as a read, raises no confirm banner and is dispatched with allowMutation:false — safe mode must refuse batches outright.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14407,7 +14794,10 @@
             "database"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:50 pins NULL rendering as the literal text 'NULL' and :76 pins a truncation warning carrying no bound, locking both fidelity defects into the suite as intended behaviour.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14419,7 +14809,10 @@
             "note"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:1 — tests for SQL database introspection UI under the credential vault; no markdown record store is under test.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "test-harness",
@@ -14465,7 +14858,10 @@
             "note"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 — a SQL table browser and chat tab over connected databases; the markdown record store this subject governs does not exist here.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "sql-console",
@@ -14477,7 +14873,10 @@
             "database"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:41-44 composes and executes `TYPE \"<key>\"` client-side with hand-rolled backslash/quote escaping — a second door the introspection module's own header (introspectionQueries.ts:1-8) claims was deleted.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "browser-credential-boundary",
@@ -14523,7 +14922,10 @@
             "force"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_dependencies/GraphCanvas.tsx:42 - hover state sits in the canvas component over unmemoized nodes with per-node closures, so the surface's only hot interaction re-renders every node and edge, and the same file's node markup (:192) is pointer-only with no focus region or keyboard cursor.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14581,7 +14983,10 @@
             "remediation"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:153-159 writes state:'failed' for any thrown error — an IPC timeout or an offline machine is recorded as a provider rejection, and :181-185 then persists only a boolean so the collapse survives a reload.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14627,7 +15032,10 @@
             "tools"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:105-109 renders load-failure, not-yet-discovered and honestly-empty as three distinct states, and McpToolResultDisplay.tsx:27 propagates the server's is_error flag rather than flattening it",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "markdown-vault",
@@ -14751,7 +15159,10 @@
             "origin"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 dispatches inbound bridge messages on shape alone (d.source !== \"athena\") with no e.origin check, and :61-64 and :80-83 post every reply and route report to the parent with a \"*\" wildcard target — the injection door and the symmetric leak the technique calls the bridge's only authentication layer.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "versioning-snapshots",
@@ -14763,7 +15174,10 @@
             "versioning"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:72-76 restores with `git checkout <sha> -- .`, which overwrites uncommitted working-tree edits that exist in no version and leaves files created after <sha> in place — a chimera tree labelled as that version.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         }
       ],
       "governance": "governed"
@@ -14797,7 +15211,10 @@
             "server"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:255 marks the sidecar always-loaded, defeating the host CLI's progressive discovery so every persona spawn carries the full ~33-tool catalog into the model's prompt",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "webhook-ingestion",
@@ -14809,7 +15226,10 @@
             "replay"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/tools/triggers.rs:1742 replays `log_entry.body`, which src-tauri/src/engine/webhook.rs:304 already replaced with the literal string '[redacted: see encrypted persona_event payload]', so every replay delivers that placeholder instead of the bytes that exposed the bug.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "voice-io",
@@ -14821,7 +15241,10 @@
             "pipeline"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "The webhook/relay and engine-pipeline files carry no audio path; the match is lexical on template_v3.rs:839 (persona 'voice' block: style + output_format) and template_checksums.rs:24 (a template file named audio-briefing-host.json).",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "billing-revenue-normalization",
@@ -14879,7 +15302,10 @@
             "scan"
           ],
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "doc_rot.rs is a strong rot detector (unverifiable as a first-class verdict, priority-ordered stable truncation), but the coupling around it is only ever validated in the map-to-disk direction and only ever collected by a 6-hour-throttled scan (src-tauri/src/commands/infrastructure/doc_rot.rs:106, context_audit.rs:56) - so what the maps omit, and what the declared tour/marketing surfaces owe, is invisible by construction.",
+          "evaluatedAt": "2026-08-29",
+          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf"
         },
         {
           "subject": "codebase-scanning",
