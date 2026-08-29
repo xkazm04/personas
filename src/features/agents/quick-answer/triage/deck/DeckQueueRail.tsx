@@ -7,15 +7,15 @@
 // raises: what is coming, and can I get to THAT one first.
 //
 // The compromise this rail makes:
-//  • It is a LEDGER, not a worklist — order, kind and title, nothing decidable.
-//    No verdict is reachable from here, so it cannot become a second way to
-//    triage that drifts from the card's.
+//  • It is a LEDGER, not a worklist — kind, project and title, nothing
+//    decidable. No verdict is reachable from here, so it cannot become a second
+//    way to triage that drifts from the card's.
 //  • Clicking a row MOVES THE READ HEAD to it (`queue.focusItem`). Nothing is
-//    reordered: the row keeps its number, the deck deals it where it stands,
-//    and the next card is the one below it — so a jump to 18 continues at 19
-//    rather than dumping the reviewer back at the front. It used to lift the
-//    row out and unshift it to position 1, which renumbered the very list the
-//    reviewer was reading, around their own click. See `triageQueue#cursorId`.
+//    reordered: the deck deals the row where it stands and the next card is the
+//    one after it, so a jump into the middle continues from there rather than
+//    dumping the reviewer back at the front. It used to lift the row out and
+//    unshift it to position 1, which renumbered the very list the reviewer was
+//    reading, around their own click. See `triageQueue#cursorId`.
 //  • It hides below `lg`. On a narrow window the card is the whole point.
 //
 // SECOND TAB (2026-08-27, migrated from the Run Desk). The rail now carries two
@@ -31,6 +31,24 @@
 // The tab is rail-local state on purpose: nothing outside needs to know which
 // half is showing, and lifting it would put a re-render of the whole deck
 // behind a switch that repaints one column.
+//
+// GROUPED, SINGLE-LINE ROWS (2026-08-29). Both tabs' rows were three columns of
+// metadata wrapped around a clamped two-line title — an ordinal, a kind icon, a
+// project chip, and on the Accepted side a project name and an age. Rows were
+// 55 and 76px, the title had roughly half the rail to itself, and the two most
+// repeated tokens on screen were the ordinal and the project. All three of
+// those facts are now carried differently or not at all:
+//
+//  • THE PROJECT IS A GROUP HEADER. Stated once per run instead of once per
+//    row, which is both less ink and more information: "everything from this
+//    project, together" was not expressible when the project was a chip. Both
+//    tabs group identically — see `deckRailGroups`.
+//  • THE ORDINAL IS GONE. It numbered a ledger nobody counts in; its real job
+//    was "where am I", and the cursor's border + tint already say that. What it
+//    cost was the title's first 32px on every single row.
+//  • ROWS ARE ONE LINE, 30px. With the badge and the chip out of the way the
+//    title owns the full 18–36rem, so it truncates far less often than the old
+//    two-line box clamped. The full text is still in the tooltip.
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 
@@ -39,37 +57,18 @@ import {
   segmentedTabPanelProps,
   type SegmentedTab,
 } from '@/features/shared/components/layout/SegmentedTabs';
-import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 import { DeckAcceptedList } from './DeckAcceptedList';
 import { DeckDispatchBar } from './DeckDispatchBar';
+import { DeckRailList } from './DeckRailList';
+import { groupRailRows, flatIndexOf, RAIL_ROW_HEIGHT } from './deckRailGroups';
 import { useAcceptedDispatch } from './useAcceptedDispatch';
 
 import type { SkipLedger } from '../triageQueue';
 import type { TriageItem } from '../triageTypes';
 import { KIND_META, kindCopy, TONE_TEXT } from './DeckChips';
-
-/** Above this many rows the list virtualizes; below it, plain DOM reads better
- *  (a virtualizer with a handful of rows costs a measure pass and buys nothing). */
-const VIRTUALIZE_ABOVE = 40;
-/**
- * Row height, fed to the virtualizer AND applied to the row itself.
- *
- * It used to be a lone `estimateSize` argument that a reader had to keep in
- * their head against `py-2 + one typo-body line` — two independent numbers,
- * and drift between them misplaces every row past the 40th, silently. The row
- * now takes its height FROM this constant, so they cannot drift: the only cost
- * is that a row whose title genuinely needs a third line clips instead of
- * growing, which `line-clamp-2` was already deciding anyway.
- *
- * 55 = `py-1` (4 + 4) plus two `typo-body` lines (14px × 1.65 × 2 ≈ 46.2) plus
- * the 1px hairline divider under every row. Two lines, because the title wraps
- * rather than truncating at the first ellipsis — see the row below. (Was 60
- * with `py-1.5`; slimmed 2026-08-28 for a denser queue.)
- */
-export const ROW_HEIGHT = 55;
 
 /**
  * The rail's width: EVERYTHING THE CARD DOES NOT NEED, floored at 18rem and
@@ -127,13 +126,11 @@ export const RAIL_WIDTH = 'w-[clamp(18rem,calc(100vw_-_56rem),36rem)]';
  */
 const QueueRow = memo(function QueueRow({
   item,
-  position,
   current,
   deferred,
   onJump,
 }: {
   item: TriageItem;
-  position: number;
   current: boolean;
   /** Skipped at least once this session — it is being re-offered, not new. */
   deferred: boolean;
@@ -159,37 +156,26 @@ const QueueRow = memo(function QueueRow({
       type="button"
       onClick={() => onJump(item.id)}
       aria-current={current ? 'true' : undefined}
-      // The kind rides in the tooltip too: with the second line gone, the icon
-      // is the only thing carrying it on screen, and an icon is not a label.
-      // The FULL title rides here as well — two clamped lines is a lot of room,
-      // but it is still a bound, and the tooltip is where the rest lives.
+      // The kind rides in the tooltip too: the icon is the only thing carrying
+      // it on screen, and an icon is not a label. The FULL title rides here as
+      // well — the row is one line and the rail is not infinitely wide, so the
+      // tooltip is where a long topic's tail lives.
       title={`${kindLabel} — ${tx(t.monitor.triage_queue_jump, { title: item.title })}`}
-      // Block, not flex, and a height taken from ROW_HEIGHT rather than implied
-      // by the padding: the title is no longer a flex sibling competing with the
-      // counter and the icon for the row's width — it owns the whole row and
-      // wraps under them. See the marker span below.
-      style={{ height: ROW_HEIGHT }}
+      // A flex row of three fixed roles — icon, title, deferred marker — with
+      // the height taken from the shared constant rather than implied by the
+      // padding, so the row and the virtualizer cannot disagree about it. The
+      // ordinal badge and project chip that used to be absolutely positioned
+      // over this row are gone; nothing overlaps the title any more.
+      style={{ height: RAIL_ROW_HEIGHT }}
       // `border-b` is the hairline that keeps rows from floating in the rail;
-      // it is part of ROW_HEIGHT above.
-      className={`focus-ring relative block w-full overflow-hidden border-l-2 border-b border-b-primary/8 px-3 py-1 text-left transition-colors ${
+      // it is part of RAIL_ROW_HEIGHT above.
+      className={`focus-ring relative flex w-full items-center gap-2 overflow-hidden border-l-2 border-b border-b-primary/8 px-3 text-left transition-colors ${
         current
           ? 'border-primary bg-primary/10'
           : 'border-transparent hover:border-primary/30 hover:bg-secondary/40'
       }`}
     >
-      {/* Position + kind, pinned to the row's top-left corner and stepped down
-          TWO sizes (caption number, 12px glyph). They used to sit IN the text
-          flow, which cost the title ~70px of a 240px rail on every row and
-          truncated most topics mid-word. Out of flow they cost the FIRST LINE
-          only — the 32px spacer below, down from 48 — and nothing at all from
-          the second. Zero is not on offer: a badge that costs no title width
-          is a badge painted over the title's first word. */}
-      <span className="pointer-events-none absolute left-2 top-1.5 flex items-center gap-0.5">
-        <span className="typo-caption w-4 text-right tabular-nums leading-none text-muted-foreground">
-          {position}
-        </span>
-        <Icon className={`h-3 w-3 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
-      </span>
+      <Icon className={`h-3.5 w-3.5 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
       {/* The icon is `aria-hidden`, so this is the ONLY thing standing between
           the row and a queue whose item types are invisible to a screen reader. */}
       <span className="sr-only">{kindLabel}</span>
@@ -197,25 +183,14 @@ const QueueRow = memo(function QueueRow({
           border and the background tint it already has — carrying that in the
           font weight as well made the rail read as a list of headlines.
 
-          `line-clamp-2` rather than `truncate`: the corner badge buys the title
-          the full rail width, and the second line is what turns "readable at a
-          glance" into "actually the whole topic" for the long ones. */}
-      <span className={`typo-body line-clamp-2 text-foreground ${deferred ? 'pr-5' : ''}`}>
-        {/* An empty inline-block, NOT `text-indent` / `float`: this box is a
-            `-webkit-box` (that is what `line-clamp` is), and a zero-width
-            spacer at the head of the flow is the one way to indent its first
-            line that does not depend on how Blink treats indentation inside
-            one. It is what keeps the title clear of the corner badge. */}
-        <span aria-hidden className="inline-block w-8" />
-        <span data-rail-name className="typo-body">{item.title}</span>
-        {/* The project, inline right after the title so the relation reads on
-            the same glance — this rail mixes every project's backlog. Inline
-            (not a flex sibling) so it wraps WITH the title inside the clamp. */}
-        {item.source.label ? (
-          <span data-rail-project className="ml-1.5 inline-block max-w-[10rem] truncate align-baseline rounded-interactive border border-primary/15 bg-secondary/40 px-1 typo-caption leading-4 text-foreground">
-            {item.source.label}
-          </span>
-        ) : null}
+          `typo-body` and not a tighter token because there is no dense-row tier
+          in this app's type scale: its 1.65 leading is a paragraph leading, and
+          it is harmless here only because the row is a single flex-centred line.
+          Do NOT try to tighten it with `leading-*` if this ever grows a second
+          line — typography.css is unlayered and beats Tailwind's utilities, so
+          the class would silently do nothing. Move the token, not the row. */}
+      <span data-rail-name className="typo-body min-w-0 flex-1 truncate text-foreground">
+        {item.title}
       </span>
       {/* A skipped card sorts to the BACK of the queue rather than leaving it,
           so without this the rail's tail reads as "not looked at yet" when it is
@@ -223,14 +198,10 @@ const QueueRow = memo(function QueueRow({
 
           The glyph is `aria-hidden`, exactly like the kind icon above it — and
           exactly like the kind icon, that means the state needs its own
-          `sr-only` companion or it does not exist for a screen reader at all.
-          The kind got one when the second line was deleted; this did not. */}
+          `sr-only` companion or it does not exist for a screen reader at all. */}
       {deferred ? (
         <>
-          <RotateCcw
-            className="absolute right-2 top-2.5 h-3 w-3 text-muted-foreground"
-            aria-hidden
-          />
+          <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
           <span className="sr-only">{t.monitor.triage_queue_deferred}</span>
         </>
       ) : null}
@@ -239,9 +210,9 @@ const QueueRow = memo(function QueueRow({
 });
 
 /**
- * The `To decide` body — the ledger, unchanged. Split out of the rail when the
- * second tab arrived, so the two bodies are siblings rather than one component
- * with a mode flag threaded through its virtualizer.
+ * The `To decide` body — the ledger. Split out of the rail when the second tab
+ * arrived, so the two bodies are siblings rather than one component with a mode
+ * flag threaded through its virtualizer.
  */
 const DecideList = memo(function DecideList({
   items,
@@ -254,69 +225,34 @@ const DecideList = memo(function DecideList({
   skips: SkipLedger;
   onJump: (id: string) => void;
 }) {
-  const virtualize = items.length > VIRTUALIZE_ABOVE;
-  const { parentRef, virtualizer } = useVirtualList(items, ROW_HEIGHT);
-
-  // A virtualized rail only mounts the rows near the viewport, so `QueueRow`'s
-  // own `scrollIntoView` cannot reach a current row that is not rendered — and
-  // the cursor is exactly the thing that now jumps (to the row clicked, and to
-  // the front again when it wraps off the end). Drive the scroller by INDEX
-  // instead; the row-level effect still handles the short, non-virtual list.
-  useEffect(() => {
-    if (!virtualize) return;
-    virtualizer.scrollToIndex(cursor, { align: 'auto' });
-    // `virtualizer` re-identifies on every measure pass; scrolling on that would
-    // fight the reviewer's own scrolling. The cursor moving is the only reason
-    // to move the viewport.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursor, virtualize]);
+  const { t } = useTranslation();
+  const flat = useMemo(
+    () =>
+      groupRailRows(
+        items,
+        (item) => item.id,
+        (item) => item.source.label,
+        t.monitor.triage_rail_group_none,
+      ),
+    [items, t],
+  );
 
   return (
-    // The scroll element is handed to the virtualizer ONLY when the list is
-    // long enough to virtualize. A virtualizer that owns a scroller it isn't
-    // driving still measures and scrolls it.
-    <div
-      data-decide-list
-      ref={virtualize ? parentRef : undefined}
-      className="min-h-0 flex-1 overflow-y-auto"
-    >
-      {virtualize ? (
-        <ul className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
-          {virtualizer.getVirtualItems().map((row) => {
-            const item = items[row.index]!;
-            return (
-              <li
-                key={item.id}
-                className="absolute inset-x-0 top-0"
-                style={{ height: row.size, transform: `translateY(${row.start}px)` }}
-              >
-                <QueueRow
-                  item={item}
-                  position={row.index + 1}
-                  current={row.index === cursor}
-                  deferred={(skips.get(item.id) ?? 0) > 0}
-                  onJump={onJump}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <ul>
-          {items.map((item, i) => (
-            <li key={item.id}>
-              <QueueRow
-                item={item}
-                position={i + 1}
-                current={i === cursor}
-                deferred={(skips.get(item.id) ?? 0) > 0}
-                onJump={onJump}
-              />
-            </li>
-          ))}
-        </ul>
+    <DeckRailList
+      flat={flat}
+      listAttr="data-decide-list"
+      // The cursor indexes the UNGROUPED deal; headers shift everything below
+      // them, so it has to be translated before a virtualizer can use it.
+      scrollTo={flatIndexOf(flat, cursor)}
+      renderRow={(item, index) => (
+        <QueueRow
+          item={item}
+          current={index === cursor}
+          deferred={(skips.get(item.id) ?? 0) > 0}
+          onJump={onJump}
+        />
       )}
-    </div>
+    />
   );
 });
 

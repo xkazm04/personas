@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "Por decidir",
     "triage_rail_tab_accepted": "Aceptadas",
     "triage_rail_tabs_aria": "Vista de la cola",
+    "triage_rail_group_none": "Sin proyecto",
     "triage_accepted_empty": "No hay nada esperando a construirse",
     "triage_accepted_empty_sub": "Los elementos aceptados esperan aquí hasta que los envías a un ejecutor.",
     "triage_accepted_select_all": "Seleccionar todo",

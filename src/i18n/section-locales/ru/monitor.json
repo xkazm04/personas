@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "На решение",
   "triage_rail_tab_accepted": "Принятые",
   "triage_rail_tabs_aria": "Вид очереди",
+  "triage_rail_group_none": "Без проекта",
   "triage_accepted_empty": "Нет задач, ожидающих разработки",
   "triage_accepted_empty_sub": "Принятые элементы остаются здесь, пока вы не отправите их исполнителю.",
   "triage_accepted_select_all": "Выбрать все",

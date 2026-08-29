@@ -94,21 +94,53 @@ surface never gets finished, so it showed nothing but the card. That held while
 the deck filled the screen; at desk width it left half the surface empty and the
 reviewer still could not answer the two questions a queue raises: what is coming,
 and can I get to *that* one first. `deck/DeckQueueRail.tsx` answers both without
-becoming a second way to triage — order, kind and title, nothing decidable, and a
-click *pins* a row to the front rather than opening it, so the keyboard's contract
-with the top card is untouched.
+becoming a second way to triage — kind, project and title, nothing decidable, and
+a click moves the *read head* to a row rather than reordering the queue around
+it, so the deck deals on from there and the keyboard's contract is untouched.
 
-**Rows are one line.** Position · icon · title, with the deferred marker at the
-right edge. The second line used to restate a kind the icon already carried; the
-title now gets the whole row width. The icon is `aria-hidden`, so the kind lives
-in an `sr-only` span and in the tooltip — deleting the visible text without that
-would have silently dropped the type for screen readers, the one way this could
-have regressed. The deferred marker is the same shape and now has the same
-companion: a bare `aria-hidden` glyph would leave the rail's tail reading as
-"not looked at yet" when it means "you already passed on these".
-`ROW_HEIGHT` is exported because it is `estimateSize` for the
-virtualizer above 40 rows: if the constant and the rendered row drift, every row
-past the fortieth is misplaced and nothing says so.
+**Rows are one line, and the project is a group header.** Icon · title, with the
+deferred marker at the right edge — 30px, and nothing else in the row. Three
+things used to compete with the title for a rail that is only 18rem at its
+floor: an ordinal badge pinned to the top-left corner, a project chip inline
+after the title, and a two-line clamp to hold what was left. All three are gone.
+
+* **The project moved up.** It is stated once per group instead of once per row,
+  which is less ink *and* more information — "everything from this project,
+  together" was not expressible while the project was a chip. Groups appear in
+  the order their first member sits in the deal, never alphabetically: the rail
+  answers *what is coming*, so sorting by name would drop the next card into the
+  middle of the list. `deckRailGroups` is the whole rule, and both tabs use it.
+* **The ordinal is gone.** It numbered a ledger nobody counts in. Its real job
+  — *where am I* — is already carried by the cursor row's left border and tint,
+  and what it cost was the title's first 32px on every row.
+* **The second line is gone.** With the badge and the chip out of the way the
+  title owns the full 18–36rem and truncates far less often than the old box
+  clamped. The tooltip still carries the whole thing.
+
+The icon is `aria-hidden`, so the kind lives in an `sr-only` span and in the
+tooltip — deleting the visible text without that would have silently dropped the
+type for screen readers, the one way this could have regressed. The deferred
+marker is the same shape with the same companion: a bare `aria-hidden` glyph
+would leave the rail's tail reading as "not looked at yet" when it means "you
+already passed on these".
+
+**Two index spaces, and mixing them is the hazard grouping introduced.** The
+queue cursor indexes the *ungrouped* deal; the virtualizer indexes the flattened
+sequence, where every header shifts everything below it. `flatIndexOf` is the
+translation, and `RailListItem.index` is the deal index each row carries so the
+current-row test never has to guess. Heights come from `railItemHeight` and
+nowhere else — it is `estimateSize` for the virtualizer above 40 flat items, so a
+constant that drifts from the rendered row misplaces everything past the
+fortieth and nothing says so.
+
+**One type gap, stated rather than papered over.** The row title is `typo-body`,
+whose 1.65 leading is a *paragraph* leading — there is no dense-row tier in this
+app's scale. It is harmless here only because the row is a single flex-centred
+line. Do not reach for `leading-*` if a rail row ever grows a second line:
+`typography.css` is unlayered and beats Tailwind's `@layer utilities`, so the
+class silently does nothing (the old row carried two such dead overrides,
+`leading-none` on the ordinal and `leading-4` on the project chip). Move the
+token, not the row.
 
 **The rail widens without moving the card.** It is `shrink-0` in a flex row and
 the card centres in the *leftover* space, so historically every pixel of rail

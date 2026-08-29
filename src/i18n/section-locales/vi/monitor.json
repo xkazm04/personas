@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "Cần quyết định",
   "triage_rail_tab_accepted": "Đã chấp nhận",
   "triage_rail_tabs_aria": "Chế độ xem hàng đợi",
+  "triage_rail_group_none": "Không có dự án",
   "triage_accepted_empty": "Không có mục nào chờ được xây dựng",
   "triage_accepted_empty_sub": "Các mục đã chấp nhận nằm ở đây cho đến khi bạn gửi chúng tới trình chạy.",
   "triage_accepted_select_all": "Chọn tất cả",

@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "To decide",
     "triage_rail_tab_accepted": "Accepted",
     "triage_rail_tabs_aria": "Queue view",
+    "triage_rail_group_none": "No project",
     "triage_accepted_empty": "Nothing waiting to be built",
     "triage_accepted_empty_sub": "Accepted items land here until you send them to a runner.",
     "triage_accepted_select_all": "Select all",

@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "待决定",
   "triage_rail_tab_accepted": "已接受",
   "triage_rail_tabs_aria": "队列视图",
+  "triage_rail_group_none": "无项目",
   "triage_accepted_empty": "没有待开发的条目",
   "triage_accepted_empty_sub": "已接受的条目会留在这里，直到你把它们交给执行器。",
   "triage_accepted_select_all": "全选",

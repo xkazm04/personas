@@ -520,6 +520,7 @@ export type Translations = {
     triage_rail_tab_decide: string;
     triage_rail_tab_accepted: string;
     triage_rail_tabs_aria: string;
+    triage_rail_group_none: string;
     triage_accepted_empty: string;
     triage_accepted_empty_sub: string;
     triage_accepted_select_all: string;

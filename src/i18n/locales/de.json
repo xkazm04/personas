@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "Zu entscheiden",
     "triage_rail_tab_accepted": "Angenommen",
     "triage_rail_tabs_aria": "Warteschlangenansicht",
+    "triage_rail_group_none": "Kein Projekt",
     "triage_accepted_empty": "Nichts wartet auf die Umsetzung",
     "triage_accepted_empty_sub": "Angenommene Einträge warten hier, bis du sie an einen Runner schickst.",
     "triage_accepted_select_all": "Alle auswählen",

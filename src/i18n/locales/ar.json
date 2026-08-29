@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "بانتظار القرار",
     "triage_rail_tab_accepted": "مقبولة",
     "triage_rail_tabs_aria": "عرض قائمة الانتظار",
+    "triage_rail_group_none": "بدون مشروع",
     "triage_accepted_empty": "لا شيء بانتظار التنفيذ",
     "triage_accepted_empty_sub": "تبقى العناصر المقبولة هنا حتى ترسلها إلى مُنفِّذ.",
     "triage_accepted_select_all": "تحديد الكل",

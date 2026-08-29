@@ -1,25 +1,33 @@
 /**
- * The queue rail, after the single-line redesign.
+ * The queue rail, after the grouped single-line redesign.
  *
- * The rail used to spend a whole second line restating a kind the left icon
- * already carried, which cost the title half the row width and doubled row
- * height. Deleting that line is easy; the three things that are easy to get
- * WRONG while deleting it are what this file pins:
+ * The rail used to spend the title's first 32px on a position badge and its
+ * last 10rem on a project chip, then clamp what was left to two lines. Grouping
+ * the project into a header and dropping the ordinal is easy; the things that
+ * are easy to get WRONG while doing it are what this file pins:
  *
- *  (a) The icon is `aria-hidden`, so dropping the text would silently remove
- *      the item's type for screen readers — the one way this change could
- *      regress accessibility.
- *  (b) The deferred marker ("you already passed on this") lived on the deleted
- *      line. A skipped card sorts to the BACK of the queue rather than leaving
- *      it, so without the marker the rail's tail reads as "not looked at yet".
- *  (c) `ROW_HEIGHT` is handed to the virtualizer as `estimateSize` and
- *      virtualization engages above 40 rows, so a constant left at the old
- *      two-line height misplaces every row past the 40th.
+ *  (a) The icon is `aria-hidden`, so the kind survives only in an `sr-only`
+ *      span — the one way this change could regress accessibility. Same for the
+ *      deferred marker ("you already passed on this"), which matters because a
+ *      skipped card sorts to the BACK of the queue rather than leaving it.
+ *  (b) GROUP ORDER IS DEAL ORDER. The rail's job is "what is coming"; grouping
+ *      is only safe because groups appear where their first member sits in the
+ *      deal, so the next card stays at the top of the rail.
+ *  (c) The cursor indexes the UNGROUPED deal, and headers shift everything
+ *      below them. Marking the current row off a flattened index would mark the
+ *      wrong row by however many headers precede it.
+ *  (d) `railItemHeight` is `estimateSize` for the virtualizer above 40 flat
+ *      items, so a constant left at the old height misplaces every row past it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
-import { DeckQueueRail, RAIL_WIDTH, ROW_HEIGHT } from '../deck/DeckQueueRail';
+import { DeckQueueRail, RAIL_WIDTH } from '../deck/DeckQueueRail';
+import {
+  RAIL_GROUP_HEADER_HEIGHT,
+  RAIL_GROUP_HEADER_HEIGHT_GAPPED,
+  RAIL_ROW_HEIGHT,
+} from '../deck/deckRailGroups';
 import { makeItem } from './triageFixtures';
 
 // The rail grew a second tab (Accepted) whose body reads
@@ -35,6 +43,10 @@ vi.mock('@/api/devTools/devTools', () => ({
 /** The decide list's own scroller — every row query below is scoped to it, so
  *  the tab switcher's buttons above cannot be mistaken for a queue row. */
 const listOf = (c: HTMLElement) => c.querySelector('[data-decide-list]') as HTMLElement;
+const titles = (c: HTMLElement) =>
+  [...listOf(c).querySelectorAll('[data-rail-name]')].map((n) => n.textContent);
+const groups = (c: HTMLElement) =>
+  [...listOf(c).querySelectorAll('[data-rail-group-name]')].map((n) => n.textContent);
 
 // This repo's test setup does not auto-cleanup.
 afterEach(cleanup);
@@ -61,15 +73,54 @@ describe('DeckQueueRail cursor', () => {
     expect(current[0]!.querySelector('[data-rail-name]')?.textContent).toBe('Second');
   });
 
-  it('leaves every row its own position — a jump must not renumber the queue', () => {
-    const { container } = renderRail(three(), new Map(), 2);
-    const positions = [...listOf(container).querySelectorAll('button')].map(
-      (b) => b.firstElementChild?.textContent,
+  it('marks the cursor against the DEAL index, not the flattened one', () => {
+    // Two groups means two headers sit above the third row in the flattened
+    // sequence. If `current` were compared against a flat index, cursor 2 would
+    // land on the wrong row — the whole hazard grouping introduces.
+    const { container } = renderRail(
+      [
+        makeItem('idea', { sourceId: 'a', title: 'Alpha one', source: { label: 'alpha' } }),
+        makeItem('idea', { sourceId: 'b', title: 'Beta one', source: { label: 'beta' } }),
+        makeItem('idea', { sourceId: 'c', title: 'Alpha two', source: { label: 'alpha' } }),
+      ],
+      new Map(),
+      2,
     );
-    expect(positions).toEqual(['1', '2', '3']);
     expect(
       listOf(container).querySelector('[aria-current="true"] [data-rail-name]')?.textContent,
-    ).toBe('Third');
+    ).toBe('Alpha two');
+  });
+});
+
+describe('DeckQueueRail grouping', () => {
+  it('states the project once per group instead of once per row', () => {
+    const { container } = renderRail([
+      makeItem('idea', { sourceId: 'a', title: 'One', source: { label: 'personas' } }),
+      makeItem('idea', { sourceId: 'b', title: 'Two', source: { label: 'personas' } }),
+    ]);
+    expect(groups(container)).toEqual(['personas']);
+    // The per-row chip is gone: the row carries the title and nothing else.
+    expect(listOf(container).querySelector('[data-rail-project]')).toBeNull();
+  });
+
+  it('orders groups by where their first member sits in the deal', () => {
+    // Alphabetical ordering would put `alpha` first and move the next card down
+    // the rail. Deal order is what keeps the rail readable as a queue.
+    const { container } = renderRail([
+      makeItem('idea', { sourceId: 'a', title: 'Zed one', source: { label: 'zed' } }),
+      makeItem('idea', { sourceId: 'b', title: 'Alpha one', source: { label: 'alpha' } }),
+      makeItem('idea', { sourceId: 'c', title: 'Zed two', source: { label: 'zed' } }),
+    ]);
+    expect(groups(container)).toEqual(['zed', 'alpha']);
+    // Rows keep their relative deal order inside a group.
+    expect(titles(container)).toEqual(['Zed one', 'Zed two', 'Alpha one']);
+  });
+
+  it('collects items with no project under a named group', () => {
+    const { container } = renderRail([
+      makeItem('idea', { sourceId: 'a', title: 'Orphan', source: { label: '' } }),
+    ]);
+    expect(groups(container)).toEqual(['No project']);
   });
 });
 
@@ -77,25 +128,24 @@ describe('DeckQueueRail rows', () => {
   it('shows the title and keeps the kind reachable without printing it', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Cache the roster' })]);
 
-    const name = listOf(container).querySelector('[data-rail-name]');
-    expect(name?.textContent).toBe('Cache the roster');
-    // The project rides beside the title as its own chip — never folded into
-    // the title text, which is what a screen reader and this assertion read.
-    const project = listOf(container).querySelector('[data-rail-project]');
-    expect(project?.textContent).toBe('somewhere');
-
+    expect(listOf(container).querySelector('[data-rail-name]')?.textContent).toBe(
+      'Cache the roster',
+    );
     // The kind must survive the deleted line — but only for assistive tech.
-    const kind = listOf(container).querySelector('.sr-only');
-    expect(kind?.textContent).toBe('Idea');
+    expect(listOf(container).querySelector('.sr-only')?.textContent).toBe('Idea');
   });
 
-  it('renders one line per row', () => {
-    const { container } = renderRail([makeItem('idea', { title: 'Only line' })]);
-    // The old row nested a second <span> carrying the kind text beside the
-    // title. Exactly one visible text node per row is the shape now.
-    const visibleSpans = listOf(container).querySelectorAll('button > span:not(.sr-only)');
-    // position + icon-sibling text only: the counter and the name.
-    expect(visibleSpans.length).toBe(2);
+  it('renders no ordinal beside the title', () => {
+    // The badge numbered a ledger nobody counts in and cost every row its first
+    // 32px. Its job — "where am I" — is the cursor's border and tint.
+    const { container } = renderRail([
+      makeItem('idea', { title: 'First' }),
+      makeItem('idea', { title: 'Second' }),
+    ]);
+    // Everything the row says, in order: the sr-only kind, then the title.
+    // Anything else in here is something that used to crowd the title out.
+    const rows = [...listOf(container).querySelectorAll('button')].map((b) => b.textContent);
+    expect(rows).toEqual(['IdeaFirst', 'IdeaSecond']);
   });
 
   it('keeps the deferred marker on a skipped row', () => {
@@ -111,19 +161,15 @@ describe('DeckQueueRail rows', () => {
     const item = makeItem('idea', { title: 'Passed on once' });
     const { container } = renderRail([item], new Map([[item.id, 1]]));
 
-    const spoken = Array.from(listOf(container).querySelectorAll('.sr-only')).map((el) => el.textContent);
+    const spoken = [...listOf(container).querySelectorAll('.sr-only')].map((el) => el.textContent);
     expect(spoken).toContain('Idea');
     expect(spoken).toContain('Passed over earlier');
   });
 
   it('does not claim an unskipped row was passed over', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
-    const spoken = Array.from(listOf(container).querySelectorAll('.sr-only')).map((el) => el.textContent);
+    const spoken = [...listOf(container).querySelectorAll('.sr-only')].map((el) => el.textContent);
     expect(spoken).not.toContain('Passed over earlier');
-  });
-
-  it('does not mark an unskipped row as deferred', () => {
-    const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
     expect(listOf(container).querySelector('.lucide-rotate-ccw')).toBeNull();
   });
 
@@ -146,35 +192,39 @@ describe('DeckQueueRail rows', () => {
 });
 
 describe('DeckQueueRail layout', () => {
-  it('virtualizes long queues at the declared ROW_HEIGHT', () => {
+  it('gives the row the SAME height it hands the virtualizer', () => {
+    // The two used to be independent numbers — `estimateSize` in one place,
+    // padding + line-height in the class list — and drift between them
+    // misplaces every row past the fortieth, silently.
+    const { container } = renderRail();
+    const row = listOf(container).querySelector('button') as HTMLElement;
+    expect(row.style.height).toBe(`${RAIL_ROW_HEIGHT}px`);
+  });
+
+  it('virtualizes long queues at the declared heights, headers included', () => {
     const items = Array.from({ length: 60 }, (_, i) =>
-      makeItem('idea', { title: `Row ${i}` }),
+      makeItem('idea', { title: `Row ${i}`, source: { label: 'personas' } }),
     );
     const { container } = renderRail(items);
     const list = listOf(container).querySelector('ul[style]') as HTMLElement | null;
     expect(list).toBeTruthy();
-    // The constant and the virtualizer's total size are two independent
-    // numbers; drift between them is silent.
-    expect(list!.style.height).toBe(`${60 * ROW_HEIGHT}px`);
+    // One header plus sixty rows. A virtualizer told every item is a row would
+    // be short by the header's height for the whole list below it.
+    expect(list!.style.height).toBe(`${RAIL_GROUP_HEADER_HEIGHT + 60 * RAIL_ROW_HEIGHT}px`);
   });
 
-  it('gives the row the SAME height it hands the virtualizer', () => {
-    // The two used to be independent numbers — `estimateSize` here, padding +
-    // line-height in the class list — and drift between them misplaces every
-    // row past the 40th, silently. The row now reads the constant, so this is
-    // a guard on that coupling surviving the next redesign.
-    const { container } = renderRail();
-    const row = listOf(container).querySelector('button') as HTMLElement;
-    expect(row.style.height).toBe(`${ROW_HEIGHT}px`);
-  });
-
-  it('keeps the counter out of the title so the title owns the row width', () => {
-    // The counter and kind icon are pinned to the corner, not laid out beside
-    // the title — which is the whole reason the title stopped truncating. If
-    // they ever slide back into the flow, the title's own text picks them up.
-    const { container } = renderRail([makeItem('idea', { title: 'Cache the roster' })]);
-    expect(listOf(container).querySelector('[data-rail-name]')?.textContent).toBe('Cache the roster');
-    expect(listOf(container).querySelector('button')?.firstElementChild?.textContent).toBe('1');
+  it('gives every group after the first its gap as height, not margin', () => {
+    // A virtualizer positions by measured offset, so a collapsing margin is not
+    // in its arithmetic — the breathing room has to BE the header's height.
+    const { container } = renderRail([
+      makeItem('idea', { sourceId: 'a', title: 'One', source: { label: 'alpha' } }),
+      makeItem('idea', { sourceId: 'b', title: 'Two', source: { label: 'beta' } }),
+    ]);
+    const headers = [...listOf(container).querySelectorAll('[data-rail-group]')] as HTMLElement[];
+    expect(headers.map((h) => h.style.height)).toEqual([
+      `${RAIL_GROUP_HEADER_HEIGHT}px`,
+      `${RAIL_GROUP_HEADER_HEIGHT_GAPPED}px`,
+    ]);
   });
 
   it('applies the shared width constant to the rail', () => {

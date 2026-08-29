@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "判断待ち",
     "triage_rail_tab_accepted": "承認済み",
     "triage_rail_tabs_aria": "キューの表示",
+    "triage_rail_group_none": "プロジェクトなし",
     "triage_accepted_empty": "実装待ちの項目はありません",
     "triage_accepted_empty_sub": "承認した項目は、実行担当に送るまでここに残ります。",
     "triage_accepted_select_all": "すべて選択",

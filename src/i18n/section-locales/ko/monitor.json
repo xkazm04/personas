@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "결정 대기",
   "triage_rail_tab_accepted": "승인됨",
   "triage_rail_tabs_aria": "대기열 보기",
+  "triage_rail_group_none": "프로젝트 없음",
   "triage_accepted_empty": "개발을 기다리는 항목이 없습니다",
   "triage_accepted_empty_sub": "승인한 항목은 실행기로 보내기 전까지 여기에 머무릅니다.",
   "triage_accepted_select_all": "전체 선택",

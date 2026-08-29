@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "Perlu diputuskan",
   "triage_rail_tab_accepted": "Diterima",
   "triage_rail_tabs_aria": "Tampilan antrean",
+  "triage_rail_group_none": "Tanpa proyek",
   "triage_accepted_empty": "Tidak ada yang menunggu dikerjakan",
   "triage_accepted_empty_sub": "Item yang diterima menunggu di sini sampai Anda mengirimnya ke runner.",
   "triage_accepted_select_all": "Pilih semua",

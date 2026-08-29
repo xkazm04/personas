@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "সিদ্ধান্ত বাকি",
   "triage_rail_tab_accepted": "গৃহীত",
   "triage_rail_tabs_aria": "সারির ভিউ",
+  "triage_rail_group_none": "কোনো প্রকল্প নেই",
   "triage_accepted_empty": "তৈরির জন্য কিছু অপেক্ষা করছে না",
   "triage_accepted_empty_sub": "গৃহীত আইটেমগুলি এখানে থাকে যতক্ষণ না আপনি সেগুলি রানারে পাঠান।",
   "triage_accepted_select_all": "সব নির্বাচন করুন",

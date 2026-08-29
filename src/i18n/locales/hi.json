@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "तय करना बाकी",
     "triage_rail_tab_accepted": "स्वीकृत",
     "triage_rail_tabs_aria": "कतार दृश्य",
+    "triage_rail_group_none": "कोई प्रोजेक्ट नहीं",
     "triage_accepted_empty": "बनाने के लिए कुछ भी बाकी नहीं",
     "triage_accepted_empty_sub": "स्वीकृत आइटम यहीं रहते हैं जब तक आप उन्हें रनर को नहीं भेजते।",
     "triage_accepted_select_all": "सभी चुनें",

@@ -513,6 +513,7 @@
   "triage_rail_tab_decide": "K rozhodnutí",
   "triage_rail_tab_accepted": "Přijaté",
   "triage_rail_tabs_aria": "Zobrazení fronty",
+  "triage_rail_group_none": "Bez projektu",
   "triage_accepted_empty": "Nic nečeká na realizaci",
   "triage_accepted_empty_sub": "Přijaté položky tu čekají, dokud je nepošlete běhovému procesu.",
   "triage_accepted_select_all": "Vybrat vše",

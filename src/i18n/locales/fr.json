@@ -514,6 +514,7 @@
     "triage_rail_tab_decide": "À décider",
     "triage_rail_tab_accepted": "Acceptées",
     "triage_rail_tabs_aria": "Vue de la file",
+    "triage_rail_group_none": "Aucun projet",
     "triage_accepted_empty": "Rien n’attend d’être construit",
     "triage_accepted_empty_sub": "Les éléments acceptés restent ici jusqu’à ce que vous les envoyiez à un exécuteur.",
     "triage_accepted_select_all": "Tout sélectionner",
