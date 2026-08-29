@@ -1234,10 +1234,10 @@ fn get_cipher() -> Result<&'static Aes256Gcm, CryptoError> {
 
     let key = get_master_key()?;
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
-    // If another thread raced us, `set` fails and we use the cached one —
-    // both are built from the same master key.
-    let _ = CIPHER.set(cipher);
-    Ok(CIPHER.get().expect("CIPHER was just set"))
+    // If another thread raced us, `get_or_init` returns the winner's value —
+    // both are built from the same master key, so either is correct, and the
+    // reference comes back without a second `get()` to unwrap.
+    Ok(CIPHER.get_or_init(|| cipher))
 }
 
 /// Encrypt plaintext string, returning `(base64_ciphertext, base64_nonce)` for DB storage.

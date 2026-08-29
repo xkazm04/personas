@@ -17,9 +17,12 @@ pub fn env_bool_strict(name: &str, default: bool) -> bool {
             "0" | "false" | "no" | "off" => false,
             _ => {
                 tracing::error!(
-                    "{name} is set to {raw:?}, which is not a recognised boolean \
-                     (expected 1/true/yes/on or 0/false/no/off). Using default \
-                     ({default}) — fix or unset the variable."
+                    variable = %name,
+                    value = ?raw,
+                    default,
+                    "env var is set but is not a recognised boolean \
+                     (expected 1/true/yes/on or 0/false/no/off); using the \
+                     default — fix or unset the variable"
                 );
                 default
             }
