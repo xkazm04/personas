@@ -158,15 +158,18 @@ export default function StudioChatInput() {
           {/* Stop found nothing to interrupt. Saying so is the whole point: the
               dock has just been released early, and without a line here that
               reads as the build having finished. */}
-          {stopNoop && !working && (
-            <p
-              data-testid="studio-stop-noop"
-              role="status"
-              className="pointer-events-auto self-center rounded-full border border-border bg-background/80 px-3 py-1 typo-caption shadow-elevation-1"
-            >
-              {t.studio.stop_nothing_running}
-            </p>
-          )}
+          {/* The live region is ALWAYS mounted and starts empty — a region born
+              with its message is never announced (census:
+              live-region-born-with-its-message); the chrome appears with the text. */}
+          <p
+            role="status"
+            data-testid={stopNoop && !working ? 'studio-stop-noop' : undefined}
+            className={stopNoop && !working
+              ? 'pointer-events-auto self-center rounded-full border border-border bg-background/80 px-3 py-1 typo-caption shadow-elevation-1'
+              : 'sr-only'}
+          >
+            {stopNoop && !working ? t.studio.stop_nothing_running : null}
+          </p>
 
           {!working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
 

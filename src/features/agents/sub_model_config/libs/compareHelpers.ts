@@ -321,7 +321,10 @@ export function buildCompareOutcomeEvent(
             ? a.modelId
             : b.modelId;
 
-  const cost = costBucket((a?.totalCost ?? 0) + (b?.totalCost ?? 0));
+  // Unknown money stays unknown (census: unknown-money-as-zero): a side with no
+  // aggregate has no cost figure, and folding it to 0 would label a half-priced
+  // comparison as a cheap one.
+  const cost = a && b ? costBucket(a.totalCost + b.totalCost) : 'unknown';
   const suffix = missing.length > 0 ? `|missing=${missing.join(',')}` : '';
   return {
     category: MODEL_CONFIG_TELEMETRY_CATEGORY,

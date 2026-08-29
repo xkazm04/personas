@@ -107,11 +107,12 @@ describe('model-config telemetry events', () => {
     // with no completion, indistinguishable from the user closing the panel.
     const oneSide = buildCompareOutcomeEvent(ok, null, 'haiku', 'sonnet');
     expect(oneSide.action).toBe('compare_complete');
-    expect(oneSide.label).toBe('haiku_vs_sonnet|winner=failed|cost=lt_1|missing=sonnet');
+    // A half-priced comparison has no cost figure: unknown stays unknown, never lt_1.
+    expect(oneSide.label).toBe('haiku_vs_sonnet|winner=failed|cost=unknown|missing=sonnet');
 
     // Neither side reported: still exactly one outcome, and it names both.
     const neither = buildCompareOutcomeEvent(null, null, 'haiku', 'opus');
-    expect(neither.label).toBe('haiku_vs_opus|winner=failed|cost=zero|missing=haiku,opus');
+    expect(neither.label).toBe('haiku_vs_opus|winner=failed|cost=unknown|missing=haiku,opus');
 
     // `failed` outranks `unscored`: with no rows there is no composite to
     // have an opinion about, so the absence is reported as the absence.

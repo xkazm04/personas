@@ -62,7 +62,9 @@ pub async fn ingest_files(
             // it the frontend's `onComplete` never fires and the progress bar
             // for a KB deleted mid-ingest hangs forever.
             progress.status = "cancelled".into();
-            let _ = app.emit(event_name::KB_INGEST_COMPLETE, &progress);
+            if let Err(e) = app.emit(event_name::KB_INGEST_COMPLETE, &progress) {
+                tracing::warn!(error = %e, "kb ingest: cancelled-event emit failed");
+            }
             return Ok(progress);
         }
 
