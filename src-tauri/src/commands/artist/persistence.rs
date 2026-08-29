@@ -170,6 +170,24 @@ pub async fn artist_autosave_composition(
         .map_err(|e| AppError::Internal(format!("Serialize wrapper: {e}")))?;
 
     let target = autosave_path(&app)?;
+
+    // Version check before write: an OLDER build must never overwrite an
+    // autosave a NEWER build wrote (same schema policy as the load paths).
+    // An unparseable existing file doesn't block — it's already lost.
+    if let Ok(existing_bytes) = fs::read(&target).await {
+        if let Ok(existing) = serde_json::from_slice::<SavedComposition>(&existing_bytes) {
+            use super::schema_policy::{classify, SchemaCompatibility};
+            if classify(existing.schema_version, CURRENT_SCHEMA_VERSION)
+                == SchemaCompatibility::NewerThanSupported
+            {
+                return Err(AppError::Validation(format!(
+                    "Autosave was written by a newer app version (schema v{}, this app supports up to v{}) — refusing to overwrite it",
+                    existing.schema_version, CURRENT_SCHEMA_VERSION
+                )));
+            }
+        }
+    }
+
     ensure_parent_dir(&target).await?;
     atomic_write(&target, &serialized).await?;
     Ok(())
