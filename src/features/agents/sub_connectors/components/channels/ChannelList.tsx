@@ -10,11 +10,24 @@ import { AnimatedList } from '@/features/shared/components/display/AnimatedList'
 export const channelTypes: Array<{
   type: NotificationChannelType;
   label: string;
-  configFields: Array<{ key: string; label: string; placeholder: string }>;
+  configFields: Array<{
+    key: string;
+    label: string;
+    placeholder: string;
+    /**
+     * Whether save-time validation may skip this field. It is DATA, not a
+     * reading of `label`: validateChannels used to decide optionality with
+     * `label.toLowerCase().includes('(optional)')`, which made a display
+     * string load-bearing -- rewording the label, or routing it through
+     * `t.*` for translation, silently turned both optional fields into
+     * required ones and blocked save with no way for the user to satisfy it.
+     */
+    optional?: boolean;
+  }>;
 }> = [
   { type: 'slack', label: 'Slack', configFields: [
     { key: 'webhook_url', label: 'Notification delivery URL', placeholder: 'e.g. https://hooks.slack.com/services/T00.../B00.../xxxx' },
-    { key: 'channel', label: 'Channel (optional)', placeholder: '#general' },
+    { key: 'channel', label: 'Channel (optional)', placeholder: '#general', optional: true },
   ] },
   { type: 'telegram', label: 'Telegram', configFields: [
     { key: 'bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
@@ -22,7 +35,7 @@ export const channelTypes: Array<{
   ] },
   { type: 'email', label: 'Email', configFields: [
     { key: 'to', label: 'To Address', placeholder: 'user@example.com' },
-    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app' },
+    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app', optional: true },
     { key: 'sendgrid_api_key', label: 'SendGrid API Key', placeholder: 'SG.xxxx' },
   ] },
 ];
