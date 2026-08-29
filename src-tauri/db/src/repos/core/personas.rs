@@ -1818,8 +1818,25 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             params![id],
         )?;
 
+        // The FK cascade is about to destroy this persona's memories, and a
+        // database cascade cannot cross into the vector store's separate file
+        // (deferred-fixes #108: one purge orphaned 100% of the vector store).
+        // Capture the doomed memories while their ids are still in scope so
+        // the reaper cascade + ledger can account for their vectors.
+        let memory_victims: Vec<(String, Option<String>)> = {
+            let mut stmt =
+                tx.prepare("SELECT id, title FROM persona_memories WHERE persona_id = ?1")?;
+            let rows = stmt.query_map(params![id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+
         let rows = tx.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
         tx.commit()?;
+        if rows > 0 {
+            crate::repos::core::memory_reaper::run_memory_reapers(pool, memory_victims);
+        }
         Ok(rows > 0)
     })
 }

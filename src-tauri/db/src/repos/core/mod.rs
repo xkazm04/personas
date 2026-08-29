@@ -4,6 +4,7 @@ pub mod design_conversations;
 pub mod frontend_crashes;
 pub mod memories;
 pub mod memory_claims;
+pub mod memory_reaper;
 pub mod memory_review_proposal;
 pub mod personas;
 pub mod saved_views;

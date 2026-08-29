@@ -495,6 +495,33 @@ fn cleanup_orphan_rows(conn: &rusqlite::Connection) {
     ];
     let mut total: i64 = 0;
     for table in ORPHAN_TABLES {
+        // This scrub is itself a delete door for memories: record the owed
+        // vector cleanup in the reaper ledger BEFORE the rows (and the only
+        // handle to their vectors) vanish. Record-only here — the recall
+        // runtime does not exist yet at init; the ledger drain / sweep pays
+        // the debt later (deferred-fixes #108).
+        if *table == "persona_memories" {
+            let victims: Vec<(String, Option<String>)> = (|| -> Result<_, rusqlite::Error> {
+                let mut stmt = conn.prepare(
+                    "SELECT id, title FROM persona_memories WHERE persona_id IS NOT NULL \
+                     AND persona_id NOT IN (SELECT id FROM personas)",
+                )?;
+                let rows = stmt.query_map([], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                })?;
+                rows.collect()
+            })()
+            .unwrap_or_default();
+            if !victims.is_empty() {
+                if let Err(e) = repos::core::memory_reaper::record_owed(conn, &victims) {
+                    tracing::warn!(
+                        count = victims.len(),
+                        error = %e,
+                        "boot scrub could not record owed memory reapers (sweep is the backstop)"
+                    );
+                }
+            }
+        }
         let sql = format!(
             "DELETE FROM {table} WHERE persona_id IS NOT NULL \
              AND persona_id NOT IN (SELECT id FROM personas)"

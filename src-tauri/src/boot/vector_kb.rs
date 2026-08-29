@@ -49,6 +49,28 @@ pub fn init_task_recall_runtime(
                 }
             }
         });
+        // Dependent-side orphan visibility (deferred-fixes #108): walk the
+        // VECTOR store and ask, per id, whether its owner still exists — the
+        // direction no parent-first sweep can cover. Report mode only: it
+        // deletes nothing and logs the accounting even when it is zero (a
+        // reconciler whose only output is silence is indistinguishable from
+        // one that never ran). Apply mode stays operator-invoked.
+        let sw_main = pool.clone();
+        let sw_vec = user_db_pool.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Err(e) = db::repos::core::memory_reaper::reconcile_memory_vector_orphans(
+                    &sw_main,
+                    &sw_vec,
+                    db::repos::core::memory_reaper::SweepMode::Report,
+                    1024,
+                ) {
+                    tracing::warn!(error = %e, "memory vector orphan sweep failed at boot");
+                }
+            })
+            .await;
+        });
         st.checkpoint("memory_recall_runtime");
     }
 }
