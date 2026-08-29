@@ -37,18 +37,32 @@ interface EvaluationResult {
   dispatched: RemediationEvent[];
 }
 
+/** What the credential's own metadata blob says about its anomaly score. */
+export type EmbeddedAnomalyClass = 'absent' | 'healthy' | 'actionable' | 'corrupt';
+
 /**
- * Parse anomaly_score from credential metadata JSON.
+ * Classify the anomaly_score embedded in a credential's metadata JSON.
+ *
+ * `corrupt` is a distinct outcome from `absent` on purpose. A blob that will
+ * not parse is a could-not-verify result, and on the remediation ladder a
+ * could-not-verify outcome weighs ZERO: it is not evidence of health and not
+ * evidence of breakage. Returning `absent` for it — which is what a bare
+ * `catch { return null }` does — makes it indistinguishable from a credential
+ * with no anomaly data, and the caller's healthy-skip then scores a corrupted
+ * credential healthy. The backend already spells this case out as
+ * `RotationStatus.healthcheck_corrupted`; this is the client half of it.
  */
-function parseAnomalyFromMetadata(
-  metadata: string | null,
-): { anomaly_score?: { remediation: string } } | null {
-  if (!metadata) return null;
+export function classifyEmbeddedAnomaly(metadata: string | null): EmbeddedAnomalyClass {
+  if (!metadata) return 'absent';
+  let parsed: { anomaly_score?: { remediation?: string } } | null;
   try {
-    return JSON.parse(metadata);
+    parsed = JSON.parse(metadata) as { anomaly_score?: { remediation?: string } };
   } catch {
-    return null;
+    return 'corrupt';
   }
+  const remediation = parsed?.anomaly_score?.remediation;
+  if (!remediation) return 'absent';
+  return remediation === 'Healthy' ? 'healthy' : 'actionable';
 }
 
 /**
@@ -74,14 +88,16 @@ export function useRemediationEvaluator() {
 
       // Fast path: check metadata-embedded anomaly_score first.
       // Only fetch full rotation status if metadata suggests anomaly.
-      const parsed = parseAnomalyFromMetadata(cred.metadata);
-      const embeddedRemediation = parsed?.anomaly_score?.remediation;
-
+      //
       // Skip healthy credentials entirely (no API call needed). The Rust
       // `Remediation` enum has no `rename_all`, so it serializes as
       // PascalCase ("Healthy") — matching actionsForRemediation()'s switch,
       // not the lowercase string this comparison used to check against.
-      if (!embeddedRemediation || embeddedRemediation === 'Healthy') {
+      // A `corrupt` blob deliberately does NOT short-circuit: the authoritative
+      // status is fetched and it decides, because the fast path is an
+      // optimisation and an unreadable optimisation input is not an answer.
+      const embedded = classifyEmbeddedAnomaly(cred.metadata);
+      if (embedded === 'absent' || embedded === 'healthy') {
         continue;
       }
 
