@@ -8,7 +8,7 @@
 
 const READ_ONLY_KEYWORDS = new Set([
   'SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'WITH',
-  'PRAGMA', 'ANALYZE', 'VALUES',
+  'VALUES',
   // Redis read commands
   'GET', 'MGET', 'HGET', 'HGETALL', 'HMGET', 'HKEYS', 'HVALS', 'HLEN',
   'LRANGE', 'LLEN', 'LINDEX', 'SCARD', 'SMEMBERS', 'SISMEMBER',
@@ -16,6 +16,15 @@ const READ_ONLY_KEYWORDS = new Set([
   'EXISTS', 'TYPE', 'TTL', 'PTTL', 'KEYS', 'SCAN', 'DBSIZE', 'INFO',
   'PING', 'ECHO', 'TIME', 'RANDOMKEY', 'STRLEN', 'GETRANGE',
 ]);
+
+// Session/engine-state statements: a third class, neither read nor data
+// mutation. They change nothing in the user's tables but DO change connection
+// or engine state the next caller inherits — `PRAGMA journal_mode = WAL`
+// rewrites the database's journal mode for everyone; `ANALYZE` rewrites the
+// planner's statistics tables. Both sat in READ_ONLY_KEYWORDS, so safe mode
+// dispatched them with no confirm banner. Safe mode has no shared-connection
+// guarantee to lean on, so they are asked about.
+const SESSION_STATE_KEYWORDS = new Set(['PRAGMA', 'ANALYZE']);
 
 // CTE-style mutations: `WITH x AS (DELETE/INSERT/UPDATE/MERGE ...) SELECT ...`
 // look read-only by leading keyword but actually mutate data. After stripping
@@ -182,6 +191,7 @@ export function isMutationQuery(queryText: string): boolean {
   const match = s.match(/^([A-Za-z]+)/);
   if (!match?.[1]) return true;
   const leading = match[1].toUpperCase();
+  if (SESSION_STATE_KEYWORDS.has(leading)) return true;
   if (!READ_ONLY_KEYWORDS.has(leading)) return true;
 
   // Two read-looking leading keywords can still carry a mutation in the body,
@@ -201,12 +211,24 @@ export function isMutationQuery(queryText: string): boolean {
   //             fail-closed posture.
   //
   // Scan the body (with literals stripped) for mutation verbs as whole words.
+  // Everything from here runs in order to GRANT read-only status, so it fails
+  // CLOSED, exactly as the backend's `cte_body_has_mutation` does: an
+  // unreadable tail has to resolve to "no".
+  const body = stripSqlLiterals(s);
+  if (body.unterminated) return true;
+
+  // In safe mode a request is ONE statement. After stripping, a separator with
+  // anything after it means the payload carries more than one — and
+  // `SELECT 1; DROP TABLE audit_log` grants read-only status on its leading
+  // keyword while a pass-through connector forwards the whole payload to an
+  // engine that honours stacked statements. Refuse the request rather than
+  // judging each member: that needs no statement splitter, which is itself
+  // dialect-shaped and easy to fool. A single trailing terminator is not a
+  // batch.
+  const sep = body.text.indexOf(';');
+  if (sep !== -1 && body.text.slice(sep + 1).trim().length > 0) return true;
+
   if (leading === 'WITH' || leading === 'EXPLAIN') {
-    const body = stripSqlLiterals(s);
-    // Fail CLOSED, exactly as the backend's `cte_body_has_mutation` does: this
-    // branch is only ever consulted in order to GRANT read-only status, so an
-    // unreadable tail has to resolve to "no".
-    if (body.unterminated) return true;
     if (MUTATION_VERBS_RE.test(body.text)) return true;
   }
 
