@@ -71,7 +71,9 @@ export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
     mark(ids, true);
     try {
       await Promise.all(ids.map(op));
-      await loadGoals();
+      // fresh: a post-mutation refresh must supersede (never join) a flight
+      // that departed before the mutation landed.
+      await loadGoals({ fresh: true });
     } catch (err) {
       toastCatch(`mastermind goals ${what}`)(err);
     } finally {

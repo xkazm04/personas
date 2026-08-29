@@ -26,11 +26,22 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use tokio::sync::{mpsc, oneshot};
 
+/// Outbound frame queue bound. Far above the handful of commands the pending
+/// map ever holds at once (each has a caller awaiting with a timeout), small
+/// enough that a stalled extension socket (suspended MV3 service worker,
+/// half-open TCP) is detected within kilobytes instead of growing an
+/// unbounded queue until memory is the backstop. Local decision, not an
+/// inherited number: sized to ~an order of magnitude above peak observed
+/// in-flight commands (single digits).
+const RELAY_QUEUE_CAP: usize = 256;
+
 struct Shared {
     /// Writer half of the live extension connection (None = disconnected).
     /// Each connection gets a generation number so a stale socket's teardown
-    /// can't clear a newer connection's sender.
-    sender: RwLock<Option<(u64, mpsc::UnboundedSender<Message>)>>,
+    /// can't clear a newer connection's sender. BOUNDED ([`RELAY_QUEUE_CAP`]):
+    /// the send site sheds new commands loudly when the extension stops
+    /// draining, rather than queueing without limit.
+    sender: RwLock<Option<(u64, mpsc::Sender<Message>)>>,
     pending: Mutex<HashMap<u64, oneshot::Sender<Result<Value, String>>>>,
     next_request_id: AtomicU64,
     next_conn_id: AtomicU64,
@@ -84,7 +95,7 @@ pub async fn ws_handler(
 
 async fn handle_socket(socket: WebSocket) {
     let conn_id = shared().next_conn_id.fetch_add(1, Ordering::Relaxed);
-    let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
+    let (tx, mut rx) = mpsc::channel::<Message>(RELAY_QUEUE_CAP);
 
     // Install as THE connection (last wins). A displaced predecessor's writer
     // task ends when its rx counterpart drops here.
@@ -190,10 +201,29 @@ pub async fn send_command(method: &str, params: Value, timeout: Duration) -> Res
         pending.insert(id, otx);
     }
     let frame = json!({ "id": id, "method": method, "params": params }).to_string();
-    if tx.send(Message::Text(frame.into())).is_err() {
+    // Shed policy: reject-NEW, loudly, at the door. Every queued frame has a
+    // caller awaiting with a deadline — blocking here would hide the stall
+    // inside those deadlines, and dropping OLD frames would break the
+    // request/response pairing of commands already counted as sent. A shed is
+    // a counted event, not a silent reset.
+    if let Err(e) = tx.try_send(Message::Text(frame.into())) {
         let mut pending = shared().pending.lock().unwrap_or_else(|p| p.into_inner());
         pending.remove(&id);
-        return Err("extension connection closed while sending".to_string());
+        return Err(match e {
+            mpsc::error::TrySendError::Full(_) => {
+                tracing::warn!(
+                    method,
+                    capacity = RELAY_QUEUE_CAP,
+                    "browser-bridge: outbound queue full — command shed (extension not draining)"
+                );
+                format!(
+                    "browser-bridge outbound queue full ({RELAY_QUEUE_CAP} frames; extension not draining) — `{method}` shed"
+                )
+            }
+            mpsc::error::TrySendError::Closed(_) => {
+                "extension connection closed while sending".to_string()
+            }
+        });
     }
     match tokio::time::timeout(timeout, orx).await {
         Ok(Ok(outcome)) => outcome,
@@ -206,5 +236,45 @@ pub async fn send_command(method: &str, params: Value, timeout: Duration) -> Res
                 timeout.as_secs()
             ))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The shed policy is witnessed without a socket: install a full bounded
+    /// sender as THE connection and prove a new command fails loudly (naming
+    /// the condition), removes its pending entry, and does not block.
+    #[tokio::test]
+    async fn queue_full_sheds_the_new_command_loudly() {
+        let (tx, _rx) = mpsc::channel::<Message>(1);
+        tx.try_send(Message::Text("occupant".to_string().into()))
+            .expect("fill the one-slot queue");
+        {
+            let mut guard = shared().sender.write().unwrap_or_else(|p| p.into_inner());
+            *guard = Some((u64::MAX, tx));
+        }
+
+        let err = send_command("noop", json!({}), Duration::from_secs(5))
+            .await
+            .expect_err("a full queue must shed, not succeed");
+        assert!(
+            err.contains("queue full"),
+            "error names the condition: {err}"
+        );
+        assert!(err.contains("noop"), "error names the shed command: {err}");
+        assert!(
+            shared()
+                .pending
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .is_empty(),
+            "the shed command's pending entry is removed"
+        );
+
+        // Leave the global slot clean for any other test in this binary.
+        let mut guard = shared().sender.write().unwrap_or_else(|p| p.into_inner());
+        *guard = None;
     }
 }
