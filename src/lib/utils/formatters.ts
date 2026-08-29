@@ -181,7 +181,8 @@ function getNumberFormat(locale: string, options?: Intl.NumberFormatOptions): In
  *
  * @param usd        The cost in US dollars.
  * @param opts.precision
- *   - `2`  (default): two decimals, `<$0.01` for sub-penny, `$0.00` for null/zero.
+ *   - `2`  (default): two decimals, `<$0.01` for sub-penny, `$0.00` for zero.
+ *   - `null`/`undefined` at ANY precision: an em dash. Never `$0.00`.
  *   - `4`:  four decimals, `<$0.001` for tiny values, `$0.0000` for zero, `—` for null.
  *   - `'auto'`: adaptive — 4 decimals below $0.01, 3 below $1, 2 otherwise;
  *     `$0.00` for zero.
@@ -212,7 +213,16 @@ export function formatCost(
       maximumFractionDigits: digits,
     }).format(amount);
 
-  if (usd == null) return precision === 2 ? fmt(0, 2) : '\u2014';
+  // Absence is not a measurement, at any precision. This used to read
+  // `precision === 2 ? fmt(0, 2) : '\u2014'`, so the DEFAULT precision -- the one
+  // every caller that passes no options reaches -- rendered a cost that was
+  // never measured as `$0.00`, indistinguishable from a run that really was
+  // free. The nullable callers are exactly the ones that reach the default
+  // (`CloudExecution.costUsd`, `CloudTriggerFiring.costUsd`), and an unpriced
+  // cloud run is disproportionately a new model the price book does not know.
+  // An exact 0 still renders as `$0.00` two lines below: zero is a
+  // measurement, null is an admission.
+  if (usd == null) return '\u2014';
   // Hoisted above the precision branches so all three agree about zero. It used
   // to live inside the `precision === 2` branch alone, and the two branches
   // below reached their `< threshold` case for an exact 0.
