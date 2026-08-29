@@ -1,6 +1,32 @@
 pub mod sanitization;
 pub mod text;
 
+/// The crate's ONE strict boolean env parser (absent degrades, malformed is
+/// loud). Before this, each reader had its own vocabulary — `crypto.rs`
+/// accepted only `"1"` while `run_budget.rs` accepted `1/true/yes/on` — so
+/// `PERSONAS_ALLOW_FALLBACK_KEY=true` silently read as off. Absent → `default`
+/// (a supported posture, no noise). Present → must be one of the accepted
+/// spellings (case-insensitive); anything else logs an error naming the
+/// variable, the expected shape, and the observed value, then returns
+/// `default` so the misread is at least deterministic and loud.
+pub fn env_bool_strict(name: &str, default: bool) -> bool {
+    match std::env::var(name) {
+        Err(_) => default,
+        Ok(raw) => match raw.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => true,
+            "0" | "false" | "no" | "off" => false,
+            _ => {
+                tracing::error!(
+                    "{name} is set to {raw:?}, which is not a recognised boolean \
+                     (expected 1/true/yes/on or 0/false/no/off). Using default \
+                     ({default}) — fix or unset the variable."
+                );
+                default
+            }
+        },
+    }
+}
+
 /// Milliseconds since the Unix epoch, saturating to 0 if the clock is before it.
 ///
 /// Lives here because both the Fleet registry and `db::repos::fleet_sessions`

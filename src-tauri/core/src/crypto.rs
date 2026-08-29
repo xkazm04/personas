@@ -461,7 +461,8 @@ enum FallbackPolicy {
 }
 
 fn fallback_policy() -> FallbackPolicy {
-    if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
+    // One strict boolean vocabulary for the crate — see `utils::env_bool_strict`.
+    if crate::utils::env_bool_strict("PERSONAS_ALLOW_FALLBACK_KEY", false) {
         FallbackPolicy::Allow
     } else {
         FallbackPolicy::Deny

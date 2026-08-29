@@ -81,10 +81,8 @@ pub fn pipeline_ceiling_usd() -> f64 {
 /// `PERSONAS_RUN_BUDGET_ENFORCE` (`1`/`true`/`yes`/`on`); **default off** so
 /// existing runs keep their warn-only behavior unless an operator turns it on.
 pub fn enforce_enabled() -> bool {
-    matches!(
-        std::env::var("PERSONAS_RUN_BUDGET_ENFORCE").ok().as_deref(),
-        Some("1") | Some("true") | Some("yes") | Some("on")
-    )
+    // One strict boolean vocabulary for the crate — see `utils::env_bool_strict`.
+    crate::utils::env_bool_strict("PERSONAS_RUN_BUDGET_ENFORCE", false)
 }
 
 /// Serializable snapshot of a run's budget state. Embedded in run summaries
