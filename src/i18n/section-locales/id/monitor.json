@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "Berapa banyak yang berjalan bersamaan",
   "triage_accepted_result": "{count} dikirim ke runner",
   "triage_accepted_result_skipped": "{count} dilewati",
+  "triage_accepted_delete": "Hapus yang dipilih",
+  "triage_accepted_delete_title": "Hapus {count} dari backlog?",
+  "triage_accepted_delete_body": "Ini menghapus ide secara permanen, beserta catatan bahwa Anda menerimanya. Tidak ada yang dibatalkan, karena belum satu pun dikirim ke runner.",
+  "triage_accepted_delete_confirm": "Hapus",
+  "triage_accepted_deleted": "{count} dihapus dari backlog",
+  "triage_accepted_deleted_gone": "{count} sudah tidak ada",
   "triage_accepted_row_aria": "Pilih {title}"
 }

@@ -15,6 +15,13 @@
  * (accepted ideas with NO task — not "accepted ideas", which would keep showing
  * work that has already gone out), and a dispatch clears the selection and
  * re-reads, so a second press cannot re-send ids whose rows have left.
+ *
+ * The trash beside the selection count is the tab's other exit, and it is the
+ * one act here with no undo: `dev_tools_bulk_delete_ideas` is a hard DELETE.
+ * Three things about it are pinned below, all of them invisible in a
+ * screenshot: it cannot fire without passing a confirm dialog, cancelling that
+ * dialog must reach no backend at all, and a delete that removed fewer rows
+ * than it asked for has to say so rather than report a clean success.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup, screen, waitFor } from '@testing-library/react';
@@ -28,11 +35,13 @@ import { makeItem } from './triageFixtures';
 const undispatchedIdeas = vi.fn<() => Promise<UndispatchedIdea[]>>();
 const dispatchIdeas =
   vi.fn<(ids: string[], target: string, opts?: { maxParallel?: number }) => Promise<unknown>>();
+const bulkDeleteIdeas = vi.fn<(ids: string[]) => Promise<number>>();
 
 vi.mock('@/api/devTools/devTools', () => ({
   undispatchedIdeas: () => undispatchedIdeas(),
   dispatchIdeas: (ids: string[], target: string, opts?: { maxParallel?: number }) =>
     dispatchIdeas(ids, target, opts),
+  bulkDeleteIdeas: (ids: string[]) => bulkDeleteIdeas(ids),
 }));
 
 afterEach(cleanup);
@@ -75,8 +84,10 @@ async function openAccepted(user: ReturnType<typeof userEvent.setup>) {
 beforeEach(() => {
   undispatchedIdeas.mockReset();
   dispatchIdeas.mockReset();
+  bulkDeleteIdeas.mockReset();
   undispatchedIdeas.mockResolvedValue([idea()]);
   dispatchIdeas.mockResolvedValue({ target: 'runner', dispatched: [{}], skipped: [], started: true });
+  bulkDeleteIdeas.mockResolvedValue(1);
 });
 
 describe('rail tabs', () => {
@@ -196,5 +207,75 @@ describe('dispatch techniques', () => {
 
     // A dispatch that half worked must not read as one that worked.
     expect(await screen.findByText(/1 skipped/)).toBeTruthy();
+  });
+});
+
+describe('deleting accepted work', () => {
+  const trash = () => screen.getByRole('button', { name: 'Delete selected' });
+
+  it('cannot delete nothing', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+    // The pile is only drainable in the direction of yes if this is reachable
+    // with an empty selection — and a destructive control that fires on nothing
+    // is worse than one that is simply not there.
+    expect(trash()).toBeDisabled();
+  });
+
+  it('asks before deleting, and reaches no backend until confirmed', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await user.click(trash());
+
+    // The dialog is up and NOTHING has happened yet. This is the assertion that
+    // matters: `dev_tools_bulk_delete_ideas` is a hard DELETE with no undo
+    // anywhere in the app, so a mis-click must be recoverable by cancelling.
+    expect(await screen.findByText('Delete 1 from the backlog?')).toBeTruthy();
+    expect(bulkDeleteIdeas).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(bulkDeleteIdeas).not.toHaveBeenCalled();
+  });
+
+  it('deletes the ticked ids, clears the selection and re-reads', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select Cache the roster' }));
+    await user.click(trash());
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(bulkDeleteIdeas).toHaveBeenCalledWith(['i1']));
+    // Two reads: the mount, and the one the delete triggers. A list that did
+    // not re-read would keep showing rows that are gone from the database.
+    await waitFor(() => expect(undispatchedIdeas).toHaveBeenCalledTimes(2));
+    // Selection cleared, so a second press cannot re-send ids whose rows left.
+    await waitFor(() => expect(trash()).toBeDisabled());
+  });
+
+  it('says how many were already gone rather than reporting a clean success', async () => {
+    // The list is cross-project and this app runs several sessions against one
+    // database, so the backend genuinely deletes fewer rows than it was asked
+    // for. Folding that into "Removed 2" is the same lie as folding a skipped
+    // dispatch into a dispatched one.
+    undispatchedIdeas.mockResolvedValue([idea(), idea({ id: 'i2', title: 'Second idea' })]);
+    bulkDeleteIdeas.mockResolvedValue(1);
+
+    const user = userEvent.setup();
+    renderRail();
+    await openAccepted(user);
+    await screen.findByRole('checkbox', { name: 'Select Second idea' });
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    await user.click(trash());
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(await screen.findByText(/Removed 1 from the backlog/)).toBeTruthy();
+    expect(await screen.findByText(/1 were already gone/)).toBeTruthy();
   });
 });

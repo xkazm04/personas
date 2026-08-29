@@ -61,16 +61,38 @@ export type DispatchMode = 'single' | 'batch' | 'parallel';
 export const MIN_PARALLEL = 1;
 export const MAX_PARALLEL = 8;
 
-/** What one dispatch actually did. `skipped` is reported ALONGSIDE `dispatched`
- *  and never folded into it: a dispatch that half-worked must not read as one
- *  that worked (the same rule `DispatchPanel` upholds). */
-export interface DispatchReport {
-  mode: DispatchMode;
-  dispatched: number;
-  skipped: number;
-  /** Resolved, translated message. Null on success. */
-  error: string | null;
-}
+/**
+ * What the last act on the selection actually did.
+ *
+ * A UNION, not one struct with a flag, because the two acts report different
+ * quantities and a shared field would have to be named for one of them: a
+ * delete has no `mode` and a dispatch has nothing that was "already gone". The
+ * discriminant is what lets the bar render each honestly.
+ *
+ * In both branches the partial outcome is reported ALONGSIDE the successful
+ * one and never folded into it — `skipped` beside `dispatched`, `requested`
+ * beside `removed`. A half-worked act must not read as one that worked (the
+ * same rule `DispatchPanel` upholds).
+ */
+export type AcceptedReport =
+  | {
+      kind: 'dispatch';
+      mode: DispatchMode;
+      dispatched: number;
+      skipped: number;
+      /** Resolved, translated message. Null on success. */
+      error: string | null;
+    }
+  | {
+      kind: 'delete';
+      /** Rows the backend actually deleted. */
+      removed: number;
+      /** Rows we asked it to delete. Greater than `removed` when something else
+       *  got there first — the list is cross-project and this app runs several
+       *  sessions against one database. */
+      requested: number;
+      error: string | null;
+    };
 
 /**
  * Module-scoped warm cache — the deck is an overlay that fully UNMOUNTS every
@@ -99,12 +121,27 @@ export interface AcceptedDispatch {
   setMaxParallel: (n: number) => void;
   /** In flight. The bar's button is an AsyncButton, so this is for the rows. */
   dispatching: boolean;
-  /** The last dispatch's outcome, until the next one starts. */
-  report: DispatchReport | null;
+  /** A delete is in flight. Separate from `dispatching` on purpose: they are
+   *  opposite acts and a single flag would let one disable the other's control
+   *  with the wrong reason. */
+  removing: boolean;
+  /** The last act's outcome, until the next one starts. */
+  report: AcceptedReport | null;
   dismissReport: () => void;
   /** Send the selection. Resolves when the batch has been accepted, not when
    *  the tasks have finished — starting them IS the deliverable. */
   dispatch: () => Promise<void>;
+  /**
+   * Delete the selection from the backlog. IRREVERSIBLE and not a verdict: it
+   * drops the `dev_ideas` rows outright, so the record that they were ever
+   * accepted goes with them. That is deliberate — this is the "I was wrong to
+   * say yes to these" exit, and leaving them as `accepted` with no task is
+   * exactly the limbo this tab exists to drain. Nothing is cancelled, because
+   * by construction every row here has no task behind it.
+   *
+   * The caller is responsible for confirming first; the hook does not ask.
+   */
+  remove: () => Promise<void>;
   reload: () => void;
 }
 
@@ -122,7 +159,8 @@ export function useAcceptedDispatch({
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set<string>());
   const [mode, setMode] = useState<DispatchMode>('batch');
   const [dispatching, setDispatching] = useState(false);
-  const [report, setReport] = useState<DispatchReport | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [report, setReport] = useState<AcceptedReport | null>(null);
 
   // The concurrency width lives in the store, exactly where the Run Desk's
   // stepper put it. Two surfaces writing two different numbers under one name
@@ -204,6 +242,7 @@ export function useAcceptedDispatch({
           mode === 'single' ? 1 : mode === 'parallel' ? maxParallel : undefined,
       });
       setReport({
+        kind: 'dispatch',
         mode,
         dispatched: result.dispatched.length,
         skipped: result.skipped.length,
@@ -213,11 +252,38 @@ export function useAcceptedDispatch({
       load();
     } catch (err) {
       silentCatch('triage/useAcceptedDispatch:dispatch')(err);
-      setReport({ mode, dispatched: 0, skipped: 0, error: resolveErrorMessage(err) });
+      setReport({ kind: 'dispatch', mode, dispatched: 0, skipped: 0, error: resolveErrorMessage(err) });
     } finally {
       if (aliveRef.current) setDispatching(false);
     }
   }, [rows, selected, mode, maxParallel, load, resolveErrorMessage]);
+
+  const remove = useCallback(async () => {
+    // Read the ids off `rows` rather than off `selected` directly, exactly as
+    // `dispatch` does: the selection is pruned against every reload, but only
+    // rows still on screen may be acted on, and a stale id in a DELETE is not
+    // a no-op the way a stale id in a dispatch is.
+    const ids = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
+    if (ids.length === 0) return;
+    setRemoving(true);
+    setReport(null);
+    try {
+      const removedCount = await devApi.bulkDeleteIdeas(ids);
+      setReport({ kind: 'delete', removed: removedCount, requested: ids.length, error: null });
+      setSelected(new Set<string>());
+      load();
+    } catch (err) {
+      silentCatch('triage/useAcceptedDispatch:remove')(err);
+      setReport({
+        kind: 'delete',
+        removed: 0,
+        requested: ids.length,
+        error: resolveErrorMessage(err),
+      });
+    } finally {
+      if (aliveRef.current) setRemoving(false);
+    }
+  }, [rows, selected, load, resolveErrorMessage]);
 
   return useMemo(
     () => ({
@@ -231,14 +297,16 @@ export function useAcceptedDispatch({
       maxParallel,
       setMaxParallel,
       dispatching,
+      removing,
       report,
       dismissReport,
       dispatch,
+      remove,
       reload: load,
     }),
     [
       rows, loading, selected, toggle, toggleAll, mode, maxParallel, setMaxParallel,
-      dispatching, report, dismissReport, dispatch, load,
+      dispatching, removing, report, dismissReport, dispatch, remove, load,
     ],
   );
 }

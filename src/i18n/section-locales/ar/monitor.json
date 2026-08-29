@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "كم عنصرًا يعمل في وقت واحد",
   "triage_accepted_result": "تم إرسال {count} إلى المُنفِّذ",
   "triage_accepted_result_skipped": "تم تخطي {count}",
+  "triage_accepted_delete": "حذف المحدد",
+  "triage_accepted_delete_title": "حذف {count} من قائمة الأعمال؟",
+  "triage_accepted_delete_body": "سيؤدي هذا إلى إزالة الأفكار نهائيًا، ومعها سجل قبولك لها. لن يتم إلغاء أي عمل، لأن أيًّا منها لم يُرسل بعد إلى منفّذ.",
+  "triage_accepted_delete_confirm": "حذف",
+  "triage_accepted_deleted": "تمت إزالة {count} من قائمة الأعمال",
+  "triage_accepted_deleted_gone": "{count} لم تعد موجودة أصلًا",
   "triage_accepted_row_aria": "تحديد {title}"
 }

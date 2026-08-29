@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "同時に実行する数",
   "triage_accepted_result": "{count} 件を実行担当に送信しました",
   "triage_accepted_result_skipped": "{count} 件スキップ",
+  "triage_accepted_delete": "選択項目を削除",
+  "triage_accepted_delete_title": "バックログから {count} 件を削除しますか？",
+  "triage_accepted_delete_body": "アイデアは完全に削除され、承認した記録も一緒に消えます。どれもまだランナーに送られていないため、中断されるものはありません。",
+  "triage_accepted_delete_confirm": "削除",
+  "triage_accepted_deleted": "バックログから {count} 件を削除しました",
+  "triage_accepted_deleted_gone": "{count} 件はすでにありませんでした",
   "triage_accepted_row_aria": "{title} を選択"
 }

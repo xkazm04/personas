@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "同时运行的数量",
   "triage_accepted_result": "已将 {count} 项交给执行器",
   "triage_accepted_result_skipped": "跳过 {count} 项",
+  "triage_accepted_delete": "删除所选",
+  "triage_accepted_delete_title": "从待办列表中删除 {count} 项？",
+  "triage_accepted_delete_body": "这会永久移除这些想法，连同你曾接受它们的记录一起。不会取消任何工作，因为它们都还没有发送给运行器。",
+  "triage_accepted_delete_confirm": "删除",
+  "triage_accepted_deleted": "已从待办列表中删除 {count} 项",
+  "triage_accepted_deleted_gone": "{count} 项已经不存在了",
   "triage_accepted_row_aria": "选择 {title}"
 }

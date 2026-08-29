@@ -527,6 +527,12 @@
     "triage_accepted_concurrency_hint": "Сколько выполняется одновременно",
     "triage_accepted_result": "Отправлено исполнителю: {count}",
     "triage_accepted_result_skipped": "Пропущено: {count}",
+    "triage_accepted_delete": "Удалить выбранное",
+    "triage_accepted_delete_title": "Удалить {count} из бэклога?",
+    "triage_accepted_delete_body": "Идеи будут удалены навсегда вместе с записью о том, что вы их приняли. Ничего не отменяется, поскольку ни одна из них ещё не отправлена раннеру.",
+    "triage_accepted_delete_confirm": "Удалить",
+    "triage_accepted_deleted": "Удалено из бэклога: {count}",
+    "triage_accepted_deleted_gone": "{count} уже отсутствовали",
     "triage_accepted_row_aria": "Выбрать «{title}»"
   },
   "common": {

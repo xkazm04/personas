@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "Combien s’exécutent en même temps",
   "triage_accepted_result": "{count} envoyés à l’exécuteur",
   "triage_accepted_result_skipped": "{count} ignorés",
+  "triage_accepted_delete": "Supprimer la sélection",
+  "triage_accepted_delete_title": "Supprimer {count} du backlog ?",
+  "triage_accepted_delete_body": "Les idées sont supprimées définitivement, ainsi que la trace de votre acceptation. Rien n'est annulé, car aucune n'a encore été envoyée à un runner.",
+  "triage_accepted_delete_confirm": "Supprimer",
+  "triage_accepted_deleted": "{count} supprimées du backlog",
+  "triage_accepted_deleted_gone": "{count} avaient déjà disparu",
   "triage_accepted_row_aria": "Sélectionner {title}"
 }

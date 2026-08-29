@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "একসাথে কতগুলি চলবে",
   "triage_accepted_result": "{count}টি রানারে পাঠানো হয়েছে",
   "triage_accepted_result_skipped": "{count}টি বাদ পড়েছে",
+  "triage_accepted_delete": "নির্বাচিতগুলি মুছুন",
+  "triage_accepted_delete_title": "ব্যাকলগ থেকে {count}টি মুছবেন?",
+  "triage_accepted_delete_body": "এতে আইডিয়াগুলি স্থায়ীভাবে মুছে যাবে, সেই সঙ্গে আপনি সেগুলি গ্রহণ করেছিলেন এই রেকর্ডও। কিছুই বাতিল হবে না, কারণ এদের কোনোটিই এখনও রানারে পাঠানো হয়নি।",
+  "triage_accepted_delete_confirm": "মুছুন",
+  "triage_accepted_deleted": "ব্যাকলগ থেকে {count}টি মুছে ফেলা হয়েছে",
+  "triage_accepted_deleted_gone": "{count}টি আগেই আর ছিল না",
   "triage_accepted_row_aria": "{title} নির্বাচন করুন"
 }

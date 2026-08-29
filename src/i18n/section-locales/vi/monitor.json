@@ -526,5 +526,11 @@
   "triage_accepted_concurrency_hint": "Số lượng chạy cùng lúc",
   "triage_accepted_result": "Đã gửi {count} tới trình chạy",
   "triage_accepted_result_skipped": "Bỏ qua {count}",
+  "triage_accepted_delete": "Xoá mục đã chọn",
+  "triage_accepted_delete_title": "Xoá {count} khỏi backlog?",
+  "triage_accepted_delete_body": "Thao tác này xoá vĩnh viễn các ý tưởng, cùng với bản ghi rằng bạn đã chấp nhận chúng. Không có gì bị huỷ, vì chưa có mục nào được gửi tới runner.",
+  "triage_accepted_delete_confirm": "Xoá",
+  "triage_accepted_deleted": "Đã xoá {count} khỏi backlog",
+  "triage_accepted_deleted_gone": "{count} vốn đã không còn",
   "triage_accepted_row_aria": "Chọn {title}"
 }

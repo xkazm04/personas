@@ -38,6 +38,7 @@ import { makeItem } from './triageFixtures';
 vi.mock('@/api/devTools/devTools', () => ({
   undispatchedIdeas: () => Promise.resolve([]),
   dispatchIdeas: () => Promise.resolve({ target: 'runner', dispatched: [], skipped: [], started: true }),
+  bulkDeleteIdeas: () => Promise.resolve(0),
 }));
 
 /** The decide list's own scroller — every row query below is scoped to it, so

@@ -527,6 +527,12 @@
     "triage_accepted_concurrency_hint": "एक साथ कितने चलेंगे",
     "triage_accepted_result": "{count} रनर को भेजे गए",
     "triage_accepted_result_skipped": "{count} छोड़े गए",
+    "triage_accepted_delete": "चयनित हटाएँ",
+    "triage_accepted_delete_title": "बैकलॉग से {count} हटाएँ?",
+    "triage_accepted_delete_body": "इससे विचार हमेशा के लिए हट जाएँगे, साथ ही यह रिकॉर्ड भी कि आपने उन्हें स्वीकार किया था। कुछ भी रद्द नहीं होगा, क्योंकि इनमें से कोई भी अभी रनर को नहीं भेजा गया है।",
+    "triage_accepted_delete_confirm": "हटाएँ",
+    "triage_accepted_deleted": "बैकलॉग से {count} हटाए गए",
+    "triage_accepted_deleted_gone": "{count} पहले से ही मौजूद नहीं थे",
     "triage_accepted_row_aria": "{title} चुनें"
   },
   "common": {

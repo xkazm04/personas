@@ -527,6 +527,12 @@
     "triage_accepted_concurrency_hint": "Kolik jich běží najednou",
     "triage_accepted_result": "Odesláno běhovému procesu: {count}",
     "triage_accepted_result_skipped": "Přeskočeno: {count}",
+    "triage_accepted_delete": "Smazat vybrané",
+    "triage_accepted_delete_title": "Smazat {count} z backlogu?",
+    "triage_accepted_delete_body": "Nápady se tím trvale odstraní, včetně záznamu o tom, že jste je přijali. Nic se neruší, protože žádný z nich zatím nebyl odeslán runneru.",
+    "triage_accepted_delete_confirm": "Smazat",
+    "triage_accepted_deleted": "Odstraněno {count} z backlogu",
+    "triage_accepted_deleted_gone": "{count} už bylo pryč",
     "triage_accepted_row_aria": "Vybrat {title}"
   },
   "common": {

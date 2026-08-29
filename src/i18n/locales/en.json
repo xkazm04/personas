@@ -527,6 +527,12 @@
     "triage_accepted_concurrency_hint": "How many run at once",
     "triage_accepted_result": "Sent {count} to the runner",
     "triage_accepted_result_skipped": "{count} skipped",
+    "triage_accepted_delete": "Delete selected",
+    "triage_accepted_delete_title": "Delete {count} from the backlog?",
+    "triage_accepted_delete_body": "This removes the ideas for good, along with the record that you accepted them. Nothing is cancelled, because none of them has been sent to a runner yet.",
+    "triage_accepted_delete_confirm": "Delete",
+    "triage_accepted_deleted": "Removed {count} from the backlog",
+    "triage_accepted_deleted_gone": "{count} were already gone",
     "triage_accepted_row_aria": "Select {title}"
   },
   "common": {

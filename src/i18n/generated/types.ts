@@ -533,6 +533,12 @@ export type Translations = {
     triage_accepted_concurrency_hint: string;
     triage_accepted_result: string;
     triage_accepted_result_skipped: string;
+    triage_accepted_delete: string;
+    triage_accepted_delete_title: string;
+    triage_accepted_delete_body: string;
+    triage_accepted_delete_confirm: string;
+    triage_accepted_deleted: string;
+    triage_accepted_deleted_gone: string;
     triage_accepted_row_aria: string;
   };
   common: {
