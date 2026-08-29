@@ -1221,15 +1221,22 @@ pub fn key_source_label() -> &'static str {
 /// The master key never changes at runtime, so the cipher can be constructed
 /// once and reused for every `encrypt_for_db` / `decrypt_from_db` call.
 fn get_cipher() -> Result<&'static Aes256Gcm, CryptoError> {
-    static CIPHER: OnceLock<Result<Aes256Gcm, String>> = OnceLock::new();
-    let result = CIPHER.get_or_init(|| {
-        let key = get_master_key().map_err(|e| e.to_string())?;
-        Ok(Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key)))
-    });
-    match result {
-        Ok(cipher) => Ok(cipher),
-        Err(e) => Err(CryptoError::KeyManagement(e.clone())),
+    // Cache only a SUCCESSFULLY-built cipher (same fix as `get_master_key`):
+    // caching the first *outcome* meant one transient keychain failure returned
+    // the stale `Err` forever and bricked encryption until restart. Storing
+    // only on success lets a later call retry and succeed.
+    static CIPHER: OnceLock<Aes256Gcm> = OnceLock::new();
+
+    if let Some(cipher) = CIPHER.get() {
+        return Ok(cipher);
     }
+
+    let key = get_master_key()?;
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    // If another thread raced us, `set` fails and we use the cached one —
+    // both are built from the same master key.
+    let _ = CIPHER.set(cipher);
+    Ok(CIPHER.get().expect("CIPHER was just set"))
 }
 
 /// Encrypt plaintext string, returning `(base64_ciphertext, base64_nonce)` for DB storage.
