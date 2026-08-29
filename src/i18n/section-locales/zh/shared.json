@@ -3,6 +3,7 @@
   "blast_checking_impact": "检查影响…",
   "blast_safe_to_delete": "未找到依赖资源。可以安全删除。",
   "blast_impact": "影响",
+  "blast_check_failed": "无法检查此删除操作的影响——影响预览不可用。请谨慎操作。",
   "grid_rows": "行",
   "grid_showing": "显示 {start}–{end}，共 {total} 项",
   "grid_rows_per_page": "每页行数",

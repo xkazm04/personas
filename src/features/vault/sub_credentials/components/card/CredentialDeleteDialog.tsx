@@ -28,7 +28,7 @@ export function CredentialDeleteDialog({
   // an inline arrow here refetched the blast radius in an infinite IPC loop for
   // as long as the dialog stayed open.
   const fetchBlastRadius = useCallback(() => getCredentialBlastRadius(credentialId), [credentialId]);
-  const { items: blastItems, loading: blastLoading } = useBlastRadius(
+  const { items: blastItems, loading: blastLoading, failed: blastFailed } = useBlastRadius(
     fetchBlastRadius,
     !!deleteConfirm && !!credentialId,
   );
@@ -42,7 +42,7 @@ export function CredentialDeleteDialog({
         { label: t.vault.delete_dialog.label_name, value: deleteConfirm.credential.name },
         { label: t.vault.delete_dialog.label_type, value: deleteConfirm.credential.service_type },
       ],
-      blastRadius: <BlastRadiusPanel items={blastItems} loading={blastLoading} />,
+      blastRadius: <BlastRadiusPanel items={blastItems} loading={blastLoading} failed={blastFailed} />,
       warningMessage: deleteConfirm.eventCountVerified === false
         ? t.vault.delete_dialog.unverified_warning
         : undefined,

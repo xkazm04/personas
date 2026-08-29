@@ -18615,6 +18615,7 @@
     "blast_checking_impact": "Memeriksa dampak…",
     "blast_safe_to_delete": "Tidak ada sumber daya dependen ditemukan. Aman untuk dihapus.",
     "blast_impact": "Dampak",
+    "blast_check_failed": "Tidak dapat memeriksa dampak penghapusan ini — pratinjau dampak tidak tersedia. Lanjutkan dengan hati-hati.",
     "grid_rows": "Baris",
     "grid_showing": "Menampilkan {start}–{end} dari {total} item",
     "grid_rows_per_page": "Baris per halaman",

@@ -3,6 +3,7 @@
   "blast_checking_impact": "影響を確認中…",
   "blast_safe_to_delete": "依存するリソースが見つかりません。安全に削除できます。",
   "blast_impact": "影響",
+  "blast_check_failed": "この削除の影響を確認できませんでした。影響プレビューは利用できません。慎重に進めてください。",
   "grid_rows": "行",
   "grid_showing": "{total}件中{start}〜{end}件を表示",
   "grid_rows_per_page": "1ページの行数",

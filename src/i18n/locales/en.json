@@ -18874,6 +18874,7 @@
     "blast_checking_impact": "Checking impact...",
     "blast_safe_to_delete": "No dependent resources found. Safe to delete.",
     "blast_impact": "Impact",
+    "blast_check_failed": "Couldn't check what this delete affects — the impact preview is unavailable. Proceed with caution.",
     "density_toggle_aria": "Row density",
     "drag_handle_aria": "Drag to reorder",
     "density_cozy": "Cozy",

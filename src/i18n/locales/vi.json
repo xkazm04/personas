@@ -18615,6 +18615,7 @@
     "blast_checking_impact": "Đang kiểm tra tác động…",
     "blast_safe_to_delete": "Không tìm thấy tài nguyên phụ thuộc. An toàn để xóa.",
     "blast_impact": "Tác động",
+    "blast_check_failed": "Không thể kiểm tra tác động của việc xóa này — bản xem trước tác động không khả dụng. Hãy thận trọng khi tiếp tục.",
     "grid_rows": "Hàng",
     "grid_showing": "Hiển thị {start}–{end} trong số {total} mục",
     "grid_rows_per_page": "Hàng mỗi trang",

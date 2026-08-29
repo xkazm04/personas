@@ -18878,6 +18878,7 @@ export type Translations = {
     blast_checking_impact: string;
     blast_safe_to_delete: string;
     blast_impact: string;
+    blast_check_failed: string;
     density_toggle_aria: string;
     drag_handle_aria: string;
     density_cozy: string;
