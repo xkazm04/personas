@@ -400,6 +400,24 @@ pub fn normalize_domain(s: Option<&str>) -> Option<String> {
     GROUP_DOMAINS.contains(&v.as_str()).then_some(v)
 }
 
+/// The key a group name is looked up by while a scan is being ingested.
+///
+/// One function rather than three `.to_lowercase()` calls, because the three
+/// sites MUST agree: the seed from the database, the insert when a
+/// `context_map_group` message arrives, and the lookup when a context names its
+/// group. A site that keys by the raw name silently stops matching the other
+/// two, and the symptom is not an error — it is a context written with a NULL
+/// group behind a `[Created]` line that reads like success. That is exactly how
+/// this was lost the first time.
+///
+/// Case-folded and trimmed, nothing else: "Studio Hub", "studio hub" and
+/// " Studio Hub " are one group. Punctuation and spacing are NOT normalised —
+/// "Studio Hub" and "Studio-Hub" stay distinct, because collapsing those would
+/// start merging groups an operator deliberately separated.
+pub fn group_key(name: &str) -> String {
+    name.trim().to_lowercase()
+}
+
 fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
     let val: serde_json::Value = serde_json::from_str(text).ok()?;
 
@@ -1370,8 +1388,36 @@ async fn run_context_generation(
         .ok_or_else(|| AppError::Internal("Missing stdout pipe".into()))?;
     let mut reader = BufReader::new(stdout).lines();
 
+    // NAME -> GROUP ID, AND IT IS SEEDED FROM THE DATABASE, NOT ONLY FROM THIS
+    // SCAN'S OWN STREAM.
+    //
+    // This map used to start empty and fill only from `context_map_group`
+    // messages. A RESCAN never emits those: the rescan prompt says "output
+    // protocol messages ONLY for changes (new groups, new contexts, updated
+    // contexts)", and a group that already exists is not a change. So every
+    // delta scan emitted `context_map_context{group_name: "Studio Hub"}` with no
+    // group message in front of it, the lookup below missed, and the context was
+    // written with a NULL group — silently, behind a `[Created] Context: …` line
+    // that reads exactly like success.
+    //
+    // Measured on a managed repo (gravitone, 2026-08-29): 7 groups created once
+    // by the first full scan on 2026-08-11 and never written to again
+    // (`updated_at == created_at` on all seven), while the map grew 6 -> 18
+    // contexts across four delta scans and the GROUPED count never moved off 6.
+    // Twelve of eighteen contexts belonged to nothing, including four that had
+    // been grouped before a later delta re-emitted them. The app's own repo
+    // looked healthy throughout because it was swept subtree-by-subtree, and a
+    // subtree scan DOES emit its groups.
+    //
+    // Keyed case-insensitively: the prompt asks for Title Case and the model
+    // mostly obliges, but "Studio Hub" and "studio hub" naming the same group is
+    // not a reason to orphan a context.
     let mut group_name_to_id: std::collections::HashMap<String, String> =
-        std::collections::HashMap::new();
+        repo::list_context_groups(pool, &project_id)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|g| (group_key(&g.name), g.id))
+            .collect();
     let mut groups_created = 0i32;
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
@@ -1495,7 +1541,7 @@ async fn run_context_generation(
                                 };
                                 match created {
                                     Ok(group) => {
-                                        group_name_to_id.insert(name.clone(), group.id.clone());
+                                        group_name_to_id.insert(group_key(&name), group.id.clone());
                                         groups_created += 1;
                                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Created] Group: {name}"));
                                     }
@@ -1542,7 +1588,51 @@ async fn run_context_generation(
                                         "[Trimmed] Context: {name} — dropped {dropped} generated/non-source path(s)"
                                     ));
                                 }
-                                let group_id = group_name_to_id.get(&group_name).cloned();
+                                // RESOLVE, OR CREATE — never write a NULL group and
+                                // call it a created context.
+                                //
+                                // With the map seeded from the database above, a miss
+                                // here means the model named a group it never declared
+                                // and that does not exist yet. That is a model error,
+                                // and the two ways to treat it are: drop the grouping
+                                // (what this did — the context lands orphaned and
+                                // nothing says so), or take the model at its word and
+                                // mint the group. Minting is right, because the name is
+                                // the model's judgement about where this context
+                                // belongs and it is the only judgement anyone has.
+                                //
+                                // The DOMAIN is deliberately left unset. A group's
+                                // domain is a business call the prompt asks for
+                                // explicitly on a `context_map_group` message; there is
+                                // none here, and deriving one from the context's
+                                // `category` would turn a technical layer into a
+                                // business domain — precisely the confusion
+                                // `normalize_domain` exists to reject. An implicit
+                                // group is a real group with one field an operator
+                                // still owes it, and the line below says so.
+                                let key = group_key(&group_name);
+                                let group_id = match group_name_to_id.get(&key).cloned() {
+                                    Some(id) => Some(id),
+                                    None => match repo::create_context_group(
+                                        pool, &pid, &group_name, None, None, None, None,
+                                    ) {
+                                        Ok(g) => {
+                                            group_name_to_id.insert(key, g.id.clone());
+                                            groups_created += 1;
+                                            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                                "[Created] Group (implicit): {group_name} — named by a context, never declared; its domain is unset and needs one"
+                                            ));
+                                            Some(g.id)
+                                        }
+                                        Err(e) => {
+                                            tracing::warn!(error = %e, "Failed to create implicit context group: {group_name}");
+                                            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                                "[Warn] Context '{name}' names group '{group_name}', which could not be created ({e}) — it will be filed under no group"
+                                            ));
+                                            None
+                                        }
+                                    },
+                                };
                                 let file_count = file_paths.len() as i32;
                                 let fp_json = serde_json::to_string(&file_paths).unwrap_or_else(|_| "[]".into());
                                 let ep_json = serde_json::to_string(&entry_points).unwrap_or_else(|_| "[]".into());
@@ -2533,6 +2623,27 @@ mod tests {
         // A scan that emitted nothing against a real map is the worst case and
         // must always trip.
         assert!(is_coverage_regression(285, 0));
+    }
+
+    // The three sites that key a group name have to agree, or a context lands
+    // with a NULL group and the scan says "[Created]" anyway.
+    #[test]
+    fn group_key_folds_case_and_space_but_never_punctuation() {
+        // The delta-scan case this was written for: the DB holds "Studio Hub",
+        // the model says "studio hub", and the context must still land in it.
+        assert_eq!(group_key("Studio Hub"), group_key("studio hub"));
+        assert_eq!(group_key("  Studio Hub  "), group_key("Studio Hub"));
+        assert_eq!(group_key("STUDIO HUB"), group_key("Studio Hub"));
+        // Two groups an operator deliberately separated stay separate: folding
+        // punctuation would merge a taxonomy nobody asked to merge.
+        assert_ne!(group_key("Studio Hub"), group_key("Studio-Hub"));
+        assert_ne!(
+            group_key("Imaging Pipeline"),
+            group_key("Imaging Pipelines")
+        );
+        // Empty stays empty — `create_context_group` rejects it, which is the
+        // right place for that refusal rather than here.
+        assert_eq!(group_key("   "), "");
     }
 
     // `is_mappable_path` is the whole gate between "the model proposed a context"
