@@ -45,11 +45,24 @@ export type PillarStateKey =
   | 'attention'
   | 'idle';
 
-/** Collapse a raw review severity string into one of three buckets. */
+/** Every severity token any producer in this tree actually emits. */
+const READABLE_SEVERITY: Record<string, SeverityBucket> = {
+  critical: 'critical',
+  error: 'critical',
+  high: 'warning',
+  warning: 'warning',
+  low: 'info',
+  info: 'info',
+};
+
+/**
+ * Collapse a raw review severity string into one of three buckets. A token
+ * that is not in the readable set is NOT quietly `info`: it takes the loudest
+ * bucket, so an item nobody could classify sorts to the top of the queue
+ * rather than to the arm that gets the least scrutiny.
+ */
 export function severityBucket(sev: string): SeverityBucket {
-  if (sev === 'critical') return 'critical';
-  if (sev === 'warning' || sev === 'high') return 'warning';
-  return 'info';
+  return READABLE_SEVERITY[(sev ?? '').trim().toLowerCase()] ?? 'critical';
 }
 
 interface SeverityMeta {

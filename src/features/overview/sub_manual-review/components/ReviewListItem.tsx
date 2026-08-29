@@ -3,12 +3,13 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
+import { STATUS_LABELS, resolveReviewSeverity } from '../libs/reviewHelpers';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import type { ManualReviewItem } from '@/lib/types/types';
 
 export function SeverityIndicator({ severity }: { severity: string }) {
-  const label = SEVERITY_LABELS[severity] ?? 'Info';
+  const { label: resolved, defaulted } = resolveReviewSeverity(severity);
+  const label = defaulted ? `${resolved} (severity unreadable)` : resolved;
   if (severity === 'critical') {
     return (
       <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
