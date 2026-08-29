@@ -156,10 +156,30 @@ export function initAnalytics(subscribeSystem: StoreSubscribe): Unsub {
 }
 
 // ---------------------------------------------------------------------------
+// Emit doors — the only interaction/feature helpers this surface offers
+// ---------------------------------------------------------------------------
+
+/**
+ * Record a discrete interaction. Routes through the *active* sink, so a user
+ * who has telemetry off (sink = `noopSink`) emits nothing — the consent switch
+ * is the sink, not a branch at the call site. This module deliberately no
+ * longer re-exports the raw `trackInteraction`/`trackFeature` from `../sentry`:
+ * that export was the unswitchable door sitting next to the safe one, and it
+ * was the natural import.
+ */
+export function trackInteraction(category: string, action: string, label?: string): void {
+  getAnalyticsSink().interaction({ category, action, label });
+}
+
+/** Record a section/tab visit through the active sink. See `trackInteraction`. */
+export function trackFeature(section: string, tab?: string, action = 'view'): void {
+  getAnalyticsSink().feature({ section, tab, action });
+}
+
+// ---------------------------------------------------------------------------
 // Re-exports — foundation surface for instrumentation and future backends
 // ---------------------------------------------------------------------------
 
-export { trackFeature, trackInteraction } from '../sentry';
 export {
   getAnalyticsSink,
   setAnalyticsSink,
