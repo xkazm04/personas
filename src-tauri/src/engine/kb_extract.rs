@@ -39,7 +39,7 @@ const INFER_SAMPLE_CHUNKS: usize = 40;
 /// the cap is the per-document budget backstop the DESIGN calls for.
 const EXTRACT_DOC_CHAR_CAP: usize = 24_000;
 
-const PROGRESS_EVENT: &str = "kb-extraction-progress";
+const PROGRESS_EVENT: &str = crate::engine::event_registry::event_name::KB_EXTRACTION_PROGRESS;
 
 fn build_args() -> crate::engine::types::CliArgs {
     let mut cli_args = prompt::build_cli_args(None, None);

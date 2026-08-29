@@ -26,7 +26,8 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Tauri frontend event channel for standards-scan lifecycle updates.
-const STANDARDS_SCAN_STATUS: &str = "dev_tools_standards_scan_status";
+const STANDARDS_SCAN_STATUS: &str =
+    crate::engine::event_registry::event_name::STANDARDS_SCAN_STATUS;
 
 // Keep in lockstep with the `## <category>` headings in `standards_ruleset.md`
 // and with the category enum in `build_standards_prompt`. `norm()` silently

@@ -22,7 +22,8 @@ pub mod operative_memory;
 /// `companion_get_operative_memory_digest` command rather than
 /// reconstruct from a delta, so the wire format stays stable as the
 /// digest text evolves.
-pub const DIGEST_CHANGED_EVENT: &str = "athena://orchestration/digest-changed";
+pub const DIGEST_CHANGED_EVENT: &str =
+    crate::engine::event_registry::event_name::ORCHESTRATION_DIGEST_CHANGED;
 
 /// Notify the frontend that operative memory just changed. Called from
 /// every entry point that mutates: `companion_record_fleet_event`, MCP

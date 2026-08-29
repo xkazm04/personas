@@ -335,4 +335,16 @@ event_names! {
     FLEET_SESSION_STATE        => "fleet-session-state",
     FLEET_SESSION_EXITED       => "fleet-session-exited",
     FLEET_REGISTRY_CHANGED     => "fleet-registry-changed",
+
+    // Companion / MCP bridges and plugin surfaces. These names lived as private
+    // consts or literals beside their emitters, so the two registry lists agreed
+    // while the app subscribed to names in neither; the call-site scan in
+    // scripts/check-event-registry.mjs is what made them visible.
+    MCP_GUIDANCE_REQUEST         => "athena://mcp/guidance-request",
+    MCP_APPROVAL_REQUEST         => "athena://mcp/approval-request",
+    ORCHESTRATION_DIGEST_CHANGED => "athena://orchestration/digest-changed",
+    FLEET_AUTO_DECIDED           => "athena://fleet/auto-decided",
+    STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
+    RADIO_STATE                  => "radio:state",
+    KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
 }

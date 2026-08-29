@@ -447,7 +447,7 @@ pub(crate) fn emit_fleet_auto_decided(app: &tauri::AppHandle, params: &serde_jso
         .map(|(label, _cwd)| label)
         .unwrap_or_default();
     let _ = app.emit(
-        "athena://fleet/auto-decided",
+        crate::engine::event_registry::event_name::FLEET_AUTO_DECIDED,
         serde_json::json!({
             "sessionId": session_id,
             "projectLabel": project_label,

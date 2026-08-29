@@ -42,8 +42,12 @@ pub enum RequestKind {
 impl RequestKind {
     pub fn event_name(self) -> &'static str {
         match self {
-            RequestKind::Guidance => "athena://mcp/guidance-request",
-            RequestKind::Approval => "athena://mcp/approval-request",
+            RequestKind::Guidance => {
+                crate::engine::event_registry::event_name::MCP_GUIDANCE_REQUEST
+            }
+            RequestKind::Approval => {
+                crate::engine::event_registry::event_name::MCP_APPROVAL_REQUEST
+            }
         }
     }
 }

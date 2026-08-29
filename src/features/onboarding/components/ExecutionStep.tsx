@@ -8,6 +8,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -52,10 +53,16 @@ export function ExecutionStep({
     let cancelled = false;
     let unlisten: UnlistenFn | null = null;
 
+    // `execution-complete` was never emitted by anything in the tree — this
+    // step waited forever on a first run. The engine's status stream is
+    // `execution-status` (every transition), so completion is the first
+    // TERMINAL state seen for this execution id.
+    const TERMINAL = new Set(['completed', 'failed', 'incomplete', 'cancelled']);
     listen<{ execution_id: string; status: string }>(
-      'execution-complete',
+      EventName.EXECUTION_STATUS,
       (event) => {
         if (cancelled) return;
+        if (!TERMINAL.has(event.payload.status)) return;
         if (event.payload.execution_id === startedExecId) {
           setFinished(true);
           if (event.payload.status === 'completed') {

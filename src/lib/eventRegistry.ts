@@ -20,6 +20,8 @@ import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { LearnedMemoryRef } from '@/lib/bindings/LearnedMemoryRef';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
+import type { RadioState } from '@/lib/bindings/RadioState';
+import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -319,6 +321,16 @@ export const EventName = {
   FLEET_SESSION_STATE: 'fleet-session-state',
   FLEET_SESSION_EXITED: 'fleet-session-exited',
   FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
+
+  // Companion / MCP bridges and plugin surfaces (see events.rs for why these
+  // were off-registry until the call-site scan).
+  MCP_GUIDANCE_REQUEST: 'athena://mcp/guidance-request',
+  MCP_APPROVAL_REQUEST: 'athena://mcp/approval-request',
+  ORCHESTRATION_DIGEST_CHANGED: 'athena://orchestration/digest-changed',
+  FLEET_AUTO_DECIDED: 'athena://fleet/auto-decided',
+  STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
+  RADIO_STATE: 'radio:state',
+  KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -755,6 +767,14 @@ export interface BuildOneShotTerminalPayload {
 // ---------------------------------------------------------------------------
 
 /** Payload shapes for each event, keyed by the event name string. */
+/** Payload of the two MCP pending-request notices (guidance / approval). */
+export interface McpRequestNoticePayload {
+  requestId: string;
+  fleetSessionId: string;
+  kind: 'guidance' | 'approval';
+  payload: unknown;
+}
+
 export interface EventPayloadMap {
   // Execution core
   [EventName.EXECUTION_OUTPUT]: { execution_id: string; line: string };
@@ -1173,6 +1193,17 @@ export interface EventPayloadMap {
   [EventName.FLEET_SESSION_STATE]: { session_id: string; state: string; reason?: string };
   [EventName.FLEET_SESSION_EXITED]: { session_id: string; exit_code: number | null };
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
+
+  // Companion / MCP bridges and plugin surfaces. The MCP notice shape is the
+  // bridge's own `RawRequestNotice`, stated here so the registry is the one
+  // authority for it; the radio and extraction payloads are generated bindings.
+  [EventName.MCP_GUIDANCE_REQUEST]: McpRequestNoticePayload;
+  [EventName.MCP_APPROVAL_REQUEST]: McpRequestNoticePayload;
+  [EventName.ORCHESTRATION_DIGEST_CHANGED]: unknown;
+  [EventName.FLEET_AUTO_DECIDED]: { sessionId: string; projectLabel: string; text: string };
+  [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
+  [EventName.RADIO_STATE]: RadioState;
+  [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;
 
   // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
   // These are backend bus events consumed by persona subscriptions for

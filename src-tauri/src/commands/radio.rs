@@ -13,7 +13,7 @@ use crate::radio::{
 
 /// Tauri event emitted to the main window with the latest `RadioState`
 /// after every mutation, so the footer can re-render without polling.
-const RADIO_STATE_EVENT: &str = "radio:state";
+const RADIO_STATE_EVENT: &str = crate::engine::event_registry::event_name::RADIO_STATE;
 
 fn with_service<F, R>(state: &State<'_, RadioServiceHandle>, f: F) -> Result<R, AppError>
 where
