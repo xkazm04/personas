@@ -11538,6 +11538,7 @@ export type Translations = {
       storage_confirm: string;
       storage_confirm_yes: string;
       storage_pruned: string;
+      storage_cascade_note: string;
       workspace_overview: string;
       loading_stats: string;
       stats_error: string;
@@ -13485,6 +13486,8 @@ export type Translations = {
       breadth_exceeded: string;
       healing_abandoned: string;
       healing_capped: string;
+      lookup_failed: string;
+      cost_ceiling_corrupt: string;
     };
     error_category: {
       rate_limit: string;

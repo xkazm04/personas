@@ -169,7 +169,9 @@
     "publish_failed": "Veröffentlichung fehlgeschlagen",
     "quarantined": "Trigger in Quarantäne",
     "healing_abandoned": "Heilung aufgegeben",
-    "healing_capped": "Heilungsversuche erschöpft"
+    "healing_capped": "Heilungsversuche erschöpft",
+    "lookup_failed": "Trigger-Suche fehlgeschlagen",
+    "cost_ceiling_corrupt": "Kostenlimit nicht lesbar"
   },
   "build": {
     "analyzing": "Analysiere",

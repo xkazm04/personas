@@ -11425,6 +11425,7 @@
       "storage_db_size": "حجم قاعدة البيانات",
       "storage_prune": "تنظيف التشغيلات القديمة",
       "storage_pruned": "أُزيل {count} تشغيلة.",
+      "storage_cascade_note": "الأثر الإجمالي: {total} صفًا عبر {tables} جدولًا (شاملًا الحذف المتتالي).",
       "storage_removable": "قابل للإزالة",
       "storage_subtitle": "استخدام قاعدة البيانات المحلية وتنظيف التشغيلات المنتهية.",
       "storage_title": "التخزين",

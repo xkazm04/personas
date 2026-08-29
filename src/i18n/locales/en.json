@@ -11532,6 +11532,7 @@
       "storage_confirm": "Remove {count} finished runs older than 24 hours?",
       "storage_confirm_yes": "Remove",
       "storage_pruned": "Removed {count} runs.",
+      "storage_cascade_note": "Total impact: {total} rows across {tables} tables (cascade included).",
       "workspace_overview": "Workspace Overview",
       "loading_stats": "Loading workspace stats...",
       "stats_error": "Failed to load workspace statistics.",

@@ -169,7 +169,9 @@
     "publish_failed": "Publikasi gagal",
     "quarantined": "Trigger dikarantina",
     "healing_abandoned": "Pemulihan menyerah",
-    "healing_capped": "Percobaan pemulihan habis"
+    "healing_capped": "Percobaan pemulihan habis",
+    "lookup_failed": "Pencarian pemicu gagal",
+    "cost_ceiling_corrupt": "Batas biaya tidak terbaca"
   },
   "build": {
     "analyzing": "Menganalisis",

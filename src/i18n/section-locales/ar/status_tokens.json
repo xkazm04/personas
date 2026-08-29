@@ -169,7 +169,9 @@
     "publish_failed": "فشل النشر",
     "quarantined": "المُشغِّل معزول",
     "healing_abandoned": "توقّف الإصلاح",
-    "healing_capped": "استُنفدت محاولات الإصلاح"
+    "healing_capped": "استُنفدت محاولات الإصلاح",
+    "lookup_failed": "فشل البحث عن المشغّل",
+    "cost_ceiling_corrupt": "سقف التكلفة غير قابل للقراءة"
   },
   "build": {
     "analyzing": "جارٍ التحليل",

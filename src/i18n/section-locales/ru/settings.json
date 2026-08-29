@@ -625,6 +625,7 @@
     "storage_db_size": "Размер базы данных",
     "storage_prune": "Очистить старые запуски",
     "storage_pruned": "Удалено запусков: {count}.",
+    "storage_cascade_note": "Общее влияние: {total} строк в {tables} таблицах (включая каскад).",
     "storage_removable": "Удаляемые",
     "storage_subtitle": "Использование локальной базы данных и очистка завершённых запусков.",
     "storage_title": "Хранилище",

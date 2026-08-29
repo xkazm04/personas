@@ -11425,6 +11425,7 @@
       "storage_db_size": "Velikost databáze",
       "storage_prune": "Vyčistit stará spuštění",
       "storage_pruned": "Odstraněno {count} spuštění.",
+      "storage_cascade_note": "Celkový dopad: {total} řádků napříč {tables} tabulkami (včetně kaskády).",
       "storage_removable": "Odstranitelné",
       "storage_subtitle": "Využití lokální databáze a čištění dokončených spuštění.",
       "storage_title": "Úložiště",

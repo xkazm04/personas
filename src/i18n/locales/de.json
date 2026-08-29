@@ -11425,6 +11425,7 @@
       "storage_db_size": "Datenbankgröße",
       "storage_prune": "Alte Ausführungen bereinigen",
       "storage_pruned": "{count} Ausführungen entfernt.",
+      "storage_cascade_note": "Gesamtauswirkung: {total} Zeilen in {tables} Tabellen (Kaskade eingeschlossen).",
       "storage_removable": "Entfernbar",
       "storage_subtitle": "Lokale Datenbanknutzung und Bereinigung abgeschlossener Ausführungen.",
       "storage_title": "Speicher",

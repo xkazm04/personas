@@ -169,7 +169,9 @@
     "publish_failed": "Ошибка публикации",
     "quarantined": "Триггер в карантине",
     "healing_abandoned": "Восстановление прекращено",
-    "healing_capped": "Попытки восстановления исчерпаны"
+    "healing_capped": "Попытки восстановления исчерпаны",
+    "lookup_failed": "Не удалось найти триггер",
+    "cost_ceiling_corrupt": "Лимит расходов нечитаем"
   },
   "build": {
     "analyzing": "Анализ",

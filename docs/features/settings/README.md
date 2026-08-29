@@ -57,6 +57,8 @@ The card shows the current installed version (via `getVersion()`) and a relative
 
 The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back.
 
+**Storage usage & prune.** The tab's storage card (`StorageUsageSection`) reports DB size and prunable finished runs, and its two-step prune confirm is armed by an **enforcement-path dry-run**: the backend executes the real cascade inside a rolled-back transaction (`prune_storage(dryRun: true)`), so the dialog names the true blast radius — total rows and the largest affected tables, cascade included — rather than a count on the executions table alone. The delete runs the identical path committed and reports the same per-table receipt. See [`docs/architecture/prune-preview-enforcement-path.md`](../../architecture/prune-preview-enforcement-path.md).
+
 **How import treats what is already here.** The default is additive and non-destructive: most entities land as **new, disabled** rows with an `(imported)` name suffix, so a bundle can never quietly overwrite work on the importing machine. Three scopes are exceptions, and each is an explicit user choice or a deliberate merge rather than a silent overwrite:
 
 - **Dev projects and twins** go through the [two-pass conflict flow](#importing-a-bundle-that-collides-two-pass-conflict-resolution). **Replace** is one of the offered resolutions, and it does modify the existing row.

@@ -625,6 +625,7 @@
     "storage_db_size": "データベースサイズ",
     "storage_prune": "古い実行をクリーンアップ",
     "storage_pruned": "{count} 件の実行を削除しました。",
+    "storage_cascade_note": "合計影響: {tables} テーブルにわたり {total} 行(カスケードを含む)。",
     "storage_removable": "削除可能",
     "storage_subtitle": "ローカルデータベースの使用状況と完了済み実行のクリーンアップ。",
     "storage_title": "ストレージ",

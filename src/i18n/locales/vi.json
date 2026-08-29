@@ -11425,6 +11425,7 @@
       "storage_db_size": "Kích thước cơ sở dữ liệu",
       "storage_prune": "Dọn dẹp lần chạy cũ",
       "storage_pruned": "Đã xóa {count} lần chạy.",
+      "storage_cascade_note": "Tổng ảnh hưởng: {total} hàng trên {tables} bảng (bao gồm xóa theo tầng).",
       "storage_removable": "Có thể xóa",
       "storage_subtitle": "Sử dụng cơ sở dữ liệu cục bộ và dọn dẹp các lần chạy đã hoàn thành.",
       "storage_title": "Bộ nhớ",

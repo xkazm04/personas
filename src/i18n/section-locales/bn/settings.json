@@ -625,6 +625,7 @@
     "storage_db_size": "ডেটাবেস আকার",
     "storage_prune": "পুরানো রান পরিষ্কার করুন",
     "storage_pruned": "{count}টি রান সরানো হয়েছে।",
+    "storage_cascade_note": "মোট প্রভাব: {tables}টি টেবিল জুড়ে {total}টি সারি (ক্যাসকেডসহ)।",
     "storage_removable": "সরানোযোগ্য",
     "storage_subtitle": "লোকাল ডেটাবেস ব্যবহার এবং শেষ হওয়া রান পরিষ্কার।",
     "storage_title": "স্টোরেজ",
