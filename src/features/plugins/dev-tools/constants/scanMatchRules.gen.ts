@@ -28,4 +28,5 @@ export const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
   { agentKey: 'devops-optimizer', keywords: /ci|cd|deploy|docker|pipeline|build|monitor|infra/i },
   { agentKey: 'bounty-hunter', keywords: /exploit|vulnerab|race.?condition|edge.?case|logic.?flaw|inconsisten|data.?leak|bounty/i },
   { agentKey: 'business-strategist', keywords: /business.?value|monetiz|conversion|retention|competitor|workflow.?friction|revenue|value.?prop/i },
+  { agentKey: 'registry-conformance', keywords: /registry|golden.?path|technique|convention|standard|doctrine|ai-registry/i },
 ];

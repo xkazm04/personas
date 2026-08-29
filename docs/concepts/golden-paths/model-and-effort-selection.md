@@ -1138,6 +1138,46 @@ its own floor can never fail. State that in the commit when the migration lands.
 
 ---
 
+### The §13 rule — `bare-model-id-literal`
+
+Registered 2026-08-25 with §13 below; published here because the index re-derives every rule of this document from §9's fences:
+
+```json
+{
+  "rules": [
+    {
+      "id": "bare-model-id-literal",
+      "goldenPath": "docs/concepts/golden-paths/model-and-effort-selection.md",
+      "title": "Anthropic model id spelled as a string literal outside personas_core::model_ids",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\"claude-(?:opus|sonnet|haiku|fable)-\\d[0-9a-z.\\-]*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a double-quoted `claude-<family>-<n…>` string literal in src-tauri/**/*.rs. PROXY FOR the stack-free condition: a vendor-scheduled fact (which model ids exist) spelled inline at a call site, so a retirement is a tree-wide grep instead of a one-file diff. Measured 2026-08-25 (research: apache/maka model-metadata): 54 production files carried one, five of them independently declaring the same default-judge string; the retired `*-20250514` ids stayed live in the failover ladder for that reason (failover.rs:634). Inline test fixtures count too — a fixture that pins a dated id also rots. The legal fix is a named constant in `src-tauri/core/src/model_ids.rs` (tier: DEFAULT_FAST / DEFAULT_BALANCED / DEFAULT_STRONG; CLI alias: ALIAS_*), which is the only file excluded."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/model_ids.rs",
+          "reason": "the single door itself — the constants this rule routes callers TO"
+        }
+      ],
+      "baseline": {
+        "files": 55,
+        "matches": 120
+      },
+      "floor": 900
+    }
+  ]
+}
+```
+
+
 ## 12. Corrections to the brief
 
 **1. "`thinking.xhigh` renders as a raw token while the same concept **is** translated under
