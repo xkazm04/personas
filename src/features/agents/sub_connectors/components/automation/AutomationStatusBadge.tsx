@@ -14,6 +14,15 @@ const STATUS_ICON = {
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 25, duration: 0.3 };
 
 const pulseKeyframes = { scale: [1, 1.15, 1] };
+/**
+ * How long the pulse is held before `shouldPulse` is cleared. NOTE: this does
+ * NOT set the animation's duration -- the pulse plays under `springTransition`.
+ * A `transitionDuration={...}` prop used to sit on the motion.span behind a
+ * `@ts-expect-error`; framer-motion has no such prop (it is absent from its
+ * whole .d.ts surface), so it was forwarded to the DOM as an unknown attribute
+ * and the value never reached the animation. Removed rather than rewired,
+ * because rewiring it would change how the badge actually looks.
+ */
 const pulseDuration = 0.4;
 
 interface ConfettiDot {
@@ -98,8 +107,6 @@ export function AutomationStatusBadge({ automationId, status }: AutomationStatus
       className={`relative inline-flex items-center gap-1 px-2 py-0.5 typo-body font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}
       transition={springTransition}
       animate={shouldPulse ? pulseKeyframes : { scale: 1 }}
-      // @ts-expect-error framer-motion animate duration
-      transitionDuration={shouldPulse ? pulseDuration : undefined}
     >
       <StatusIcon className="w-2.5 h-2.5" /> {t.agents.connectors[statusConfig.labelKey]}
       {showConfetti && <ConfettiBurst />}
