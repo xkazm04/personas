@@ -151,7 +151,14 @@ export function projectQueue({
   rows.sort(
     (a, b) =>
       a.skips - b.skips ||
-      compareOrder(a.item.weight, a.item.createdAt, b.item.weight, b.item.createdAt),
+      compareOrder(
+        a.item.weight,
+        a.item.createdAt,
+        b.item.weight,
+        b.item.createdAt,
+        a.item.id,
+        b.item.id,
+      ),
   );
 
   const items = rows.map((r) => r.item);

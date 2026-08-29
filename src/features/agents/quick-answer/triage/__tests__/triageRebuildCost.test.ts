@@ -34,7 +34,14 @@ const NO_SKIPS: SkipLedger = new Map();
 /* -------------------------------------------------------------------------- */
 
 describe('the sort is precomputed and still the same order', () => {
-  /** The old comparator, verbatim — the order this refactor must reproduce. */
+  /**
+   * The old comparator — the order this refactor must reproduce, plus the
+   * identity tiebreak. The baseline deliberately gained that last clause: as
+   * written it returned 0 for two items with the same weight and the same
+   * timestamp, so what it pinned for those pairs was not an order at all but
+   * the input sequence the fixture happened to build. Pinning against it
+   * unchanged would pin the untotality.
+   */
   function legacyOrder(
     all: TriageItem[],
     skips: SkipLedger,
@@ -49,7 +56,8 @@ describe('the sort is precomputed and still the same order', () => {
         return (
           (skips.get(a.id) ?? 0) - (skips.get(b.id) ?? 0) ||
           b.weight - a.weight ||
-          a.createdAt.localeCompare(b.createdAt)
+          a.createdAt.localeCompare(b.createdAt) ||
+          a.id.localeCompare(b.id)
         );
       })
       .map((i) => i.id);
@@ -150,7 +158,7 @@ describe('the sort is precomputed and still the same order', () => {
         const a = items[i - 1]!;
         const b = items[i]!;
         const cmp =
-          rank(a) - rank(b) || compareOrder(a.weight, a.createdAt, b.weight, b.createdAt);
+          rank(a) - rank(b) || compareOrder(a.weight, a.createdAt, b.weight, b.createdAt, a.id, b.id);
         expect(cmp).toBeLessThanOrEqual(0);
       }
     }
@@ -169,16 +177,42 @@ describe('the sort is precomputed and still the same order', () => {
     ];
     for (const a of stamps) {
       for (const b of stamps) {
-        expect(Math.sign(compareOrder(1, a, 1, b))).toBe(Math.sign(a.localeCompare(b)));
+        // Same id on both sides so the identity tiebreak stays out of the way and
+        // this stays a test about timestamp collation.
+        expect(Math.sign(compareOrder(1, a, 1, b, 'i', 'i'))).toBe(Math.sign(a.localeCompare(b)));
       }
     }
+  });
+
+  it('is a TOTAL order: two items raised in the same second cannot swap', () => {
+    // The queue is replaced wholesale every 30s poll, and nothing promises the
+    // backend hands the rows back in the same sequence twice. If the
+    // comparator returns 0 for a pair, their relative position is whatever the
+    // incoming array happened to be — the reviewer's card silently changes
+    // under a keystroke aimed at the previous one.
+    const a = makeItem('idea', {
+      sourceId: 'aaa',
+      weight: 50,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    const b = makeItem('idea', {
+      sourceId: 'bbb',
+      weight: 50,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(compareTriage(a, b)).not.toBe(0);
+    expect(Math.sign(compareTriage(a, b))).toBe(-Math.sign(compareTriage(b, a)));
+    expect([a, b].sort(compareTriage).map((i) => i.id)).toEqual(
+      [b, a].sort(compareTriage).map((i) => i.id),
+    );
   });
 
   it('keeps `compareTriage` as the one ordering law', () => {
     const a = makeItem('idea', { weight: 50, createdAt: '2026-01-01T00:00:00.000Z' });
     const b = makeItem('idea', { weight: 50, createdAt: '2026-01-02T00:00:00.000Z' });
     expect(compareTriage(a, b)).toBe(
-      compareOrder(a.weight, a.createdAt, b.weight, b.createdAt),
+      compareOrder(a.weight, a.createdAt, b.weight, b.createdAt, a.id, b.id),
     );
   });
 });
