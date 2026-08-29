@@ -448,7 +448,19 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
 
         return Some(ContextMapProtocol::Context {
             project_id: ctx.get("project_id")?.as_str()?.to_string(),
-            group_name: ctx.get("group_name")?.as_str()?.to_string(),
+            // NOT `?`. Every other field here uses it, and for `name` and
+            // `project_id` that is right — a context message without those is
+            // not a context message. `group_name` is different: `?` returns
+            // None from this whole function, so a model that omitted the field
+            // lost the ENTIRE context, silently, with its file list. Losing the
+            // grouping is a small wrong answer; losing the context is a hole in
+            // the map that nothing reports. Take what was sent and let the
+            // ingest decide what an unnamed group means.
+            group_name: ctx
+                .get("group_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
             name: ctx.get("name")?.as_str()?.to_string(),
             description: ctx
                 .get("description")
@@ -1611,7 +1623,20 @@ async fn run_context_generation(
                                 // group is a real group with one field an operator
                                 // still owes it, and the line below says so.
                                 let key = group_key(&group_name);
-                                let group_id = match group_name_to_id.get(&key).cloned() {
+                                // NO NAME AT ALL is not a name to mint a group from.
+                                // `create_context_group` rejects an empty name, and it
+                                // is right to — so this branch keeps the context and
+                                // says plainly that it arrived without a home, rather
+                                // than reporting a failed create for a group nobody
+                                // asked for. Covers absent, null, non-string and blank
+                                // in one condition, because they are one situation.
+                                let group_id = if key.is_empty() {
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Warn] Context '{name}' named no group — kept, filed under none; assign it in the Context Ledger"
+                                    ));
+                                    None
+                                } else {
+                                    match group_name_to_id.get(&key).cloned() {
                                     Some(id) => Some(id),
                                     None => match repo::create_context_group(
                                         pool, &pid, &group_name, None, None, None, None,
@@ -1632,6 +1657,7 @@ async fn run_context_generation(
                                             None
                                         }
                                     },
+                                    }
                                 };
                                 let file_count = file_paths.len() as i32;
                                 let fp_json = serde_json::to_string(&file_paths).unwrap_or_else(|_| "[]".into());
@@ -2644,6 +2670,77 @@ mod tests {
         // Empty stays empty — `create_context_group` rejects it, which is the
         // right place for that refusal rather than here.
         assert_eq!(group_key("   "), "");
+    }
+
+    // WHICH fields may be missing, and which may not. The `?` in the parser
+    // returns None for the WHOLE message, so every field that uses it is a
+    // field whose absence deletes the context. That is right for `name` and
+    // `project_id` and was wrong for `group_name`: a model that omitted the
+    // group lost the context and its entire file list, silently, and the map
+    // came back with a hole nothing reported.
+    #[test]
+    fn a_context_without_a_group_name_still_parses() {
+        let with = r#"{"context_map_context":{"project_id":"p1","group_name":"Studio Hub","name":"studio-navigation","file_paths":["app/x.ts"]}}"#;
+        let without = r#"{"context_map_context":{"project_id":"p1","name":"studio-navigation","file_paths":["app/x.ts"]}}"#;
+
+        let parsed = parse_context_map_protocol(with).expect("a full message parses");
+        match parsed {
+            ContextMapProtocol::Context {
+                group_name,
+                name,
+                file_paths,
+                ..
+            } => {
+                assert_eq!(group_name, "Studio Hub");
+                assert_eq!(name, "studio-navigation");
+                assert_eq!(file_paths, vec!["app/x.ts".to_string()]);
+            }
+            _ => panic!("wrong variant"),
+        }
+
+        // The whole point: the context survives, carrying its files.
+        let parsed = parse_context_map_protocol(without)
+            .expect("a context with no group_name must still reach the ingest");
+        match parsed {
+            ContextMapProtocol::Context {
+                group_name,
+                name,
+                file_paths,
+                ..
+            } => {
+                // Empty is how "the model named none" reaches the ingest, which
+                // reads it through `group_key` and files the context under no
+                // group rather than minting one from nothing.
+                assert!(group_key(&group_name).is_empty());
+                assert_eq!(name, "studio-navigation");
+                assert_eq!(file_paths, vec!["app/x.ts".to_string()]);
+            }
+            _ => panic!("wrong variant"),
+        }
+
+        // An explicit blank, and a non-string, land in the same place.
+        for raw in [
+            r#"{"context_map_context":{"project_id":"p1","group_name":"   ","name":"c","file_paths":["a.ts"]}}"#,
+            r#"{"context_map_context":{"project_id":"p1","group_name":7,"name":"c","file_paths":["a.ts"]}}"#,
+        ] {
+            match parse_context_map_protocol(raw).expect("still a context") {
+                ContextMapProtocol::Context { group_name, .. } => {
+                    assert!(group_key(&group_name).is_empty())
+                }
+                _ => panic!("wrong variant"),
+            }
+        }
+
+        // And the fields that MUST stay fatal are still fatal — dropping a
+        // message with no name is correct, because there is no context there.
+        assert!(parse_context_map_protocol(
+            r#"{"context_map_context":{"project_id":"p1","group_name":"G","file_paths":["a.ts"]}}"#
+        )
+        .is_none());
+        assert!(parse_context_map_protocol(
+            r#"{"context_map_context":{"group_name":"G","name":"c","file_paths":["a.ts"]}}"#
+        )
+        .is_none());
     }
 
     // `is_mappable_path` is the whole gate between "the model proposed a context"
