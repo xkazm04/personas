@@ -28,6 +28,19 @@ describe('analytics sink registry', () => {
     expect(getAnalyticsSink()).toBe(sentrySink);
   });
 
+  it('the analytics surface routes trackInteraction through the active sink, not straight to Sentry', async () => {
+    const { trackInteraction } = await import('./index');
+    const seen: Array<{ category: string; action: string }> = [];
+    setAnalyticsSink({ ...noopSink, interaction: (e) => seen.push(e) });
+    trackInteraction('persona', 'create', 'from_template');
+    expect(seen).toEqual([{ category: 'persona', action: 'create', label: 'from_template' }]);
+
+    // Telemetry off: the same call site emits nothing, with no branch of its own.
+    setAnalyticsSink(noopSink);
+    trackInteraction('persona', 'create');
+    expect(seen).toHaveLength(1);
+  });
+
   it('noopSink swallows every event without throwing', () => {
     expect(() => {
       noopSink.feature({ section: 'overview', action: 'view' });
