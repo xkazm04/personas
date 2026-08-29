@@ -159,7 +159,7 @@ function SuccessRing({ rate }: { rate: number | null }) {
               <span className="text-foreground typo-body-lg">%</span>
             </>
           ) : (
-            <span className="text-foreground/40">—</span>
+            <span className="text-foreground">—</span>
           )}
         </div>
         <div className="typo-caption uppercase tracking-[0.25em] text-foreground mt-1 font-mono">
