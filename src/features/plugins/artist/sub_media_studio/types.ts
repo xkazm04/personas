@@ -237,6 +237,27 @@ export interface Composition {
   styleGuide?: string;
 }
 
+/**
+ * Membership test for rehydrated compositions (autosave / file load). A
+ * `JSON.parse(...) as Composition` cast accepts any JSON, so a drifted or
+ * corrupted payload flowed straight into the store; the guard refuses it at
+ * the boundary instead. Checks the required top-level shape only — item-level
+ * drift is the schema-version migration path's job.
+ */
+export function isComposition(v: unknown): v is Composition {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    typeof o.name === 'string' &&
+    typeof o.width === 'number' &&
+    typeof o.height === 'number' &&
+    typeof o.fps === 'number' &&
+    typeof o.backgroundColor === 'string' &&
+    Array.isArray(o.items)
+  );
+}
+
 // -- Playback ---------------------------------------------------------------
 
 export interface PlaybackState {

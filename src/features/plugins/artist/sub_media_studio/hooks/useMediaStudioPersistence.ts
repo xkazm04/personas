@@ -12,6 +12,7 @@ import {
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import type { Composition } from '../types';
+import { isComposition } from '../types';
 
 /** How long after the last edit to flush an autosave. */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -168,7 +169,10 @@ export function useMediaStudioPersistence({
           hydratedRef.current = true;
           return;
         }
-        const parsed = JSON.parse(restore.compositionJson) as Composition;
+        const parsed: unknown = JSON.parse(restore.compositionJson);
+        if (!isComposition(parsed)) {
+          throw new Error('Autosave payload is not a valid composition');
+        }
         replaceComposition(parsed);
         setRestoredFromAutosave(true);
         setLastSavedAt(Date.parse(restore.savedAt) || Date.now());
@@ -278,7 +282,10 @@ export function useMediaStudioPersistence({
     async (path: string) => {
       try {
         const loaded = await artistLoadComposition(path);
-        const parsed = JSON.parse(loaded.compositionJson) as Composition;
+        const parsed: unknown = JSON.parse(loaded.compositionJson);
+        if (!isComposition(parsed)) {
+          throw new Error('Composition file payload is not a valid composition');
+        }
         replaceComposition(parsed);
         setCurrentFile(path);
         setLastSavedAt(Date.now());
