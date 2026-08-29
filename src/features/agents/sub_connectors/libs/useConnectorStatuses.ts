@@ -72,14 +72,23 @@ export function useConnectorStatuses() {
         const existing = prevByName.get(credType);
         const linkedCredId = credentialLinks[credType];
         const linkedCred = linkedCredId ? credentialsByIdMap.get(linkedCredId) ?? null : null;
-        const credentialId = existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null;
+        // The EXPLICIT link wins over the auto-match. `matchedCred` is whichever
+        // credential of that service_type happened to be indexed first, so with
+        // two credentials for one connector the user's own choice -- persisted
+        // into design_context.credentialLinks by CredentialPicker -- was
+        // discarded on every fresh mount and the tab tested (and reported
+        // readiness for) an arbitrary sibling. `useUnfulfilledCredentials`
+        // already treats the link as authoritative; this now agrees with it.
+        // A link pointing at a deleted credential resolves to null and still
+        // falls through to the auto-match.
+        const credentialId = existing?.credentialId ?? linkedCred?.id ?? matchedCred?.id ?? null;
         // Fall back to whatever the backend last recorded on the credential, so
         // a revisit opens with the known outcome instead of blank-then-retest.
         const resolvedCred = credentialId ? credentialsByIdMap.get(credentialId) ?? null : null;
         return {
           name: credType,
           credentialId,
-          credentialName: existing?.credentialName ?? matchedCred?.name ?? linkedCred?.name ?? null,
+          credentialName: existing?.credentialName ?? linkedCred?.name ?? matchedCred?.name ?? null,
           testing: existing?.testing ?? false,
           result: existing?.result ?? restoreHealthcheck(resolvedCred),
           linkError: existing?.linkError ?? null,
