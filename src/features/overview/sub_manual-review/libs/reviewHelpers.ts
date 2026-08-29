@@ -13,8 +13,31 @@ export const STATUS_LABELS: Record<string, string> = {
 export const SEVERITY_LABELS: Record<string, string> = {
   info: 'Info',
   warning: 'Warning',
+  // The producer prompt asks personas for info|warning|error|critical and a
+  // second writer emits "high"; both used to fall through to 'Info'.
+  high: 'High',
+  error: 'Error',
   critical: 'Critical',
 };
+
+/** A severity label plus whether it was read or defaulted. */
+export interface ResolvedReviewSeverity {
+  label: string;
+  /** True when the payload's severity could not be read and the loud default applied. */
+  defaulted: boolean;
+}
+
+/**
+ * Resolve a review's severity for display. A token this consumer cannot read
+ * takes the LOUDEST label and carries a machine-readable `defaulted` marker,
+ * instead of being spelled the same way as a readable `info` — otherwise an
+ * unreadable payload and a genuinely trivial one become indistinguishable to
+ * every downstream surface, including the unattended resolver.
+ */
+export function resolveReviewSeverity(severity: string | null | undefined): ResolvedReviewSeverity {
+  const label = SEVERITY_LABELS[(severity ?? '').trim().toLowerCase()];
+  return label ? { label, defaulted: false } : { label: 'Unclassified', defaulted: true };
+}
 
 export type FilterStatus = 'all' | ManualReviewStatus;
 export type SourceFilter = 'all' | 'local' | 'cloud';
