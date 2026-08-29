@@ -218,15 +218,19 @@ export function useConnectorStatuses() {
       ),
     );
     if (selectedPersona) {
-      try {
-        await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'unknown error';
+      // The design_context write queue reports failure through the RETURNED
+      // result, never by rejecting (`applyDesignContextMutation` wraps its whole
+      // body in try/catch and resolves `{ applied: false, reason }`). A
+      // try/catch here was therefore unreachable: a persona that no longer
+      // exists, or a failed `applyPersonaOp`, left the optimistic link on screen
+      // and reported success, and the link was gone on the next mount.
+      const outcome = await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
+      if (!outcome.applied) {
         // Revert optimistic update -- the link was never persisted
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: errorMsg }) }
+              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: outcome.reason }) }
               : s,
           ),
         );

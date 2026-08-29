@@ -26,12 +26,22 @@ export function AgentCredentialDemands() {
 
   const handleReuse = useCallback(async (demand: UnfulfilledCredential, credentialId: string) => {
     if (!selectedPersona) return;
-    try {
-      await mutateCredentialLink(selectedPersona.id, demand.connectorName, credentialId);
-      await fetchCredentials();
-    } catch (err) { silentCatch("features/agents/sub_connectors/components/connectors/AgentCredentialDemands:catch1")(err); }
+    // `mutateCredentialLink` resolves `{ applied: false, reason }` on failure --
+    // it does not reject -- so the catch that used to stand here could never
+    // run. A link that never persisted closed the picker exactly like one that
+    // did, and the demand card stayed on screen with no explanation.
+    const outcome = await mutateCredentialLink(selectedPersona.id, demand.connectorName, credentialId);
+    if (!outcome.applied) {
+      toastCatch(
+        "AgentCredentialDemands:mutateCredentialLink",
+        tx(t.agents.connectors.test_link_failed, { error: outcome.reason }),
+      )(new Error(outcome.reason));
+      setLinkingDemand(null);
+      return;
+    }
+    await fetchCredentials().catch(silentCatch("AgentCredentialDemands:fetchCredentialsAfterReuse"));
     setLinkingDemand(null);
-  }, [selectedPersona, fetchCredentials]);
+  }, [selectedPersona, fetchCredentials, t, tx]);
 
   const handleDesignComplete = useCallback(() => {
     setDesignOpen(false);
