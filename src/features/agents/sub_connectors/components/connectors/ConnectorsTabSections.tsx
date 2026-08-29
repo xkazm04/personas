@@ -157,7 +157,14 @@ export function ConnectorsSection({
       ) : (
       <div className="space-y-2">
         {roleGroups.map((group) => (
-          <div key={group.items.map((s) => s.name).join(',')} className="space-y-2">
+          // Identity is the ROLE, not the membership. Keying on the joined
+          // member names made the key change whenever a health filter hid one
+          // member, so React unmounted and remounted every card in the group --
+          // discarding each ConnectorStatusCard's open swap picker and replaying
+          // its entrance. roleLabel is unique per group, and each ungrouped
+          // status is emitted once (the `grouped` set guarantees it), so
+          // items[0].name is a unique fallback.
+          <div key={group.roleLabel || group.items[0]?.name} className="space-y-2">
             {group.roleLabel && group.items.length > 1 && (
               <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
             )}
