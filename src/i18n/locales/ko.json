@@ -13367,7 +13367,9 @@
       "publish_failed": "게시 실패",
       "quarantined": "트리거 격리됨",
       "healing_abandoned": "자가 복구 중단",
-      "healing_capped": "복구 재시도 소진"
+      "healing_capped": "복구 재시도 소진",
+      "lookup_failed": "트리거 조회 실패",
+      "cost_ceiling_corrupt": "비용 상한을 읽을 수 없음"
     },
     "build": {
       "analyzing": "분석 중",

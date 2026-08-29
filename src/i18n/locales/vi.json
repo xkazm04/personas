@@ -13367,7 +13367,9 @@
       "publish_failed": "Phát hành thất bại",
       "quarantined": "Trigger đã bị cách ly",
       "healing_abandoned": "Đã ngừng tự sửa",
-      "healing_capped": "Hết lượt thử sửa lỗi"
+      "healing_capped": "Hết lượt thử sửa lỗi",
+      "lookup_failed": "Không tìm được trigger",
+      "cost_ceiling_corrupt": "Không đọc được trần chi phí"
     },
     "build": {
       "analyzing": "Đang phân tích",

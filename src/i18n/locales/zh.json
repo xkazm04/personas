@@ -13367,7 +13367,9 @@
       "publish_failed": "发布失败",
       "quarantined": "触发器已隔离",
       "healing_abandoned": "已放弃修复",
-      "healing_capped": "修复重试已用尽"
+      "healing_capped": "修复重试已用尽",
+      "lookup_failed": "触发器查找失败",
+      "cost_ceiling_corrupt": "成本上限无法读取"
     },
     "build": {
       "analyzing": "分析中",

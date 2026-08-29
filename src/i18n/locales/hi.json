@@ -13367,7 +13367,9 @@
       "publish_failed": "प्रकाशन विफल",
       "quarantined": "ट्रिगर क्वारंटीन किया गया",
       "healing_abandoned": "स्व-सुधार रुक गया",
-      "healing_capped": "सुधार के प्रयास समाप्त"
+      "healing_capped": "सुधार के प्रयास समाप्त",
+      "lookup_failed": "ट्रिगर लुकअप विफल",
+      "cost_ceiling_corrupt": "लागत सीमा अपठनीय"
     },
     "build": {
       "analyzing": "विश्लेषण हो रहा है",
