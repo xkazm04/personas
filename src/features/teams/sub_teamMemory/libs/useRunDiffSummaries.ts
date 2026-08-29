@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { silentCatch } from '@/lib/silentCatch';
+import { unmatchedByContent } from './memoryDiff';
 
 export interface RunDiffSummary {
   added: number;
@@ -22,8 +23,9 @@ const MAX_CACHED_RUNS = 64;
 /**
  * Per-run "+added / −removed vs the previous run" summaries for the memory
  * timeline. Fetches each run's full memory set (the panel's paged list is
- * incomplete) and diffs consecutive runs by memory id — the same matching
- * rule as `computeMemoryDiff`. The oldest run counts everything as added.
+ * incomplete) and diffs consecutive runs by CONTENT — the same matching
+ * rule as `computeMemoryDiff`, so the marker and the panel it summarizes cannot
+ * disagree. The oldest run counts everything as added.
  */
 export function useRunDiffSummaries(runIdsChronological: string[]): Map<string, RunDiffSummary> {
   const [summaries, setSummaries] = useState<Map<string, RunDiffSummary>>(new Map());
@@ -79,11 +81,9 @@ export function useRunDiffSummaries(runIdsChronological: string[]): Map<string, 
             continue;
           }
           const prev = sets[i - 1]!;
-          const prevIds = new Set(prev.map((m) => m.id));
-          const currentIds = new Set(current.map((m) => m.id));
           next.set(recent[i]!, {
-            added: current.filter((m) => !prevIds.has(m.id)).length,
-            removed: prev.filter((m) => !currentIds.has(m.id)).length,
+            added: unmatchedByContent(current, prev).length,
+            removed: unmatchedByContent(prev, current).length,
           });
         }
         setSummaries(next);

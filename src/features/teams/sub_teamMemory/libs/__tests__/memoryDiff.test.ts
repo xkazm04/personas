@@ -27,7 +27,7 @@ function mem(id: string, category: string, importance: number): TeamMemory {
 }
 
 describe('computeMemoryDiff', () => {
-  it('matches by id: what only B has is added, what only A has is removed', () => {
+  it('aligns on content: what only B has is added, what only A has is removed', () => {
     const a = [mem('1', 'decision', 5), mem('2', 'context', 5)];
     const b = [mem('2', 'context', 5), mem('3', 'learning', 5)];
 
@@ -37,6 +37,23 @@ describe('computeMemoryDiff', () => {
     expect(diff.removed.map((m) => m.id)).toEqual(['1']);
     expect(diff.totalA).toBe(2);
     expect(diff.totalB).toBe(2);
+  });
+
+  it('reports no change for two runs holding the same learnings under fresh ids', () => {
+    // Every memory row carries exactly one `run_id` and a freshly minted uuid,
+    // so run A's id set and run B's id set are disjoint BY CONSTRUCTION. Under
+    // id alignment this pair rendered as 2 new learnings plus 2 lost ones —
+    // knowledge creation and loss that never happened.
+    const a = [mem('a1', 'decision', 5), mem('a2', 'context', 7)];
+    const b = [
+      { ...mem('b1', 'decision', 5), title: 'title a1', content: 'content a1' },
+      { ...mem('b2', 'context', 7), title: 'title a2', content: 'content a2' },
+    ];
+
+    const diff = computeMemoryDiff(a, b);
+
+    expect(diff.added).toEqual([]);
+    expect(diff.removed).toEqual([]);
   });
 
   it('reports a category present on one side only as a COUNT change', () => {
