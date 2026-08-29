@@ -97,6 +97,17 @@ export function getAnalyticsSink(): AnalyticsSink {
   return current;
 }
 
+/**
+ * Is a real destination armed? The null sink is *chosen silence* (telemetry
+ * off), and that is a different fact from a live destination: a once-per-install
+ * milestone must not burn its latch on a sink that discards by design. This is
+ * a local consent query answered by the composition point — never a delivery
+ * acknowledgement the product waits on.
+ */
+export function isSinkDelivering(): boolean {
+  return current !== noopSink;
+}
+
 /** Swap the active sink (e.g. to a local-first or product-analytics backend). */
 export function setAnalyticsSink(sink: AnalyticsSink): void {
   current = sink;
