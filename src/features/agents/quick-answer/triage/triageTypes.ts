@@ -365,10 +365,20 @@ export function compareOrder(
   aCreatedAt: string,
   bWeight: number,
   bCreatedAt: string,
+  aId: string,
+  bId: string,
 ): number {
   if (bWeight !== aWeight) return bWeight - aWeight;
   if (aCreatedAt < bCreatedAt) return -1;
   if (aCreatedAt > bCreatedAt) return 1;
+  // Identity tiebreak: the order has to be TOTAL. Two items raised in the same
+  // second with the same weight are a real case (one poll, one producer, one
+  // batch), and without this the pair's relative position is whatever order
+  // the backend happened to return — a 30s poll replaces the array wholesale,
+  // so the two cards can trade places under the reviewer between refreshes.
+  // The ids are opaque and stable, so this is arbitrary but never varies.
+  if (aId < bId) return -1;
+  if (aId > bId) return 1;
   return 0;
 }
 
@@ -380,5 +390,5 @@ export function compareOrder(
  * ones someone already declined to judge once.
  */
 export function compareTriage(a: TriageItem, b: TriageItem): number {
-  return compareOrder(a.weight, a.createdAt, b.weight, b.createdAt);
+  return compareOrder(a.weight, a.createdAt, b.weight, b.createdAt, a.id, b.id);
 }
