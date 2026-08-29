@@ -26,6 +26,13 @@ export { buildSpanTree, flattenTree } from '../../libs/traceHelpers';
 export function buildParentIndex(spans: UnifiedSpan[]): Map<string, string | null> {
   const index = new Map<string, string | null>();
   for (const span of spans) {
+    // Two events reporting the same span id are two distinct calls that
+    // collided, not one call seen twice. The FIRST occurrence owns the id for
+    // parent linkage so children attach deterministically; `set` alone let the
+    // last arrival win, which made the tree depend on batch/retry order at the
+    // producer. (The later claimant still needs marking on the surface so the
+    // reader sees two colliding calls rather than a twin — not done here.)
+    if (index.has(span.span_id)) continue;
     index.set(span.span_id, span.parent_span_id ?? null);
   }
   return index;
