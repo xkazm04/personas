@@ -5,6 +5,8 @@ import {
   type PersonaDraft,
   MIN_PERSONA_TIMEOUT_MS,
   MAX_PERSONA_TIMEOUT_MS,
+  MIN_PERSONA_MAX_CONCURRENT,
+  MAX_PERSONA_MAX_CONCURRENT,
 } from '@/features/agents/sub_editor';
 
 const MIN_PERSONA_TIMEOUT_S = MIN_PERSONA_TIMEOUT_MS / 1000;
@@ -177,15 +179,15 @@ export function PersonaSettingsTab({
                   {t.agents.settings_status.max_concurrent}
                   <FieldHint
                     text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
-                    range="1--10"
+                    range={`${MIN_PERSONA_MAX_CONCURRENT}--${MAX_PERSONA_MAX_CONCURRENT}`}
                     example="3"
                   />
                 </label>
                 <NumberStepper
                   value={draft.maxConcurrent}
-                  onChange={(v) => patch({ maxConcurrent: v ?? 1 })}
-                  min={1}
-                  max={50}
+                  onChange={(v) => patch({ maxConcurrent: v ?? MIN_PERSONA_MAX_CONCURRENT })}
+                  min={MIN_PERSONA_MAX_CONCURRENT}
+                  max={MAX_PERSONA_MAX_CONCURRENT}
                   ariaLabel={t.agents.settings_status.max_concurrent}
                   className="w-full"
                 />

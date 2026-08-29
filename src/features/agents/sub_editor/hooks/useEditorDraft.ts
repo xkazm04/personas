@@ -3,7 +3,7 @@ import { preparePersonaExecution } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
 import { useEditorDirtyState, useEditorHistory } from '../libs/EditorDocument';
 import { useEditorSave } from '../libs/useEditorSave';
-import { type PersonaDraft, buildDraft, checkModelProfileIntegrity } from '../libs/PersonaDraft';
+import { type PersonaDraft, buildDraft, checkModelProfileIntegrity, clampDraftPatch } from '../libs/PersonaDraft';
 import { silentCatch } from '@/lib/silentCatch';
 
 const emptyDraft = () => buildDraft({ name: '', enabled: false });
@@ -23,8 +23,11 @@ export function useEditorDraft() {
 
   const prevPersonaIdRef = useRef(selectedPersona?.id);
 
+  // The one door every draft write passes through, so the field bounds are
+  // clamped here rather than in each control — a spinner's limits are an
+  // affordance and the next writer added will not pass through them.
   const patch = useCallback((updates: Partial<PersonaDraft>) => {
-    setDraft((prev) => ({ ...prev, ...updates }));
+    setDraft((prev) => ({ ...prev, ...clampDraftPatch(updates) }));
   }, []);
 
   // Detect a corrupted persisted model_profile so we can (a) warn the user

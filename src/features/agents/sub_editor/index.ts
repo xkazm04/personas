@@ -13,6 +13,9 @@ export {
   DEFAULT_PERSONA_TIMEOUT_MS,
   MIN_PERSONA_TIMEOUT_MS,
   MAX_PERSONA_TIMEOUT_MS,
+  MIN_PERSONA_MAX_CONCURRENT,
+  MAX_PERSONA_MAX_CONCURRENT,
+  clampDraftPatch,
 } from './libs/PersonaDraft';
 export { useEditorSave } from './libs/useEditorSave';
 export { useTabSection, type TabSaveMode, type TabSectionConfig, type TabSectionHandle } from './libs/useTabSection';
