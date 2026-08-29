@@ -3341,6 +3341,18 @@ struct KpTestPhaseResult {
     /// nothing to itemise.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     details: Vec<serde_json::Value>,
+    /// **`overnight` only** — the ideas the night left on the table
+    /// (§13.12). Always present on an overnight phase, `[]` included: "the
+    /// night produced nothing" is a finding, and a missing key is not. `None`
+    /// (absent) on every other phase, which has no backlog to report.
+    ///
+    /// Additive: `counts`, `details` and `errors` are untouched, because a
+    /// driver already deep-scans them.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    proposals: Option<Vec<personas_engine::headless::NightProposal>>,
+    /// **`overnight` only** — the decline log, same rules as `proposals`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    declines: Option<Vec<personas_engine::headless::NightDecline>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     errors: Vec<String>,
 }
@@ -3450,6 +3462,10 @@ fn phase_stub() -> KpTestPhaseResult {
         duration_ms: 0,
         counts: None,
         details: Vec::new(),
+        // Only the overnight phase fills these; every other phase leaves them
+        // absent rather than reporting an empty backlog it never looked at.
+        proposals: None,
+        declines: None,
         errors: Vec::new(),
     }
 }
@@ -3466,6 +3482,11 @@ async fn tick_phase_overnight(
         None => overnight::overnight_eligible_projects(pool),
     };
     let mut out = phase_stub();
+    // Present from here on, `[]` included: an overnight phase that reports no
+    // key at all is indistinguishable from one whose night produced nothing,
+    // and telling those apart is the whole point of the two lists (§13.12).
+    out.proposals = Some(Vec::new());
+    out.declines = Some(Vec::new());
     if projects.is_empty() {
         out.counts = Some(serde_json::json!({ "projects": 0, "dispatched": 0, "blocked": 0 }));
         return out;
@@ -3489,6 +3510,17 @@ async fn tick_phase_overnight(
             // that does not grant ScanAndTriage, or a claim that could not be
             // taken. It belongs in `errors` where the driver can read it.
             Err(e) => out.errors.push(format!("{id}: {e}")),
+        }
+        // Read AFTER the night ran, per project, whether or not it dispatched:
+        // a refusal ("mode suggest triages but does not dispatch") is exactly
+        // the case where the proposals it left behind are the only reading
+        // there is. Best-effort, and never fails the phase.
+        let backlog = personas_engine::headless::night_backlog(pool, id);
+        if let Some(proposals) = out.proposals.as_mut() {
+            proposals.extend(backlog.proposals);
+        }
+        if let Some(declines) = out.declines.as_mut() {
+            declines.extend(backlog.declines);
         }
     }
     out.counts = Some(serde_json::json!({
@@ -4946,6 +4978,105 @@ mod tests {
         match retire_persona_db(&pool, "no-such-persona") {
             Err(AppError::NotFound(msg)) => assert!(msg.contains("no-such-persona"), "{msg}"),
             other => panic!("expected NotFound, got {other:?}"),
+        }
+    }
+
+    // =========================================================================
+    // The overnight phase's proposal list and decline log (§13.12)
+    // =========================================================================
+
+    #[test]
+    fn an_overnight_summary_carries_both_lists_even_when_the_night_produced_nothing() {
+        let mut overnight = phase_stub();
+        overnight.phase = "overnight";
+        overnight.proposals = Some(Vec::new());
+        overnight.declines = Some(Vec::new());
+
+        let json = serde_json::to_value(&overnight).expect("serialize");
+        // Present and EMPTY. The bug this replaces is a summary that carried
+        // only prose ("1 accepted idea(s) left for the morning") and never the
+        // ideas — a reader could not tell a quiet night from an unreported one.
+        assert_eq!(json["proposals"], serde_json::json!([]));
+        assert_eq!(json["declines"], serde_json::json!([]));
+
+        // Nothing an existing consumer deep-scans has moved.
+        assert_eq!(json["phase"], serde_json::json!("overnight"));
+        assert_eq!(json["ran"], serde_json::json!(true));
+        assert_eq!(json["durationMs"], serde_json::json!(0));
+        assert!(json.get("counts").is_none(), "counts still skips when None");
+        assert!(
+            json.get("details").is_none(),
+            "details still skips when empty"
+        );
+        assert!(
+            json.get("errors").is_none(),
+            "errors still skips when empty"
+        );
+    }
+
+    #[test]
+    fn a_populated_overnight_summary_names_the_ideas_and_the_reasons() {
+        use personas_engine::headless::{NightDecline, NightProposal};
+
+        let mut overnight = phase_stub();
+        overnight.phase = "overnight";
+        overnight.proposals = Some(vec![NightProposal {
+            title: "Close the decode seam".into(),
+            target: "Decode seam".into(),
+            why: Some("two call sites already disagree".into()),
+            journey: Some("Role to schedule".into()),
+            axis: Some("stabilize".into()),
+            size: Some("s".into()),
+            confidence: None,
+        }]);
+        overnight.declines = Some(vec![
+            NightDecline {
+                title: "Rewrite the renderer".into(),
+                reason: Some("outside-mandate"),
+            },
+            NightDecline {
+                title: "Something the rule name does not explain".into(),
+                reason: None,
+            },
+        ]);
+
+        let json = serde_json::to_value(&overnight).expect("serialize");
+        assert_eq!(
+            json["proposals"][0],
+            serde_json::json!({
+                "title": "Close the decode seam",
+                "target": "Decode seam",
+                "why": "two call sites already disagree",
+                "journey": "Role to schedule",
+                "axis": "stabilize",
+                "size": "s",
+                // Nothing in the lane records a confidence, so the field is
+                // emitted as null rather than filled with a number nobody
+                // measured.
+                "confidence": null,
+            })
+        );
+        assert_eq!(
+            json["declines"],
+            serde_json::json!([
+                { "title": "Rewrite the renderer", "reason": "outside-mandate" },
+                // An unmappable reason is null, never invented.
+                { "title": "Something the rule name does not explain", "reason": null },
+            ])
+        );
+    }
+
+    #[test]
+    fn a_phase_with_no_backlog_to_report_omits_both_lists_rather_than_claiming_empty() {
+        for phase in ["reconcile", "report", "probation"] {
+            let mut result = phase_stub();
+            result.phase = phase;
+            let json = serde_json::to_value(&result).expect("serialize");
+            assert!(
+                json.get("proposals").is_none(),
+                "{phase} never looks at the backlog — reporting `[]` would claim it did"
+            );
+            assert!(json.get("declines").is_none(), "{phase}");
         }
     }
 }

@@ -1667,6 +1667,12 @@ is the second gate, not the first.
     { "phase": "overnight", "ran": true, "durationMs": 38010,
       "counts": { "projects": 1, "dispatched": 0, "blocked": 1, "degraded": 0 },
       "details": [ /* the NightRun ledger row, verbatim */ ],
+      // §13.12 — overnight ONLY, and always present, `[]` included
+      "proposals": [ { "title": "Close the decode seam", "target": "Decode seam",
+                       "why": "two call sites already disagree",
+                       "journey": "Role to schedule", "axis": "stabilize",
+                       "size": "s", "confidence": null } ],
+      "declines":  [ { "title": "Rewrite the renderer", "reason": "outside-mandate" } ],
       "errors": [] },
     { "phase": "reconcile", "ran": true, "durationMs": 2900,
       "counts": { "projects": 1, "branchesSeen": 3, "newlyRecorded": 1, "gated": 1, "errors": [] } },
@@ -2165,6 +2171,81 @@ assertions: the plan reads both records and calls it done only when neither has
 work left (including the two half-done states); a retire archives and the second
 call is a no-op; an open mandate is reported as owed and stops being owed once
 the carry-out has stamped it terminal; an unknown persona is `NotFound`.
+
+### 13.12 The night's product: a proposal list and a decline log (2026-08-29)
+
+The `overnight` phase summary now carries two lists **in addition to** everything
+it already carried — `counts`, `details` (the `NightRun` ledger row verbatim) and
+`errors` are untouched, name for name, because a driver already deep-scans them.
+
+**Why.** kp's bench is being rebuilt around rung-0 *ideation nights*, whose whole
+product is what the night proposed and what it turned down. Until this existed
+the summary said only how many: a `blockedReason` reading *"mode suggest triages
+but does not dispatch (1 accepted idea(s) left for the morning)"* names a number
+and never the idea, so nothing downstream could grade the night's judgement. The
+two lists **are** the reading.
+
+```jsonc
+"proposals": [ { "title": "…",           // dev_ideas.title
+                 "target": "…",          // the context's name, else the project's, else its id
+                 "why": "…",             // reasoning, falling back to description
+                 "journey": "…",         // the use case named by use_case_id
+                 "axis": "…",            // scan_type, falling back to category
+                 "size": "xs|s|m|l|xl",  // folded from effort
+                 "confidence": null } ],
+"declines":  [ { "title": "…",
+                 "reason": "low-value|outside-mandate|already-done|needs-human|null" } ]
+```
+
+**What is read.** Proposals are every idea standing `accepted` (the ones a
+`suggest` night leaves for the morning — the very ideas the `blockedReason`
+counts) then every idea standing `pending`; declines are the ideas standing
+`rejected`. Both are capped at `headless::MAX_TICK_BACKLOG_ITEMS` (50 each),
+newest first, and `archived` ideas appear in neither — archiving is lifecycle
+bookkeeping, not a decision. This is deliberately **state**, not a window keyed
+on the run's own start: a blocked dispatch is about the accepted ideas that
+*exist*, whichever tick accepted them, and a window would report an empty list
+for exactly the case the reading is for. The read happens per project after the
+night ran, dispatched or not, and is best-effort — the night already happened, so
+an unreadable backlog reports what it could read instead of failing the phase.
+
+**Empty is a finding; missing is a gap.** Both keys are present on every
+`overnight` summary, `[]` included, and absent on every other phase — a phase
+that never looks at a backlog must not report an empty one.
+
+**Two projections, both admitted as such.**
+
+- `size` folds `dev_ideas.effort` in pairs along the emitter's own documented
+  ladder (`idea_scanner.rs`: 1=trivial … 10=epic) — 1-2 `xs` … 9-10 `xl`. An
+  absent or out-of-range effort is `null`.
+- `reason` is a **lossy** projection over free text, and it is allowed to fail.
+  The lane has no decline vocabulary: `dev_ideas.status` is
+  `pending | accepted | rejected | archived`, and `rejection_reason` is whatever
+  the rejecting hand typed, plus the mechanical
+  `"Auto-rejected by triage rule '<name>'"` whose only signal is a rule name an
+  operator chose. So `headless::decline_reason` matches phrases that can only
+  mean one thing and answers `null` for everything else. A reason invented to
+  fill the field would read downstream as the night's actual judgement.
+
+**`confidence` is always `null` today.** `dev_ideas` records `effort`, `impact`,
+`risk` and a triage `priority`; none of those is a confidence, and deriving one
+from them would be inventing a number. The field exists so the absence is
+*stated* — unmeasured is not zero, the doctrine both repos share.
+
+#### Tests
+
+`personas-engine`, `headless` (5): the reason map projects only what can mean one
+thing and answers `null` for a rule name that says nothing about why; the size
+ladder folds and refuses out-of-range; a project with no ideas reports two lists
+that are **empty, not missing** (asserted through serde, not through the struct);
+a populated backlog reports the ideas themselves with a rejected one appearing as
+a decline and never as a proposal; and an idea that names a context and a use case
+reports them as `target` and `journey`.
+
+`app_lib`, `engine::management_api` (3): an overnight summary always carries both
+keys and leaves `counts` / `details` / `errors` exactly as they were; a populated
+one emits the documented object shapes including the two nulls; and `reconcile` /
+`report` / `probation` omit both keys rather than claiming an empty backlog.
 
 ## 14. Memory — the App master stops starting amnesiac (§8)
 

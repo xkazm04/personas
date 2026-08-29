@@ -248,7 +248,7 @@ paths:
 
         | phase | what runs | `counts` |
         | --- | --- | --- |
-        | `overnight` | `run_overnight_now_core` per eligible project — autopilot capability gate, App master mandate, budget governor, fleet slot cap and branch-only dispatch all intact | `{projects, dispatched, blocked, degraded}`; `details[]` = the `NightRun` ledger rows |
+        | `overnight` | `run_overnight_now_core` per eligible project — autopilot capability gate, App master mandate, budget governor, fleet slot cap and branch-only dispatch all intact | `{projects, dispatched, blocked, degraded}`; `details[]` = the `NightRun` ledger rows; plus `proposals[]` and `declines[]` (below) |
         | `reconcile` | `app_master_reconcile::reconcile_tick_summary` | `{projects, branchesSeen, newlyRecorded, gated, errors}` |
         | `report` | `kp_reporter::kp_rollup_tick_summary` | `{candidates, pushed, skipped, period, errors}` |
         | `probation` | `probation_tick_summary` (raise) then the headless decision sweep | `{mandates, due, raised, deferred, decided, notes}`; `details[]` = one decision each |
@@ -256,6 +256,22 @@ paths:
         A phase that ran and found nothing to do is `ran: true` with zero counts.
         An **unknown** phase name is a 400, never a silent skip — a driver that
         typed `reconciile` and got a 200 would read the typo as a passing run.
+
+        **The `overnight` phase also reports the night's product** — `proposals[]`
+        and `declines[]`, added beside the existing fields, never in place of one
+        (§13.12). Both keys are present on every overnight summary, `[]` included,
+        and absent on every other phase: "the night produced nothing" is a finding,
+        and a missing key is not the same answer. Proposals are the ideas standing
+        `accepted` then `pending` (the ones a `suggest` night leaves for the
+        morning — the very ideas a `blockedReason` counts without naming);
+        declines are the ideas standing `rejected`. 50 of each, newest first.
+
+        Two fields are admitted projections. `size` folds `dev_ideas.effort` along
+        the emitter's own 1..=10 ladder (1-2 `xs` … 9-10 `xl`), `null` when absent
+        or out of range. `reason` is a **lossy** map over free text — the lane has
+        no decline vocabulary, only whatever the rejecting hand typed — so it
+        answers `null` rather than guessing. `confidence` is always `null`:
+        nothing in the backlog records one, and unmeasured is not zero.
       requestBody:
         required: false
         content:
@@ -299,6 +315,30 @@ paths:
                         durationMs: { type: integer }
                         counts: { type: [object, "null"] }
                         details: { type: array, items: { type: object } }
+                        proposals:
+                          type: array
+                          description: "`overnight` only — always present there, `[]` included; absent on every other phase."
+                          items:
+                            type: object
+                            properties:
+                              title: { type: string }
+                              target: { type: string, description: "The context's name, else the project's, else its id. Never blank." }
+                              why: { type: [string, "null"], description: "`reasoning`, falling back to `description`." }
+                              journey: { type: [string, "null"], description: The use case named by `use_case_id`. }
+                              axis: { type: [string, "null"], description: "`scan_type`, falling back to `category`." }
+                              size: { type: [string, "null"], enum: [xs, s, m, l, xl, null], description: Folded from `effort` along the emitter's 1..=10 ladder. }
+                              confidence: { type: "null", description: "Always null — the backlog records no confidence, and unmeasured is not zero." }
+                        declines:
+                          type: array
+                          description: "`overnight` only, same presence rule as `proposals`."
+                          items:
+                            type: object
+                            properties:
+                              title: { type: string }
+                              reason:
+                                type: [string, "null"]
+                                enum: [low-value, outside-mandate, already-done, needs-human, null]
+                                description: Projected from the free-text `rejection_reason`; null when it maps onto nothing, never guessed.
                         errors: { type: array, items: { type: string } }
         "400": { description: One or more unknown phase names }
         "403": { description: "The key lacks the personas:test scope" }

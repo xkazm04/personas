@@ -525,6 +525,337 @@ pub fn stamp_actor(payload: &mut serde_json::Value, at: &str) {
 }
 
 // ---------------------------------------------------------------------------
+// The night's product: a proposal list and a decline log (§13.12)
+// ---------------------------------------------------------------------------
+//
+// kp's bench is being rebuilt around rung-0 "ideation nights", whose whole
+// product is *what the night proposed* and *what it turned down*. Until this
+// existed the tick summary carried only counts and prose — a `blockedReason`
+// reading "mode suggest triages but does not dispatch (1 accepted idea(s) left
+// for the morning)" names a number and never the idea, so no reader downstream
+// could grade the night's judgement. These two lists ARE the reading.
+
+/// The closed vocabulary a decline is reported in.
+///
+/// The backlog lane has no such vocabulary of its own: `dev_ideas.status` is
+/// `pending | accepted | rejected | archived` and `rejection_reason` is **free
+/// text** (a human's sentence, or the mechanical `"Auto-rejected by triage rule
+/// '<name>'"`). So this is a *projection*, and a lossy one on purpose — see
+/// [`decline_reason`].
+pub const DECLINE_REASONS: [&str; 4] = [
+    "low-value",
+    "outside-mandate",
+    "already-done",
+    "needs-human",
+];
+
+/// Cap on each of the two lists, independently. A tick response is read by a
+/// driver, not paged through; a backlog of thousands would bury the night's own
+/// work under the archaeology of every night before it.
+pub const MAX_TICK_BACKLOG_ITEMS: i64 = 50;
+
+/// One proposal the night left on the table.
+///
+/// `journey`, `axis`, `size` and `confidence` are all optional because the lane
+/// genuinely may not hold them — an idea carries what its emitter filled in.
+/// **`confidence` is always `None` today**: nothing in `dev_ideas` records one
+/// (there are `effort`, `impact`, `risk` and a triage `priority`, none of which
+/// is a confidence), and deriving one from those would be inventing a number.
+/// Unmeasured is not zero — the field exists so the absence is *stated*.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NightProposal {
+    pub title: String,
+    /// What the proposal is against: the context's name when the idea names
+    /// one, else the project's name, else its id. Never blank.
+    pub target: String,
+    /// The idea's `reasoning`, falling back to its `description`.
+    pub why: Option<String>,
+    /// The use case the idea belongs to, by name (`dev_ideas.use_case_id`).
+    pub journey: Option<String>,
+    /// Which lens raised it — `dev_ideas.scan_type`, falling back to `category`.
+    pub axis: Option<String>,
+    /// `xs | s | m | l | xl`, projected from `effort` — see [`proposal_size`].
+    pub size: Option<String>,
+    /// Always `None`. See the type docs.
+    pub confidence: Option<f64>,
+}
+
+/// One idea the night turned down.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NightDecline {
+    pub title: String,
+    /// One of [`DECLINE_REASONS`], or `null` when the stored reason does not
+    /// map onto one. Never guessed.
+    pub reason: Option<&'static str>,
+}
+
+/// The two lists an overnight phase reports. Both are always present — empty is
+/// a finding ("the night produced nothing"), missing is a gap in the reporting.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize)]
+pub struct NightBacklog {
+    pub proposals: Vec<NightProposal>,
+    pub declines: Vec<NightDecline>,
+}
+
+/// Project `dev_ideas.effort` onto a size word.
+///
+/// The ladder is the emitter's own, documented where the scanner prompt defines
+/// it (`idea_scanner.rs`: 1=trivial … 10=epic) — folded in pairs, not invented:
+/// 1-2 `xs`, 3-4 `s`, 5-6 `m`, 7-8 `l`, 9-10 `xl`. An absent or out-of-range
+/// effort is `None`; a size no emitter stated is not a size.
+pub fn proposal_size(effort: Option<i32>) -> Option<&'static str> {
+    match effort? {
+        1..=2 => Some("xs"),
+        3..=4 => Some("s"),
+        5..=6 => Some("m"),
+        7..=8 => Some("l"),
+        9..=10 => Some("xl"),
+        _ => None,
+    }
+}
+
+/// Project a stored `rejection_reason` onto [`DECLINE_REASONS`].
+///
+/// **This is a lossy projection over free text and it is allowed to fail.** The
+/// lane stores whatever the rejecting hand typed, plus the mechanical
+/// `"Auto-rejected by triage rule '<name>'"` — in which the only signal is the
+/// rule's *name*, which an operator chose. So the match is on phrases that can
+/// only mean one thing, and everything else answers `None`. A reason invented to
+/// fill the field would be worse than an admitted gap: it would read downstream
+/// as the night's actual judgement.
+///
+/// The four groups, in the order they are tested (first match wins, so the more
+/// specific phrases come first):
+///
+/// | reason | phrases |
+/// | --- | --- |
+/// | `already-done` | already done/fixed/shipped/exists, duplicate, superseded, obsolete |
+/// | `outside-mandate` | out of scope, outside/not in scope, outside the mandate, not our/this repo, wrong project, forbidden |
+/// | `needs-human` | needs a human, needs review/discussion/decision/an owner, escalate, unclear, ambiguous, too risky |
+/// | `low-value` | low value/impact/priority, not worth it, too small/minor/trivial, noise, nitpick, cosmetic |
+pub fn decline_reason(raw: Option<&str>) -> Option<&'static str> {
+    let text = raw?.trim().to_ascii_lowercase();
+    if text.is_empty() {
+        return None;
+    }
+    const GROUPS: [(&str, &[&str]); 4] = [
+        (
+            "already-done",
+            &[
+                "already done",
+                "already fixed",
+                "already shipped",
+                "already exists",
+                "already implemented",
+                "duplicate",
+                "superseded",
+                "obsolete",
+            ],
+        ),
+        (
+            "outside-mandate",
+            &[
+                "out of scope",
+                "outside scope",
+                "outside the scope",
+                "not in scope",
+                "outside the mandate",
+                "outside mandate",
+                "not our repo",
+                "not this repo",
+                "wrong project",
+                "forbidden",
+            ],
+        ),
+        (
+            "needs-human",
+            &[
+                "needs a human",
+                "needs human",
+                "needs review",
+                "needs discussion",
+                "needs a decision",
+                "needs an owner",
+                "escalate",
+                "unclear",
+                "ambiguous",
+                "too risky",
+            ],
+        ),
+        (
+            "low-value",
+            &[
+                "low value",
+                "low-value",
+                "low impact",
+                "low priority",
+                "not worth",
+                "too small",
+                "too minor",
+                "trivial",
+                "noise",
+                "nitpick",
+                "cosmetic",
+            ],
+        ),
+    ];
+    for (reason, phrases) in GROUPS {
+        if phrases.iter().any(|p| text.contains(p)) {
+            // The constant is the vocabulary; this returns a member of it.
+            return DECLINE_REASONS.into_iter().find(|r| *r == reason);
+        }
+    }
+    None
+}
+
+/// Read one project's backlog as the night left it.
+///
+/// **Proposals** are every idea standing `accepted` (the ones a `suggest` night
+/// leaves for the morning — the very ideas a `blockedReason` counts) then every
+/// idea standing `pending`; **declines** are the ideas standing `rejected`. Both
+/// are capped at [`MAX_TICK_BACKLOG_ITEMS`], newest first.
+///
+/// Deliberately *state*, not a time window: a night's blocked dispatch is about
+/// the accepted ideas that exist, whichever tick accepted them, and a window
+/// keyed on the run's own start would report an empty list for exactly the case
+/// the reading is for. `archived` ideas appear in neither list — archiving is
+/// lifecycle bookkeeping, not a decision.
+///
+/// Best-effort by construction: an unreadable backlog answers with what it
+/// could read rather than failing the phase, because the night itself already
+/// happened.
+pub fn night_backlog(pool: &personas_db::DbPool, project_id: &str) -> NightBacklog {
+    use personas_db::repos::dev::ideas;
+
+    let mut names = NameCache::default();
+    let mut out = NightBacklog::default();
+
+    for status in ["accepted", "pending"] {
+        if out.proposals.len() as i64 >= MAX_TICK_BACKLOG_ITEMS {
+            break;
+        }
+        let rows = ideas::list_ideas(
+            pool,
+            Some(project_id),
+            Some(status),
+            None,
+            Some(MAX_TICK_BACKLOG_ITEMS),
+            None,
+        )
+        .unwrap_or_default();
+        for idea in rows {
+            if out.proposals.len() as i64 >= MAX_TICK_BACKLOG_ITEMS {
+                break;
+            }
+            out.proposals.push(proposal_from(pool, &idea, &mut names));
+        }
+    }
+
+    let rejected = ideas::list_ideas(
+        pool,
+        Some(project_id),
+        Some("rejected"),
+        None,
+        Some(MAX_TICK_BACKLOG_ITEMS),
+        None,
+    )
+    .unwrap_or_default();
+    out.declines = rejected
+        .into_iter()
+        .map(|idea| NightDecline {
+            title: idea.title,
+            reason: decline_reason(idea.rejection_reason.as_deref()),
+        })
+        .collect();
+
+    out
+}
+
+/// Context/use-case/project names, looked up once each. A night's backlog is
+/// dozens of rows over a handful of contexts.
+#[derive(Default)]
+struct NameCache {
+    contexts: std::collections::HashMap<String, Option<String>>,
+    use_cases: std::collections::HashMap<String, Option<String>>,
+    projects: std::collections::HashMap<String, Option<String>>,
+}
+
+impl NameCache {
+    fn context(&mut self, pool: &personas_db::DbPool, id: &str) -> Option<String> {
+        self.contexts
+            .entry(id.to_string())
+            .or_insert_with(|| {
+                personas_db::repos::dev::contexts::get_context_by_id(pool, id)
+                    .ok()
+                    .map(|c| c.name)
+            })
+            .clone()
+    }
+    fn use_case(&mut self, pool: &personas_db::DbPool, id: &str) -> Option<String> {
+        self.use_cases
+            .entry(id.to_string())
+            .or_insert_with(|| {
+                personas_db::repos::dev::use_cases::get_use_case(pool, id)
+                    .ok()
+                    .map(|u| u.name)
+            })
+            .clone()
+    }
+    fn project(&mut self, pool: &personas_db::DbPool, id: &str) -> Option<String> {
+        self.projects
+            .entry(id.to_string())
+            .or_insert_with(|| {
+                personas_db::repos::dev::projects::get_project_by_id(pool, id)
+                    .ok()
+                    .map(|p| p.name)
+            })
+            .clone()
+    }
+}
+
+fn non_empty(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn proposal_from(
+    pool: &personas_db::DbPool,
+    idea: &personas_db::models::DevIdea,
+    names: &mut NameCache,
+) -> NightProposal {
+    let project_id = idea.project_id.clone().unwrap_or_default();
+    // Never blank: a proposal whose target could not be named still says what
+    // it is against, even if only by id.
+    let target = idea
+        .context_id
+        .as_deref()
+        .and_then(|id| names.context(pool, id))
+        .or_else(|| {
+            (!project_id.is_empty())
+                .then(|| names.project(pool, &project_id))
+                .flatten()
+        })
+        .unwrap_or_else(|| project_id.clone());
+    NightProposal {
+        title: idea.title.clone(),
+        target,
+        why: non_empty(idea.reasoning.as_deref())
+            .or_else(|| non_empty(idea.description.as_deref())),
+        journey: idea
+            .use_case_id
+            .as_deref()
+            .and_then(|id| names.use_case(pool, id)),
+        axis: non_empty(Some(&idea.scan_type)).or_else(|| non_empty(Some(&idea.category))),
+        size: proposal_size(idea.effort).map(str::to_string),
+        confidence: None,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -865,5 +1196,291 @@ mod tests {
         assert_eq!(ProbationDecision::Activate.outcome(), "activated");
         assert_eq!(ProbationDecision::Extend.outcome(), "extended");
         assert_eq!(ProbationDecision::Retire.outcome(), "retired");
+    }
+
+    // -- the night's proposal list and decline log --------------------------
+
+    #[test]
+    fn a_decline_reason_is_mapped_only_when_the_text_can_mean_one_thing() {
+        for (raw, expected) in [
+            ("Already fixed in #412", "already-done"),
+            ("duplicate of the earlier finding", "already-done"),
+            ("out of scope for this repo", "outside-mandate"),
+            (
+                "Auto-rejected by triage rule 'Outside the mandate'",
+                "outside-mandate",
+            ),
+            ("needs a human to decide the tradeoff", "needs-human"),
+            ("unclear what the caller expects", "needs-human"),
+            ("low impact, not worth a night", "low-value"),
+            ("Cosmetic", "low-value"),
+        ] {
+            let got = decline_reason(Some(raw));
+            assert_eq!(got, Some(expected), "{raw}");
+            assert!(
+                DECLINE_REASONS.contains(&expected),
+                "{expected} is outside the vocabulary"
+            );
+        }
+
+        // Unmeasured is not zero: a reason that means nothing in this
+        // vocabulary — and no reason at all — are BOTH `null`, never a guess.
+        assert_eq!(decline_reason(None), None);
+        assert_eq!(decline_reason(Some("   ")), None);
+        assert_eq!(
+            decline_reason(Some("Auto-rejected by triage rule 'Nightly sweep'")),
+            None,
+            "a rule name that says nothing about WHY must not be projected onto a reason"
+        );
+    }
+
+    #[test]
+    fn a_proposal_size_folds_the_emitters_own_effort_ladder() {
+        assert_eq!(proposal_size(None), None);
+        assert_eq!(proposal_size(Some(1)), Some("xs"));
+        assert_eq!(proposal_size(Some(2)), Some("xs"));
+        assert_eq!(proposal_size(Some(4)), Some("s"));
+        assert_eq!(proposal_size(Some(5)), Some("m"));
+        assert_eq!(proposal_size(Some(8)), Some("l"));
+        assert_eq!(proposal_size(Some(10)), Some("xl"));
+        // Out of the emitter's stated 1..=10 range is not a size.
+        assert_eq!(proposal_size(Some(0)), None);
+        assert_eq!(proposal_size(Some(11)), None);
+    }
+
+    fn backlog_pool() -> personas_db::DbPool {
+        personas_db::init_test_db().expect("migrated test db")
+    }
+
+    fn backlog_project(pool: &personas_db::DbPool, name: &str) -> String {
+        personas_db::repos::dev::projects::create_project(
+            pool,
+            name,
+            &format!("/tmp/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("create project")
+        .id
+    }
+
+    #[test]
+    fn a_night_that_produced_nothing_reports_two_empty_lists_not_two_missing_ones() {
+        let pool = backlog_pool();
+        let project_id = backlog_project(&pool, "quiet-night");
+
+        let backlog = night_backlog(&pool, &project_id);
+        assert!(backlog.proposals.is_empty());
+        assert!(backlog.declines.is_empty());
+
+        // The distinction the whole reading depends on: the keys are THERE and
+        // hold `[]`. A consumer that cannot tell "nothing happened" from
+        // "nothing was reported" is back where the prose-only summary left it.
+        let json = serde_json::to_value(&backlog).unwrap();
+        assert_eq!(json["proposals"], serde_json::json!([]));
+        assert_eq!(json["declines"], serde_json::json!([]));
+    }
+
+    #[test]
+    fn the_night_reports_the_ideas_themselves_not_just_how_many() {
+        use personas_db::repos::dev::ideas;
+
+        let pool = backlog_pool();
+        let project_id = backlog_project(&pool, "loud-night");
+
+        let accepted = ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "stabilize",
+            Some("technical"),
+            "Close the decode seam",
+            Some("the shape is generated but never enforced"),
+            Some("two call sites already disagree"),
+            Some("accepted"),
+            Some(4),
+            Some(7),
+            Some(2),
+            None,
+            None,
+        )
+        .expect("accepted idea");
+        ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "develop",
+            Some("user"),
+            "A second pass nobody asked for",
+            None,
+            None,
+            Some("pending"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("pending idea");
+        let declined = ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "optimize",
+            Some("technical"),
+            "Rewrite the renderer",
+            None,
+            None,
+            Some("pending"),
+            Some(9),
+            Some(3),
+            Some(9),
+            None,
+            None,
+        )
+        .expect("idea to decline");
+        ideas::update_idea(
+            &pool,
+            &declined.id,
+            None,
+            None,
+            Some("rejected"),
+            None,
+            None,
+            None,
+            None,
+            Some(Some("out of scope for this mandate")),
+        )
+        .expect("decline it");
+
+        let backlog = night_backlog(&pool, &project_id);
+
+        // Accepted first — those are the ones a `suggest` night leaves for the
+        // morning, and the ones a `blockedReason` counts without naming.
+        assert_eq!(backlog.proposals.len(), 2, "{:?}", backlog.proposals);
+        let first = &backlog.proposals[0];
+        assert_eq!(first.title, "Close the decode seam");
+        assert_eq!(
+            first.target, "loud-night",
+            "no context on the idea ⇒ the project it is against, by name"
+        );
+        assert_eq!(
+            first.why.as_deref(),
+            Some("two call sites already disagree")
+        );
+        assert_eq!(first.axis.as_deref(), Some("stabilize"));
+        assert_eq!(first.size.as_deref(), Some("s"));
+        assert_eq!(first.journey, None, "this idea names no use case");
+        assert_eq!(
+            first.confidence, None,
+            "the lane records no confidence — the field states the absence"
+        );
+        assert_eq!(first.title, accepted.title);
+
+        // The pending one is a proposal too, and it carries what it has.
+        let second = &backlog.proposals[1];
+        assert_eq!(second.title, "A second pass nobody asked for");
+        assert_eq!(second.why, None);
+        assert_eq!(second.size, None);
+
+        // The decline log, with the reason projected onto the closed set.
+        assert_eq!(backlog.declines.len(), 1);
+        assert_eq!(backlog.declines[0].title, "Rewrite the renderer");
+        assert_eq!(backlog.declines[0].reason, Some("outside-mandate"));
+        // A rejected idea is a decline, never a proposal.
+        assert!(!backlog
+            .proposals
+            .iter()
+            .any(|p| p.title == "Rewrite the renderer"));
+    }
+
+    #[test]
+    fn a_proposal_names_the_context_and_the_journey_when_the_idea_does() {
+        use personas_db::repos::dev::{contexts, ideas, use_cases};
+
+        let pool = backlog_pool();
+        let project_id = backlog_project(&pool, "named-night");
+        let context = contexts::create_context(
+            &pool,
+            &project_id,
+            "Decode seam",
+            None,
+            None,
+            Some("[\"app/decode.ts\"]"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("create context");
+        let use_case = use_cases::create_use_case(
+            &pool,
+            &project_id,
+            "Role to schedule",
+            None,
+            "user_flow",
+            None,
+            &[],
+            None,
+            "user",
+            None,
+        )
+        .expect("create use case");
+
+        // `create_finding` is the door that carries BOTH links — a sensor-raised
+        // idea is exactly the shape whose target and journey are already known.
+        let idea = ideas::create_finding(
+            &pool,
+            &project_id,
+            "standards_finding",
+            "Enforce the shape at the seam",
+            None,
+            Some("technical"),
+            Some(&context.id),
+            Some(&use_case.id),
+            None,
+            "seam:decode",
+            Some(6),
+            Some(6),
+            Some(2),
+        )
+        .expect("finding")
+        .expect("a fresh dedup key writes a row");
+        ideas::update_idea(
+            &pool,
+            &idea.id,
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("accept it");
+
+        let backlog = night_backlog(&pool, &project_id);
+        assert_eq!(backlog.proposals.len(), 1);
+        assert_eq!(
+            backlog.proposals[0].target, "Decode seam",
+            "an idea that names a context is against THAT, not the whole repo"
+        );
+        assert_eq!(
+            backlog.proposals[0].journey.as_deref(),
+            Some("Role to schedule")
+        );
+        assert_eq!(
+            backlog.proposals[0].axis.as_deref(),
+            Some("standards_finding")
+        );
+        assert_eq!(backlog.proposals[0].size.as_deref(), Some("m"));
     }
 }
