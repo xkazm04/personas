@@ -40,20 +40,35 @@ export const SUCCESS_RATE_IDENTITIES = {
   } satisfies MetricIdentity,
 } as const;
 
+/**
+ * Resolve a metric to a percentage, or to `null` when it was not measured.
+ *
+ * `null` is not a defensive nicety, it is the contract. An empty denominator
+ * means nothing ran in the window, and a fleet that executed nothing did not
+ * have a 0% success rate — it had no success rate. Returning 0 for it decides
+ * "not measured" is "measured, zero" here, at the derivation, before any chart
+ * or tile gets a vote, and 0% on a success-rate tile is not a neutral value:
+ * it reads as a total outage. The same applies to a non-finite ratio, which is
+ * an unreadable input rather than a floor.
+ *
+ * Callers must render an absent metric as a neutral mark (a dash), never as 0
+ * and never as a vanished tile.
+ */
 export function resolveMetricPercent(identity: MetricIdentity, values: {
   numerator?: number;
   denominator?: number;
   ratio?: number;
-}): number {
+}): number | null {
   if (identity.kind === 'precomputed_ratio') {
-    const ratio = values.ratio ?? 0;
-    return Number.isFinite(ratio) ? ratio * 100 : 0;
+    const ratio = values.ratio;
+    if (ratio === undefined || !Number.isFinite(ratio)) return null;
+    return ratio * 100;
   }
 
   const numerator = values.numerator ?? 0;
   const denominator = values.denominator ?? 0;
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
-    return 0;
+    return null;
   }
   return (numerator / denominator) * 100;
 }

@@ -16,7 +16,8 @@ import { PaneHeader } from './PaneHeader';
 export const VitalsConsole = memo(function VitalsConsole({
   successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points, personaName, trend,
 }: {
-  successRate: number;
+  /** null when nothing ran in the window — an unmeasured rate, not a zero one. */
+  successRate: number | null;
   activeAgents: number;
   activeAlertCount: number;
   totalExecutions: number;
@@ -120,7 +121,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   );
 });
 
-function SuccessRing({ rate }: { rate: number }) {
+function SuccessRing({ rate }: { rate: number | null }) {
   const { t } = useTranslation();
   // Honour reduced-motion: collapse the 600ms ring sweep to its final state
   // rather than animating the stroke. The global reduced-motion CSS already
@@ -131,8 +132,12 @@ function SuccessRing({ rate }: { rate: number }) {
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const offset = c - (rate / 100) * c;
-  const color = rate >= 90 ? '#34d399' : rate >= 75 ? '#fbbf24' : '#fb7185';
+  // An unmeasured window draws the track and no arc. Drawing rate 0 instead
+  // would render a fleet that executed nothing as an alarm-coloured 0% — a
+  // finding the surface fabricated, with the same geometry as a real outage.
+  const measured = rate !== null;
+  const offset = measured ? c - (rate / 100) * c : c;
+  const color = !measured ? 'transparent' : rate >= 90 ? '#34d399' : rate >= 75 ? '#fbbf24' : '#fb7185';
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
@@ -148,8 +153,14 @@ function SuccessRing({ rate }: { rate: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="font-mono text-4xl tabular-nums text-foreground">
-          <AnimatedCounter value={rate} formatFn={(v) => `${Math.round(v)}`} />
-          <span className="text-foreground typo-body-lg">%</span>
+          {measured ? (
+            <>
+              <AnimatedCounter value={rate} formatFn={(v) => `${Math.round(v)}`} />
+              <span className="text-foreground typo-body-lg">%</span>
+            </>
+          ) : (
+            <span className="text-foreground/40">—</span>
+          )}
         </div>
         <div className="typo-caption uppercase tracking-[0.25em] text-foreground mt-1 font-mono">
           {t.overview.dashboard.success_label}

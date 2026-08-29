@@ -97,10 +97,13 @@ export default function MissionControlHome() {
       ? globalExecutions.filter((e) => e.persona_id === selectedPersonaId)
       : globalExecutions;
     const successCount = execs.filter((e) => e.status === 'completed').length;
-    const successRate = Math.round(resolveMetricPercent(
+    // null when nothing ran in the window: an unmeasured rate is carried as
+    // absent all the way to the ring, never rounded into a measured 0%.
+    const pct = resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: successCount, denominator: execs.length },
-    ));
+    );
+    const successRate = pct === null ? null : Math.round(pct);
     return { successRate, activeAgents: personas.length };
   }, [globalExecutions, personas, selectedPersonaId]);
 
@@ -113,10 +116,11 @@ export default function MissionControlHome() {
       return { successRate: stats.successRate, points: fleetPoints };
     }
     const summary = observabilityMetrics.summary;
-    const successRate = Math.round(resolveMetricPercent(
+    const pct = resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: summary.successfulExecutions, denominator: summary.totalExecutions },
-    ));
+    );
+    const successRate = pct === null ? null : Math.round(pct);
     const points = observabilityMetrics.chartData.chart_points.map((p) => ({
       date: p.date, total_executions: p.executions, failed: p.failed,
     }));
