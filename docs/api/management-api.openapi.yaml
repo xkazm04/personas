@@ -427,6 +427,66 @@ paths:
         "403": { description: "The key lacks the personas:test scope" }
         "404": { description: "The mode is off, the project id does not exist, or the persona holds no App-master mandate" }
 
+  /api/kp/test/retire:
+    post:
+      summary: "Headless bridge only: end one persona's tenure"
+      description: |
+        **Exists only while `PERSONAS_HEADLESS_BRIDGE=1`** — with the mode off the
+        route is not registered and answers **404**, not 403. Requires the
+        `personas:test` scope, exactly like `/api/kp/test/tick`.
+
+        Hiring was reachable over the bridge and retiring was not, so the 2026-08
+        App-master sweeps left 100+ personas on the roster with no mechanical way
+        to put one down. See §13.11 of
+        `docs/architecture/cloud-integration-bridge.md`.
+
+        **Two records, one shared meaning.** The persona is archived through
+        `repos::core::personas::archive_persona` — the same repository function
+        the `archive_persona` command calls, so **no cascade**: executions,
+        memories and the violation ledger stay readable. Any linked App-master
+        mandate is ended through `apply_app_master_probation_decision`, the same
+        carry-out a human's probation `retire` click reaches (autopilot → `off`,
+        cadence triggers disabled, mandate `retired`, holder memory, kp push).
+        Nothing re-implements what retiring means.
+
+        **Idempotent per half.** A second call finishes whatever the first left
+        and writes nothing when both records are already terminal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId]
+              properties:
+                personaId:
+                  type: string
+                  description: The persona whose tenure ends. Required — a retirement will not guess which tenure to end.
+      responses:
+        "200":
+          description: The tenure is over (it may already have been)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  headlessBridge: { type: boolean, const: true }
+                  actor: { type: string, const: headless_bridge }
+                  personaId: { type: string }
+                  alreadyRetired: { type: boolean, description: "True ⇒ both records were already terminal and nothing was written" }
+                  lifecycle: { type: string, const: archived }
+                  note: { type: string }
+                  mandate:
+                    type: [object, "null"]
+                    description: Null when the persona holds no App-master mandate.
+                    properties:
+                      projectId: { type: string }
+                      decision: { type: string, const: retired }
+                      carriedOut: { type: boolean, description: "False ⇒ the mandate was already decided, or there was no record to apply it to" }
+        "400": { description: "`personaId` missing or blank, or the persona is system-origin and cannot be archived" }
+        "403": { description: "The key lacks the personas:test scope" }
+        "404": { description: "The mode is off, or no persona carries that id" }
+
   /api/kp/connector-catalog:
     get:
       summary: Connectors a KP hire form may offer

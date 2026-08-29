@@ -2107,6 +2107,65 @@ retires a merged worktree, keeps in-flight work, keeps everything inside the
 grace window, and never considers a worktree outside its root; and the two
 guardrail variants share one tail.
 
+### 13.11 The retire endpoint — a tenure that can actually end (2026-08-29)
+
+`POST /api/kp/test/retire`. Same two gates as the tick and the seed (§13.6): the
+route is **added** only while `personas_engine::headless::enabled()`, so with the
+mode off it 404s rather than 403s, and `authorize` demands `personas:test` for
+the whole `/api/kp/test/` prefix.
+
+**Why it exists.** Hiring was reachable over the bridge and retiring was not. The
+2026-08 App-master sweeps therefore left **100+ personas** on the roster, one per
+run, with no mechanical way to put any of them down — and kp's bench is being
+rebuilt around *tenures* rather than fresh hires, which needs the end of a tenure
+to be as reachable as its start. A tenure that cannot end is not a tenure.
+
+```jsonc
+// request
+{ "personaId": "…" }   // required; a retirement will not guess which tenure to end
+```
+
+```jsonc
+// response (200) — inside the standard { success, data } envelope
+{ "headlessBridge": true, "actor": "headless_bridge",
+  "personaId": "…",
+  "alreadyRetired": false,          // true => nothing was written
+  "lifecycle": "archived",
+  "mandate": { "projectId": "…",    // null when the persona holds no App master mandate
+               "decision": "retired",
+               "carriedOut": true }, // false => it was already decided
+  "note": "…" }
+```
+
+**Two records, one shared meaning.** A tenure ends in two places and they can
+already disagree — a probation `retire` ends the mandate and leaves the persona
+row untouched; a hand-archive does the reverse. So the route decides *both*
+halves before writing either (`RetirePlan`), and:
+
+| half | how | what it means |
+| --- | --- | --- |
+| the persona | `repos::core::personas::archive_persona` — the same repository function the `archive_persona` command calls | lifecycle `archived`, **no cascade**: executions, memories, messages and the violation ledger all stay readable. A retirement that erased the record would destroy the evidence for the decision at the moment it was made. System-origin personas are refused (400) |
+| the mandate | `reviews::apply_app_master_probation_decision` with `decision: "retired"` — the same carry-out a human's `retire` click and the headless probation sweep reach | autopilot → `off`, cadence triggers disabled, the mandate records `retired`, the holder remembers it, kp is told |
+
+Nothing here re-implements "what retiring means". `verdict` is `None` (no backbone
+was read — written as *no verdict recorded*, never as a pass), `reviewId` is
+`None` (this decision was not raised, it was requested) and the headless
+`incomplete` streak is left exactly as it stands.
+
+**Idempotent per half.** A second call finishes whatever the first left and
+writes nothing when both records are already terminal, answering
+`alreadyRetired: true` — which is what lets a driver retry a retirement it is not
+sure landed. An unknown `personaId` is the standard 404 envelope, not a silent
+success.
+
+#### Tests
+
+`app_lib`, `engine::management_api` (4), beside the other `/api/kp/test/*`
+assertions: the plan reads both records and calls it done only when neither has
+work left (including the two half-done states); a retire archives and the second
+call is a no-op; an open mandate is reported as owed and stops being owed once
+the carry-out has stamped it terminal; an unknown persona is `NotFound`.
+
 ## 14. Memory — the App master stops starting amnesiac (§8)
 
 kp `docs/concepts/app-master.md` §8 is the semantics; this section is what

@@ -181,14 +181,16 @@ pub fn management_router(state: ManagementState) -> Router {
     // affirmative check.
     let router = if personas_engine::headless::enabled() {
         tracing::warn!(
-            "HEADLESS BRIDGE: serving POST /api/kp/test/tick and POST /api/kp/test/seed-work — \
-             an on-demand run of the overnight / reconcile / report / probation loop and the \
-             backlog seeding it needs to have anything to dispatch, both gated on the {} scope",
+            "HEADLESS BRIDGE: serving POST /api/kp/test/tick, POST /api/kp/test/seed-work and \
+             POST /api/kp/test/retire — an on-demand run of the overnight / reconcile / report / \
+             probation loop, the backlog seeding it needs to have anything to dispatch, and the \
+             tenure end that lets a bench put a persona down again; all gated on the {} scope",
             personas_engine::headless::TEST_SCOPE
         );
         router
             .route("/api/kp/test/tick", post(kp_test_tick))
             .route("/api/kp/test/seed-work", post(kp_test_seed_work))
+            .route("/api/kp/test/retire", post(kp_test_retire))
     } else {
         router
     };
@@ -3696,6 +3698,209 @@ async fn kp_test_seed_work(
 }
 
 // =============================================================================
+// Headless bridge retirement (§13.11) — end a tenure over the bridge
+// =============================================================================
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpTestRetireBody {
+    /// The persona whose tenure ends. Required: a retirement that guessed its
+    /// target would be a retirement that puts down the wrong hire.
+    #[serde(default)]
+    persona_id: Option<String>,
+}
+
+/// What one retirement still has to do, decided **before** anything is written.
+///
+/// A tenure ends in two records, not one — the persona's lifecycle and the App
+/// master mandate the hire created — and they can already disagree (a mandate
+/// retired at probation review leaves the persona row untouched). Deciding both
+/// halves up front is what makes the route idempotent *per half* rather than
+/// per call: a second retire finishes whatever the first left, and answers
+/// `alreadyRetired` only when there was nothing left at all.
+#[derive(Debug, PartialEq, Eq)]
+struct RetirePlan {
+    /// The persona is not yet `archived`.
+    archive: bool,
+    /// A mandate record is linked to this persona and is not yet decided, so
+    /// the shared probation carry-out still owes it a `retired`.
+    carry_out_mandate: bool,
+}
+
+impl RetirePlan {
+    /// `None` for the mandate ⇒ this persona holds none (an ordinary hire, or
+    /// one whose mandate was already removed); `Some(false)` ⇒ it holds one
+    /// that is already decided. Neither is work.
+    fn decide(lifecycle: &str, mandate_open: Option<bool>) -> Self {
+        Self {
+            archive: lifecycle != PersonaLifecycle::Archived.as_str(),
+            carry_out_mandate: mandate_open.unwrap_or(false),
+        }
+    }
+
+    /// Nothing left to do in either record ⇒ the tenure was already over.
+    fn already_retired(&self) -> bool {
+        !self.archive && !self.carry_out_mandate
+    }
+}
+
+/// The DB half of [`kp_test_retire`], split out so it is reachable by a test
+/// without a Tauri `AppHandle`.
+///
+/// **Reuses** `personas::archive_persona` — the same repository function the
+/// `archive_persona` command calls — so a bridge retirement is the same archive
+/// a human performs: lifecycle `archived`, no cascade, system personas refused.
+/// Returns the refreshed persona, the plan that was decided, and the
+/// `dev_projects.id` of the linked mandate when there is one, which is what the
+/// caller hands to the shared probation carry-out.
+fn retire_persona_db(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<(Persona, RetirePlan, Option<String>), AppError> {
+    let persona = persona_repo::get_by_id(pool, persona_id)?;
+    // The hire record. `load_mandates` is one prefix query, and the mandate is
+    // keyed by project — so the persona is found by scanning, not by guessing a
+    // key from an id it does not own.
+    let mandate = personas_engine::app_master::load_mandates(pool)
+        .into_iter()
+        .find(|(_, record)| record.persona_id == persona_id);
+    let plan = RetirePlan::decide(
+        &persona.lifecycle,
+        mandate
+            .as_ref()
+            .map(|(_, record)| record.probation_decided_at.is_none()),
+    );
+    let persona = if plan.archive {
+        persona_repo::archive_persona(pool, persona_id)?
+    } else {
+        persona
+    };
+    Ok((persona, plan, mandate.map(|(project_id, _)| project_id)))
+}
+
+/// `POST /api/kp/test/retire` — end one persona's tenure.
+///
+/// Same gating as [`kp_test_tick`] and [`kp_test_seed_work`]: the route exists
+/// only while `personas_engine::headless::enabled()` (so with the mode off it
+/// 404s rather than 403s), and `authorize` demands `personas:test` for the whole
+/// `/api/kp/test/` prefix.
+///
+/// **Why the bridge needs it.** The 2026-08 App-master sweeps left 100+ personas
+/// behind because nothing could put one down again: hiring was reachable over
+/// the bridge and retiring was not, so every bench run added to the roster
+/// permanently. A tenure that cannot end is not a tenure.
+///
+/// **Two records, one shared meaning.** The persona is archived through the
+/// repository function the `archive_persona` command calls, and the linked App
+/// master mandate is ended through
+/// `reviews::apply_app_master_probation_decision` — the *same* carry-out a
+/// human's `retire` click and the headless probation sweep reach. So autopilot
+/// goes to `off`, the cadence triggers are disabled, the mandate records
+/// `retired`, the holder remembers it and kp is told, exactly as they would be
+/// on any other retirement. A second implementation of "what retiring means"
+/// is the bug this route deliberately does not write.
+///
+/// Idempotent per half: a persona already `archived` whose mandate is already
+/// decided answers `alreadyRetired: true` and writes nothing.
+async fn kp_test_retire(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<KpTestRetireBody>,
+) -> Response {
+    // Second gate. The route only exists while the mode is on, but a stale
+    // router is not a thing this handler is willing to assume.
+    if !personas_engine::headless::enabled() {
+        return err_json(StatusCode::NOT_FOUND, "not found").into_response();
+    }
+
+    let Some(persona_id) = body
+        .persona_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+    else {
+        return err_json(
+            StatusCode::BAD_REQUEST,
+            "`personaId` is required — retirement will not guess which tenure to end",
+        )
+        .into_response();
+    };
+
+    let pool = state.pool.clone();
+    let (persona, plan, mandate_project_id) = match retire_persona_db(&pool, &persona_id) {
+        Ok(v) => v,
+        Err(AppError::NotFound(msg)) => {
+            return err_json(StatusCode::NOT_FOUND, &format!("{msg} not found")).into_response()
+        }
+        // System-origin personas (the Director) cannot be archived. That is a
+        // refusal with a reason, not a 500.
+        Err(AppError::Validation(msg)) => {
+            return err_json(StatusCode::BAD_REQUEST, &msg).into_response()
+        }
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
+    };
+
+    // The mandate half, through the one carry-out every retirement goes through.
+    let mut mandate_carried_out = false;
+    if plan.carry_out_mandate {
+        if let Some(project_id) = mandate_project_id.as_deref() {
+            let app_state = state.app.state::<Arc<crate::AppState>>();
+            mandate_carried_out =
+                crate::commands::design::reviews::apply_app_master_probation_decision(
+                    &app_state,
+                    crate::commands::design::reviews::ProbationCarryOut {
+                        project_id,
+                        decision: "retired",
+                        note: Some(format!(
+                        "retired over the headless test bridge by `{}`; autopilot off and cadence \
+                         triggers disabled",
+                        personas_engine::headless::ACTOR
+                    )),
+                        // Nothing about a bridge retirement is a probation
+                        // extension, so the streak is left exactly as it stands.
+                        headless_incomplete_streak: None,
+                        // There deliberately is no review row: this decision was
+                        // not raised, it was requested.
+                        review_id: None,
+                        // No backbone was read. `None` is written as *no verdict
+                        // recorded* — never as a pass.
+                        verdict: None,
+                        unmeasured: &[],
+                    },
+                );
+        }
+    }
+
+    tracing::warn!(
+        persona_id = %persona.id,
+        project_id = mandate_project_id.as_deref(),
+        already_retired = plan.already_retired(),
+        actor = personas_engine::headless::ACTOR,
+        "HEADLESS BRIDGE: retiring a persona with NO human in the loop"
+    );
+
+    ok_json(serde_json::json!({
+        "headlessBridge": true,
+        "actor": personas_engine::headless::ACTOR,
+        "personaId": persona.id,
+        "alreadyRetired": plan.already_retired(),
+        "lifecycle": persona.lifecycle,
+        "mandate": mandate_project_id.map(|project_id| serde_json::json!({
+            "projectId": project_id,
+            "decision": "retired",
+            // False when the mandate was already decided (nothing to do) or
+            // when the carry-out found no record to apply it to. A bench must
+            // be able to tell "ended just now" from "was already ended".
+            "carriedOut": mandate_carried_out,
+        })),
+        "note": "the persona is archived (no cascade — executions, memories and the violation ledger stay readable) and any linked App master mandate is ended through the same carry-out a probation `retire` reaches",
+    }))
+    .into_response()
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -4608,6 +4813,139 @@ mod tests {
             );
             let req: A2ARequest = serde_json::from_str(&raw).expect("parse");
             assert_eq!(req.method, method);
+        }
+    }
+
+    // =========================================================================
+    // POST /api/kp/test/retire (§13.11)
+    // =========================================================================
+
+    /// A fully-migrated pool — the retire path reads `personas` AND
+    /// `app_settings` (where the mandate lives), so the initial-schema-only
+    /// `test_pool` above is not enough.
+    fn retire_pool() -> DbPool {
+        crate::db::init_test_db().expect("migrated test db")
+    }
+
+    fn make_persona(pool: &DbPool, name: &str) -> Persona {
+        persona_repo::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "You are a test App master.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .expect("create persona")
+    }
+
+    fn make_mandate(pool: &DbPool, persona_id: &str, project_id: &str) {
+        let record = personas_engine::app_master::MandateRecord {
+            persona_id: persona_id.into(),
+            project_id: project_id.into(),
+            mandate: personas_engine::app_master::Mandate::default(),
+            probation_ends_at: "2026-09-30T00:00:00+00:00".into(),
+            hired_at: "2026-08-01T00:00:00+00:00".into(),
+            review_cadence_days: 30,
+            budget_monthly_usd: None,
+            retire_criteria: vec![],
+            probation_decided_at: None,
+            probation_decision: None,
+            probation_review_id: None,
+            headless_incomplete_streak: 0,
+        };
+        personas_engine::app_master::set_mandate(pool, &record).expect("set mandate");
+    }
+
+    #[test]
+    fn a_retire_plan_reads_both_records_and_only_then_calls_it_done() {
+        // Nothing done yet, and a mandate is open: both halves are work.
+        let fresh = RetirePlan::decide("active", Some(true));
+        assert_eq!(
+            fresh,
+            RetirePlan {
+                archive: true,
+                carry_out_mandate: true
+            }
+        );
+        assert!(!fresh.already_retired());
+
+        // Half-done in either direction is still NOT already retired — that is
+        // the state a probation `retire` (mandate only) and a hand-archive
+        // (persona only) each leave behind.
+        assert!(!RetirePlan::decide("archived", Some(true)).already_retired());
+        assert!(!RetirePlan::decide("active", Some(false)).already_retired());
+
+        // Archived, with the mandate decided (or with no mandate at all).
+        assert!(RetirePlan::decide("archived", Some(false)).already_retired());
+        assert!(RetirePlan::decide("archived", None).already_retired());
+    }
+
+    #[test]
+    fn retiring_archives_the_persona_and_the_second_call_is_a_no_op() {
+        let pool = retire_pool();
+        let persona = make_persona(&pool, "Bench App Master");
+        assert_eq!(persona.lifecycle, "active");
+
+        let (retired, plan, mandate) = retire_persona_db(&pool, &persona.id).expect("retire");
+        assert!(plan.archive, "an active persona has to be archived");
+        assert!(!plan.already_retired());
+        assert_eq!(retired.lifecycle, "archived");
+        assert_eq!(mandate, None, "this hire holds no App master mandate");
+
+        // Idempotent: the same call again writes nothing and says so, which is
+        // what lets a bench driver retry a retirement it is not sure landed.
+        let (again, plan, _) = retire_persona_db(&pool, &persona.id).expect("retire twice");
+        assert!(plan.already_retired(), "{plan:?}");
+        assert_eq!(again.lifecycle, "archived");
+    }
+
+    #[test]
+    fn retiring_reports_the_linked_mandate_until_it_is_decided() {
+        let pool = retire_pool();
+        let persona = make_persona(&pool, "Mandated App Master");
+        make_mandate(&pool, &persona.id, "proj-retire");
+
+        // The hire record is found by the persona it names, and it is open.
+        let (_, plan, mandate) = retire_persona_db(&pool, &persona.id).expect("retire");
+        assert_eq!(mandate.as_deref(), Some("proj-retire"));
+        assert!(
+            plan.carry_out_mandate,
+            "an undecided mandate is still owed a `retired` — archiving the persona alone \
+             would leave the roster claiming a live tenure"
+        );
+
+        // Once the carry-out has stamped the record terminal, a repeat retire
+        // has nothing left in EITHER record.
+        let mut record = personas_engine::app_master::get_mandate(&pool, "proj-retire").unwrap();
+        record.probation_decided_at = Some("2026-08-29T00:00:00+00:00".into());
+        record.probation_decision = Some("retired".into());
+        personas_engine::app_master::set_mandate(&pool, &record).unwrap();
+
+        let (_, plan, mandate) = retire_persona_db(&pool, &persona.id).expect("retire twice");
+        assert_eq!(mandate.as_deref(), Some("proj-retire"));
+        assert!(plan.already_retired(), "{plan:?}");
+    }
+
+    #[test]
+    fn retiring_an_unknown_persona_is_a_not_found() {
+        let pool = retire_pool();
+        match retire_persona_db(&pool, "no-such-persona") {
+            Err(AppError::NotFound(msg)) => assert!(msg.contains("no-such-persona"), "{msg}"),
+            other => panic!("expected NotFound, got {other:?}"),
         }
     }
 }

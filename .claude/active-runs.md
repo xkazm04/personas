@@ -2,6 +2,11 @@
 
 ## Active
 
+### kp-bench-retire-and-proposals — kp App-master bench: /api/kp/test/retire + proposals/declines on the overnight tick summary
+- **[2026-08-29 21:25]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/headless.rs` · `docs/architecture/cloud-integration-bridge.md` · `docs/api/management-api.openapi.yaml`
+- **Status:** started
+
 - **[2026-08-29 17:34]**
 - **Paths:** `src/features/agents/quick-answer/triage/deck/**` · `src/features/agents/quick-answer/triage/__tests__/**` · `src/i18n/locales/**` · `src/features/agents/quick-answer/DESIGN.md`
 - **Status:** started
