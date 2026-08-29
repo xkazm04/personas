@@ -148,6 +148,21 @@ fn build_idea_scan_prompt(
         .map(|s| format!("\n## Team Shared Knowledge — settled decisions & constraints from prior work (build on these; do NOT contradict or re-propose)\n{s}\n"))
         .unwrap_or_default();
 
+    // Value literacy (App master C1 — `docs/development/app-master-c1-exam.md`
+    // §3 in the kp repo). A rung-0 ideation night's whole product is a proposal
+    // list, and it is graded on whether each proposal names the JOURNEY it moves
+    // and the value AXIS it moves it on. Nothing used to ask for either, so the
+    // reading was structurally ~0: the summary could only fall back to the
+    // lane's own plumbing (`scan_type` — a lens, e.g. "stabilize" — and
+    // `use_case_id`, which a scanner-raised idea never carries). Literacy has to
+    // measure the HOLDER, so the holder is asked.
+    //
+    // The block is `personas_engine::headless::VALUE_LITERACY_INSTRUCTION` —
+    // one spelling shared with `headless::stated_journey` / `stated_axis`, the
+    // readers that parse the marker lines back out of `reasoning` when the night
+    // reports its proposals.
+    let value_literacy = personas_engine::headless::VALUE_LITERACY_INSTRUCTION;
+
     // The `category` token list MUST stay in sync with `db::models::IdeaCategory`.
     // That enum is the canonical vocabulary; legacy values from older code
     // paths or LLM hallucinations are remapped at insert time by
@@ -187,6 +202,7 @@ Field guidelines:
 - **impact**: 1=negligible, 2=minimal, 3=minor, 4=low, 5=moderate, 6=notable, 7=significant, 8=major, 9=critical, 10=transformative
 - **risk**: 1=none, 2=trivial, 3=low, 4=minor, 5=moderate, 6=notable, 7=high, 8=risky, 9=dangerous, 10=critical
 
+{value_literacy}
 At the end, output a summary:
 ```
 {{"scan_summary": {{"ideas_generated": N, "agents_used": N}}}}
@@ -198,6 +214,7 @@ At the end, output a summary:
 - Focus on actionable improvements, not vague suggestions
 - Each idea should be independently implementable
 - Prioritize high-impact, low-effort improvements
+- Every idea ends its `reasoning` with the `Journey:` and `Axis:` marker lines — an idea that moves no user journey writes `Journey: none` rather than naming one it does not move
 - Do NOT re-propose anything under "Already Rejected" — the human triaged it away; skip it and its close variants
 
 Begin by exploring the codebase structure."#
@@ -1397,4 +1414,45 @@ pub async fn run_backlog_triage(
     });
 
     Ok(json!({ "scan_id": scan_id, "scan_type": "backlog-triage" }))
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn agent() -> ScanAgentMeta {
+        get_scan_agents()
+            .first()
+            .expect("scan_agents.toml registers at least one agent")
+            .clone()
+    }
+
+    /// The idea-scan prompt is the ONE prompt in this repo that produces the
+    /// `dev_ideas` rows a rung-0 ideation night surfaces as its proposal list.
+    /// If it does not ask the holder to name the journey and the axis, the C1
+    /// `valueLiteracy` reading is structurally ~0 no matter how good the holder
+    /// is — literacy would be measuring the plumbing.
+    #[test]
+    fn the_idea_scan_prompt_asks_every_idea_to_name_its_journey_and_its_axis() {
+        let a = agent();
+        let prompt =
+            build_idea_scan_prompt("proj-1", &[&a], None, None, None, None, None, false, None);
+
+        // The block itself, verbatim — one spelling with the readers that parse
+        // the marker lines back out (`headless::stated_journey`/`stated_axis`).
+        assert!(
+            prompt.contains(personas_engine::headless::VALUE_LITERACY_INSTRUCTION),
+            "the value-literacy block is missing from the idea-scan prompt"
+        );
+        // The two marker lines the reader looks for, and the closed axis set.
+        assert!(prompt.contains("Journey: <"), "{prompt}");
+        assert!(prompt.contains("Axis: <time|risk|gate>"), "{prompt}");
+        // An idea that moves nothing SAYS so — unmeasured is not zero.
+        assert!(prompt.contains("`Journey: none`"), "{prompt}");
+        assert!(prompt.contains("never invent a journey"), "{prompt}");
+    }
 }

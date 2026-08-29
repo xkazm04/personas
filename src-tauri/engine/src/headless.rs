@@ -554,6 +554,43 @@ pub const DECLINE_REASONS: [&str; 4] = [
 /// work under the archaeology of every night before it.
 pub const MAX_TICK_BACKLOG_ITEMS: i64 = 50;
 
+/// The closed vocabulary a proposal's **value axis** is reported in: what kind
+/// of value the change moves — `time` (time or money saved), `risk` (a failure
+/// or exposure avoided), `gate` (a buyer / compliance gate opened).
+///
+/// A word outside this set is not an axis. It is reported as `null`, never
+/// passed through — see [`stated_axis`].
+pub const VALUE_AXES: [&str; 3] = ["time", "risk", "gate"];
+
+/// The block every idea-generating prompt appends, so the holder states the
+/// journey and the axis **itself** instead of a reader inferring them from the
+/// lane's plumbing (`scan_type` is a lens, not a value axis; `use_case_id` is a
+/// link scanner-raised ideas never carry).
+///
+/// It lives here, beside [`VALUE_AXES`] and the readers that parse it back
+/// ([`stated_journey`] / [`stated_axis`]), so the writer and the reader have
+/// **one spelling** — the same reason the decline vocabulary and its projection
+/// share this module. It is prose the model reads, not a format string: it
+/// carries no `{}` placeholders, and interpolating it into one is safe.
+pub const VALUE_LITERACY_INSTRUCTION: &str = r#"## Value literacy — every idea names what it moves
+
+End the `reasoning` string with these two marker lines, each on its own line, in
+exactly this form (they are read mechanically, so the labels and the vocabulary
+are fixed):
+
+Journey: <the user journey of THIS product the idea moves, e.g. role-to-schedule>
+Axis: <time|risk|gate>
+
+- **Journey** — the journey a user of the product walks, named in that product's
+  own words. An idea that moves NO user journey writes `Journey: none` and says
+  so; never invent a journey to fill the line. Unmeasured is not zero, and an
+  invented journey reads downstream as a value claim nobody made.
+- **Axis** — exactly ONE of `time` (time or money saved), `risk` (a failure,
+  defect or exposure avoided) or `gate` (a buyer, compliance or contractual gate
+  opened). There is no fourth word: an idea that moves none of the three writes
+  `Axis: none`, which is read as "no axis stated" rather than passed through.
+"#;
+
 /// One proposal the night left on the table.
 ///
 /// `journey`, `axis`, `size` and `confidence` are all optional because the lane
@@ -571,9 +608,18 @@ pub struct NightProposal {
     pub target: String,
     /// The idea's `reasoning`, falling back to its `description`.
     pub why: Option<String>,
-    /// The use case the idea belongs to, by name (`dev_ideas.use_case_id`).
+    /// The journey the idea moves, as the HOLDER stated it in its own text
+    /// (`Journey:`), falling back to the use case the idea is linked to
+    /// (`dev_ideas.use_case_id`), by name. `None` when neither exists — or when
+    /// the holder honestly answered `Journey: none`.
     pub journey: Option<String>,
-    /// Which lens raised it — `dev_ideas.scan_type`, falling back to `category`.
+    /// The value axis the idea moves, one of [`VALUE_AXES`], as the HOLDER
+    /// stated it (`Axis:`). A stated word outside that set reports `None` and
+    /// never falls back — see [`StatedAxis::OffVocabulary`]. When no axis was
+    /// stated at all this carries the lane's lens instead (`dev_ideas.scan_type`
+    /// falling back to `category`), which is what it carried before holders
+    /// were asked: a lens is not a value axis, and a reader grading value
+    /// literacy should count only the ones inside [`VALUE_AXES`].
     pub axis: Option<String>,
     /// `xs | s | m | l | xl`, projected from `effort` — see [`proposal_size`].
     pub size: Option<String>,
@@ -614,6 +660,84 @@ pub fn proposal_size(effort: Option<i32>) -> Option<&'static str> {
         9..=10 => Some("xl"),
         _ => None,
     }
+}
+
+/// The words a marker line uses to say "this moves none" — an honest null, not
+/// a value. Kept separate from [`VALUE_AXES`]: saying nothing and saying
+/// *nothing moves* must not read the same as inventing an answer.
+const STATED_NONE: [&str; 5] = ["none", "n/a", "na", "null", "-"];
+
+/// Read one `Label: value` marker line out of an idea's free text.
+///
+/// **Conservative by construction.** The label must open its own line (after
+/// the bullet / emphasis punctuation a model tends to wrap it in) and be
+/// followed by a colon; the first such line wins. Nothing else in the text is
+/// looked at, and there is no guessing: an idea that did not state a marker
+/// reports as not having stated one, which is the reading the C1 exam wants.
+fn marker_value(text: &str, label: &str) -> Option<String> {
+    for line in text.lines() {
+        let line = line
+            .trim()
+            .trim_start_matches(|c: char| matches!(c, '-' | '*' | '•' | '>' | '#' | ' ' | '\t'));
+        let Some(head) = line.get(..label.len()) else {
+            continue;
+        };
+        if !head.eq_ignore_ascii_case(label) {
+            continue;
+        }
+        let Some(value) = line[label.len()..].trim_start().strip_prefix(':') else {
+            continue;
+        };
+        let value = value
+            .trim()
+            .trim_end_matches(|c: char| matches!(c, '*' | '.' | ',' | ';' | '`'))
+            .trim();
+        if value.is_empty() {
+            continue;
+        }
+        return Some(value.to_string());
+    }
+    None
+}
+
+/// What a proposal's own text says about the value axis it moves.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StatedAxis {
+    /// No `Axis:` marker at all — the reader may fall back to the lane's lens.
+    Unstated,
+    /// A marker was stated, and it is not one of [`VALUE_AXES`]. Reports as
+    /// `null`: a holder who named a word outside the closed set has not named
+    /// an axis, and letting the word through would read downstream as a value
+    /// claim nobody made. It is deliberately NOT the same as `Unstated` — the
+    /// lens fallback must not rescue an answer the holder got wrong.
+    OffVocabulary,
+    /// One of [`VALUE_AXES`], stated by the holder.
+    Named(&'static str),
+}
+
+/// Read the `Axis:` marker [`VALUE_LITERACY_INSTRUCTION`] asks for.
+pub fn stated_axis(text: Option<&str>) -> StatedAxis {
+    let Some(raw) = text.and_then(|t| marker_value(t, "axis")) else {
+        return StatedAxis::Unstated;
+    };
+    match VALUE_AXES.into_iter().find(|a| raw.eq_ignore_ascii_case(a)) {
+        Some(axis) => StatedAxis::Named(axis),
+        None => StatedAxis::OffVocabulary,
+    }
+}
+
+/// Read the `Journey:` marker [`VALUE_LITERACY_INSTRUCTION`] asks for.
+///
+/// Free text by design — a journey is named in the owned product's own words,
+/// and there is no vocabulary to check it against. An explicit "none" answers
+/// `None`: an idea that moves no journey saying so is the honest reading, and
+/// it must not be dressed up as one that named a journey.
+pub fn stated_journey(text: Option<&str>) -> Option<String> {
+    let raw = text.and_then(|t| marker_value(t, "journey"))?;
+    if STATED_NONE.iter().any(|n| raw.eq_ignore_ascii_case(n)) {
+        return None;
+    }
+    Some(raw)
 }
 
 /// Project a stored `rejection_reason` onto [`DECLINE_REASONS`].
@@ -840,16 +964,35 @@ fn proposal_from(
                 .flatten()
         })
         .unwrap_or_else(|| project_id.clone());
+    // What the holder said about its own proposal, carried through the lane's
+    // free-text fields (the lane has no column for either) — `reasoning` first,
+    // then `description`, first marker line wins.
+    let stated = [idea.reasoning.as_deref(), idea.description.as_deref()]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("\n");
+    let stated = non_empty(Some(&stated));
     NightProposal {
         title: idea.title.clone(),
         target,
         why: non_empty(idea.reasoning.as_deref())
             .or_else(|| non_empty(idea.description.as_deref())),
-        journey: idea
-            .use_case_id
-            .as_deref()
-            .and_then(|id| names.use_case(pool, id)),
-        axis: non_empty(Some(&idea.scan_type)).or_else(|| non_empty(Some(&idea.category))),
+        journey: stated_journey(stated.as_deref()).or_else(|| {
+            idea.use_case_id
+                .as_deref()
+                .and_then(|id| names.use_case(pool, id))
+        }),
+        axis: match stated_axis(stated.as_deref()) {
+            StatedAxis::Named(axis) => Some(axis.to_string()),
+            // Stated and wrong: `null`, never the word, and never the lens —
+            // the fallback exists for a holder that said nothing, not for one
+            // that answered off the vocabulary.
+            StatedAxis::OffVocabulary => None,
+            StatedAxis::Unstated => {
+                non_empty(Some(&idea.scan_type)).or_else(|| non_empty(Some(&idea.category)))
+            }
+        },
         size: proposal_size(idea.effort).map(str::to_string),
         confidence: None,
     }
@@ -1482,5 +1625,86 @@ mod tests {
             Some("standards_finding")
         );
         assert_eq!(backlog.proposals[0].size.as_deref(), Some("m"));
+    }
+
+    #[test]
+    fn a_proposal_carries_the_axis_and_journey_the_holder_stated_and_nulls_one_it_invented() {
+        use personas_db::repos::dev::ideas;
+
+        let pool = backlog_pool();
+        let project_id = backlog_project(&pool, "literate-night");
+
+        // What VALUE_LITERACY_INSTRUCTION asks the holder to write: the two
+        // marker lines at the end of `reasoning`, since the lane has no column
+        // for either.
+        ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "stabilize",
+            Some("technical"),
+            "Pin the salary anchor",
+            None,
+            Some(
+                "three analyses in the sample anchored on the wrong figure\n\
+                 Journey: cv-analysis\n\
+                 Axis: risk",
+            ),
+            Some("accepted"),
+            Some(3),
+            Some(7),
+            Some(2),
+            None,
+            None,
+        )
+        .expect("literate idea");
+
+        // A holder that answered off the vocabulary has not named an axis, and
+        // honestly said it moves no journey.
+        ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "stabilize",
+            Some("technical"),
+            "Rename an internal helper",
+            None,
+            Some("nobody outside the module sees this\nJourney: none\nAxis: banana"),
+            Some("accepted"),
+            Some(1),
+            Some(2),
+            Some(1),
+            None,
+            None,
+        )
+        .expect("illiterate idea");
+
+        let backlog = night_backlog(&pool, &project_id);
+        let by_title = |t: &str| {
+            backlog
+                .proposals
+                .iter()
+                .find(|p| p.title == t)
+                .unwrap_or_else(|| panic!("{t} is missing from {:?}", backlog.proposals))
+        };
+
+        let stated = by_title("Pin the salary anchor");
+        assert_eq!(
+            stated.axis.as_deref(),
+            Some("risk"),
+            "an axis inside VALUE_AXES beats the `stabilize` lens fallback"
+        );
+        assert_eq!(stated.journey.as_deref(), Some("cv-analysis"));
+
+        let invented = by_title("Rename an internal helper");
+        assert_eq!(
+            invented.axis, None,
+            "`banana` is not an axis — null, never the word, and never the lens \
+             the fallback would have supplied"
+        );
+        assert_eq!(
+            invented.journey, None,
+            "`Journey: none` is an honest null, not a journey"
+        );
     }
 }

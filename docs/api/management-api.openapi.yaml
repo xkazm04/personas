@@ -324,8 +324,8 @@ paths:
                               title: { type: string }
                               target: { type: string, description: "The context's name, else the project's, else its id. Never blank." }
                               why: { type: [string, "null"], description: "`reasoning`, falling back to `description`." }
-                              journey: { type: [string, "null"], description: The use case named by `use_case_id`. }
-                              axis: { type: [string, "null"], description: "`scan_type`, falling back to `category`." }
+                              journey: { type: [string, "null"], description: "The journey the holder itself named in the idea's `Journey:` marker line, else the use case named by `use_case_id`. An honest `Journey: none` reports null." }
+                              axis: { type: [string, "null"], description: "The value axis the holder itself named in the idea's `Axis:` marker line — one of `time`, `risk`, `gate`; a word outside that set reports null and never falls back. When no axis was stated: `scan_type`, falling back to `category` (a lens, not a value axis)." }
                               size: { type: [string, "null"], enum: [xs, s, m, l, xl, null], description: Folded from `effort` along the emitter's 1..=10 ladder. }
                               confidence: { type: "null", description: "Always null — the backlog records no confidence, and unmeasured is not zero." }
                         declines:

@@ -1670,7 +1670,9 @@ is the second gate, not the first.
       // §13.12 — overnight ONLY, and always present, `[]` included
       "proposals": [ { "title": "Close the decode seam", "target": "Decode seam",
                        "why": "two call sites already disagree",
-                       "journey": "Role to schedule", "axis": "stabilize",
+                       // §13.12.1 — both as the holder itself stated them; an
+                       // idea that stated neither falls back to the lane's lens
+                       "journey": "role-to-schedule", "axis": "risk",
                        "size": "s", "confidence": null } ],
       "declines":  [ { "title": "Rewrite the renderer", "reason": "outside-mandate" } ],
       "errors": [] },
@@ -2189,8 +2191,8 @@ two lists **are** the reading.
 "proposals": [ { "title": "…",           // dev_ideas.title
                  "target": "…",          // the context's name, else the project's, else its id
                  "why": "…",             // reasoning, falling back to description
-                 "journey": "…",         // the use case named by use_case_id
-                 "axis": "…",            // scan_type, falling back to category
+                 "journey": "…",         // the holder's own `Journey:` marker, else the use case named by use_case_id
+                 "axis": "…",            // the holder's own `Axis:` (time|risk|gate); else scan_type, falling back to category
                  "size": "xs|s|m|l|xl",  // folded from effort
                  "confidence": null } ],
 "declines":  [ { "title": "…",
@@ -2232,6 +2234,53 @@ that never looks at a backlog must not report an empty one.
 from them would be inventing a number. The field exists so the absence is
 *stated* — unmeasured is not zero, the doctrine both repos share.
 
+#### 13.12.1 Value literacy — the holder names the journey and the axis (2026-08-29)
+
+kp's C1 exam grades a night on **`valueLiteracy`**: the fraction of proposals
+that name the journey they move and the value axis they move it on. As first
+shipped that reading was structurally ~0, and no amount of holder skill could
+change it — `journey` came from `use_case_id`, which a scanner-raised idea never
+carries, and `axis` came from `scan_type`, which is a *lens* (`"stabilize"`), not
+a value axis. Literacy has to measure the **holder**, so the holder is asked.
+
+**Where the ask lives.** `personas_engine::headless::VALUE_LITERACY_INSTRUCTION`
+— appended to the idea-scan prompt (`idea_scanner.rs::build_idea_scan_prompt`),
+which is the one prompt in this repo that produces the `dev_ideas` rows a rung-0
+night surfaces as its proposal list. It asks every idea to end its `reasoning`
+with two marker lines:
+
+```
+Journey: <the user journey of THIS product the idea moves, e.g. role-to-schedule>
+Axis: <time|risk|gate>
+```
+
+The constant lives beside the readers that parse it back
+(`headless::stated_journey` / `stated_axis`) so the writer and the reader have
+one spelling — the same reason the decline vocabulary sits next to its
+projection.
+
+**Where they are stored: the lane's free text.** `dev_ideas` has no column for
+either, and the two that come closest are already spoken for (`evidence` is the
+verification probe's baseline; `use_case_id` is an FK-free link to a *catalogued*
+use case, which a free-text journey name is not). So the markers ride in
+`reasoning`, exactly as kp's exam §8 prescribes, and the read is deliberately
+**conservative**: `headless::marker_value` matches only a line that *opens* with
+the label and a colon, first line wins, and nothing else in the text is looked
+at. There is no guessing — an idea that stated no marker reports as one that
+stated no marker.
+
+**How the summary resolves each field.**
+
+| field | stated by the holder | nothing stated |
+| --- | --- | --- |
+| `journey` | the marker's text, verbatim. `Journey: none` (or `n/a`/`null`/`-`) is an **honest null** and reports `null` — an idea that moves no journey saying so is the reading, not a gap to be filled | the linked use case's name, as before |
+| `axis` | the word when it is one of `headless::VALUE_AXES` = `time \| risk \| gate`; **any other word reports `null`** and never falls back — a holder who answered `banana` has not named an axis, and the lens fallback must not rescue a wrong answer | `scan_type` falling back to `category`, exactly as before |
+
+The lens fallback is kept rather than removed: it is what the field carried
+before holders were asked, and a reader grading literacy counts only the values
+inside `VALUE_AXES`, so a `"stabilize"` in that slot reads as *not literate* —
+which is the truth about that idea.
+
 #### Tests
 
 `personas-engine`, `headless` (5): the reason map projects only what can mean one
@@ -2240,7 +2289,17 @@ ladder folds and refuses out-of-range; a project with no ideas reports two lists
 that are **empty, not missing** (asserted through serde, not through the struct);
 a populated backlog reports the ideas themselves with a rejected one appearing as
 a decline and never as a proposal; and an idea that names a context and a use case
-reports them as `target` and `journey`.
+reports them as `target` and `journey`. §13.12.1 adds a sixth
+(`a_proposal_carries_the_axis_and_journey_the_holder_stated_and_nulls_one_it_invented`):
+an idea whose `reasoning` carries `Axis: risk` / `Journey: cv-analysis` reports
+those instead of the `stabilize` lens, and one carrying `Axis: banana` /
+`Journey: none` reports `null` for both.
+
+`app_lib`, `commands::infrastructure::idea_scanner` (1):
+`the_idea_scan_prompt_asks_every_idea_to_name_its_journey_and_its_axis` — the
+assembled idea-scan prompt contains `VALUE_LITERACY_INSTRUCTION` verbatim, both
+marker lines, the closed axis set and the "say `none` rather than invent one"
+rule.
 
 `app_lib`, `engine::management_api` (3): an overnight summary always carries both
 keys and leaves `counts` / `details` / `errors` exactly as they were; a populated
