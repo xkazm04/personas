@@ -14,3 +14,4 @@
 {"ts": "2026-08-27T22:37:42.059717Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["read-batching", "typed-accessors", "key-registry", "settings-audit-and-history"], "deviations": 4}
 {"ts": "2026-08-27T22:37:42.059717Z", "bundle": "software-engineering", "subjects": ["sql-console", "markdown-vault", "browser-credential-boundary"], "techniques": ["safe-mode-guarding", "introspection-architecture", "dialect-capability-declaration", "editor-ergonomics", "result-fidelity", "nl-assist-gating"], "deviations": 6}
 {"ts": "2026-08-27T22:37:42.059717Z", "bundle": "software-engineering", "subjects": ["import-normalization"], "techniques": ["format-detection", "import-validation", "intermediate-representation", "lossy-conversion-disclosure"], "deviations": 8}
+{"ts":"2026-08-29T13:05:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":3}
