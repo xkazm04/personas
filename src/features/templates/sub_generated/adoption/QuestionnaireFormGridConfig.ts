@@ -5,14 +5,25 @@
  *   - Animation variants shared across the grid
  *   - groupByCategory helper
  */
-import { Settings2, KeyRound, ShieldCheck, Brain, Bell, Globe, Gauge } from 'lucide-react';
+import { Settings2, KeyRound, ShieldCheck, ShieldAlert, Brain, Bell, Globe, Gauge } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { QuestionnaireCategory } from './questionnaireCategoryOrder';
 
 // ---------------------------------------------------------------------------
 // Category meta
 // ---------------------------------------------------------------------------
 
 /*
+ * `satisfies Record<QuestionnaireCategory, …>` is load-bearing, and is the same
+ * conversion `questionnaire/questionnaireGlyphRow.ts:45-54` already made: it
+ * turns a category added to QUESTIONNAIRE_CATEGORY_ORDER but forgotten here
+ * into a COMPILE ERROR. Without it this was an open `Record<string, …>`, the
+ * omission was unrepresentable as an error, and `boundaries` sat missing — its
+ * questions rendered under the 'Other' fallback with the Configuration glyph
+ * and nothing said so. The exported view stays widened to `string` keys because
+ * callers index it with `question.category`, a free-form value off the template
+ * payload; an unknown category still lands on FALLBACK_CATEGORY.
+ *
  * Theme-safe accent choices:
  *   - `text-*-400` classes have a project-wide [data-theme^="light"]
  *     override in globals.css that bumps them to their 600/700
@@ -21,10 +32,15 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
  *   - Borders route through the neutral `border` token so they stay
  *     soft across every theme without per-hue overrides to maintain.
  */
-export const CATEGORY_META: Record<
-  string,
-  { label: string; Icon: React.ComponentType<{ className?: string }>; color: string; bg: string; border: string }
-> = {
+interface CategoryMeta {
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+const CATEGORY_META_BY_CATEGORY = {
   credentials:       { label: 'Credentials',       Icon: KeyRound,    color: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-border' },
   configuration:     { label: 'Configuration',     Icon: Settings2,   color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-border' },
   human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck, color: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-border' },
@@ -32,7 +48,10 @@ export const CATEGORY_META: Record<
   notifications:     { label: 'Notifications',     Icon: Bell,        color: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-border' },
   domain:            { label: 'Domain',            Icon: Globe,       color: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-border' },
   quality:           { label: 'Quality',           Icon: Gauge,       color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-border' },
-};
+  boundaries:        { label: 'Boundaries',        Icon: ShieldAlert, color: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-border' },
+} satisfies Record<QuestionnaireCategory, CategoryMeta>;
+
+export const CATEGORY_META: Record<string, CategoryMeta> = CATEGORY_META_BY_CATEGORY;
 
 export const FALLBACK_CATEGORY = {
   label: 'Other',
