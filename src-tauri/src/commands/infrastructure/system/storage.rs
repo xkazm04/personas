@@ -225,7 +225,7 @@ pub fn prune_storage(
 #[cfg(test)]
 mod prune_tests {
     use super::*;
-    use crate::db::init_test_db;
+    use crate::db::{init_test_db, PoolExt};
 
     fn seed(conn: &rusqlite::Connection) {
         conn.execute(
@@ -267,7 +267,7 @@ mod prune_tests {
     #[test]
     fn dry_run_sees_the_cascade_and_deletes_nothing() {
         let pool = init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("storage::prune_tests").unwrap();
         seed(&conn);
         let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
 
@@ -290,7 +290,7 @@ mod prune_tests {
     #[test]
     fn act_receipt_matches_the_dry_run_prediction() {
         let pool = init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("storage::prune_tests").unwrap();
         seed(&conn);
         let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
 

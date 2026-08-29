@@ -617,7 +617,7 @@ mod tests {
 
     fn vec_pool_with_stand_ins() -> UserDbPool {
         let pool = init_test_user_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("memory_reaper::tests").unwrap();
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS persona_memory_embedding (
                  memory_id TEXT, embedding BLOB);
@@ -631,7 +631,7 @@ mod tests {
     }
 
     fn seed_vector(pool: &UserDbPool, memory_id: &str) {
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("memory_reaper::tests").unwrap();
         conn.execute(
             "INSERT INTO persona_memory_embedding (memory_id, embedding) VALUES (?1, x'00')",
             params![memory_id],
@@ -646,7 +646,7 @@ mod tests {
     }
 
     fn vector_rows(pool: &UserDbPool, memory_id: &str) -> i64 {
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("memory_reaper::tests").unwrap();
         conn.query_row(
             "SELECT (SELECT COUNT(*) FROM persona_memory_embedding WHERE memory_id = ?1)
                   + (SELECT COUNT(*) FROM persona_memory_embedding_meta WHERE memory_id = ?1)",
@@ -702,7 +702,7 @@ mod tests {
     }
 
     fn ledger_row(pool: &DbPool, id: &str) -> Option<LedgerRow> {
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("memory_reaper::tests").unwrap();
         ensure_ledger_table(&conn).unwrap();
         pending_rows(&conn, 10_000)
             .unwrap()
@@ -713,7 +713,7 @@ mod tests {
     #[test]
     fn record_owed_upserts_and_resolve_empties() {
         let pool = init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("memory_reaper::tests").unwrap();
         record_owed(&conn, &[("m1".into(), Some("First".into()))]).unwrap();
         // Re-record merges rather than duplicates.
         record_owed(&conn, &[("m1".into(), None)]).unwrap();
@@ -791,7 +791,7 @@ mod tests {
         let gone = "gone-memory-id".to_string();
         seed_vector(&vec_pool, &gone);
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.conn("memory_reaper::tests").unwrap();
             record_owed(
                 &conn,
                 &[(alive.clone(), None), (gone.clone(), Some("Gone".into()))],
