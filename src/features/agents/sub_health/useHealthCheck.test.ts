@@ -67,6 +67,16 @@ describe('computeHealthScore', () => {
     );
   });
 
+  it('does not score an undetermined sub-check against the persona', () => {
+    // `undetermined` means the check could not run. Charging the persona for
+    // the prober's own outage is the collapse this verdict exists to prevent,
+    // and the type system cannot catch it: nothing switches exhaustively on
+    // severity, so this assertion is the only guard.
+    const { value, grade } = computeHealthScore([issue('undetermined'), issue('undetermined')]);
+    expect(value).toBe(HEALTH_SCORING.maxScore);
+    expect(grade).toBe('healthy');
+  });
+
   it('ignores resolved issues', () => {
     const { value, grade } = computeHealthScore([issue('error', true), issue('warning', true)]);
     expect(value).toBe(HEALTH_SCORING.maxScore);

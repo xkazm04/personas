@@ -176,12 +176,17 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
   let totalErrors = 0;
   let totalWarnings = 0;
   let totalInfos = 0;
+  let totalUndetermined = 0;
 
   for (const check of checks) {
     for (const issue of check.result.issues) {
+      // Explicit per-severity branches, not an `else` tail: the tail is how a
+      // fourth verdict gets laundered into the third one. `undetermined` says
+      // a sub-check could not run, so it belongs to no persona-facing count.
       if (issue.severity === 'error') totalErrors++;
       else if (issue.severity === 'warning') totalWarnings++;
-      else totalInfos++;
+      else if (issue.severity === 'info') totalInfos++;
+      else if (issue.severity === 'undetermined') totalUndetermined++;
     }
   }
 
@@ -196,6 +201,7 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
     errorCount: totalErrors,
     warningCount: totalWarnings,
     infoCount: totalInfos,
+    undeterminedCount: totalUndetermined,
   };
 }
 
