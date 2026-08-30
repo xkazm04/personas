@@ -109,6 +109,29 @@ Discovered in `/research` run 2026-06-03 (headroom → Fleet token optimization)
 - **Token surface is OBSERVED, not controlled.** Fleet doesn't build the interactive CLI's prompt — it reads the resulting JSONL transcript (`commands/fleet/transcript_read.rs`) into a compact rollup (`FleetTranscriptSummary`: token totals incl. cache read/write + `last_context_tokens`, folded incrementally via `ingest_delta` so N sessions never re-parse multi-MB files). So personas-side token optimization for Fleet is either (a) observe + nudge the user (the 2026-06-03 `FleetTokenSummaryBar` aggregate + `FleetContextPill` inline `/compact` action), or (b) intercept the CLI↔Anthropic traffic via a proxy (deferred — see [[Research/2026-06-03-headroom-fleet-token-optimization]]). `CONTEXT_BLOAT_TOKENS = 150_000` in `transcript_read.rs` mirrors `FleetContextPill`'s red threshold.
 - **Per-session MCP:** `build_mcp_spawn` writes a per-session `mcp.json` wiring the spawned `claude` to the in-app Athena MCP endpoint (`http://127.0.0.1:<local_http port>/mcp/rpc`) with a per-session token header. This is the natural attachment point for any future cross-CLI shared-context tool.
 
+### Channel follow-up loops: message → execution → reply row (Lane B + team summon)
+
+Added in `/research` run 2026-08-30 (Grok bot popularity compare). Two in-app
+conversational loops dispatch through `execute_persona_inner` with
+`input_data.source = "channel"` (which also tells `dispatch.rs::chat_lane_owned_externally`
+the waiter owns the chat lane — dispatch must not double-post):
+
+- **Persona channel (Lane B):** `commands/communication/persona_channel.rs::post_persona_channel_message`
+  → `run_channel_followup` — reply row into `team_channel_messages` (persona-sentinel scope).
+- **Team channel summon:** `commands/teams/team_channel.rs::post_team_directive` — an
+  `@Persona Name` mention (case-insensitive vs team member names, cap 3) stores the
+  directive with `consumer='mention'` (the schema's documented routes-to-an-actor value,
+  unimplemented until this run) and spawns `run_summon_followup` per mentioned member;
+  the reply lands as `author_kind='persona'`, `consumer='display'`, threaded under the
+  directive. Mention-free posts keep the original whole-team `consumer='inject'`
+  step-boundary delivery (an idle team answers nothing — by design for that path).
+
+Both attach a **live-context block** from `engine/src/channel_live_context.rs`
+(bounded JSON: recent executions, bus events, active team assignments) so channel
+replies are situated in current app state, not chat history alone. Findings about
+"channel replies ignore X" anchor there; findings about mention grammar anchor at
+`mentioned_members` in `team_channel.rs`.
+
 **Codex provider was removed (2026-04-27).** Earlier versions of this doc said `engine/provider/codex.rs::build_execution_args` builds Codex args independently. That file no longer exists; only ClaudeProvider remains. CLI-flag changes only need to be evaluated for Claude Code applicability — there is no second provider to coordinate with. If Codex (or any new CLI engine) is re-introduced, sibling providers would need their own `build_execution_args` impl that does NOT call `prompt::build_cli_args` (since that funnel pins Claude-specific flags like `--effort`).
 
 ### Lifecycle hooks: `hooks_sidecar.rs` is narrow (Claude Code's NATIVE hooks only)
