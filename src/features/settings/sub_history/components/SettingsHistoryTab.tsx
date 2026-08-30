@@ -5,6 +5,7 @@ import {
   listSettingsAuditEntries,
   type SettingsAuditEntry,
 } from '@/api/system/settings';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -17,8 +18,10 @@ const PAGE_SIZE = 100;
  * tabs unmount on panel switch, so without this the audit log falls back to a
  * cold ghost state on every return visit even though nothing changed. Keyed by
  * category filter; a fresh fetch still runs and silently replaces it.
+ * `createModuleCache` gives it a `maxSize` eviction door rather than a bare
+ * `Map` (see docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10).
  */
-const historyCache = new Map<string, SettingsAuditEntry[]>();
+const historyCache = createModuleCache<string, SettingsAuditEntry[]>({ maxSize: 32 });
 
 /** Rows in the first viewport that play the one-shot entrance cascade. */
 const CASCADE_ROWS = 20;

@@ -18,6 +18,7 @@ import {
   workspacesOn,
   type Registry,
 } from '@/features/plugins/dev-tools/sub_workspaces/registry/registryLinkStore';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { RegistryCoverage } from '@/lib/bindings/RegistryCoverage';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { silentCatch } from '@/lib/silentCatch';
@@ -43,8 +44,10 @@ export interface RegistryCoverageState {
 }
 
 /** Warm cache keyed by registry id — survives lane unmount/remount so a
- *  navigation back paints the last known coverage instantly. */
-const warmCache = new Map<string, CoverageData>();
+ *  navigation back paints the last known coverage instantly.
+ *  `createModuleCache` gives it a `maxSize` eviction door rather than a bare
+ *  `Map` (see docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10). */
+const warmCache = createModuleCache<string, CoverageData>({ maxSize: 32 });
 
 export function useRegistryCoverage(): RegistryCoverageState {
   const snapshot = useSyncExternalStore(

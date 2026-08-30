@@ -8,10 +8,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getHierarchyGraph } from '@/api/devTools/hierarchy';
 import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { HierarchyGraph } from '@/lib/bindings/HierarchyGraph';
 import { silentCatch } from '@/lib/silentCatch';
 
-const graphCache = new Map<string, HierarchyGraph>();
+// Keyed by `projectId::corpusRoot` — a small population (one entry per
+// project the user has opened this session, times at most a couple of
+// corpus-root resolutions each). `createModuleCache`'s `maxSize` gives it an
+// eviction door a bare `Map` never had (see
+// docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10).
+const graphCache = createModuleCache<string, HierarchyGraph>({ maxSize: 32 });
 
 export interface UseHierarchyGraph {
   /** The freshest graph we have — warm cache first, revalidated in place. */

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listApiKeyAudit, type ApiKeyAuditEntry } from '@/api/auth/externalApiKeys';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
@@ -29,9 +30,12 @@ function statusColor(status: number): string {
  * Module-scoped session cache (docs/design/overview-loading.md, law 1). The
  * drawer remounts fresh each time it's opened for a key, so without this a
  * re-open of the same key falls back to a cold ghost state. Keyed by keyId;
- * a fresh fetch still runs and silently replaces it.
+ * a fresh fetch still runs and silently replaces it. `createModuleCache`
+ * gives it a `maxSize` eviction door — a bare `Map` here would grow for the
+ * life of the process, one entry per key ever audited this session (see
+ * docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10).
  */
-const auditCache = new Map<string, ApiKeyAuditEntry[]>();
+const auditCache = createModuleCache<string, ApiKeyAuditEntry[]>({ maxSize: 32 });
 
 const CASCADE_ROWS = 10;
 const AUDIT_ROW_H = 32;

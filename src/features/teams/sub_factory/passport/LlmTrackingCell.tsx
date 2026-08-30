@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { useVaultStore } from '@/stores/vaultStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
@@ -26,8 +27,13 @@ import { useImprove } from './improve/ImproveContext';
  *  the truth was $7.25.
  *
  *  A cache key must name everything the value depends on. This one named the
- *  thing the component was *about* instead. */
-const spendCache = new Map<string, number | null>();
+ *  thing the component was *about* instead.
+ *
+ *  `createModuleCache` gives it a `maxSize` eviction door — the compound
+ *  `slug|credId` key space grows with every (project, connector) pair
+ *  visited this session, and a bare `Map` had no reaper (see
+ *  docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10). */
+const spendCache = createModuleCache<string, number | null>({ maxSize: 32 });
 const inFlight = new Set<string>();
 
 export function LlmTrackingCell({ slug, label }: { slug: string; label: string | null }) {

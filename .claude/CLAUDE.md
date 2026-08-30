@@ -290,7 +290,7 @@ rather than reaching for a blanket rule.
 1. **Lazy route/section** → wrap in `<Suspense fallback={<RouteChunkSkeleton/>}>` (kills the blank chunk-load gap; invisible once the chunk is warm/idle-prefetched).
 2. **A list/table** → use `UnifiedTable` with `isLoading` + `data`. Its three-state body (ghost-under-header while `isLoading && empty` → settled-only empty → rows rippling in via a cascade **coupled to `isLoading`**) is the whole doctrine from two props.
 3. **A non-table data region** → static chrome always renders; ghost **under** it only when `isLoading && items.length===0` (a fetch never hides rendered rows — law 1); rows via `RevealItem` + `useRevealTracker`.
-4. **A view that fully unmounts on nav-away** (lazy routes do) → keep last fetch in a **module-scoped cache** keyed by entity so a remount paints warm, not a re-ghost (precedent: `sub_lifecycle/LifecyclePage.tsx`, `.../competitions/CompetitionList.tsx`).
+4. **A view that fully unmounts on nav-away** (lazy routes do) → keep last fetch in a **module-scoped cache** keyed by entity so a remount paints warm, not a re-ghost (precedent: `sub_lifecycle/LifecyclePage.tsx`, `.../competitions/CompetitionList.tsx`). A single-slot warm cache built by hand (as in those two precedents) stays fine as-is; a cache with **multiple entries** — keyed by project/credential/file/etc. rather than one fixed slot — must use `createModuleCache` (`src/hooks/utility/data/useModuleSubscription.ts`, key + TTL + `maxSize` eviction + `invalidate`), not a hand-rolled `Map`, so it always names its cap.
 
 Import as `@/features/shared/components/<category>/<Name>`. If a genuinely new
 reusable pattern is needed, **add it to `shared/components/` (not a feature folder)**

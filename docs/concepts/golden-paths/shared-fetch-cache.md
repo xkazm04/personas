@@ -109,12 +109,15 @@ wrong about the durability — "don't retry on every re-render" was implemented 
 | `StalenessIndicator` render sites | **5, in 2 files** | both in Overview |
 | a reusable `Loadable<T>` / `AsyncState<T>` / `Cached<T>` | **0** in six codebases | §6 clause 6 |
 
-### The repo has FIVE shared answers. Four of them are almost unused, and the best one is used once.
+### The repo has SIX shared answers. Five of them are almost unused, and the best one for a multi-entry cache was missing from this table entirely until 2026-08-30.
+
+> **Corrected 2026-08-30 — a sixth primitive, found the same way §12.9 found the fifth.** `src/hooks/utility/data/useModuleSubscription.ts:52`'s `createModuleCache` was absent from every count in this document's §0 sweep. It is a `Map`-backed factory (the exact shape §12.9(a) already names as invisible to a name-based scan) with **key + `ttlMs` + `maxSize` (LRU-style eviction on overflow) + `invalidate`/`invalidateAll` + a `useSyncExternalStore`-based subscription hook** — the only one of the six that has an eviction door at all. It is now the **preferred primitive for new multi-entry value caches**: `createTtlValueCache` remains correct for existing single/few-key adopters (`useDataPortability.ts`) and is not being migrated on this pass, but a new cache keyed by an unbounded or large-domain entity (project id, credential id, file path, …) should reach for `createModuleCache` first, because it is the only one of the six that bounds itself.
 
 | primitive | what it does | consumer call sites |
 |---|---|---:|
 | `src/lib/tauriInvoke.ts:143-176, :336-395` — auto-dedup | folds concurrent identical `list_*`/`get_*`/`fetch_*` reads into one round-trip; 250 ms TTL after settle; `structuredClone` per extra caller; rejections evicted immediately | **every caller, automatically** |
 | **`src/lib/async/createTtlValueCache.ts:34`** | **module-scope value cache, keyed, TTL'd, `get`/`set`/`delete`/`clear`.** Its docstring names the exact population this leaf is about: *"When a component instead holds its fetched data in local `useState`, that data is lost on unmount … This cache stores the value itself at module scope, so a remount within the TTL window can seed local state from the cache and skip the IPC entirely."* | **1** |
+| **`src/hooks/utility/data/useModuleSubscription.ts:52` — `createModuleCache`** | **module-scope `Map` cache with key + `ttlMs` + `maxSize` eviction + `invalidate`/`invalidateAll`, plus a paired `useModuleSubscription`/`useModuleCacheSubscription` hook (`useSyncExternalStore`) so components re-render on `notify()`.** The only one of the six with a bounding door — `evictOverflow` drops expired entries first, then least-recently-written, on every `set`. **Preferred for new multi-entry value caches** (see the correction above). | **3** (`useBulkHealthcheck.ts`, `useCredentialHealth.ts`, and one pure-computation memoiser in `formatters.ts`) |
 | **`src/lib/async/createCachedFetch.ts:41`** | **in-flight collapse + TTL freshness, keyed at CALL time** (`run(key, fetcher, onHit)`); records freshness **only on success, so a failure is never cached**; `invalidate(key?)` clears **both** the timestamp map and the in-flight map | **1** |
 | `src/lib/utils/deduplicateFetch.ts:19, :40` | in-flight coalescing by key, released in `.finally()` | **4** (all Zustand slices) |
 | `src/lib/utils/staleWhileRevalidate.ts:55` | TTL + in-flight dedup + LRU cap 500 + `invalidateSWRCache` | **1 file**, 2 constructions |
@@ -1184,3 +1187,20 @@ construction:
    type nobody reaches*) rather than a design critique, and §9 is a ratchet on **routing** rather
    than a placeholder for a build. But the process lesson stands on its own: **before diagnosing why
    a shared answer is unused, enumerate the shared answers.**
+10. **Corrected 2026-08-30 — a sixth primitive, missed by the identical mechanism §12.9 already
+    diagnosed, one directory over from where that correction was looking.** `src/hooks/utility/data/useModuleSubscription.ts:52`'s
+    `createModuleCache` was absent from the FIVE-primitive count in §0 and the table in the section
+    above. It holds its state in `const data = new Map()` / `const timestamps = new Map()` **inside
+    a factory function**, exactly the construction §12.9(a) names as invisible to a name-based `cach`
+    scan — and this leaf's own inventory never widened its search past `src/lib/` to the `src/hooks/`
+    tree, so the miss was the same vocabulary-bounded recall problem, applied to a directory instead
+    of a word. It is, by the measurements above, the **strongest of the six**: it is the only
+    primitive with a `maxSize`/eviction door (the exact gap D2/§7 diagnose in 40 of 61 hand-rolled
+    caches), it already has a paired subscription hook so a component re-renders on invalidation
+    without a manual re-render kick, and it has three real consumers against the other keyed
+    primitives' one apiece. The corrected prescription: **new multi-entry value caches should reach
+    for `createModuleCache`, not `createTtlValueCache`** — `createTtlValueCache` stays correct and
+    stays put for its existing single-key adopter, but it has no eviction door, so a cache whose key
+    space is an entity id (project, credential, file) rather than a fixed literal set is safer built
+    on the primitive that bounds itself. §7's Task-3-shaped prescriptions and any future one should
+    cite `createModuleCache` first for that population.
