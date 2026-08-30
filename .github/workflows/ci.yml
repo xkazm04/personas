@@ -193,21 +193,6 @@ jobs:
         if: always()
         run: bash scripts/check-unused-bindings.sh
 
-      - name: knip (advisory)
-        if: always()
-        continue-on-error: true
-        # knip.json has been configured since before this comment existed but
-        # was never run anywhere — a gate that isn't wired is indistinguishable
-        # from no gate at all. This step is deliberately advisory rather than
-        # a silent local hook (see CLAUDE.md: "gates that run green while
-        # checking nothing" is the named disease here) — it always runs and
-        # its result is always visible in the CI log, it just doesn't fail
-        # the job, because the raw finding count (300+ unused files, 1000+
-        # unused exports, most pre-existing) is far from triaged. Tightening
-        # this into a real ratchet — baselined counts like scripts/census —
-        # is follow-up work, not something to fake by silencing it.
-        run: npm run check:dead
-
       - name: Run frontend tests
         if: always()
         run: npm run test -- --run
