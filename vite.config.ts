@@ -117,7 +117,20 @@ export default defineConfig(async () => ({
               // vendor blob. Users updating Personas re-download only what
               // actually changed (see vendor-chart/flow/motion/markdown).
               const chunks: Record<string, string[]> = {
-                "react-vendor": ["react", "react-dom", "zustand"],
+                // immer's only consumer (triggerSlice.ts) is itself eager, so
+                // this chunk is eager too -- but grouping it with react-vendor
+                // (rather than leaving it unnamed) keeps it OUT of vendor-chart.
+                // Unnamed, rolldown folded it into vendor-chart (recharts/d3,
+                // otherwise lazy-only), so the whole chart+d3 stack loaded
+                // eagerly just because of this one small dep. NOTE: a brand-new
+                // manual-chunk name (e.g. a dedicated "vendor-immer" group) was
+                // tried and silently had no effect across repeated clean builds
+                // -- rolldown discarded it rather than emitting the chunk, even
+                // though the callback demonstrably returned that name for both
+                // immer copies (the top-level one and recharts' own nested
+                // dependency). Reusing an existing group name is what actually
+                // works; verify with a clean build before renaming this again.
+                "react-vendor": ["react", "react-dom", "zustand", "immer"],
                 "ui-vendor": ["lucide-react"],
                 "vendor-motion": ["framer-motion"],
                 "tauri-vendor": [
