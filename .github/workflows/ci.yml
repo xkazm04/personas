@@ -152,9 +152,11 @@ jobs:
 
       - name: Validate tier builds (starter / team)
         if: always()
-        # Tier variants flip frontend gating via VITE_APP_TIER and tree-shake
-        # disabled features. Validate starter + team compile here so a broken
-        # tier-gate import doesn't slip through. The builder tier is NOT built
+        # Tier variants flip frontend gating via VITE_APP_TIER — a RUNTIME
+        # check (isTierAvailable()/isTierVisible() against BUILD_MAX_TIER),
+        # not build-time tree-shaking; higher-tier code is not eliminated
+        # from these bundles. Validate starter + team compile here so a
+        # broken tier-gate import doesn't slip through. The builder tier is NOT built
         # here — the canonical `npm run build` step below produces it, so
         # building it again would be redundant (~one extra full Vite build per
         # CI run). check:tiers writes to dist/ as a side effect, so it must run
@@ -167,10 +169,16 @@ jobs:
         run: npm run build
 
       - name: Check bundle size budget
-        if: always()
-        # Budget lives in scripts/lib/bundle-budget.mjs (single source shared
-        # with bundle-size-report.mjs): 850 KB/chunk, 5000 KB total. No flags
-        # needed — the script defaults to the shared budget.
+        # Deliberately NOT `if: always()`, unlike its neighbors in this job.
+        # This step used to run under `if: always()` too, which meant a
+        # budget failure was easy to miss among the other steps' own
+        # failures — the ratchet in scripts/lib/bundle-budget.mjs went stale
+        # (57 phantom chunks, a baseline from 2026-03-14) without anyone
+        # noticing it had drifted this far. The gate compares the current
+        # build against scripts/bundle-baseline.json and fails on any rise
+        # beyond a small tolerance; run with `--update` locally (as a
+        # deliberate, reviewed re-baseline) if a real, intentional size
+        # change needs to move the baseline forward.
         run: node scripts/check-bundle-budget.mjs
 
       - name: Comment bundle size on PR
@@ -184,6 +192,21 @@ jobs:
       - name: Check for unused bindings
         if: always()
         run: bash scripts/check-unused-bindings.sh
+
+      - name: knip (advisory)
+        if: always()
+        continue-on-error: true
+        # knip.json has been configured since before this comment existed but
+        # was never run anywhere — a gate that isn't wired is indistinguishable
+        # from no gate at all. This step is deliberately advisory rather than
+        # a silent local hook (see CLAUDE.md: "gates that run green while
+        # checking nothing" is the named disease here) — it always runs and
+        # its result is always visible in the CI log, it just doesn't fail
+        # the job, because the raw finding count (300+ unused files, 1000+
+        # unused exports, most pre-existing) is far from triaged. Tightening
+        # this into a real ratchet — baselined counts like scripts/census —
+        # is follow-up work, not something to fake by silencing it.
+        run: npm run check:dead
 
       - name: Run frontend tests
         if: always()
