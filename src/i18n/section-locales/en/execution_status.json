@@ -1,0 +1,8 @@
+{
+  "completed": "Completed",
+  "failed": "Failed",
+  "queued": "Queued",
+  "running": "Running",
+  "cancelled": "Cancelled",
+  "error": "Error"
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
+  "xray_label": "Composed of {count} capabilities",
+  "xray_tooltip": "This template is a mentality plus capabilities from the recipe catalog — the same parts you can compose by hand in the Foundry."
+}

@@ -1,0 +1,16 @@
+{
+  "conversation_truncated": "This conversation reached the message limit. Older messages have been removed — consider starting a new conversation to preserve context.",
+  "no_persona": "No persona selected",
+  "stages": {
+    "assembling_label": "Preparing instructions",
+    "assembling_desc": "Putting together the agent instructions from your settings",
+    "generating_label": "Generating with AI",
+    "generating_desc": "Running Claude to create the agent design",
+    "parsing_label": "Reading results",
+    "parsing_desc": "Processing the AI response into a usable format",
+    "checking_label": "Checking everything works",
+    "checking_desc": "Making sure the suggested tools and services are available",
+    "saving_label": "Saving result",
+    "saving_desc": "Saving the finished design"
+  }
+}

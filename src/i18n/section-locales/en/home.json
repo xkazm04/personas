@@ -1,0 +1,213 @@
+{
+  "get_started": {
+    "title": "Build your first agent",
+    "subtitle": "Describe a job in plain language and we'll set up a working agent — or ask the assistant to do it for you.",
+    "build_cta": "Build your first agent",
+    "ask_cta": "Ask the assistant"
+  },
+  "resume": {
+    "failure": "Unread failure in {personaName} — investigate",
+    "tour": "Resume {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Continue editing {personaName}"
+  },
+  "setup": {
+    "choose_role": "Choose your role",
+    "choose_role_hint": "We'll tailor the experience to match how you work.",
+    "pick_tool": "Pick your favorite tool",
+    "pick_tool_hint": "This will be your first service connection.",
+    "describe_goal": "What do you want to automate?",
+    "describe_goal_hint": "Describe your first automation goal — we'll help you set it up.",
+    "goal_placeholder": "e.g. Automatically sync new Jira tickets to a Slack channel...",
+    "ready_to_save": "Ready to save",
+    "step_role": "Your Role",
+    "step_role_hint": "Tell us your role so we can tailor the experience.",
+    "step_tool": "Favorite Tool",
+    "step_tool_hint": "Pick the first service you want to connect.",
+    "step_goal": "Automation Goal",
+    "step_goal_hint": "Describe what you would like to automate first.",
+    "select_role_first": "Select a role first to unlock tool options.",
+    "select_tool_first": "Select a tool first to set your goal.",
+    "get_started": "Get Started",
+    "role_office_rat": "Everyday user",
+    "role_office_rat_hint": "Non-technical user",
+    "role_developer": "Developer",
+    "role_developer_hint": "Technical user",
+    "role_manager": "Manager",
+    "role_manager_hint": "Planning & coordination",
+    "role": "Role",
+    "tool": "Tool",
+    "goal": "Goal"
+  },
+  "nav_status": {
+    "incidents": "{count} open incident",
+    "incidents_other": "{count} open incidents",
+    "reviews": "{count} pending review",
+    "reviews_other": "{count} pending reviews",
+    "teams": "{count} team",
+    "teams_other": "{count} teams",
+    "agents_active": "{count} agent active in the last 24h",
+    "agents_active_other": "{count} agents active in the last 24h",
+    "events_today": "{count} event in the last 24h",
+    "events_today_other": "{count} events in the last 24h",
+    "connections_external": "{count} external connection",
+    "connections_external_other": "{count} external connections",
+    "connections_builtin": "{count} built-in connector",
+    "connections_builtin_other": "{count} built-in connectors",
+    "trend_up": "up {pct}% vs the prior 24h",
+    "trend_down": "down {pct}% vs the prior 24h",
+    "trend_flat": "no change vs the prior 24h",
+    "agents_enabled": "{count} active agent",
+    "agents_enabled_other": "{count} active agents",
+    "reports": "{count} unread report",
+    "reports_other": "{count} unread reports"
+  },
+  "learning": {
+    "title": "Learning Center",
+    "subtitle": "Guided tours and power moves to master Personas",
+    "guided_tours": "Guided Tours",
+    "tours_completed": "{completed}/{total} completed",
+    "done": "Done",
+    "restart": "Restart",
+    "start_tour": "Start Tour",
+    "steps_count": "{count} steps",
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Power Moves",
+    "moves_used": "{used}/{total} used",
+    "try_it": "Try it",
+    "used_badge": "Used",
+    "group_save_time": "Save time",
+    "group_prevent_failures": "Prevent failures",
+    "group_level_up": "Level up agents",
+    "group_orchestrate": "Orchestrate",
+    "pm_monitor_triage_title": "Triage the whole fleet from the titlebar",
+    "pm_schedule_delay_title": "Skip or delay a scheduled run",
+    "pm_bulk_rerun_title": "Bulk re-run failed executions",
+    "pm_dead_letter_title": "Rescue events from the dead-letter queue",
+    "pm_annotate_golden_title": "Star golden runs, tag regressions",
+    "pm_credential_health_title": "Let AI heal failing credentials",
+    "pm_lab_measure_title": "Measure prompts across models",
+    "pm_prompt_rollback_title": "Roll back a bad prompt in one click",
+    "pm_director_coaching_title": "Get portfolio coaching from the Director",
+    "pm_event_chain_title": "Chain agents with event listeners",
+    "pm_live_stream_title": "Watch chains cascade in real time",
+    "pm_athena_fleet_title": "Ask Athena to analyze your fleet",
+    "composed_tours": "Composed by Athena",
+    "composed_badge": "Athena composed",
+    "composed_stale": "May be outdated — the app has changed since this was composed",
+    "composed_failed": "Couldn't load the walkthroughs Athena composed for you.",
+    "composed_empty": "When you ask Athena to show you how something works, the walkthroughs she composes land here.",
+    "composed_dismiss": "Dismiss this outdated walkthrough",
+    "composed_all_dismissed": "You've cleared every outdated walkthrough. New ones appear here as Athena composes them."
+  },
+  "setup_stepper": {
+    "your_profile": "Your profile",
+    "choose_role": "Choose your role",
+    "tailor_hint": "We'll tailor the experience to match how you work.",
+    "simple_hint": "We've set up the app for everyday office use.",
+    "pick_tool": "Pick your favorite tool",
+    "tool_hint": "This will be your first connector integration.",
+    "automate_title": "What do you want to automate?",
+    "automate_hint": "Describe your first automation goal -- we'll help you set it up.",
+    "automate_placeholder": "e.g. Automatically sync new Jira tickets to a Slack channel...",
+    "min_chars": "Min 10 characters ({current}/10)",
+    "ready_to_save": "Ready to save",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish"
+  },
+  "welcome_layout": {
+    "get_started": "Get Started",
+    "language": "Language"
+  },
+  "welcome": "Welcome",
+  "greeting_morning": "Good Morning",
+  "greeting_afternoon": "Good Afternoon",
+  "greeting_evening": "Good Evening",
+  "operator": "User",
+  "commander": "Commander",
+  "summary_empty": "Get started by creating your first agent or exploring the platform.",
+  "summary_stats": "You have {personasCount} agent{personasPlural} and {credentialsCount} credential{credentialsPlural} configured.",
+  "quick_navigation": "Quick Navigation",
+  "platform_label": "personas platform",
+  "roadmap": {
+    "title": "Product Roadmap",
+    "subtitle": "What we're building now and what comes next.",
+    "unavailable": "Roadmap unavailable",
+    "unavailable_hint": "Could not load the product roadmap. Check your connection and try again.",
+    "status_in_progress": "In Progress",
+    "status_next": "Next",
+    "status_planned": "Planned",
+    "status_completed": "Completed",
+    "priority_now": "Now",
+    "priority_next": "Next",
+    "priority_later": "Later",
+    "in_progress_count": "{count} In Progress",
+    "next_count": "{count} Next"
+  },
+  "fleet": {
+    "executions_today": "Runs Today",
+    "success_rate": "Success Rate",
+    "active_agents": "Active Agents",
+    "credentials": "Credentials"
+  },
+  "since_left": {
+    "title": "Since you left",
+    "runs": "{count} run",
+    "runs_other": "{count} runs",
+    "failed": "{count} failed",
+    "failed_other": "{count} failed",
+    "alerts": "{count} alert raised",
+    "alerts_other": "{count} alerts raised",
+    "approvals": "{count} approval waiting",
+    "approvals_other": "{count} approvals waiting",
+    "dismiss": "Dismiss"
+  },
+  "nav": {
+    "overview": {
+      "label": "Overview",
+      "description": "See how your agents are performing, what they've done recently, and monitor everything in one place"
+    },
+    "personas": {
+      "label": "Agents",
+      "description": "Create, set up, and manage your AI agents -- give them custom behaviors and connect them to your tools"
+    },
+    "events": {
+      "label": "Events",
+      "description": "Set up what triggers your agents to run -- schedules, incoming notifications, or changes you define"
+    },
+    "credentials": {
+      "label": "Connections",
+      "description": "Manage your service logins, database connections, and passwords that let agents access your tools"
+    },
+    "design-reviews": {
+      "label": "Templates",
+      "description": "Browse ready-made agent blueprints, import workflows, and generate new agent designs"
+    },
+    "team": {
+      "label": "Teams",
+      "description": "Combine multiple agents into a team that works together on multi-step workflows"
+    },
+    "teams": {
+      "label": "Teams",
+      "description": "Combine multiple agents into a team that works together on multi-step workflows"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Run your agents in the cloud so they work even when your computer is off"
+    },
+    "settings": {
+      "label": "Settings",
+      "description": "Your account, how the app looks, notification preferences, and advanced options"
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Extend your agents with third-party plugins and custom extensions"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Library)",
+    "personas_tab": "Personas (Animated)",
+    "lucide_footer": "lucide-react -- generic icon library -- static",
+    "personas_footer": "9 custom icons -- neural/circuit motifs -- CSS-animated -- theme-adaptive"
+  }
+}

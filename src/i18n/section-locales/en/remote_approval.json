@@ -1,0 +1,13 @@
+{
+  "title": "Remote run request",
+  "body": "Your dashboard requested a run of {persona} on this device.",
+  "safety_note": "This runs locally on this device with its own credentials. Nothing runs until you approve.",
+  "approve": "Approve & run",
+  "approving": "Starting…",
+  "reject": "Reject",
+  "queue_count": "{index} of {total} pending",
+  "prompt_label": "Prompt",
+  "no_prompt": "No prompt provided.",
+  "from_dashboard": "Requested from the web dashboard",
+  "later": "Decide later"
+}

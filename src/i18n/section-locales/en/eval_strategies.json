@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Output Quality",
+  "keyword_match_description": "Checks expected behavior terms in agent output",
+  "tool_accuracy_label": "Tool Accuracy",
+  "tool_accuracy_description": "Compares expected vs actual tool calls",
+  "protocol_compliance_label": "Protocol Compliance",
+  "protocol_compliance_description": "Checks for expected protocol message patterns",
+  "confusion_detect_label": "Confusion Detection",
+  "confusion_detect_description": "Checks for known confusion/failure phrases",
+  "composite_label": "Composite",
+  "composite_description": "Weighted combination of all strategies"
+}
