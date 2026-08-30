@@ -104,7 +104,7 @@ export default tseslint.config(
       "custom/no-silent-catch": "error",
       "custom/no-direct-white-colors": "warn",
       "custom/role-button-requires-keydown": "error",
-      "custom/no-whole-store-subscription": "warn",
+      "custom/no-whole-store-subscription": "error",
       "custom/enforce-reduced-motion-fallback": "warn",
       "custom/prefer-shared-clipboard": "warn",
       "custom/prefer-numeric": "warn",

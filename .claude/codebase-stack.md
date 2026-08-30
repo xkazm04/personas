@@ -1093,3 +1093,66 @@ across 6,005 files, all baselined and green. `npm run check` is a ten-link `&&` 
 eight project checks including `census:check` run *ahead* of `tsc --noEmit` and `eslint src/`,
 so a green typecheck locally says nothing about the eight gates in front of it.
 Full doctrine now in `.claude/CLAUDE.md` → "The golden-path census".
+
+## Client runtime strong patterns (codified 2026-08-30 by /architect)
+
+### (a) Bounded-buffer discipline
+
+Every module-scoped cache/buffer in the renderer declares a cap and an eviction
+policy at creation, not as an afterthought. Reference implementations:
+`src/lib/execution/executionSink.ts` — a ring buffer capped at
+`MAX_TERMINAL_LINES = 10_000` (`:16`) and `MAX_TOTAL_BYTES = 10 * 1024 * 1024`
+(`:20`), plus a `generation` counter (`:110`) that makes a stale async flush
+inert after a reset, and a flush loop suspended while the tab is hidden.
+`src/features/plugins/fleet/fleetTerminalManager.ts` — `MAX_PARKED = 6`
+(`:297`) and `MAX_WEBGL = 6` (`:326`), each an LRU with an instrumented
+eviction counter (`:390`) so a budget set too low shows up as a number, not a
+silent leak. **Anti-shape (fixed 2026-08-30, kept as the cautionary example)**:
+`src/features/agents/sub_executions/libs/comparisonDiffWorkerClient.ts`
+declared `lineCache`/`jsonCache` as plain module-level `Map`s keyed by a
+content-hash of an unbounded execution population, only ever `.set()`, never
+evicted — the one monotonic heap-growth vector the 2026-08-30 scan found. Now
+a 24-entry LRU with eviction counters (same commit wave as this section); the
+original shape is the counter-example to point new code away from.
+
+### (b) The polling seam
+
+All recurring data refresh goes through `usePolling`
+(`src/hooks/utility/timing/usePolling.ts`) + the shared `pollingCoordinator`
+(`src/lib/polling/pollingCoordinator.ts`). Named cadences live in
+`POLLING_CONFIG` (`usePolling.ts:6-19` — `runningExecutions`, `cloudReviews`,
+`dashboardRefresh`, `cloudStatus`, `cloudHistory`, `pipelineRefresh`), each
+rounded onto one of five shared heartbeat buckets (`BUCKETS`,
+`pollingCoordinator.ts:26` — 5s/12s/15s/30s/60s) instead of owning its own
+timer. The coordinator suspends every bucket on `document.hidden` and
+`usePolling` backs off exponentially per-ticker on consecutive errors, capped
+at `maxBackoff` (default 4x interval). Raw `setInterval`/`setTimeout` is for UI
+tickers only (clocks, elapsed-time counters) — never for anything that fetches
+data.
+
+### (c) Typed lazy-route registry
+
+`SECTION_ROUTES` in `src/features/personas/sectionRouter.tsx:59` is a
+`satisfies`-checked map of `lazyRetry()`-wrapped components keyed by
+`RoutableSection = Exclude<SidebarSection, 'schedules'>` (`:45`), each entry
+typed as `SectionRoute` (`Component` + `boundaryName`, `:47-52`): `tsc` fails
+if a rail section is added without a route, or an overlay-only section sneaks
+into the content router. Overlays get the same discipline from the other
+direction in `src/App.tsx`: each mounts as its own `OverlayIsland` boundary
+(`:114` — one `ErrorBoundary` + `Suspense` per overlay, so one bad chunk takes
+only itself down, e.g. `:412-439`) and is warmed ahead of first open by
+`idlePrefetch` (`:28`, invoked `:271`). New top-level sections and overlays
+MUST go through these two seams. Caveat, verified 2026-08-30: `App.tsx` still
+statically imports several overlay-shaped components rather than routing them
+through `lazyRetry`/`OverlayIsland` — e.g. `LiveChannelOverlay`,
+`RemoteApprovalPrompt`, `PairApprovalModal`, `FirstUseConsentModal`,
+`ResourcePickerHost` (`App.tsx:7-10,15`). These are exactly the shape the
+`/architect` scan flagged as pulling vendor JS eager; the specific bundle-size
+figure from that scan was not independently re-measured here, so cite the
+pattern, not the number, until it is.
+
+**Housekeeping note:** this pass also promoted `custom/no-whole-store-subscription`
+from `warn` to `error` in `eslint.config.js` (0 occurrences measured across
+`src/` before promotion) — the "3 `error` / 17 `warn` / 1 `off`" custom-rule
+split recorded above and in `.claude/CLAUDE.md` is now 4 `error` / 16 `warn` /
+1 `off` and should be re-measured before being cited again.
