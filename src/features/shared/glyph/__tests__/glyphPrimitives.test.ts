@@ -1,11 +1,21 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { humanizeCron } from '../cron';
 import { en } from '@/i18n/en';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import deCatalog from '@/i18n/locales/de.json';
 import arCatalog from '@/i18n/locales/ar.json';
 import jaCatalog from '@/i18n/locales/ja.json';
 import ruCatalog from '@/i18n/locales/ru.json';
 import zhCatalog from '@/i18n/locales/zh.json';
+
+// `templates` is a code-split, non-core English section (see
+// src/i18n/useTranslation.ts's module header) — `cron.ts`/`triggers.ts`
+// require a live `t` with no default, so it's never eagerly needed in
+// production; only this suite passes `en` directly. Await the chunk once, up
+// front, rather than growing the production-eager core for a test-only path.
+beforeAll(async () => {
+  await preloadSectionsAsync('en', ['templates']);
+});
 
 /** Locale catalogs imported as raw JSON. The shape assertion below is safe by
  *  construction: `check:i18n:strict` proves every locale has exactly the key

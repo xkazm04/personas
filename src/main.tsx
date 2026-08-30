@@ -171,8 +171,13 @@ function readPersistedSidebarSection(): SidebarSection {
 }
 
 async function preloadPersistedLocaleBeforeMount(): Promise<void> {
+  // English used to return here immediately: its sections were one eagerly
+  // bundled constant, always resident, so there was nothing to await. Most
+  // English sections are code-split now too (src/i18n/useTranslation.ts's
+  // module header), so English gets the exact same pre-mount gate as the
+  // other 13 locales — otherwise the very first paint of a non-base route
+  // could race the English chunk for its own sections.
   const language = readPersistedLocale();
-  if (language === "en") return;
   const sections = sectionsForRoute(readPersistedSidebarSection());
   await Promise.race([
     preloadSectionsAsync(language, sections),
