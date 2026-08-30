@@ -16,7 +16,7 @@
  * turns red here.
  */
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { storeBus } from '@/lib/storeBus';
 import { initStoreBus } from '@/lib/storeBusWiring';
@@ -53,13 +53,13 @@ describe('getting-started mock-build seam', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    useSystemStore.getState().resetTour('getting-started-simple');
-    useSystemStore.getState().resetTour('getting-started');
+    useTourStore.getState().resetTour('getting-started-simple');
+    useTourStore.getState().resetTour('getting-started');
     useAgentStore.getState().resetBuildSession();
   });
 
   it('drives the build to promoted → completes persona-creation via the real storeBus tour event', () => {
-    const sys = () => useSystemStore.getState();
+    const sys = () => useTourStore.getState();
     sys().startTour('getting-started');
     expect(sys().tourActive).toBe(true);
     expect(sys().tourCurrentStepIndex).toBe(0);
@@ -85,7 +85,7 @@ describe('getting-started mock-build seam', () => {
   });
 
   it('emitting the real execution:completed event completes first-execution', () => {
-    const sys = () => useSystemStore.getState();
+    const sys = () => useTourStore.getState();
     sys().startTour('getting-started');
     sys().emitTourEvent('tour:appearance-changed');
     sys().advanceTour();

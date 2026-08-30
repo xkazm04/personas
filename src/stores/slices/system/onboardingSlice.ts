@@ -1,6 +1,12 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import type { TourId } from "./tourSlice";
+// Cross-store bridge: tourSlice was extracted into its own standalone
+// `useTourStore` (see docs ADR "tour-slice-extraction") so tour writes no
+// longer fan out to every systemStore subscriber. onboardingSlice still
+// needs to read/drive tour state at two points below (the modal->tour
+// handoff), so those go through `useTourStore.getState()` instead of `get()`.
+import { useTourStore } from "../../tourStore";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/types/types";
 import * as Sentry from "@sentry/react";
@@ -260,8 +266,10 @@ export const createOnboardingSlice: StateCreator<
     // half-finished modal has nothing to hand off from.
     if (!s.onboardingCreatedPersonaId) return;
     // If the user already finished the tour some other way, don't nag.
+    // Bridge: tour completion now lives on useTourStore, not this slice.
+    const tour = useTourStore.getState();
     const alreadyToured =
-      s.isTourCompleted?.("getting-started") || s.isTourCompleted?.("getting-started-simple");
+      tour.isTourCompleted("getting-started") || tour.isTourCompleted("getting-started-simple");
     if (alreadyToured) return;
     trackMetric("onboarding.tour_offer_shown");
     set({ tourHandoffVisible: true, tourHandoffOffered: true });
@@ -279,7 +287,8 @@ export const createOnboardingSlice: StateCreator<
     // adopted a template = a live first agent), so the tour skips re-teaching
     // agent creation. Honest — the step's outcome is genuinely satisfied — and
     // startTour's own firstUnfinished cursor lands the user on the next real step.
-    get().startTour(tourId, { preCompletedSteps: ["persona-creation"] });
+    // Bridge: starting a tour is now an action on useTourStore.
+    useTourStore.getState().startTour(tourId, { preCompletedSteps: ["persona-creation"] });
   },
 
   dismissTourHandoff: () => {

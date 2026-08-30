@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { ArrowRight, Check, ChevronDown, ChevronUp, Crosshair, Eye, EyeOff, Volume2 } from 'lucide-react';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import {
   getLocalizedTourSteps,
   isExplorationTourEvent,
@@ -57,7 +57,7 @@ export function TourNarrativeDeck({
 }: TourNarrativeDeckProps) {
   const { t, tx } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const highlightMissing = useSystemStore((s) => s.tourHighlightMissing);
+  const highlightMissing = useTourStore((s) => s.tourHighlightMissing);
 
   const steps = getLocalizedTourSteps(t, tourId);
   const currentStep = steps[currentIndex];
@@ -78,7 +78,7 @@ export function TourNarrativeDeck({
 
   const requiresAcknowledge = isExplorationTourEvent(currentStep.completeOn);
   const showAcknowledgeButton = requiresAcknowledge && !isStepCompleted;
-  const handleAcknowledge = () => useSystemStore.getState().emitTourEvent(currentStep.completeOn);
+  const handleAcknowledge = () => useTourStore.getState().emitTourEvent(currentStep.completeOn);
 
   return (
     // The wrapper spans the content area only (the rail owns everything left of

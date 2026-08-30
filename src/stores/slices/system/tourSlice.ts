@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 import * as Sentry from "@sentry/react";
-import type { SystemStore } from "../../storeTypes";
 import { useToastStore } from "@/stores/toastStore";
 import { en } from "@/i18n/en";
 import type { Translations } from "@/i18n/useTranslation";
@@ -47,7 +46,7 @@ export type TourId = StaticTourId | DynamicTourId;
  * To add a new event:
  *   1. Add it to `TOUR_EVENTS` below.
  *   2. Use it as `completeOn` on a step.
- *   3. Emit it via `useSystemStore.getState().emitTourEvent('tour:my-key')`
+ *   3. Emit it via `useTourStore.getState().emitTourEvent('tour:my-key')`
  *      or from `storeBusWiring.ts`.
  */
 export const TOUR_EVENTS = [
@@ -1392,7 +1391,7 @@ export interface TourSlice {
 }
 
 export const createTourSlice: StateCreator<
-  SystemStore,
+  TourSlice,
   [],
   [],
   TourSlice

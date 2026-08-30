@@ -1,4 +1,4 @@
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 
 /**
@@ -19,7 +19,7 @@ export function focusTourHighlight(testId: string | null | undefined): void {
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   // Setting the same value is a Zustand no-op, so clear then re-set on the next
   // tick to force the spotlight to re-measure and pulse around the element.
-  const setHighlight = useSystemStore.getState().setHighlightTestId;
+  const setHighlight = useTourStore.getState().setHighlightTestId;
   setHighlight(null);
   window.setTimeout(() => setHighlight(testId), 60);
 }

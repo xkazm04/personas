@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { PickerGrid } from './PickerGrid';
@@ -17,8 +17,8 @@ interface CredentialPickerProps {
 export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
   const recipeIndicators = useRecipeIndicators();
   const filters = usePickerFilters(connectors, credentials, searchTerm, recipeIndicators);
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const recordCredentialInteraction = useSystemStore((s) => s.recordCredentialInteraction);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const recordCredentialInteraction = useTourStore((s) => s.recordCredentialInteraction);
   const recordCatalogConnectorView = useVaultStore((s) => s.recordCatalogConnectorView);
 
   const handleCategoryChange = useCallback((v: string | null) => {

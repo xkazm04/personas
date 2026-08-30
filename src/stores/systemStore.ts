@@ -1,6 +1,10 @@
 /**
- * System domain store -- UI chrome, cloud, GitLab, onboarding, guided tour,
- * dev-tools, network / P2P, and setup wizard.
+ * System domain store -- UI chrome, cloud, GitLab, onboarding, dev-tools,
+ * network / P2P, and setup wizard.
+ *
+ * The guided tour used to live here as `tourSlice`; it now has its own
+ * standalone `useTourStore` (src/stores/tourStore.ts) — see docs ADR
+ * "tour-slice-extraction".
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -12,7 +16,6 @@ import { createCloudSlice } from "./slices/system/cloudSlice";
 import { createGitLabSlice } from "./slices/system/gitlabSlice";
 import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
 import * as Sentry from "@sentry/react";
-import { createTourSlice } from "./slices/system/tourSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
@@ -37,7 +40,6 @@ export const useSystemStore = create<SystemStore>()(
       ...createCloudSlice(...a),
       ...createGitLabSlice(...a),
       ...createOnboardingSlice(...a),
-      ...createTourSlice(...a),
       ...createDevToolsSlice(...a),
       ...createFleetSlice(...a),
       ...createNetworkSlice(...a),
@@ -83,8 +85,13 @@ export const useSystemStore = create<SystemStore>()(
         onboardingCompleted: state.onboardingCompleted,
         onboardingDismissedAtStep: state.onboardingDismissedAtStep,
         onboardingStepCompleted: state.onboardingStepCompleted,
-        tourCompleted: state.tourCompleted,
-        tourDismissed: state.tourDismissed,
+        // tourCompleted/tourDismissed used to be redundantly persisted here as
+        // well as tourSlice's own `guided-tour-state` localStorage key. The
+        // tour slice moved to its own standalone `useTourStore` (see docs ADR
+        // "tour-slice-extraction") and owns its persistence directly, so these
+        // two keys were dropped. A stale "persona-ui-system" blob still
+        // carrying them is harmless — zustand's persist merge ignores extra
+        // keys on rehydrate.
         setupRole: state.setupRole,
         setupTool: state.setupTool,
         setupGoal: state.setupGoal,

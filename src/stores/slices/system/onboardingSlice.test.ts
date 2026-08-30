@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { createOnboardingSlice, type OnboardingSlice } from "./onboardingSlice";
 import type { SystemStore } from "../../storeTypes";
+import { useTourStore } from "../../tourStore";
 
 const STORAGE_KEY = "onboarding-state-v1";
 
@@ -29,9 +30,16 @@ function makeHarness() {
   };
 }
 
+// onboardingSlice's tour-handoff path reads/writes `useTourStore` directly
+// (tourSlice was extracted into its own standalone store — see docs ADR
+// "tour-slice-extraction"). Snapshot the real store's state once so every
+// test can override just the fields it needs and the next test starts clean.
+const initialTourStoreState = useTourStore.getState();
+
 describe("onboardingSlice — reversible skip escape hatch", () => {
   beforeEach(() => {
     localStorage.clear();
+    useTourStore.setState(initialTourStoreState, true);
   });
 
   describe("resumeOnboarding — dismissed mid-flow", () => {
@@ -90,7 +98,8 @@ describe("onboardingSlice — reversible skip escape hatch", () => {
     it("offerTourHandoff shows the card once, persists the flag, and never re-offers", () => {
       const h = makeHarness();
       // Modal produced a live first agent; tour not yet done.
-      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => false });
+      h.set({ onboardingCreatedPersonaId: "p1" });
+      useTourStore.setState({ isTourCompleted: () => false });
 
       h.state().offerTourHandoff();
       expect(h.state().tourHandoffVisible).toBe(true);
@@ -107,7 +116,8 @@ describe("onboardingSlice — reversible skip escape hatch", () => {
 
     it("does not offer when the modal produced no agent", () => {
       const h = makeHarness();
-      h.set({ onboardingCreatedPersonaId: null, isTourCompleted: () => false });
+      h.set({ onboardingCreatedPersonaId: null });
+      useTourStore.setState({ isTourCompleted: () => false });
       h.state().offerTourHandoff();
       expect(h.state().tourHandoffVisible).toBe(false);
       expect(h.state().tourHandoffOffered).toBe(false);
@@ -115,14 +125,16 @@ describe("onboardingSlice — reversible skip escape hatch", () => {
 
     it("does not offer when the tour is already completed", () => {
       const h = makeHarness();
-      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => true });
+      h.set({ onboardingCreatedPersonaId: "p1" });
+      useTourStore.setState({ isTourCompleted: () => true });
       h.state().offerTourHandoff();
       expect(h.state().tourHandoffVisible).toBe(false);
     });
 
     it("finishOnboarding hands off to the offer when an agent was created", () => {
       const h = makeHarness();
-      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => false });
+      h.set({ onboardingCreatedPersonaId: "p1" });
+      useTourStore.setState({ isTourCompleted: () => false });
       h.state().finishOnboarding();
       expect(h.state().onboardingCompleted).toBe(true);
       expect(h.state().tourHandoffVisible).toBe(true);
@@ -131,12 +143,12 @@ describe("onboardingSlice — reversible skip escape hatch", () => {
     it("acceptTourHandoff hides the card and starts the tour modal-aware", () => {
       const h = makeHarness();
       const calls: Array<{ id: string | undefined; opts: unknown }> = [];
-      h.set({
-        onboardingCreatedPersonaId: "p1",
+      h.set({ onboardingCreatedPersonaId: "p1" });
+      useTourStore.setState({
         isTourCompleted: () => false,
-        startTour: (id?: string, opts?: unknown) => {
+        startTour: ((id?: string, opts?: unknown) => {
           calls.push({ id, opts });
-        },
+        }) as typeof initialTourStoreState.startTour,
       });
       h.state().offerTourHandoff();
       h.state().acceptTourHandoff("getting-started");

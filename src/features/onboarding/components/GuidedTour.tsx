@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronRight, X, MapPin, Sparkles, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useTourStore } from "@/stores/tourStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -30,22 +31,22 @@ export default function GuidedTour() {
   // — when the modal closes (finish/dismiss), the panel naturally
   // reappears at whatever step it was on.
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const tourResumePending = useSystemStore((s) => s.tourResumePending);
-  const tourId = useSystemStore((s) => s.tourActiveTourId);
-  const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
-  const completedSteps = useSystemStore((s) => s.tourStepCompleted);
-  const subStepIndex = useSystemStore((s) => s.tourSubStepIndex);
-  const advanceTour = useSystemStore((s) => s.advanceTour);
-  const goToTourStep = useSystemStore((s) => s.goToTourStep);
-  const dismissTour = useSystemStore((s) => s.dismissTour);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const tourResumePending = useTourStore((s) => s.tourResumePending);
+  const tourId = useTourStore((s) => s.tourActiveTourId);
+  const currentIndex = useTourStore((s) => s.tourCurrentStepIndex);
+  const completedSteps = useTourStore((s) => s.tourStepCompleted);
+  const subStepIndex = useTourStore((s) => s.tourSubStepIndex);
+  const advanceTour = useTourStore((s) => s.advanceTour);
+  const goToTourStep = useTourStore((s) => s.goToTourStep);
+  const dismissTour = useTourStore((s) => s.dismissTour);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const setEventBusTab = useSystemStore((s) => s.setEventBusTab);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
-  const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
-  const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
-  const completionMap = useSystemStore((s) => s.tourCompletionMap);
+  const captureAppearanceBaseline = useTourStore((s) => s.captureAppearanceBaseline);
+  const setHighlightTestId = useTourStore((s) => s.setHighlightTestId);
+  const completionMap = useTourStore((s) => s.tourCompletionMap);
 
   const { t, tx } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
@@ -114,7 +115,7 @@ export default function GuidedTour() {
       // step even if a clear is somehow missed.
       const scheduleStepTimeout = (fn: () => void, ms: number) =>
         scheduleTourTimeout(() => {
-          if (useSystemStore.getState().tourCurrentStepIndex !== stepIndex) return;
+          if (useTourStore.getState().tourCurrentStepIndex !== stepIndex) return;
           fn();
         }, ms);
 
@@ -169,7 +170,7 @@ export default function GuidedTour() {
         // currently-selected one (promote already selects the new agent).
         // selectPersona emits persona:selected (which routes to the Activity
         // tab), so flip to use-cases just after it settles.
-        const createdId = useSystemStore.getState().tourCreatedPersonaId
+        const createdId = useTourStore.getState().tourCreatedPersonaId
           ?? useAgentStore.getState().selectedPersona?.id
           ?? null;
         if (createdId) useAgentStore.getState().selectPersona(createdId);
@@ -184,7 +185,7 @@ export default function GuidedTour() {
             .then(({ obsidianAvailable }) => obsidianAvailable())
             .then((avail) => {
               if (avail.binaryInstalled && tourActiveRef.current) {
-                useSystemStore.getState().emitTourEvent('tour:obsidian-detected');
+                useTourStore.getState().emitTourEvent('tour:obsidian-detected');
               }
             })
             .catch(silentCatch('onboarding/GuidedTour:obsidianDetectProbe'));
@@ -194,7 +195,7 @@ export default function GuidedTour() {
         // SetupPanel emits the event when Save Configuration succeeds.
         scheduleStepTimeout(() => {
           if (useSystemStore.getState().obsidianConnected) {
-            useSystemStore.getState().emitTourEvent('tour:obsidian-vault-connected');
+            useTourStore.getState().emitTourEvent('tour:obsidian-vault-connected');
           }
         }, 400);
       }
@@ -231,7 +232,7 @@ export default function GuidedTour() {
     advanceTour();
   };
   const handlePrev = () => {
-    if (currentIndex > 0) useSystemStore.setState({ tourCurrentStepIndex: currentIndex - 1, tourSubStepIndex: 0 });
+    if (currentIndex > 0) useTourStore.setState({ tourCurrentStepIndex: currentIndex - 1, tourSubStepIndex: 0 });
   };
   const handleJump = (index: number) => {
     goToTourStep(index);
@@ -240,8 +241,8 @@ export default function GuidedTour() {
   // same gesture (mark current complete first so the completion map is right).
   const handleFinishTour = (nextTourId?: TourId) => {
     setShowCompletion(false);
-    useSystemStore.getState().finishTour();
-    if (nextTourId) useSystemStore.getState().startTour(nextTourId);
+    useTourStore.getState().finishTour();
+    if (nextTourId) useTourStore.getState().startTour(nextTourId);
   };
 
   // Keyboard navigation — DELIBERATELY scoped to the panel (handler lives on the
@@ -392,7 +393,7 @@ export default function GuidedTour() {
                 steps={visibleSteps}
                 currentIndex={currentIndex}
                 completedSteps={completedSteps}
-                onJump={(i) => useSystemStore.setState({ tourCurrentStepIndex: i, tourSubStepIndex: 0, tourResumePending: false })}
+                onJump={(i) => useTourStore.setState({ tourCurrentStepIndex: i, tourSubStepIndex: 0, tourResumePending: false })}
               />
             </div>
             {/* Continue at the saved step */}
@@ -400,7 +401,7 @@ export default function GuidedTour() {
               <Button
                 variant="primary"
                 block
-                onClick={() => useSystemStore.setState({ tourResumePending: false })}
+                onClick={() => useTourStore.setState({ tourResumePending: false })}
                 data-testid="tour-resume-continue"
               >
                 {t.onboarding.resume_continue_cta}
