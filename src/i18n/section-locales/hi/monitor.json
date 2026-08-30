@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "एक साथ कितने चलेंगे",
   "triage_accepted_result": "{count} रनर को भेजे गए",
   "triage_accepted_result_skipped": "{count} छोड़े गए",
-  "triage_accepted_row_aria": "{title} चुनें"
+  "triage_accepted_row_aria": "{title} चुनें",
+  "grid_board_aria": "फ़्लीट बोर्ड",
+  "grid_rail_tab_dispatch": "भेजें",
+  "grid_rail_tab_messages": "संदेश",
+  "grid_rail_tabs_aria": "गतिविधि पैनल",
+  "grid_messages_empty": "अभी तक कोई चैनल गतिविधि नहीं।",
+  "grid_dock_collapse": "डिस्पैच कंसोल छिपाएं"
 }

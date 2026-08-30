@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "Combien s’exécutent en même temps",
     "triage_accepted_result": "{count} envoyés à l’exécuteur",
     "triage_accepted_result_skipped": "{count} ignorés",
-    "triage_accepted_row_aria": "Sélectionner {title}"
+    "triage_accepted_row_aria": "Sélectionner {title}",
+    "grid_board_aria": "Tableau de la flotte",
+    "grid_rail_tab_dispatch": "Envoi",
+    "grid_rail_tab_messages": "Messages",
+    "grid_rail_tabs_aria": "Panneau d’activité",
+    "grid_messages_empty": "Aucune activité de canal pour l’instant.",
+    "grid_dock_collapse": "Masquer la console d’envoi"
   },
   "common": {
     "loading": "Chargement…",

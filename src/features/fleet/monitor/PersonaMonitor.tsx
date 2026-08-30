@@ -333,7 +333,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       {view === 'activity' ? (
         /* Body — the fleet board with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden px-5 py-4">
+          {/* Same wrapper the three channel surfaces get — the Activity board
+              is a card on the HUD atmosphere now, not a bare grid on the page
+              background (see FleetGridView's consolidation header). */}
+          <div className="absolute inset-0 overflow-hidden p-2 hud-atmosphere">
             {loading && cards.length === 0 ? (
               // First-ever cold open only (the warm cache in useMonitorData makes
               // every re-open paint the last-known fleet immediately): permanent
@@ -348,6 +351,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 teams={teams}
                 selectedPersonaId={selection?.personaId ?? null}
                 onSelect={handleCardSelect}
+                feedTeams={workspaceTeams}
+                onOpenSpeaker={handleDrillIn}
               />
             )}
           </div>

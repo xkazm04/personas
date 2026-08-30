@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "كم عنصرًا يعمل في وقت واحد",
     "triage_accepted_result": "تم إرسال {count} إلى المُنفِّذ",
     "triage_accepted_result_skipped": "تم تخطي {count}",
-    "triage_accepted_row_aria": "تحديد {title}"
+    "triage_accepted_row_aria": "تحديد {title}",
+    "grid_board_aria": "لوحة الأسطول",
+    "grid_rail_tab_dispatch": "إرسال",
+    "grid_rail_tab_messages": "الرسائل",
+    "grid_rail_tabs_aria": "لوحة النشاط",
+    "grid_messages_empty": "لا يوجد نشاط في القنوات بعد.",
+    "grid_dock_collapse": "إخفاء وحدة الإرسال"
   },
   "common": {
     "loading": "جارٍ التحميل…",

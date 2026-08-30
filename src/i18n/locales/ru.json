@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "Сколько выполняется одновременно",
     "triage_accepted_result": "Отправлено исполнителю: {count}",
     "triage_accepted_result_skipped": "Пропущено: {count}",
-    "triage_accepted_row_aria": "Выбрать «{title}»"
+    "triage_accepted_row_aria": "Выбрать «{title}»",
+    "grid_board_aria": "Панель флота",
+    "grid_rail_tab_dispatch": "Отправка",
+    "grid_rail_tab_messages": "Сообщения",
+    "grid_rail_tabs_aria": "Панель активности",
+    "grid_messages_empty": "В каналах пока нет активности.",
+    "grid_dock_collapse": "Скрыть консоль отправки"
   },
   "common": {
     "loading": "Загрузка…",

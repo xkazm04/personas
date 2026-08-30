@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "একসাথে কতগুলি চলবে",
   "triage_accepted_result": "{count}টি রানারে পাঠানো হয়েছে",
   "triage_accepted_result_skipped": "{count}টি বাদ পড়েছে",
-  "triage_accepted_row_aria": "{title} নির্বাচন করুন"
+  "triage_accepted_row_aria": "{title} নির্বাচন করুন",
+  "grid_board_aria": "ফ্লিট বোর্ড",
+  "grid_rail_tab_dispatch": "পাঠান",
+  "grid_rail_tab_messages": "বার্তা",
+  "grid_rail_tabs_aria": "অ্যাক্টিভিটি প্যানেল",
+  "grid_messages_empty": "এখনও কোনও চ্যানেল কার্যকলাপ নেই।",
+  "grid_dock_collapse": "ডিসপ্যাচ কনসোল লুকান"
 }

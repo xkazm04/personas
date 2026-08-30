@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "同时运行的数量",
     "triage_accepted_result": "已将 {count} 项交给执行器",
     "triage_accepted_result_skipped": "跳过 {count} 项",
-    "triage_accepted_row_aria": "选择 {title}"
+    "triage_accepted_row_aria": "选择 {title}",
+    "grid_board_aria": "舰队看板",
+    "grid_rail_tab_dispatch": "派发",
+    "grid_rail_tab_messages": "消息",
+    "grid_rail_tabs_aria": "活动面板",
+    "grid_messages_empty": "暂无频道动态。",
+    "grid_dock_collapse": "隐藏派发控制台"
   },
   "common": {
     "loading": "加载中…",

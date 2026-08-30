@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "Wie viele gleichzeitig laufen",
   "triage_accepted_result": "{count} an den Runner geschickt",
   "triage_accepted_result_skipped": "{count} übersprungen",
-  "triage_accepted_row_aria": "{title} auswählen"
+  "triage_accepted_row_aria": "{title} auswählen",
+  "grid_board_aria": "Flotten-Board",
+  "grid_rail_tab_dispatch": "Senden",
+  "grid_rail_tab_messages": "Nachrichten",
+  "grid_rail_tabs_aria": "Aktivitätsbereich",
+  "grid_messages_empty": "Noch keine Kanalaktivität.",
+  "grid_dock_collapse": "Sendekonsole ausblenden"
 }

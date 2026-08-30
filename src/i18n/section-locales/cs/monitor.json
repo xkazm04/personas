@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "Kolik jich běží najednou",
   "triage_accepted_result": "Odesláno běhovému procesu: {count}",
   "triage_accepted_result_skipped": "Přeskočeno: {count}",
-  "triage_accepted_row_aria": "Vybrat {title}"
+  "triage_accepted_row_aria": "Vybrat {title}",
+  "grid_board_aria": "Přehled flotily",
+  "grid_rail_tab_dispatch": "Odeslat",
+  "grid_rail_tab_messages": "Zprávy",
+  "grid_rail_tabs_aria": "Panel aktivity",
+  "grid_messages_empty": "Zatím žádná aktivita v kanálech.",
+  "grid_dock_collapse": "Skrýt konzoli odesílání"
 }

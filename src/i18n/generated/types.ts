@@ -533,6 +533,12 @@ export type Translations = {
     triage_accepted_result: string;
     triage_accepted_result_skipped: string;
     triage_accepted_row_aria: string;
+    grid_board_aria: string;
+    grid_rail_tab_dispatch: string;
+    grid_rail_tab_messages: string;
+    grid_rail_tabs_aria: string;
+    grid_messages_empty: string;
+    grid_dock_collapse: string;
   };
   common: {
     unknown_error: string;
@@ -13478,6 +13484,8 @@ export type Translations = {
       breadth_exceeded: string;
       healing_abandoned: string;
       healing_capped: string;
+      lookup_failed: string;
+      cost_ceiling_corrupt: string;
     };
     error_category: {
       rate_limit: string;

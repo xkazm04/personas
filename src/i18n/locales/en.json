@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "How many run at once",
     "triage_accepted_result": "Sent {count} to the runner",
     "triage_accepted_result_skipped": "{count} skipped",
-    "triage_accepted_row_aria": "Select {title}"
+    "triage_accepted_row_aria": "Select {title}",
+    "grid_board_aria": "Fleet board",
+    "grid_rail_tab_dispatch": "Dispatch",
+    "grid_rail_tab_messages": "Messages",
+    "grid_rail_tabs_aria": "Activity panel",
+    "grid_messages_empty": "No channel activity yet.",
+    "grid_dock_collapse": "Hide the dispatch console"
   },
   "common": {
     "unknown_error": "Unknown error",

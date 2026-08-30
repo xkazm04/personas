@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "Berapa banyak yang berjalan bersamaan",
     "triage_accepted_result": "{count} dikirim ke runner",
     "triage_accepted_result_skipped": "{count} dilewati",
-    "triage_accepted_row_aria": "Pilih {title}"
+    "triage_accepted_row_aria": "Pilih {title}",
+    "grid_board_aria": "Papan armada",
+    "grid_rail_tab_dispatch": "Kirim",
+    "grid_rail_tab_messages": "Pesan",
+    "grid_rail_tabs_aria": "Panel aktivitas",
+    "grid_messages_empty": "Belum ada aktivitas kanal.",
+    "grid_dock_collapse": "Sembunyikan konsol pengiriman"
   },
   "common": {
     "loading": "Memuat…",

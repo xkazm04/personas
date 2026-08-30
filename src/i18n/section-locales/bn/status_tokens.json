@@ -169,7 +169,9 @@
     "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
     "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
     "healing_abandoned": "নিরাময় থেমে গেছে",
-    "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
+    "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ",
+    "lookup_failed": "ট্রিগার অনুসন্ধান ব্যর্থ",
+    "cost_ceiling_corrupt": "খরচের সীমা পড়া যায়নি"
   },
   "build": {
     "analyzing": "বিশ্লেষণ চলছে",

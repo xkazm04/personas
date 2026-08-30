@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "同時に実行する数",
   "triage_accepted_result": "{count} 件を実行担当に送信しました",
   "triage_accepted_result_skipped": "{count} 件スキップ",
-  "triage_accepted_row_aria": "{title} を選択"
+  "triage_accepted_row_aria": "{title} を選択",
+  "grid_board_aria": "フリートボード",
+  "grid_rail_tab_dispatch": "送信",
+  "grid_rail_tab_messages": "メッセージ",
+  "grid_rail_tabs_aria": "アクティビティパネル",
+  "grid_messages_empty": "チャンネルの動きはまだありません。",
+  "grid_dock_collapse": "送信コンソールを隠す"
 }

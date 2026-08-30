@@ -2,6 +2,11 @@
 
 ## Active
 
+### activity-consolidation — Consolidate Monitor UI into Activity: wide named tiles, Conversations-grade chrome, 3-tab rail, docked quick-dispatch
+- **[2026-08-30 21:42]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/i18n/locales/*.json`
+- **Status:** started
+
 - **[2026-08-28 23:35]**
 - **Paths:** `src/**` · `.claude/skills/scan-sweep/**`
 - **Status:** started

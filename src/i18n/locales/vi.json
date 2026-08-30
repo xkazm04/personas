@@ -526,7 +526,13 @@
     "triage_accepted_concurrency_hint": "Số lượng chạy cùng lúc",
     "triage_accepted_result": "Đã gửi {count} tới trình chạy",
     "triage_accepted_result_skipped": "Bỏ qua {count}",
-    "triage_accepted_row_aria": "Chọn {title}"
+    "triage_accepted_row_aria": "Chọn {title}",
+    "grid_board_aria": "Bảng đội hình",
+    "grid_rail_tab_dispatch": "Gửi đi",
+    "grid_rail_tab_messages": "Tin nhắn",
+    "grid_rail_tabs_aria": "Bảng hoạt động",
+    "grid_messages_empty": "Chưa có hoạt động nào trong kênh.",
+    "grid_dock_collapse": "Ẩn bảng điều khiển gửi đi"
   },
   "common": {
     "loading": "Đang tải…",

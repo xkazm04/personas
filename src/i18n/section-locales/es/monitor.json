@@ -525,5 +525,11 @@
   "triage_accepted_concurrency_hint": "Cuántos se ejecutan a la vez",
   "triage_accepted_result": "{count} enviados al ejecutor",
   "triage_accepted_result_skipped": "{count} omitidos",
-  "triage_accepted_row_aria": "Seleccionar {title}"
+  "triage_accepted_row_aria": "Seleccionar {title}",
+  "grid_board_aria": "Tablero de la flota",
+  "grid_rail_tab_dispatch": "Enviar",
+  "grid_rail_tab_messages": "Mensajes",
+  "grid_rail_tabs_aria": "Panel de actividad",
+  "grid_messages_empty": "Aún no hay actividad en los canales.",
+  "grid_dock_collapse": "Ocultar la consola de envío"
 }
