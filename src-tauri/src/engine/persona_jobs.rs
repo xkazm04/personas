@@ -476,6 +476,7 @@ async fn memory_curation_run(
             entries: &pipeline.entries,
             summary: Some(&summary),
             team_id: None,
+            kind: None,
         },
     )?;
 

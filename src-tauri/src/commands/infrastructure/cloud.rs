@@ -920,6 +920,7 @@ pub async fn cloud_deploy_persona(
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
         "homeTeamId": persona.home_team_id,
+        "coreProfile": persona.core_profile,
     });
 
     client.upsert_persona(&persona_body).await?;
@@ -1004,6 +1005,7 @@ pub async fn cloud_sync_persona(
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
         "homeTeamId": persona.home_team_id,
+        "coreProfile": persona.core_profile,
     });
 
     client.upsert_persona(&persona_body).await?;

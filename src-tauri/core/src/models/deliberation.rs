@@ -109,6 +109,26 @@ pub struct PersonaCore {
     pub conflict_style: String,
     /// 0 = holds its ground, 1 = yields readily to stronger arguments.
     pub deference: f64,
+    /// Living-agent additive fields (spark `living-agent-core`). All default
+    /// so pre-existing `core_profile` JSON keeps parsing unchanged.
+    ///
+    /// WHO the persona is — authored prose identity beyond the dials.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub identity: Option<String>,
+    /// HOW it speaks — authored voice/tone prose.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub voice: Option<String>,
+    /// Standing principles it works by.
+    #[serde(default)]
+    pub principles: Vec<String>,
+    /// Hard constraints it must not cross.
+    #[serde(default)]
+    pub constraints: Vec<String>,
+    /// How it decides when principles conflict.
+    #[serde(default)]
+    pub decision_principles: Vec<String>,
 }
 
 /// Typed shape of the `persona_teams.north_star` JSON column — the shared

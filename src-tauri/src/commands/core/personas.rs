@@ -152,6 +152,9 @@ fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
     if let Some(ref channels) = input.notification_channels {
         errors.extend(pv::validate_notification_channels(channels));
     }
+    if let Some(Some(ref core)) = input.core_profile {
+        errors.extend(pv::validate_core_profile(core));
+    }
     check(errors)
 }
 
@@ -224,6 +227,7 @@ pub fn update_persona(
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
             "homeTeamId": sync_persona.home_team_id,
+            "coreProfile": sync_persona.core_profile,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
@@ -339,6 +343,7 @@ pub fn update_persona_parameters(
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
             "homeTeamId": sync_persona.home_team_id,
+            "coreProfile": sync_persona.core_profile,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");

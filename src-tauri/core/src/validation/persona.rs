@@ -6,6 +6,7 @@ use super::contract::{ValidationError, ValidationRule};
 
 pub const MAX_NAME_CHARS: usize = 200;
 pub const MAX_PROMPT_BYTES: usize = 50 * 1024; // 50 KB
+pub const MAX_CORE_PROFILE_BYTES: usize = 16_384; // 16 KB
 pub const MAX_CONCURRENT_MIN: i32 = 1;
 pub const MAX_CONCURRENT_MAX: i32 = 50;
 pub const TIMEOUT_MS_MIN: i32 = 1000;
@@ -247,6 +248,24 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
     }
 
     errors
+}
+
+/// Cap the serialized `PersonaCore` JSON (`personas.core_profile`). The Core
+/// is authored prose + dials — 16 KB is generous; anything larger is almost
+/// certainly a paste accident or a runaway generator.
+pub fn validate_core_profile(json: &str) -> Vec<ValidationError> {
+    if json.len() > MAX_CORE_PROFILE_BYTES {
+        vec![ValidationError::new(
+            "core_profile",
+            "max_length",
+            format!(
+                "Persona core exceeds maximum size of {} KB",
+                MAX_CORE_PROFILE_BYTES / 1024
+            ),
+        )]
+    } else {
+        vec![]
+    }
 }
 
 pub fn validate_max_concurrent(v: i32) -> Vec<ValidationError> {
@@ -509,6 +528,13 @@ pub fn rules() -> Vec<ValidationRule> {
             "json",
             "Must be a valid JSON array",
         ),
+        ValidationRule::new(
+            "persona",
+            "core_profile",
+            "max_length",
+            format!("Maximum {} KB", MAX_CORE_PROFILE_BYTES / 1024),
+        )
+        .with_max(MAX_CORE_PROFILE_BYTES as f64),
     ]
 }
 

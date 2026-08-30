@@ -756,6 +756,7 @@ async fn run_reflection_core(
             entries: &entries,
             summary: Some(&summary),
             team_id: team.map(|(tid, _)| tid),
+            kind: None,
         },
     )?;
 

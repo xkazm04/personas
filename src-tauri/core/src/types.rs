@@ -663,6 +663,7 @@ impl EphemeralPersona {
             setup_detail: None,
             disabled_dims_json: None,
             lifecycle: "draft".to_string(),
+            core_profile: None,
             created_at: now.clone(),
             updated_at: now,
         };

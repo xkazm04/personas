@@ -34,4 +34,27 @@ conflictStyle: string,
 /**
  * 0 = holds its ground, 1 = yields readily to stronger arguments.
  */
-deference: number, };
+deference: number,
+/**
+ * Living-agent additive fields (spark `living-agent-core`). All default
+ * so pre-existing `core_profile` JSON keeps parsing unchanged.
+ *
+ * WHO the persona is — authored prose identity beyond the dials.
+ */
+identity?: string,
+/**
+ * HOW it speaks — authored voice/tone prose.
+ */
+voice?: string,
+/**
+ * Standing principles it works by.
+ */
+principles: Array<string>,
+/**
+ * Hard constraints it must not cross.
+ */
+constraints: Array<string>,
+/**
+ * How it decides when principles conflict.
+ */
+decisionPrinciples: Array<string>, };

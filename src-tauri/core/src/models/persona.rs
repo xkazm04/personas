@@ -758,6 +758,12 @@ pub struct Persona {
     /// move to/from `archived`. Stored as the lowercase string.
     #[serde(default = "default_lifecycle")]
     pub lifecycle: String,
+    /// Serialized `PersonaCore` JSON — the persona's Character (living-agent
+    /// spine). Seeded by build/adopt (seed-if-absent), owned by the operator
+    /// thereafter. `None` for personas without an authored Core.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub core_profile: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -1025,6 +1031,10 @@ pub struct UpdatePersonaInput {
     /// `None` = leave unchanged. Promote/archive/restore drive this; the repo
     /// validates the value against `PersonaLifecycle`.
     pub lifecycle: Option<String>,
+    /// Serialized `PersonaCore` JSON (the persona's Character). Partial-update:
+    /// key omitted = leave unchanged; `null` = clear; value = set.
+    #[serde(default, deserialize_with = "double_option")]
+    pub core_profile: Option<Option<String>>,
     /// Change-log attribution only — NOT a persisted persona column. Tags each
     /// `update_persona` with its origin (`"editor" | "header" | "fanout" |
     /// "other"`) so the persona change history can say where an edit came from.

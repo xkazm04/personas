@@ -661,6 +661,7 @@ mod tests {
     fn make_test_persona(name: &str, prompt: &str) -> Persona {
         Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: format!("test-{name}"),
             project_id: "default".into(),
             name: name.into(),

@@ -760,6 +760,7 @@ pub async fn review_memories_with_cli(
                 entries: &entries,
                 summary: Some(&summary),
                 team_id: None,
+                kind: None,
             },
         )?;
         // Refresh details to surface the proposal action so the UI

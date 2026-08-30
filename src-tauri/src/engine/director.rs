@@ -2313,6 +2313,7 @@ mod tests {
         use crate::db::models::{PersonaGatewayExposure, PersonaTrustLevel, PersonaTrustOrigin};
         Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p-1".into(),
             project_id: "default".into(),
             name: "T".into(),

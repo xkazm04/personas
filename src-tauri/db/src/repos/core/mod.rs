@@ -1,11 +1,14 @@
+pub mod attention_ledger;
 pub mod build_sessions;
 pub mod curation_schedule;
 pub mod design_conversations;
+pub mod episodes;
 pub mod frontend_crashes;
 pub mod memories;
 pub mod memory_claims;
 pub mod memory_reaper;
 pub mod memory_review_proposal;
 pub mod personas;
+pub mod responsibilities;
 pub mod saved_views;
 pub mod settings;

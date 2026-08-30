@@ -232,6 +232,11 @@ export interface PartialPersonaUpdate {
   disabled_dims_json?: string | null;
   /** Lifecycle stage (`draft` | `active` | `archived`); omit to leave unchanged. */
   lifecycle?: string | null;
+  /**
+   * Serialized `PersonaCore` JSON — the persona's Character (living-agent
+   * spine). Pass `null` to clear; omit to leave unchanged.
+   */
+  core_profile?: string | null;
   /** Change-log attribution — where this edit originated. Defaults to `editor`
    *  (the generic builder is the editor autosave path). Not a persisted column. */
   source?: 'editor' | 'header' | 'fanout' | 'other';
@@ -360,7 +365,7 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
 }
 
 /**
- * The 13 `Option<Option<T>>` columns on `UpdatePersonaInput` (see
+ * The 14 `Option<Option<T>>` columns on `UpdatePersonaInput` (see
  * `core/src/models/persona.rs`). Each carries
  * `#[serde(default, deserialize_with = "double_option")]`, which gives the key
  * THREE meanings on the wire — and the generated binding cannot express that,
@@ -377,6 +382,7 @@ export const PERSONA_NULLABLE_FIELDS = [
   'description', 'structured_prompt', 'icon', 'color', 'last_design_result',
   'last_test_report', 'model_profile', 'max_budget_usd', 'max_turns',
   'design_context', 'home_team_id', 'parameters', 'disabled_dims_json',
+  'core_profile',
 ] as const;
 
 type PersonaNullableField = (typeof PERSONA_NULLABLE_FIELDS)[number];

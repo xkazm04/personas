@@ -16,4 +16,9 @@ status: string, createdAt: string, decidedAt?: string,
  * insights become team-shared (`home_team_id`) memories. `None`
  * for persona-scoped curation/reflection proposals.
  */
-teamId?: string, };
+teamId?: string,
+/**
+ * Proposal family: `memory_curation` (default, the original review
+ * pipeline) — the living-agent consolidation adds further kinds.
+ */
+kind: string, };

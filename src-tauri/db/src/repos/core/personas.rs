@@ -357,9 +357,10 @@ enum ProfileMode {
 /// an upgraded one, for the same query. Reading by name is what makes that
 /// difference stop mattering.
 ///
-/// Five ALTER-added columns are deliberately excluded because this mapper does
-/// not read them: `content_hash`, `core_profile`, `group_id`,
-/// `langfuse_export_enabled`, `last_modified_device`.
+/// Four ALTER-added columns are deliberately excluded because this mapper does
+/// not read them: `content_hash`, `group_id`, `langfuse_export_enabled`,
+/// `last_modified_device`. (`core_profile` joined the projection with the
+/// living-agent spine — the Life tab reads the Core off every row.)
 const FULL_COLUMNS: &str = "id, project_id, name, description, system_prompt, \
      structured_prompt, icon, color, enabled, sensitive, headless, starred, \
      max_concurrent, timeout_ms, notification_channels, last_design_result, \
@@ -367,7 +368,7 @@ const FULL_COLUMNS: &str = "id, project_id, name, description, system_prompt, \
      home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
      trust_score, parameters, gateway_exposure, template_category, \
      cli_awareness_enabled, setup_status, setup_detail, disabled_dims_json, \
-     lifecycle, created_at, updated_at";
+     lifecycle, core_profile, created_at, updated_at";
 
 fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Persona> {
     let id: String = row.get("id")?;
@@ -450,6 +451,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .ok()
             .flatten()
             .unwrap_or_else(|| "active".to_string()),
+        core_profile: row.get::<_, Option<String>>("core_profile").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -539,7 +541,8 @@ const LEAN_LIST_COLUMNS: &str = "id, project_id, name, description, icon, color,
      last_design_result, model_profile, max_budget_usd, max_turns, design_context, \
      home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
      trust_score, gateway_exposure, template_category, cli_awareness_enabled, \
-     setup_status, setup_detail, disabled_dims_json, lifecycle, created_at, updated_at";
+     setup_status, setup_detail, disabled_dims_json, lifecycle, core_profile, \
+     created_at, updated_at";
 
 /// Map a lean roster row to a `Persona` with the five heavy editor-only fields
 /// left blank. `model_profile` is redacted (list view). Mirrors the light-field
@@ -618,6 +621,9 @@ fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
             .ok()
             .flatten()
             .unwrap_or_else(|| "active".to_string()),
+        // Small and Life-tab-critical — the lean row carries it so the roster
+        // never blinks the Core away (unlike the five heavy blobs above).
+        core_profile: row.get::<_, Option<String>>("core_profile").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -1175,6 +1181,14 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(
             input.lifecycle,
             "lifecycle",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.core_profile,
+            "core_profile",
             sets,
             param_idx,
             param_values,

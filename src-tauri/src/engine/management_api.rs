@@ -4841,6 +4841,7 @@ mod tests {
         .to_string();
         let persona = Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p-1".into(),
             project_id: "default".into(),
             name: "Email Buddy".into(),
@@ -4893,6 +4894,7 @@ mod tests {
         let now = chrono::Utc::now().to_rfc3339();
         let persona = Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p-2".into(),
             project_id: "default".into(),
             name: "Helper".into(),

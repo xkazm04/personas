@@ -3037,13 +3037,30 @@ pub async fn promote_build_draft_inner(
     // Design D — stamp the authored core dials into `core_profile` (the
     // deliberation moderator routes by it; persona turns speak from it).
     // Best-effort post-commit, mirroring instant adopt (template_adopt.rs).
+    // Seed-if-absent (living-agent): once an operator has authored a Core, a
+    // re-promote must NEVER overwrite it — the guard makes the stamp a no-op
+    // on any row that already carries one.
     if let Some(core) = &promoted_core {
         if let Ok(conn) = state.db.get() {
-            let _ = conn.execute(
-                "UPDATE personas SET core_profile = ?1, updated_at = ?2 WHERE id = ?3",
+            match conn.execute(
+                "UPDATE personas SET core_profile = ?1, updated_at = ?2 \
+                 WHERE id = ?3 AND (core_profile IS NULL OR core_profile = '')",
                 rusqlite::params![core, chrono::Utc::now().to_rfc3339(), persona_id],
-            );
-            tracing::info!(persona_id = %persona_id, "promote: stamped persona core_profile");
+            ) {
+                Ok(0) => tracing::info!(
+                    persona_id = %persona_id,
+                    "promote: core_profile already present — seed skipped (operator-owned)",
+                ),
+                Ok(_) => tracing::info!(
+                    persona_id = %persona_id,
+                    "promote: stamped persona core_profile (seed-if-absent)",
+                ),
+                Err(e) => tracing::warn!(
+                    persona_id = %persona_id,
+                    error = %e,
+                    "promote: core_profile stamp failed (non-fatal)",
+                ),
+            }
         }
     }
 
