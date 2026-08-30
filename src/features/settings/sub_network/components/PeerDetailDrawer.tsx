@@ -45,20 +45,33 @@ export function PeerDetailDrawer({
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
 
-  // Listen for push-based manifest sync progress events
+  // Listen for push-based manifest sync progress events. Not routed through
+  // useTypedTauriEvent: the registry's payload for this event name
+  // (`{sync_id, synced, total}`) doesn't match what this component reads
+  // (`{peerId, resourceCount, syncedAt}`) — a pre-existing drift out of scope
+  // here — so the explicit generic + cancelled-flag pattern is applied
+  // directly to close the async-listener-teardown race without touching that.
   useEffect(() => {
     let unlisten: UnlistenFn | null = null;
-    void listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
+    let cancelled = false;
+    listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
       EventName.P2P_MANIFEST_SYNC_PROGRESS,
       (event) => {
+        if (cancelled) return;
         if (event.payload.peerId === peer.peer_id) {
           setSyncProgress({ resourceCount: event.payload.resourceCount, syncedAt: event.payload.syncedAt });
           // Refresh manifest data in the store
           fetchPeerManifest(peer.peer_id);
         }
       },
-    ).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
+    ).then((fn) => {
+      if (cancelled) fn();
+      else unlisten = fn;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   }, [peer.peer_id, fetchPeerManifest]);
 
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');

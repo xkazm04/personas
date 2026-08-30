@@ -87,17 +87,21 @@ export default function GraphPanel() {
     loadStats();
     void obsidianGraphStartWatcher().catch(silentCatch('GraphPanel:startWatcher'));
     let unlisten: (() => void) | null = null;
+    let cancelled = false;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    void listen<VaultChangedEvent>(VAULT_CHANGED_EVENT, () => {
+    listen<VaultChangedEvent>(VAULT_CHANGED_EVENT, () => {
+      if (cancelled) return;
       // Debounce burst events so we re-walk the vault at most once per ~800ms
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         void loadStats();
       }, 800);
     }).then((u) => {
-      unlisten = u;
-    });
+      if (cancelled) u();
+      else unlisten = u;
+    }).catch(silentCatch('GraphPanel:vaultChangedListen'));
     return () => {
+      cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
       if (unlisten) unlisten();
       // Stop the watcher on every unmount AND on vault switch — otherwise

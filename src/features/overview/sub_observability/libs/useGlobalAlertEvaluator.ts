@@ -14,6 +14,13 @@ import { silentCatch } from '@/lib/silentCatch';
  * passes it to `evaluateAlertRules(metricsOverride)` rather than writing the
  * shared `observabilityMetrics`, so it never clobbers the range/persona filter
  * the Observability tab is showing.
+ *
+ * Deliberately NOT routed through `usePolling`/pollingCoordinator visibility
+ * gating (long-session hygiene pass, see BackgroundServices): this loop is
+ * the client-side half of alert *delivery* — it has to keep evaluating and
+ * firing toasts/incidents while the window is minimized, which is exactly the
+ * scenario a user configures alerts for. Gating it on `document.hidden` would
+ * silently stop notifications the moment the app leaves focus.
  */
 const ALERT_EVAL_INTERVAL_MS = 60_000;
 const ALERT_EVAL_WINDOW_DAYS = 1;

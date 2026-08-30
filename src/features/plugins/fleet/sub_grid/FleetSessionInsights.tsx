@@ -27,23 +27,58 @@ interface Props {
 const SUMMARY_CACHE = new Map<string, { summary: FleetTranscriptSummary; at: number }>();
 const SUMMARY_TTL_MS = 15_000;
 
+/** Max sessions kept in the summary cache. Entries are small (a rollup, not a
+ *  transcript), but a long-lived fleet session cycles through hundreds of
+ *  Claude sessions over days — cap it so the map doesn't grow unbounded. */
+const MAX_SUMMARY_CACHE_ENTRIES = 50;
+
+let summaryCacheEvictions = 0;
+
+/** Read a session's cached summary, touching it to the MRU end on a hit. */
+function readSummaryCache(id: string): { summary: FleetTranscriptSummary; at: number } | undefined {
+  const entry = SUMMARY_CACHE.get(id);
+  if (entry) {
+    SUMMARY_CACHE.delete(id);
+    SUMMARY_CACHE.set(id, entry);
+  }
+  return entry;
+}
+
+/** Write a session's summary, evicting the least-recently-used entry past the cap. */
+function writeSummaryCache(id: string, entry: { summary: FleetTranscriptSummary; at: number }): void {
+  SUMMARY_CACHE.delete(id);
+  SUMMARY_CACHE.set(id, entry);
+  while (SUMMARY_CACHE.size > MAX_SUMMARY_CACHE_ENTRIES) {
+    const oldestKey = SUMMARY_CACHE.keys().next().value;
+    if (oldestKey === undefined) break;
+    SUMMARY_CACHE.delete(oldestKey);
+    summaryCacheEvictions++;
+  }
+}
+
+/** Test-only / diagnostic accessor for the eviction counter. */
+export function __getInsightsCacheStats(): { size: number; evictions: number } {
+  return { size: SUMMARY_CACHE.size, evictions: summaryCacheEvictions };
+}
+
 /** Test-only: the module-scope cache leaks between vitest cases otherwise. */
 export function __resetInsightsCacheForTests(): void {
   SUMMARY_CACHE.clear();
+  summaryCacheEvictions = 0;
 }
 
 export function FleetSessionInsights({ claudeSessionId }: Props) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
   const [summary, setSummary] = useState<FleetTranscriptSummary | null>(
-    () => (claudeSessionId ? SUMMARY_CACHE.get(claudeSessionId)?.summary ?? null : null),
+    () => (claudeSessionId ? readSummaryCache(claudeSessionId)?.summary ?? null : null),
   );
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async (force = false) => {
     if (!claudeSessionId) return;
-    const cached = SUMMARY_CACHE.get(claudeSessionId);
+    const cached = readSummaryCache(claudeSessionId);
     if (!force && cached && Date.now() - cached.at < SUMMARY_TTL_MS) {
       setSummary(cached.summary);
       setFailed(false);
@@ -55,7 +90,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       // Prefer the incremental rollup (delta-only, scale-friendly); fall back
       // to a full transcript read if the rollup isn't available yet.
       const s = (await sessionMetadata(claudeSessionId)) ?? (await readTranscript(claudeSessionId));
-      SUMMARY_CACHE.set(claudeSessionId, { summary: s, at: Date.now() });
+      writeSummaryCache(claudeSessionId, { summary: s, at: Date.now() });
       setSummary(s);
     } catch (e) {
       setFailed(true);

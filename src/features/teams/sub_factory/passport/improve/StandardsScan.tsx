@@ -3,14 +3,15 @@
 // fix — an instant Tier-0 config toggle where it maps, otherwise "Fix with
 // Claude" (the finding's recommendation becomes the task prompt). Portalled so
 // the matrix's overflow never clips it.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { listen } from '@tauri-apps/api/event';
 import { ShieldCheck, ScanSearch, X, Rocket } from 'lucide-react';
 
 import { listStandards, runStandardsScan } from '@/api/devTools/devTools';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName } from '@/lib/eventRegistry';
 import type { DevStandard } from '@/lib/bindings/DevStandard';
 import { derivePassportFromMetadata } from '../passportDerive';
 import { useImprove } from './ImproveContext';
@@ -57,17 +58,14 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
   }, [slug]);
 
   // scan lifecycle: listen for completion → refetch
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    listen<{ project_id?: string; status?: string }>('dev_tools_standards_scan_status', (e) => {
-      if (e.payload?.project_id !== slug) return;
-      if (e.payload.status === 'complete' || e.payload.status === 'error') {
-        setScanning(false);
-        listStandards(slug).then(setFindings).catch(silentCatch('StandardsScan:rescanListStandards'));
-      }
-    }).then((f) => { unlisten = f; }).catch(silentCatch('StandardsScan:listen'));
-    return () => { unlisten?.(); };
+  const onScanStatus = useCallback((payload: { project_id?: string; status?: string }) => {
+    if (payload?.project_id !== slug) return;
+    if (payload.status === 'complete' || payload.status === 'error') {
+      setScanning(false);
+      listStandards(slug).then(setFindings).catch(silentCatch('StandardsScan:rescanListStandards'));
+    }
   }, [slug]);
+  useTypedTauriEvent(EventName.STANDARDS_SCAN_STATUS, onScanStatus, 'StandardsScan:listen');
 
   useLayoutEffect(() => {
     if (!anchor) { setPos(null); return; }

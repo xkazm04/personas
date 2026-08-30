@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, Play } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { trackInteraction } from '@/lib/analytics';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName } from '@/lib/eventRegistry';
 import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/database/vectorKb';
 // The payload of `kb-extraction-progress` is a generated contract; this file
 // used to re-declare it by hand, so a Rust-side field change would have drifted
@@ -56,23 +57,18 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   useEffect(() => { void loadEntities(); }, [loadEntities]);
 
   // Live progress for the active run; refresh the entity table when it ends.
-  const loadEntitiesRef = useRef(loadEntities);
-  loadEntitiesRef.current = loadEntities;
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void listen<KbExtractionProgress>('kb-extraction-progress', (event) => {
-      if (event.payload.kbId !== kb.id) return;
-      setProgress(event.payload);
-      if (event.payload.status !== 'running') {
-        // A run that ends in failure carries its reason here and nowhere else:
-        // the progress line below is gated on `running`, so without this the
-        // run simply stops and the user is told nothing.
-        if (event.payload.error) setError(event.payload.error);
-        void loadEntitiesRef.current();
-      }
-    }).then((fn) => { unlisten = fn; });
-    return () => unlisten?.();
-  }, [kb.id]);
+  const onExtractionProgress = useCallback((payload: KbExtractionProgress) => {
+    if (payload.kbId !== kb.id) return;
+    setProgress(payload);
+    if (payload.status !== 'running') {
+      // A run that ends in failure carries its reason here and nowhere else:
+      // the progress line below is gated on `running`, so without this the
+      // run simply stops and the user is told nothing.
+      if (payload.error) setError(payload.error);
+      void loadEntities();
+    }
+  }, [kb.id, loadEntities]);
+  useTypedTauriEvent(EventName.KB_EXTRACTION_PROGRESS, onExtractionProgress, 'ExtractTab:extractionProgress');
 
   const handleInfer = useCallback(async () => {
     setInferring(true);
