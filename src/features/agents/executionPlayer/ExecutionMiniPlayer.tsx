@@ -30,6 +30,9 @@ import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/vi
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 
+/** Raw tail used only by the expanded terminal view; empty when collapsed/Simple mode so we skip the slice entirely. */
+const EMPTY_LINES: string[] = [];
+
 /** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
 function SimpleExecutionView({
   isExecuting,
@@ -37,6 +40,7 @@ function SimpleExecutionView({
   stageProgress,
   elapsed,
   executionOutput,
+  meaningfulTail,
   traceEntries,
   traceLive,
   executionSummary,
@@ -46,6 +50,7 @@ function SimpleExecutionView({
   stageProgress: { label: string; fraction: number };
   elapsed: number;
   executionOutput: string[];
+  meaningfulTail: string[];
   traceEntries: ReturnType<typeof useReasoningTrace>['entries'];
   traceLive: boolean;
   executionSummary: ReturnType<typeof useExecutionSummary>;
@@ -53,10 +58,10 @@ function SimpleExecutionView({
   const { t } = useTranslation();
   const { copied, copy } = useCopyToClipboard();
 
-  const resultText = useMemo(() => {
-    const meaningful = executionOutput.filter((l) => l.trim().length > 0);
-    return meaningful.slice(-6).join('\n');
-  }, [executionOutput]);
+  // meaningfulTail is executionMeaningfulTail (last 30 non-blank lines,
+  // maintained incrementally by executionSink) -- slicing that instead of
+  // re-filtering the whole executionOutput buffer every flush.
+  const resultText = useMemo(() => meaningfulTail.slice(-6).join('\n'), [meaningfulTail]);
 
   const handleCopy = useCallback(() => {
     copy(executionOutput.join('\n'));
@@ -139,6 +144,8 @@ export default function ExecutionMiniPlayer() {
 
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const executionOutput = useAgentStore((s) => s.executionOutput);
+  const executionMeaningfulTail = useAgentStore((s) => s.executionMeaningfulTail);
+  const executionLastLine = useAgentStore((s) => s.executionLastLine);
   const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
   const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
@@ -230,11 +237,16 @@ export default function ExecutionMiniPlayer() {
     }
   };
 
+  // Only the expanded Full-mode terminal renders the raw tail -- collapsed
+  // (pill) and Simple mode need lastLine/meaningfulTail only, so skip the
+  // slice entirely rather than recomputing it on every flush for a view
+  // that isn't even mounted.
+  const showExpandedTerminal = !isSimple && miniPlayerExpanded;
   const lastLines = useMemo(
-    () => executionOutput.slice(-30),
-    [executionOutput],
+    () => (showExpandedTerminal ? executionOutput.slice(-30) : EMPTY_LINES),
+    [executionOutput, showExpandedTerminal],
   );
-  const lastLine = executionOutput[executionOutput.length - 1] ?? '';
+  const lastLine = executionLastLine;
 
   const stageProgress = useMemo(
     () => traceProgress(pipelineTrace),
@@ -335,6 +347,7 @@ export default function ExecutionMiniPlayer() {
             stageProgress={stageProgress}
             elapsed={elapsed}
             executionOutput={executionOutput}
+            meaningfulTail={executionMeaningfulTail}
             traceEntries={traceEntries}
             traceLive={traceLive}
             executionSummary={executionSummary}
@@ -369,7 +382,7 @@ export default function ExecutionMiniPlayer() {
         )}
 
         {/* Full mode: Expanded scrollable terminal */}
-        {!isSimple && miniPlayerExpanded && (
+        {showExpandedTerminal && (
           <div
             ref={terminalRef}
             className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 font-mono typo-code leading-relaxed scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
