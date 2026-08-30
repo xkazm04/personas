@@ -3320,6 +3320,29 @@ struct KpTestTickBody {
     /// out `probationDays`. Ignored by every other phase.
     #[serde(default)]
     force_probation: bool,
+    /// **AUTHOR before triaging** (§13.13). With an `overnight` phase, run the
+    /// idea scanner for `projectId` first, so a compressed night can produce the
+    /// proposals it then reports instead of only re-triaging the deck it
+    /// inherited. Ignored by every other phase.
+    ///
+    /// Authoring normally lives in the `idea_replenish` subscription, on a 900s
+    /// timer behind a 20h per-project cooldown — pacing rules for an unattended
+    /// loop that a compressed night can never reach. The tick bypasses those;
+    /// it does **not** bypass the quota cooldown (see
+    /// `headless::IDEATION_QUOTA_BLOCKED`).
+    #[serde(default)]
+    ideate: bool,
+    /// **Run this night at this autopilot mode instead of the project's stored
+    /// one** — `off | measure | suggest | full`, for THIS TICK ONLY; the stored
+    /// mode is read and never written.
+    ///
+    /// A project on `full` dispatches every accepted idea as a fleet session,
+    /// which is the wrong night for a bench whose product is a proposal list.
+    /// `suggest` triages and stops, leaving the accepted ideas for the morning
+    /// — and the `blockedReason` that says so. An unknown word is a 400, never
+    /// a silent fallback to the stored mode.
+    #[serde(default)]
+    autopilot: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -3353,6 +3376,11 @@ struct KpTestPhaseResult {
     /// **`overnight` only** — the decline log, same rules as `proposals`.
     #[serde(skip_serializing_if = "Option::is_none")]
     declines: Option<Vec<personas_engine::headless::NightDecline>>,
+    /// **`overnight` only, and only when the tick asked to `ideate`** (§13.13).
+    /// Absent otherwise — the same rule the two lists follow: a night that was
+    /// never asked to author must not report a zero for it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ideation: Option<personas_engine::headless::Ideation>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     errors: Vec<String>,
 }
@@ -3369,6 +3397,13 @@ struct KpTestPhaseResult {
 ///
 /// Synchronous by design: a driver that compresses a night into one call needs
 /// the call to *mean* the night is over.
+///
+/// Two fields let a caller ask for an **ideation night** — a night that
+/// proposes and dispatches nothing (§13.13). `ideate` authors before triaging,
+/// through the same scanner entry the `idea_replenish` subscription uses;
+/// `autopilot` runs the night at a mode this tick names instead of the project's
+/// stored one, without writing it back. Both are additive: a tick that sends
+/// neither gets exactly the night it got before.
 async fn kp_test_tick(
     AxumState(state): AxumState<Arc<ManagementState>>,
     Json(body): Json<KpTestTickBody>,
@@ -3397,6 +3432,25 @@ async fn kp_test_tick(
         }
     };
 
+    // The autopilot override, resolved BEFORE any phase runs (§13.13). A word
+    // this vocabulary does not know is a 400 and no night at all — silently
+    // running the project's stored mode instead would hand a driver that asked
+    // for a quiet `suggest` night a full dispatching one, under a 200.
+    let mode_override =
+        match personas_engine::headless::select_autopilot_override(body.autopilot.as_deref()) {
+            Ok(mode) => mode,
+            Err(unknown) => {
+                return err_json(
+                    StatusCode::BAD_REQUEST,
+                    &format!(
+                        "unknown autopilot mode: {unknown}. Known modes: {}",
+                        personas_engine::headless::AUTOPILOT_MODES.join(", ")
+                    ),
+                )
+                .into_response();
+            }
+        };
+
     let started = chrono::Utc::now();
     let pool = state.pool.clone();
     let app = state.app.clone();
@@ -3405,7 +3459,16 @@ async fn kp_test_tick(
     for phase in requested {
         let t0 = std::time::Instant::now();
         let result = match phase {
-            "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
+            "overnight" => {
+                tick_phase_overnight(
+                    &pool,
+                    &app,
+                    body.project_id.as_deref(),
+                    body.ideate,
+                    mode_override,
+                )
+                .await
+            }
             "reconcile" => {
                 // The driver scopes by persona; reconcile is project-keyed.
                 // Resolve the persona's mandate project so a scoped tick never
@@ -3466,6 +3529,7 @@ fn phase_stub() -> KpTestPhaseResult {
         // absent rather than reporting an empty backlog it never looked at.
         proposals: None,
         declines: None,
+        ideation: None,
         errors: Vec::new(),
     }
 }
@@ -3474,6 +3538,8 @@ async fn tick_phase_overnight(
     pool: &crate::db::DbPool,
     app: &AppHandle,
     project_id: Option<&str>,
+    ideate: bool,
+    mode_override: Option<personas_engine::autopilot::AutopilotMode>,
 ) -> KpTestPhaseResult {
     use crate::commands::infrastructure::overnight;
 
@@ -3482,6 +3548,15 @@ async fn tick_phase_overnight(
         None => overnight::overnight_eligible_projects(pool),
     };
     let mut out = phase_stub();
+
+    // AUTHOR FIRST (§13.13). Before the night triages, give it something of its
+    // own to triage — otherwise a fresh tenure's first compressed night can only
+    // re-rank the deck it inherited, and the proposal list it reports is the
+    // previous operator's, not the holder's. Never fatal: a refused or broken
+    // scan is a reading on `ideation`, and the night below runs regardless.
+    if ideate {
+        out.ideation = Some(run_tick_ideation(pool, app, project_id).await);
+    }
     // Present from here on, `[]` included: an overnight phase that reports no
     // key at all is indistinguishable from one whose night produced nothing,
     // and telling those apart is the whole point of the two lists (§13.12).
@@ -3494,7 +3569,7 @@ async fn tick_phase_overnight(
 
     let (mut dispatched, mut blocked, mut degraded) = (0i64, 0i64, 0i64);
     for id in &projects {
-        match overnight::run_overnight_now_core(pool, app, id).await {
+        match overnight::run_overnight_now_core(pool, app, id, mode_override).await {
             Ok(run) => {
                 dispatched += run.dispatched_count;
                 if run.blocked_reason.is_some() {
@@ -3530,6 +3605,156 @@ async fn tick_phase_overnight(
         "degraded": degraded,
     }));
     out
+}
+
+/// §13.13 — run the idea scanner for the tick's project, through the very entry
+/// the `idea_replenish` subscription uses, and wait for it.
+///
+/// **The same path, minus the pacing.** The lens rotation is
+/// `pick_replenish_lenses` (LRU over the project's `dev_scans` history) and the
+/// entry is `idea_scanner::run_scan_core`, so the ideas this authors are the
+/// ideas that loop would have authored — the backlog aging pass, the backlog
+/// backpressure cap and the prompt's whole grounding block included. What is
+/// deliberately NOT consulted: `find_replenish_candidate`'s 20h `dev_scans`
+/// cooldown and its "fully idle project" picker, and the default-OFF
+/// `autonomous_idea_scan` switch. Those exist to stop an unattended 900s loop
+/// spending on its own initiative and to choose WHICH project it picks; a test
+/// tick names its project and is the operator's initiative. **The quota
+/// cooldown is honoured** — that one is a real spend limit, not a pacing rule.
+///
+/// It waits, because the whole point is that the same phase then triages and
+/// reports what this authored: `run_scan_core` returns as soon as it has
+/// spawned, so a tick that did not wait would report the deck it inherited and
+/// call it the night's work.
+async fn run_tick_ideation(
+    pool: &crate::db::DbPool,
+    app: &AppHandle,
+    project_id: Option<&str>,
+) -> personas_engine::headless::Ideation {
+    use personas_engine::headless::{ideation_decision, Ideation, IdeationDecision};
+
+    // The quota probe is a DB read; keep it off the async runtime's thread the
+    // way every other caller does.
+    let cooldown = {
+        let pool = pool.clone();
+        tokio::task::spawn_blocking(move || {
+            crate::engine::subscription::quota_cooldown_active(&pool)
+        })
+        .await
+        .unwrap_or(false)
+    };
+    let project_id = match ideation_decision(true, project_id.is_some(), cooldown) {
+        IdeationDecision::Blocked(reason) => return Ideation::blocked(reason),
+        // `run_tick_ideation` is only called when the tick asked, so this arm is
+        // unreachable — answered rather than unwrapped, because an ideation
+        // reading must never be the thing that panics a night.
+        IdeationDecision::NotRequested => return Ideation::blocked("ideation was not requested"),
+        IdeationDecision::Run => project_id.unwrap_or_default().to_string(),
+    };
+
+    let lenses = {
+        let pool = pool.clone();
+        let pid = project_id.clone();
+        tokio::task::spawn_blocking(move || {
+            crate::engine::subscription::pick_replenish_lenses(&pool, &pid)
+        })
+        .await
+        .unwrap_or_default()
+    };
+    if lenses.is_empty() {
+        return Ideation::blocked("no ideation lens could be picked for this project");
+    }
+    let lens = lenses.join(",");
+
+    tracing::info!(
+        project_id = %project_id,
+        lenses = ?lenses,
+        actor = personas_engine::headless::ACTOR,
+        "headless tick: authoring before triage (20h scan cooldown bypassed by request)"
+    );
+    let launched = crate::commands::infrastructure::idea_scanner::run_scan_core(
+        app.clone(),
+        pool.clone(),
+        project_id.clone(),
+        lenses,
+        None,
+        None,
+    )
+    .await;
+    let scan_id = match launched {
+        // A refusal is a RESULT — the backlog cap, a missing project, an
+        // unresolvable agent. Reported, never raised.
+        Err(e) => return Ideation::unmeasured(lens, format!("scan launch refused: {e}")),
+        Ok(v) => match v.get("scan_id").and_then(|v| v.as_str()) {
+            Some(id) => id.to_string(),
+            None => return Ideation::unmeasured(lens, "scan launched without an id to wait on"),
+        },
+    };
+    await_ideation_scan(pool, &scan_id, &lens).await
+}
+
+/// Poll the scan row until it stops running, or until the wait runs out.
+///
+/// The scan's own completion handler is what writes `status` and `idea_count`,
+/// so the row is the honest place to read both from — and `idea_count` is the
+/// scan's count, not this function's guess at one. A scan that ended `error` or
+/// outran the wait reports `authored: null`: it may well have written rows
+/// before it stopped, and claiming zero would be inventing a measurement.
+async fn await_ideation_scan(
+    pool: &crate::db::DbPool,
+    scan_id: &str,
+    lens: &str,
+) -> personas_engine::headless::Ideation {
+    use personas_engine::headless::Ideation;
+
+    let deadline = std::time::Instant::now()
+        + std::time::Duration::from_secs(personas_engine::headless::ideation_timeout_secs());
+    loop {
+        let scan = {
+            let pool = pool.clone();
+            let id = scan_id.to_string();
+            tokio::task::spawn_blocking(move || {
+                crate::db::repos::dev::scans::get_scan_by_id(&pool, &id)
+            })
+            .await
+        };
+        match scan {
+            Ok(Ok(scan)) if scan.status != "running" => {
+                return if scan.status == "complete" {
+                    Ideation::authored(lens, scan.idea_count as i64)
+                } else {
+                    Ideation::unmeasured(
+                        lens,
+                        format!(
+                            "scan {scan_id} ended `{}`: {}",
+                            scan.status,
+                            scan.error.as_deref().unwrap_or("no reason recorded")
+                        ),
+                    )
+                };
+            }
+            // The row is gone or unreadable: the tick cannot wait on something
+            // it cannot see, and pretending otherwise would burn the whole
+            // timeout before saying so.
+            Ok(Err(e)) => {
+                return Ideation::unmeasured(lens, format!("scan {scan_id} unreadable: {e}"))
+            }
+            Err(e) => {
+                return Ideation::unmeasured(lens, format!("scan {scan_id} wait failed: {e}"))
+            }
+            Ok(Ok(_)) => {}
+        }
+        if std::time::Instant::now() >= deadline {
+            return Ideation::unmeasured(
+                lens,
+                format!(
+                    "scan {scan_id} still running after {}s — the night ran without waiting further",
+                    personas_engine::headless::ideation_timeout_secs()
+                ),
+            );
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    }
 }
 
 async fn tick_phase_reconcile(
@@ -5028,15 +5253,21 @@ mod tests {
             axis: Some("stabilize".into()),
             size: Some("s".into()),
             confidence: None,
+            created_at: "2026-08-29T21:39:09+00:00".into(),
+            origin: None,
         }]);
         overnight.declines = Some(vec![
             NightDecline {
                 title: "Rewrite the renderer".into(),
                 reason: Some("outside-mandate"),
+                created_at: "2026-08-25T09:00:00+00:00".into(),
+                origin: Some("standards_finding".into()),
             },
             NightDecline {
                 title: "Something the rule name does not explain".into(),
                 reason: None,
+                created_at: "2026-08-25T09:01:00+00:00".into(),
+                origin: None,
             },
         ]);
 
@@ -5054,16 +5285,42 @@ mod tests {
                 // emitted as null rather than filled with a number nobody
                 // measured.
                 "confidence": null,
+                // §13.13 — the row's own stamp and sensor, verbatim. These two
+                // lists select by STATE and carry no time window, so a project
+                // that held a deck before the tenure began reports that deck;
+                // `createdAt` is what lets a reader tell those apart, and
+                // `origin` whether a sensor raised it rather than the holder.
+                "createdAt": "2026-08-29T21:39:09+00:00",
+                "origin": null,
             })
         );
         assert_eq!(
             json["declines"],
             serde_json::json!([
-                { "title": "Rewrite the renderer", "reason": "outside-mandate" },
+                { "title": "Rewrite the renderer", "reason": "outside-mandate",
+                  "createdAt": "2026-08-25T09:00:00+00:00", "origin": "standards_finding" },
                 // An unmappable reason is null, never invented.
-                { "title": "Something the rule name does not explain", "reason": null },
+                { "title": "Something the rule name does not explain", "reason": null,
+                  "createdAt": "2026-08-25T09:01:00+00:00", "origin": null },
             ])
         );
+
+        // Additive, asserted as such: the seven fields a7955297b shipped are
+        // still spelled exactly the way they were, and the two new ones are the
+        // only difference.
+        let row = json["proposals"][0].as_object().expect("a proposal object");
+        assert_eq!(row.len(), 9);
+        for key in [
+            "title",
+            "target",
+            "why",
+            "journey",
+            "axis",
+            "size",
+            "confidence",
+        ] {
+            assert!(row.contains_key(key), "`{key}` must not be renamed");
+        }
     }
 
     #[test]
@@ -5078,5 +5335,160 @@ mod tests {
             );
             assert!(json.get("declines").is_none(), "{phase}");
         }
+    }
+
+    // =========================================================================
+    // The ideation night (§13.13) — authoring, the mode override, and the
+    // provenance the two lists now carry
+    // =========================================================================
+
+    #[test]
+    fn an_ideation_reading_appears_only_on_a_night_that_was_asked_to_author() {
+        // Not asked: the key is absent. The same rule the two lists follow —
+        // `[]` means "the night produced nothing", and there is no such thing
+        // as an ideation reading for a night that never attempted one.
+        let mut quiet = phase_stub();
+        quiet.phase = "overnight";
+        quiet.proposals = Some(Vec::new());
+        quiet.declines = Some(Vec::new());
+        let json = serde_json::to_value(&quiet).expect("serialize");
+        assert!(
+            json.get("ideation").is_none(),
+            "a night nobody asked to ideate must not report `ran: false`"
+        );
+
+        // Asked, and it ran: four fields, and the count is the scan row's own.
+        let mut authored = phase_stub();
+        authored.phase = "overnight";
+        authored.proposals = Some(Vec::new());
+        authored.declines = Some(Vec::new());
+        authored.ideation = Some(personas_engine::headless::Ideation::authored(
+            "architecture-analyst,business-strategist",
+            6,
+        ));
+        let json = serde_json::to_value(&authored).expect("serialize");
+        assert_eq!(
+            json["ideation"],
+            serde_json::json!({
+                "ran": true,
+                "lens": "architecture-analyst,business-strategist",
+                "authored": 6,
+                "blocked": null,
+            })
+        );
+
+        // Asked, and refused: never an error, always a reading — and `authored`
+        // is null, because unmeasured is not zero.
+        let mut blocked = phase_stub();
+        blocked.phase = "overnight";
+        blocked.proposals = Some(Vec::new());
+        blocked.declines = Some(Vec::new());
+        blocked.ideation = Some(personas_engine::headless::Ideation::blocked(
+            personas_engine::headless::IDEATION_QUOTA_BLOCKED,
+        ));
+        let json = serde_json::to_value(&blocked).expect("serialize");
+        assert_eq!(json["ran"], serde_json::json!(true), "the night still ran");
+        assert_eq!(json["ideation"]["ran"], serde_json::json!(false));
+        assert_eq!(json["ideation"]["authored"], serde_json::Value::Null);
+        assert!(json["ideation"]["blocked"]
+            .as_str()
+            .expect("a blocked ideation says why")
+            .contains("quota cooldown"));
+    }
+
+    #[test]
+    fn the_ideation_reading_is_additive_and_moves_nothing_the_night_already_reported() {
+        let mut overnight = phase_stub();
+        overnight.phase = "overnight";
+        overnight.counts = Some(serde_json::json!({
+            "projects": 1, "dispatched": 0, "blocked": 1, "degraded": 0
+        }));
+        overnight.details = vec![serde_json::json!({ "id": "run-1" })];
+        overnight.errors = vec!["proj-1: nope".to_string()];
+        overnight.proposals = Some(Vec::new());
+        overnight.declines = Some(Vec::new());
+        let without = serde_json::to_value(&overnight).expect("serialize");
+
+        overnight.ideation = Some(personas_engine::headless::Ideation::authored(
+            "ux-reviewer",
+            3,
+        ));
+        let with = serde_json::to_value(&overnight).expect("serialize");
+
+        for key in [
+            "phase",
+            "ran",
+            "durationMs",
+            "counts",
+            "details",
+            "proposals",
+            "declines",
+            "errors",
+        ] {
+            assert_eq!(
+                with[key], without[key],
+                "`{key}` is deep-scanned by a driver already — ideation is added beside it"
+            );
+        }
+        assert_eq!(
+            with.as_object().unwrap().len(),
+            without.as_object().unwrap().len() + 1
+        );
+    }
+
+    #[test]
+    fn no_phase_but_overnight_can_carry_an_ideation_reading() {
+        for phase in ["reconcile", "report", "probation"] {
+            let mut result = phase_stub();
+            result.phase = phase;
+            let json = serde_json::to_value(&result).expect("serialize");
+            assert!(
+                json.get("ideation").is_none(),
+                "{phase} never authors — reporting an ideation reading would claim it did"
+            );
+        }
+    }
+
+    #[test]
+    fn a_suggest_override_is_the_mode_that_triages_without_dispatching() {
+        use crate::engine::autopilot::Capability;
+        use personas_engine::headless::select_autopilot_override;
+
+        // Why `autopilot: "suggest"` produces `dispatched: 0`: this is the same
+        // matrix `run_project_night` consults, and it is the only thing between
+        // an accepted idea and a fleet session. `suggest` grants the triage half
+        // and refuses the dispatch half, so the night reaches
+        // `blockedReason: "mode `suggest` triages but does not dispatch (N
+        // accepted idea(s) left for the morning)"` — which is exactly the list
+        // §13.12 then reports.
+        let suggest = select_autopilot_override(Some("suggest"))
+            .expect("a known mode")
+            .expect("an override was asked for");
+        assert!(suggest.allows(Capability::ScanAndTriage));
+        assert!(
+            !suggest.allows(Capability::DispatchFixes),
+            "an ideation night that dispatched would be the night the override exists to avoid"
+        );
+
+        // And `full`, which the kp project actually stores, does dispatch —
+        // the reason the override is needed at all rather than just asking
+        // nicely.
+        let full = select_autopilot_override(Some("full"))
+            .expect("a known mode")
+            .expect("an override was asked for");
+        assert!(full.allows(Capability::DispatchFixes));
+
+        // The override is a value passed into one night. Nothing here writes a
+        // mode, and `run_overnight_now_core` reads `load_modes` and never
+        // writes it back — so the project is the same after the tick as before.
+        assert_eq!(
+            select_autopilot_override(None),
+            Ok(None),
+            "a tick that names no mode runs the project's stored one"
+        );
+        assert!(
+            select_autopilot_override(Some("suggets")).is_err(),
+            "a typo is a 400, never a silently-full night"
+        );
     }
 }

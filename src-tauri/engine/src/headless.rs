@@ -506,6 +506,196 @@ pub fn select_tick_phases(requested: Option<&[String]>) -> Result<Vec<&'static s
         .collect())
 }
 
+// ---------------------------------------------------------------------------
+// The ideation night (§13.13): author first, and run the night at a mode the
+// tick names rather than the one the project stores
+// ---------------------------------------------------------------------------
+//
+// A rung-0 ideation night is a night that PROPOSES and dispatches nothing. Two
+// things stood in the way of running one over this bridge, and both are here:
+//
+//  1. The tick only ever triaged ideas that already existed. Authoring lives in
+//     the `idea_replenish` subscription, on a 900s timer behind a 20h
+//     per-project cooldown, which a compressed night never reaches — so a fresh
+//     tenure's first night could only re-triage the deck it inherited.
+//  2. A project left on autopilot `full` DISPATCHES every accepted idea as a
+//     fleet session. For a night whose whole product is a list, that is not a
+//     stronger run, it is the wrong run — and flipping the stored mode to get a
+//     quiet night would leave the project changed after the bench went home.
+
+/// The autopilot modes a tick may name. Same four words `AutopilotMode::parse`
+/// accepts — spelled out here so the refusal message can list them, exactly as
+/// [`TICK_PHASES`] does for phases.
+pub const AUTOPILOT_MODES: [&str; 4] = ["off", "measure", "suggest", "full"];
+
+/// Resolve a tick's `autopilot` override.
+///
+/// `None` ⇒ no override: the night runs at the project's stored mode, which is
+/// what every production caller gets. `Some(word)` ⇒ that mode, **for this tick
+/// only** — the caller applies it to the night and writes nothing back, so a
+/// bench that asked for one quiet night leaves the project exactly as it found
+/// it.
+///
+/// An unknown word is an `Err`, never a silent fallback to the stored mode, for
+/// the same reason an unknown phase name is a 400: a driver that typed
+/// `"sugest"` and got a 200 would read a full dispatching night as the quiet one
+/// it asked for — and that mistake costs money.
+pub fn select_autopilot_override(
+    requested: Option<&str>,
+) -> Result<Option<crate::autopilot::AutopilotMode>, String> {
+    let Some(raw) = requested else {
+        return Ok(None);
+    };
+    let word = raw.trim();
+    crate::autopilot::AutopilotMode::parse(word)
+        .map(Some)
+        .ok_or_else(|| word.to_string())
+}
+
+/// Whether the tick should run the idea scanner before it triages, and if not,
+/// why not.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IdeationDecision {
+    /// The tick did not ask to ideate. Nothing is reported: a night that was
+    /// never asked to author must not carry an ideation reading at all.
+    NotRequested,
+    /// Asked for, and refused before anything was spent.
+    Blocked(&'static str),
+    /// Run the scanner for the tick's project.
+    Run,
+}
+
+/// Refusal: `ideate` without a project to ideate for.
+///
+/// An unscoped tick runs the night for **every** eligible project; ideating
+/// unscoped would spawn a paid scan agent per project off one flag. The tick
+/// still runs — this is reported, not raised.
+pub const IDEATION_NEEDS_PROJECT: &str =
+    "ideation needs a projectId — an unscoped tick would spend one scan agent per eligible project";
+
+/// Refusal: the provider quota cooldown is open.
+///
+/// **The one guard a test tick does not get to wave away.** The 20h per-project
+/// scan cooldown is a pacing rule for an unattended 900s loop and a test tick is
+/// neither unattended nor paced, so the tick bypasses it deliberately. A quota
+/// cooldown is a different animal: it says the account is at or over a real
+/// spend limit right now. That is true whoever is asking, and a bench that
+/// spent through it would be measuring the wrong thing anyway.
+pub const IDEATION_QUOTA_BLOCKED: &str =
+    "quota cooldown active — a spend guard is not a test artefact, so the tick did not scan";
+
+/// The gate, as a pure function, so the one decision that matters (which guard
+/// a test tick honours and which it bypasses) can be read and tested without a
+/// Tauri handle, a pool or a paid agent.
+///
+/// Note what is **absent** from the arguments: the `dev_scans` 20h cooldown and
+/// the default-OFF `autonomous_idea_scan` setting. Both gate the *unattended*
+/// replenish loop — "don't do this on your own initiative, and not more than
+/// once a day" — and a tick carrying `ideate: true` is precisely an operator
+/// asking on purpose. They are not consulted, and that is the bypass this
+/// function exists to make legible.
+pub fn ideation_decision(
+    requested: bool,
+    has_project: bool,
+    quota_cooldown: bool,
+) -> IdeationDecision {
+    if !requested {
+        return IdeationDecision::NotRequested;
+    }
+    if !has_project {
+        return IdeationDecision::Blocked(IDEATION_NEEDS_PROJECT);
+    }
+    if quota_cooldown {
+        return IdeationDecision::Blocked(IDEATION_QUOTA_BLOCKED);
+    }
+    IdeationDecision::Run
+}
+
+/// What the tick's authoring half did, reported on the `overnight` phase.
+///
+/// Present exactly when the tick asked to ideate, absent otherwise — the same
+/// rule the two backlog lists follow (§13.12): a phase that never attempted
+/// something must not report a zero for it.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Ideation {
+    /// **True only when the scan finished inside this tick**, so the ideas it
+    /// authored are in the very backlog this same phase goes on to triage and
+    /// report. A scan that was launched and then errored or outran the wait is
+    /// `false` with `blocked` saying which — "it started" is not the claim a
+    /// reader of a night's proposal list needs.
+    pub ran: bool,
+    /// The lenses the scan ran, comma-joined — the lane's own spelling
+    /// (`dev_scans.scan_type` stores a comma-joined list). `null` when no scan
+    /// was ever launched.
+    pub lens: Option<String>,
+    /// Ideas the scan created, from the completed scan row's own count.
+    /// **`null` is "unmeasured", never zero**: a scan that errored may well have
+    /// written rows before it failed, and a tick that stopped waiting knows
+    /// nothing about what landed after.
+    pub authored: Option<i64>,
+    /// Why this night has no authored ideas it can vouch for; `null` when the
+    /// scan completed. Ideation never fails the tick — a blocked or broken scan
+    /// is a reading, and the night still ran.
+    pub blocked: Option<String>,
+}
+
+impl Ideation {
+    /// Refused before anything was launched.
+    pub fn blocked(reason: impl Into<String>) -> Self {
+        Self {
+            ran: false,
+            lens: None,
+            authored: None,
+            blocked: Some(reason.into()),
+        }
+    }
+
+    /// The scan completed and its count is the row's own.
+    pub fn authored(lens: impl Into<String>, authored: i64) -> Self {
+        Self {
+            ran: true,
+            lens: Some(lens.into()),
+            authored: Some(authored),
+            blocked: None,
+        }
+    }
+
+    /// Launched, but this tick cannot say what it produced (it errored, or the
+    /// wait ran out). The lens is still known and still reported.
+    pub fn unmeasured(lens: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self {
+            ran: false,
+            lens: Some(lens.into()),
+            authored: None,
+            blocked: Some(reason.into()),
+        }
+    }
+}
+
+/// How long the tick waits for the scan it launched, in seconds.
+pub const IDEATION_TIMEOUT_ENV: &str = "PERSONAS_HEADLESS_IDEATION_TIMEOUT_SECS";
+
+/// Default wait: 20 minutes. An idea scan spawns a paid CLI agent per lens and
+/// the replenish loop budgets ~6 minutes for one; two lenses plus a slow
+/// provider fits inside this, and a night that needs longer reports
+/// `blocked` rather than holding the driver's HTTP call open indefinitely.
+pub const IDEATION_TIMEOUT_DEFAULT_SECS: u64 = 1_200;
+
+/// Parse the wait override. Anything unreadable — a non-number, or a `0` that
+/// would turn the wait into "don't wait" while still spending on the scan —
+/// falls back to the default rather than being obeyed.
+pub fn parse_ideation_timeout_secs(raw: Option<&str>) -> u64 {
+    raw.and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(IDEATION_TIMEOUT_DEFAULT_SECS)
+}
+
+/// [`parse_ideation_timeout_secs`] over [`IDEATION_TIMEOUT_ENV`].
+pub fn ideation_timeout_secs() -> u64 {
+    parse_ideation_timeout_secs(std::env::var(IDEATION_TIMEOUT_ENV).ok().as_deref())
+}
+
 /// Merge `{decidedBy, decidedAt}` into a decision row's JSON payload.
 ///
 /// The tables this mode writes to (`companion_approval`) have no actor column,
@@ -625,6 +815,34 @@ pub struct NightProposal {
     pub size: Option<String>,
     /// Always `None`. See the type docs.
     pub confidence: Option<f64>,
+    /// `dev_ideas.created_at`, **carried verbatim** — never reformatted.
+    ///
+    /// It is here because these two lists select by STATE and by design carry
+    /// no time window (see [`night_backlog`]): a project that held an operator's
+    /// deck before a tenure began reports that deck as the night's proposals,
+    /// and only the row's own age can tell a reader which ideas the current
+    /// holder actually authored. The window belongs to the reader, so the reader
+    /// is given the stamp.
+    ///
+    /// **Verbatim, and two forms exist.** Every idea a scanner raises is written
+    /// by `dev_ideas::create_idea` / `create_finding` with
+    /// `chrono::Utc::now().to_rfc3339()`, so a holder's proposals carry RFC3339
+    /// UTC. A handful of older doors write SQLite's `datetime('now')`
+    /// (`"YYYY-MM-DD HH:MM:SS"`, UTC, no zone marker). Normalising the second
+    /// into the first would mean stamping a zone onto a value that does not
+    /// carry one — so the column is passed through as stored and a reader that
+    /// parses it must accept both. Reporting what the row says is not the same
+    /// as making it prettier.
+    pub created_at: String,
+    /// `dev_ideas.origin`, **verbatim**: which sensor raised the idea (one of
+    /// `personas_db::models::FINDING_ORIGINS`), or `null` for a classic
+    /// Idea-Scanner idea.
+    ///
+    /// Paired with `createdAt` for the same reason: state alone cannot say
+    /// whether a proposal came from the night's own reasoning or from a
+    /// mechanical sensor sweep, and a bench grading a holder's judgement is
+    /// asking exactly that. `null` is a real answer here, not a gap.
+    pub origin: Option<String>,
 }
 
 /// One idea the night turned down.
@@ -635,6 +853,11 @@ pub struct NightDecline {
     /// One of [`DECLINE_REASONS`], or `null` when the stored reason does not
     /// map onto one. Never guessed.
     pub reason: Option<&'static str>,
+    /// `dev_ideas.created_at`, **carried verbatim** — the same rule and the same
+    /// reason as [`NightProposal::created_at`], which documents both forms.
+    pub created_at: String,
+    /// `dev_ideas.origin`, **verbatim** — see [`NightProposal::origin`].
+    pub origin: Option<String>,
 }
 
 /// The two lists an overnight phase reports. Both are always present — empty is
@@ -891,6 +1114,8 @@ pub fn night_backlog(pool: &personas_db::DbPool, project_id: &str) -> NightBackl
         .map(|idea| NightDecline {
             title: idea.title,
             reason: decline_reason(idea.rejection_reason.as_deref()),
+            created_at: idea.created_at,
+            origin: idea.origin,
         })
         .collect();
 
@@ -995,6 +1220,12 @@ fn proposal_from(
         },
         size: proposal_size(idea.effort).map(str::to_string),
         confidence: None,
+        // Verbatim, both of them. Everything else on this struct is a
+        // projection the module had to argue for; these two are the row's own
+        // words, and the argument for them is that a reader grading a tenure
+        // needs to know which proposals predate it.
+        created_at: idea.created_at.clone(),
+        origin: idea.origin.clone(),
     }
 }
 
@@ -1706,5 +1937,255 @@ mod tests {
             invented.journey, None,
             "`Journey: none` is an honest null, not a journey"
         );
+    }
+
+    // =========================================================================
+    // The ideation night (§13.13)
+    // =========================================================================
+
+    #[test]
+    fn an_absent_autopilot_override_leaves_the_projects_own_mode_alone() {
+        assert_eq!(select_autopilot_override(None), Ok(None));
+    }
+
+    #[test]
+    fn every_stored_autopilot_word_is_accepted_as_an_override() {
+        use crate::autopilot::AutopilotMode;
+        for word in AUTOPILOT_MODES {
+            let parsed = select_autopilot_override(Some(word)).expect("known mode");
+            assert_eq!(
+                parsed.map(AutopilotMode::as_str),
+                Some(word),
+                "the override vocabulary and the stored vocabulary must be the same four words"
+            );
+        }
+        // Whitespace is the driver's, not a different mode.
+        assert_eq!(
+            select_autopilot_override(Some("  suggest ")),
+            Ok(Some(AutopilotMode::Suggest))
+        );
+    }
+
+    #[test]
+    fn an_unknown_autopilot_word_is_refused_rather_than_ignored() {
+        // Silently falling back to the stored mode would run a `full`,
+        // dispatching, money-spending night for a driver that asked for a quiet
+        // one and read a 200 as confirmation.
+        assert_eq!(
+            select_autopilot_override(Some("sugest")),
+            Err("sugest".to_string())
+        );
+        assert_eq!(select_autopilot_override(Some("")), Err(String::new()));
+    }
+
+    #[test]
+    fn ideation_runs_only_when_asked_and_only_for_a_named_project() {
+        assert_eq!(
+            ideation_decision(false, true, false),
+            IdeationDecision::NotRequested,
+            "a night nobody asked to author reports no ideation reading at all"
+        );
+        assert_eq!(
+            ideation_decision(true, false, false),
+            IdeationDecision::Blocked(IDEATION_NEEDS_PROJECT)
+        );
+        assert_eq!(ideation_decision(true, true, false), IdeationDecision::Run);
+    }
+
+    #[test]
+    fn a_test_tick_bypasses_the_pacing_cooldown_but_never_the_spend_guard() {
+        // The whole point of the flag: the 20h `dev_scans` cooldown and the
+        // default-OFF subscription switch are not arguments to this function,
+        // because an explicit tick is exactly the case they were written to
+        // exclude. The quota cooldown IS an argument, and it wins.
+        assert_eq!(
+            ideation_decision(true, true, true),
+            IdeationDecision::Blocked(IDEATION_QUOTA_BLOCKED)
+        );
+        // And it is reported, never raised — a blocked scan still leaves a night
+        // that ran.
+        let reading = Ideation::blocked(IDEATION_QUOTA_BLOCKED);
+        assert!(!reading.ran);
+        assert_eq!(reading.authored, None, "unmeasured is not zero");
+    }
+
+    #[test]
+    fn an_ideation_reading_says_which_of_the_three_answers_it_is() {
+        let ran = serde_json::to_value(Ideation::authored("architecture-analyst,ux-reviewer", 7))
+            .unwrap();
+        assert_eq!(
+            ran,
+            serde_json::json!({
+                "ran": true,
+                "lens": "architecture-analyst,ux-reviewer",
+                "authored": 7,
+                "blocked": null,
+            })
+        );
+
+        let refused = serde_json::to_value(Ideation::blocked(IDEATION_QUOTA_BLOCKED)).unwrap();
+        assert_eq!(refused["ran"], serde_json::json!(false));
+        assert_eq!(refused["lens"], serde_json::Value::Null);
+        assert_eq!(refused["authored"], serde_json::Value::Null);
+        assert_eq!(
+            refused["blocked"],
+            serde_json::json!(IDEATION_QUOTA_BLOCKED)
+        );
+
+        // Launched, then unreadable: the lens is known, the count is not, and
+        // `ran` does not claim the night's ideas are in the backlog below it.
+        let broken = serde_json::to_value(Ideation::unmeasured(
+            "security-auditor",
+            "scan sc-1 ended `error`: provider refused",
+        ))
+        .unwrap();
+        assert_eq!(broken["ran"], serde_json::json!(false));
+        assert_eq!(broken["lens"], serde_json::json!("security-auditor"));
+        assert_eq!(broken["authored"], serde_json::Value::Null);
+        assert!(broken["blocked"].as_str().unwrap().contains("sc-1"));
+    }
+
+    #[test]
+    fn the_ideation_wait_refuses_an_override_that_would_not_wait_at_all() {
+        assert_eq!(
+            parse_ideation_timeout_secs(None),
+            IDEATION_TIMEOUT_DEFAULT_SECS
+        );
+        assert_eq!(parse_ideation_timeout_secs(Some(" 90 ")), 90);
+        // A zero wait would spend on the scan and then report nothing about it.
+        assert_eq!(
+            parse_ideation_timeout_secs(Some("0")),
+            IDEATION_TIMEOUT_DEFAULT_SECS
+        );
+        assert_eq!(
+            parse_ideation_timeout_secs(Some("soon")),
+            IDEATION_TIMEOUT_DEFAULT_SECS
+        );
+    }
+
+    #[test]
+    fn every_row_says_when_it_was_raised_and_by_which_sensor() {
+        use personas_db::repos::dev::ideas;
+
+        let pool = backlog_pool();
+        let project_id = backlog_project(&pool, "dated-night");
+
+        let scanned = ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "stabilize",
+            Some("technical"),
+            "Close the decode seam",
+            Some("the shape is generated but never enforced"),
+            Some("two call sites already disagree"),
+            Some("accepted"),
+            Some(4),
+            Some(7),
+            Some(2),
+            None,
+            None,
+        )
+        .expect("scanner idea");
+        let sensed = ideas::create_finding(
+            &pool,
+            &project_id,
+            "standards_finding",
+            "Enforce the shape at the seam",
+            None,
+            Some("technical"),
+            None,
+            None,
+            None,
+            "seam:decode",
+            Some(6),
+            Some(6),
+            Some(2),
+        )
+        .expect("finding")
+        .expect("a fresh dedup key writes a row");
+        let declined = ideas::create_idea(
+            &pool,
+            Some(&project_id),
+            None,
+            "stabilize",
+            Some("technical"),
+            "Rewrite the renderer",
+            None,
+            None,
+            Some("rejected"),
+            Some(9),
+            Some(2),
+            Some(8),
+            None,
+            None,
+        )
+        .expect("declined idea");
+
+        let backlog = night_backlog(&pool, &project_id);
+        let proposal = |t: &str| {
+            backlog
+                .proposals
+                .iter()
+                .find(|p| p.title == t)
+                .unwrap_or_else(|| panic!("{t} missing"))
+        };
+
+        // Verbatim, both of them.
+        assert_eq!(
+            proposal("Close the decode seam").created_at,
+            scanned.created_at
+        );
+        assert_eq!(
+            proposal("Close the decode seam").origin,
+            None,
+            "a classic Idea-Scanner idea has no sensor, and null says so"
+        );
+        assert_eq!(
+            proposal("Enforce the shape at the seam").created_at,
+            sensed.created_at
+        );
+        assert_eq!(
+            proposal("Enforce the shape at the seam").origin.as_deref(),
+            Some("standards_finding")
+        );
+        assert_eq!(backlog.declines.len(), 1);
+        assert_eq!(backlog.declines[0].created_at, declined.created_at);
+        assert_eq!(backlog.declines[0].origin, None);
+
+        // Additive, and the addition is checked as such: the seven fields a
+        // driver already deep-scans are still there, spelled the same way, on
+        // the same rows.
+        let json = serde_json::to_value(&backlog).unwrap();
+        let row = json["proposals"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["title"] == serde_json::json!("Close the decode seam"))
+            .unwrap();
+        assert_eq!(row["title"], serde_json::json!("Close the decode seam"));
+        assert_eq!(row["target"], serde_json::json!("dated-night"));
+        assert_eq!(
+            row["why"],
+            serde_json::json!("two call sites already disagree")
+        );
+        assert_eq!(row["journey"], serde_json::Value::Null);
+        assert_eq!(row["axis"], serde_json::json!("stabilize"));
+        assert_eq!(row["size"], serde_json::json!("s"));
+        assert_eq!(row["confidence"], serde_json::Value::Null);
+        assert_eq!(row["createdAt"], serde_json::json!(scanned.created_at));
+        assert_eq!(row["origin"], serde_json::Value::Null);
+        assert_eq!(
+            row.as_object().unwrap().len(),
+            9,
+            "seven original fields plus the two added — nothing renamed, nothing dropped"
+        );
+
+        let decline = &json["declines"][0];
+        assert_eq!(decline["title"], serde_json::json!("Rewrite the renderer"));
+        assert_eq!(decline["reason"], serde_json::Value::Null);
+        assert_eq!(decline["createdAt"], serde_json::json!(declined.created_at));
+        assert_eq!(decline["origin"], serde_json::Value::Null);
+        assert_eq!(decline.as_object().unwrap().len(), 4);
     }
 }

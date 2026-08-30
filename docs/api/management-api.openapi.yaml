@@ -272,6 +272,36 @@ paths:
         no decline vocabulary, only whatever the rejecting hand typed — so it
         answers `null` rather than guessing. `confidence` is always `null`:
         nothing in the backlog records one, and unmeasured is not zero.
+
+        **`ideate` + `autopilot` make it an ideation night** (§13.13) — a night
+        that proposes and dispatches nothing.
+
+        `ideate: true` runs the idea scanner for `projectId` **before** the
+        night triages, through the same entry and the same LRU lens rotation the
+        `idea_replenish` subscription uses, and waits for it — so what the night
+        authors is in the backlog it then reports. It bypasses that loop's
+        pacing rules (the 20h per-project scan cooldown, the idle-project picker,
+        the default-OFF switch), which exist to stop an unattended timer spending
+        on its own initiative; it does **not** bypass the quota cooldown, because
+        a spend guard is not a test artefact. Ideation never fails the tick: the
+        `overnight` phase carries an `ideation` reading saying whether it ran,
+        was blocked, or could not be measured.
+
+        `autopilot` runs that one night at the mode it names instead of the
+        project's stored one — read, never written, so the project is unchanged
+        after the tick. `suggest` grants `ScanAndTriage` and refuses
+        `DispatchFixes`, which is what makes an ideation night report
+        `dispatched: 0` and leave its accepted ideas in `proposals[]`. An unknown
+        mode is a **400**, never a silent fallback: a driver that typed `sugest`
+        and got a 200 would read a full dispatching night as the quiet one it
+        asked for.
+
+        Every `proposals[]` and `declines[]` row also carries `createdAt` and
+        `origin`, verbatim from `dev_ideas`. The two lists select by STATE and
+        deliberately carry no time window, so a project holding a deck raised
+        before a tenure began reports that deck; the row's own stamp is what lets
+        a reader tell those apart, and `origin` whether a sensor raised it rather
+        than the holder.
       requestBody:
         required: false
         content:
@@ -289,6 +319,19 @@ paths:
                   type: array
                   items: { type: string, enum: [overnight, reconcile, report, probation] }
                   description: Absent ⇒ all four.
+                ideate:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Author before triaging (§13.13). Requires `projectId` — an unscoped tick would spend one
+                    scan agent per eligible project, and reports that as `ideation.blocked` rather than refusing.
+                    Ignored by every phase but `overnight`.
+                autopilot:
+                  type: string
+                  enum: [off, measure, suggest, full]
+                  description: >-
+                    Run this ONE night at this autopilot mode instead of the project's stored one. The stored
+                    mode is read and never written. Absent ⇒ the stored mode. An unknown word is a 400.
       responses:
         "200":
           description: Every requested phase ran (a phase's own failures are in its `errors`)
@@ -328,6 +371,8 @@ paths:
                               axis: { type: [string, "null"], description: "The value axis the holder itself named in the idea's `Axis:` marker line — one of `time`, `risk`, `gate`; a word outside that set reports null and never falls back. When no axis was stated: `scan_type`, falling back to `category` (a lens, not a value axis)." }
                               size: { type: [string, "null"], enum: [xs, s, m, l, xl, null], description: Folded from `effort` along the emitter's 1..=10 ladder. }
                               confidence: { type: "null", description: "Always null — the backlog records no confidence, and unmeasured is not zero." }
+                              createdAt: { type: string, description: "`dev_ideas.created_at`, VERBATIM. Scanner-raised ideas carry RFC3339 UTC; a few older doors write SQLite `datetime('now')` (`YYYY-MM-DD HH:MM:SS`, UTC, no zone). Not normalised — a reader must accept both." }
+                              origin: { type: [string, "null"], description: "`dev_ideas.origin`, verbatim: which sensor raised the idea, or null for a classic Idea-Scanner idea. Null is an answer, not a gap." }
                         declines:
                           type: array
                           description: "`overnight` only, same presence rule as `proposals`."
@@ -339,8 +384,24 @@ paths:
                                 type: [string, "null"]
                                 enum: [low-value, outside-mandate, already-done, needs-human, null]
                                 description: Projected from the free-text `rejection_reason`; null when it maps onto nothing, never guessed.
+                              createdAt: { type: string, description: Same rule as a proposal's. }
+                              origin: { type: [string, "null"], description: Same rule as a proposal's. }
+                        ideation:
+                          type: object
+                          description: >-
+                            `overnight` only, and only when the tick sent `ideate: true` — absent otherwise, because a
+                            night that never attempted to author must not report a zero for it (§13.13).
+                          properties:
+                            ran:
+                              type: boolean
+                              description: >-
+                                True only when the scan COMPLETED inside this tick, so what it authored is in the backlog
+                                this same phase reports. A scan that errored or outran the wait is false with `blocked`.
+                            lens: { type: [string, "null"], description: "The lenses the scan ran, comma-joined (the lane's own spelling); null when no scan was launched." }
+                            authored: { type: [integer, "null"], description: "The completed scan row's own idea_count. Null is UNMEASURED, never zero — an errored scan may have written rows before it stopped." }
+                            blocked: { type: [string, "null"], description: "Why there are no authored ideas this tick can vouch for; null when the scan completed. Ideation never fails the tick." }
                         errors: { type: array, items: { type: string } }
-        "400": { description: One or more unknown phase names }
+        "400": { description: One or more unknown phase names, or an unknown `autopilot` mode }
         "403": { description: "The key lacks the personas:test scope" }
         "404": { description: The headless bridge test mode is off on this process }
 

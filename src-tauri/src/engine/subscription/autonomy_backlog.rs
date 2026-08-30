@@ -196,7 +196,12 @@ const REPLENISH_LENSES: &[&str] = &[
 /// based on the `dev_scans` history (scan_type is a comma-joined list).
 /// Never-used lenses come first, then oldest-used — so every perspective gets
 /// its turn before any repeats.
-fn pick_replenish_lenses(pool: &DbPool, project_id: &str) -> Vec<String> {
+///
+/// `pub(crate)` because the headless test bridge's ideation tick (§13.13) runs
+/// the SAME rotation: a compressed night that always scanned through the
+/// architecture lens would report a backlog this loop would never have
+/// produced, and the bench would be grading the wrong night.
+pub(crate) fn pick_replenish_lenses(pool: &DbPool, project_id: &str) -> Vec<String> {
     let mut last_used: std::collections::HashMap<&str, String> = Default::default();
     if let Ok(conn) = pool.get() {
         if let Ok(mut stmt) = conn.prepare(
