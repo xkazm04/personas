@@ -177,6 +177,80 @@ pub fn last_completed(
     )
 }
 
+/// Open passes of `kind` — `started` rows with no completion — newest first.
+/// The attention scheduler's in-flight probe: a young open row refuses a new
+/// pass; a stale one (older than its window) is ignored and narrated.
+pub fn list_open(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<Vec<AttentionLedgerEntry>, AppError> {
+    timed_query!("persona_attention_ledger", "attention_ledger::list_open", {
+        let conn = pool.conn("attention_ledger::list_open")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_attention_ledger
+             WHERE persona_id = ?1 AND kind = ?2 AND completed_at IS NULL
+             ORDER BY started_at DESC, id DESC"
+        ))?;
+        let rows = stmt.query_map(params![persona_id, kind], row_to_entry)?;
+        Ok(collect_rows(rows, "attention_ledger::list_open"))
+    })
+}
+
+/// The newest row of `kind` regardless of verdict or completion — the
+/// refusal-dedupe read ("is the latest entry already this same refusal?").
+pub fn last_row(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<Option<AttentionLedgerEntry>, AppError> {
+    timed_query!("persona_attention_ledger", "attention_ledger::last_row", {
+        let conn = pool.conn("attention_ledger::last_row")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_attention_ledger
+             WHERE persona_id = ?1 AND kind = ?2
+             ORDER BY started_at DESC, id DESC
+             LIMIT 1"
+        ))?;
+        stmt.query_row(params![persona_id, kind], row_to_entry)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Per-responsibility newest `started_at` for `(kind, lane)`, refusals
+/// excluded — the advance lane's rotation input (least-recently-advanced
+/// charter first, derived from history rather than a stored cursor).
+pub fn latest_started_per_responsibility(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+    lane: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::latest_started_per_responsibility",
+        {
+            let conn = pool.conn("attention_ledger::latest_started_per_responsibility")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT responsibility_id, MAX(started_at) AS latest
+                 FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND kind = ?2 AND lane = ?3
+                   AND responsibility_id IS NOT NULL
+                   AND verdict != 'refused'
+                 GROUP BY responsibility_id",
+            )?;
+            let rows = stmt.query_map(params![persona_id, kind, lane], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })?;
+            Ok(collect_rows(
+                rows,
+                "attention_ledger::latest_started_per_responsibility",
+            ))
+        }
+    )
+}
+
 /// How many passes of `kind` started today (UTC), for the max-runs-per-day
 /// cap. `lane = Some(..)` narrows to one lane; `None` counts every lane.
 /// Refusal rows are excluded — a refused pass never ran, and counting it
@@ -279,6 +353,67 @@ mod tests {
             last_completed(&pool, "p1", "consolidation")?.is_none(),
             "an attention pass must not answer for consolidation"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn list_open_and_last_row_see_what_the_completed_reads_hide() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        let open = insert_started(&pool, "p1", None, "attention", Some("advance"))?;
+        assert!(last_completed(&pool, "p1", "attention")?.is_none());
+
+        let open_rows = list_open(&pool, "p1", "attention")?;
+        assert_eq!(open_rows.len(), 1);
+        assert_eq!(open_rows[0].id, open);
+        assert!(list_open(&pool, "p1", "consolidation")?.is_empty());
+
+        // last_row sees the OPEN row (last_completed cannot), and after a
+        // refusal lands it moves to the newest entry regardless of verdict.
+        assert_eq!(last_row(&pool, "p1", "attention")?.unwrap().id, open);
+        complete(&pool, &open, "dispatched", "", None, None, None)?;
+        assert!(list_open(&pool, "p1", "attention")?.is_empty());
+        let refusal = insert_refusal(&pool, "p1", None, "attention", None, "quiet")?;
+        assert_eq!(last_row(&pool, "p1", "attention")?.unwrap().id, refusal);
+        Ok(())
+    }
+
+    #[test]
+    fn latest_started_per_responsibility_derives_the_rotation() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        let a1 = insert_started(&pool, "p1", Some("resp-a"), "attention", Some("advance"))?;
+        let b1 = insert_started(&pool, "p1", Some("resp-b"), "attention", Some("advance"))?;
+        // Refusals never advance the rotation; other lanes/kinds are invisible.
+        insert_refusal(
+            &pool,
+            "p1",
+            Some("resp-c"),
+            "attention",
+            Some("advance"),
+            "cap",
+        )?;
+        insert_started(&pool, "p1", Some("resp-a"), "attention", Some("improve"))?;
+        insert_started(
+            &pool,
+            "p1",
+            Some("resp-a"),
+            "consolidation",
+            Some("advance"),
+        )?;
+        // Backdate a's advance so b is unambiguously the most recent.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET started_at = '2020-01-01T00:00:00Z'
+             WHERE id = ?1",
+            params![a1],
+        )?;
+        let _ = b1;
+
+        let latest = latest_started_per_responsibility(&pool, "p1", "attention", "advance")?;
+        assert_eq!(latest.len(), 2, "resp-c (refused only) must be absent");
+        let map: std::collections::HashMap<_, _> = latest.into_iter().collect();
+        assert_eq!(map["resp-a"], "2020-01-01T00:00:00Z");
+        assert!(map["resp-b"] > map["resp-a"]);
         Ok(())
     }
 

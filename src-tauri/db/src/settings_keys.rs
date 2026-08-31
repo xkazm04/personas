@@ -395,6 +395,19 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Living-agent attention loop (WP5): whether the per-persona attention tick
+/// may, unattended, dispatch ONE lane of work per tick (arrivals recovery >
+/// sleep-consolidation maintenance > daily self-review > charter advancement)
+/// for personas holding an active, attention-enabled responsibility charter.
+/// Every decision — dispatch, enqueue, refusal — lands in
+/// `persona_attention_ledger`. Default OFF — nothing spends tokens
+/// autonomously until the user opts in. Read by
+/// `engine::subscription::AttentionSubscription` via
+/// `engine::autonomy::Action::AttentionLoop`. Stored `"true"` / `"false"`.
+pub const AUTONOMOUS_ATTENTION_LOOP: &str = "autonomous_attention_loop";
+/// Default for [`AUTONOMOUS_ATTENTION_LOOP`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ATTENTION_LOOP_DEFAULT: bool = false;
+
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -814,6 +827,7 @@ const ALLOWED_KEYS: &[&str] = &[
     DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    AUTONOMOUS_ATTENTION_LOOP,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -988,6 +1002,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
+        | AUTONOMOUS_ATTENTION_LOOP
         | COMPANION_DAILY_ROLLUP
         | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS

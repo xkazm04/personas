@@ -529,7 +529,35 @@ pub async fn post_persona_channel_message(
         },
     );
 
-    // Conversation context: the last few chat rows BEFORE this one, oldest
+    dispatch_channel_followup(
+        state.inner().clone(),
+        app,
+        &persona_id,
+        &persona.name,
+        &message_id,
+        &content,
+    )?;
+
+    Ok(PostedPersonaChannelMessage { id: message_id, at })
+}
+
+/// Build the follow-up input envelope for one posted user message and spawn
+/// the guarded reply-waiter — the ONE dispatch door both the live post path
+/// above and the attention loop's arrivals-recovery lane
+/// (`engine::subscription::attention`) go through. Safe to call again for the
+/// same message: the `channel:{persona_id}:{message_id}` idempotency key makes
+/// `execute_persona_inner` return the existing execution instead of
+/// double-running, and the fresh waiter then writes the reply the dead one
+/// never did.
+pub(crate) fn dispatch_channel_followup(
+    state: Arc<AppState>,
+    app: tauri::AppHandle,
+    persona_id: &str,
+    persona_name: &str,
+    message_id: &str,
+    content: &str,
+) -> Result<(), AppError> {
+    // Conversation context: the last few chat rows around this one, oldest
     // first, as the {author, content} pairs the dispatch prompt renders.
     let prior_messages: Vec<serde_json::Value> = {
         let conn = state.db.get()?;
@@ -564,30 +592,32 @@ pub async fn post_persona_channel_message(
         "content": content,
         "priorMessages": prior_messages,
         "liveContext":
-            crate::engine::channel_live_context::build_live_context(&state.db, &persona_id, None),
+            crate::engine::channel_live_context::build_live_context(&state.db, persona_id, None),
     });
     // Mirrors Slack's `slack:{channel}:{ts}` key: one execution per posted
     // message, ever — a retry of the spawn dedupes instead of double-running.
     let idempotency_key = format!("channel:{persona_id}:{message_id}");
 
-    let state_arc: Arc<AppState> = state.inner().clone();
-    let persona_name = persona.name.clone();
+    let persona_id = persona_id.to_string();
+    let persona_name = persona_name.to_string();
+    let message_id = message_id.to_string();
     let task_persona_id = persona_id.clone();
     let task_message_id = message_id.clone();
-    let panic_pool = state_arc.db.clone();
+    let task_name = persona_name.clone();
+    let panic_pool = state.db.clone();
     let panic_app = app.clone();
     let panic_persona_id = persona_id.clone();
     let panic_message_id = message_id.clone();
-    let panic_name = persona_name.clone();
+    let panic_name = persona_name;
     spawn_guarded(
         "persona_channel_followup",
-        persona_id.clone(),
+        persona_id,
         async move {
             run_channel_followup(
-                state_arc,
+                state,
                 app,
                 task_persona_id,
-                persona_name,
+                task_name,
                 task_message_id,
                 input_data.to_string(),
                 idempotency_key,
@@ -607,8 +637,7 @@ pub async fn post_persona_channel_message(
             );
         },
     );
-
-    Ok(PostedPersonaChannelMessage { id: message_id, at })
+    Ok(())
 }
 
 /// The spawned half: execute, wait for the terminal state, write the reply

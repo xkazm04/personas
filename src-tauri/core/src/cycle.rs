@@ -167,6 +167,74 @@ impl CycleVerdict {
     }
 }
 
+// ── Attention-loop refusals (WP5) ──────────────────────────────────────────
+
+/// Why an attention pass was refused before any lane was chosen — the typed
+/// sibling of [`SkipReason`] for the attention scheduler
+/// (`app_lib`'s `engine::subscription::attention`). Serialized (tagged, like
+/// [`CycleVerdict`]) into the attention ledger's refusal `reason` column so a
+/// refusal can be aggregated and asserted on, never prose-only.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum AttentionRefusal {
+    /// An attention pass for this persona is still open (a `started` ledger
+    /// row with no completion, younger than the in-flight window).
+    InFlight { started_at: String },
+    /// The last completed pass is closer than the charter interval floor.
+    IntervalFloor {
+        minutes_since: i64,
+        interval_minutes: i64,
+    },
+    /// The local clock is inside a charter's quiet-hours window.
+    QuietHours { window: String },
+    /// Today's attention passes have reached the charter cap.
+    DailyCapReached { runs_today: i64, cap: i64 },
+    /// The persona's monthly budget is spent — refuse loudly here instead of
+    /// spawning into the execution path's Validation error.
+    BudgetExhausted { spent_usd: f64, limit_usd: f64 },
+}
+
+impl AttentionRefusal {
+    /// The serialized tag — the dedupe key for "same refusal, same day".
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::InFlight { .. } => "in_flight",
+            Self::IntervalFloor { .. } => "interval_floor",
+            Self::QuietHours { .. } => "quiet_hours",
+            Self::DailyCapReached { .. } => "daily_cap_reached",
+            Self::BudgetExhausted { .. } => "budget_exhausted",
+        }
+    }
+
+    /// Human-readable one-liner for logs (the typed value is what persists).
+    pub fn describe(&self) -> String {
+        match self {
+            Self::InFlight { started_at } => {
+                format!("an attention pass started at {started_at} is still open")
+            }
+            Self::IntervalFloor {
+                minutes_since,
+                interval_minutes,
+            } => format!(
+                "the last pass completed {minutes_since}m ago and the {interval_minutes}m \
+                 interval floor has not elapsed"
+            ),
+            Self::QuietHours { window } => {
+                format!("inside the quiet-hours window {window}")
+            }
+            Self::DailyCapReached { runs_today, cap } => {
+                format!("{runs_today} passes today have reached the cap of {cap}")
+            }
+            Self::BudgetExhausted {
+                spent_usd,
+                limit_usd,
+            } => format!(
+                "monthly budget exhausted: ${spent_usd:.2} spent of the ${limit_usd:.2} limit"
+            ),
+        }
+    }
+}
+
 /// The admission decision, in the companion admission's proven order:
 /// force → interval floor (keyed on last COMPLETION) → min-work → pressure →
 /// staleness. Pure; the caller owns the keyed guard and every read.
@@ -331,6 +399,42 @@ mod tests {
             v,
             CycleVerdict::Skip(SkipReason::NothingToConsume { .. })
         ));
+    }
+
+    #[test]
+    fn attention_refusals_serialize_tagged_with_a_stable_kind() {
+        let r = AttentionRefusal::IntervalFloor {
+            minutes_since: 12,
+            interval_minutes: 30,
+        };
+        let json = serde_json::to_string(&r).unwrap();
+        assert!(json.contains(r#""kind":"interval_floor"#), "{json}");
+        assert!(json.contains(r#""minutes_since":12"#), "{json}");
+        // The tag and the kind() accessor must never drift apart — the
+        // refusal-dedupe compares kind() against the persisted tag.
+        for r in [
+            AttentionRefusal::InFlight {
+                started_at: "t".into(),
+            },
+            AttentionRefusal::IntervalFloor {
+                minutes_since: 1,
+                interval_minutes: 2,
+            },
+            AttentionRefusal::QuietHours { window: "w".into() },
+            AttentionRefusal::DailyCapReached {
+                runs_today: 3,
+                cap: 3,
+            },
+            AttentionRefusal::BudgetExhausted {
+                spent_usd: 1.0,
+                limit_usd: 1.0,
+            },
+        ] {
+            let v: serde_json::Value =
+                serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
+            assert_eq!(v["kind"], r.kind(), "{r:?}");
+            assert!(!r.describe().is_empty());
+        }
     }
 
     #[test]

@@ -124,10 +124,9 @@ fn gauge(pool: &DbPool, persona_id: &str) -> Result<(CycleReading, String), AppE
 
 /// Dry admission check: would a consolidation run right now? Does not take
 /// the keyed guard (reports [`SkipReason::AlreadyRunning`] when it is held).
-// Part of the WP4 wire contract; today exercised by unit tests only — its
-// production caller is the follow-up "sleep pressure" UI gauge command.
-// Mirrors `retrieval::filter_by_model`'s cfg_attr-allow precedent.
-#[cfg_attr(not(test), allow(dead_code))]
+/// Production caller since WP5: the attention loop's maintenance lane
+/// (`engine::subscription::attention`) admits here before enqueueing a
+/// `sleep_consolidation_run` job.
 pub fn admit(pool: &DbPool, persona_id: &str, force: bool) -> Result<CycleVerdict, AppError> {
     if CycleKey::is_held(persona_id) {
         return Ok(CycleVerdict::Skip(SkipReason::AlreadyRunning));

@@ -295,6 +295,20 @@ pub fn start_loops(
                 pool: pool.clone(),
             },
         ),
+        // Living-agent attention loop (WP5) — default-OFF
+        // (`autonomous_attention_loop`, via autonomy::Action::AttentionLoop).
+        // One persona dispatch per tick across four lanes (arrivals recovery >
+        // sleep-consolidation maintenance > daily self-review > charter
+        // advancement); every decision ledgered in persona_attention_ledger.
+        // Free when no charter has cadence.attentionEnabled (one roster scan
+        // per tick and out). NOT desktop-gated: engine machinery, not an
+        // OS-signal source. AppState (for execute_persona_inner's gates) is
+        // captured the same way the desktop Clipboard subscription captures it.
+        Box::new(subscription::AttentionSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+            state: app.state::<Arc<crate::AppState>>().inner().clone(),
+        }),
         // App master proposal reconciler (P5a) — observes proposal branches,
         // runs the repository's OWN declared gates against them, and records
         // merges and reverts. Without it `proposalsMerged`,
