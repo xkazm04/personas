@@ -142,13 +142,37 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 //
 // (3) **`access_count` / `last_accessed_at` ownership.** These columns are
 //     incremented EXCLUSIVELY by `repos::core::memories::increment_access_batch`,
-//     which is the only writer in the codebase. The single legitimate caller
-//     is the prompt-injection hot path (`engine::prompt::*`) right before
-//     it serializes a memory into the system prompt. Every other read path
+//     which is the only writer in the codebase. Every other read path
 //     (memory editor, overview list, capability picker) MUST NOT increment
 //     these — a casual `SELECT *` should never touch counters. Test fixtures
 //     that need to simulate access call `increment_access_batch` directly
 //     so the audit trail remains consistent.
+//
+//     The rule is a DELIVERY rule, not a read-path rule: the increment belongs
+//     wherever selected memories actually cross into a model's context, and
+//     nowhere else. The legitimate callers, enumerated 2026-08-31 (this list
+//     is the contract — extend it in the same commit that adds a caller):
+//       - `engine::runner` (x2) — the live dispatch, both the prepared-blob
+//         branch and the freshly-packed branch. Increments the packed set
+//         only; omitted candidates were never shown to the model.
+//       - `commands::infrastructure::dev_tools` — the unattended App-master
+//         dispatch. A real injection despite the module name.
+//     `commands::execution::executions` reads the same selection and does NOT
+//     increment, which is correct: it only PREPARES a prompt that may never
+//     run, so the count is deferred to whichever runner consumes the blob.
+//     Counting at both is a double-count; counting only there is a phantom.
+//
+//     KNOWN GAP (not yet fixed): `engine::claude_md_projection` selects
+//     through `get_for_injection_v2` and renders into a file the consumer
+//     imports and re-reads on `/compact` — a delivery, at a higher rate than
+//     the prompt path — and it does not increment. Latent today because
+//     `install_projection` is env-gated and has no production caller. It must
+//     not stay latent past the day it gets one, because `decay_score` anchors
+//     age at `last_accessed_at`: memories delivered only through the
+//     projection would age as though never read, and the plan to retire the
+//     prompt-path injection would take the store's whole usage signal with
+//     it. Open question blocking the fix: a projected file is re-read every
+//     turn, so "one delivery" is not obviously one increment.
 //
 // (4) **`importance` bounds.** Enforced at three layers, in increasing order
 //     of cheapness:
