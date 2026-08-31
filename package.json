@@ -102,6 +102,7 @@
     "i18n:plan-gaps": "node scripts/i18n/plan-gaps.mjs",
     "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
     "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs",
+    "perf:load": "node scripts/perf/load-harness.mjs",
     "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
     "check:evidence": "node scripts/registry/evidence-check.mjs",
     "registry:mirror": "node scripts/registry/mirror-paths.mjs",

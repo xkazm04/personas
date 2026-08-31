@@ -27,10 +27,33 @@
  *   4. **DOM node count** at snapshot time — a cheap proxy for tree
  *      complexity. Captured by document.querySelectorAll('*').length.
  *
+ *   5. **Long tasks** — PerformanceObserver('longtask'). The single best proxy
+ *      for user-visible jank: any main-thread block over 50ms is a frame the
+ *      user did not get. Reported as count + total blocked ms + the longest
+ *      one, because "many small stalls" and "one huge stall" are different
+ *      failures and an average hides both.
+ *
+ *   6. **Frame timing** — a rAF sampler. Total frames, frames slower than 33ms
+ *      (a missed 30fps beat) and 50ms, plus p95 frame time. Render *cost* and
+ *      render *smoothness* are not the same measurement: React can report a
+ *      cheap average commit while the compositor drops every third frame.
+ *
+ *   7. **Harness event arrivals** — a dedicated listener on the two synthetic
+ *      load events. This exists so a run can compare what Rust EMITTED against
+ *      what the webview RECEIVED; without it a saturated transport looks
+ *      exactly like a fast renderer. It costs one counter increment per event,
+ *      in test mode only.
+ *
+ * Additions 5-7 exist for the load-harness runs (scripts/perf/load-harness.mjs).
+ * The idle-only metrics above answer "is this cheap when nothing is happening",
+ * which is the question that does NOT decide a renderer.
+ *
  * Zero overhead in production: this module is not imported in prod bundles,
  * and App.tsx's Profiler `onRender` callback is the cheapest path possible
  * (one object lookup) when __PERF__ is not present.
  */
+import { listen } from '@tauri-apps/api/event';
+
 import {
   subscribeIpcMetrics,
   getIpcRecords,
@@ -51,6 +74,13 @@ interface PerfState {
   renderCommitCount: number;
   renderActualMs: number;
   renderBaseMs: number;
+  longTaskCount: number;
+  longTaskTotalMs: number;
+  longTaskMaxMs: number;
+  /** Every frame delta since reset, in ms. Bounded — see MAX_FRAME_SAMPLES. */
+  frameDeltas: number[];
+  frameOverflow: number;
+  eventsReceived: Map<string, number>;
 }
 
 export interface PerfSnapshot {
@@ -72,6 +102,31 @@ export interface PerfSnapshot {
   dom: {
     nodeCount: number;
   };
+  /** Main-thread blocks >50ms. The jank measurement. */
+  longTasks: {
+    count: number;
+    totalMs: number;
+    maxMs: number;
+    /** Share of the window spent blocked. The number to watch on a ramp. */
+    blockedPct: number;
+  };
+  /** Frame pacing. `null` when no frames were sampled (window too short). */
+  frames: {
+    count: number;
+    /** Frames slower than a 30fps beat — a visible hitch. */
+    over33ms: number;
+    /** Frames slower than 50ms — a stall the user reads as a freeze. */
+    over50ms: number;
+    p95Ms: number;
+    avgMs: number;
+    /** True -> more frames occurred than were retained; p95 covers the first
+     *  MAX_FRAME_SAMPLES only. */
+    truncated: boolean;
+  } | null;
+  /** Synthetic-load events that actually reached the webview. Compare against
+   *  the harness's `emittedOutput` / `emittedState` to detect a saturated
+   *  transport, which otherwise reads as a fast renderer. */
+  eventsReceived: Array<{ name: string; count: number }>;
   /** JS heap (Chromium `performance.memory`). Present in WebView2; `null` where
    *  the non-standard API is unavailable. Bytes. The honest "real memory" read
    *  for prod-build perf measurement (dev heap is inflated by Vite/HMR). */
@@ -82,6 +137,9 @@ export interface PerfSnapshot {
   } | null;
   diagnostics?: {
     ipcSubscribed: boolean;
+    /** False -> this engine has no `longtask` entry type and the jank numbers
+     *  above are all zero for that reason, not because nothing blocked. */
+    longTasksSupported: boolean;
   };
 }
 
@@ -95,8 +153,23 @@ function createInitialState(): PerfState {
     renderCommitCount: 0,
     renderActualMs: 0,
     renderBaseMs: 0,
+    longTaskCount: 0,
+    longTaskTotalMs: 0,
+    longTaskMaxMs: 0,
+    frameDeltas: [],
+    frameOverflow: 0,
+    eventsReceived: new Map(),
   };
 }
+
+/**
+ * Cap on retained frame samples. At 60fps a 60-second step is 3,600 samples;
+ * the cap is generous enough for a long hold and bounded so a forgotten reset
+ * cannot grow an array until the measurement itself is the thing allocating.
+ * Overflow is COUNTED, not silently dropped — a step that overflowed reports a
+ * p95 over its first N frames and says so.
+ */
+const MAX_FRAME_SAMPLES = 20_000;
 
 let state: PerfState = createInitialState();
 // Baseline of getIpcTotalCount() at the last reset. Used to compute how
@@ -203,11 +276,120 @@ function snapshot(): PerfSnapshot {
     dom: {
       nodeCount: document.querySelectorAll('*').length,
     },
+    longTasks: {
+      count: state.longTaskCount,
+      totalMs: Math.round(state.longTaskTotalMs * 100) / 100,
+      maxMs: Math.round(state.longTaskMaxMs * 100) / 100,
+      blockedPct:
+        now > state.resetAt
+          ? Math.round((state.longTaskTotalMs / (now - state.resetAt)) * 10000) / 100
+          : 0,
+    },
+    frames: summariseFrames(),
+    eventsReceived: Array.from(state.eventsReceived.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count),
     memory: readJsHeap(),
     diagnostics: {
       ipcSubscribed: unsubscribeIpc !== null,
+      longTasksSupported,
     },
   };
+}
+
+/**
+ * p95 over the retained frame deltas.
+ *
+ * Sorted copy rather than a streaming estimator: a step holds a few thousand
+ * samples at most, the sort happens once per snapshot (not per frame), and an
+ * exact percentile is worth more than a cheap approximation when the whole
+ * point of the number is to catch the tail.
+ */
+function summariseFrames(): PerfSnapshot['frames'] {
+  const d = state.frameDeltas;
+  if (d.length === 0) return null;
+  const sorted = [...d].sort((a, b) => a - b);
+  const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] ?? 0;
+  let sum = 0;
+  let over33 = 0;
+  let over50 = 0;
+  for (const v of d) {
+    sum += v;
+    if (v > 33) over33 += 1;
+    if (v > 50) over50 += 1;
+  }
+  return {
+    count: d.length + state.frameOverflow,
+    over33ms: over33,
+    over50ms: over50,
+    p95Ms: Math.round(p95 * 100) / 100,
+    avgMs: Math.round((sum / d.length) * 100) / 100,
+    truncated: state.frameOverflow > 0,
+  };
+}
+
+/**
+ * Long-task observer. Registered once for the life of the module; entries land
+ * in whatever measurement window is open, and `reset()` zeroes the counters
+ * rather than tearing the observer down — re-registering per window would miss
+ * tasks that straddle a step boundary, which are exactly the interesting ones.
+ */
+function attachLongTaskObserver(): boolean {
+  if (typeof PerformanceObserver === 'undefined') return false;
+  try {
+    const obs = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        state.longTaskCount += 1;
+        state.longTaskTotalMs += entry.duration;
+        if (entry.duration > state.longTaskMaxMs) state.longTaskMaxMs = entry.duration;
+      }
+    });
+    obs.observe({ entryTypes: ['longtask'] });
+    return true;
+  } catch {
+    // Not supported in this engine — `frames` still gives a smoothness read.
+    return false;
+  }
+}
+
+/**
+ * Frame sampler. One rAF chained forever: two subtractions and a push per
+ * frame, which is the cheapest honest way to see what the compositor actually
+ * delivered. Test-mode only, so production pays nothing.
+ */
+function attachFrameSampler(): void {
+  if (typeof requestAnimationFrame !== 'function') return;
+  let last = performance.now();
+  const step = (t: number) => {
+    const dt = t - last;
+    last = t;
+    // Skip any absurd delta (window hidden, debugger paused) — those measure
+    // the environment, not the app.
+    if (dt > 0 && dt < 2000) {
+      if (state.frameDeltas.length < MAX_FRAME_SAMPLES) state.frameDeltas.push(dt);
+      else state.frameOverflow += 1;
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/**
+ * Count arrivals of the synthetic-load events.
+ *
+ * Deliberately its own listener rather than a hook inside the app's handlers:
+ * it must keep counting even if a store subscription is torn down, unmounted or
+ * throws, because "the UI stopped consuming" is one of the outcomes a stress
+ * run needs to be able to see.
+ */
+function attachEventCounters(): void {
+  const count = (name: string) => {
+    void listen(name, () => {
+      state.eventsReceived.set(name, (state.eventsReceived.get(name) ?? 0) + 1);
+    });
+  };
+  count('fleet-session-output');
+  count('fleet-session-state');
 }
 
 /** Read Chromium's non-standard `performance.memory` if present (WebView2 has
@@ -236,6 +418,9 @@ function mark(label: string): void {
 // ── Initialise on load ────────────────────────────────────────────────────
 
 const ipcSubscribed = attachIpcSubscription();
+const longTasksSupported = attachLongTaskObserver();
+attachFrameSampler();
+attachEventCounters();
 
 // Expose on window so the Rust test-automation bridge can call into us
 // via eval. The bridge.ts dispatcher also picks up these methods through

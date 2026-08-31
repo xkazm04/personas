@@ -51,6 +51,8 @@ pub mod state;
 /// of the ~849 that reference these modules.
 pub use personas_core::retrieval;
 pub use state::AppState;
+#[cfg(feature = "test-automation")]
+pub mod load_harness;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;
