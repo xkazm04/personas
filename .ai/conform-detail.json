@@ -6635,6 +6635,844 @@
           "evidence": "No control in this context performs or receives a commit against a system of record, so there is no rejection to route onto a field."
         }
       ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/fleet-orchestration": {
+      "context": "plugins-fleet-tests",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:16-23 (deriveAxes cases) and :68 (the 'full lifecycle' states array) both hard-code a 7-member list, missing 'finished' from FleetSessionState; sibling sub_grid/__tests__/fleetGridGroupOrder.test.ts (not in this context) shows the project's own fix pattern — assert against the shared authority (FLEET_STATE_META / a type-level exhaustiveness check) instead of a literal array."
+        }
+      ]
+    },
+    "50bf2ad0-3da7-4405-991a-6e22695903a2/companion-runtime": {
+      "context": "companion-narration-ops",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "action-catalog-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/companion/DevOpLedger.tsx:89-109 duplicates a backend-defined closed vocabulary in hand-written frontend logic with a silent fallback for unknown values — the same one-authority-per-vocabulary failure already flagged for the action catalog at companion-core-store (d77a22ee, athenaLabels.ts) and commands-companion (3effd422, approval_lifecycle.rs), here applied to the dev-op cycle's outcome vocabulary rather than the action-kind vocabulary."
+        }
+      ],
+      "registryProposal": "The five-copy-vocabulary antipattern this project keeps re-triggering (action kinds in athenaLabels.ts, dev-op status in DevOpLedger.tsx, approval executors in approval_lifecycle.rs) is one structural cause appearing at 3+ independent sites across this project; worth checking whether action-catalog-single-source's guidance should explicitly generalize beyond the action-execution catalog to 'any backend-closed vocabulary a companion surface renders', since this project keeps re-deriving the same defect for vocabularies that aren't literally the action catalog."
+    },
+    "5ed4c95e-037f-459e-ba3e-aa1300fd7504/conversation-orchestration": {
+      "context": "companion-chat-bubbles",
+      "subject": "conversation-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "model-proposed-quick-replies",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/QuickReplies.tsx:12-19,46 (onPick routes to the normal send pipeline, never a direct action) and companionStore.ts:318 (cleared on next send)."
+        }
+      ]
+    },
+    "5ed4c95e-037f-459e-ba3e-aa1300fd7504/companion-runtime": {
+      "context": "companion-chat-bubbles",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "action-catalog-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/companion/ApprovalCard.tsx:13,83 + athenaLabels.ts:29-40 (switch-per-slug with a title-cased synthetic fallback, never checked against the backend's actual action table)."
+        }
+      ]
+    },
+    "5ed4c95e-037f-459e-ba3e-aa1300fd7504/companion-identity": {
+      "context": "companion-chat-bubbles",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "constitution-self-model-split",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/BrainViewer.tsx:106-118 lists identity and constitution as distinct kinds with different affordances."
+        },
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/BrainViewer.tsx:565-566,605-622,671 gates the raw full-content save path to the human-authored identity kind only."
+        }
+      ]
+    },
+    "3f38546e-e970-4837-97f7-f0504aa32daf/companion-identity": {
+      "context": "plugins-companion-decision",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": []
+    },
+    "3f38546e-e970-4837-97f7-f0504aa32daf/hitl-approval": {
+      "context": "plugins-companion-decision",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "decision-records",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/sub_decisions/DecisionsPanel.tsx:26-28 — rows are immutable; a correction re-emits a new logged entry rather than editing the old one."
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:359-390 (buildQueue merges 3 sources into one FIFO, each source's fetch failure isolated by its own try/catch)."
+        }
+      ]
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/fleet-orchestration": {
+      "context": "recipe-build-models",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": []
+    },
+    "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e/fleet-orchestration": {
+      "context": "fleet-terminal-manager",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-166 (BROADCAST_CONCURRENCY-bounded pool, per-session failure isolation)."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:167-216 (three explicit outcomes, failed-id-scoped retry)."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:86-97 (hibernated sessions excluded as broadcast targets, with the reason stated)."
+        }
+      ]
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/fleet-orchestration": {
+      "context": "agents-quick-answer",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": []
+    },
+    "03960450-6979-4412-9de3-35c897fe56d2/diff-comparison": {
+      "context": "agents-executions-components",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w1-personas-agent-platform",
+      "techniques": [
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:166-170,198-199 (catch -> diffs=[] -> 'identical'); src/features/agents/sub_executions/libs/comparisonHelpers.ts:53-71 (Set-membership diffLines silently absorbs a removed duplicate)."
+        },
+        {
+          "technique": "computation-offload",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/libs/comparisonDiffWorkerClient.ts:175-265 — worker offload, cancel-by-request-id (pendingLine.delete on cancel), bounded LRU cache with an eviction counter, synchronous fallback when Worker is unavailable."
+        },
+        {
+          "technique": "pair-and-baseline-selection",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionComparison.tsx:60-84 — left/right explicitly labeled with role, id, status badge and timestamp side by side, not positional-only."
+        }
+      ]
+    },
+    "55d6d7cb-b016-4d73-8386-b5c18beafdae/markdown-vault": {
+      "context": "vault-database-shell",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "no markdown record store; records here are SQL rows in external databases, not files with frontmatter"
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "no inter-note links to extract; SQL foreign keys are not this technique's target"
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "no notes to go stale, orphan, or broken-link"
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "introspectionQueries.ts walks SQL schemas via backend commands, not a directory tree of notes"
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "no vault to mirror; the SQL connection is the primary store, not a derivation of a markdown corpus"
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "no human text editor peer writing markdown files here"
+        },
+        {
+          "technique": "replicated-substrate",
+          "verdict": "not-applicable",
+          "evidence": "no replicated markdown corpus; the underlying data lives in the connected SQL/Redis/Notion service"
+        }
+      ]
+    },
+    "14c7d145-2166-454b-aee5-d69d9d527d79/settings": {
+      "context": "appearance-settings",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "theme/density/timezone/brightness keys live in themeStore's zustand shape, not the app_settings allow-listed key space"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "zustand store fields are already typed at the store; no stringly app_settings read boundary is involved"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "no backend round trip at all — themeStore hydrates from localStorage synchronously"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "no registry entry, so no kind classification exists to apply"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "not-applicable",
+          "evidence": "writes never reach settings_audit_log::insert (src-tauri/db/src/repos/core/settings.rs:55) because they never reach app_settings at all"
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "the UI is pure immediate/auto-save against client state with no explicit-save form to guard"
+        }
+      ]
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/settings": {
+      "context": "settings-network",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "peer identity/trust fields live in a dedicated identity table, not the app_settings key space"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "identity.rs commands are typed Tauri commands over their own table, not app_settings string accessors"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "get_local_identity/fetchTrustedPeers are dedicated endpoints, not app_settings bulk reads"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "no registry entry exists for these values to classify"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "not-applicable",
+          "evidence": "identity/trust mutations never call settings_audit_log::insert"
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "not-applicable",
+          "evidence": "network dashboard/bundle export-import and identity edits are their own device-pairing/sharing UX, not a settings save form"
+        }
+      ],
+      "registryProposal": "The matcher scored settings-network at 698 on lexical overlap ('settings', 'history', 'change') alone (grounding: lexical-only) despite the context's real governance being peer-identity/device-trust and bundle export/import — a domain that already has a 'device-pairing' subject referenced elsewhere in this repo's docs (docs/concepts/paths/device-pairing/applications/rust--pairing-ceremony.md). Same over-match pattern hit appearance-settings (grounding: use_when, but code shows pure client-state). Worth checking whether device-pairing is the better subject for both settings-network and appearance-settings's theming half, or whether appearance belongs under client-state/design-tokens instead."
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/accessibility": {
+      "context": "hooks-utility-interaction",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "preference-respect",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:1-58 (dual-signal useReducedMotion), :101-107 (useMotion), :209-215 (useMotionVariants strips transform/timing keys, preserves opacity)"
+        },
+        {
+          "technique": "keyboard-navigation-models",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9-50 — ArrowLeft/Right/Home/End roving focus with wraparound for tablists/toolbars/menubars"
+        },
+        {
+          "technique": "primitive-level-a11y",
+          "verdict": "not-applicable",
+          "evidence": "this is a hooks-only directory with no shared button/dialog/table primitive catalog to audit"
+        },
+        {
+          "technique": "live-region-architecture",
+          "verdict": "not-applicable",
+          "evidence": "no announcer/provider code in this directory"
+        },
+        {
+          "technique": "name-and-description-wiring",
+          "verdict": "not-applicable",
+          "evidence": "no label/name computation code here"
+        },
+        {
+          "technique": "a11y-verification",
+          "verdict": "not-applicable",
+          "evidence": "no test-gate or audit-harness code in this directory (tests present are unit tests for the hooks themselves, not a11y gates)"
+        },
+        {
+          "technique": "assistive-tech-divergence",
+          "verdict": "not-applicable",
+          "evidence": "no screen-reader-pairing-specific code at this layer"
+        }
+      ]
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/draft-editing": {
+      "context": "hooks-utility-interaction",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "navigation-guards",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:39-152 — single interceptor, save/discard/stay resolve(), dirty observed via caller-supplied isDirty plus in-flight nav interception"
+        },
+        {
+          "technique": "draft-model",
+          "verdict": "not-applicable",
+          "evidence": "no entity buffer is constructed in this hooks directory"
+        },
+        {
+          "technique": "dirty-tracking",
+          "verdict": "not-applicable",
+          "evidence": "isDirty is a caller-supplied boolean; this hook does not own dirtiness derivation"
+        },
+        {
+          "technique": "debounced-save-groups",
+          "verdict": "not-applicable",
+          "evidence": "no per-group save scheduling lives here"
+        },
+        {
+          "technique": "field-defaults-and-bounds",
+          "verdict": "not-applicable",
+          "evidence": "no field definitions live in this directory"
+        },
+        {
+          "technique": "completeness-derivation",
+          "verdict": "not-applicable",
+          "evidence": "no readiness/publish-gate logic lives here"
+        }
+      ]
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/settings": {
+      "context": "hooks-utility-interaction",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "save-experience",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22, useSaveFeedback.ts:8-25 (confirm quietly), useUnsavedGuard.ts:92-112 (guardSettingsTab)"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "no key space owned by this hooks directory"
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "no settings read/write accessor code here"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "no settings fetch code here"
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "no registry classification code here"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "not-applicable",
+          "evidence": "no audit-write code here"
+        }
+      ]
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/fleet-orchestration": {
+      "context": "stores-slices-system",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:247-291 — event-driven primary channel (FLEET_SESSION_STATE/FLEET_SESSION_EXITED/FLEET_REGISTRY_CHANGED), no process polling"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "fleetSlice.ts:101-107 explicitly delegates the authoritative registry to Rust; this slice is a cache by design, not a second registry"
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "durability/restart-recovery is the Rust engine's concern, no footprint in this zustand slice"
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "hibernate/wake semantics are backend; this slice only surfaces toggles (fleetAutoHibernate) that call fleetApi"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "dispatch/collision-domain logic is backend, not this store"
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "no harvest-phase aggregation logic in this slice"
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "no panel-convening logic here"
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "no executor-plane topology code here"
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "no container/volume reconciliation code here"
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "worker-briefing is a dispatch-time backend concern"
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "no failure-taxonomy classification code here"
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "no per-worker trajectory analysis code here"
+        }
+      ]
+    },
+    "1bad7967-29dc-4e12-b99a-cb5177b4fb9b/companion-runtime": {
+      "context": "db-repos",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "host-seam-contracts",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:108,155 and dev_tools.rs consumed directly by src-tauri/src/companion/*.rs via crate::db::repos::* rather than an injected Store seam"
+        },
+        {
+          "technique": "metered-llm-seam",
+          "verdict": "not-applicable",
+          "evidence": "db-repos is pure persistence; no model-call door lives in these files"
+        },
+        {
+          "technique": "headless-turn-stream",
+          "verdict": "not-applicable",
+          "evidence": "no turn/stream logic in the repo layer"
+        },
+        {
+          "technique": "action-catalog-single-source",
+          "verdict": "not-applicable",
+          "evidence": "no action-vocabulary code in the repo layer"
+        },
+        {
+          "technique": "autonomous-cycle-hosting",
+          "verdict": "not-applicable",
+          "evidence": "cycle admission/ceilings are hosted in companion/*, not in these repos"
+        },
+        {
+          "technique": "operative-working-set",
+          "verdict": "not-applicable",
+          "evidence": "these are durable-store repos (dev_memories, twin, research_lab, fleet_sessions, etc.), not a process-lifetime working set"
+        },
+        {
+          "technique": "signal-economy-contract",
+          "verdict": "not-applicable",
+          "evidence": "report-or-absorb logic lives in companion/*, not in the repo layer"
+        }
+      ]
+    },
+    "f71df7d8-fb1c-4151-bba3-00fe164a537b/mcp-tools": {
+      "context": "teams-collaboration-repo",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": []
+    },
+    "63edaec0-367e-4553-a6ee-bfd4144be305/codebase-scanning": {
+      "context": "workspace-governance",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "finding-lifecycle",
+          "verdict": "conformant",
+          "evidence": "static_scan.rs:122-154 (stable dedup_key, log-and-continue, terminal status); workspace_verify.rs:41-56,123-181,556 (separate verify pass, honest 'unverified' fallback)"
+        },
+        {
+          "technique": "sensor-pipeline",
+          "verdict": "conformant",
+          "evidence": "standards_scan.rs:165-210 — honest complete/error terminal status with a panic handler, never silently empty"
+        },
+        {
+          "technique": "incremental-scanning",
+          "verdict": "conformant",
+          "evidence": "incremental_scan.rs:1-70 — SHA256 per-file delta cache vs the last successful scan, explicitly incremental"
+        },
+        {
+          "technique": "rule-precision-discipline",
+          "verdict": "unknown",
+          "evidence": "did not check whether rules were hand-verified against a sample population before shipping"
+        },
+        {
+          "technique": "llm-assisted-scanning",
+          "verdict": "unknown",
+          "evidence": "did not check context_generation.rs/use_case_scan.rs for the model-as-unreliable-sensor containment discipline"
+        },
+        {
+          "technique": "dead-code-detection",
+          "verdict": "unknown",
+          "evidence": "not checked in this pass"
+        },
+        {
+          "technique": "ingestion-budget",
+          "verdict": "unknown",
+          "evidence": "not checked in this pass"
+        },
+        {
+          "technique": "evidence-scoping",
+          "verdict": "unknown",
+          "evidence": "not checked in this pass"
+        },
+        {
+          "technique": "verify-after-generate",
+          "verdict": "unknown",
+          "evidence": "context_map_export.rs/context_audit.rs not examined for post-generation invariant checks"
+        }
+      ]
+    },
+    "937c9d47-b0ca-4e3b-90e3-25baefe04474/voice-io": {
+      "context": "supabase-sync-pipeline",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w2-personas-infrastructure",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "no microphone capture anywhere in cloud/sync/*"
+        },
+        {
+          "technique": "tts-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "no synthesis/playback queue in this context"
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "not-applicable",
+          "evidence": "no transcription/synthesis engine seam here"
+        },
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "no transcript-to-command crossing here"
+        },
+        {
+          "technique": "voice-ux-integration",
+          "verdict": "not-applicable",
+          "evidence": "no voice affordances in this backend sync module"
+        },
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "not-applicable",
+          "evidence": "the 'cloud' here is database row sync, not audio residency"
+        },
+        {
+          "technique": "duplex-agent-sessions",
+          "verdict": "not-applicable",
+          "evidence": "no live conversational session vendor involved"
+        },
+        {
+          "technique": "portable-provider-package",
+          "verdict": "not-applicable",
+          "evidence": "no engine-package seam here"
+        },
+        {
+          "technique": "speech-ready-text",
+          "verdict": "not-applicable",
+          "evidence": "no text-to-speech door here"
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "no transcripts exist in this context"
+        }
+      ]
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/markdown-vault": {
+      "context": "vault-shared-vector",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "no markdown record store — this is a document vector index, not a note database"
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "no inter-note links exist to extract; the graph subject here (dependency graph) is a separate context"
+        }
+      ]
+    },
+    "77b8c703-0803-42bc-808a-f255725cc293/markdown-vault": {
+      "context": "vault-dependency-graph",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "credentialGraph.ts:16-24 — edges are typed domain relationships (credential->persona->event), not markdown-link edges"
+        }
+      ]
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/markdown-vault": {
+      "context": "vault-catalog-schemas",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "schemaConfigs.tsx defines in-memory form config objects, not a markdown record schema"
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/markdown-vault": {
+      "context": "vault-shared-playground",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "no markdown record store anywhere in shared/playground/tabs"
+        }
+      ]
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/markdown-vault": {
+      "context": "vault-credentials-components-features",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "there is no markdown corpus here to lint for broken links/orphans/staleness"
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/credential-vault": {
+      "context": "vault-shared-playground",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "OverviewTab.tsx:141-148 — a provider outage or offline probe renders identically to a rejected credential (red FAIL), teaching the operator to distrust red"
+        }
+      ]
+    },
+    "50f50f97-be0e-4a93-8f1c-c0b967cd45d0/fleet-orchestration": {
+      "context": "plugins-dev-tools-triage",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "dispatch.ts:72-86 — no derived dispatch key is checked against the registry before spawnSession, so re-dispatching the same finding (e.g. a retried automation) can open a second fleet session in the same working directory unchecked"
+        }
+      ]
+    },
+    "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b/eval-harness": {
+      "context": "lab-versions-eval",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "metric-role-contract",
+          "verdict": "deviation",
+          "evidence": "evalAggregation.ts:128-165 — winnerId is decided by a weighted composite of tool accuracy, output quality, and protocol compliance instead of one optimized metric with the others as thresholds"
+        }
+      ]
+    },
+    "c4a2fa9d-1b41-4141-894b-c90663aa0433/sql-console": {
+      "context": "vault-catalog-autocred-ui",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "not-applicable",
+          "evidence": "there is no query execution surface in this context to guard"
+        }
+      ]
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/design-tokens": {
+      "context": "vault-catalog-picker",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "token-taxonomy",
+          "verdict": "deviation",
+          "evidence": "ConnectorCard.tsx:127,144 — raw Tailwind color utilities duplicate (and have drifted from) the existing success/warning semantic tokens instead of referencing them"
+        }
+      ]
+    },
+    "3084d603-7cdb-41cd-bbad-8f24a8015b3e/test-harness": {
+      "context": "lib-harness",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-08-31",
+      "worker": "w3-personas-plugin-ecosystem",
+      "techniques": [
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "no test suite is owned or partitioned here — 'test' is a declared GateType with no realized gate in verifier.ts's PERSONAS_GATES"
+        }
+      ]
     }
   }
 }

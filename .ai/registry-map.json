@@ -1708,7 +1708,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:162-170 (JsonDiffSection) and :74-81,105-106 (OutputDiffSection) catch a failed off-thread diff computation and set the result to an empty array, which then renders as 'identical'/'no_differences' or 'no_log_data' — exactly the conflation diff-honesty forbids ('failure is spelled as failure... never as an empty diff'), and comparisonHelpers.ts:53-71's diffLines aligns lines by Set membership rather than sequence, so a duplicate line removed from one side (present twice in A, once in B) renders every occurrence as unchanged instead of showing the removal.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "production-trace-scoring",
@@ -1827,7 +1830,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/** is a human-review triage deck over already-produced build questions and practice suggestions; every 'session'/'dispatch'/'registry' occurrence in this context's files (TriageDeckVariant.tsx:14, DeckTopBar.tsx:189-192, useDeckControls.tsx:483-491) refers to the browsing/keyboard session or the app's UI keyboard registry, not a fleet of spawned agent processes — no session-registry, dispatch, or harvest site exists here, the same precondition failure already recorded for this exact subject's sibling agents-design (8650ca36), and consistent with the sibling conversation-orchestration verdict already recorded on this same context.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -2517,7 +2523,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "Every component under src/features/settings/sub_appearance/components/ reads and writes only src/stores/themeStore.ts (zustand `persist` middleware to localStorage) — grep found zero references to src/api/system/settings.ts or get_app_setting/set_app_setting anywhere in the directory. The settings golden path's own Boundaries section draws this exact line ('client-side persistence mechanics... belong to client-state. This subject owns the durable, backend-held key space'), so no technique's precondition holds for this context.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -3626,7 +3635,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/plugins/companion/QuickReplies.tsx:1-9,40-61 sends the picked chip text through the same pipeline as typed text (send-never-execute) with numbered 1-9 keyboard access, and companionStore.ts:318 clears quickReplies on next send/reset (chip-set staleness); src/features/plugins/companion/QueuedMessages.tsx never silently drops a mid-turn message — every queued item stays visible, cancelable, and FIFO-drained.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "companion-runtime",
@@ -3639,7 +3651,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/ApprovalCard.tsx:13,83 renders every proposed action's label via athenaLabels.ts's actionLabel() — the same hand-maintained per-slug switch (documented as a manual 3-step 'add a key, add a case, no-op the caller' procedure at athenaLabels.ts:12-15) already recorded as a companion-runtime deviation at companion-core-store (d77a22ee) and plugins-companion-decision (3f38546e); this is a third site consuming the identical uncompared action vocabulary, not a new root cause.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "companion-identity",
@@ -3652,7 +3667,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/plugins/companion/BrainViewer.tsx:106-118 (KINDS) keeps 'identity' (self-model) and 'constitution' as two separately-listed kinds; the edit affordance at :565-566 and :671-710 is gated to isIdentity only — the human freely rewrites identity.md through a plain textarea + companionSaveIdentity (a full-content human correction, sanctioned by disk-truth-db-index's 'the person...corrects it by typing') while the constitution has no editing path in this UI at all.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -3784,7 +3802,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/companion/DevOpLedger.tsx:89-109 hand-maintains a second copy of the five-token dev-op status vocabulary (dispatched|completed|merged|closed|interrupted) that src/api/companion.ts:388-395 only documents in a comment on a bare `status: string` field (not a generated closed union, unlike FleetSessionState); statusLabel falls back to the raw token and statusTone falls back to a plain grey dot for anything unrecognized, so a sixth backend status introduced later renders silently instead of failing loud.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "chat-transcript",
@@ -4248,7 +4269,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:108 (get_for_injection) and :155 (render_for_prompt) are called directly via `crate::db::repos::dev_memories::...` from src-tauri/src/companion/jobs/night_plan.rs:67-69, src-tauri/src/companion/night_shift/unattended.rs:294-298, and src-tauri/src/companion/proactive/backlog_triage.rs:32; likewise dev_tools.rs is reached directly from companion/athena_reaction.rs, canvas.rs, dev_mode.rs, dispatcher/read_ops.rs and more — a raw repo-module import into the companion runtime rather than the injected 'Store' capability host-seam-contracts requires, so the runtime has one host forever and cannot be constructed against a test double. This is the other side of the exact violation already recorded on the companion side (context 'companion', src-tauri/src/companion/disk.rs:22-26).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "companion-identity",
@@ -5611,7 +5635,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-216 realizes parallel-dispatch (bounded mapWithConcurrency, not Promise.all, so one wedged PTY cannot stall the batch) and result-harvest (all-sent/partial/none accounting with an exact 'N of M' outcome and a retry that narrows to precisely the sessions that failed) almost to the letter of the golden path's own 'seven of nine produced results; two failed, named' example; :86-97 also honors hibernation-and-resume by excluding hibernated sessions from write targets because hibernation frees the process.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -6559,7 +6586,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:1-107 realizes preference-respect: one derived signal (useReducedMotion) combining the OS prefers-reduced-motion media query AND the app's own Appearance 'Reduce Motion' toggle (read via the `data-motion` DOM attribute themeStore projects), consumed identically by both CSS and Framer-motion JS paths — exactly the 'one signal per preference, every surface derives' contract, and the file's own comment documents fixing the prior bug where the JS half missed the app-level toggle. useRovingTabIndex.ts:9-50 realizes keyboard-navigation-models' roving-focus model for composite widgets (Arrow/Home/End with wraparound, moves focus + selection together).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "draft-editing",
@@ -6572,7 +6602,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:39-152 realizes navigation-guards: one interceptor covers sidebar-section navigation, opt-in settings-tab navigation, and window close (beforeunload), offering save/discard/stay and reverting the in-flight navigation until resolved — matching 'one interceptor over all exit paths.' This hooks context owns no draft buffer itself, so draft-model/dirty-tracking/debounced-save-groups/field-defaults-and-bounds/completeness-derivation are not-applicable here; notably the two contexts that DO own a buffer (agents-editor, templates-draft-editor) are both already recorded as draft-model deviations, so the shared guard hook is sound even though the buffers it guards are not.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "settings",
@@ -6585,7 +6618,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22 (checkmark via useSaveFeedback.ts:8-25 plus a success toast) gives settings panels save-experience's 'confirm quietly' feedback, and useUnsavedGuard.ts's guardSettingsTab option (:92-112) guards settings-tab navigation specifically — the save-experience technique's realized half. The other five settings techniques are not-applicable to this hooks-only context (no key space, no store logic; that lives in src-tauri/db/src/settings_keys.rs and repos/core/settings.rs).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "ui-controls",
@@ -6889,7 +6925,10 @@
           ],
           "grounding": "use_when",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:128,135,165 sorts version aggregates by compositeScore (toolAccuracy*0.4 + outputQuality*0.4 + protocolCompliance*0.2, mirrored from Rust SCORE_WEIGHTS) and crowns winnerId as the top score — folding three metrics into one composite verdict with no declared single optimized metric and threshold gates, the same collapse already flagged one layer down in test-runner-lab's eval.rs:380.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "versioning-snapshots",
@@ -7195,7 +7234,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/harness/verifier.ts:13-32 PERSONAS_GATES only wires typecheck/lint/build commands — GateType declares a 'test' variant (types.ts:74) that the built-in gate set never realizes. The module is a Plan->Execute->Verify autonomous coding loop over quality goals (scenario-parser.ts), not machinery that owns, partitions, or runs a test suite; there are no lanes, fixtures, or isolation policy for this subject to govern.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "agent-instruction-files",
@@ -10250,7 +10292,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "decision/parseSpokenDecision.ts, resolveDecision.ts, types.ts, useDecisionQueue.ts, sub_decisions/* and orb/* aggregate pending approvals/incidents/reviews into a decision queue and render a retrospective, immutable design-decision log; none references a constitution, self-model, profile, memory substrate, brain probe or capability inventory — the same precondition failure already recorded for companion-identity at the structurally identical plugins-companion-inbox context (11fe7642).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "hitl-approval",
@@ -10263,7 +10308,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "decision/resolveDecision.ts:39-57 keeps a decision pending and surfaces the error in place on a write failure instead of clearing it as resolved (failure spelled as failure, never an empty/false success); decision/useDecisionQueue.ts:359-390 unifies approvals, blocking incidents and human reviews into one FIFO review surface with per-source error isolation; sub_decisions/DecisionsPanel.tsx:26-28 keeps decision rows immutable as an audit trail rather than editable.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -10813,7 +10861,10 @@
           ],
           "grounding": "use_when",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 calls spawnSession(project.root_path, [prompt]) directly with no dispatch-key check against the registry for an already-running session on this idea/project, and no disjointness check against other sessions sharing the same root_path — the same missing-admission-door pattern the recorded deviation on commands-fleet names ('N sessions share one repo with no disjointness check').",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "remediation-handoff",
@@ -10974,7 +11025,10 @@
           ],
           "grounding": "use_when",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:15-23,67-74 asserts deriveAxes/full-lifecycle coverage over only 7 of the 8 closed FleetSessionState values, omitting 'finished' — the exact state whose omission from production code was already a recorded fleet-orchestration deviation on fleet-session-grid (67c91bb4); the switch it is testing (FleetStatusDots.tsx:32-41) already handles 'finished' correctly, so this suite would not catch a regression that dropped it again.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "runner-fleet",
@@ -11797,7 +11851,10 @@
           ],
           "grounding": "use_when",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/models/build_session.rs:263-292 models exactly ONE persona's build progress through a BuildPhase lifecycle (Initializing...Promoted) with a single cli_pid — never a registry of many concurrent sessions, a dispatcher, or a harvest phase; the recipe/genome/persona models in this context are single-persona authoring data, not fleet state. Same single-session precondition failure already recorded against this subject for agents-design (8650ca36), the sibling subject the golden path explicitly excludes.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "mcp-tools",
@@ -12261,7 +12318,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:11-22 calls useSystemStore actions (setDisplayName, exportIdentityCard, importTrustedPeer, revokePeerTrust) that route through src-tauri/src/commands/network/identity.rs:20 (set_display_name) into a dedicated db/repos/resources/identity.rs peer-identity table — a separate device-identity/trust domain, never the app_settings key-value store or settings_audit_log this subject governs. Same boundary failure as appearance-settings, different underlying domain (peer identity, not client state).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "public-claim-provenance",
@@ -12980,7 +13040,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:101-107 documents itself as a thin client cache ('The Rust side owns the source-of-truth registry; this slice is a thin client cache') and :247-291 drives all state transitions purely from Rust-typed FleetSessionState events (FLEET_SESSION_STATE / FLEET_SESSION_EXITED / FLEET_REGISTRY_CHANGED) rather than inventing a parallel vocabulary or polling processes — the conformant exception in a domain where every other judged fleet-orchestration context (commands-fleet, engine-build-session, fleet-monitor-channels, fleet-monitor-shell, fleet-session-grid) is already recorded as a deviation, two of them for exactly the second-vocabulary failure this slice avoids.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "companion-runtime",
@@ -13324,7 +13387,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:1-14 is a desktop-to-Supabase database row sync pipeline (SQLite -> cloud, RLS-scoped, fault-isolated per table) with no microphone capture, transcription, synthesis, or engine adapter anywhere in cursor.rs/client.rs/rows.rs; every voice-io technique's precondition (an audio capture or playback pipeline) fails. Same lexical-resonance pattern already recorded as not-applicable for sibling contexts engine-build-session and webhook-ingestion in this same subject ('cloud'/'device'/'pipeline' matched vocabulary, no audio path).",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -13558,7 +13624,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "unknown",
+          "evidence": "Only 1 of the 12 files in this context's paths (resources/mcp_gateways.rs — a credential-grouping table for aggregating multiple MCP-speaking credentials under one persona) touches MCP at all; the rest (teams.rs, team_memories.rs, team_channel.rs, notification_subscriptions.rs, orchestration/team_assignments.rs, n8n_sessions.rs, owned_devices.rs, playwright_procedures.rs, ocr.rs, artist.rs) are team-collaboration and unrelated-integration repos with no wire-protocol footprint (no transport, schema, dispatch door, or untrusted-result handling visible anywhere in these paths). mcp_gateways.rs itself is DB-CRUD only (add/remove/list/toggle member, health-state columns) with no authorization or scoping enforcement — that logic, per the sibling verdicts, lives in src-tauri/src/mcp_server/auth.rs (already recorded as a deviation) and the persona-credentials scope minting (already recorded conformant). Left unjudged rather than forcing a verdict off this thin, mostly-unrelated evidence base.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "agent-instruction-files",
@@ -15579,7 +15648,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx and its siblings (AutoCredBrowser, AutoCredConsent, AutoCredReview) drive a Playwright browser-automation credential-capture flow (checkPlaywrightAvailable from @/api/vault/autoCredBrowser) — no SQL, no database connection, no schema browsing anywhere in the context. The subject's precondition ('the application manages connections to external databases') never holds.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -15662,7 +15734,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 and :144 hardcode 'bg-orange-500/10 border-orange-500/20 text-orange-400' and 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' inline instead of consuming the app's own semantic status tokens (src/lib/design/statusTokens.ts:27-32 success, :92-98 timeout/caution — used correctly elsewhere, e.g. CredentialIntelligence.tsx's STATUS_COLORS); the inline emerald border has already drifted to /20 where the token defines /30 — the exact 'raw values... drifting a shade or two' failure mode the golden path names.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -15713,7 +15788,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx defines connector credential-type form schemas (MCP fields, env var mapping) rendered through React form components — configuration UI over the credential vault, not markdown files with frontmatter. No file-as-record contract exists here.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "credential-vault",
@@ -15774,7 +15852,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:6-13 reads audit logs, usage stats, and dependents via @/api/vault/credentials — credential vault intelligence UI, not a markdown record store. No frontmatter, links, or file walk anywhere in the context.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         }
       ],
       "governance": "governed"
@@ -16003,7 +16084,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:1-13 and introspectionQueries.ts:8-9 are a SQL database browser/editor for connected external databases (postgres/mysql/redis/notion/airtable), not a directory of markdown notes; every markdown-vault technique's precondition (a filesystem of markdown records with frontmatter) fails, exactly as already recorded for sibling contexts vault-databases-tabs and vault-database-tests over the same sub_databases directory.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "credential-vault",
@@ -16218,7 +16302,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:16-24 builds a credential/persona/event dependency graph keyed agent:<id>/evt:<id> — a data-model relationship graph, not a link graph extracted from markdown note bodies. No frontmatter record contract anywhere in the context; precondition fails as it does for every other 'vault'-lexical context that isn't a markdown store.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "credential-vault",
@@ -16332,7 +16419,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:6-12 imports CredentialMetadata/ConnectorDefinition and drives a credential edit/healthcheck panel; every tab in this context (ApiExplorer, McpTools, Executions) operates on the credential vault's API surface, not a markdown note store — same conclusion as the recorded not-applicable verdicts on sibling vault-catalog contexts.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "credential-vault",
@@ -16345,7 +16435,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:141-148 branches purely on effectiveHealthcheckResult.success (boolean) to render OK/FAIL, ignoring the typed HealthResult.state ('verified'|'unverifiable'|'failed', declared at useCredentialHealth.ts:36-40) — reproduces the exact could-not-verify/broken collapse the sibling deviation on vault-shared-hooks already names for this same hook.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "multi-project",
@@ -16393,7 +16486,10 @@
           ],
           "grounding": "lexical-only",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx ingests arbitrary documents (.txt/.md/.html/.csv/.json — IngestDirectoryPicker.tsx:29) into a vector KB for RAG search; CorpusOverview.tsx:77 only renders an LLM-generated report as markdown text. No frontmatter schema, minted identity, or link graph exists — the vault-as-database precondition (a directory of markdown notes as records) never holds, same as the recorded not-applicable verdict on vault-catalog-autocred-ui.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "retrieval",
@@ -16648,7 +16744,10 @@
           ],
           "grounding": "use_when",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:122-154 gives findings a stable dedup_key and a log-and-continue insert discipline that always drives the scan to a terminal status rather than aborting on one bad insert; standards_scan.rs:165-210 reports honest complete/error terminal status (with a panic handler at :206) rather than ever presenting a broken run as a clean zero; workspace_verify.rs:41-56,123-181,556 runs verification as an explicit separate pass with a guarded parser (won't trust a model's own 'SUMMARY: N verified' claim over matched per-item verdicts) and marks unmatched practices 'unverified' rather than silently dropping them; incremental_scan.rs:1-70 computes an honest SHA256 delta cache against the last full scan rather than presenting a partial rescan as a full-population statement.",
+          "evaluatedAt": "2026-08-31",
+          "evaluatedAgainst": "sha256:155574232fcec29f"
         },
         {
           "subject": "agent-instruction-files",
