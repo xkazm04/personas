@@ -264,7 +264,9 @@ orchestration/teams docs for the assignment model.
 ## Editor UI — the Design hub
 
 The per-persona editor surfaces are tabbed in `EditorTabBar`:
-`Activity · Matrix · Design · Use Cases · Lab · Chat · Settings`.
+`Activity · Design · Life · Lab · Settings` (Matrix, Use Cases and Chat are
+legacy tab ids that migrate into the Design hub; **Life** is the living-agent
+surface, see its section below).
 
 **Share to the gallery.** The editor header (`PersonaEditorHeader`) carries a
 **Share** button (`ShareAgentButton`) that publishes the persona to the public
@@ -531,6 +533,40 @@ the optional `UpdatePersonaInput.source`), and a timestamp.
   (keeping the original before-value); per-persona history is capped at 200 rows.
 - Read via the `list_persona_change_log` IPC command. Restore/rollback is out of
   scope — this is an inspection surface only.
+
+## Life tab (Core · Responsibilities · Brain)
+
+The **Life** editor tab (`src/features/agents/sub_life/`, spark
+`living-agent-core`) is the living-agent surface — three sub-surfaces under a
+segmented switch, all keyed to the selected persona:
+
+- **Core** — the persona's character: three 0..1 dials (risk tolerance,
+  speed-vs-quality, deference), the conflict style (challenger · harmonizer ·
+  analyst · pragmatist), authored prose (motivation, stance, north-star
+  commitment, identity, voice), and three string lists (principles,
+  constraints, decision principles). Stored as `PersonaCore` JSON in
+  `personas.core_profile`; saved in ONE `update_persona` call on an explicit
+  Save (no autosave), so the change log records it like any other field.
+- **Responsibilities** — standing charters (`persona_responsibilities`):
+  outcomes with success criteria, measurable objectives, scope rung 0..2 (the
+  grantable ceiling, same as App-master mandate intake), refusal classes from
+  the domain library plus `custom:` free text, owner, attention cadence,
+  monthly budget, and read-mostly tenure. Retire is the only status door in
+  the UI. The **attention ledger** strip below shows recent
+  attention/consolidation passes with verdicts and reasons; the same rows
+  also appear in the Activity tab as an item type.
+- **Brain** — the episodic record (`persona_episodes`, keyset "load older"),
+  the read-only self-model (`identity.md`), the proposal inbox
+  (`memory_curation` and `self_model_diff` proposals, applied or discarded
+  through the shared review doors), and a manual "Consolidate now" trigger.
+
+**The write-lane law:** the Core is operator-owned (only the operator edits
+it; a build/adopt seeds it once and never overwrites a non-null Core); the
+self-model changes only through APPROVED `self_model_diff` proposals, never by
+direct edit; memories change within the memory-review contract (apply/discard
+of proposals). Enforcement note surfaced in the UI: outside the
+software-engineering domain, refusal classes hold at prompt level only — the
+persona is instructed to refuse, nothing blocks it in software.
 
 ## Home team — workspace anchor
 

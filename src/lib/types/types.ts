@@ -413,7 +413,7 @@ export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "lear
 export type GoalsTab = "board" | "timeline" | "progress";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
 export type KpisTab = "dashboard" | "proposals";
-export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
+export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions" | "life";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
 export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations";
 /** Legacy EditorTab values kept only for migrating persisted state. */

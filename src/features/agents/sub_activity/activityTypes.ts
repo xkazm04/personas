@@ -1,14 +1,15 @@
-import { Play, Zap, Brain, AlertTriangle, MessageSquare, type LucideIcon } from 'lucide-react';
+import { Play, Zap, Brain, AlertTriangle, MessageSquare, Eye, type LucideIcon } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaReport } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
 
-export type ActivityType = 'all' | 'execution' | 'event' | 'memory' | 'review' | 'message';
+export type ActivityType = 'all' | 'execution' | 'event' | 'memory' | 'review' | 'message' | 'attention';
 
 export interface ActivityItem {
-  type: 'execution' | 'event' | 'memory' | 'review' | 'message';
+  type: 'execution' | 'event' | 'memory' | 'review' | 'message' | 'attention';
   id: string;
   title: string;
   subtitle: string;
@@ -20,7 +21,7 @@ export interface ActivityItem {
    * (ad-hoc chat, budget alerts, reviews from non-capability runs).
    */
   useCaseId: string | null;
-  raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaReport;
+  raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaReport | AttentionLedgerEntry;
 }
 
 export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
@@ -29,6 +30,7 @@ export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: s
   memory: { icon: Brain, color: 'text-violet-400', bg: 'bg-violet-500/10' },
   review: { icon: AlertTriangle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
   message: { icon: MessageSquare, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  attention: { icon: Eye, color: 'text-teal-400', bg: 'bg-teal-500/10' },
 };
 
 export const FILTER_TABS: { id: ActivityType; label: string }[] = [
@@ -38,6 +40,8 @@ export const FILTER_TABS: { id: ActivityType; label: string }[] = [
   { id: 'memory', label: 'Memories' },
   { id: 'review', label: 'Reviews' },
   { id: 'message', label: 'Messages' },
+  // Label resolved via i18n in ActivityFilters (t.agents.life.activity_filter_attention).
+  { id: 'attention', label: 'Attention' },
 ];
 
 export function renderImportanceStars(status: string): string {

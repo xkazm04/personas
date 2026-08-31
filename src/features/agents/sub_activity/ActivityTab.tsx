@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { listExecutions } from '@/api/agents/executions';
+import { listAttentionLedger } from '@/api/agents/responsibilities';
 import { listMemories } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { listEvents } from '@/api/overview/events';
@@ -10,6 +11,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
 import type { ActivityItem, ActivityType } from './activityTypes';
 import { ActivityHeader } from './ActivityHeader';
 import { ActivityFilters } from './ActivityFilters';
@@ -35,6 +37,10 @@ export function ActivityTab() {
   const [tagFilter, setTagFilter] = useState('all');
   const [starredOnly, setStarredOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  // Partial-failure honesty for the attention feed (golden path
+  // partial-failure-read-envelope): a failed ledger read is disclosed instead
+  // of rendering as "no attention passes".
+  const [attentionUnavailable, setAttentionUnavailable] = useState(false);
 
   const personaId = selectedPersona?.id;
   const useCases = useSelectedUseCases();
@@ -44,12 +50,26 @@ export function ActivityTab() {
     if (!personaId) return;
     setIsLoading(true);
     try {
-      const [executions, events, memories, reviews, messages] = await Promise.all([
+      // Attention keeps its failure distinct (state -> inline notice) instead
+      // of collapsing "failed" into "none" like the five legacy feeds below.
+      const attentionPromise = (async (): Promise<AttentionLedgerEntry[]> => {
+        try {
+          const rows = await listAttentionLedger(personaId, 50);
+          setAttentionUnavailable(false);
+          return rows;
+        } catch (err) {
+          silentCatch('ActivityTab:listAttentionLedger')(err);
+          setAttentionUnavailable(true);
+          return [];
+        }
+      })();
+      const [executions, events, memories, reviews, messages, attention] = await Promise.all([
         listExecutions(personaId, 50).catch((err) => { silentCatch('ActivityTab:listExecutions')(err); return [] as PersonaExecution[]; }),
         listEvents(100).catch((err) => { silentCatch('ActivityTab:listEvents')(err); return [] as PersonaEvent[]; }),
         listMemories(personaId, undefined, undefined, 50).catch((err) => { silentCatch('ActivityTab:listMemories')(err); return [] as PersonaMemory[]; }),
         listManualReviews(personaId).catch((err) => { silentCatch('ActivityTab:listManualReviews')(err); return [] as PersonaManualReview[]; }),
         listReports(50).catch((err) => { silentCatch('ActivityTab:listReports')(err); return [] as PersonaReport[]; }),
+        attentionPromise,
       ]);
 
       const personaEvents = events.filter(
@@ -103,6 +123,15 @@ export function ActivityTab() {
           useCaseId: getUseCaseId(m),
           raw: m,
         })),
+        ...attention.map((a): ActivityItem => ({
+          type: 'attention', id: a.id,
+          title: t.agents.life.activity_attention_row,
+          subtitle: a.reason.slice(0, 80),
+          status: a.verdict,
+          timestamp: a.startedAt,
+          useCaseId: null,
+          raw: a,
+        })),
       ];
 
       allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -150,7 +179,7 @@ export function ActivityTab() {
   }, [items, filter]);
 
   const counts = useMemo(() => {
-    const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0, message: 0 };
+    const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0, message: 0, attention: 0 };
     for (const item of items) c[item.type]++;
     return c;
   }, [items]);
@@ -193,6 +222,11 @@ export function ActivityTab() {
         onTagFilterChange={setTagFilter}
         onStarredOnlyChange={setStarredOnly}
       />
+      {attentionUnavailable && (filter === 'all' || filter === 'attention') && (
+        <p className="typo-caption text-status-warning" data-testid="activity-attention-unavailable">
+          {t.agents.life.activity_attention_unavailable}
+        </p>
+      )}
       <ActivityList
         items={filtered}
         isLoading={isLoading}

@@ -30,6 +30,7 @@ export const TAB_LABELS: Record<string, string> = {
   settings: 'Settings',
   assertions: 'Assertions',
   model: 'Model',
+  life: 'Life',
 };
 
 /** Convert a list of tab IDs to human-readable labels. */

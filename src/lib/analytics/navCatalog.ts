@@ -87,7 +87,7 @@ const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, f
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
 const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
-const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true });
+const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true, life: true });
 // `parameters` was missing from the old subset-tolerant guard too — the exact
 // Record caught it on conversion (third omission after mastermind + missions).
 const DESIGN_SUB_TABS = exact<DesignSubTab>({ 'use-cases': true, prompt: true, parameters: true, connectors: true, triggers: true, messaging: true, automations: true });
