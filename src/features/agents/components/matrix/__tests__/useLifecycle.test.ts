@@ -140,6 +140,7 @@ vi.mock("@/stores/agentStore", () => {
 // ---------------------------------------------------------------------------
 
 import { useLifecycle } from "../useLifecycle";
+import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore/composeCoreProfile";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -617,6 +618,187 @@ describe("useLifecycle", () => {
       expect(promoteResult!.success).toBe(false);
       expect(mockUpdatePersona).not.toHaveBeenCalled();
       expect(mockPromoteBuildDraft).not.toHaveBeenCalled();
+    });
+  });
+
+  // -- handlePromote: codex core snapshot (seam b) -----------------------
+  // The dialogue-cinema layout captures the Persona Core Codex state at Launch;
+  // handlePromote consumes it once AFTER promoteBuildDraft resolves (i.e. after
+  // the Rust seed-if-absent stamp ran inside the command) and writes the
+  // composed typed Core through updatePersona({ core_profile }).
+
+  describe("handlePromote codex core snapshot", () => {
+    const codexSnapshot = (): PersonaCoreLaunchSnapshot => ({
+      state: {
+        archetypeId: "guardian",
+        disposition: 0.15,
+        conflictStyle: "analyst",
+        traits: [],
+        model: "sonnet",
+        effort: "medium",
+      },
+      archetype: {
+        id: "guardian",
+        name: "Guardian",
+        tagline: "Nothing ships unverified",
+        icon: "ShieldCheck",
+        color: "teal",
+        recipeAffinity: [],
+        persona: {
+          core: {
+            motivation: "Hold the line.",
+            stance: "Nothing ships unverified.",
+            northStarCommitment: "The product just works.",
+            riskTolerance: 0.15,
+            speedVsQuality: 0.2,
+            conflictStyle: "challenger",
+            deference: 0.25,
+          },
+        },
+      },
+    });
+
+    function promotableState() {
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: { system_prompt: "You are a bot", tools: [] },
+        buildSessionId: "session-123",
+      });
+    }
+
+    it("writes the composed typed Core through updatePersona after promote", async () => {
+      promotableState();
+      const consume = vi.fn().mockReturnValue(codexSnapshot());
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1", consumeCoreSnapshot: consume }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(consume).toHaveBeenCalledTimes(1);
+      expect(mockUpdatePersona).toHaveBeenCalledTimes(1);
+      expect(mockUpdatePersona).toHaveBeenCalledWith("persona-1", expect.anything());
+      const partial = mockBuildUpdateInput.mock.calls[0]![0] as { core_profile?: string };
+      const core = JSON.parse(partial.core_profile!) as Record<string, unknown>;
+      // Archetype base survives; the chosen conflict style overlays it.
+      expect(core.motivation).toBe("Hold the line.");
+      expect(core.riskTolerance).toBe(0.15);
+      expect(core.speedVsQuality).toBe(0.2);
+      expect(core.conflictStyle).toBe("analyst");
+      // Ordering: the explicit update lands strictly AFTER the promote (whose
+      // Rust body already ran the seed-if-absent stamp before returning).
+      expect(mockPromoteBuildDraft.mock.invocationCallOrder[0]!).toBeLessThan(
+        mockUpdatePersona.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it("does nothing when no snapshot was captured", async () => {
+      promotableState();
+      const consume = vi.fn().mockReturnValue(null);
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1", consumeCoreSnapshot: consume }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(consume).toHaveBeenCalledTimes(1);
+      expect(mockUpdatePersona).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when the codex was untouched (composer returns null)", async () => {
+      promotableState();
+      const consume = vi.fn().mockReturnValue({
+        state: {
+          archetypeId: null,
+          disposition: 0.4,
+          conflictStyle: null,
+          traits: [],
+          model: "opus",
+          effort: "xhigh",
+        },
+        archetype: null,
+      } satisfies PersonaCoreLaunchSnapshot);
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1", consumeCoreSnapshot: consume }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockUpdatePersona).not.toHaveBeenCalled();
+    });
+
+    it("composes over the design payload's own core when no archetype was picked", async () => {
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: {
+          system_prompt: "You are a bot",
+          persona: {
+            core: {
+              motivation: "LLM motivation.",
+              stance: "LLM stance.",
+              northStarCommitment: "LLM commitment.",
+              riskTolerance: 0.3,
+              speedVsQuality: 0.7,
+              conflictStyle: "pragmatist",
+              deference: 0.6,
+            },
+          },
+        },
+        buildSessionId: "session-123",
+      });
+      const consume = vi.fn().mockReturnValue({
+        state: {
+          archetypeId: null,
+          disposition: 0.4,
+          conflictStyle: "challenger",
+          traits: [],
+          model: "sonnet",
+          effort: "medium",
+        },
+        archetype: null,
+      } satisfies PersonaCoreLaunchSnapshot);
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1", consumeCoreSnapshot: consume }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      const partial = mockBuildUpdateInput.mock.calls[0]![0] as { core_profile?: string };
+      const core = JSON.parse(partial.core_profile!) as Record<string, unknown>;
+      expect(core.motivation).toBe("LLM motivation.");
+      expect(core.riskTolerance).toBe(0.3);
+      expect(core.conflictStyle).toBe("challenger");
+    });
+
+    it("stays non-fatal: a failed core update does not fail the promote", async () => {
+      promotableState();
+      mockUpdatePersona.mockRejectedValueOnce(new Error("offline"));
+      const consume = vi.fn().mockReturnValue(codexSnapshot());
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1", consumeCoreSnapshot: consume }),
+      );
+
+      let promoteResult: { success: boolean } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(true);
     });
   });
 

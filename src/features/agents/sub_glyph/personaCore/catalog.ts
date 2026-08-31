@@ -21,6 +21,12 @@ import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types"
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
 
+/** The disposition slider's untouched value. Named once so the hook's default
+ *  state and `composeCoreProfile`'s "did the user move the slider?" check can
+ *  never drift apart — the composer treats any other value as a deliberate
+ *  choice that drives the risk/speed dials of the runtime Core. */
+export const DEFAULT_DISPOSITION = 0.4;
+
 /** The three control accents that are NOT axis colours.
  *
  *  They were raw hex literals at their call sites, and three of the four

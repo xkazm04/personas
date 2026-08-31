@@ -3,6 +3,7 @@ import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from 
 import type { QuickConfigState } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { PetalState } from "@/features/shared/glyph/persona-sigil/types";
+import type { PersonaCoreLaunchSnapshot } from "./personaCore";
 
 export type { PetalState };
 
@@ -43,6 +44,14 @@ export interface GlyphFullLayoutProps {
   /** Slice 4 — initial messaging channels for picker hydration when the
    *  build flow resumes for an existing persona. */
   initialNotificationChannels?: ChannelSpecV2[];
+  /** Persona Core Codex → typed runtime Core (dialogue-cinema only). Fired at
+   *  Launch with the codex snapshot (typed state + resolved archetype); the
+   *  matrix entry holds it until promote, where `composeCoreProfile` turns it
+   *  into `personas.core_profile` (an explicit `update_persona` AFTER the Rust
+   *  seed-if-absent stamp has run inside `promote_build_draft`). The `cinema`
+   *  layout has no codex and never calls this, so archetype-less builds keep
+   *  today's stamp source (the design payload's `persona.core`) unchanged. */
+  onLaunchCoreSnapshot?: (snapshot: PersonaCoreLaunchSnapshot) => void;
 }
 
 export type { GlyphDimension, GlyphRow, BuildQuestion, CellBuildStatus, BuildPhase, QuickConfigState };

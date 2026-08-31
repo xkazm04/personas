@@ -18,12 +18,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { listArchetypes } from "@/api/archetypes";
 import { DEFAULT_EFFORT } from "@/lib/models/modelCatalog";
 import { silentCatch } from "@/lib/silentCatch";
-import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, modelTier, traitById } from "./catalog";
+import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, DEFAULT_DISPOSITION, modelTier, traitById } from "./catalog";
 import type { Archetype, EffortLevel, ModelTier, PersonaCore, PersonaCoreState } from "./types";
 
 const DEFAULT_CORE: PersonaCoreState = {
   archetypeId: null,
-  disposition: 0.4,
+  disposition: DEFAULT_DISPOSITION,
   conflictStyle: null,
   traits: [],
   model: "sonnet",

@@ -15,6 +15,7 @@ import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
 import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
+import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
   serializeQuickConfig,
@@ -327,9 +328,26 @@ export function UnifiedBuildEntry() {
     };
   }, [draftPersonaId]);
 
+  // -- Persona Core Codex snapshot (dialogue-cinema layout) ---------------
+  // The layout hands the typed codex snapshot up at Launch (before the build
+  // session exists); handlePromote consumes it once and composes it into
+  // `personas.core_profile` AFTER the Rust seed-if-absent stamp has run. A ref,
+  // not state: it never drives a render, and the single in-flight build this
+  // surface owns makes one slot sufficient.
+  const pendingCoreSnapshotRef = useRef<PersonaCoreLaunchSnapshot | null>(null);
+  const handleLaunchCoreSnapshot = useCallback((snapshot: PersonaCoreLaunchSnapshot) => {
+    pendingCoreSnapshotRef.current = snapshot;
+  }, []);
+  const consumeCoreSnapshot = useCallback(() => {
+    const snapshot = pendingCoreSnapshotRef.current;
+    pendingCoreSnapshotRef.current = null;
+    return snapshot;
+  }, []);
+
   const build = useBuild({ personaId: draftPersonaId });
   const lifecycle = useLifecycle({
     personaId: draftPersonaId,
+    consumeCoreSnapshot,
   });
 
   // -- Auto-test on draft_ready when no pending questions -----------------
@@ -424,8 +442,17 @@ export function UnifiedBuildEntry() {
   // Reset auto-test guard if the user resets/restarts the build (no
   // active session). Switching between drafts is handled implicitly —
   // the new session's id won't match the latched value.
+  //
+  // The codex snapshot is dropped on the same edge: a session that ends
+  // without promote (cancel, reject, reset) must not leak its codex choices
+  // into a later, unrelated build. The launch-time set is safe from this
+  // effect — it happens while buildSessionId is ALREADY null (no dep change),
+  // and the session id arriving afterwards is the non-null branch.
   useEffect(() => {
-    if (!buildSessionId) autoTestedRef.current = null;
+    if (!buildSessionId) {
+      autoTestedRef.current = null;
+      pendingCoreSnapshotRef.current = null;
+    }
   }, [buildSessionId]);
 
   // -- Auto-submit collected answers when the round empties ----------------
@@ -859,6 +886,11 @@ export function UnifiedBuildEntry() {
           onViewAgent: handleViewPromotedAgent,
           buildError: build.buildError,
           initialNotificationChannels: initialNotificationChannels ?? undefined,
+          // Persona Core Codex → typed core_profile. Only the dialogue-cinema
+          // layout mounts the codex and calls this; the cinema layout never
+          // does, so its builds keep today's stamp source (the design
+          // payload's persona.core, seeded by the Rust promote stamp).
+          onLaunchCoreSnapshot: handleLaunchCoreSnapshot,
         };
         const LayoutComponent =
           layout === "cinema" ? GlyphCinemaLayout : GlyphDialogueCinemaLayout;

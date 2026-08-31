@@ -24,6 +24,14 @@ import {
   buildUpdateInput,
 } from "@/api/agents/personas";
 import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes";
+// Deep module import ON PURPOSE: the personaCore barrel also exports the codex
+// React components + the archetype API hook; this pure module keeps the promote
+// path's import graph free of them.
+import {
+  composeCoreProfile,
+  extractDesignCore,
+  type PersonaCoreLaunchSnapshot,
+} from "@/features/agents/sub_glyph/personaCore/composeCoreProfile";
 import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
@@ -37,6 +45,12 @@ interface UseLifecycleOptions {
   personaId: string | null;
   /** Callback to start a new build session (from useBuild.handleGenerate). */
   handleGenerate?: (intent: string, overridePersonaId?: string) => Promise<void>;
+  /** Persona Core Codex → typed runtime Core (seam b). Read-and-clear accessor
+   *  for the codex snapshot the dialogue-cinema layout captured at Launch;
+   *  `handlePromote` consumes it once and composes it into
+   *  `personas.core_profile`. Absent (cinema layout, template adoption) means
+   *  the Rust promote stamp's own source stands unchanged. */
+  consumeCoreSnapshot?: () => PersonaCoreLaunchSnapshot | null;
 }
 
 interface ToolTestEventPayload {
@@ -65,6 +79,7 @@ export interface PromoteResult {
 
 export function useLifecycle({
   personaId,
+  consumeCoreSnapshot,
 }: UseLifecycleOptions) {
   // -- Read build slice state from Zustand selectors -------------------------
 
@@ -266,6 +281,30 @@ export function useLifecycle({
           excluded.length > 0 ? excluded : undefined,
         );
 
+        // Persona Core Codex → typed runtime Core (seam b). This is
+        // deterministic ordering, not a race: `promote_build_draft` runs its
+        // seed-if-absent `core_profile` stamp (build_sessions.rs "Design D",
+        // write-if-null) inside the command body BEFORE returning, so this
+        // explicit update always lands after the stamp and wins — and the
+        // stamp's guard can never resurrect the seeded value. When no snapshot
+        // exists (cinema layout has no codex; codex untouched; adoption flow),
+        // the stamp source stands unchanged. Best-effort: a failed update
+        // leaves the seeded core in place, so the persona is never core-less.
+        const coreSnapshot = consumeCoreSnapshot?.() ?? null;
+        if (coreSnapshot) {
+          const composed = composeCoreProfile(
+            coreSnapshot.state,
+            coreSnapshot.archetype,
+            extractDesignCore(agentIR),
+          );
+          if (composed) {
+            await updatePersona(
+              effectivePid,
+              buildUpdateInput({ core_profile: JSON.stringify(composed) }),
+            ).catch(silentCatch("lifecycle:codexCoreProfile"));
+          }
+        }
+
         // Transition to promoted
         useAgentStore.getState().handleBuildSessionStatus({
           type: "session_status",
@@ -341,7 +380,7 @@ export function useLifecycle({
       logger.error("handlePromote failed", { message });
       return emptyResult;
     }
-  }, [personaId]);
+  }, [personaId, consumeCoreSnapshot]);
 
   // -- handleRejectTest ------------------------------------------------------
   //
