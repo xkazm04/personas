@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "_comment": "Per-cell regression baseline for gate.mjs. `defaults` applies to every composed cell; `cells.<id>` overrides one cell (set `mustPass: false` to waive a cell, or narrow `requiredExpectations`). Starting posture per the WP7 brief: every L1 deterministic assert is REQUIRED for all cells; the judge dims are advisory and never gate. The assert vocabulary is L1_ASSERTS in cells.mjs — gate failures name any drift.",
+  "defaults": {
+    "mustPass": true,
+    "requiredExpectations": [
+      "adopted",
+      "core_profile_stamped",
+      "core_dials_match",
+      "responsibility_created",
+      "core_section_present",
+      "responsibilities_section_present",
+      "dial_prose_matches_band",
+      "responsibility_title_present"
+    ]
+  },
+  "judgeDims": {
+    "status": "advisory",
+    "dims": [
+      "character-fidelity",
+      "responsibility-fit",
+      "honesty-escalation",
+      "grounding",
+      "cost-discipline"
+    ]
+  },
+  "l2": {
+    "_comment": "L2 asserts gate only the cells an L2 run admitted (see gate.mjs expectedCellsFor). budget_cap incompletes fail the gate unless --allow-budget-cap.",
+    "requiredExpectations": ["execution_terminal", "cost_recorded"]
+  },
+  "cells": {}
+}
