@@ -9,6 +9,7 @@ use crate::db::repos::core::memory_claims::{self as claims_repo, DisputedMemoryR
 use crate::db::repos::core::memory_review_proposal::{
     self as proposal_repo, CreateProposalInput, MemoryReviewProposal, ProposalEntry,
 };
+use crate::engine::persona_brain::identity as identity_apply;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -878,6 +879,36 @@ pub fn apply_persona_memory_review_proposal(
                 "proposal already in status `{}` — no action taken",
                 proposal.status
             )],
+        });
+    }
+
+    // Living-agent self-model proposals (kind='self_model_diff') carry
+    // anchored identity diffs, not memory entries — route them to the one
+    // identity-apply door (which does its own validate → CAS → backed-up
+    // write) and map its outcome onto this command's result shape so the
+    // frontend's proposal surface needs no second command.
+    if proposal.kind == identity_apply::KIND_SELF_MODEL_DIFF {
+        let persona_id = proposal.persona_id.clone().ok_or_else(|| {
+            AppError::Validation(format!(
+                "self_model_diff proposal `{proposal_id}` carries no persona_id"
+            ))
+        })?;
+        let outcome = identity_apply::apply_approved(&state.db, &persona_id, &proposal_id)?;
+        tracing::info!(
+            persona_id = %persona_id,
+            proposal_id = %proposal_id,
+            applied = outcome.applied.len(),
+            skipped = outcome.skipped.len(),
+            backup = %outcome.backup,
+            "self-model diffs applied to identity.md"
+        );
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: outcome.applied.len(),
+            synthesized: 0,
+            archived: 0,
+            errors: outcome.skipped,
         });
     }
 

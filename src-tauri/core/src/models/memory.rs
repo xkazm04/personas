@@ -330,6 +330,15 @@ pub struct PersonaMemory {
     /// never silently removed — resolution is a human decision.
     #[serde(default)]
     pub open_claim_count: i32,
+    /// Stable fact identity (living-agent consolidation, e16). A short slug
+    /// (e.g. `"tooling.build_needs_desktop_feature"`) naming the FACT this row
+    /// states, so a later consolidation pass can recognise the same fact and
+    /// the tombstone table (`persona_memory_tombstone`) can refuse its
+    /// resurrection after a deliberate delete. `None` for organic memories —
+    /// only the consolidation writer (`repos::core::memories::
+    /// create_consolidated`) mints it.
+    #[serde(default)]
+    pub fact_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

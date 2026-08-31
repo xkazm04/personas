@@ -822,8 +822,17 @@ fn normalize_diff_path(raw: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Storage
+// Storage — LEGACY (WP3 moved mandates into `persona_responsibilities`)
 // ---------------------------------------------------------------------------
+//
+// Since spark `living-agent-core` WP3, the mandate's storage is the
+// `persona_responsibilities` table, accessed through
+// [`crate::responsibility`] (`mandate_for_project`, `load_mandate_map`,
+// `store_mandate_record`, `record_hire`). The three functions below remain
+// ONLY as the legacy door: `responsibility::migrate_legacy_mandates` reads
+// (and then deletes) these rows at boot, and tests seed them to exercise
+// that migration. Do NOT add new production call sites — a mandate written
+// here is invisible to every reader.
 
 /// `app_settings` key prefix; the full key is
 /// `app_master_mandate:<project_id>`. Allow-listed in

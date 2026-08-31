@@ -3,11 +3,11 @@
 /**
  * One outcome a responsibility exists to produce, with its acceptance bar.
  */
-export type ResponsibilityOutcome = { id: string,
+export type ResponsibilityOutcome = { id: string, 
 /**
  * What "done well" produces, stated as a claim about the world.
  */
-statement: string,
+statement: string, 
 /**
  * How anyone can tell the outcome held.
  */

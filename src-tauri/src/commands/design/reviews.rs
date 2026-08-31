@@ -1378,7 +1378,9 @@ pub(crate) fn apply_app_master_probation_decision(
         unmeasured,
     } = carry;
 
-    let Some(mut record) = personas_engine::app_master::get_mandate(&state.db, project_id) else {
+    let Some(mut record) =
+        personas_engine::responsibility::mandate_for_project_or_none(&state.db, project_id)
+    else {
         tracing::warn!(
             review_id,
             project_id,
@@ -1430,7 +1432,7 @@ pub(crate) fn apply_app_master_probation_decision(
     if let Some(streak) = headless_incomplete_streak {
         record.headless_incomplete_streak = streak;
     }
-    if let Err(e) = personas_engine::app_master::set_mandate(&state.db, &record) {
+    if let Err(e) = personas_engine::responsibility::store_mandate_record(&state.db, &record) {
         tracing::error!(
             review_id, project_id, error = %e,
             "app_master: could not record the probation decision on the mandate"

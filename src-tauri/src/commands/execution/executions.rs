@@ -449,8 +449,12 @@ pub(crate) async fn execute_persona_inner(
             persona.structured_prompt.as_deref(),
             persona.model_profile.as_deref(),
             tools.len(),
-            &crate::engine::prompt::active_capabilities_fingerprint(
-                persona.design_context.as_deref(),
+            &format!(
+                "{}|{}",
+                crate::engine::prompt::active_capabilities_fingerprint(
+                    persona.design_context.as_deref(),
+                ),
+                crate::engine::prompt::core_fingerprint(persona.core_profile.as_deref()),
             ),
         );
         match state.session_pool.take(&persona_id, config_hash).await {
@@ -527,7 +531,12 @@ pub fn prepare_persona_execution(
         }
     }
 
-    let mut prompt_text = prompt::assemble_prompt(
+    // Living-agent inputs mirror the runner main path so the speculative blob
+    // matches what a real run would assemble (the cache key covers charters;
+    // the episodic tail rides the blob's 5-minute TTL).
+    let (responsibilities, recent_episodes) =
+        crate::engine::runner::load_living_prompt_inputs(&state.db, &persona_id);
+    let mut prompt_text = prompt::assemble_prompt_with_skills(
         &persona,
         &tools,
         None,
@@ -536,6 +545,9 @@ pub fn prepare_persona_execution(
         None,
         #[cfg(feature = "desktop")]
         None,
+        None, // written-skills set: no connector hints on this surface
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice()),
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice()),
     );
     let mut memory_ids = Vec::new();
     if let Ok(tiered) = mem_repo::get_for_injection_v2(
@@ -548,7 +560,7 @@ pub fn prepare_persona_execution(
         prompt_text = with_memories;
         memory_ids = ids;
     }
-    let key = prepared_run_cache::cache_key(&persona, &tools, None, None);
+    let key = prepared_run_cache::cache_key(&persona, &tools, None, None, &responsibilities);
     prepared_run_cache::insert(
         key.clone(),
         prepared_run_cache::PreparedRunBlob {
@@ -846,8 +858,11 @@ pub fn preview_execution(
         .as_deref()
         .and_then(|s| serde_json::from_str(s).ok());
 
-    // Assemble prompt (same as real execution)
-    let prompt_text = prompt::assemble_prompt(
+    // Assemble prompt (same as real execution). Living-agent inputs mirror
+    // the runner main path so the preview shows the prompt a run would carry.
+    let (responsibilities, recent_episodes) =
+        crate::engine::runner::load_living_prompt_inputs(&state.db, &persona_id);
+    let prompt_text = prompt::assemble_prompt_with_skills(
         &persona,
         &tools,
         input_json.as_ref(),
@@ -856,6 +871,9 @@ pub fn preview_execution(
         None, // no connector usage hints in preview
         #[cfg(feature = "desktop")]
         None, // no ambient context in preview
+        None, // written-skills set: no connector hints on this surface
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice()),
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice()),
     );
 
     // Count memories that would be injected

@@ -3,11 +3,11 @@
 /**
  * One measurable objective under a responsibility (baseline → target).
  */
-export type ResponsibilityObjective = { key: string, label: string, baseline?: number, target?: number, unit?: string,
+export type ResponsibilityObjective = { key: string, label: string, baseline?: number, target?: number, unit?: string, 
 /**
  * 'up' | 'down' — which way the metric should move.
  */
-direction?: string, windowDays?: number, lastMeasuredAt?: string,
+direction?: string, windowDays?: bigint, lastMeasuredAt?: string, 
 /**
  * Where the measurement comes from (a KPI id, a command, prose).
  */

@@ -3,28 +3,28 @@
 /**
  * One row of `persona_episodes` — an append-only episodic record entry.
  */
-export type PersonaEpisode = { id: string, personaId: string, executionId?: string, responsibilityId?: string,
+export type PersonaEpisode = { id: string, personaId: string, executionId?: string, responsibilityId?: string, 
 /**
  * Who spoke/acted: 'user' | 'assistant' | 'system' | 'tool' | ...
  */
-role: string,
+role: string, 
 /**
  * Where the episode came from ('execution', 'channel', 'chat', ...).
  */
-source: string,
+source: string, 
 /**
  * The stored excerpt (bounded; `chars` counts the ORIGINAL body).
  */
-bodyExcerpt: string,
+bodyExcerpt: string, 
 /**
  * Full body on disk, when the excerpt was truncated from a file.
  */
-filePath?: string,
+filePath?: string, 
 /**
  * Content hash of the original body — the dedupe/provenance key.
  */
-contentHash: string,
+contentHash: string, 
 /**
  * Character count of the ORIGINAL body (consolidation budget input).
  */
-chars: number, createdAt: string, };
+chars: bigint, createdAt: string, };

@@ -2,9 +2,36 @@
 
 /**
  * Employment-shaped lifecycle data for a responsibility.
+ *
+ * The four `probation*`/`headless*` fields are the probation-review
+ * bookkeeping the legacy `app_master::MandateRecord` carried on its
+ * `app_settings` row. They live here because the responsibility table is now
+ * the mandate's storage (WP3) and the round-trip
+ * `MandateRecord` -> `PersonaResponsibility` -> `MandateRecord` must be
+ * lossless — dropping them would let the probation tick raise a duplicate
+ * review for a hire that was already decided.
  */
-export type ResponsibilityTenure = { hiredAt?: string, probationEndsAt?: string, reviewCadenceDays?: number,
+export type ResponsibilityTenure = { hiredAt?: string, probationEndsAt?: string, reviewCadenceDays?: bigint, 
 /**
  * Conditions under which the responsibility should be retired.
  */
-retireCriteria: Array<string>, };
+retireCriteria: Array<string>, 
+/**
+ * RFC-3339 instant the probation review was decided ('activated' or
+ * 'retired'); `None` while undecided (extending is not a decision).
+ */
+probationDecidedAt?: string, 
+/**
+ * 'activated' | 'extended' | 'retired' — the decision that was taken.
+ */
+probationDecision?: string, 
+/**
+ * The raised-but-unanswered probation review, so the lifecycle tick
+ * raises exactly one packet per hire.
+ */
+probationReviewId?: string, 
+/**
+ * Consecutive `incomplete` probation verdicts the headless bridge has
+ * already answered with an extension (see `MandateRecord`).
+ */
+headlessIncompleteStreak?: number, };

@@ -833,9 +833,12 @@ fn set_probation_autopilot(db: &crate::db::DbPool, project_id: &str, notes: &mut
 
 /// Persist the enforceable mandate + tenure for `project_id`.
 ///
-/// A project holds at most ONE mandate (`app_master_mandate:<project_id>` is a
-/// single settings key), so a new hire on a project that already had one
-/// **replaces** it: the record is built from scratch here, which is what resets
+/// Since WP3 the storage is a `persona_responsibilities` row
+/// (`domain = 'software_engineering'`, `source = 'kp-hire'`), written through
+/// `personas_engine::responsibility::record_hire` — the accessor that also
+/// serves every mandate read. A project holds at most ONE mandate, so a new
+/// hire on a project that already had one **replaces** it (the old charter is
+/// retired, the record is built from scratch here) — which is what resets
 /// `headless_incomplete_streak`, `probation_decided_at` and the tenure start.
 /// Inheriting any of those would let a fresh hire be retired on its first
 /// `incomplete` because its predecessor had already been extended once.
@@ -843,6 +846,7 @@ fn persist_mandate(
     db: &crate::db::DbPool,
     project_id: &str,
     persona_id: &str,
+    app_name: &str,
     am: &serde_json::Value,
     notes: &mut Vec<String>,
 ) -> Option<MandateRecord> {
@@ -926,7 +930,8 @@ fn persist_mandate(
         probation_review_id: None,
         headless_incomplete_streak: 0,
     };
-    match personas_engine::app_master::set_mandate(db, &record) {
+    let title = format!("App master for {app_name}");
+    match personas_engine::responsibility::record_hire(db, &record, &title) {
         Ok(()) => Some(record),
         Err(e) => {
             // This one matters more than the others: without the record, the
@@ -1133,7 +1138,7 @@ pub(crate) fn bind_app_master(
     out.trigger_ids = trigger_ids;
     out.unsupported_triggers = unsupported;
     set_probation_autopilot(db, &project_id, &mut out.notes);
-    let mandate = persist_mandate(db, &project_id, persona_id, am, &mut out.notes);
+    let mandate = persist_mandate(db, &project_id, persona_id, &app_name, am, &mut out.notes);
 
     // (h) LAST, and only once the mandate is durable. The core identity memory
     // states the rung, the owner and the budget as facts about this hire; if
@@ -1182,9 +1187,10 @@ pub(crate) fn stamp_app_master_link(
 ) -> Result<(), AppError> {
     let persona = crate::db::repos::core::personas::get_by_id(db, persona_id)?;
     let mut dc = persona.parsed_design_context();
-    let probation_ends_at = personas_engine::app_master::get_mandate(db, &outcome.project_id)
-        .map(|r| r.probation_ends_at)
-        .unwrap_or_default();
+    let probation_ends_at =
+        personas_engine::responsibility::mandate_for_project_or_none(db, &outcome.project_id)
+            .map(|r| r.probation_ends_at)
+            .unwrap_or_default();
     // Pin the persona to the project it owns, so the `codebase` connector
     // resolves THIS repo (the `dev_project_id` precedent).
     if !outcome.project_id.is_empty() {

@@ -284,7 +284,12 @@ pub async fn dry_run_persona(
         });
 
     // -- Assemble prompt (same path as the real runner) -------------------
-    let prompt_text = prompt::assemble_prompt(
+    // Living-agent inputs mirror the runner main path: active charters +
+    // episodic tail (best-effort, degrade to empty), so the dry-run prompt is
+    // the prompt a real run would carry.
+    let (responsibilities, recent_episodes) =
+        super::runner::load_living_prompt_inputs(&state.db, &persona.id);
+    let prompt_text = prompt::assemble_prompt_with_skills(
         &persona,
         &tools,
         input_json.as_ref(),
@@ -293,6 +298,9 @@ pub async fn dry_run_persona(
         None, // connector usage hints
         #[cfg(feature = "desktop")]
         None,
+        None, // written-skills set: no connector hints on this surface
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice()),
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice()),
     );
     let prompt_chars = prompt_text.chars().count() as i64;
     log(

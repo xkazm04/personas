@@ -144,6 +144,87 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
     Ok(id)
 }
 
+/// Input to [`create_raw`] — living-agent proposal families whose
+/// `proposal_json` is NOT a `ProposalEntry` array (today: `self_model_diff`,
+/// whose payload is `{"diffs":[...],"rationale":"..."}`). `threshold` is a
+/// curation concept and is stored as 0; `reviewed_count` mirrors
+/// `proposed_changes` (each diff is one reviewable change).
+pub struct CreateRawProposalInput<'a> {
+    pub persona_id: &'a str,
+    /// Must satisfy the column CHECK ('memory_curation' | 'self_model_diff').
+    pub kind: &'a str,
+    pub proposal_json: &'a str,
+    pub summary: Option<&'a str>,
+    pub proposed_changes: i32,
+}
+
+pub fn create_raw(pool: &DbPool, input: CreateRawProposalInput<'_>) -> Result<String, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::create_raw",
+        {
+            let id = format!("memprop_{}", Uuid::new_v4().simple());
+            let conn = pool.conn("memory_review_proposal::create_raw")?;
+            conn.execute(
+                "INSERT INTO persona_memory_review_proposal
+                    (id, persona_id, threshold, instructions, proposal_json,
+                     summary, reviewed_count, proposed_changes, status, created_at, team_id, kind)
+                 VALUES (?1, ?2, 0, NULL, ?3, ?4, ?5, ?5, 'pending_review',
+                         datetime('now'), NULL, ?6)",
+                params![
+                    id,
+                    input.persona_id,
+                    input.proposal_json,
+                    input.summary,
+                    input.proposed_changes,
+                    input.kind,
+                ],
+            )?;
+            Ok(id)
+        }
+    )
+}
+
+/// The raw row for families whose payload is not a `ProposalEntry` array —
+/// [`get`]'s `map_row` would silently parse such a payload to `[]` (its
+/// `unwrap_or_default`), which is exactly right for LIST surfaces and exactly
+/// wrong for the apply path, which needs the payload bytes.
+#[derive(Debug, Clone)]
+pub struct RawProposal {
+    pub id: String,
+    pub persona_id: Option<String>,
+    pub kind: String,
+    pub status: String,
+    pub proposal_json: String,
+}
+
+pub fn get_raw(pool: &DbPool, id: &str) -> Result<Option<RawProposal>, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::get_raw",
+        {
+            let conn = pool.conn("memory_review_proposal::get_raw")?;
+            let row = conn
+                .query_row(
+                    "SELECT id, persona_id, kind, status, proposal_json
+                     FROM persona_memory_review_proposal WHERE id = ?1",
+                    params![id],
+                    |r| {
+                        Ok(RawProposal {
+                            id: r.get("id")?,
+                            persona_id: r.get("persona_id")?,
+                            kind: r.get("kind")?,
+                            status: r.get("status")?,
+                            proposal_json: r.get("proposal_json")?,
+                        })
+                    },
+                )
+                .optional()?;
+            Ok(row)
+        }
+    )
+}
+
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<MemoryReviewProposal>, AppError> {
     let conn = pool.conn("memory_review_proposal::get")?;
     let row = conn

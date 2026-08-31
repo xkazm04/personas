@@ -951,21 +951,40 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         // Verify exists
         let existing = get_by_id(pool, id)?;
 
-        // Auto-version if structured_prompt is changing
-        if let Some(ref new_sp) = input.structured_prompt {
-            let changed = match (&existing.structured_prompt, new_sp.as_deref()) {
+        // Auto-version if structured_prompt OR core_profile is changing
+        // (living-agent: a Core edit is a prompt-shaping change and must land
+        // in prompt history even when the structured prompt is untouched).
+        let sp_changing = match &input.structured_prompt {
+            Some(new_sp) => match (&existing.structured_prompt, new_sp.as_deref()) {
                 (None, None) => false,
                 (Some(old), Some(new)) => old != new,
                 _ => true,
-            };
-            if changed {
-                let _ = crate::repos::execution::metrics::create_prompt_version_if_changed(
-                    pool,
-                    id,
-                    new_sp.clone(),
-                    input.system_prompt.clone(),
-                );
-            }
+            },
+            None => false,
+        };
+        let cp_changing = match &input.core_profile {
+            Some(new_cp) => new_cp.as_deref() != existing.core_profile.as_deref(),
+            None => false,
+        };
+        if sp_changing || cp_changing {
+            // Pass the POST-update values for both halves: the changing one
+            // from the input, the untouched one carried from the existing row
+            // so the version snapshot never drops it.
+            let new_sp = input
+                .structured_prompt
+                .clone()
+                .unwrap_or_else(|| existing.structured_prompt.clone());
+            let new_cp = input
+                .core_profile
+                .clone()
+                .unwrap_or_else(|| existing.core_profile.clone());
+            let _ = crate::repos::execution::metrics::create_prompt_version_if_changed(
+                pool,
+                id,
+                new_sp,
+                input.system_prompt.clone(),
+                new_cp,
+            );
         }
 
         // Validate fields when provided

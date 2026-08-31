@@ -38,6 +38,7 @@ pub fn row_to_prompt_version(row: &Row) -> rusqlite::Result<PersonaPromptVersion
         resolved_cells: row.get("resolved_cells").unwrap_or(None),
         icon: row.get("icon").unwrap_or(None),
         color: row.get("color").unwrap_or(None),
+        core_profile: row.get("core_profile").unwrap_or(None),
     })
 }
 
@@ -53,6 +54,8 @@ pub struct VersionSnapshotFields {
     pub resolved_cells: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
+    /// Serialized `PersonaCore` (living-agent) captured with the version.
+    pub core_profile: Option<String>,
 }
 
 pub fn create_prompt_version(
@@ -110,11 +113,12 @@ pub fn create_prompt_version_with_snapshot(
                 conn.execute(
             "INSERT INTO persona_prompt_versions
              (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at,
-              design_context, last_design_result, resolved_cells, icon, color)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
+              design_context, last_design_result, resolved_cells, icon, color, core_profile)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
             params![
                 id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, now,
                 snapshot.design_context, snapshot.last_design_result, snapshot.resolved_cells, snapshot.icon, snapshot.color,
+                snapshot.core_profile,
             ],
         )?;
                 Ok((version_number,))
@@ -137,6 +141,7 @@ pub fn create_prompt_version_with_snapshot(
                         resolved_cells: snapshot.resolved_cells,
                         icon: snapshot.icon,
                         color: snapshot.color,
+                        core_profile: snapshot.core_profile,
                     })
                 }
                 Err(e) => {
@@ -150,11 +155,18 @@ pub fn create_prompt_version_with_snapshot(
 
 /// Creates a version only if the prompt actually changed from the latest version.
 /// Returns Some(version) if created, None if unchanged.
+///
+/// Living-agent: the diff covers `structured_prompt` OR `core_profile` — a
+/// Core (dial/prose) edit is a prompt-shaping change and must land in prompt
+/// history even when the structured prompt itself is untouched. Callers pass
+/// the persona's CURRENT core_profile (post-update), so an unchanged Core
+/// never false-positives the diff.
 pub fn create_prompt_version_if_changed(
     pool: &DbPool,
     persona_id: &str,
     structured_prompt: Option<String>,
     system_prompt: Option<String>,
+    core_profile: Option<String>,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
     timed_query!(
         "execution_metrics",
@@ -162,29 +174,37 @@ pub fn create_prompt_version_if_changed(
         {
             let conn = pool.conn("metrics::create_prompt_version_if_changed")?;
 
-            // Get latest version's prompt to diff
-            let latest: Option<(Option<String>,)> = conn
+            // Get latest version's prompt + core to diff. `core_profile` reads
+            // leniently (pre-e16 rows have no column value) — a missing value
+            // diffs as None, exactly like a version that never captured it.
+            let latest: Option<(Option<String>, Option<String>)> = conn
                 .query_row(
-                    "SELECT structured_prompt FROM persona_prompt_versions
+                    "SELECT structured_prompt, core_profile FROM persona_prompt_versions
              WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT 1",
                     params![persona_id],
-                    |row| Ok((row.get(0)?,)),
+                    |row| Ok((row.get(0)?, row.get(1).unwrap_or(None))),
                 )
                 .ok();
 
-            let latest_prompt = latest.and_then(|r| r.0);
+            let (latest_prompt, latest_core) = latest.unwrap_or((None, None));
 
-            // Skip if prompts are identical
-            if latest_prompt.as_deref() == structured_prompt.as_deref() {
+            // Skip only when BOTH halves are identical
+            if latest_prompt.as_deref() == structured_prompt.as_deref()
+                && latest_core.as_deref() == core_profile.as_deref()
+            {
                 return Ok(None);
             }
 
-            let version = create_prompt_version(
+            let version = create_prompt_version_with_snapshot(
                 pool,
                 persona_id,
                 structured_prompt,
                 system_prompt,
                 Some("Auto-saved".into()),
+                VersionSnapshotFields {
+                    core_profile,
+                    ..Default::default()
+                },
             )?;
             Ok(Some(version))
         }
@@ -2366,6 +2386,78 @@ mod tests {
         assert_eq!(versions.len(), 2);
         assert_eq!(versions[0].version_number, 2); // DESC order
         assert_eq!(versions[1].version_number, 1);
+    }
+
+    /// Living-agent versioning contract: `core_profile` is captured with the
+    /// snapshot, round-trips through the row mapper, and the auto-version
+    /// diff fires on a Core-only change (and stays quiet when neither half
+    /// changed).
+    #[test]
+    fn prompt_version_captures_and_diffs_core_profile() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "persona-core");
+        let core_a = r#"{"riskTolerance":0.2}"#.to_string();
+        let core_b = r#"{"riskTolerance":0.9}"#.to_string();
+
+        // v1: first call with a core creates and captures it.
+        let v1 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_a.clone()),
+        )
+        .unwrap()
+        .expect("first version created");
+        assert_eq!(v1.core_profile.as_deref(), Some(core_a.as_str()));
+
+        // Identical prompt AND core → no new version.
+        assert!(create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_a.clone()),
+        )
+        .unwrap()
+        .is_none());
+
+        // Core-only change (a dial edit) → versioned.
+        let v2 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_b.clone()),
+        )
+        .unwrap()
+        .expect("core-only change must version");
+        assert_eq!(v2.version_number, 2);
+        assert_eq!(v2.core_profile.as_deref(), Some(core_b.as_str()));
+
+        // Prompt-only change carries the (unchanged) core forward.
+        let v3 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-2".into()),
+            None,
+            Some(core_b.clone()),
+        )
+        .unwrap()
+        .expect("prompt change must version");
+        assert_eq!(v3.core_profile.as_deref(), Some(core_b.as_str()));
+
+        // Round-trip through the row mapper (SELECT * read path).
+        let listed = get_prompt_versions(&pool, &persona, None).unwrap();
+        assert_eq!(listed.len(), 3);
+        assert_eq!(listed[0].core_profile.as_deref(), Some(core_b.as_str()));
+        assert_eq!(listed[2].core_profile.as_deref(), Some(core_a.as_str()));
+
+        // The plain (non-snapshot) constructor stays core-less — pre-living
+        // callers keep their exact behavior.
+        let plain =
+            create_prompt_version(&pool, &persona, Some("sp-3".into()), None, None).unwrap();
+        assert_eq!(plain.core_profile, None);
     }
 
     #[test]

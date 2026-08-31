@@ -168,6 +168,8 @@ pub fn persona_to_agent(
     tools: &[PersonaToolDefinition],
     credential_hints: Option<&[&str]>,
 ) -> GitLabAgentDefinition {
+    // v1: living-agent sections not exported (responsibilities/episodes stay
+    // None — `## Core` still renders from the persona snapshot).
     let system_prompt = engine::prompt::assemble_prompt(
         persona,
         tools,
@@ -236,6 +238,8 @@ pub fn persona_to_agents_md(
     tools: &[PersonaToolDefinition],
     credential_hints: Option<&[&str]>,
 ) -> String {
+    // v1: living-agent sections not exported (responsibilities/episodes stay
+    // None — `## Core` still renders from the persona snapshot).
     let prompt = engine::prompt::assemble_prompt(
         persona,
         tools,

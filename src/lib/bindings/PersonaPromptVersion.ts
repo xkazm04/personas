@@ -4,4 +4,10 @@ export type PersonaPromptVersion = { id: string, persona_id: string, version_num
 /**
  * Version tag: "production", "experimental", or "archived"
  */
-tag: string, created_at: string, design_context: string | null, last_design_result: string | null, resolved_cells: string | null, icon: string | null, color: string | null, };
+tag: string, created_at: string, design_context: string | null, last_design_result: string | null, resolved_cells: string | null, icon: string | null, color: string | null, 
+/**
+ * Serialized `PersonaCore` captured with this version (living-agent
+ * spine — the Core travels with prompt history). `None` on rows
+ * predating migration e16.
+ */
+core_profile: string | null, };

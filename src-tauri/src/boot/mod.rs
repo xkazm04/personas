@@ -58,6 +58,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     migrations::encrypt_legacy_secrets(&pool, &mut st);
 
+    migrations::migrate_app_master_mandates(&pool);
+
     services::init_connector_registry(&pool, &mut st);
 
     // Install panic crash hook that writes to crash_logs/ before aborting

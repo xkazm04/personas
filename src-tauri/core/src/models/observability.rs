@@ -624,6 +624,11 @@ pub struct PersonaPromptVersion {
     pub icon: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
+    /// Serialized `PersonaCore` captured with this version (living-agent
+    /// spine — the Core travels with prompt history). `None` on rows
+    /// predating migration e16.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub core_profile: Option<String>,
 }
 
 // ============================================================================

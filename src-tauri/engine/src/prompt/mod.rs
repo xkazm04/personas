@@ -16,28 +16,35 @@
 
 mod advisory;
 mod assemble;
+mod budget;
 mod capabilities;
 mod cli_args;
+mod core_section;
 mod discipline;
 mod resume_prompt;
 mod runtime_safety;
 mod templates;
 mod variables;
 
+pub use budget::{fnv1a_64, warn_over_budget, PromptBlockSizes};
 pub use capabilities::{
-    active_capabilities_fingerprint, build_tool_documentation, parse_model_profile,
-    render_active_capabilities, render_capability_policy_lines, resolve_use_case_model_override,
-    DEFAULT_CAPABILITY_MODEL,
+    active_capabilities_fingerprint, build_tool_documentation, core_fingerprint,
+    parse_model_profile, render_active_capabilities, render_capability_policy_lines,
+    resolve_use_case_model_override, DEFAULT_CAPABILITY_MODEL,
 };
 pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args, DEFAULT_EFFORT};
+pub use core_section::{render_core, render_responsibilities, MAX_RESPONSIBILITIES_RENDERED};
 pub use resume_prompt::assemble_resume_prompt;
 pub use variables::replace_variables;
 
 #[cfg(test)]
 use personas_db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 
+// `pub(crate)` so sibling modules' tests can reuse the persona/tool fixtures
+// (e.g. `prepared_run_cache`'s cache-key tests) instead of hand-rolling a
+// 40-field `Persona` literal. Test-only either way (`cfg(test)`).
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 
 pub use assemble::*;
 pub(crate) use discipline::*;

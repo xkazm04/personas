@@ -9,6 +9,7 @@ mod cli_args;
 mod events;
 mod fix_loop;
 mod fixtures;
+mod living_agent;
 mod runtime_safety;
 
 pub(crate) use fixtures::*;

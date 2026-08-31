@@ -1,8 +1,8 @@
 use rusqlite::{params, OptionalExtension};
 
 use crate::models::{
-    validate_category, validate_importance, CreatePersonaMemoryInput, PersonaMemory,
-    DEFAULT_MEMORY_CATEGORY,
+    normalize_category, validate_category, validate_importance, CreatePersonaMemoryInput,
+    PersonaMemory, DEFAULT_MEMORY_CATEGORY,
 };
 use crate::query_builder::QueryBuilder;
 use crate::repos::core::memory_reaper;
@@ -140,7 +140,7 @@ fn build_memory_filters(
 /// the query, not silently defaulted per row.
 const COLUMNS: &str = "id, persona_id, title, content, category, source_execution_id, \
      importance, tags, tier, access_count, last_accessed_at, created_at, updated_at, \
-     use_case_id, home_team_id, derived_from, open_claim_count";
+     use_case_id, home_team_id, derived_from, open_claim_count, fact_key";
 
 row_mapper!(row_to_memory -> PersonaMemory {
     id, persona_id, title, content, category,
@@ -153,6 +153,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     home_team_id [opt],
     derived_from [opt],
     open_claim_count [opt_i32],
+    fact_key [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -502,6 +503,256 @@ pub fn create_synthesized(
         )?;
     }
     get_by_id(pool, &created.id)
+}
+
+// ---------------------------------------------------------------------------
+// Living-agent consolidation writer + fact tombstones (spark WP4)
+// ---------------------------------------------------------------------------
+
+/// One fact draft produced by a sleep-consolidation LLM leg. `sources` are
+/// `persona_episodes` ids — the provenance that lands in
+/// `persona_memory_sources`.
+#[derive(Debug, Clone)]
+pub struct ConsolidatedFactDraft {
+    /// Stable fact identity slug (e.g. `"tooling.build_needs_desktop_feature"`).
+    pub fact_key: String,
+    pub title: String,
+    pub content: String,
+    pub category: Option<String>,
+    pub importance: i32,
+    /// Episode ids this fact was consolidated from. MUST be non-empty.
+    pub sources: Vec<String>,
+}
+
+/// What happened to one draft. `memory_id` is set for `created` / `updated`.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DraftOutcome {
+    pub fact_key: String,
+    /// `created` | `updated` | `skipped_tombstoned` | `rejected`
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+/// Per-batch rollup of [`create_consolidated`], serializable into the
+/// attention ledger's `stats_json`.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConsolidationOutcome {
+    pub created: usize,
+    pub updated: usize,
+    pub skipped_tombstoned: usize,
+    pub rejected: usize,
+    pub outcomes: Vec<DraftOutcome>,
+}
+
+/// **The one write door for consolidation-derived memories** (living-agent
+/// governance, mirroring `engine/src/app_master_memory.rs:22-42`):
+///
+/// * tier is FORCED to `working` — an unattended pass never writes `core`
+///   (user-pinned) and never promotes its own output;
+/// * category is never `preference` — agent-inferred claims about a human
+///   never auto-commit (a `preference` draft is coerced to `learned` and the
+///   coercion is recorded on the outcome);
+/// * importance is clamped to 2..=4 — observations competing for a recall
+///   budget, never self-declared core identity;
+/// * a draft with **no sources** is rejected — a consolidated fact with no
+///   episode provenance is an invention, not a consolidation;
+/// * a `(persona_id, fact_key)` present in `persona_memory_tombstone` is
+///   skipped (and counted) — a deliberately forgotten fact must not return
+///   through the consolidation door.
+///
+/// Per draft, the memory write + `fact_key` + provenance rows land in ONE
+/// `Immediate` transaction (the tombstone read informs the write), so a
+/// mid-batch failure can never leave a memory without its provenance. Drafts
+/// are independent: one bad draft rolls back only itself.
+///
+/// A draft whose `fact_key` already names a live (non-archive) memory of this
+/// persona UPDATES that row in place (stable fact identity — the fact evolved,
+/// it did not multiply) and unions the new provenance.
+pub fn create_consolidated(
+    pool: &DbPool,
+    persona_id: &str,
+    drafts: Vec<ConsolidatedFactDraft>,
+) -> Result<ConsolidationOutcome, AppError> {
+    timed_query!(
+        "persona_memories",
+        "persona_memories::create_consolidated",
+        {
+            let mut conn = pool.conn("memories::create_consolidated")?;
+            let mut out = ConsolidationOutcome::default();
+
+            for draft in drafts {
+                let fact_key = draft.fact_key.trim().to_string();
+                let title = strip_html_tags(&draft.title);
+                let content = strip_html_tags(&draft.content);
+
+                let reject = |reason: &str, out: &mut ConsolidationOutcome, fact_key: &str| {
+                    out.rejected += 1;
+                    out.outcomes.push(DraftOutcome {
+                        fact_key: fact_key.to_string(),
+                        status: "rejected".into(),
+                        memory_id: None,
+                        detail: Some(reason.to_string()),
+                    });
+                };
+
+                if draft.sources.is_empty() {
+                    reject("empty sources — no episode provenance", &mut out, &fact_key);
+                    continue;
+                }
+                if fact_key.is_empty() || title.trim().is_empty() || content.trim().is_empty() {
+                    reject("empty fact_key/title/content", &mut out, &fact_key);
+                    continue;
+                }
+
+                // Governance clamps (see doc comment).
+                let importance = draft.importance.clamp(2, 4);
+                let raw_category =
+                    normalize_category(draft.category.as_deref().unwrap_or("learned"));
+                let (category, coerced) = if raw_category == "preference" {
+                    ("learned", true)
+                } else {
+                    (raw_category, false)
+                };
+
+                let tx =
+                    conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+
+                // Tombstone gate — inside the tx so the read informs the write.
+                let forgotten: bool = tx.query_row(
+                    "SELECT COUNT(*) AS n FROM persona_memory_tombstone
+                 WHERE persona_id = ?1 AND fact_key = ?2",
+                    params![persona_id, fact_key],
+                    |r| r.get::<_, i64>("n"),
+                )? > 0;
+                if forgotten {
+                    drop(tx);
+                    out.skipped_tombstoned += 1;
+                    out.outcomes.push(DraftOutcome {
+                        fact_key,
+                        status: "skipped_tombstoned".into(),
+                        memory_id: None,
+                        detail: Some("fact_key is tombstoned for this persona".into()),
+                    });
+                    continue;
+                }
+
+                // Stable fact identity: an existing live row with this fact_key is
+                // updated, not duplicated.
+                let existing: Option<String> = tx
+                    .query_row(
+                        "SELECT id FROM persona_memories
+                     WHERE persona_id = ?1 AND fact_key = ?2 AND tier != 'archive'
+                     LIMIT 1",
+                        params![persona_id, fact_key],
+                        |r| r.get("id"),
+                    )
+                    .optional()?;
+
+                let now = chrono::Utc::now().to_rfc3339();
+                let (memory_id, status) = match existing {
+                    Some(id) => {
+                        tx.execute(
+                            "UPDATE persona_memories
+                         SET title = ?1, content = ?2, category = ?3,
+                             importance = ?4, updated_at = ?5
+                         WHERE id = ?6",
+                            params![title, content, category, importance, now, id],
+                        )?;
+                        (id, "updated")
+                    }
+                    None => {
+                        let id = uuid::Uuid::new_v4().to_string();
+                        tx.execute(
+                            "INSERT INTO persona_memories
+                            (id, persona_id, title, content, category, importance,
+                             tier, fact_key, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'working', ?7, ?8, ?8)",
+                            params![
+                                id, persona_id, title, content, category, importance, fact_key, now
+                            ],
+                        )?;
+                        (id, "created")
+                    }
+                };
+
+                for episode_id in &draft.sources {
+                    tx.execute(
+                        "INSERT OR IGNORE INTO persona_memory_sources (memory_id, episode_id)
+                     VALUES (?1, ?2)",
+                        params![memory_id, episode_id],
+                    )?;
+                }
+                tx.commit()?;
+
+                match status {
+                    "created" => out.created += 1,
+                    _ => out.updated += 1,
+                }
+                out.outcomes.push(DraftOutcome {
+                    fact_key,
+                    status: status.into(),
+                    memory_id: Some(memory_id),
+                    detail: coerced.then(|| "category `preference` coerced to `learned`".into()),
+                });
+            }
+            Ok(out)
+        }
+    )
+}
+
+/// Is `(persona_id, fact_key)` tombstoned — i.e. deliberately forgotten, and
+/// barred from returning through [`create_consolidated`]?
+pub fn is_forgotten(pool: &DbPool, persona_id: &str, fact_key: &str) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_memory_tombstone",
+        "persona_memories::is_forgotten",
+        {
+            let conn = pool.conn("memories::is_forgotten")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_tombstone
+             WHERE persona_id = ?1 AND fact_key = ?2",
+                params![persona_id, fact_key],
+                |r| r.get("n"),
+            )?;
+            Ok(n > 0)
+        }
+    )
+}
+
+/// Record that a fact was deliberately forgotten. Idempotent (PK upsert keeps
+/// the FIRST reason — the original act of forgetting is the record that
+/// matters). FK-less by table design: the tombstone must survive the deletion
+/// of everything it refers to.
+pub fn tombstone_fact(
+    pool: &DbPool,
+    persona_id: &str,
+    fact_key: &str,
+    reason: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_memory_tombstone",
+        "persona_memories::tombstone_fact",
+        {
+            let conn = pool.conn("memories::tombstone_fact")?;
+            conn.execute(
+                "INSERT INTO persona_memory_tombstone (persona_id, fact_key, reason, created_at)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(persona_id, fact_key) DO NOTHING",
+                params![
+                    persona_id,
+                    fact_key,
+                    reason,
+                    chrono::Utc::now().to_rfc3339()
+                ],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// All `active`-tier memories for a persona — the candidate set for the
@@ -1188,15 +1439,33 @@ pub fn get_archivable_candidates(
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::delete", {
         let conn = pool.conn("memories::delete")?;
-        let title: Option<String> = conn
+        let row: Option<(String, Option<String>, Option<String>)> = conn
             .query_row(
-                "SELECT title FROM persona_memories WHERE id = ?1",
+                "SELECT persona_id, title, fact_key FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| r.get("title"),
+                |r| Ok((r.get("persona_id")?, r.get("title")?, r.get("fact_key")?)),
             )
             .optional()?;
         let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;
         if rows > 0 {
+            // Living-agent forgetting: a user-initiated delete of a
+            // fact-keyed memory is a deliberate act of forgetting — the
+            // tombstone bars `create_consolidated` from re-deriving it.
+            // Best-effort: a tombstone failure must not fail the delete.
+            if let Some((persona_id, _, Some(key))) = row
+                .as_ref()
+                .map(|(p, t, k)| (p, t, k.as_deref().filter(|k| !k.is_empty())))
+            {
+                if let Err(e) = tombstone_fact(pool, persona_id, key, "memory deleted by user") {
+                    tracing::warn!(
+                        memory_id = %id,
+                        fact_key = %key,
+                        error = %e,
+                        "memories::delete: tombstone write failed"
+                    );
+                }
+            }
+            let title = row.and_then(|(_, t, _)| t);
             memory_reaper::run_memory_reapers(pool, vec![(id.to_string(), title)]);
         }
         Ok(rows > 0)
@@ -2241,8 +2510,8 @@ pub async fn backfill_memory_embeddings(
 #[cfg(test)]
 mod tests {
     /// The `COLUMNS` projection must prepare against the real migrated schema.
-    /// Seven of its seventeen columns exist only by ALTER TABLE, so no single
-    /// DDL block proves them present; this does.
+    /// Eight of its eighteen columns exist only by ALTER TABLE (`fact_key`
+    /// arrived in e16), so no single DDL block proves them present; this does.
     #[test]
     fn every_projection_prepares_against_the_real_schema() {
         let pool = crate::init_test_db().unwrap();
@@ -3439,6 +3708,201 @@ mod tests {
             v,
             serde_json::json!({"core": 1, "active": 12, "working": 3, "archived": 4})
         );
+    }
+
+    // -- Living-agent consolidation writer (WP4) ----------------------------
+
+    fn seed_persona_raw(pool: &DbPool, id: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+                params![id],
+            )
+            .unwrap();
+    }
+
+    fn seed_episode(pool: &DbPool, id: &str, persona_id: &str) {
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_episodes
+                    (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
+                 VALUES (?1, ?2, 'run', 'execution', 'body', ?1, 4, datetime('now'))",
+                params![id, persona_id],
+            )
+            .unwrap();
+    }
+
+    fn draft(fact_key: &str, importance: i32, sources: &[&str]) -> ConsolidatedFactDraft {
+        ConsolidatedFactDraft {
+            fact_key: fact_key.into(),
+            title: format!("title for {fact_key}"),
+            content: format!("content for {fact_key}"),
+            category: Some("learned".into()),
+            importance,
+            sources: sources.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn consolidated_draft_with_empty_sources_is_rejected() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &[])]).unwrap();
+        assert_eq!(out.rejected, 1);
+        assert_eq!(out.created + out.updated, 0);
+        assert_eq!(out.outcomes[0].status, "rejected");
+        let n: i64 = pool
+            .get()
+            .unwrap()
+            .query_row("SELECT COUNT(*) AS n FROM persona_memories", [], |r| {
+                r.get("n")
+            })
+            .unwrap();
+        assert_eq!(n, 0, "a rejected draft writes nothing");
+    }
+
+    #[test]
+    fn consolidated_tombstoned_fact_key_is_skipped_and_counted() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        tombstone_fact(&pool, "p1", "k.dead", "forgotten in a test").unwrap();
+        assert!(is_forgotten(&pool, "p1", "k.dead").unwrap());
+        assert!(!is_forgotten(&pool, "p1", "k.alive").unwrap());
+
+        let out = create_consolidated(
+            &pool,
+            "p1",
+            vec![draft("k.dead", 3, &["ep1"]), draft("k.alive", 3, &["ep1"])],
+        )
+        .unwrap();
+        assert_eq!(out.skipped_tombstoned, 1);
+        assert_eq!(out.created, 1);
+        let statuses: Vec<&str> = out.outcomes.iter().map(|o| o.status.as_str()).collect();
+        assert_eq!(statuses, vec!["skipped_tombstoned", "created"]);
+    }
+
+    #[test]
+    fn consolidated_importance_is_clamped_and_tier_forced_working() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        let out = create_consolidated(
+            &pool,
+            "p1",
+            vec![draft("k.low", 1, &["ep1"]), draft("k.high", 5, &["ep1"])],
+        )
+        .unwrap();
+        assert_eq!(out.created, 2);
+        for o in &out.outcomes {
+            let m = get_by_id(&pool, o.memory_id.as_deref().unwrap()).unwrap();
+            assert_eq!(
+                m.tier, "working",
+                "consolidation never writes above working"
+            );
+            assert!(
+                (2..=4).contains(&m.importance),
+                "importance clamped to 2..=4, got {}",
+                m.importance
+            );
+            assert!(m.fact_key.is_some(), "fact_key is persisted and read back");
+        }
+    }
+
+    #[test]
+    fn consolidated_preference_category_is_coerced() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        let mut d = draft("k.pref", 3, &["ep1"]);
+        d.category = Some("preference".into());
+        let out = create_consolidated(&pool, "p1", vec![d]).unwrap();
+        let m = get_by_id(&pool, out.outcomes[0].memory_id.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            m.category, "learned",
+            "agent-inferred preference claims never auto-commit"
+        );
+        assert!(out.outcomes[0]
+            .detail
+            .as_deref()
+            .unwrap()
+            .contains("coerced"));
+    }
+
+    #[test]
+    fn consolidated_provenance_rows_land_in_the_same_tx() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        seed_episode(&pool, "ep2", "p1");
+        let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1", "ep2"])]).unwrap();
+        let memory_id = out.outcomes[0].memory_id.clone().unwrap();
+        let n: i64 = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_sources WHERE memory_id = ?1",
+                params![memory_id],
+                |r| r.get("n"),
+            )
+            .unwrap();
+        assert_eq!(
+            n, 2,
+            "both episode provenance rows committed with the memory"
+        );
+    }
+
+    #[test]
+    fn consolidated_same_fact_key_updates_in_place() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        seed_episode(&pool, "ep2", "p1");
+        let first = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1"])]).unwrap();
+        let mut evolved = draft("k.a", 4, &["ep2"]);
+        evolved.content = "sharper current version".into();
+        let second = create_consolidated(&pool, "p1", vec![evolved]).unwrap();
+        assert_eq!(second.updated, 1);
+        assert_eq!(second.created, 0);
+        assert_eq!(
+            first.outcomes[0].memory_id, second.outcomes[0].memory_id,
+            "stable fact identity: the fact evolved, it did not multiply"
+        );
+        let m = get_by_id(&pool, second.outcomes[0].memory_id.as_deref().unwrap()).unwrap();
+        assert_eq!(m.content, "sharper current version");
+        // Provenance unions across passes.
+        let n: i64 = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_sources WHERE memory_id = ?1",
+                params![m.id],
+                |r| r.get("n"),
+            )
+            .unwrap();
+        assert_eq!(n, 2);
+    }
+
+    #[test]
+    fn delete_of_fact_keyed_memory_tombstones_it() {
+        let pool = init_test_db().unwrap();
+        seed_persona_raw(&pool, "p1");
+        seed_episode(&pool, "ep1", "p1");
+        let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1"])]).unwrap();
+        let memory_id = out.outcomes[0].memory_id.clone().unwrap();
+        assert!(delete(&pool, &memory_id).unwrap());
+        assert!(
+            is_forgotten(&pool, "p1", "k.a").unwrap(),
+            "user delete of a fact-keyed memory is a deliberate act of forgetting"
+        );
+        // ... and the consolidation door now refuses the fact.
+        seed_episode(&pool, "ep3", "p1");
+        let again = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep3"])]).unwrap();
+        assert_eq!(again.skipped_tombstoned, 1);
+        assert_eq!(again.created, 0);
     }
 }
 

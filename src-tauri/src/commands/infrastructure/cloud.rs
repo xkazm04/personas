@@ -580,6 +580,8 @@ pub async fn cloud_execute_persona(
         })
         .transpose()?;
 
+    // v1: living-agent sections not exported (responsibilities/episodes stay
+    // None — `## Core` still renders from the persona snapshot).
     let prompt = engine::prompt::assemble_prompt(
         &persona,
         &tools,
@@ -890,7 +892,9 @@ pub async fn cloud_deploy_persona(
     // Read the persona locally to use as label
     let persona = personas::get_by_id(&state.db, &persona_id)?;
 
-    // First, sync the persona to the cloud orchestrator so it exists there
+    // First, sync the persona to the cloud orchestrator so it exists there.
+    // v1: living-agent sections not exported (responsibilities/episodes stay
+    // None — `## Core` still renders from the persona snapshot).
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
     let prompt = engine::prompt::assemble_prompt(
         &persona,
@@ -978,6 +982,8 @@ pub async fn cloud_sync_persona(
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
     let tools_list = tools::get_tools_for_persona(&state.db, &persona_id)?;
+    // v1: living-agent sections not exported (responsibilities/episodes stay
+    // None — `## Core` still renders from the persona snapshot).
     let prompt = engine::prompt::assemble_prompt(
         &persona,
         &tools_list,

@@ -39,6 +39,7 @@
 pub mod context_fingerprint;
 pub mod cron;
 pub mod crypto;
+pub mod cycle;
 pub mod digest_config;
 pub mod drive_root;
 pub mod engine_kind;

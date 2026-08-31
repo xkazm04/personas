@@ -7,31 +7,31 @@ import type { ResponsibilityTenure } from "./ResponsibilityTenure";
 /**
  * One row of `persona_responsibilities` — a standing charter a persona holds.
  */
-export type PersonaResponsibility = { id: string, personaId: string, title: string,
+export type PersonaResponsibility = { id: string, personaId: string, title: string, 
 /**
  * Coarse area label, e.g. 'general', 'engineering', 'support'.
  */
-domain: string, outcomes: Array<ResponsibilityOutcome>, objectives: Array<ResponsibilityObjective>,
+domain: string, outcomes: Array<ResponsibilityOutcome>, objectives: Array<ResponsibilityObjective>, 
 /**
  * Autonomy rung 0..n — how far the persona may act without approval.
  */
-scopeRung: number,
+scopeRung: number, 
 /**
  * Classes of request the persona must refuse under this charter.
  */
-refusalClasses: Array<string>,
+refusalClasses: Array<string>, 
 /**
  * Actions that always require operator approval.
  */
-approvalGates: Array<string>,
+approvalGates: Array<string>, 
 /**
  * Human accountable for the responsibility ('' = the operator).
  */
-owner: string, cadence: ResponsibilityCadence, budgetMonthlyUsd?: number, tenure: ResponsibilityTenure,
+owner: string, cadence: ResponsibilityCadence, budgetMonthlyUsd?: number, tenure: ResponsibilityTenure, 
 /**
  * 'draft' | 'active' | 'suspended' | 'retired' (DB CHECK-enforced).
  */
-status: string, projectId?: string,
+status: string, projectId?: string, 
 /**
  * Who authored the charter ('operator' | 'template' | 'athena' | ...).
  */

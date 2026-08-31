@@ -224,6 +224,24 @@ pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
     entries.join("|")
 }
 
+/// Fingerprint of the persona's living-agent Core (`personas.core_profile`).
+///
+/// Sibling of [`active_capabilities_fingerprint`] for the session-pool config
+/// hash: combine BOTH at the `session_pool::compute_config_hash` call sites
+/// (e.g. `format!("{}|{}", active_capabilities_fingerprint(..),
+/// core_fingerprint(..))`) so a dial edit invalidates warm sessions the same
+/// way a capability toggle does. Returns `""` for an absent/blank core so
+/// personas without a Core contribute exactly the hash input they do today.
+///
+/// Content-hash (FNV-1a-64) rather than the raw JSON: the fingerprint lands
+/// in log lines and cache keys, and the core can be multiple KB of prose.
+pub fn core_fingerprint(core_profile: Option<&str>) -> String {
+    match core_profile.map(str::trim) {
+        None | Some("") => String::new(),
+        Some(cp) => format!("core:{:016x}", super::budget::fnv1a_64(cp.as_bytes())),
+    }
+}
+
 /// Phase C5b — render the per-capability generation policy as natural-language
 /// bullet points the LLM can act on. Returns an empty Vec when the JSON object
 /// has no recognised fields, so the caller can skip the surrounding header.

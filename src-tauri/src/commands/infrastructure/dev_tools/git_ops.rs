@@ -129,7 +129,8 @@ fn enforce_app_master_mandate(
 ) -> Result<(), AppError> {
     use personas_engine::app_master;
 
-    let Some(record) = app_master::get_mandate(db, project_id) else {
+    let Some(record) = personas_engine::responsibility::mandate_for_project_or_none(db, project_id)
+    else {
         return Ok(());
     };
     let violations = app_master::scan_diff(

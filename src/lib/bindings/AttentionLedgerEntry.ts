@@ -3,19 +3,19 @@
 /**
  * One row of `persona_attention_ledger` — an attention/consolidation pass.
  */
-export type AttentionLedgerEntry = { id: string, personaId: string, responsibilityId?: string,
+export type AttentionLedgerEntry = { id: string, personaId: string, responsibilityId?: string, 
 /**
  * 'attention' | 'consolidation' (DB CHECK-enforced).
  */
-kind: string,
+kind: string, 
 /**
  * Optional sub-lane within the kind (e.g. an attention trigger class).
  */
-lane?: string,
+lane?: string, 
 /**
  * 'started' while running; then 'acted' | 'noop' | 'refused' | 'failed'.
  */
-verdict: string, reason: string,
+verdict: string, reason: string, 
 /**
  * Watermark: episodes with `created_at` <= this were consumed.
  */

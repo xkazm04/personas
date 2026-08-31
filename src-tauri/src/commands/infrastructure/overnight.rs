@@ -505,7 +505,8 @@ async fn run_project_night(
     // Read ONCE: the budget governor needs the ceiling, and the night's own
     // memory write-back needs the holder. Two reads of the same setting row
     // would be two chances to disagree about whether this project has a hire.
-    let app_master_mandate = personas_engine::app_master::get_mandate(pool, project_id);
+    let app_master_mandate =
+        personas_engine::responsibility::mandate_for_project_or_none(pool, project_id);
     let app_master_budget: Option<(String, f64)> = app_master_mandate.as_ref().and_then(|r| {
         r.budget_monthly_usd
             .filter(|b| *b > 0.0)

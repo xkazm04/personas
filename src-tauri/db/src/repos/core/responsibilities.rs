@@ -226,6 +226,91 @@ pub fn list_active_with_attention(pool: &DbPool) -> Result<Vec<PersonaResponsibi
     )
 }
 
+/// A project's charters in one domain, newest first. `only_active` narrows to
+/// `status = 'active'` — the filter the mandate accessor
+/// (`personas-engine::responsibility`) reads through: a suspended or retired
+/// charter grants nothing.
+pub fn list_by_project_domain(
+    pool: &DbPool,
+    project_id: &str,
+    domain: &str,
+    only_active: bool,
+) -> Result<Vec<PersonaResponsibility>, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::list_by_project_domain",
+        {
+            let conn = pool.conn("responsibilities::list_by_project_domain")?;
+            let filter = if only_active {
+                " AND status = 'active'"
+            } else {
+                ""
+            };
+            let sql = format!(
+                "SELECT {COLUMNS} FROM persona_responsibilities
+                 WHERE project_id = ?1 AND domain = ?2{filter}
+                 ORDER BY created_at DESC, id DESC"
+            );
+            let mut stmt = conn.prepare_cached(&sql)?;
+            let rows = stmt.query_map(params![project_id, domain], row_to_responsibility)?;
+            Ok(collect_rows(
+                rows,
+                "responsibilities::list_by_project_domain",
+            ))
+        }
+    )
+}
+
+/// Every ACTIVE, project-bound charter in one domain — the mandate accessor's
+/// "load them all for this tick" read (rows with no `project_id` cannot be a
+/// mandate, so they are filtered in SQL rather than after the decode).
+pub fn list_active_project_bound(
+    pool: &DbPool,
+    domain: &str,
+) -> Result<Vec<PersonaResponsibility>, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::list_active_project_bound",
+        {
+            let conn = pool.conn("responsibilities::list_active_project_bound")?;
+            let sql = format!(
+                "SELECT {COLUMNS} FROM persona_responsibilities
+                 WHERE domain = ?1 AND status = 'active' AND project_id IS NOT NULL
+                 ORDER BY created_at ASC, id ASC"
+            );
+            let mut stmt = conn.prepare_cached(&sql)?;
+            let rows = stmt.query_map(params![domain], row_to_responsibility)?;
+            Ok(collect_rows(
+                rows,
+                "responsibilities::list_active_project_bound",
+            ))
+        }
+    )
+}
+
+/// Whether ANY charter (any status, any domain) exists for this persona on
+/// this project — the legacy-mandate migration's idempotency guard.
+pub fn exists_for_persona_project(
+    pool: &DbPool,
+    persona_id: &str,
+    project_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::exists_for_persona_project",
+        {
+            let conn = pool.conn("responsibilities::exists_for_persona_project")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_responsibilities
+                 WHERE persona_id = ?1 AND project_id = ?2",
+                params![persona_id, project_id],
+                |r| r.get("n"),
+            )?;
+            Ok(n > 0)
+        }
+    )
+}
+
 /// Partial update. `None` = leave unchanged; the double-`Option` fields
 /// (`budget_monthly_usd`, `project_id`) clear with `Some(None)`. Status moves
 /// through [`set_status`], never here.
@@ -602,6 +687,64 @@ mod tests {
         let work_list = list_active_with_attention(&pool)?;
         assert_eq!(work_list.len(), 1);
         assert_eq!(work_list[0].id, hit.id);
+        Ok(())
+    }
+
+    #[test]
+    fn project_domain_reads_filter_on_status_binding_and_domain() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+
+        // Active software charter on proj-a — the one every read should find.
+        let live = create(
+            &pool,
+            CreateResponsibilityInput {
+                domain: "software_engineering",
+                project_id: Some("proj-a"),
+                ..base_input("p1")
+            },
+        )?;
+        // Retired charter on the same project: visible only when asked for.
+        let dead = create(
+            &pool,
+            CreateResponsibilityInput {
+                domain: "software_engineering",
+                project_id: Some("proj-a"),
+                title: "Old charter",
+                ..base_input("p1")
+            },
+        )?;
+        set_status(&pool, &dead.id, ResponsibilityStatus::Retired)?;
+        // Same project, different domain: never a software mandate.
+        create(
+            &pool,
+            CreateResponsibilityInput {
+                project_id: Some("proj-a"),
+                ..base_input("p1") // domain "docs"
+            },
+        )?;
+        // Software domain but unbound: filtered out of the project-bound scan.
+        create(
+            &pool,
+            CreateResponsibilityInput {
+                domain: "software_engineering",
+                ..base_input("p1")
+            },
+        )?;
+
+        let active = list_by_project_domain(&pool, "proj-a", "software_engineering", true)?;
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].id, live.id);
+        let all = list_by_project_domain(&pool, "proj-a", "software_engineering", false)?;
+        assert_eq!(all.len(), 2, "retired shows up when only_active = false");
+
+        let bound = list_active_project_bound(&pool, "software_engineering")?;
+        assert_eq!(bound.len(), 1);
+        assert_eq!(bound[0].id, live.id);
+
+        assert!(exists_for_persona_project(&pool, "p1", "proj-a")?);
+        assert!(!exists_for_persona_project(&pool, "p1", "proj-b")?);
+        assert!(!exists_for_persona_project(&pool, "p2", "proj-a")?);
         Ok(())
     }
 

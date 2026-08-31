@@ -3,12 +3,12 @@
 /**
  * When and how often the responsibility's attention loop runs.
  */
-export type ResponsibilityCadence = {
+export type ResponsibilityCadence = { 
 /**
  * Master switch for the attention loop on this responsibility.
  */
-attentionEnabled: boolean, intervalMinutes?: number,
+attentionEnabled: boolean, intervalMinutes?: bigint, 
 /**
  * e.g. "22:00-07:00" — no attention runs inside this window.
  */
-quietHours?: string, maxRunsPerDay?: number, };
+quietHours?: string, maxRunsPerDay?: bigint, };

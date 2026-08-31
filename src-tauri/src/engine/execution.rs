@@ -855,7 +855,11 @@ impl ExecutionEngine {
             persona.structured_prompt.as_deref(),
             persona.model_profile.as_deref(),
             tools.len(),
-            &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+            &format!(
+                "{}|{}",
+                prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                prompt::core_fingerprint(persona.core_profile.as_deref()),
+            ),
         );
 
         // Spawn background task.
@@ -1641,7 +1645,11 @@ fn drain_and_start_next(
                     persona.structured_prompt.as_deref(),
                     persona.model_profile.as_deref(),
                     ctx.tools.len(),
-                    &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                    &format!(
+                        "{}|{}",
+                        prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                        prompt::core_fingerprint(persona.core_profile.as_deref()),
+                    ),
                 );
 
                 let handle = tokio::spawn(async move {
@@ -2227,6 +2235,67 @@ async fn handle_execution_result(
         .unwrap_or(false);
     if !is_simulation {
         notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    }
+
+    // Living-agent episodic record (WP4): mint one `run` episode after the
+    // status persist. Best-effort, spawned like the knowledge hook below —
+    // an episode failure must never touch the run (log-only); simulations
+    // leave no episodic trace.
+    if !is_simulation {
+        let mint_pool = pool.clone();
+        let mint_exec_id = exec_id.to_string();
+        let mint_persona_id = persona_id.to_string();
+        let mint_status = status.as_str().to_string();
+        let duration_ms = result.duration_ms;
+        let cost_usd = result.cost_usd;
+        // Output excerpt ≤2000 chars; input excerpt kept tighter (the output
+        // is the run's own voice, the input is context).
+        let output_excerpt =
+            crate::companion::brain::util::excerpt(result.output.as_deref().unwrap_or(""), 2_000);
+        crate::background_job::spawn_guarded(
+            "persona_episode_mint",
+            exec_id.to_string(),
+            async move {
+                let input_data = exec_repo::get_by_id(&mint_pool, &mint_exec_id)
+                    .ok()
+                    .and_then(|e| e.input_data);
+                let parsed: Option<serde_json::Value> = input_data
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str(s).ok());
+                let source = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("source"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let input_excerpt = crate::companion::brain::util::excerpt(
+                    input_data.as_deref().unwrap_or(""),
+                    1_000,
+                );
+                let content = format!(
+                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
+                );
+                if let Err(e) = crate::engine::persona_brain::episodes::record(
+                    &mint_pool,
+                    &mint_persona_id,
+                    crate::engine::persona_brain::episodes::EpisodeRole::Run,
+                    &source,
+                    Some(&mint_exec_id),
+                    None,
+                    &content,
+                ) {
+                    tracing::warn!(
+                        execution_id = %mint_exec_id,
+                        persona_id = %mint_persona_id,
+                        error = %e,
+                        "persona episode mint failed (best-effort; run unaffected)"
+                    );
+                }
+            },
+            // Recovery arm: the mint is best-effort and leaves no partial
+            // state — the panic is already logged by spawn_guarded.
+            |_msg| async {},
+        );
     }
 
     // Budget enforcement (only on success)

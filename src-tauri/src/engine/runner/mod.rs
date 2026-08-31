@@ -29,9 +29,11 @@ use tokio::sync::Mutex;
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
 
-use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::models::{EpisodeExcerpt, Persona, PersonaResponsibility, PersonaToolDefinition};
 use crate::db::repos::communication::manual_reviews as manual_review_repo;
+use crate::db::repos::core::episodes as episode_repo;
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::core::responsibilities as resp_repo;
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
@@ -57,6 +59,48 @@ use self::stages::RunnerStage;
 /// personas' generic "timed out after 600s" fires. See
 /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
+
+/// Load the living-agent prompt inputs (spark `living-agent-core`, WP2): the
+/// persona's ACTIVE standing charters and the last 8 rows of its episodic
+/// record, mapped to [`EpisodeExcerpt`] and reversed to OLDEST-FIRST (the
+/// order `## Recent Episodes (oldest first)` renders in).
+///
+/// Best-effort by contract: a failed read logs a `tracing::warn!` and
+/// degrades to empty — the living-agent tables being unhappy must never fail
+/// an execution, a preview, or a dry run. Shared by the runner main path,
+/// `preview_execution` / `prepare_persona_execution`, `preview_prompt`, and
+/// `dry_run_persona` so all five surfaces assemble the same prompt.
+pub fn load_living_prompt_inputs(
+    pool: &DbPool,
+    persona_id: &str,
+) -> (Vec<PersonaResponsibility>, Vec<EpisodeExcerpt>) {
+    let responsibilities = match resp_repo::list_by_persona(pool, persona_id, false) {
+        Ok(list) => list.into_iter().filter(|r| r.status == "active").collect(),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "living-agent: responsibilities load failed (non-fatal)");
+            Vec::new()
+        }
+    };
+    // `list_recent` returns newest-first; the prompt section reads oldest-first.
+    let recent_episodes = match episode_repo::list_recent(pool, persona_id, 8) {
+        Ok(eps) => eps
+            .into_iter()
+            .rev()
+            .map(|e| EpisodeExcerpt {
+                id: e.id,
+                role: e.role,
+                source: e.source,
+                body_excerpt: e.body_excerpt,
+                created_at: e.created_at,
+            })
+            .collect(),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "living-agent: episodes load failed (non-fatal)");
+            Vec::new()
+        }
+    };
+    (responsibilities, recent_episodes)
+}
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
@@ -746,6 +790,26 @@ pub async fn run_execution(
         } else {
             Some(&connector_usage_hints)
         };
+    // Living-agent inputs (WP2): active charters + the episodic tail, loaded
+    // once for BOTH assembly branches below and for the prepared-run cache
+    // key. Skipped on session resume — the resume prompt carries no persona
+    // sections. Best-effort: failures degrade to empty inside the loader.
+    let (responsibilities, recent_episodes) = if is_session_resume {
+        (Vec::new(), Vec::new())
+    } else {
+        load_living_prompt_inputs(&pool, &persona.id)
+    };
+    if !responsibilities.is_empty() || !recent_episodes.is_empty() {
+        logger.log(&format!(
+            "[living] {} active charter(s), {} episode excerpt(s) in prompt",
+            responsibilities.len(),
+            recent_episodes.len()
+        ));
+    }
+    let responsibilities_opt: Option<&[PersonaResponsibility]> =
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice());
+    let recent_episodes_opt: Option<&[EpisodeExcerpt]> =
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice());
     let prepared_run_key = if !is_session_resume
         && hint_refs.is_empty()
         && connector_hints_opt.is_none()
@@ -753,7 +817,11 @@ pub async fn run_execution(
         && workspace_instructions.is_none()
     {
         Some(super::prepared_run_cache::cache_key(
-            &persona, &tools, None, None,
+            &persona,
+            &tools,
+            None,
+            None,
+            &responsibilities,
         ))
     } else {
         None
@@ -776,7 +844,12 @@ pub async fn run_execution(
             prepared_memory_ids = Some(blob.memory_ids);
             blob.prompt_text
         } else {
-            prompt::assemble_prompt(
+            // Cache miss on the prepared path: assemble the same base prompt
+            // `prepare_persona_execution` would have cached — including the
+            // living-agent sections, so a miss and a hit produce the same
+            // prompt shape. (No connector hints on this path, so the
+            // written-skills set is irrelevant — None mirrors the wrapper.)
+            prompt::assemble_prompt_with_skills(
                 &persona,
                 &tools,
                 None,
@@ -785,6 +858,9 @@ pub async fn run_execution(
                 None,
                 #[cfg(feature = "desktop")]
                 None,
+                None,
+                responsibilities_opt,
+                recent_episodes_opt,
             )
         }
     } else {
@@ -804,6 +880,8 @@ pub async fn run_execution(
             // Per-skill lockstep: shrink to a pointer only for connectors whose
             // SKILL.md was actually written just above.
             Some(&written_connector_skills),
+            responsibilities_opt,
+            recent_episodes_opt,
         )
     };
 

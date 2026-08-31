@@ -324,7 +324,12 @@ Memories:
 // CLI one-shot (mirrors the curation pipeline's spawn contract)
 // ---------------------------------------------------------------------------
 
-async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
+// `pub(crate)` (was private): the living-agent sleep consolidation
+// (`engine::persona_brain::sleep_cycle`) reuses this exact spawn contract —
+// same subscription-only env scrubbing, same timeout/error path — rather than
+// growing a second ad-hoc CLI spawn (rust-backend rule: unadopted primitives
+// are the dominant defect).
+pub(crate) async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     let (program, mut args) = crate::engine::cli_process::claude_cli_invocation();
     args.extend(
         [
@@ -909,6 +914,7 @@ mod tests {
             home_team_id: None,
             derived_from: None,
             open_claim_count: 0,
+            fact_key: None,
         }
     }
 

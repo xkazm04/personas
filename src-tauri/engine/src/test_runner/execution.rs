@@ -34,7 +34,14 @@ pub async fn execute_scenario(
     scenario: &TestScenario,
     model: &TestModelConfig,
 ) -> Result<ExecutionOutput, String> {
-    // Build the base prompt
+    // Build the base prompt.
+    //
+    // Living-agent sections: `assemble_prompt` passes None for both
+    // responsibilities and recent episodes ON PURPOSE — the Lab isolates
+    // prompt variables, so a version-vs-version or model-vs-model cell must
+    // measure ONLY the prompt under test, not whatever charters/episodes the
+    // live persona happens to carry at run time. (`## Core` still renders:
+    // it travels on the persona snapshot the Lab explicitly constructs.)
     let base_prompt = prompt::assemble_prompt(
         persona,
         tools,

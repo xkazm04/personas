@@ -51,6 +51,11 @@ pub const KIND_MEMORY_REFLECTION: &str = "memory_reflection_run";
 /// held redundantly by ≥2 members into team-shared insights.
 pub const KIND_TEAM_MEMORY_REFLECTION: &str = "team_memory_reflection_run";
 
+/// Kind discriminator for the living-agent sleep consolidation job
+/// (`engine::persona_brain::sleep_cycle`): new episodes → governed
+/// `working`-tier fact memories, every pass ledgered.
+pub const KIND_SLEEP_CONSOLIDATION: &str = "sleep_consolidation_run";
+
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -290,10 +295,36 @@ async fn dispatch_handler(pool: &DbPool, job: &BackgroundJob) -> Result<String, 
         KIND_MEMORY_CURATION => memory_curation_run(pool, &params).await,
         KIND_MEMORY_REFLECTION => memory_reflection_run(pool, &params).await,
         KIND_TEAM_MEMORY_REFLECTION => team_memory_reflection_run(pool, &params).await,
+        KIND_SLEEP_CONSOLIDATION => sleep_consolidation_run(pool, &params).await,
         other => Err(AppError::Internal(format!(
             "unknown persona background job kind `{other}`"
         ))),
     }
+}
+
+/// `sleep_consolidation_run` job kind handler (living-agent WP4).
+///
+/// Inputs (`params_json`, camelCase per the wire contract):
+/// - `personaId` (required)
+/// - `force` (optional bool): bypass pressure/floor/staleness — never the
+///   per-persona single-flight guard.
+///
+/// The body is `persona_brain::sleep_cycle::run`; admission verdicts, typed
+/// refusals and the consumed watermark all land in `persona_attention_ledger`,
+/// so this handler only translates params and returns the summary line.
+async fn sleep_consolidation_run(
+    pool: &DbPool,
+    params: &serde_json::Value,
+) -> Result<String, AppError> {
+    let persona_id = params
+        .get("personaId")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Validation("sleep_consolidation_run requires personaId".into()))?;
+    let force = params
+        .get("force")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    crate::engine::persona_brain::sleep_cycle::run(pool, persona_id, force).await
 }
 
 /// `team_memory_reflection_run` job kind handler. Inputs:

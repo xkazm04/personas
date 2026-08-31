@@ -201,6 +201,8 @@ pub fn update_persona(
                 Ok(t) => t,
                 Err(_) => return,
             };
+        // v1: living-agent sections not exported (responsibilities/episodes
+        // stay None — `## Core` still renders from the persona snapshot).
         let prompt = engine::prompt::assemble_prompt(
             &sync_persona,
             &tools_list,
@@ -317,6 +319,8 @@ pub fn update_persona_parameters(
                 Ok(t) => t,
                 Err(_) => return,
             };
+        // v1: living-agent sections not exported (responsibilities/episodes
+        // stay None — `## Core` still renders from the persona snapshot).
         let prompt = engine::prompt::assemble_prompt(
             &sync_persona,
             &tools_list,

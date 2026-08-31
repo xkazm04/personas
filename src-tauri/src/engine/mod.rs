@@ -12,6 +12,7 @@ pub mod composite;
 pub mod connector_strategy;
 pub mod credential_broker;
 pub mod pattern_miner;
+pub mod persona_brain;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and

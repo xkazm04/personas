@@ -75,7 +75,7 @@
 
 use std::collections::HashMap;
 
-use crate::app_master::{self, MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
+use crate::app_master::{MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
 use crate::autopilot::{self, AutopilotMode, Capability};
 use personas_db::settings_keys;
 use personas_db::DbPool;
@@ -220,8 +220,11 @@ pub fn is_allowed(
 // ---------------------------------------------------------------------------
 
 /// Load every project's App master mandate for this tick. Mirrors
-/// [`load_modes`]: one prefix query, absent = unmandated.
-pub use crate::app_master::load_mandates;
+/// [`load_modes`]: one query, absent = unmandated. Since WP3 the storage is
+/// the `persona_responsibilities` table, read through
+/// [`crate::responsibility`] — the shape (project-keyed map, never fails)
+/// is unchanged.
+pub use crate::responsibility::load_mandate_map as load_mandates;
 
 /// Does this project's App master mandate permit `action`?
 ///
@@ -256,7 +259,7 @@ pub fn mandate_permits_for(
     project_id: &str,
     action: Action,
 ) -> Result<(), MandateRefusal> {
-    let Some(record) = app_master::get_mandate(pool, project_id) else {
+    let Some(record) = crate::responsibility::mandate_for_project_or_none(pool, project_id) else {
         return Ok(());
     };
     record

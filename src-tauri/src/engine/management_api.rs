@@ -1399,12 +1399,14 @@ async fn improve_prompt(
         .await
     {
         Ok((_, version_text)) => {
-            // Save as new prompt version
+            // Save as new prompt version. Carry the persona's live Core so the
+            // living-agent half of the diff never false-positives here.
             let version_id = metrics_repo::create_prompt_version_if_changed(
                 &state.pool,
                 &persona_id,
                 Some(version_text.clone()),
                 None,
+                persona.core_profile.clone(),
             );
             ok_json(serde_json::json!({
                 "improved": true,
@@ -1519,11 +1521,22 @@ async fn accept_draft(
     }
 
     let _ = matrix_repo::accept_draft(&state.pool, &run_id);
+    // Carry the persona's live Core into the auto-version so the living-agent
+    // half of the diff never false-positives on this structured-prompt write.
+    let live_core: Option<String> = conn
+        .query_row(
+            "SELECT core_profile FROM personas WHERE id = ?1",
+            rusqlite::params![run.persona_id],
+            |r| r.get(0),
+        )
+        .ok()
+        .flatten();
     let _ = metrics_repo::create_prompt_version_if_changed(
         &state.pool,
         &run.persona_id,
         Some(draft_json),
         None,
+        live_core,
     );
 
     ok_json(serde_json::json!({ "accepted": true, "persona_id": run.persona_id })).into_response()
@@ -3477,7 +3490,7 @@ async fn kp_test_tick(
                 // while the worker was still authoring).
                 let scoped_project: Option<String> = body.project_id.clone().or_else(|| {
                     body.persona_id.as_deref().and_then(|pid| {
-                        personas_engine::app_master::load_mandates(&pool)
+                        personas_engine::responsibility::load_mandate_map(&pool)
                             .into_iter()
                             .find(|(_, r)| r.persona_id == pid)
                             .map(|(project_id, _)| project_id)
@@ -3891,7 +3904,7 @@ async fn kp_test_seed_work(
     ) {
         (Some(pid), _) => pid.to_string(),
         (None, Some(persona_id)) => {
-            let mandates = personas_engine::app_master::load_mandates(&pool);
+            let mandates = personas_engine::responsibility::load_mandate_map(&pool);
             match mandates
                 .into_iter()
                 .find(|(_, record)| record.persona_id == persona_id)
@@ -4015,10 +4028,10 @@ fn retire_persona_db(
     persona_id: &str,
 ) -> Result<(Persona, RetirePlan, Option<String>), AppError> {
     let persona = persona_repo::get_by_id(pool, persona_id)?;
-    // The hire record. `load_mandates` is one prefix query, and the mandate is
-    // keyed by project — so the persona is found by scanning, not by guessing a
-    // key from an id it does not own.
-    let mandate = personas_engine::app_master::load_mandates(pool)
+    // The hire record. `load_mandate_map` is one indexed query, and the
+    // mandate is keyed by project — so the persona is found by scanning, not
+    // by guessing a key from an id it does not own.
+    let mandate = personas_engine::responsibility::load_mandate_map(pool)
         .into_iter()
         .find(|(_, record)| record.persona_id == persona_id);
     let plan = RetirePlan::decide(
@@ -5126,7 +5139,7 @@ mod tests {
             probation_review_id: None,
             headless_incomplete_streak: 0,
         };
-        personas_engine::app_master::set_mandate(pool, &record).expect("set mandate");
+        personas_engine::responsibility::store_mandate_record(pool, &record).expect("set mandate");
     }
 
     #[test]
@@ -5189,10 +5202,12 @@ mod tests {
 
         // Once the carry-out has stamped the record terminal, a repeat retire
         // has nothing left in EITHER record.
-        let mut record = personas_engine::app_master::get_mandate(&pool, "proj-retire").unwrap();
+        let mut record = personas_engine::responsibility::mandate_for_project(&pool, "proj-retire")
+            .unwrap()
+            .unwrap();
         record.probation_decided_at = Some("2026-08-29T00:00:00+00:00".into());
         record.probation_decision = Some("retired".into());
-        personas_engine::app_master::set_mandate(&pool, &record).unwrap();
+        personas_engine::responsibility::store_mandate_record(&pool, &record).unwrap();
 
         let (_, plan, mandate) = retire_persona_db(&pool, &persona.id).expect("retire twice");
         assert_eq!(mandate.as_deref(), Some("proj-retire"));
