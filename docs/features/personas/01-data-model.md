@@ -1,11 +1,16 @@
 # Persona data model
 
 Everything a persona is, on disk. The `personas` table is the primary
-row; a dozen join tables hang off `persona_id`.
+row; a dozen join tables hang off `persona_id`. Since the living-agent
+rebase, a persona also carries a runtime **Core** (`core_profile`), a
+set of **charters** (`persona_responsibilities`), a **brain** (episode
+log + consolidated memories with provenance and tombstones), and a
+**per-persona disk root** under `~/.personas/personas/<id>/`.
 
 ## The `Persona` struct
 
-`src-tauri/src/db/models/persona.rs` (line ~344). TS binding at
+`src-tauri/core/src/models/persona.rs` (line ~700; the models live in
+the extracted `personas-core` crate). TS binding at
 `src/lib/bindings/Persona.ts` (camelCase via `#[serde(rename_all =
 "camelCase")]` in the JSON interchange path).
 
@@ -45,17 +50,89 @@ row; a dozen join tables hang off `persona_id`.
 | `template_category` | `Option<String>` | Lowercase category (`"development"`, `"finance"`, …) inferred at template adoption. Drives Simple-mode illustration + the export-safe icon fallback. |
 | `cli_awareness_enabled` | `bool` | Per-persona gate (default `false`) for the Athena CLI session-resume awareness block. |
 | `disabled_dims_json` | `Option<String>` | JSON `{ [use_case_id]: GlyphDimension[] }` of per-capability dims disabled in the View-mode SigilEditModal. Durable across rebuilds + runs; the runtime executor skips actions bound to disabled dims. `NULL` = none. |
+| `lifecycle` | `String` | Lifecycle state string (default `'active'`; column added by the fleet/workspaces migration). |
+| `core_profile` | `Option<String>` | Serialized `PersonaCore` JSON — the persona's Character (see [The Core](#the-core-core_profile) below). Seeded by build/adopt (seed-if-absent), operator-owned thereafter. `None` for personas without an authored Core. |
 | `created_at` / `updated_at` | `String` | ISO8601 timestamps. |
 
-> **`core_profile` is a write-only column, not a struct field.** `promote_build_draft_inner`
-> stamps `personas.core_profile` from `payload.persona.core` (the 7-dial deliberation
-> temperament) via raw SQL, but the `Persona` struct does not carry it — so it won't
-> appear in the ts-rs binding or a `SELECT *` deserialize. Read it with an explicit
-> column query when you need it.
+The mutation counterpart `UpdatePersonaInput` carries `core_profile:
+Option<Option<String>>` (double-option, so the Core is clearable), at
+`persona.rs` line ~1037.
+
+## The Core (`core_profile`)
+
+The living-agent spine. `personas.core_profile` holds a serialized
+**`PersonaCore`** (`src-tauri/core/src/models/deliberation.rs`, line
+~94; ts-rs binding `src/lib/bindings/PersonaCore.ts`, camelCase wire
+names). The struct is stored as raw JSON on the persona — parsing
+happens at the consumers (prompt assembly, deliberation moderator), so
+a corrupt Core can never fail persona loading.
+
+**The 7 dials** (the original Design-D deliberation temperament, all
+required):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `motivation` | `String` | What drives this persona. |
+| `stance` | `String` | Its default posture in a discussion. |
+| `north_star_commitment` | `String` | The one commitment it will not trade away. |
+| `risk_tolerance` | `f64` | 0 = risk-averse … 1 = risk-seeking. |
+| `speed_vs_quality` | `f64` | 0 = quality-maximal … 1 = speed-maximal. |
+| `conflict_style` | `String` | `challenger` \| `harmonizer` \| `analyst` \| `pragmatist`. |
+| `deference` | `f64` | 0 = holds ground … 1 = yields readily. |
+
+**The additive identity fields** (living-agent; all `#[serde(default)]`
+so pre-existing `core_profile` JSON keeps parsing unchanged):
+
+- `identity: Option<String>` — WHO the persona is
+- `voice: Option<String>` — HOW it speaks
+- `principles: Vec<String>`
+- `constraints: Vec<String>`
+- `decision_principles: Vec<String>` (wire: `decisionPrinciples`)
+
+**Ownership law — the Core is operator-owned.** No agent write path
+exists: consolidation, the attention loop and executions never touch
+`core_profile`. The only writers are the operator-facing update command
+and the two **seed-if-absent** stamps, whose guard is the SQL itself,
+not application logic:
+
+```sql
+UPDATE personas SET core_profile = ?1, updated_at = ?2
+ WHERE id = ?3 AND (core_profile IS NULL OR core_profile = '')
+```
+
+- template adoption stamps the archetype/template-authored Core
+  (`src-tauri/src/commands/design/template_adopt.rs`, line ~634, from
+  `payload.persona.core`)
+- build-session promote does the same on promotion
+  (`src-tauri/src/commands/design/build_sessions.rs`, line ~3037)
+
+Both log `"… core_profile already present — seed skipped
+(operator-owned)"` when the row already carries one. The archetype
+catalog (`src-tauri/engine/src/archetype_catalog.rs`) requires a
+`"core"` key per archetype and asserts every dial is present.
+
+**Versioning — a Core edit is a prompt-shaping change.** The Core
+travels with prompt history: `persona_prompt_versions.core_profile`
+(added by the `e16_living_agent` migration) snapshots it alongside the
+structured prompt. `create_prompt_version_if_changed`
+(`src-tauri/db/src/repos/execution/metrics.rs`, line ~164) diffs BOTH
+halves against the latest version and versions when either changed —
+so a dial edit with an untouched prompt still lands in history, and an
+unchanged Core never produces version churn. The persona `update()`
+repo fn auto-versions on either half changing
+(`src-tauri/db/src/repos/core/personas.rs`, line ~948).
+
+**Validation**: `validate_core_profile`
+(`src-tauri/core/src/validation/persona.rs`, line ~256) caps the
+serialized Core at 16 KB.
+
+At execution time the assembler renders the Core as a `## Core` prompt
+section — see [02-capabilities.md](02-capabilities.md#the-assembled-prompt).
 
 ## The `personas` table
 
-`src-tauri/src/db/migrations/schema.rs` (line ~22):
+`src-tauri/db/src/migrations/schema.rs` (the schema lives in the
+extracted `personas-db` crate):
 
 ```sql
 CREATE TABLE IF NOT EXISTS personas (
@@ -85,11 +162,14 @@ CREATE INDEX idx_personas_enabled ON personas(enabled);
 CREATE INDEX idx_personas_home_team_id ON personas(home_team_id);
 ```
 
-Fields added via migrations (see `incremental.rs`): `headless`,
+Fields added via migrations (see
+`src-tauri/db/src/migrations/incremental/`): `headless`,
 `source_review_id`, `trust_level`, `trust_origin`, `trust_verified_at`,
-`trust_score`, `parameters`, `gateway_exposure`, `starred`, `last_test_report`,
-`template_category`, `cli_awareness_enabled`, `setup_status`, `setup_detail`,
-`disabled_dims_json`, and the write-only `core_profile` column.
+`trust_score`, `parameters`, `gateway_exposure`, `starred`,
+`last_test_report`, `template_category`, `cli_awareness_enabled`,
+`setup_status`, `setup_detail`, `disabled_dims_json`, `lifecycle`
+(`c03_fleet_and_workspaces`), and `core_profile`
+(`e07_deliberation_and_scoring`, step id `personas.core_profile`).
 
 ## The `structured_prompt` JSON
 
@@ -105,9 +185,11 @@ When set, it's a JSON object with these canonical subsections:
 }
 ```
 
-Assembly in `src-tauri/src/engine/prompt.rs` merges these into the
-system prompt at execution time. Templates populate them during design
-(see [templates/01-template-format.md](../templates/01-template-format.md)).
+Assembly in the engine prompt module merges these into the system
+prompt at execution time (see
+[02-capabilities.md](02-capabilities.md#the-assembled-prompt)).
+Templates populate them during design (see
+[templates/01-template-format.md](../templates/01-template-format.md)).
 
 The adoption answer pipeline injects a `configuration` key too, with
 the user's answers as a markdown list — see
@@ -154,7 +236,67 @@ pre-envelope personas. Always use the helper — never parse raw SQL.
 ## Associated join tables
 
 All join tables use `persona_id TEXT NOT NULL REFERENCES personas(id)
-ON DELETE CASCADE` unless noted. Deleting a persona cascades cleanly.
+ON DELETE CASCADE` unless noted. Deleting a persona cascades cleanly
+(with one deliberate exception: memory tombstones, below).
+
+### `persona_responsibilities` (charters)
+
+The living-agent employment contract: WHAT a persona owns, at what
+authority, on what cadence, at what cost. Created by the
+`e16_living_agent` migration:
+
+```sql
+CREATE TABLE persona_responsibilities (
+    id                 TEXT PRIMARY KEY NOT NULL,
+    persona_id         TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    title              TEXT NOT NULL,
+    domain             TEXT NOT NULL DEFAULT 'general',
+    outcomes           TEXT NOT NULL DEFAULT '[]',   -- [{id, statement, success_criteria[]}]
+    objectives         TEXT NOT NULL DEFAULT '[]',   -- measurable ledger (see below)
+    scope_rung         INTEGER NOT NULL DEFAULT 0,   -- 0-2; rung 3+ refused at intake
+    refusal_classes    TEXT NOT NULL DEFAULT '[]',   -- JSON array of class ids
+    approval_gates     TEXT NOT NULL DEFAULT '[]',
+    owner              TEXT NOT NULL DEFAULT '',
+    cadence            TEXT NOT NULL DEFAULT '{}',   -- attention_enabled, interval_minutes,
+                                                     -- quiet_hours, max_runs_per_day
+    budget_monthly_usd REAL,
+    tenure             TEXT NOT NULL DEFAULT '{}',   -- hired_at, probation_*, review cadence,
+                                                     -- retire_criteria[]
+    status             TEXT NOT NULL DEFAULT 'active'
+                       CHECK(status IN ('draft','active','suspended','retired')),
+    project_id         TEXT,
+    source             TEXT NOT NULL DEFAULT 'operator'
+                       CHECK(source IN ('operator','kp-hire','migration')),
+    created_at         TEXT NOT NULL,
+    updated_at         TEXT NOT NULL
+);
+```
+
+Rust model `PersonaResponsibility` +
+`ResponsibilityOutcome`/`ResponsibilityObjective`/`ResponsibilityCadence`/`ResponsibilityTenure`
+in `src-tauri/core/src/models/responsibility.rs`; repo at
+`src-tauri/db/src/repos/core/responsibilities.rs` (JSON columns parse
+leniently — a corrupt charter degrades to defaults with a warning, it
+never makes the roster unreadable). The **objectives ledger** entries
+carry `key`, `label`, `baseline`, `target`, `unit`, `direction`
+(`up`/`down`), `window_days`, `last_measured_at`, `source` — the
+measurable side of the charter's outcomes.
+
+**The App-master mandate is a software-domain profile of a charter.**
+A project's mandate = its newest `status='active'` charter with
+`domain='software_engineering'` and a non-NULL `project_id`
+(`src-tauri/engine/src/responsibility.rs`; `to_mandate_record` /
+`from_mandate_record` are lossless in both directions). The legacy
+`app_settings` storage (`app_master_mandate:` keys in
+`src-tauri/engine/src/app_master.rs`) was migrated away: the boot
+migration `migrate_legacy_mandates` (`responsibility.rs`, line ~582,
+driven by `src-tauri/src/boot/migrations.rs`) moves each legacy row
+into `persona_responsibilities` with `source='migration'` and deletes
+the setting, before any mandate reader starts.
+
+Governance semantics (scope rungs, refusal classes, budgets, tenure)
+are covered in
+[03-trust-and-governance.md](03-trust-and-governance.md#charters-scope-rungs-refusal-classes-tenure).
 
 ### `persona_tools` + `persona_tool_definitions`
 
@@ -238,7 +380,7 @@ personas.
 ### `persona_automations` + `automation_runs`
 
 External workflow integration (n8n, Zapier, GitHub Actions, custom
-webhook). Stored in `incremental.rs`:
+webhook). Stored in the incremental migrations:
 
 ```sql
 CREATE TABLE persona_automations (
@@ -310,6 +452,131 @@ Extended model (in `memory.rs`) adds `tier` (`core` | `active` |
 runtime uses `get_for_injection_v2` (core/active/working); lifecycle transitions
 (promote/archive) run on every execution — see
 [execution/02-lifecycle.md](../execution/02-lifecycle.md#memory-injection).
+
+**`fact_key`** (added by `e16_living_agent`, step id
+`persona_memories.fact_key`) is the stable identity of a consolidated
+fact. `create_consolidated` (`src-tauri/db/src/repos/core/memories.rs`,
+line ~576) checks the tombstone first, then updates the existing live
+row in place when a non-archive row already carries the key — so a fact
+evolves under one identity instead of accumulating near-duplicates.
+Rows written by consolidation always land at tier `'working'` with
+episode provenance (below); see
+[03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law)
+for the full write contract.
+
+### The brain tables (living-agent memory)
+
+All created by the `e16_living_agent` migration
+(`src-tauri/db/src/migrations/incremental/e16_living_agent.rs`).
+
+#### `persona_episodes`
+
+The raw experience log — one row per recorded episode, doubled by a
+markdown file on disk:
+
+```sql
+CREATE TABLE persona_episodes (
+    id                TEXT PRIMARY KEY NOT NULL,
+    persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    execution_id      TEXT,
+    responsibility_id TEXT,
+    role              TEXT NOT NULL,      -- run | channel | operator | system
+    source            TEXT NOT NULL DEFAULT '',
+    body_excerpt      TEXT NOT NULL,      -- capped excerpt for consolidation
+    file_path         TEXT,               -- disk markdown, or NULL
+    content_hash      TEXT NOT NULL,      -- sha256 of the full markdown
+    chars             INTEGER NOT NULL,   -- original body char count
+    created_at        TEXT NOT NULL
+);
+```
+
+The full markdown (YAML front-matter + complete body) lives at
+`~/.personas/personas/<id>/episodes/YYYY/MM/DD/pep_<short>_<role>.md`;
+the index row keeps a capped `body_excerpt` and the `content_hash`
+tying the two together. The disk write is deliberately **best-effort**
+(unlike the companion brain): on failure it warns and inserts the row
+with `file_path = NULL`, so consolidation keeps working off the
+excerpt. Writer: `src-tauri/src/engine/persona_brain/episodes.rs`.
+
+#### `persona_memory_sources` (provenance)
+
+```sql
+CREATE TABLE persona_memory_sources (
+    memory_id  TEXT NOT NULL REFERENCES persona_memories(id) ON DELETE CASCADE,
+    episode_id TEXT NOT NULL,
+    PRIMARY KEY(memory_id, episode_id)
+);
+```
+
+Every consolidated memory records WHICH episodes it was derived from
+(`create_consolidated` inserts here on every write, and unions
+provenance on in-place fact updates). A consolidated memory without
+provenance cannot exist.
+
+#### `persona_memory_tombstone`
+
+```sql
+CREATE TABLE persona_memory_tombstone (
+    persona_id TEXT NOT NULL,
+    fact_key   TEXT NOT NULL,
+    reason     TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(persona_id, fact_key)
+);
+```
+
+A forgotten fact stays forgotten: consolidation checks
+`is_forgotten(persona_id, fact_key)` before writing, so a tombstoned
+fact can never be silently re-derived from old episodes.
+**Deliberately FK-less** — a tombstone is the durable record that a
+fact must NOT come back, so no entity's deletion may cascade away the
+record of its own forgetting (the migration's own test asserts
+tombstones outlive their persona). `tombstone_fact` is idempotent and
+keeps the first reason.
+
+#### `persona_attention_ledger`
+
+```sql
+CREATE TABLE persona_attention_ledger (
+    id                TEXT PRIMARY KEY NOT NULL,
+    persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    responsibility_id TEXT,
+    kind              TEXT NOT NULL CHECK(kind IN ('attention','consolidation')),
+    lane              TEXT,
+    verdict           TEXT NOT NULL,      -- 'started' → acted | noop | refused | failed
+    reason            TEXT NOT NULL DEFAULT '',
+    consumed_through  TEXT,               -- episode watermark
+    stats_json        TEXT,
+    cost_usd          REAL,
+    started_at        TEXT NOT NULL,
+    completed_at      TEXT
+);
+```
+
+Every attention-loop pass and consolidation run is ledgered — including
+the ones that refused to run and why. Repo:
+`src-tauri/db/src/repos/core/attention_ledger.rs`; surfaced by the
+`list_attention_ledger` command. See
+[02-capabilities.md](02-capabilities.md#the-attention-loop) for the
+loop itself.
+
+#### `persona_memory_review_proposal.kind`
+
+The review-proposal table (from the earlier memory-review feature)
+gained a `kind` column:
+
+```sql
+ALTER TABLE persona_memory_review_proposal
+  ADD COLUMN kind TEXT NOT NULL DEFAULT 'memory_curation'
+  CHECK(kind IN ('memory_curation','self_model_diff'));
+```
+
+- `memory_curation` — the classic proposal: an array of memory edits.
+- `self_model_diff` — anchored diffs against the persona's
+  `identity.md` self-model, proposed by consolidation and applied only
+  after operator approval (`src-tauri/src/engine/persona_brain/identity.rs`;
+  the apply path rejects a proposal of the wrong kind). See
+  [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law).
 
 ### `persona_manual_reviews` + `review_messages`
 
@@ -402,10 +669,30 @@ CREATE TABLE persona_prompt_versions (
     tag               TEXT DEFAULT 'experimental',  -- experimental | production | archived
     created_at        TEXT DEFAULT (datetime('now'))
 );
+-- + core_profile TEXT (e16_living_agent): the Core snapshot travels
+--   with every version, so a rollback restores Character and prompt together.
 ```
 
-Written by `promote_build_draft_inner` on every promotion. The Lab
+Written by `promote_build_draft_inner` on every promotion, and by
+`create_prompt_version_if_changed` whenever the structured prompt OR
+the Core changes (see [The Core](#the-core-core_profile)). The Lab
 Matrix uses this to A/B test prompt variants.
+
+## The per-persona disk root
+
+`~/.personas/personas/<persona_id>/` (resolver: `persona_root` in
+`src-tauri/src/engine/persona_brain/mod.rs`; honors the
+`PERSONAS_HOME` override for tests):
+
+| Path | Contents |
+|---|---|
+| `identity.md` | The persona's **self-model** — seeded on first use by `seed_if_absent` with generic sections (`# My work`: what I own / how I work best / what I've learned about my craft; `# My self-reads`: what I've gotten wrong / open questions). A persona models its work and self-reads, never a human. |
+| `identity.bak-<ts>-<uuid>.md` | Automatic backup taken before each applied self-model diff. |
+| `episodes/YYYY/MM/DD/pep_<short>_<role>.md` | Full episode markdown (front-matter + body); the DB keeps the index + excerpt. |
+
+`identity.md` is never edited directly by any loop — changes arrive
+only as anchored diffs through approved `self_model_diff` proposals
+(see [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law)).
 
 ## The `build_sessions` table (build lifecycle)
 
@@ -425,7 +712,8 @@ testing → test_complete → promoted`, plus `completed`/`failed`/`cancelled`),
 `promote_build_draft_inner` reads `agent_ir` and fans it out into
 `persona_tool_definitions` / `persona_tools` / `persona_triggers` /
 `persona_event_subscriptions` / `persona_prompt_versions` and the persona row
-itself (see [README](README.md#the-build-session--how-a-describe-build-runs)).
+itself — including the seed-if-absent Core stamp (see
+[README](README.md#the-build-session--how-a-describe-build-runs)).
 
 ## Enums summary
 
@@ -436,6 +724,8 @@ PersonaGatewayExposure: LocalOnly (default) | InviteOnly | Public
 ParamType:            Number | String | Boolean | Select
 DesignFileKind:       ApiSpec | Schema | McpConfig | Other
 HealthStatus:         Healthy | Degraded | Failing | Dormant
+ResponsibilityStatus: Draft | Active (default) | Suspended | Retired
+EpisodeRole:          Run | Channel | Operator | System
 ```
 
 All `#[serde(rename_all = "snake_case")]` except `DesignFileKind` which
@@ -445,13 +735,23 @@ uses `kebab-case`.
 
 | File | Role |
 |---|---|
-| `src-tauri/src/db/models/persona.rs` | `Persona` struct + enums + `DesignContextData` envelope |
-| `src-tauri/src/db/models/tool.rs` | Tool definitions and persona-tool join |
-| `src-tauri/src/db/models/trigger.rs` | `PersonaTrigger` + `TriggerConfig` enum |
-| `src-tauri/src/db/models/memory.rs` | Memory with tiers and access tracking |
-| `src-tauri/src/db/models/review.rs` | Manual review types |
-| `src-tauri/src/db/models/automation.rs` | External automation models |
-| `src-tauri/src/db/migrations/schema.rs` | Base CREATE TABLE statements |
-| `src-tauri/src/db/migrations/incremental.rs` | Added-column migrations per feature |
-| `src-tauri/src/db/repos/core/personas.rs` | CRUD + queries |
+| `src-tauri/core/src/models/persona.rs` | `Persona` struct + enums + `DesignContextData` envelope |
+| `src-tauri/core/src/models/deliberation.rs` | `PersonaCore` (the 7 dials + identity fields) |
+| `src-tauri/core/src/models/responsibility.rs` | `PersonaResponsibility` + outcome/objective/cadence/tenure models |
+| `src-tauri/core/src/models/brain.rs` | `PersonaEpisode`, `AttentionLedgerEntry` |
+| `src-tauri/core/src/models/tool.rs` | Tool definitions and persona-tool join |
+| `src-tauri/core/src/models/trigger.rs` | `PersonaTrigger` + `TriggerConfig` enum |
+| `src-tauri/core/src/models/memory.rs` | Memory with tiers and access tracking |
+| `src-tauri/core/src/models/review.rs` | Manual review types |
+| `src-tauri/core/src/models/automation.rs` | External automation models |
+| `src-tauri/db/src/migrations/schema.rs` | Base CREATE TABLE statements |
+| `src-tauri/db/src/migrations/incremental/` | Added-column migrations per feature (`e07` Core column, `e16` living-agent tables) |
+| `src-tauri/db/src/repos/core/personas.rs` | CRUD + queries + Core auto-versioning on update |
+| `src-tauri/db/src/repos/core/responsibilities.rs` | Charter CRUD |
+| `src-tauri/db/src/repos/core/episodes.rs` | Episode index CRUD |
+| `src-tauri/db/src/repos/core/memories.rs` | Memory CRUD + `create_consolidated` + tombstones |
+| `src-tauri/db/src/repos/core/attention_ledger.rs` | Attention/consolidation ledger |
+| `src-tauri/src/engine/persona_brain/` | Episodes on disk, identity.md, sleep cycle |
+| `src-tauri/engine/src/responsibility.rs` | Charter validation, domain class sets, mandate round-trip |
 | `src-tauri/src/commands/core/personas.rs` | Tauri IPC for persona CRUD |
+| `src-tauri/src/commands/core/responsibilities.rs` | Tauri IPC for charter CRUD + ledger |

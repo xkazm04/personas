@@ -4,13 +4,14 @@ What a persona can **do** at runtime. Each capability maps to a
 specific column on `personas` or a join table. This doc is the cross-
 reference: "if I want behaviour X, which field controls it?"
 
-## The six capability surfaces
+## The capability surfaces
 
 ```
   Persona
     │
     ├── Tools         — what the persona can CALL (actions)
-    ├── Triggers      — how the persona gets INVOKED
+    ├── Triggers      — how the persona gets WOKEN from outside (events, clocks, webhooks)
+    ├── Attention     — how the persona spends its OWN initiative (the attention loop)
     ├── Events        — what the persona REACTS to
     ├── Memory        — what the persona LEARNS
     ├── Reviews       — when the persona asks for APPROVAL
@@ -18,7 +19,10 @@ reference: "if I want behaviour X, which field controls it?"
 ```
 
 Each surface has a table with a `persona_id` FK and one or more
-`persona.*` columns that gate it. This page walks each in turn.
+`persona.*` columns that gate it. This page walks each in turn, then
+describes [the assembled prompt](#the-assembled-prompt) that stitches
+the living-agent pieces (Core, charters, episodes, memory) into every
+execution.
 
 ---
 
@@ -70,7 +74,14 @@ future work can express "this persona should prefer credential X". See
 
 ## Triggers
 
-**Purpose**: how a persona gets invoked automatically.
+**Purpose**: how a persona gets invoked automatically. In the
+living-agent frame, triggers are the persona's **wake sources from the
+outside world** — a clock, an event, a webhook, a file change decides
+it is time to run. The [attention loop](#the-attention-loop) below is
+the complementary entry point: the persona's own initiative, on its
+charters' cadence. The two are deliberately kept apart — an
+attention-dispatched execution never carries a `trigger_id`, so it can
+never advance a trigger's schedule.
 
 **Storage**: `persona_triggers` table — one row per trigger, any
 number per persona. `trigger_type` and `config` define the activation
@@ -111,6 +122,76 @@ Scheduler skips fires outside the window and returns HTTP 422 with
 **See** [execution/01-entry-points.md](../execution/01-entry-points.md)
 for the full activation semantics per type and how the scheduler loop
 actually evaluates them.
+
+---
+
+## The attention loop
+
+**Purpose**: let a persona act on its charters without an external
+trigger — check what it owns, follow up on what it missed, keep its
+memory consolidated, and occasionally improve its own craft.
+
+**Default OFF.** The loop is gated by the global settings key
+`autonomous_attention_loop` (`AUTONOMOUS_ATTENTION_LOOP` in
+`src-tauri/db/src/settings_keys.rs`, default `false`; an absent key is
+off). It is an autonomy `Action::AttentionLoop` with required scope
+rung 2, so a mandate check rides on top of the switch.
+
+**Where it lives**: `AttentionSubscription` in
+`src-tauri/src/engine/subscription/attention.rs` — a standard
+`ReactiveSubscription` (300 s active interval, 900 s idle, 120 s
+initial delay), registered in `engine/background/lifecycle.rs`. The
+work list is `responsibilities::list_active_with_attention`: active
+charters whose `cadence.attention_enabled` is true, on enabled
+personas.
+
+**Admission ladder** — before any work is chosen, each candidate
+persona climbs five checks; the first refusal wins and is **typed**
+(`AttentionRefusal` in `src-tauri/core/src/cycle.rs`, serialized with
+a stable `kind` tag):
+
+| # | Check | Refusal kind |
+|---|---|---|
+| 1 | an open ledger row younger than 30 min | `in_flight` |
+| 2 | minutes since last completed pass < the charters' max `interval_minutes` (default 30) | `interval_floor` |
+| 3 | inside any charter's `quiet_hours` window (`"HH:MM-HH:MM"`, wrap-aware) | `quiet_hours` |
+| 4 | today's runs ≥ the charters' min `max_runs_per_day` (default 24) | `daily_cap_reached` |
+| 5 | monthly spend ≥ `persona.max_budget_usd` (when set > 0) — the same `get_monthly_spend` pair the execution pre-flight uses, checked here so the ledger refuses loudly instead of the spawn failing validation | `budget_exhausted` |
+
+Refusals are written to `persona_attention_ledger` as terminal
+`refused` rows carrying the serialized refusal — deduplicated (same
+kind, same day, work still pending), so the ledger stays a story, not
+a heartbeat log. A persona with nothing to do writes nothing.
+
+**Lanes** — for an admitted persona, `choose_lane` picks ONE lane per
+tick, in priority order:
+
+1. **`arrivals`** — an unanswered team-channel message addressed to
+   the persona, at least 10 minutes old (younger messages are still
+   owned by the live reply path; re-dispatch is idempotent by key).
+2. **`maintenance`** — the sleep-cycle consolidation is due
+   (`sleep_cycle::admit`): enqueues a consolidation job, DB-only.
+3. **`improve`** — once per day (`count_today(lane='improve') == 0`):
+   a self-improvement pass on the persona's own craft. Deliberately
+   ranked above `advance`, otherwise it would be unreachable.
+4. **`advance`** — push the least-recently-advanced charter's
+   objectives forward (never-advanced charters first).
+
+Every dispatched brief embeds the `ATTENTION_GUARDRAILS` preamble
+("PROPOSE, never restructure", "NEVER touch your own gates", "stay
+inside the scope rung named above", "NOBODY IS THERE") and restates
+the charter's scope rung and refusal classes. The dispatch envelope is
+`{"source": "attention", "_attention": {ledgerId, responsibilityId,
+lane}, "task": …}` with a per-decision idempotency key and — by
+design — **no `trigger_id`**.
+
+Every pass, refusal, dispatch outcome and consolidation run lands in
+`persona_attention_ledger` (schema in
+[01-data-model.md](01-data-model.md#persona_attention_ledger));
+verdicts run `started → dispatched | enqueued | acted | noop | refused
+| failed`. The Design hub's Responsibilities sub-tab, the Mission Control
+attention-loop tile (which also holds the loop's global toggle), and the
+Activity feed read this ledger.
 
 ---
 
@@ -179,7 +260,10 @@ for cascade semantics (chain_trace_id, cascade guards, DLQ handling).
 knowledge across executions.
 
 **Storage**: `persona_memories`. Extended model adds `tier`
-(`core` | `active` | `archive`), `access_count`, `last_accessed_at`.
+(`core` | `active` | `working` | `archive`), `access_count`,
+`last_accessed_at`, and — since the living-agent rebase — `fact_key`
+(the stable identity of a consolidated fact; see
+[01-data-model.md](01-data-model.md#persona_memories)).
 
 **Categories** (from `memory.rs` validation):
 
@@ -199,13 +283,20 @@ knowledge across executions.
 - 4: High — frequently useful context
 - 5: Critical — essential for operation
 
-**Injection**: at the start of every execution, `mem_repo::get_for_injection()`
-fetches core memories (always injected) plus top active memories
-(sorted by importance + recency). They're formatted as markdown
-sections `## Agent Memory — Core Beliefs` and `## Agent Memory — Recent
-Learnings` and appended to the system prompt.
+Consolidation-written facts are clamped to 2–4 by the write door — an
+agent cannot mint its own `critical` memory (see
+[03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law)).
 
-**Emission**: persona emits memory via:
+**Injection**: at the start of every execution,
+`mem_repo::get_for_injection_v2()` fetches core memories (always
+injected) plus top active/working memories (sorted by importance +
+recency; the archive tier is excluded). They're formatted as markdown
+sections `## Agent Memory — Core Beliefs` and `## Agent Memory —
+Recent Learnings` and appended to the system prompt.
+
+**Two write paths**:
+
+1. **Protocol emission** (during a run) — the persona emits:
 
 ```json
 {
@@ -218,10 +309,21 @@ Learnings` and appended to the system prompt.
 
 Parsed by `engine/parser.rs` → `dispatch.rs` → `mem_repo::create`.
 
+2. **Consolidation** (between runs) — the sleep cycle
+   (`src-tauri/src/engine/persona_brain/sleep_cycle.rs`) distills
+   recent episodes into durable facts through the single governed door
+   `create_consolidated`: tier forced to `working`, importance clamped
+   2–4, mandatory episode provenance, tombstone check first. Details
+   in [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law).
+
 **Lifecycle**: on every execution, `mem_repo::run_lifecycle()`:
-- Promotes frequently-accessed active memories to core
-- Archives unused core memories after idle period
+- Promotes frequently-accessed memories up the tiers
+- Archives unused memories after an idle period
 - Tracks access counts for the lifecycle heuristic
+
+A curator can also **forget** a fact permanently: the tombstone
+(`persona_memory_tombstone`) bars consolidation from ever re-deriving
+it from old episodes.
 
 ---
 
@@ -253,6 +355,12 @@ and a session-resume path).
 EVERY tool call emits a review and waits. This is separate from the
 explicit `manual_review` protocol that any persona can invoke.
 `persona.headless == true` bypasses the trust-level check.
+
+A cousin of this surface carries the living-agent **self-model diffs**:
+a `persona_memory_review_proposal` row of kind `self_model_diff` is a
+"please-approve-this-identity-edit" request, applied only on operator
+approval (see
+[03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law)).
 
 ---
 
@@ -335,6 +443,39 @@ what happens:
 
 ---
 
+## The assembled prompt
+
+Every execution's system prompt is assembled in
+`src-tauri/engine/src/prompt/assemble.rs`
+(`assemble_prompt_with_skills` is the full-arity entry; section
+renderers in `prompt/core_section.rs`). Since the living-agent rebase
+the assembler renders three sections that make the persona a WHO
+before a HOW:
+
+| Section | Content | Source |
+|---|---|---|
+| `## Core` | The rendered `PersonaCore` — identity, voice, the 7 dials, principles, constraints, decision principles. Placed immediately before the `## Identity` branch ("WHO before HOW"); when the Core carries its own `identity`, the structured prompt's identity subsection is skipped so the two never fight. | `persona.core_profile`, parsed once; a corrupt Core warns and skips — it can never fail assembly |
+| `## Responsibilities` | Up to 3 active charters (then "+N more"): domain, outcomes with success criteria, the scope-rung line ("never merge, deploy, or change your own gates"), refusal classes as refuse-and-escalate prose, the monthly budget line | `resp_repo::list_by_persona` filtered to `active`, loaded best-effort by `runner::load_living_prompt_inputs` |
+| `## Recent Episodes (oldest first)` | The last 8 episodes, **reversed to oldest-first** so the story reads forward; body nonce-fenced, the heading and framing sentence deliberately outside the fence | `episode_repo::list_recent` (newest-first, then `.rev()`) |
+
+Alongside them the assembler keeps the pre-living pieces: the
+structured-prompt subsections (identity/instructions/toolGuidance/…),
+tool guidance, and the memory sections (`## Agent Memory — Core
+Beliefs`, `## Agent Memory — Recent Learnings`).
+
+The living inputs are **best-effort**: a failed charter or episode
+read warns and degrades to an empty section — a broken brain must
+never block an execution. They are skipped on session resume (the
+session already carries its context). Per-section size tripwires
+(`prompt/budget.rs`: Core 8k chars, Responsibilities 8k, Episodes 12k,
+total 200k) log overruns for observability but never truncate.
+
+A Core edit invalidates warm prepared-run caches — the Core is hashed
+into the cache key (`prepared_run_cache.rs`), and
+`core_fingerprint` travels with the execution record.
+
+---
+
 ## Cross-surface interactions
 
 These combine across surfaces and are worth knowing:
@@ -350,16 +491,25 @@ These combine across surfaces and are worth knowing:
    This creates a "heartbeat" pattern: one persona on a cron that
    triggers a fan-out of subscribers.
 
-3. **Memory + reviews**: a reviewer's decision in a `manual_review` is
+3. **Attention + channels**: the arrivals lane is a recovery net —
+   a team-channel message the live reply path never answered gets
+   re-dispatched by the attention loop through the same door, with
+   the same idempotency key, so double-delivery is structurally safe.
+
+4. **Attention + memory**: the maintenance lane is how consolidation
+   actually gets scheduled day-to-day — the loop probes
+   `sleep_cycle::admit` and enqueues the consolidation job when due.
+
+5. **Memory + reviews**: a reviewer's decision in a `manual_review` is
    a natural source of `learned` memory. The emit_memory + resolve-
    review flow is manual for now; auto-capture would be a small
    engine extension.
 
-4. **Notifications + manual reviews**: a `critical` severity review
+6. **Notifications + manual reviews**: a `critical` severity review
    typically drives a high-priority Slack/SMS message via
    `persona_messages`. The persona usually emits both in sequence.
 
-5. **Automations + triggers**: an automation can itself be triggered
+7. **Automations + triggers**: an automation can itself be triggered
    by webhook — bypassing the persona entirely for pure workflow
    steps. Used for "this persona handles intent; those steps are
    deterministic n8n flows".
@@ -370,16 +520,20 @@ These combine across surfaces and are worth knowing:
 |---|---|
 | `src-tauri/src/engine/tool_runner.rs` | Tool kind detection + dispatch (script/API/automation) |
 | `src-tauri/src/engine/automation_runner.rs` | External platform invocation |
-| `src-tauri/src/engine/prompt.rs` | Prompt assembly with memory + tools + guidance |
-| `src-tauri/src/engine/parser.rs` | Protocol message extraction (emit_event, manual_review, …) |
+| `src-tauri/engine/src/prompt/assemble.rs` | Prompt assembly (Core / Responsibilities / Episodes / memory / tools) |
+| `src-tauri/engine/src/prompt/core_section.rs` | `render_core` + `render_responsibilities` |
+| `src-tauri/src/engine/subscription/attention.rs` | The attention loop (lanes, admission ladder, guardrails) |
+| `src-tauri/src/engine/persona_brain/sleep_cycle.rs` | Consolidation loop (maintenance lane's target) |
+| `src-tauri/engine/src/parser.rs` | Protocol message extraction (emit_event, manual_review, …) |
 | `src-tauri/src/engine/dispatch.rs` | Turn protocol messages into DB writes |
-| `src-tauri/src/engine/bus.rs` | Event bus matching logic |
-| `src-tauri/src/engine/scheduler.rs` + `cron.rs` | Trigger scheduling |
+| `src-tauri/engine/src/bus.rs` | Event bus matching logic |
+| `src-tauri/src/engine/background/scheduler.rs` + `src-tauri/core/src/cron.rs` | Trigger scheduling |
 | `src-tauri/src/engine/webhook.rs` | Webhook HTTP server (port 9420) |
-| `src-tauri/src/db/repos/resources/tools.rs` | Tool CRUD |
-| `src-tauri/src/db/repos/resources/triggers.rs` | Trigger CRUD |
-| `src-tauri/src/db/repos/communication/events.rs` | Event + subscription CRUD |
-| `src-tauri/src/db/repos/resources/memories.rs` | Memory CRUD + lifecycle |
-| `src-tauri/src/db/repos/communication/manual_reviews.rs` | Review CRUD |
-| `src-tauri/src/db/repos/communication/messages.rs` | Message + delivery CRUD |
-| `src-tauri/src/db/repos/resources/automations.rs` | Automation CRUD |
+| `src-tauri/db/src/repos/resources/tools.rs` | Tool CRUD |
+| `src-tauri/db/src/repos/resources/triggers.rs` | Trigger CRUD |
+| `src-tauri/db/src/repos/communication/events.rs` | Event + subscription CRUD |
+| `src-tauri/db/src/repos/core/memories.rs` | Memory CRUD + lifecycle + `create_consolidated` |
+| `src-tauri/db/src/repos/core/attention_ledger.rs` | Attention/consolidation ledger |
+| `src-tauri/db/src/repos/communication/manual_reviews.rs` | Review CRUD |
+| `src-tauri/db/src/repos/communication/reports.rs` | Message + delivery CRUD |
+| `src-tauri/db/src/repos/resources/automations.rs` | Automation CRUD |
