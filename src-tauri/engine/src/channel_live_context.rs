@@ -116,7 +116,7 @@ fn active_assignments(pool: &DbPool, team_id: &str) -> Option<Vec<JsonValue>> {
         .prepare(
             "SELECT title, status, created_at FROM team_assignments
              WHERE team_id = ?1 AND status IN ('queued','running','awaiting_review')
-             ORDER BY created_at DESC LIMIT ?2",
+             ORDER BY created_at DESC, id DESC LIMIT ?2",
         )
         .ok()?;
     let rows = stmt
