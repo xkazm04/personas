@@ -2,7 +2,7 @@ import {
   Check, Key, Globe, Laptop, Plug, Shield, Zap,
   MessageSquare, Database, Boxes, FolderOpen, Clock, Brain,
 } from 'lucide-react';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const FEATURED_CATEGORIES = [
@@ -42,8 +42,8 @@ interface Props {
 
 export default function CredentialsTourContent({ subStepIndex }: Props) {
   const { t, tx } = useTranslation();
-  const recordInteraction = useSystemStore((s) => s.recordCredentialInteraction);
-  const interactions = useSystemStore((s) => s.tourCredentialInteractions);
+  const recordInteraction = useTourStore((s) => s.recordCredentialInteraction);
+  const interactions = useTourStore((s) => s.tourCredentialInteractions);
   const browsedCount = interactions.categoriesBrowsed.length;
 
   return (

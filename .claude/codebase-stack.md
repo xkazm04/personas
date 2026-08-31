@@ -109,6 +109,29 @@ Discovered in `/research` run 2026-06-03 (headroom → Fleet token optimization)
 - **Token surface is OBSERVED, not controlled.** Fleet doesn't build the interactive CLI's prompt — it reads the resulting JSONL transcript (`commands/fleet/transcript_read.rs`) into a compact rollup (`FleetTranscriptSummary`: token totals incl. cache read/write + `last_context_tokens`, folded incrementally via `ingest_delta` so N sessions never re-parse multi-MB files). So personas-side token optimization for Fleet is either (a) observe + nudge the user (the 2026-06-03 `FleetTokenSummaryBar` aggregate + `FleetContextPill` inline `/compact` action), or (b) intercept the CLI↔Anthropic traffic via a proxy (deferred — see [[Research/2026-06-03-headroom-fleet-token-optimization]]). `CONTEXT_BLOAT_TOKENS = 150_000` in `transcript_read.rs` mirrors `FleetContextPill`'s red threshold.
 - **Per-session MCP:** `build_mcp_spawn` writes a per-session `mcp.json` wiring the spawned `claude` to the in-app Athena MCP endpoint (`http://127.0.0.1:<local_http port>/mcp/rpc`) with a per-session token header. This is the natural attachment point for any future cross-CLI shared-context tool.
 
+### Channel follow-up loops: message → execution → reply row (Lane B + team summon)
+
+Added in `/research` run 2026-08-30 (Grok bot popularity compare). Two in-app
+conversational loops dispatch through `execute_persona_inner` with
+`input_data.source = "channel"` (which also tells `dispatch.rs::chat_lane_owned_externally`
+the waiter owns the chat lane — dispatch must not double-post):
+
+- **Persona channel (Lane B):** `commands/communication/persona_channel.rs::post_persona_channel_message`
+  → `run_channel_followup` — reply row into `team_channel_messages` (persona-sentinel scope).
+- **Team channel summon:** `commands/teams/team_channel.rs::post_team_directive` — an
+  `@Persona Name` mention (case-insensitive vs team member names, cap 3) stores the
+  directive with `consumer='mention'` (the schema's documented routes-to-an-actor value,
+  unimplemented until this run) and spawns `run_summon_followup` per mentioned member;
+  the reply lands as `author_kind='persona'`, `consumer='display'`, threaded under the
+  directive. Mention-free posts keep the original whole-team `consumer='inject'`
+  step-boundary delivery (an idle team answers nothing — by design for that path).
+
+Both attach a **live-context block** from `engine/src/channel_live_context.rs`
+(bounded JSON: recent executions, bus events, active team assignments) so channel
+replies are situated in current app state, not chat history alone. Findings about
+"channel replies ignore X" anchor there; findings about mention grammar anchor at
+`mentioned_members` in `team_channel.rs`.
+
 **Codex provider was removed (2026-04-27).** Earlier versions of this doc said `engine/provider/codex.rs::build_execution_args` builds Codex args independently. That file no longer exists; only ClaudeProvider remains. CLI-flag changes only need to be evaluated for Claude Code applicability — there is no second provider to coordinate with. If Codex (or any new CLI engine) is re-introduced, sibling providers would need their own `build_execution_args` impl that does NOT call `prompt::build_cli_args` (since that funnel pins Claude-specific flags like `--effort`).
 
 ### Lifecycle hooks: `hooks_sidecar.rs` is narrow (Claude Code's NATIVE hooks only)
@@ -1070,3 +1093,66 @@ across 6,005 files, all baselined and green. `npm run check` is a ten-link `&&` 
 eight project checks including `census:check` run *ahead* of `tsc --noEmit` and `eslint src/`,
 so a green typecheck locally says nothing about the eight gates in front of it.
 Full doctrine now in `.claude/CLAUDE.md` → "The golden-path census".
+
+## Client runtime strong patterns (codified 2026-08-30 by /architect)
+
+### (a) Bounded-buffer discipline
+
+Every module-scoped cache/buffer in the renderer declares a cap and an eviction
+policy at creation, not as an afterthought. Reference implementations:
+`src/lib/execution/executionSink.ts` — a ring buffer capped at
+`MAX_TERMINAL_LINES = 10_000` (`:16`) and `MAX_TOTAL_BYTES = 10 * 1024 * 1024`
+(`:20`), plus a `generation` counter (`:110`) that makes a stale async flush
+inert after a reset, and a flush loop suspended while the tab is hidden.
+`src/features/plugins/fleet/fleetTerminalManager.ts` — `MAX_PARKED = 6`
+(`:297`) and `MAX_WEBGL = 6` (`:326`), each an LRU with an instrumented
+eviction counter (`:390`) so a budget set too low shows up as a number, not a
+silent leak. **Anti-shape (fixed 2026-08-30, kept as the cautionary example)**:
+`src/features/agents/sub_executions/libs/comparisonDiffWorkerClient.ts`
+declared `lineCache`/`jsonCache` as plain module-level `Map`s keyed by a
+content-hash of an unbounded execution population, only ever `.set()`, never
+evicted — the one monotonic heap-growth vector the 2026-08-30 scan found. Now
+a 24-entry LRU with eviction counters (same commit wave as this section); the
+original shape is the counter-example to point new code away from.
+
+### (b) The polling seam
+
+All recurring data refresh goes through `usePolling`
+(`src/hooks/utility/timing/usePolling.ts`) + the shared `pollingCoordinator`
+(`src/lib/polling/pollingCoordinator.ts`). Named cadences live in
+`POLLING_CONFIG` (`usePolling.ts:6-19` — `runningExecutions`, `cloudReviews`,
+`dashboardRefresh`, `cloudStatus`, `cloudHistory`, `pipelineRefresh`), each
+rounded onto one of five shared heartbeat buckets (`BUCKETS`,
+`pollingCoordinator.ts:26` — 5s/12s/15s/30s/60s) instead of owning its own
+timer. The coordinator suspends every bucket on `document.hidden` and
+`usePolling` backs off exponentially per-ticker on consecutive errors, capped
+at `maxBackoff` (default 4x interval). Raw `setInterval`/`setTimeout` is for UI
+tickers only (clocks, elapsed-time counters) — never for anything that fetches
+data.
+
+### (c) Typed lazy-route registry
+
+`SECTION_ROUTES` in `src/features/personas/sectionRouter.tsx:59` is a
+`satisfies`-checked map of `lazyRetry()`-wrapped components keyed by
+`RoutableSection = Exclude<SidebarSection, 'schedules'>` (`:45`), each entry
+typed as `SectionRoute` (`Component` + `boundaryName`, `:47-52`): `tsc` fails
+if a rail section is added without a route, or an overlay-only section sneaks
+into the content router. Overlays get the same discipline from the other
+direction in `src/App.tsx`: each mounts as its own `OverlayIsland` boundary
+(`:114` — one `ErrorBoundary` + `Suspense` per overlay, so one bad chunk takes
+only itself down, e.g. `:412-439`) and is warmed ahead of first open by
+`idlePrefetch` (`:28`, invoked `:271`). New top-level sections and overlays
+MUST go through these two seams. Caveat, verified 2026-08-30: `App.tsx` still
+statically imports several overlay-shaped components rather than routing them
+through `lazyRetry`/`OverlayIsland` — e.g. `LiveChannelOverlay`,
+`RemoteApprovalPrompt`, `PairApprovalModal`, `FirstUseConsentModal`,
+`ResourcePickerHost` (`App.tsx:7-10,15`). These are exactly the shape the
+`/architect` scan flagged as pulling vendor JS eager; the specific bundle-size
+figure from that scan was not independently re-measured here, so cite the
+pattern, not the number, until it is.
+
+**Housekeeping note:** this pass also promoted `custom/no-whole-store-subscription`
+from `warn` to `error` in `eslint.config.js` (0 occurrences measured across
+`src/` before promotion) — the "3 `error` / 17 `warn` / 1 `off`" custom-rule
+split recorded above and in `.claude/CLAUDE.md` is now 4 `error` / 16 `warn` /
+1 `off` and should be re-measured before being cited again.

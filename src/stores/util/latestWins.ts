@@ -39,5 +39,34 @@ export function createLatestWins() {
     isCurrent(token: number): boolean {
       return token === seq;
     },
+    /** Peek at the current generation WITHOUT minting. For observers that are
+     *  not requests themselves but must go inert when the slot's owner
+     *  re-fetches (e.g. a scoped merge racing a full family reload). */
+    current(): number {
+      return seq;
+    },
+  };
+}
+
+/**
+ * Per-key latest-wins — one independent token slot per key, for writes scoped
+ * finer than a whole store family (a per-project merge, a per-row refresh).
+ * Same mint/compare contract as {@link createLatestWins}; the key is the slot.
+ * Keys accumulate one number each and are never evicted — bounded by the
+ * population of real entities (projects), not by request volume.
+ */
+export function createKeyedLatestWins<K = string>() {
+  const seqs = new Map<K, number>();
+  return {
+    /** Mint a new token for `key`; call synchronously before firing the request. */
+    next(key: K): number {
+      const n = (seqs.get(key) ?? 0) + 1;
+      seqs.set(key, n);
+      return n;
+    },
+    /** True if `token` is still `key`'s most recently minted one. */
+    isCurrent(key: K, token: number): boolean {
+      return seqs.get(key) === token;
+    },
   };
 }

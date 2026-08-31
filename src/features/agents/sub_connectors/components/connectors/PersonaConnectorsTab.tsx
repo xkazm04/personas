@@ -62,7 +62,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       )}
       <AgentCredentialDemands />
       <ConnectorVerificationPanel verification={verification} onMissingCountChange={onMissingCountChange} />
-      <ToolsSection tools={tools} personaId={selectedPersona?.id} />
+      <ToolsSection tools={tools} />
       <AutomationsSection automations={selectedPersona?.automations ?? []} onAdd={() => setAutomationModalOpen(true)} onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }} />
       {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (
         <EmptyState variant="connectors-empty" />

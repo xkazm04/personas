@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
+import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/personaIndex';
 import { eventFamily, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
 import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, authorName, itemAccent, avatarBgFor, isAuthorKind } from '@/features/teams/sub_collab/collabRender';

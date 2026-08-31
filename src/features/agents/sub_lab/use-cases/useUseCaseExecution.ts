@@ -4,6 +4,8 @@ import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import type { UseCaseItem } from './UseCasesList';
 
+const EMPTY_LINES: string[] = [];
+
 export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onExecutionFinished?: () => void) {
   const executePersona = useAgentStore((s) => s.executePersona);
   const cancelExecution = useAgentStore((s) => s.cancelExecution);
@@ -33,7 +35,6 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     useCase.sample_input ? JSON.stringify(useCase.sample_input, null, 2) : '{}'
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [outputLines, setOutputLines] = useState<string[]>([]);
   const [terminalHeight, setTerminalHeight] = useState(300);
   const isDraggingTerminal = useRef(false);
   const dragStartY = useRef(0);
@@ -41,6 +42,13 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
 
   const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
   const isThisUseCaseExecution = isThisPersonasExecution && activeUseCaseId === useCase.id;
+  // Derived, not copied into local state: executionOutput already gets a
+  // fresh identity from executionSink on every flush, so mirroring it into a
+  // second useState was a redundant full-buffer copy + extra render pass on
+  // the same ~100ms cadence. executePersona resets executionOutput to [] in
+  // the same synchronous set() call that flips activeUseCaseId, so this stays
+  // empty at the start of a run and empty again once ownership moves away.
+  const outputLines = isThisUseCaseExecution ? executionOutput : EMPTY_LINES;
   const elapsedMs = useElapsedTimer(isExecuting && isThisUseCaseExecution, 500);
   const prevIsExecutingRef = useRef(isExecuting);
   const wasOurExecutionRef = useRef(false);
@@ -49,16 +57,7 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     setFieldValues(buildFieldValues(useCase));
     setInputData(useCase.sample_input ? JSON.stringify(useCase.sample_input, null, 2) : '{}');
     setJsonError(null);
-    setOutputLines([]);
   }, [useCase.id, buildFieldValues, useCase]);
-
-  useEffect(() => {
-    if (isThisUseCaseExecution && executionOutput.length > 0) {
-      setOutputLines(executionOutput);
-    } else if (!isThisUseCaseExecution) {
-      setOutputLines([]);
-    }
-  }, [executionOutput, isThisUseCaseExecution]);
 
   useEffect(() => {
     if (isExecuting && isThisUseCaseExecution) {
@@ -99,7 +98,6 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     parsedInput._use_case = { title: useCase.title, description: useCase.description };
 
     setJsonError(null);
-    setOutputLines([]);
     await executePersona(personaId, parsedInput, useCase.id);
   };
 

@@ -1,10 +1,11 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 
 use crate::models::{
     validate_category, validate_importance, CreatePersonaMemoryInput, PersonaMemory,
     DEFAULT_MEMORY_CATEGORY,
 };
 use crate::query_builder::QueryBuilder;
+use crate::repos::core::memory_reaper;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -919,9 +920,33 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
         // Chunk deletes into batches of 500 to stay well under the limit.
         const CHUNK_SIZE: usize = 500;
-        let conn = pool.conn("memories::batch_delete")?;
-        let tx = conn.unchecked_transaction()?;
+        let mut conn = pool.conn("memories::batch_delete")?;
+        // BEGIN IMMEDIATE: the victim SELECT below informs the DELETE, and a
+        // deferred snapshot cannot upgrade past a concurrent committer
+        // (transaction-boundary golden path).
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let mut total_deleted: i64 = 0;
+
+        // Capture the victims (id + contemporaneous title) BEFORE the rows
+        // vanish — the reaper ledger records them at the door.
+        let mut victims: Vec<(String, Option<String>)> = Vec::new();
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let ph = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let ps: Vec<&dyn rusqlite::ToSql> =
+                chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+            let mut stmt = tx.prepare(&format!(
+                "SELECT id, title FROM persona_memories WHERE id IN ({ph})"
+            ))?;
+            let rows = stmt.query_map(ps.as_slice(), |r| {
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
+            })?;
+            for r in rows {
+                victims.push(r?);
+            }
+        }
 
         for chunk in ids.chunks(CHUNK_SIZE) {
             let mut qb = QueryBuilder::new();
@@ -932,8 +957,9 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         }
 
         tx.commit()?;
-        // MEMORY CONTRACT (7): drop the deleted rows' vectors (best-effort).
-        spawn_delete_memory_embeddings(ids.to_vec());
+        // MEMORY CONTRACT (7): drop the deleted rows' vectors via the reaper
+        // registry (ledger-backed; a failed reap is a recorded debt, not a log line).
+        memory_reaper::run_memory_reapers(pool, victims);
         Ok(total_deleted)
     })
 }
@@ -1048,7 +1074,12 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
                     now_archived.push(r?);
                 }
             }
-            spawn_delete_memory_embeddings(now_archived);
+            // Unledgered on purpose: the row SURVIVES (archive is reversible),
+            // so this is not an orphan — the orphan ledger's existence check
+            // would resolve it without deleting. A missed drop here is repaired
+            // by the parent-first archived-GC sweep, which is the correct
+            // direction when the relational row still exists.
+            memory_reaper::run_memory_reapers_unledgered(pool, now_archived);
         }
         Ok(total)
     })
@@ -1128,7 +1159,26 @@ pub fn get_archivable_candidates(
     )
 }
 
-crud_delete!("persona_memories");
+/// Hard-delete one memory by id (user-initiated; MAY remove a `core` row).
+/// Formerly `crud_delete!("persona_memories")` — hand-written so this door
+/// runs the reaper cascade (registry + ledger) like every other delete door.
+pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("persona_memories", "persona_memories::delete", {
+        let conn = pool.conn("memories::delete")?;
+        let title: Option<String> = conn
+            .query_row(
+                "SELECT title FROM persona_memories WHERE id = ?1",
+                params![id],
+                |r| r.get("title"),
+            )
+            .optional()?;
+        let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;
+        if rows > 0 {
+            memory_reaper::run_memory_reapers(pool, vec![(id.to_string(), title)]);
+        }
+        Ok(rows > 0)
+    })
+}
 
 /// Delete a memory only if it is NOT user-pinned `core`. Defence-in-depth
 /// backstop to MEMORY CONTRACT (1) for LLM/batch apply paths (memory review,
@@ -1139,10 +1189,20 @@ crud_delete!("persona_memories");
 pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_non_core", {
         let conn = pool.conn("memories::delete_non_core")?;
+        let title: Option<String> = conn
+            .query_row(
+                "SELECT title FROM persona_memories WHERE id = ?1 AND tier != 'core'",
+                params![id],
+                |r| r.get("title"),
+            )
+            .optional()?;
         let affected = conn.execute(
             "DELETE FROM persona_memories WHERE id = ?1 AND tier != 'core'",
             params![id],
         )?;
+        if affected > 0 {
+            memory_reaper::run_memory_reapers(pool, vec![(id.to_string(), title)]);
+        }
         Ok(affected > 0)
     })
 }
@@ -1156,8 +1216,29 @@ pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// No FK children. Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_all", {
-        let conn = pool.conn("memories::delete_all")?;
-        let n = conn.execute("DELETE FROM persona_memories WHERE tier != 'core'", [])?;
+        let mut conn = pool.conn("memories::delete_all")?;
+        // BEGIN IMMEDIATE: the victim SELECT informs the DELETE
+        // (transaction-boundary golden path — a deferred snapshot cannot
+        // upgrade past a concurrent committer).
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        // Capture the victims BEFORE the unscoped delete destroys the only
+        // handle the reaper ledger could record.
+        let victims: Vec<(String, Option<String>)> = {
+            let mut stmt =
+                tx.prepare("SELECT id, title FROM persona_memories WHERE tier != 'core'")?;
+            let rows = stmt.query_map([], |r| {
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+        let n = tx.execute("DELETE FROM persona_memories WHERE tier != 'core'", [])?;
+        tx.commit()?;
+        if n > 0 {
+            memory_reaper::run_memory_reapers(pool, victims);
+        }
         Ok(n)
     })
 }
@@ -1318,11 +1399,18 @@ pub fn merge(
         )?;
 
         tx.commit()?;
-        // MEMORY CONTRACT (7): index the merged row, drop the two retired
-        // vectors (both fire-and-forget; a miss is repaired by backfill /
-        // stays an inert orphan respectively).
+        // MEMORY CONTRACT (7): index the merged row (fire-and-forget; a miss
+        // is repaired by backfill) and retire the two source rows' vectors via
+        // the reaper registry (ledger-backed; a failed reap is a recorded
+        // debt, not an inert orphan).
         spawn_embed_memory(id.clone(), memory_embedding_text_parts(&title, &content));
-        spawn_delete_memory_embeddings(vec![delete_id_a.to_string(), delete_id_b.to_string()]);
+        memory_reaper::run_memory_reapers(
+            pool,
+            vec![
+                (delete_id_a.to_string(), Some(mem_a.title.clone())),
+                (delete_id_b.to_string(), Some(mem_b.title.clone())),
+            ],
+        );
         get_by_id(pool, &id)
     })
 }
@@ -1745,30 +1833,6 @@ fn spawn_embed_memory(memory_id: String, text: String) {
 #[cfg(not(feature = "ml"))]
 fn spawn_embed_memory(_memory_id: String, _text: String) {}
 
-/// Fire-and-forget vector cleanup for hard-deleted memory ids. Same no-op
-/// conditions as [`spawn_embed_memory`]. A missed cleanup only leaves an
-/// orphan vector whose id never matches a live candidate — inert for recall.
-#[cfg(feature = "ml")]
-fn spawn_delete_memory_embeddings(ids: Vec<String>) {
-    if ids.is_empty() {
-        return;
-    }
-    let Some((vec_pool, _)) = crate::memory_recall::task_recall_runtime() else {
-        return;
-    };
-    let Ok(handle) = tokio::runtime::Handle::try_current() else {
-        return;
-    };
-    handle.spawn(async move {
-        if let Err(e) = delete_memory_embeddings(&vec_pool, &ids) {
-            tracing::debug!(error = %e, "memory embedding cleanup failed (orphan vectors are inert)");
-        }
-    });
-}
-
-#[cfg(not(feature = "ml"))]
-fn spawn_delete_memory_embeddings(_ids: Vec<String>) {}
-
 /// Latched to `true` only after the vec table is created *successfully* this
 /// process — same rationale as companion's `VEC_TABLE_READY` (a `Once` would
 /// cache a transient first-call failure as "done" and strand the table absent
@@ -2008,7 +2072,9 @@ pub fn embedded_memory_ids(
 }
 
 /// Drop embeddings for `ids` (lifecycle cleanup when memories are hard-deleted).
-/// Chunked to stay under SQLite's variable limit; idempotent.
+/// Delegates to the reaper registry's vector entry — ONE implementation of the
+/// two-table delete (KNN row + model-stamp sidecar, chunked, idempotent) shared
+/// by the cascade, the ledger drain, and the dependent-side sweep.
 #[cfg(feature = "ml")]
 pub fn delete_memory_embeddings(
     vec_pool: &crate::UserDbPool,
@@ -2018,25 +2084,7 @@ pub fn delete_memory_embeddings(
         return Ok(());
     }
     ensure_memory_vec_table(vec_pool)?;
-    let conn = vec_pool.conn("memories::delete_memory_embeddings")?;
-    const CHUNK: usize = 400;
-    for chunk in ids.chunks(CHUNK) {
-        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let params: Vec<&dyn rusqlite::ToSql> =
-            chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
-        conn.execute(
-            &format!("DELETE FROM persona_memory_embedding WHERE memory_id IN ({placeholders})"),
-            params.as_slice(),
-        )?;
-        // Keep the model-stamp sidecar in lockstep with the vectors it describes.
-        conn.execute(
-            &format!(
-                "DELETE FROM persona_memory_embedding_meta WHERE memory_id IN ({placeholders})"
-            ),
-            params.as_slice(),
-        )?;
-    }
-    Ok(())
+    memory_reaper::reap_vector_embeddings(vec_pool, ids).map(|_| ())
 }
 
 /// Bounded, idempotent GC sweep for archived-memory embedding leftovers.
@@ -2049,7 +2097,8 @@ pub fn delete_memory_embeddings(
 /// leftover embeddings cleaned this call — 0 on a clean corpus, so it is safe to
 /// call on every decay tick (idempotent) and never scans the whole table
 /// (bounded). Hard-delete is unaffected — it still drops vectors via
-/// [`batch_delete`] → [`spawn_delete_memory_embeddings`].
+/// [`batch_delete`] → the reaper registry
+/// (`memory_reaper::run_memory_reapers`).
 #[cfg(feature = "ml")]
 pub fn gc_archived_memory_embeddings(
     main_pool: &DbPool,

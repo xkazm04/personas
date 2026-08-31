@@ -5,7 +5,6 @@ import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition
 
 interface ToolsSectionProps {
   tools: PersonaToolDefinition[];
-  personaId?: string;
 }
 
 export function ToolsSection({ tools }: ToolsSectionProps) {

@@ -8,6 +8,7 @@ import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import {
   obsidianBrainDetectVaults,
@@ -179,7 +180,7 @@ export default function SetupPanel() {
       // A freshly-configured vault flips Obsidian availability → surface the mirror group.
       void refreshMirrorState();
       // Completes the Brain tour's "Connect a Vault" step (no-op outside the tour).
-      useSystemStore.getState().emitTourEvent('tour:obsidian-vault-connected');
+      useTourStore.getState().emitTourEvent('tour:obsidian-vault-connected');
       addToast(t.plugins.obsidian_brain.config_saved, 'success');
     } catch (e) {
       addToast(tx(t.plugins.obsidian_brain.save_failed, { error: String(e) }), 'error');

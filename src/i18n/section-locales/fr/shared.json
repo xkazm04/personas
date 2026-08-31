@@ -3,6 +3,7 @@
   "blast_checking_impact": "Vérification de l’impact…",
   "blast_safe_to_delete": "Aucune ressource dépendante trouvée. Suppression possible.",
   "blast_impact": "Impact",
+  "blast_check_failed": "Impossible de vérifier ce que cette suppression affecte — l'aperçu d'impact est indisponible. Procédez avec prudence.",
   "grid_rows": "Lignes",
   "grid_showing": "Affichage de {start}–{end} sur {total} éléments",
   "grid_rows_per_page": "Lignes par page",

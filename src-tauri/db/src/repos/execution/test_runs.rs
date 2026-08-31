@@ -124,23 +124,31 @@ pub fn update_run_status(
         current_status
             .validate_transition(status)
             .map_err(AppError::Validation)?;
-        conn.execute(
+        // CAS: `AND status = ?7` closes the TOCTOU gap between the SELECT
+        // above and this UPDATE (same spelling as events.rs::update_status).
+        let rows = conn.execute(
             "UPDATE persona_test_runs SET
                 status = ?1,
                 scenarios_count = COALESCE(?2, scenarios_count),
                 summary = COALESCE(?3, summary),
                 error = COALESCE(?4, error),
                 completed_at = COALESCE(?5, completed_at)
-             WHERE id = ?6",
+             WHERE id = ?6 AND status = ?7",
             params![
                 status.as_str(),
                 scenarios_count,
                 summary,
                 error,
                 completed_at,
-                id
+                id,
+                current
             ],
         )?;
+        if rows == 0 {
+            return Err(AppError::Validation(format!(
+                "TestRun {id} status changed concurrently (expected '{current}')"
+            )));
+        }
         Ok(())
     })
 }

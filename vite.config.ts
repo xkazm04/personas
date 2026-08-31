@@ -11,6 +11,11 @@ import {
 // (Ctrl+Shift+L). Self-gates to `command === 'serve' && PERSONAS_INSPECTOR=1`,
 // so it never reaches a production / tauri build and is off in normal dev.
 import { devSourceLocPlugin } from "./scripts/babel/dev-source-loc-vite-plugin.mjs";
+// Build-only, flag-gated: runs babel-plugin-react-compiler. Self-gates to
+// `PERSONAS_REACT_COMPILER=1`; inert (no transform hook) otherwise. Dark-launch
+// experiment — see ADR "react-compiler-build-only" and the file header for the
+// measurement protocol before ever flipping the default.
+import { reactCompilerPlugin } from "./scripts/babel/react-compiler-vite-plugin.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 const isMobile = !!process.env.TAURI_ANDROID || !!process.env.TAURI_IOS;
@@ -36,6 +41,10 @@ export default defineConfig(async () => ({
     // DevInspector source-location stamping. Self-gated (serve + env flag) and
     // enforce:'pre', so it runs before oxc lowers JSX and is a no-op otherwise.
     devSourceLocPlugin(),
+    // React Compiler experiment. Self-gated (build + env flag), enforce:'pre',
+    // so it runs before oxc lowers JSX and is a no-op (no transform hook at
+    // all) unless PERSONAS_REACT_COMPILER=1.
+    reactCompilerPlugin(),
     // Codegen (template checksums, connector seed, agent icon sprites,
     // i18n locale split, command names, ts-rs binding regen, n8n limits,
     // host-triple cache check) is owned by `scripts/run-codegen.mjs` via
@@ -117,7 +126,20 @@ export default defineConfig(async () => ({
               // vendor blob. Users updating Personas re-download only what
               // actually changed (see vendor-chart/flow/motion/markdown).
               const chunks: Record<string, string[]> = {
-                "react-vendor": ["react", "react-dom", "zustand"],
+                // immer's only consumer (triggerSlice.ts) is itself eager, so
+                // this chunk is eager too -- but grouping it with react-vendor
+                // (rather than leaving it unnamed) keeps it OUT of vendor-chart.
+                // Unnamed, rolldown folded it into vendor-chart (recharts/d3,
+                // otherwise lazy-only), so the whole chart+d3 stack loaded
+                // eagerly just because of this one small dep. NOTE: a brand-new
+                // manual-chunk name (e.g. a dedicated "vendor-immer" group) was
+                // tried and silently had no effect across repeated clean builds
+                // -- rolldown discarded it rather than emitting the chunk, even
+                // though the callback demonstrably returned that name for both
+                // immer copies (the top-level one and recharts' own nested
+                // dependency). Reusing an existing group name is what actually
+                // works; verify with a clean build before renaming this again.
+                "react-vendor": ["react", "react-dom", "zustand", "immer"],
                 "ui-vendor": ["lucide-react"],
                 "vendor-motion": ["framer-motion"],
                 "tauri-vendor": [

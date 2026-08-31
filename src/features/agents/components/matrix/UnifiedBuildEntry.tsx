@@ -22,6 +22,7 @@ import {
 } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useTourStore } from "@/stores/tourStore";
 import {
   updatePersona,
   buildUpdateInput,
@@ -143,7 +144,7 @@ export function UnifiedBuildEntry() {
     if (s.companionPrefill && s.companionPrefill.intent) {
       return s.companionPrefill.intent;
     }
-    const bridgeIsActive = s.onboardingActive || s.tourActive;
+    const bridgeIsActive = s.onboardingActive || useTourStore.getState().tourActive;
     return bridgeIsActive && typeof s.setupGoal === 'string' ? s.setupGoal : '';
   })();
   const [intentText, _setIntentText] = useState(initialIntent);

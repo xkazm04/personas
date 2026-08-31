@@ -11,9 +11,12 @@ import {
   getDocumentVisible,
   subscribeDocumentVisibility,
 } from '@/lib/documentVisibility';
+import { classifyLine } from '@/lib/utils/terminalColors';
 
 /** Maximum terminal output lines kept in memory to prevent OOM on long executions. */
 const MAX_TERMINAL_LINES = 10_000;
+/** Size of the rolling non-blank-line tail projection (mirrors the old per-consumer `.slice(-30)`). */
+const MEANINGFUL_TAIL_SIZE = 30;
 /** Maximum length of a single terminal line in characters. */
 const MAX_LINE_LENGTH = 4096;
 /** Maximum total bytes tracked across all terminal lines (~10 MB). */
@@ -49,16 +52,23 @@ class TerminalRingBuffer {
 
   get count() { return this._count; }
 
-  /** Append lines. Oldest entries are evicted when capacity is exceeded. */
-  pushMany(lines: string[]): void {
-    if (lines.length === 0) return;
+  /**
+   * Append lines. Oldest entries are evicted when capacity is exceeded.
+   * Returns the evicted lines (oldest-first) so callers can keep derived
+   * projections (e.g. a text-only subsequence) in sync without rescanning
+   * the whole buffer.
+   */
+  pushMany(lines: string[]): string[] {
+    if (lines.length === 0) return [];
     this._dirty = true;
 
     const start = lines.length > this.capacity ? lines.length - this.capacity : 0;
+    const evicted: string[] = [];
 
     for (let i = start; i < lines.length; i++) {
       const writeIdx = (this.head + this._count) % this.capacity;
       if (this._count === this.capacity) {
+        evicted.push(this.buf[writeIdx]!);
         this.buf[writeIdx] = lines[i];
         this.head = (this.head + 1) % this.capacity;
       } else {
@@ -66,6 +76,7 @@ class TerminalRingBuffer {
         this._count++;
       }
     }
+    return evicted;
   }
 
   /** Return a flat string[] snapshot. Cached until next mutation. */
@@ -92,9 +103,25 @@ class TerminalRingBuffer {
 // Flush callback type
 // ---------------------------------------------------------------------------
 
+/**
+ * Incremental projections over `output`, maintained by the sink so consumers
+ * never need to re-filter/re-classify the whole (up to 10k-line) buffer on
+ * every ~100ms flush. `textLines` and `meaningfulTail` are new-reference only
+ * when their content actually changed this flush (same dirty-cache shape as
+ * `TerminalRingBuffer.toArray`) so an unrelated flush can bail out cheaply.
+ */
+export interface ExecutionOutputProjections {
+  /** Lines classified as `'text'` by classifyLine, in order. */
+  textLines: string[];
+  /** Last `MEANINGFUL_TAIL_SIZE` non-blank lines. */
+  meaningfulTail: string[];
+  /** Most recent line, or '' if none. */
+  lastLine: string;
+}
+
 /** Called by the sink to push flushed output into the Zustand store. */
 export interface SinkFlushCallback {
-  (output: string[], totalBytes: number): void;
+  (output: string[], totalBytes: number, projections: ExecutionOutputProjections): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +144,16 @@ export class ExecutionSink {
   private normalFlushScheduled = false;
   private normalVisibilityUnsubscribe: (() => void) | null = null;
   private onFlush: SinkFlushCallback | null = null;
+
+  // -- Incremental projections (normal mode only -- see recomputeProjections
+  // for the tail/truncated-mode cold path) --------------------------------
+  /** Text-classified subsequence of the ring, with a head pointer so eviction is O(evicted count), not O(buffer). */
+  private textLines: string[] = [];
+  private textLinesHead = 0;
+  private textLinesCache: string[] = [];
+  private textLinesDirty = true;
+  private meaningfulTail: string[] = [];
+  private lastLine = '';
 
   /** Bind the flush callback. Called once when the slice is created. */
   bind(callback: SinkFlushCallback): void {
@@ -146,32 +183,22 @@ export class ExecutionSink {
     // current ring snapshot synchronously so callers see the final output.
     if (!this.truncated && this.normalFlushScheduled && this.onFlush) {
       this.lastNormalFlushTime = Date.now();
-      this.onFlush(this.ring.toArray(), this.totalBytes);
+      this.onFlush(this.ring.toArray(), this.totalBytes, this.currentProjections());
     }
   }
 
   /** Reset all state for a new execution. */
   reset(): void {
-    this.generation++;
-    this.batchLines = [];
-    this.batchBytes = 0;
-    this.batchScheduled = false;
-    this.truncated = false;
-    this.totalBytes = 0;
-    this.lastTailFlushTime = 0;
-    this.tailFlushScheduled = false;
-    this.tailVisibilityUnsubscribe?.();
-    this.tailVisibilityUnsubscribe = null;
-    this.lastNormalFlushTime = 0;
-    this.normalFlushScheduled = false;
-    this.normalVisibilityUnsubscribe?.();
-    this.normalVisibilityUnsubscribe = null;
-    this.ring.clear();
-    this.tailRing.clear();
+    this.resetState();
   }
 
   /** Clear everything and notify the store. */
   clear(): void {
+    this.resetState();
+  }
+
+  /** Shared body of reset()/clear() -- see their doc comments. */
+  private resetState(): void {
     this.generation++;
     this.batchLines = [];
     this.batchBytes = 0;
@@ -188,6 +215,12 @@ export class ExecutionSink {
     this.normalVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
+    this.textLines = [];
+    this.textLinesHead = 0;
+    this.textLinesCache = [];
+    this.textLinesDirty = true;
+    this.meaningfulTail = [];
+    this.lastLine = '';
   }
 
   /**
@@ -229,19 +262,106 @@ export class ExecutionSink {
       return;
     }
 
-    // Normal mode -- push to main ring
-    this.ring.pushMany(linesToFlush);
+    // Normal mode -- push to main ring, then advance the incremental
+    // projections by the same delta (+ whatever the ring evicted) so they
+    // never need to rescan the whole buffer.
+    const evicted = this.ring.pushMany(linesToFlush);
+    this.applyProjectionDelta(linesToFlush, evicted);
 
     // Check if we just crossed the byte budget
     if (this.totalBytes >= MAX_TOTAL_BYTES) {
       this.truncated = true;
-      // Freeze the main ring snapshot and start tail mode
+      // Freeze the main ring snapshot and start tail mode. This is a cold,
+      // rare-once path -- recompute projections fully rather than reconcile
+      // the incremental state against the reshaped (header + tail) output.
       this.ring.pushMany([formatTruncationNotice(this.totalBytes)]);
-      this.onFlush(this.ring.toArray(), this.totalBytes);
+      const output = this.ring.toArray();
+      this.onFlush(output, this.totalBytes, this.recomputeProjections(output));
       return;
     }
 
     this.scheduleNormalFlush();
+  }
+
+  /**
+   * Advance the incremental projections by exactly the lines this flush
+   * added/evicted. `evicted` is bounded by this flush's batch size (see
+   * TerminalRingBuffer.pushMany), not the ring capacity, so this is O(delta)
+   * even once the ring is at capacity and evicting every flush.
+   */
+  private applyProjectionDelta(added: string[], evicted: string[]): void {
+    let textChanged = false;
+    if (evicted.length > 0) {
+      let evictedTextCount = 0;
+      for (const line of evicted) {
+        if (classifyLine(line) === 'text') evictedTextCount++;
+      }
+      if (evictedTextCount > 0) {
+        this.textLinesHead += evictedTextCount;
+        textChanged = true;
+      }
+    }
+
+    for (const line of added) {
+      if (classifyLine(line) === 'text') {
+        this.textLines.push(line);
+        textChanged = true;
+      }
+      if (line.trim().length > 0) {
+        this.meaningfulTail.push(line);
+        if (this.meaningfulTail.length > MEANINGFUL_TAIL_SIZE) this.meaningfulTail.shift();
+      }
+    }
+
+    if (textChanged) {
+      this.textLinesDirty = true;
+      // Compact the dead head prefix once it dominates the backing array so
+      // memory doesn't grow unbounded across a long execution.
+      if (this.textLinesHead > 1024 && this.textLinesHead * 2 > this.textLines.length) {
+        this.textLines = this.textLines.slice(this.textLinesHead);
+        this.textLinesHead = 0;
+      }
+    }
+
+    if (added.length > 0) this.lastLine = added[added.length - 1]!;
+  }
+
+  /** Snapshot of the incrementally-maintained projections (normal mode). */
+  private currentProjections(): ExecutionOutputProjections {
+    return {
+      textLines: this.textLinesSnapshot(),
+      meaningfulTail: this.meaningfulTail.slice(),
+      lastLine: this.lastLine,
+    };
+  }
+
+  /** New-reference-only-when-changed cache, mirroring TerminalRingBuffer.toArray. */
+  private textLinesSnapshot(): string[] {
+    if (!this.textLinesDirty) return this.textLinesCache;
+    this.textLinesCache = this.textLinesHead === 0
+      ? this.textLines.slice()
+      : this.textLines.slice(this.textLinesHead);
+    this.textLinesDirty = false;
+    return this.textLinesCache;
+  }
+
+  /**
+   * Full recompute -- used only on the cold truncation/tail path, where the
+   * output shape (header + blank + tail) is reconstructed from scratch each
+   * time anyway and `tailRing` is capped at TAIL_BUFFER_LINES, so this never
+   * approaches the O(10k) cost the incremental path exists to avoid.
+   */
+  private recomputeProjections(lines: string[]): ExecutionOutputProjections {
+    const textLines: string[] = [];
+    const meaningfulTail: string[] = [];
+    for (const line of lines) {
+      if (classifyLine(line) === 'text') textLines.push(line);
+      if (line.trim().length > 0) {
+        meaningfulTail.push(line);
+        if (meaningfulTail.length > MEANINGFUL_TAIL_SIZE) meaningfulTail.shift();
+      }
+    }
+    return { textLines, meaningfulTail, lastLine: lines[lines.length - 1] ?? '' };
   }
 
   /**
@@ -269,7 +389,7 @@ export class ExecutionSink {
       if (this.truncated) return;
 
       this.lastNormalFlushTime = Date.now();
-      this.onFlush(this.ring.toArray(), this.totalBytes);
+      this.onFlush(this.ring.toArray(), this.totalBytes, this.currentProjections());
     };
 
     if (delay === 0) {
@@ -310,14 +430,17 @@ export class ExecutionSink {
 
       this.lastTailFlushTime = Date.now();
 
-      // Build output: truncation header + tail lines
+      // Build output: truncation header + tail lines. Cold path (throttled to
+      // once per TAIL_FLUSH_INTERVAL_MS, bounded by TAIL_BUFFER_LINES) -- full
+      // recompute is cheap and simpler than reconciling incremental state
+      // against this reshaped output.
       const tailLines = this.tailRing.toArray();
       const output = [
         formatTruncationNotice(this.totalBytes),
         "",
         ...tailLines,
       ];
-      this.onFlush(output, this.totalBytes);
+      this.onFlush(output, this.totalBytes, this.recomputeProjections(output));
     };
 
     if (!getDocumentVisible()) {

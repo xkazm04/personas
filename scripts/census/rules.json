@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 45,
-        "matches": 68
+        "files": 41,
+        "matches": 64
       },
       "floor": 4000
     },
@@ -745,7 +745,7 @@
       },
       "baseline": {
         "files": 54,
-        "matches": 135
+        "matches": 136
       },
       "floor": 200
     },
@@ -909,8 +909,8 @@
         }
       ],
       "baseline": {
-        "files": 38,
-        "matches": 92
+        "files": 39,
+        "matches": 94
       },
       "floor": 900
     },
@@ -1050,7 +1050,7 @@
       },
       "baseline": {
         "files": 46,
-        "matches": 246
+        "matches": 245
       },
       "floor": 100
     },
@@ -2154,8 +2154,8 @@
         "description": "A write-once process-global whose payload is a Result, so the FIRST attempt's outcome is frozen for the life of the process — including a failure. PROXY FOR the stack-free condition: a process-lifetime cache that stores a failure. Whatever transient condition made the first call fail (a locked keychain, an env var not yet exported, a directory not yet created) is then permanent, and the only recovery is a restart. This repo has already shipped that bug and fixed it once: core/src/crypto.rs:497-503 records that a previous `OnceLock<Result<..>>` for the master key 'bricked all credential encrypt/decrypt for the whole process, recoverable only by restart', and the fix was to store ONLY the success (`OnceLock<ProtectedKey>` at :504, re-derived on every call until one succeeds). Fix: cache the success, not the outcome — `OnceLock<T>` with a `get()`-then-retry, or `Mutex<Option<T>>` if the value can legitimately change."
       },
       "baseline": {
-        "files": 3,
-        "matches": 4
+        "files": 2,
+        "matches": 3
       },
       "floor": 900
     },
@@ -2620,8 +2620,8 @@
         }
       ],
       "baseline": {
-        "files": 5,
-        "matches": 7
+        "files": 6,
+        "matches": 8
       },
       "floor": 900
     },
@@ -3027,8 +3027,8 @@
         "description": "JSON.parse of a blob field on an entity or IPC record, asserted straight into a named type — the cast IS the validation. PROXY FOR the stack-free condition: a definition the app did not author becomes app state without being reconstructed against a closed vocabulary. Measured 2026-08-16 at 629a914af: 16 matches / 15 files, against 26 matches / 25 files for the compliant form (`: unknown = JSON.parse(`) — same anchor, disjoint by construction, 319 JSON.parse occurrences total in 4,829 files. PRECISION 15/16 hand-read (each parses a model-composed spec, an imported definition, an outside-CLI ingest blob, or a persona design_context; the one borderline is useEngineCapabilities.ts:60). RECALL is deliberately partial: requiring a MEMBER-EXPRESSION argument excludes the localStorage-hydration arm by construction (0 file overlap with raw-web-storage, verified) at the cost of missing the three n8n file/paste/URL import hooks, which bind the text to a local first. Widening to any expression gives 68 matches at ~44% precision. THE ARGUMENT MATCH MUST NOT BE A CONSUMING WILDCARD: a `[\\s\\S]{0,300}?` window slid across statement boundaries and flagged lib/channel/teamBridge.ts:42 — the exemplar of the COMPLIANT pattern — as a violation. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS type assertion on a parsed JSON blob column. In Rust it wears serde_json::Value + .get(), in Python a Pydantic model never fed the body, in Next.js `(await res.json()) as T` — this pattern scores ZERO on all three."
       },
       "baseline": {
-        "files": 15,
-        "matches": 16
+        "files": 14,
+        "matches": 14
       },
       "floor": 4000
     },
@@ -3444,8 +3444,8 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 98,
-        "matches": 174
+        "files": 97,
+        "matches": 176
       },
       "floor": 900
     },
@@ -3496,8 +3496,8 @@
         }
       ],
       "baseline": {
-        "files": 52,
-        "matches": 76
+        "files": 46,
+        "matches": 70
       },
       "floor": 3000
     },
@@ -5156,8 +5156,8 @@
         }
       ],
       "baseline": {
-        "files": 19,
-        "matches": 33
+        "files": 23,
+        "matches": 37
       },
       "floor": 4000
     },
@@ -5268,8 +5268,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 43,
-        "matches": 48
+        "files": 42,
+        "matches": 47
       },
       "floor": 4000
     },
@@ -5429,7 +5429,7 @@
       },
       "baseline": {
         "files": 107,
-        "matches": 358
+        "matches": 359
       },
       "floor": 900
     },

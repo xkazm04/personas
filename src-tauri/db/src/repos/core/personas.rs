@@ -1818,8 +1818,28 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             params![id],
         )?;
 
+        // The FK cascade is about to destroy this persona's memories, and a
+        // database cascade cannot cross into the vector store's separate file
+        // (deferred-fixes #108: one purge orphaned 100% of the vector store).
+        // Capture the doomed memories while their ids are still in scope so
+        // the reaper cascade + ledger can account for their vectors.
+        let memory_victims: Vec<(String, Option<String>)> = {
+            let mut stmt =
+                tx.prepare("SELECT id, title FROM persona_memories WHERE persona_id = ?1")?;
+            let rows = stmt.query_map(params![id], |r| {
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("title")?,
+                ))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+
         let rows = tx.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
         tx.commit()?;
+        if rows > 0 {
+            crate::repos::core::memory_reaper::run_memory_reapers(pool, memory_victims);
+        }
         Ok(rows > 0)
     })
 }
@@ -1970,8 +1990,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
             "SELECT COUNT(*) AS n FROM persona_automations WHERE persona_id = ?1 AND deployment_status = 'active'",
             params![id],
             |r| r.get("n"),
-        )
-        .unwrap_or(0);
+        )?;
         if active_automations > 0 {
             impacts.push((
                 "automation".into(),
@@ -2014,13 +2033,11 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         }
 
         // Event subscriptions
-        let subs: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) AS n FROM persona_event_subscriptions WHERE persona_id = ?1",
-                params![id],
-                |r| r.get("n"),
-            )
-            .unwrap_or(0);
+        let subs: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM persona_event_subscriptions WHERE persona_id = ?1",
+            params![id],
+            |r| r.get("n"),
+        )?;
         if subs > 0 {
             impacts.push((
                 "subscription".into(),
@@ -2034,8 +2051,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
             "SELECT COUNT(*) AS n FROM persona_executions WHERE persona_id = ?1 AND status IN ('running', 'queued')",
             params![id],
             |r| r.get("n"),
-        )
-        .unwrap_or(0);
+        )?;
         if running > 0 {
             impacts.push((
                 "execution".into(),
@@ -2044,13 +2060,11 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         }
 
         // Learned memories — permanently destroyed by the cascade delete.
-        let memories: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) AS n FROM persona_memories WHERE persona_id = ?1",
-                params![id],
-                |r| r.get("n"),
-            )
-            .unwrap_or(0);
+        let memories: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM persona_memories WHERE persona_id = ?1",
+            params![id],
+            |r| r.get("n"),
+        )?;
         if memories > 0 {
             impacts.push((
                 "memory".into(),
@@ -2061,13 +2075,11 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // Emitted events — the polymorphic `source_id` rows are hard-deleted
         // (they can't be FK-constrained). Events that merely *target* this
         // persona are FK-set-null and survive, so only source events are lost.
-        let events: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
-                params![id],
-                |r| r.get("n"),
-            )
-            .unwrap_or(0);
+        let events: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
+            params![id],
+            |r| r.get("n"),
+        )?;
         if events > 0 {
             impacts.push((
                 "event".into(),

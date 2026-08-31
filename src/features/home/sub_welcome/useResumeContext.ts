@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTourStore } from '@/stores/tourStore';
 import { getLocalizedTourById, getLocalizedTourSteps } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -109,12 +109,12 @@ export function useResumeContext(): ResumeContext | null {
   // The tour title / step title surfaced below are translated copy resolved
   // from `onboarding.tours`, so this hook needs the live bundle.
   const { t } = useTranslation();
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const tourActiveTourId = useSystemStore((s) => s.tourActiveTourId);
-  const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
-  const tourCurrentStepIndex = useSystemStore((s) => s.tourCurrentStepIndex);
-  const tourDismissed = useSystemStore((s) => s.tourDismissed);
-  const tourCompletionMap = useSystemStore((s) => s.tourCompletionMap);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const tourActiveTourId = useTourStore((s) => s.tourActiveTourId);
+  const tourStepCompleted = useTourStore((s) => s.tourStepCompleted);
+  const tourCurrentStepIndex = useTourStore((s) => s.tourCurrentStepIndex);
+  const tourDismissed = useTourStore((s) => s.tourDismissed);
+  const tourCompletionMap = useTourStore((s) => s.tourCompletionMap);
   const personas = useAgentStore((s) => s.personas);
   const executions = useAgentStore((s) => s.executions);
 

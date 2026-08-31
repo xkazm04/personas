@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { diffLines, summarizePromptDiff, type PromptDiffSummaryCopy } from '../PromptDiffModal';
-import { getEnglishTranslations } from '@/i18n/englishSections';
+import { getEnglishTranslationsAsync } from '@/i18n/useTranslation';
 
 /**
  * The prose used to be composed as English literals INSIDE summarizePromptDiff,
@@ -144,8 +144,11 @@ describe('summarizePromptDiff', () => {
     expect(out).not.toMatch(/^vs /m);
   });
 
-  it('has the catalog keys CompetitionCard feeds it', () => {
-    const dl = getEnglishTranslations().plugins.dev_lifecycle;
+  it('has the catalog keys CompetitionCard feeds it', async () => {
+    // `plugins` is a code-split (non-core) English section now — see
+    // src/i18n/useTranslation.ts's module header — so this test awaits its
+    // chunk explicitly rather than assuming it's already resident.
+    const dl = (await getEnglishTranslationsAsync()).plugins.dev_lifecycle;
     expect(dl.prompt_diff_summary_headline).toContain('{label}');
     expect(dl.prompt_diff_summary_variant).toContain('{added}');
     expect(dl.prompt_diff_summary_variant).toContain('{removed}');

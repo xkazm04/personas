@@ -19,6 +19,7 @@ import {
   driveStorageInfo,
   driveWriteText,
 } from "@/api/drive";
+import { createModuleCache } from "@/hooks/utility/data/useModuleSubscription";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { kindBucketWeight, visualForEntry } from "../designTokens";
 
@@ -67,8 +68,15 @@ export type SortDir = "asc" | "desc";
 // while a background refresh settles silently behind it. Keyed per-path for
 // entries (a Drive listing is per-folder); tree/storage/recent are
 // single-account-scoped so one slot each is enough.
+//
+// `driveEntriesCache` is keyed by an unbounded population (every folder path
+// visited this session), so it uses `createModuleCache` for its `maxSize`
+// eviction door rather than a bare `Map` — see
+// docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10. 200 entries
+// comfortably covers a session's worth of folder navigation while still
+// bounding a very large or very deep tree.
 // ---------------------------------------------------------------------------
-const driveEntriesCache = new Map<string, DriveEntry[]>();
+const driveEntriesCache = createModuleCache<string, DriveEntry[]>({ maxSize: 200 });
 let driveTreeCache: DriveTreeNode | null = null;
 let driveStorageCache: DriveStorageInfo | null = null;
 let driveRecentCache: DriveEntry[] = [];

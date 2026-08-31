@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import {
   CircleDashed, Loader2, AlertCircle, CheckCircle2, CircleSlash, XCircle, Wand2,
   ChevronDown, ChevronRight, SkipForward, Ban, RotateCcw, Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -13,6 +12,12 @@ import { listTeamAssignmentSteps, resolveTeamAssignmentReview } from '@/api/pipe
 import { silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
+
+// `usePersonaIndex` moved to `personaIndex.ts` (a lean, markdown-free module) so
+// that App-root-mounted eager consumers (LiveChannelOverlay → MergedRow) don't
+// drag this file's MarkdownRenderer stack into the eager bundle. Re-exported
+// here so existing lazy-loaded consumers of `boardShared` keep working.
+export { usePersonaIndex } from './personaIndex';
 
 /* ----------------------------------------------------------------------------
  * Shared primitives for the assignment-board prototypes.
@@ -76,12 +81,6 @@ export function StepProgressStrip({ steps, className }: { steps: TeamAssignmentS
       ))}
     </div>
   );
-}
-
-/** Map persona ids to personas once per render tree. */
-export function usePersonaIndex(): Map<string, Persona> {
-  const personas = useAgentStore((s) => s.personas) as Persona[];
-  return useMemo(() => new Map(personas.map((p) => [p.id, p])), [personas]);
 }
 
 /** Small persona chip: icon + short name. */

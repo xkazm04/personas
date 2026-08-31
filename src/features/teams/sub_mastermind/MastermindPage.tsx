@@ -316,7 +316,7 @@ function MastermindInner() {
       const pending = [...scanTimers.current.keys()];
       if (pending.length > 0) {
         for (const slug of pending) { void invalidateScans(slug); clearScanBusy(slug); }
-      } else void loadScans();
+      } else void loadScans({ fresh: true }); // the world just changed — never join a pre-completion flight
     }
   }, [invalidateScans, loadScans, clearScanBusy]);
   useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);

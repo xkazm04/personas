@@ -1,6 +1,7 @@
 import { AlertCircle, Compass, PenLine, ChevronRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useResumeContext, clearLastEdited } from './useResumeContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
@@ -25,8 +26,8 @@ export default function ResumeBanner() {
   const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
-  const startTour = useSystemStore((s) => s.startTour);
-  const dismissTour = useSystemStore((s) => s.dismissTour);
+  const startTour = useTourStore((s) => s.startTour);
+  const dismissTour = useTourStore((s) => s.dismissTour);
   const selectPersona = useAgentStore((s) => s.selectPersona);
 
   if (!ctx) return null;

@@ -1667,6 +1667,14 @@ is the second gate, not the first.
     { "phase": "overnight", "ran": true, "durationMs": 38010,
       "counts": { "projects": 1, "dispatched": 0, "blocked": 1, "degraded": 0 },
       "details": [ /* the NightRun ledger row, verbatim */ ],
+      // §13.12 — overnight ONLY, and always present, `[]` included
+      "proposals": [ { "title": "Close the decode seam", "target": "Decode seam",
+                       "why": "two call sites already disagree",
+                       // §13.12.1 — both as the holder itself stated them; an
+                       // idea that stated neither falls back to the lane's lens
+                       "journey": "role-to-schedule", "axis": "risk",
+                       "size": "s", "confidence": null } ],
+      "declines":  [ { "title": "Rewrite the renderer", "reason": "outside-mandate" } ],
       "errors": [] },
     { "phase": "reconcile", "ran": true, "durationMs": 2900,
       "counts": { "projects": 1, "branchesSeen": 3, "newlyRecorded": 1, "gated": 1, "errors": [] } },
@@ -2106,6 +2114,363 @@ directories; a non-git project is refused rather than dispatched into; prune
 retires a merged worktree, keeps in-flight work, keeps everything inside the
 grace window, and never considers a worktree outside its root; and the two
 guardrail variants share one tail.
+
+### 13.11 The retire endpoint — a tenure that can actually end (2026-08-29)
+
+`POST /api/kp/test/retire`. Same two gates as the tick and the seed (§13.6): the
+route is **added** only while `personas_engine::headless::enabled()`, so with the
+mode off it 404s rather than 403s, and `authorize` demands `personas:test` for
+the whole `/api/kp/test/` prefix.
+
+**Why it exists.** Hiring was reachable over the bridge and retiring was not. The
+2026-08 App-master sweeps therefore left **100+ personas** on the roster, one per
+run, with no mechanical way to put any of them down — and kp's bench is being
+rebuilt around *tenures* rather than fresh hires, which needs the end of a tenure
+to be as reachable as its start. A tenure that cannot end is not a tenure.
+
+```jsonc
+// request
+{ "personaId": "…" }   // required; a retirement will not guess which tenure to end
+```
+
+```jsonc
+// response (200) — inside the standard { success, data } envelope
+{ "headlessBridge": true, "actor": "headless_bridge",
+  "personaId": "…",
+  "alreadyRetired": false,          // true => nothing was written
+  "lifecycle": "archived",
+  "mandate": { "projectId": "…",    // null when the persona holds no App master mandate
+               "decision": "retired",
+               "carriedOut": true }, // false => it was already decided
+  "note": "…" }
+```
+
+**Two records, one shared meaning.** A tenure ends in two places and they can
+already disagree — a probation `retire` ends the mandate and leaves the persona
+row untouched; a hand-archive does the reverse. So the route decides *both*
+halves before writing either (`RetirePlan`), and:
+
+| half | how | what it means |
+| --- | --- | --- |
+| the persona | `repos::core::personas::archive_persona` — the same repository function the `archive_persona` command calls | lifecycle `archived`, **no cascade**: executions, memories, messages and the violation ledger all stay readable. A retirement that erased the record would destroy the evidence for the decision at the moment it was made. System-origin personas are refused (400) |
+| the mandate | `reviews::apply_app_master_probation_decision` with `decision: "retired"` — the same carry-out a human's `retire` click and the headless probation sweep reach | autopilot → `off`, cadence triggers disabled, the mandate records `retired`, the holder remembers it, kp is told |
+
+Nothing here re-implements "what retiring means". `verdict` is `None` (no backbone
+was read — written as *no verdict recorded*, never as a pass), `reviewId` is
+`None` (this decision was not raised, it was requested) and the headless
+`incomplete` streak is left exactly as it stands.
+
+**Idempotent per half.** A second call finishes whatever the first left and
+writes nothing when both records are already terminal, answering
+`alreadyRetired: true` — which is what lets a driver retry a retirement it is not
+sure landed. An unknown `personaId` is the standard 404 envelope, not a silent
+success.
+
+#### Tests
+
+`app_lib`, `engine::management_api` (4), beside the other `/api/kp/test/*`
+assertions: the plan reads both records and calls it done only when neither has
+work left (including the two half-done states); a retire archives and the second
+call is a no-op; an open mandate is reported as owed and stops being owed once
+the carry-out has stamped it terminal; an unknown persona is `NotFound`.
+
+### 13.12 The night's product: a proposal list and a decline log (2026-08-29)
+
+The `overnight` phase summary now carries two lists **in addition to** everything
+it already carried — `counts`, `details` (the `NightRun` ledger row verbatim) and
+`errors` are untouched, name for name, because a driver already deep-scans them.
+
+**Why.** kp's bench is being rebuilt around rung-0 *ideation nights*, whose whole
+product is what the night proposed and what it turned down. Until this existed
+the summary said only how many: a `blockedReason` reading *"mode suggest triages
+but does not dispatch (1 accepted idea(s) left for the morning)"* names a number
+and never the idea, so nothing downstream could grade the night's judgement. The
+two lists **are** the reading.
+
+```jsonc
+"proposals": [ { "title": "…",           // dev_ideas.title
+                 "target": "…",          // the context's name, else the project's, else its id
+                 "why": "…",             // reasoning, falling back to description
+                 "journey": "…",         // the holder's own `Journey:` marker, else the use case named by use_case_id
+                 "axis": "…",            // the holder's own `Axis:` (time|risk|gate); else scan_type, falling back to category
+                 "size": "xs|s|m|l|xl",  // folded from effort
+                 "confidence": null,
+                 "createdAt": "…",       // dev_ideas.created_at, VERBATIM (§13.13)
+                 "origin": "…|null" } ], // dev_ideas.origin, verbatim — which sensor raised it
+"declines":  [ { "title": "…",
+                 "reason": "low-value|outside-mandate|already-done|needs-human|null",
+                 "createdAt": "…", "origin": "…|null" } ]
+```
+
+**What is read.** Proposals are every idea standing `accepted` (the ones a
+`suggest` night leaves for the morning — the very ideas the `blockedReason`
+counts) then every idea standing `pending`; declines are the ideas standing
+`rejected`. Both are capped at `headless::MAX_TICK_BACKLOG_ITEMS` (50 each),
+newest first, and `archived` ideas appear in neither — archiving is lifecycle
+bookkeeping, not a decision. This is deliberately **state**, not a window keyed
+on the run's own start: a blocked dispatch is about the accepted ideas that
+*exist*, whichever tick accepted them, and a window would report an empty list
+for exactly the case the reading is for. The read happens per project after the
+night ran, dispatched or not, and is best-effort — the night already happened, so
+an unreadable backlog reports what it could read instead of failing the phase.
+
+**Empty is a finding; missing is a gap.** Both keys are present on every
+`overnight` summary, `[]` included, and absent on every other phase — a phase
+that never looks at a backlog must not report an empty one.
+
+**Two projections, both admitted as such.**
+
+- `size` folds `dev_ideas.effort` in pairs along the emitter's own documented
+  ladder (`idea_scanner.rs`: 1=trivial … 10=epic) — 1-2 `xs` … 9-10 `xl`. An
+  absent or out-of-range effort is `null`.
+- `reason` is a **lossy** projection over free text, and it is allowed to fail.
+  The lane has no decline vocabulary: `dev_ideas.status` is
+  `pending | accepted | rejected | archived`, and `rejection_reason` is whatever
+  the rejecting hand typed, plus the mechanical
+  `"Auto-rejected by triage rule '<name>'"` whose only signal is a rule name an
+  operator chose. So `headless::decline_reason` matches phrases that can only
+  mean one thing and answers `null` for everything else. A reason invented to
+  fill the field would read downstream as the night's actual judgement.
+
+**`confidence` is always `null` today.** `dev_ideas` records `effort`, `impact`,
+`risk` and a triage `priority`; none of those is a confidence, and deriving one
+from them would be inventing a number. The field exists so the absence is
+*stated* — unmeasured is not zero, the doctrine both repos share.
+
+#### 13.12.1 Value literacy — the holder names the journey and the axis (2026-08-29)
+
+kp's C1 exam grades a night on **`valueLiteracy`**: the fraction of proposals
+that name the journey they move and the value axis they move it on. As first
+shipped that reading was structurally ~0, and no amount of holder skill could
+change it — `journey` came from `use_case_id`, which a scanner-raised idea never
+carries, and `axis` came from `scan_type`, which is a *lens* (`"stabilize"`), not
+a value axis. Literacy has to measure the **holder**, so the holder is asked.
+
+**Where the ask lives.** `personas_engine::headless::VALUE_LITERACY_INSTRUCTION`
+— appended to the idea-scan prompt (`idea_scanner.rs::build_idea_scan_prompt`),
+which is the one prompt in this repo that produces the `dev_ideas` rows a rung-0
+night surfaces as its proposal list. It asks every idea to end its `reasoning`
+with two marker lines:
+
+```
+Journey: <the user journey of THIS product the idea moves, e.g. role-to-schedule>
+Axis: <time|risk|gate>
+```
+
+The constant lives beside the readers that parse it back
+(`headless::stated_journey` / `stated_axis`) so the writer and the reader have
+one spelling — the same reason the decline vocabulary sits next to its
+projection.
+
+**Where they are stored: the lane's free text.** `dev_ideas` has no column for
+either, and the two that come closest are already spoken for (`evidence` is the
+verification probe's baseline; `use_case_id` is an FK-free link to a *catalogued*
+use case, which a free-text journey name is not). So the markers ride in
+`reasoning`, exactly as kp's exam §8 prescribes, and the read is deliberately
+**conservative**: `headless::marker_value` matches only a line that *opens* with
+the label and a colon, first line wins, and nothing else in the text is looked
+at. There is no guessing — an idea that stated no marker reports as one that
+stated no marker.
+
+**How the summary resolves each field.**
+
+| field | stated by the holder | nothing stated |
+| --- | --- | --- |
+| `journey` | the marker's text, verbatim. `Journey: none` (or `n/a`/`null`/`-`) is an **honest null** and reports `null` — an idea that moves no journey saying so is the reading, not a gap to be filled | the linked use case's name, as before |
+| `axis` | the word when it is one of `headless::VALUE_AXES` = `time \| risk \| gate`; **any other word reports `null`** and never falls back — a holder who answered `banana` has not named an axis, and the lens fallback must not rescue a wrong answer | `scan_type` falling back to `category`, exactly as before |
+
+The lens fallback is kept rather than removed: it is what the field carried
+before holders were asked, and a reader grading literacy counts only the values
+inside `VALUE_AXES`, so a `"stabilize"` in that slot reads as *not literate* —
+which is the truth about that idea.
+
+#### Tests
+
+`personas-engine`, `headless` (5): the reason map projects only what can mean one
+thing and answers `null` for a rule name that says nothing about why; the size
+ladder folds and refuses out-of-range; a project with no ideas reports two lists
+that are **empty, not missing** (asserted through serde, not through the struct);
+a populated backlog reports the ideas themselves with a rejected one appearing as
+a decline and never as a proposal; and an idea that names a context and a use case
+reports them as `target` and `journey`. §13.12.1 adds a sixth
+(`a_proposal_carries_the_axis_and_journey_the_holder_stated_and_nulls_one_it_invented`):
+an idea whose `reasoning` carries `Axis: risk` / `Journey: cv-analysis` reports
+those instead of the `stabilize` lens, and one carrying `Axis: banana` /
+`Journey: none` reports `null` for both.
+
+`app_lib`, `commands::infrastructure::idea_scanner` (1):
+`the_idea_scan_prompt_asks_every_idea_to_name_its_journey_and_its_axis` — the
+assembled idea-scan prompt contains `VALUE_LITERACY_INSTRUCTION` verbatim, both
+marker lines, the closed axis set and the "say `none` rather than invent one"
+rule.
+
+`app_lib`, `engine::management_api` (3): an overnight summary always carries both
+keys and leaves `counts` / `details` / `errors` exactly as they were; a populated
+one emits the documented object shapes including the two nulls; and `reconcile` /
+`report` / `probation` omit both keys rather than claiming an empty backlog.
+
+### 13.13 The ideation night — the tick authors, and runs at a mode it names (2026-08-30)
+
+kp's C1 exam (`docs/development/app-master-c1-exam.md` §2) grades a **rung-0
+ideation night**: the holder reads, ranks, proposes and declines, and dispatches
+nothing. §13.12 gave the night a product to report. Measured live on 2026-08-30,
+three things still made such a night impossible to *run* over this bridge — all
+three are closed here, all three additively.
+
+**1 — the tick could only triage a deck it inherited.** `POST /api/kp/test/tick`
+with `phases: ["overnight"]` runs `run_overnight_now_core`, which computes the
+scan delta and applies the project's triage rules to the ideas that already
+exist. Authoring lives somewhere else entirely: the `idea_replenish`
+subscription (`engine/subscription/autonomy_backlog.rs`), a 900s timer that picks
+one fully-idle project and runs `idea_scanner::run_scan_core`. A compressed night
+never reaches it, so a fresh tenure's first night could only re-rank the previous
+operator's backlog and report it as its own proposals.
+
+**2 — the project's stored autopilot mode was the only mode available.** kp's
+project is on `full`, which DISPATCHES every accepted idea as an unattended fleet
+session (~$8/night). That is not a stronger ideation night, it is the wrong one —
+and flipping the stored mode to `suggest` for the bench would leave the project
+degraded after the bench went home.
+
+**3 — the two lists select by state, with no time window, and said nothing about
+when a row was raised.** That is deliberate (§13.12: a blocked dispatch is about
+the accepted ideas that *exist*), but it means the kp project's 58 accepted ideas
+from 2026-08-25..27 — the operator's deck, raised before the tenure was hired —
+report as the holder's proposals. Nothing in the row said otherwise.
+
+#### The request, additive
+
+```jsonc
+{ "projectId": "…", "phases": ["overnight"],
+  "ideate": true,          // author BEFORE triaging (needs a projectId)
+  "autopilot": "suggest" } // run THIS night at this mode; the stored one is not written
+```
+
+A tick that sends neither field gets exactly the night it got before.
+
+#### `ideate` — the same scanner, minus the pacing
+
+The entry is `idea_scanner::run_scan_core` and the lenses come from
+`subscription::pick_replenish_lenses` (LRU over the project's `dev_scans`
+history), so the ideas a tick authors are the ideas the replenish loop would have
+authored: the same stale-idea archival pass, the same backlog backpressure cap,
+the same prompt with its grounding block and its §13.12.1 value-literacy ask.
+
+What the tick **bypasses**, deliberately, and why each is safe to bypass:
+
+| guard | bypassed? | reason |
+| --- | --- | --- |
+| 20h per-project scan cooldown (`find_replenish_candidate`'s `dev_scans` predicate) | **yes** | It paces an unattended 900s loop so it cannot spend $1-3 every quarter hour on its own initiative. A test tick is neither unattended nor recurring; it is one operator-issued request, and a compressed night that obeyed a 20-hour clock could never author at all. |
+| the "fully idle project" picker (no open goals, no pending ideas) | **yes** | It chooses *which* project an unattended loop touches. A tick names its project, so the choice is already made — by a human. |
+| default-OFF `autonomous_idea_scan` setting | **yes** | It means "do not do this on your own initiative". `ideate: true` is the initiative. |
+| **quota cooldown** (`quota_cooldown_active`) | **NO** | It says the account is at or over a real provider spend limit *right now*. That is true whoever is asking, and a bench that spent through it would be measuring a provider outage. **A spend guard is not a test artefact.** |
+| backlog backpressure cap (inside `run_scan_core`) | **NO** | It is part of the shared entry; a saturated backlog reports as a refusal rather than stacking ideas triage cannot drain. |
+
+**The tick waits.** `run_scan_core` returns as soon as it has spawned the scan, so
+a tick that did not wait would triage and report the deck it inherited and call it
+the night's work. The tick polls the scan row every 2s until it leaves `running`,
+bounded by `PERSONAS_HEADLESS_IDEATION_TIMEOUT_SECS` (default **1200s**; a
+non-numeric or `0` override falls back to the default rather than turning the wait
+off while still paying for the scan).
+
+**The reading**, on the `overnight` phase and *only* when the tick asked to
+ideate — absent otherwise, the same rule the two lists follow: a phase that never
+attempted something must not report a zero for it.
+
+```jsonc
+"ideation": { "ran": true,                       // the scan COMPLETED inside this tick
+              "lens": "architecture-analyst,ux-reviewer",  // comma-joined, the lane's own spelling
+              "authored": 6,                     // the completed scan row's own idea_count
+              "blocked": null }
+```
+
+- `ran` is true **only** when the scan finished here, so what it authored is in
+  the very backlog this same phase then triages and reports. A scan that was
+  launched and then errored, or outran the wait, is `ran: false` with `blocked`
+  saying which — "it started" is not the claim a reader of a proposal list needs.
+- `authored: null` is **unmeasured, never zero**: a scan that errored may well
+  have written rows before it stopped, and a tick that stopped waiting knows
+  nothing about what landed afterwards.
+- **Ideation never fails the tick.** Quota cooldown, a launch refusal, a broken
+  scan, a missing `projectId` (an unscoped tick would spend one scan agent per
+  eligible project) — each is a `blocked` string and the night below runs anyway.
+
+#### `autopilot` — an override for one tick, written nowhere
+
+`off | measure | suggest | full`. `run_overnight_now_core` gained a
+`mode_override` parameter that replaces the stored mode for the whole night: the
+`ScanAndTriage` capability gate, the mode recorded on the `autopilot_night_runs`
+ledger row, and the `DispatchFixes` gate inside `run_project_night` all read the
+one value, so an overridden night is that mode's night end to end rather than a
+hybrid. The stored mode is **read and never written** — `load_modes` is the only
+call, so the project is the same after the tick as before it. Every production
+caller (`dev_tools_run_overnight_now`) passes `None`.
+
+`suggest` is what an ideation night wants: it grants `ScanAndTriage` and refuses
+`DispatchFixes`, so the night triages and stops at
+`blockedReason: "mode `suggest` triages but does not dispatch (N accepted idea(s)
+left for the morning)"` — which is precisely the list §13.12 then reports. An
+override that does not grant `ScanAndTriage` (`off`, `measure`) refuses the night
+and says whose mode refused, so a driver is not sent to change a stored setting
+that was already fine.
+
+**An unknown word is a 400**, never a silent fallback to the stored mode — the
+same rule as an unknown phase name, and here it is the one that costs money: a
+driver that typed `"sugest"` and got a 200 would read a full dispatching night as
+the quiet one it asked for.
+
+#### `createdAt` and `origin` on every proposal and decline
+
+Both **verbatim from the row**, added beside the seven fields a7955297b shipped;
+nothing renamed, nothing reshaped.
+
+- `createdAt` = `dev_ideas.created_at`. The window belongs to the reader, so the
+  reader gets the stamp: only the row's own age separates the holder's proposals
+  from a deck raised before the tenure began. **Two forms exist and neither is
+  rewritten** — `create_idea` / `create_finding` write RFC3339 UTC
+  (`chrono::Utc::now().to_rfc3339()`), which is what every scanner-raised idea
+  carries, while a handful of older doors write SQLite's `datetime('now')`
+  (`"YYYY-MM-DD HH:MM:SS"`, UTC, no zone marker). Normalising the second would
+  mean stamping a zone onto a value that does not carry one, so a reader must
+  accept both. (The mixed-format hazard is known in this lane: `quota_cooldown_active`
+  carries a `datetime()` predicate for exactly this reason.)
+- `origin` = `dev_ideas.origin`: which sensor raised the idea, or `null` for a
+  classic Idea-Scanner idea. State alone cannot say whether a proposal came from
+  the night's own reasoning or from a mechanical sweep, and a bench grading
+  judgement is asking exactly that. `null` here is an answer, not a gap.
+
+#### Tests
+
+`personas-engine`, `headless` (+7): an absent override leaves the stored mode
+alone and all four stored words are accepted as overrides (the override
+vocabulary and the stored vocabulary are the same four); an unknown word is an
+`Err`, never a fallback; ideation runs only when asked and only for a named
+project; **the quota cooldown blocks and the pacing cooldown is not even an
+argument to the decision** (`a_test_tick_bypasses_the_pacing_cooldown_but_never_the_spend_guard`);
+the three ideation readings serialize to the three documented shapes; a `0` or
+non-numeric wait override falls back to the default; and every proposal and
+decline carries its row's `createdAt` and `origin` while the original seven /
+two fields stay spelled exactly as they were.
+
+`app_lib`, `engine::management_api` (+4): the `ideation` key is absent on a night
+that was not asked to author and present with its four fields on one that was;
+adding it moves none of `phase` / `ran` / `durationMs` / `counts` / `details` /
+`proposals` / `declines` / `errors`; no phase but `overnight` can carry it; and
+`suggest` is the mode that grants `ScanAndTriage` and refuses `DispatchFixes`,
+which is *why* an overridden night reports `dispatched: 0`. The existing
+populated-summary test gained the two new fields and an explicit
+seven-keys-unchanged assertion.
+
+**What is not covered by a test, and why.** `run_scan_core` takes a
+`tauri::AppHandle`; this repo has no `tauri::test` harness (see
+`commands/core/personas.rs:931`), so neither the scanner invocation nor the
+overnight phase that wraps it can be driven from a unit test. What is testable is
+what was therefore moved into `personas_engine::headless` as pure functions — the
+override vocabulary, the ideation gate (which guard is honoured and which is
+bypassed, legible from the function's own argument list), the wait bound and every
+emitted shape. The wiring that remains in `management_api.rs` is a thin call
+sequence over those decisions. This is the same limit §13.8 records for the rest
+of the bridge, not a new one.
 
 ## 14. Memory — the App master stops starting amnesiac (§8)
 

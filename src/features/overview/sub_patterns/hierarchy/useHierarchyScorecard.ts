@@ -6,10 +6,15 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { getHierarchyScorecard } from '@/api/devTools/hierarchy';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { HierarchyScorecard } from '@/lib/bindings/HierarchyScorecard';
 import { silentCatch } from '@/lib/silentCatch';
 
-const scorecardCache = new Map<string, HierarchyScorecard>();
+// Keyed by projectId — a small population (one entry per project opened this
+// session). `createModuleCache`'s `maxSize` gives it an eviction door a bare
+// `Map` never had (see docs/concepts/golden-paths/shared-fetch-cache.md §12
+// item 10).
+const scorecardCache = createModuleCache<string, HierarchyScorecard>({ maxSize: 32 });
 
 export interface UseHierarchyScorecard {
   /** Warm copy first, revalidated in place. `null` until the first success —

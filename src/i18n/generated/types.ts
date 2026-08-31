@@ -520,6 +520,7 @@ export type Translations = {
     triage_rail_tab_decide: string;
     triage_rail_tab_accepted: string;
     triage_rail_tabs_aria: string;
+    triage_rail_group_none: string;
     triage_accepted_empty: string;
     triage_accepted_empty_sub: string;
     triage_accepted_select_all: string;
@@ -532,6 +533,12 @@ export type Translations = {
     triage_accepted_concurrency_hint: string;
     triage_accepted_result: string;
     triage_accepted_result_skipped: string;
+    triage_accepted_delete: string;
+    triage_accepted_delete_title: string;
+    triage_accepted_delete_body: string;
+    triage_accepted_delete_confirm: string;
+    triage_accepted_deleted: string;
+    triage_accepted_deleted_gone: string;
     triage_accepted_row_aria: string;
     grid_board_aria: string;
     grid_rail_tab_dispatch: string;
@@ -11542,6 +11549,7 @@ export type Translations = {
       storage_confirm: string;
       storage_confirm_yes: string;
       storage_pruned: string;
+      storage_cascade_note: string;
       workspace_overview: string;
       loading_stats: string;
       stats_error: string;
@@ -18884,6 +18892,7 @@ export type Translations = {
     blast_checking_impact: string;
     blast_safe_to_delete: string;
     blast_impact: string;
+    blast_check_failed: string;
     density_toggle_aria: string;
     drag_handle_aria: string;
     density_cozy: string;

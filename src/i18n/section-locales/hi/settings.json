@@ -625,6 +625,7 @@
     "storage_db_size": "डेटाबेस आकार",
     "storage_prune": "पुराने रन साफ करें",
     "storage_pruned": "{count} रन हटाए।",
+    "storage_cascade_note": "कुल प्रभाव: {tables} तालिकाओं में {total} पंक्तियाँ (कैस्केड सहित)।",
     "storage_removable": "हटाने योग्य",
     "storage_subtitle": "स्थानीय डेटाबेस उपयोग और पूर्ण रन की सफाई।",
     "storage_title": "संग्रहण",

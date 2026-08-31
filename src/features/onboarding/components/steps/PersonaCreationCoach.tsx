@@ -1,6 +1,6 @@
 import { Check, MessageSquare, Sparkles, FlaskConical, Rocket, PenLine } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SUB_STEPS = [
@@ -222,7 +222,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
         <button
           type="button"
           onClick={() => {
-            useSystemStore.getState().emitTourEvent('tour:persona-promoted');
+            useTourStore.getState().emitTourEvent('tour:persona-promoted');
           }}
           className="w-full text-center text-[11px] text-foreground hover:text-muted-foreground/60 transition-colors py-1"
           data-testid="tour-coach-skip"

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useTrackedElementRect } from '@/hooks/utility/interaction/useTrackedElementRect';
 
 const PADDING = 8;
@@ -23,9 +23,9 @@ const BORDER_RADIUS = 12;
  * non-dimming `TrackedGlowRing`. This component owns only the dimming visual.
  */
 export default function TourSpotlight() {
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const highlightTestId = useSystemStore((s) => s.tourHighlightTestId);
-  const setHighlightMissing = useSystemStore((s) => s.setHighlightMissing);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const highlightTestId = useTourStore((s) => s.tourHighlightTestId);
+  const setHighlightMissing = useTourStore((s) => s.setHighlightMissing);
 
   // Flag (don't dismiss) when the target can't be found, so the tour survives.
   const onMissing = useCallback(() => {

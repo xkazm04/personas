@@ -3,6 +3,7 @@
   "blast_checking_impact": "Auswirkung wird geprüft…",
   "blast_safe_to_delete": "Keine abhängigen Ressourcen gefunden. Sicher zu löschen.",
   "blast_impact": "Auswirkung",
+  "blast_check_failed": "Die Auswirkungen dieses Löschvorgangs konnten nicht geprüft werden – die Vorschau ist nicht verfügbar. Mit Vorsicht fortfahren.",
   "grid_rows": "Zeilen",
   "grid_showing": "{start}–{end} von {total} Elementen",
   "grid_rows_per_page": "Zeilen pro Seite",

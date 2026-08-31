@@ -14,7 +14,7 @@ import { useReducedMotion } from 'framer-motion';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
+import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/personaIndex';
 import { MergedChannels } from '../channels/mergedFeed';
 import type { FeedTeam, TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';

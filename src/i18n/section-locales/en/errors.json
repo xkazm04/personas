@@ -1,0 +1,22 @@
+{
+  "dismiss_error": "Dismiss error",
+  "boundary_title": "Something unexpected happened in {name}",
+  "boundary_title_generic": "Something unexpected happened",
+  "boundary_body": "Don't worry -- your data is safe. You can try again or head back to the dashboard.",
+  "boundary_retry": "Try Again",
+  "boundary_dashboard": "Go to Dashboard",
+  "boundary_copy": "Copy report for support",
+  "boundary_copied": "Copied to clipboard",
+  "boundary_dev": "For developers",
+  "boundary_no_stack": "No stack trace available",
+  "go_back": "Go back",
+  "not_found": "The requested resource was not found",
+  "validation": "Invalid input: {detail}",
+  "auth": "Authentication failed -- check your credentials",
+  "rate_limited": "Too many requests -- please wait a moment and try again",
+  "network_offline": "No internet connection",
+  "database": "Database error -- please restart the app",
+  "internal": "An unexpected error occurred",
+  "cloud_error": "Cloud service error: {detail}",
+  "gitlab_error": "GitLab error: {detail}"
+}

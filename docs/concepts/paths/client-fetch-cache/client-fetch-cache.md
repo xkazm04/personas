@@ -14,6 +14,7 @@ evidence:
   - src/lib/utils/deduplicateFetch.ts                                            # keyed in-flight dedup; settle-time removal on success AND failure
   - src/lib/async/createCachedFetch.ts                                           # slice-seam dedup + TTL; freshness stamped only on success; declares its seam vs the transport-level auto-dedup
   - src/lib/async/createTtlValueCache.ts                                         # module-scoped value cache with TTL + per-key invalidation, extracted from two inline precedents
+  - src/hooks/utility/data/useModuleSubscription.ts                              # createModuleCache: keyed module cache with TTL + maxSize eviction + invalidate/invalidateAll, paired useSyncExternalStore subscription hook; preferred for multi-entry value caches (added 2026-08-30, found late — see shared-fetch-cache.md §12.10)
   - src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx # single-slot warm-remount cache keyed by scope; warm paint, silent refresh behind, never flashes a neighbor's data
   - src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx               # warm-remount precedent (unkeyed, correct: data is app-global); always revalidates on mount
   - src/features/overview/sub_certification/useCertificationData.ts             # idle-deferred first load with timeout fallback and unmount cancellation

@@ -12,6 +12,25 @@
 
 - **[2026-08-30 21:42]**
 - **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/i18n/locales/*.json`
+### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later
+- **[2026-08-30 17:01]**
+- **Paths:** `src-tauri/core/src/models/persona.rs` · `src-tauri/core/src/models/memory.rs` · `src-tauri/core/src/models/deliberation.rs` · `src-tauri/db/src/migrations/**` · `src-tauri/db/src/repos/core/**` · `src-tauri/db/src/memory_recall.rs` · `src-tauri/engine/src/prompt/**` · `src-tauri/engine/src/template_v3.rs` · `src-tauri/engine/src/app_master.rs` · `src-tauri/engine/src/app_master_memory.rs` · `src-tauri/engine/src/archetype_catalog.rs` · `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/runner/**` · `src-tauri/src/commands/core/personas.rs` · `src-tauri/src/commands/design/**` · `src/features/agents/sub_glyph/**` · `src/api/agents/**` · `docs/features/personas/**` · `scripts/templates/_archetypes.json`
+- **Status:** started
+
+- **[2026-08-30 15:38]**
+- **Paths:** `src/App.tsx` · `vite.config.ts` · `src/features/fleet/**` · `src/features/agents/executionPlayer/**` · `src/hooks/execution/**` · `src/lib/async/**` · `src/i18n/**` · `eslint.config.js` · `scripts/lib/bundle-budget.mjs` · `docs/concepts/**`
+- **Status:** started
+
+- **[2026-08-29 21:25]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/headless.rs` · `docs/architecture/cloud-integration-bridge.md` · `docs/api/management-api.openapi.yaml`
+- **Status:** started
+
+- **[2026-08-29 17:34]**
+- **Paths:** `src/features/agents/quick-answer/triage/deck/**` · `src/features/agents/quick-answer/triage/__tests__/**` · `src/i18n/locales/**` · `src/features/agents/quick-answer/DESIGN.md`
+- **Status:** started
+
+- **[2026-08-29 12:37]**
+- **Paths:** `src/features/agents/sub_connectors/**`
 - **Status:** started
 
 - **[2026-08-28 23:35]**
@@ -64,6 +83,8 @@
 
 - **[2026-08-26 16:21]**
 - **Paths:** `src/features/overview/sub_events/**` · `src/features/overview/sub_missionControl/**` · `src/features/overview/sub_director/**` · `src/features/overview/sub_incidents/**`
+- **[2026-08-28 16:16]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/src/engine/management_api/**` · `.claude/skills/ship-milestone/**` · `docs/features/plugins/dev tools/ship.md` · `scripts/ship/**`
 - **Status:** started
 
 - **[2026-08-26 10:14]**
@@ -519,6 +540,20 @@
 ### activity-rail-prototype — Activity: full-height fix, dock->Monitor footer, triage-backed Reviews, /prototype the rail row language
 
 ### activity-consolidation — Consolidate Monitor UI into Activity: wide named tiles, Conversations-grade chrome, 3-tab rail, docked quick-dispatch
+### architect-client-runtime — /architect client redesign: runtime CPU/RAM findings + bundle/gate repairs + codifications (worktree architect-client-runtime)
+
+### grok-bot-compare — C:/Program Files/Git/research on Grok bot popularity vs personas agentic mgmt + Channels
+- **[2026-08-30 14:19]** Source: web: Grok bot research
+- **Paths:** `C:/Users/kazda/Documents/Obsidian/personas/Research/**` · `C:/Users/kazda/Documents/Obsidian/personas/Lessons/**`
+- **Status:** completed (commits: ae52ac71d, 139c56652, a2ef6400e)
+
+### kp-bench-retire-and-proposals — kp App-master bench: /api/kp/test/retire + proposals/declines on the overnight tick summary
+
+### triage-rail-rows — Redesign DeckQueueRail + DeckAcceptedList rows: group by project, slim single-line rows
+
+### scan-sweep-connectors — C:/Program Files/Git/scan-sweep --optimize over agents-connectors
+
+### ship-goals-orchestration — Ship goals orchestration: management-API ship routes + 3-app milestone cuts (ascent/kp/systedo-case)
 
 ### eval-triage — measured Before/After evaluation rule: skill 2.5.0, triage 154 pending, execute accepts, retrospective
 
@@ -545,6 +580,7 @@
 ### overview-ui-pass-2 — Events headers, Director empty card, Incidents 3-way prototype, Extracted removal, Patterns Codex + Coverage prototype
 
 ### overview-ui-pass — Events typography, Vault pane header, Director layout, Incidents prototype
+### ship-goals-orchestration — Ship goals orchestration: management-API ship routes + 3-app milestone cuts (ascent/kp/systedo-case)
 
 ### exec-text-column-fix — Fix rusqlite Invalid column type Text at index 15 (persona_executions.cache_read_tokens)
 

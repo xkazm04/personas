@@ -1,5 +1,6 @@
 import { Map } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
+import { useTourStore } from "@/stores/tourStore";
 import { getActiveTourSteps, type TourId } from "@/stores/slices/system/tourSlice";
 import { useTier } from "@/hooks/utility/interaction/useTier";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -7,10 +8,10 @@ import { TourProgressArc } from './TourProgressArc';
 
 export default function TourLauncher() {
   const { t, tx } = useTranslation();
-  const tourCompleted = useSystemStore((s) => s.tourCompleted);
-  const tourDismissed = useSystemStore((s) => s.tourDismissed);
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const tourCompleted = useTourStore((s) => s.tourCompleted);
+  const tourDismissed = useTourStore((s) => s.tourDismissed);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const tourStepCompleted = useTourStore((s) => s.tourStepCompleted);
   // Onboarding modal owns the screen — see precedence contract in
   // `src/features/onboarding/README.md`. While the welcome modal is
   // open we hide the launcher button so the user only sees one
@@ -35,10 +36,10 @@ export default function TourLauncher() {
   const handleClick = () => {
     // Always resume from where user left off — don't reset
     if (tourDismissed) {
-      useSystemStore.setState({ tourDismissed: false });
+      useTourStore.setState({ tourDismissed: false });
     }
     setTimeout(() => {
-      useSystemStore.getState().startTour(tourId);
+      useTourStore.getState().startTour(tourId);
     }, 50);
   };
 

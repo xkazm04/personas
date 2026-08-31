@@ -31,7 +31,6 @@ import type { OnboardingSlice } from "./slices/system/onboardingSlice";
 import type { CronAgentsSlice } from "./slices/overview/cronAgentsSlice";
 import type { MiniPlayerSlice } from "./slices/agents/miniPlayerSlice";
 import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
-import type { TourSlice } from "./slices/system/tourSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
@@ -243,13 +242,18 @@ export type VaultStore = CoreState &
   RotationSlice &
   CatalogPrefsSlice;
 
-/** System domain: UI, cloud, GitLab, onboarding, tour, view-mode, dev-tools, network, setup */
+/**
+ * System domain: UI, cloud, GitLab, onboarding, view-mode, dev-tools, network,
+ * setup. The guided-tour slice was extracted into its own standalone
+ * `useTourStore` (src/stores/tourStore.ts) — see docs ADR
+ * "tour-slice-extraction" — so tour writes stop fanning out to every
+ * systemStore subscriber.
+ */
 export type SystemStore = CoreState &
   UiSlice &
   CloudSlice &
   GitLabSlice &
   OnboardingSlice &
-  TourSlice &
   DevToolsSlice &
   FleetSlice &
   NetworkSlice &

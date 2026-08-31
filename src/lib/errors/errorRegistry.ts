@@ -132,7 +132,9 @@ const ERROR_RULES: ErrorRule[] = [
     },
   },
   {
-    match: 'Forbidden',
+    // AppError::Forbidden serialises kind "forbidden" (lowercase) and a
+    // "Forbidden: ..." message — match both spellings.
+    match: /\bforbidden\b/i,
     error: {
       message: 'Access denied.',
       suggestion: 'You may not have permission for this action. Check your credentials or contact an admin.',

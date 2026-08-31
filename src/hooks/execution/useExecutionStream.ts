@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { classifyLine } from '@/lib/utils/terminalColors';
+import { useShallow } from 'zustand/react/shallow';
 
 const EMPTY: string[] = [];
 
@@ -10,19 +9,24 @@ const EMPTY: string[] = [];
  * checking persona ownership, and filtering by line classification.
  *
  * Used by both ChatTab (for streaming bubbles) and PersonaRunner (for terminal).
+ *
+ * textLines is executionTextLines, maintained incrementally by executionSink
+ * (see executionSink.ts) -- this hook no longer re-filters/re-classifies the
+ * whole buffer on every flush.
  */
 export function useExecutionStream(personaId: string) {
-  const executionOutput = useAgentStore((s) => s.executionOutput);
-  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
-  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const { executionOutput, executionTextLines, executionPersonaId, isExecuting } = useAgentStore(
+    useShallow((s) => ({
+      executionOutput: s.executionOutput,
+      executionTextLines: s.executionTextLines,
+      executionPersonaId: s.executionPersonaId,
+      isExecuting: s.isExecuting,
+    })),
+  );
 
   const isOwner = executionPersonaId === personaId && personaId !== '';
   const lines = isOwner ? executionOutput : EMPTY;
-
-  const textLines = useMemo(() => {
-    if (!isOwner || executionOutput.length === 0) return EMPTY;
-    return executionOutput.filter((l) => classifyLine(l) === 'text');
-  }, [executionOutput, isOwner]);
+  const textLines = isOwner ? executionTextLines : EMPTY;
 
   return { lines, textLines, isOwner, isRunning: isExecuting && isOwner };
 }

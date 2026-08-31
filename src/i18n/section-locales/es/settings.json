@@ -625,6 +625,7 @@
     "storage_db_size": "Tamaño de la base de datos",
     "storage_prune": "Limpiar ejecuciones antiguas",
     "storage_pruned": "{count} ejecuciones eliminadas.",
+    "storage_cascade_note": "Impacto total: {total} filas en {tables} tablas (cascada incluida).",
     "storage_removable": "Eliminable",
     "storage_subtitle": "Uso de la base de datos local y limpieza de ejecuciones finalizadas.",
     "storage_title": "Almacenamiento",

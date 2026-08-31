@@ -26,7 +26,8 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
-import { createLatestWins } from '@/stores/util/latestWins';
+import { createInFlightRegistry } from '@/stores/util/inFlight';
+import { createKeyedLatestWins, createLatestWins } from '@/stores/util/latestWins';
 
 import { loadMonitoringSummaries, type MonitoringSummary } from './liveState';
 
@@ -102,16 +103,21 @@ interface SceneStore {
 
   /** Cross-project relations/similarity map (one IPC). */
   loadMeta: () => Promise<void>;
-  /** All idea-scan rows in ONE list call, grouped client-side by project. */
-  loadScans: () => Promise<void>;
+  /** All idea-scan rows in ONE list call, grouped client-side by project.
+   *  Concurrent callers JOIN the in-flight call (N mounts = 1 IPC); pass
+   *  `fresh: true` when the world changed since any current flight left
+   *  (a scan just completed) so a stale flight is superseded, not joined. */
+  loadScans: (opts?: { fresh?: boolean }) => Promise<void>;
   /** Re-fetch only one project's scan rows (scoped IPC) and merge them in. */
   invalidateScans: (projectId: string) => Promise<void>;
   /** Fetch live monitoring stats for the given projects (bounded concurrency).
    *  Throttled to MONITOR_MIN_INTERVAL unless `force`; retryFailed reuses the
    *  last inputs. */
   loadSentry: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
-  /** All goals across all projects in one batched IPC, grouped by project. */
-  loadGoals: () => Promise<void>;
+  /** All goals across all projects in one batched IPC, grouped by project.
+   *  Joins any in-flight call; `fresh: true` for post-mutation refreshes
+   *  (joining a pre-mutation flight would hand back the stale answer). */
+  loadGoals: (opts?: { fresh?: boolean }) => Promise<void>;
   /** All in-flight dev-runner tasks in one batched IPC, grouped by project. */
   loadRunners: () => Promise<void>;
   /** 30d LLM spend for every wired project (bounded concurrency, throttled). */
@@ -146,6 +152,19 @@ const guards: Record<SceneFamily, ReturnType<typeof createLatestWins>> = {
   runners: createLatestWins(),
 };
 
+/** In-flight dedup for the argument-less family loads: concurrent identical
+ *  requests (StrictMode double-mount, page + modal both mounting) share one
+ *  IPC instead of firing N. Keyed by family — every argument that changes the
+ *  answer (the argument-carrying sentry/llmSpend loads stay outside; their
+ *  answer depends on inputs and they are already interval-throttled). */
+const flights = createInFlightRegistry();
+
+/** One latest-wins slot PER PROJECT for scoped scan invalidations — keyed
+ *  exactly like the write it protects (a per-project merge), so two
+ *  invalidations for the same project supersede each other while distinct
+ *  projects never cancel one another. */
+const scanInvalidation = createKeyedLatestWins();
+
 export const useSceneStore = create<SceneStore>((set, get) => ({
   meta: null,
   metaStatus: 'idle',
@@ -160,7 +179,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   llmSpend: new Map(),
   llmSpendStatus: 'idle',
 
-  loadMeta: async () => {
+  loadMeta: () => flights.run('relations', async () => {
     const token = guards.relations.next();
     set({ metaStatus: 'loading' });
     try {
@@ -172,9 +191,9 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       if (!guards.relations.isCurrent(token)) return;
       set((s) => ({ metaStatus: failStatus(s.metaStatus) }));
     }
-  },
+  }),
 
-  loadScans: async () => {
+  loadScans: (opts) => flights.run('scans', async () => {
     const token = guards.scans.next();
     set({ scansStatus: 'loading' });
     try {
@@ -186,11 +205,21 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       if (!guards.scans.isCurrent(token)) return;
       set((s) => ({ scansStatus: failStatus(s.scansStatus) }));
     }
-  },
+  }, opts?.fresh ? 'replace' : 'join'),
 
   invalidateScans: async (projectId) => {
+    // Keyed latest-wins: the slot is THIS project's scan rows. Minted
+    // synchronously before the request leaves; a newer invalidation for the
+    // same project makes this one inert, while other projects' slots are
+    // untouched. The family generation is PEEKED (not minted — this scoped
+    // merge must not cancel a full reload): if a full loadScans supersedes
+    // us mid-flight, it owns the whole map and our merge is inert too.
+    const token = scanInvalidation.next(projectId);
+    const familyGen = guards.scans.current();
     try {
       const rows = await listScans(projectId, 20);
+      if (!scanInvalidation.isCurrent(projectId, token)) return;
+      if (guards.scans.current() !== familyGen) return;
       set((s) => {
         const next = new Map(s.scans);
         next.set(projectId, rows);
@@ -221,7 +250,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   },
 
-  loadGoals: async () => {
+  loadGoals: (opts) => flights.run('goals', async () => {
     const token = guards.goals.next();
     set({ goalsStatus: 'loading' });
     try {
@@ -239,9 +268,9 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       if (!guards.goals.isCurrent(token)) return;
       set((s) => ({ goalsStatus: failStatus(s.goalsStatus) }));
     }
-  },
+  }, opts?.fresh ? 'replace' : 'join'),
 
-  loadRunners: async () => {
+  loadRunners: () => flights.run('runners', async () => {
     const token = guards.runners.next();
     set({ runnersStatus: 'loading' });
     try {
@@ -263,7 +292,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       if (!guards.runners.isCurrent(token)) return;
       set((s) => ({ runnersStatus: failStatus(s.runnersStatus) }));
     }
-  },
+  }),
 
   loadLlmSpend: async (projects, credentials, force = false) => {
     const now = Date.now();

@@ -625,6 +625,7 @@
     "storage_db_size": "데이터베이스 크기",
     "storage_prune": "오래된 실행 정리",
     "storage_pruned": "{count}개의 실행이 제거되었습니다.",
+    "storage_cascade_note": "총 영향: {tables}개 테이블에 걸쳐 {total}개 행(계단식 삭제 포함).",
     "storage_removable": "제거 가능",
     "storage_subtitle": "로컬 데이터베이스 사용량 및 완료된 실행 정리.",
     "storage_title": "저장소",

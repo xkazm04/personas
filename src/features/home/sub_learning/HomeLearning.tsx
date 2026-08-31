@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GraduationCap, Compass, Check, ChevronRight, Sparkles, RefreshCw, X } from 'lucide-react';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { getLocalizedTourRegistry, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
@@ -153,8 +153,8 @@ function ComposedTourCard({
 // -- Component ----------------------------------------------------------
 
 export default function HomeLearning() {
-  const tourCompletionMap = useSystemStore((s) => s.tourCompletionMap);
-  const startTour = useSystemStore((s) => s.startTour);
+  const tourCompletionMap = useTourStore((s) => s.tourCompletionMap);
+  const startTour = useTourStore((s) => s.startTour);
   const [activeTour, setActiveTour] = useState<TourDef | null>(null);
   const {
     entries: composedTours,

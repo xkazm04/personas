@@ -10,6 +10,7 @@
 import { storeBus, AccessorKey } from '@/lib/storeBus';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -56,7 +57,7 @@ export function initStoreBus(): void {
 
   // Execution completed — systemStore emits tour event + activation milestone
   storeBus.on('execution:completed', () => {
-    useSystemStore.getState().emitTourEvent('tour:execution-complete');
+    useTourStore.getState().emitTourEvent('tour:execution-complete');
     void import('@/lib/analytics').then((a) => a.markActivation('execution_completed'));
   });
 
@@ -102,22 +103,22 @@ export function initStoreBus(): void {
 
   // Appearance changed — systemStore emits tour event for appearance step completion
   storeBus.on('appearance:changed', () => {
-    useSystemStore.getState().emitTourEvent('tour:appearance-changed');
+    useTourStore.getState().emitTourEvent('tour:appearance-changed');
   });
 
-  // Build phase changed — systemStore advances tour sub-steps for persona creation.
+  // Build phase changed — tourStore advances tour sub-steps for persona creation.
   // The persona-creation step only completes on an actual PROMOTE (not the
   // earlier test_complete): the next tour step runs the live agent, which
   // requires it to be promoted. Promotion also records the created persona id
   // so the run step can open exactly that agent.
   storeBus.on('build:phase-changed', ({ phase }) => {
-    const sys = useSystemStore.getState();
-    if (!sys.tourActive) return;
-    if (phase === 'draft_ready') sys.emitTourEvent('tour:persona-draft-ready');
+    const tour = useTourStore.getState();
+    if (!tour.tourActive) return;
+    if (phase === 'draft_ready') tour.emitTourEvent('tour:persona-draft-ready');
     if (phase === 'promoted') {
       const pid = useAgentStore.getState().selectedPersona?.id;
-      if (pid) sys.setTourCreatedPersona(pid);
-      sys.emitTourEvent('tour:persona-promoted');
+      if (pid) tour.setTourCreatedPersona(pid);
+      tour.emitTourEvent('tour:persona-promoted');
     }
   });
 }

@@ -38,6 +38,19 @@ pub struct StorageReport {
     pub prunable_executions: u64,
 }
 
+/// One table's share of a prune's blast radius.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TableImpact {
+    /// Table name (a code identifier, shown verbatim).
+    pub table: String,
+    /// Rows this table lost when the delete executed. Bounded far under 2^53
+    /// (a single prune's casualties), so the wire carries a JS number.
+    #[ts(type = "number")]
+    pub rows: u64,
+}
+
 /// Result of a prune (or a dry-run preview of one).
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -49,6 +62,15 @@ pub struct PruneResult {
     pub pruned_executions: u64,
     /// The effective age floor applied (hours).
     pub age_hours: u64,
+    /// Every table that shrank when the DELETE executed — the cascade set,
+    /// tallied THROUGH THE ENFORCEMENT PATH (the real delete ran inside a
+    /// transaction; a dry-run rolls it back), so preview and act cannot
+    /// diverge by construction. Largest first.
+    pub casualties: Vec<TableImpact>,
+    /// Sum over `casualties` — the honest total the confirm copy shows.
+    /// Same bound as [`TableImpact::rows`]; a JS number on the wire.
+    #[ts(type = "number")]
+    pub total_rows: u64,
 }
 
 fn cutoff_rfc3339(hours: u64) -> String {
@@ -64,24 +86,24 @@ pub fn storage_usage(
     require_auth_sync(&state)?;
     let conn = state.db.get()?;
 
+    // Both counts PROPAGATE failure — a probe swallowed into zero would render
+    // as "nothing to remove", which a safety surface must never fabricate.
     let total_executions: u64 = conn
-        .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| {
-            r.get::<_, i64>(0)
-        })
-        .unwrap_or(0)
+        .query_row("SELECT COUNT(*) AS n FROM persona_executions", [], |r| {
+            r.get::<_, i64>("n")
+        })?
         .max(0) as u64;
 
     let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
     let prunable_executions: u64 = conn
         .query_row(
             &format!(
-                "SELECT COUNT(*) FROM persona_executions \
+                "SELECT COUNT(*) AS n FROM persona_executions \
                  WHERE status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1"
             ),
             [&cutoff],
-            |r| r.get::<_, i64>(0),
-        )
-        .unwrap_or(0)
+            |r| r.get::<_, i64>("n"),
+        )?
         .max(0) as u64;
 
     // Best-effort DB file size.
@@ -101,8 +123,88 @@ pub fn storage_usage(
     })
 }
 
+/// Tables whose row deltas a prune tallies: every ordinary table plus the
+/// executions FTS index itself. FTS5 shadow internals (`executions_fts_data`
+/// etc.) hold storage blocks rather than user rows, so counting them would
+/// inflate the honest number with bookkeeping.
+fn countable_tables(conn: &rusqlite::Connection) -> Result<Vec<String>, AppError> {
+    let mut stmt = conn.prepare(
+        "SELECT name FROM sqlite_master
+         WHERE type = 'table'
+           AND name NOT LIKE 'sqlite_%'
+           AND name NOT LIKE '%_fts_%'
+         ORDER BY name",
+    )?;
+    let rows = stmt.query_map([], |r| r.get::<_, String>("name"))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+/// `COUNT(*)` per table. A failed probe PROPAGATES — a count swallowed into
+/// zero would render as "no dependents, safe to delete", the one failure mode
+/// a safety surface cannot have (failure-not-empty-success).
+fn table_counts(
+    conn: &rusqlite::Connection,
+    tables: &[String],
+) -> Result<Vec<(String, u64)>, AppError> {
+    let mut out = Vec::with_capacity(tables.len());
+    for table in tables {
+        let n: i64 =
+            conn.query_row(&format!("SELECT COUNT(*) AS n FROM \"{table}\""), [], |r| {
+                r.get("n")
+            })?;
+        out.push((table.clone(), n.max(0) as u64));
+    }
+    Ok(out)
+}
+
+/// The enforcement-path prune shared by preview and act (deferred-fixes #31;
+/// registry `entity-lifecycle/blast-radius-computation`, 2026-08-29 amendment:
+/// "sharing the predicate is still not sharing the effect"). The real DELETE
+/// executes inside a transaction with foreign keys ON, casualties are tallied
+/// per table by diffing row counts — which SEES the FK cascade and the FTS
+/// trigger, unlike any count on the target table — and the mode decides only
+/// the final verb: ROLLBACK for a dry-run, COMMIT for the act.
+pub fn prune_executions(
+    conn: &mut rusqlite::Connection,
+    cutoff: &str,
+    dry_run: bool,
+) -> Result<(u64, Vec<TableImpact>), AppError> {
+    let where_clause =
+        format!("status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1");
+    let tables = countable_tables(conn)?;
+    // BEGIN IMMEDIATE: the before-counts inform the delete's accounting, and
+    // the preview's honesty depends on counts and delete seeing one world
+    // (transaction-boundary golden path - a deferred snapshot cannot upgrade
+    // past a concurrent committer).
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let before = table_counts(&tx, &tables)?;
+    let pruned_executions = tx.execute(
+        &format!("DELETE FROM persona_executions WHERE {where_clause}"),
+        [&cutoff],
+    )? as u64;
+    let after = table_counts(&tx, &tables)?;
+    if dry_run {
+        tx.rollback()?;
+    } else {
+        tx.commit()?;
+    }
+    let mut casualties: Vec<TableImpact> = before
+        .iter()
+        .zip(after.iter())
+        .filter(|((_, b), (_, a))| b > a)
+        .map(|((table, b), (_, a))| TableImpact {
+            table: table.clone(),
+            rows: b - a,
+        })
+        .collect();
+    casualties.sort_by(|x, y| y.rows.cmp(&x.rows).then_with(|| x.table.cmp(&y.table)));
+    Ok((pruned_executions, casualties))
+}
+
 /// Prune terminal executions older than `older_than_hours` (default + floor 24h).
-/// **Dry-run by default** — pass `dry_run = false` to actually delete.
+/// **Dry-run by default** — pass `dry_run = false` to actually delete. Both
+/// modes run the identical enforcement path ([`prune_executions`]); the result
+/// doubles as the preview (dry-run) and the receipt (act).
 #[tauri::command]
 pub fn prune_storage(
     state: State<'_, Arc<AppState>>,
@@ -115,30 +217,105 @@ pub fn prune_storage(
         .unwrap_or(MIN_PRUNE_AGE_HOURS)
         .max(MIN_PRUNE_AGE_HOURS);
     let cutoff = cutoff_rfc3339(age_hours);
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
 
-    let where_clause =
-        format!("status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1");
-
-    let pruned_executions: u64 = conn
-        .query_row(
-            &format!("SELECT COUNT(*) FROM persona_executions WHERE {where_clause}"),
-            [&cutoff],
-            |r| r.get::<_, i64>(0),
-        )
-        .unwrap_or(0)
-        .max(0) as u64;
-
-    if !dry_run && pruned_executions > 0 {
-        conn.execute(
-            &format!("DELETE FROM persona_executions WHERE {where_clause}"),
-            [&cutoff],
-        )?;
-    }
+    let (pruned_executions, casualties) = prune_executions(&mut conn, &cutoff, dry_run)?;
+    let total_rows = casualties.iter().map(|c| c.rows).sum();
 
     Ok(PruneResult {
         dry_run,
         pruned_executions,
         age_hours,
+        casualties,
+        total_rows,
     })
+}
+
+#[cfg(test)]
+mod prune_tests {
+    use super::*;
+    use crate::db::{init_test_db, PoolExt};
+
+    fn seed(conn: &rusqlite::Connection) {
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'Prune Test', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .unwrap();
+        // Two prunable terminal runs (old), one recent run the floor protects.
+        conn.execute_batch(
+            "INSERT INTO persona_executions (id, persona_id, status, completed_at, created_at)
+             VALUES ('e-old-1', 'p1', 'completed', datetime('now', '-3 days'), datetime('now', '-3 days'));
+             INSERT INTO persona_executions (id, persona_id, status, completed_at, created_at)
+             VALUES ('e-old-2', 'p1', 'failed', datetime('now', '-2 days'), datetime('now', '-2 days'));
+             INSERT INTO persona_executions (id, persona_id, status, completed_at, created_at)
+             VALUES ('e-new', 'p1', 'completed', datetime('now'), datetime('now'));
+             -- Cascade children the target-table count can never see.
+             INSERT INTO persona_tool_usage (id, execution_id, persona_id, tool_name, created_at)
+             VALUES ('tu1', 'e-old-1', 'p1', 'Bash', datetime('now', '-3 days'));
+             INSERT INTO persona_tool_usage (id, execution_id, persona_id, tool_name, created_at)
+             VALUES ('tu2', 'e-old-2', 'p1', 'Read', datetime('now', '-2 days'));
+             INSERT INTO persona_tool_usage (id, execution_id, persona_id, tool_name, created_at)
+             VALUES ('tu3', 'e-new', 'p1', 'Edit', datetime('now'));",
+        )
+        .unwrap();
+    }
+
+    fn count(conn: &rusqlite::Connection, table: &str) -> i64 {
+        conn.query_row(&format!("SELECT COUNT(*) AS n FROM {table}"), [], |r| {
+            r.get("n")
+        })
+        .unwrap()
+    }
+
+    fn casualty(casualties: &[TableImpact], table: &str) -> Option<u64> {
+        casualties.iter().find(|c| c.table == table).map(|c| c.rows)
+    }
+
+    /// The dry-run IS the enforcement path: it must see the cascade (the
+    /// 3.29× class the shared-predicate count missed) and delete nothing.
+    #[test]
+    fn dry_run_sees_the_cascade_and_deletes_nothing() {
+        let pool = init_test_db().unwrap();
+        let mut conn = pool.conn("storage::prune_tests").unwrap();
+        seed(&conn);
+        let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
+
+        let (pruned, casualties) = prune_executions(&mut conn, &cutoff, true).unwrap();
+        assert_eq!(pruned, 2);
+        assert_eq!(casualty(&casualties, "persona_executions"), Some(2));
+        assert_eq!(
+            casualty(&casualties, "persona_tool_usage"),
+            Some(2),
+            "the preview must see the FK cascade, not just the target table"
+        );
+        // Rolled back: nothing actually left.
+        assert_eq!(count(&conn, "persona_executions"), 3);
+        assert_eq!(count(&conn, "persona_tool_usage"), 3);
+    }
+
+    /// Preview and act share one implementation: on an unchanged DB the act's
+    /// receipt equals the dry-run's prediction, and the floor-protected recent
+    /// run (and its child) survive.
+    #[test]
+    fn act_receipt_matches_the_dry_run_prediction() {
+        let pool = init_test_db().unwrap();
+        let mut conn = pool.conn("storage::prune_tests").unwrap();
+        seed(&conn);
+        let cutoff = cutoff_rfc3339(MIN_PRUNE_AGE_HOURS);
+
+        let (predicted, predicted_casualties) = prune_executions(&mut conn, &cutoff, true).unwrap();
+        let (actual, actual_casualties) = prune_executions(&mut conn, &cutoff, false).unwrap();
+        assert_eq!(predicted, actual);
+        assert_eq!(predicted_casualties, actual_casualties);
+
+        assert_eq!(count(&conn, "persona_executions"), 1);
+        assert_eq!(count(&conn, "persona_tool_usage"), 1);
+
+        // Idempotent: a second act finds nothing prunable.
+        let (again, again_casualties) = prune_executions(&mut conn, &cutoff, false).unwrap();
+        assert_eq!(again, 0);
+        assert!(again_casualties.is_empty());
+    }
 }

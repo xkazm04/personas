@@ -3,7 +3,7 @@ import { Compass, MessageSquareText, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { WALKTHROUGHS } from '@/features/plugins/companion/guidance/walkthroughs';
-import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { composeTour, ingestComposedTour } from '@/stores/slices/system/dynamicTours';
 import { silentCatch } from '@/lib/silentCatch';
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -52,7 +52,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
           return;
         }
         setComposeState('idle');
-        useSystemStore.getState().startTour(id);
+        useTourStore.getState().startTour(id);
       })
       .catch((err) => {
         silentCatch('home/sub_cockpit/WalkthroughOfferWidget:compose')(err);

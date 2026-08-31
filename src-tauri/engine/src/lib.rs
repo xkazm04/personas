@@ -64,6 +64,8 @@ pub mod build_stall;
 pub mod bus;
 pub mod capability_contract;
 #[cfg(feature = "desktop")]
+pub mod channel_live_context;
+#[cfg(feature = "desktop")]
 pub mod channel_reply;
 pub mod chunker;
 pub mod claude_md_projection;

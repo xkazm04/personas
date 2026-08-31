@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   parseTriggerConfig,
   getTriggerCategory,
@@ -17,7 +17,18 @@ import {
   getTriggerTypeLabel,
 } from '../platform/triggerConstants';
 import { en } from '@/i18n/en';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
+
+// `triggers` is a code-split, non-core English section (see
+// src/i18n/useTranslation.ts's module header) — it isn't in en.ts's eager
+// core because no PRODUCTION call site ever exercises the `(t = en)` default
+// these functions carry (every real caller passes a live `t`); only this
+// suite calls them with `en` directly. Await the chunk once, up front,
+// rather than growing the production-eager core for a test-only path.
+beforeAll(async () => {
+  await preloadSectionsAsync('en', ['triggers']);
+});
 
 describe('parseTriggerConfig — raw config coercion', () => {
   // Regression guard: `JSON.parse('null')` returns null, and the previous

@@ -125,14 +125,16 @@ pub fn update_run_status(
         current_status
             .validate_transition(status)
             .map_err(AppError::Validation)?;
-        conn.execute(
+        // CAS: `AND status = ?7` closes the TOCTOU gap between the SELECT
+        // above and this UPDATE (same spelling as events.rs::update_status).
+        let rows = conn.execute(
             "UPDATE genome_breeding_runs SET
                 status = ?1,
                 offspring_count = COALESCE(?2, offspring_count),
                 summary = COALESCE(?3, summary),
                 error = COALESCE(?4, error),
                 completed_at = COALESCE(?5, completed_at)
-             WHERE id = ?6",
+             WHERE id = ?6 AND status = ?7",
             params![
                 status.as_str(),
                 offspring_count,
@@ -140,8 +142,14 @@ pub fn update_run_status(
                 error,
                 completed_at,
                 id,
+                current,
             ],
         )?;
+        if rows == 0 {
+            return Err(AppError::Validation(format!(
+                "GenomeBreedingRun {id} status changed concurrently (expected '{current}')"
+            )));
+        }
         Ok(())
     })
 }

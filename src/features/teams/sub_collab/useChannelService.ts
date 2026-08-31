@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { CHANNEL_POLL_MS } from '@/stores/slices/pipeline/channelSlice';
+import { usePolling } from '@/hooks/utility/timing/usePolling';
 
 /** Trailing window that folds a progress-event burst into one head refresh. */
 const COALESCE_MS = 1_000;
@@ -24,6 +25,16 @@ export function useChannelService(): void {
   const refresh = usePipelineStore((s) => s.refreshSubscribedChannels);
   const refreshPersonas = usePipelineStore((s) => s.refreshSubscribedPersonaChannels);
   const notifyPersona = usePipelineStore((s) => s.notifyPersonaChannel);
+
+  // Fallback poll for the sources with no push channel yet (bus events,
+  // memories). Routed through the shared polling coordinator so it suspends
+  // while the window is hidden/minimized — this is a UI-freshness poll, not a
+  // notification path (TEAM_ASSIGNMENT_PROGRESS above stays push-driven and
+  // keeps firing), so there's nothing to preserve while nobody is looking.
+  const runFallbackPoll = useCallback(async () => {
+    await Promise.all([refresh(), refreshPersonas()]);
+  }, [refresh, refreshPersonas]);
+  usePolling(runFallbackPoll, { interval: CHANNEL_POLL_MS, enabled: true, name: 'channelService' });
 
   useEffect(() => {
     let cancelled = false;
@@ -71,14 +82,8 @@ export function useChannelService(): void {
       else personaUnlisten = u;
     });
 
-    const timer = setInterval(() => {
-      void refresh();
-      void refreshPersonas();
-    }, CHANNEL_POLL_MS);
-
     return () => {
       cancelled = true;
-      clearInterval(timer);
       if (pending !== null) clearTimeout(pending);
       if (personaPending !== null) clearTimeout(personaPending);
       if (unlisten) unlisten();

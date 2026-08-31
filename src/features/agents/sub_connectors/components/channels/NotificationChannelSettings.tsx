@@ -92,7 +92,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       const typeDef = channelTypes.find(t => t.type === channel.type);
       if (!typeDef) continue;
       for (const field of typeDef.configFields) {
-        if (field.label.toLowerCase().includes('(optional)')) continue;
+        if (field.optional) continue;
         if (!channel.config[field.key]?.trim()) errors.push(`${typeDef.label}: ${field.label} is required`);
       }
     }

@@ -8,6 +8,7 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "@/stores/systemStore";
+import { useTourStore } from "@/stores/tourStore";
 import { getActiveTourSteps } from "@/stores/slices/system/tourSlice";
 import { useAgentStore } from "@/stores/agentStore";
 import { storeBus } from "@/lib/storeBus";
@@ -2646,19 +2647,19 @@ const bridge: TestBridge = {
   // and assert progress. `tourEmit` fires a completion event directly (used
   // when a step's natural completion is impractical to drive in-test).
   tourStart(tourId?: string) {
-    useSystemStore.getState().startTour(tourId as Parameters<ReturnType<typeof useSystemStore.getState>['startTour']>[0]);
+    useTourStore.getState().startTour(tourId as Parameters<ReturnType<typeof useTourStore.getState>['startTour']>[0]);
     return { success: true };
   },
   tourReset(tourId?: string) {
-    useSystemStore.getState().resetTour(tourId as Parameters<ReturnType<typeof useSystemStore.getState>['resetTour']>[0]);
+    useTourStore.getState().resetTour(tourId as Parameters<ReturnType<typeof useTourStore.getState>['resetTour']>[0]);
     return { success: true };
   },
   tourEmit(eventKey: string) {
-    useSystemStore.getState().emitTourEvent(eventKey as Parameters<ReturnType<typeof useSystemStore.getState>['emitTourEvent']>[0]);
+    useTourStore.getState().emitTourEvent(eventKey as Parameters<ReturnType<typeof useTourStore.getState>['emitTourEvent']>[0]);
     return { success: true };
   },
   tourState() {
-    const s = useSystemStore.getState();
+    const s = useTourStore.getState();
     const steps = getActiveTourSteps(s.tourActiveTourId);
     return {
       active: s.tourActive,

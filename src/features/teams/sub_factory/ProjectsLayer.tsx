@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getProjectFavicon } from '@/api/devTools/devTools';
 import { projectWallSummary } from '@/api/devTools/milestones';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ProjectsPassportWall } from './passport';
@@ -24,8 +25,10 @@ import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
 
 /** root_path → favicon data URL (null = probed, none found). Module scope —
- *  repo favicons don't change mid-session; remounts must not re-probe N repos. */
-const FAVICON_CACHE = new Map<string, string | null>();
+ *  repo favicons don't change mid-session; remounts must not re-probe N repos.
+ *  `createModuleCache` bounds it with `maxSize` rather than a bare `Map`
+ *  (see docs/concepts/golden-paths/shared-fetch-cache.md §12 item 10). */
+const FAVICON_CACHE = createModuleCache<string, string | null>({ maxSize: 32 });
 
 export function ProjectsLayer({
   onOpen,

@@ -935,7 +935,8 @@ pub async fn dev_tools_run_overnight_now(
     project_id: String,
 ) -> Result<NightRun, AppError> {
     require_auth(&state).await?;
-    run_overnight_now_core(&state.db, &app, &project_id).await
+    // No override: a human's "run it now" runs the project's own mode.
+    run_overnight_now_core(&state.db, &app, &project_id, None).await
 }
 
 /// The body of [`dev_tools_run_overnight_now`], without the IPC auth check and
@@ -948,22 +949,45 @@ pub async fn dev_tools_run_overnight_now(
 /// identically here. The headless bridge's tick endpoint
 /// (`docs/architecture/cloud-integration-bridge.md` §13) calls this, so an
 /// unattended loop cannot get a *different* night than a human would.
+/// `mode_override` runs this ONE night at a mode the caller names instead of the
+/// project's stored one, **without writing it back** — the headless test bridge's
+/// `autopilot` field (§13.13), and nothing else. It exists so a bench can ask a
+/// `full` project for one non-dispatching ideation night without leaving the
+/// project degraded after the run: the stored mode is read here and never
+/// touched, so the next real night is the one the operator configured. Every
+/// production caller passes `None`.
 pub(crate) async fn run_overnight_now_core(
     pool: &DbPool,
     app: &AppHandle,
     project_id: &str,
+    mode_override: Option<AutopilotMode>,
 ) -> Result<NightRun, AppError> {
     let project_id = project_id.to_string();
     let modes = autopilot::load_modes(pool);
-    let mode = modes
+    let stored = modes
         .get(project_id.as_str())
         .copied()
         .unwrap_or(AutopilotMode::Off);
+    // The override replaces the mode for the whole night — the capability gate
+    // below, the ledger row's recorded mode, and the dispatch gate inside
+    // `run_project_night` all read this one value, so an overridden night is
+    // that mode's night end to end rather than a hybrid of two.
+    let mode = mode_override.unwrap_or(stored);
     if !mode.allows(Capability::ScanAndTriage) {
-        return Err(AppError::Validation(format!(
+        let base = format!(
             "project autopilot mode `{}` does not grant ScanAndTriage — set it to suggest or full first",
             mode.as_str()
-        )));
+        );
+        return Err(AppError::Validation(match mode_override {
+            // Say whose mode refused: an overridden refusal that read like the
+            // stored one would send a driver to change a setting that was
+            // already fine.
+            Some(_) => format!(
+                "{base} (tick override; the stored mode is `{}`)",
+                stored.as_str()
+            ),
+            None => base,
+        }));
     }
     let now = chrono::Local::now().naive_local();
     let key = format!("{}-manual-{}", now.format("%Y-%m-%d"), now.format("%H%M%S"));

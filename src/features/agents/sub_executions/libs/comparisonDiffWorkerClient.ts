@@ -32,6 +32,65 @@ const pendingJson = new Map<number, PendingJson>();
 let worker: Worker | null | undefined;
 let nextRequestId = 1;
 
+/**
+ * Max cached diff results per kind. Long-session hygiene: these caches were
+ * unbounded and keyed by a hash of the compared payloads, so a session that
+ * compares many execution pairs over a few days accumulated full
+ * LineDiffEntry[]/JsonDiffEntry[] arrays forever. Modeled on
+ * `fleetTerminalManager`'s MAX_PARKED/MAX_WEBGL discipline (bounded LRU + an
+ * eviction counter): a cap set too low and "comparisons feel slow to
+ * recompute" would otherwise read identically without the counter.
+ */
+const MAX_CACHE_ENTRIES = 24;
+
+let lineCacheEvictions = 0;
+let jsonCacheEvictions = 0;
+
+/** Test-only / diagnostic accessor for the eviction counters. */
+export function __getComparisonCacheStats(): {
+  lineSize: number;
+  jsonSize: number;
+  lineEvictions: number;
+  jsonEvictions: number;
+} {
+  return {
+    lineSize: lineCache.size,
+    jsonSize: jsonCache.size,
+    lineEvictions: lineCacheEvictions,
+    jsonEvictions: jsonCacheEvictions,
+  };
+}
+
+/** Test-only: clear both caches and reset the eviction counters. */
+export function __resetComparisonCachesForTests(): void {
+  lineCache.clear();
+  jsonCache.clear();
+  lineCacheEvictions = 0;
+  jsonCacheEvictions = 0;
+}
+
+/** Read `key`, touching it to the most-recently-used end on a hit. */
+function lruGet<V>(cache: Map<string, V>, key: string): V | undefined {
+  const value = cache.get(key);
+  if (value !== undefined) {
+    cache.delete(key);
+    cache.set(key, value);
+  }
+  return value;
+}
+
+/** Write `key`, evicting the least-recently-used entry past the cap. */
+function lruSet<V>(cache: Map<string, V>, key: string, value: V, onEvict: () => void): void {
+  cache.delete(key);
+  cache.set(key, value);
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey: string | undefined = cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+    onEvict();
+  }
+}
+
 function hashContent(value: string | null): string {
   const text = value ?? '';
   let hash = 0x811c9dc5;
@@ -119,7 +178,7 @@ export function computeLineDiffOffThread(
   onChunk: (chunk: LineDiffEntry[]) => void,
 ): { cancel: () => void; promise: Promise<LineDiffEntry[]> } {
   const key = diffCacheKey(left, right);
-  const cached = lineCache.get(key);
+  const cached = lruGet(lineCache, key);
   if (cached) {
     let cancelled = false;
     return {
@@ -142,7 +201,7 @@ export function computeLineDiffOffThread(
       (left ?? '').split('\n').filter((line) => line.trim()),
       (right ?? '').split('\n').filter((line) => line.trim()),
     );
-    lineCache.set(key, result);
+    lruSet(lineCache, key, result, () => lineCacheEvictions++);
     queueMicrotask(() => onChunk(result));
     return { cancel: () => undefined, promise: Promise.resolve(result) };
   }
@@ -152,7 +211,7 @@ export function computeLineDiffOffThread(
     pendingLine.set(id, {
       onChunk,
       resolve: (result) => {
-        lineCache.set(key, result);
+        lruSet(lineCache, key, result, () => lineCacheEvictions++);
         resolve(result);
       },
       reject,
@@ -173,7 +232,7 @@ export function computeJsonDiffOffThread(
   right: string | null,
 ): { cancel: () => void; promise: Promise<JsonDiffEntry[]> } {
   const key = diffCacheKey(left, right);
-  const cached = jsonCache.get(key);
+  const cached = lruGet(jsonCache, key);
   if (cached) {
     return { cancel: () => undefined, promise: Promise.resolve(cached) };
   }
@@ -181,7 +240,7 @@ export function computeJsonDiffOffThread(
   const activeWorker = getWorker();
   if (!activeWorker) {
     const result = jsonDiff(left, right);
-    jsonCache.set(key, result);
+    lruSet(jsonCache, key, result, () => jsonCacheEvictions++);
     return { cancel: () => undefined, promise: Promise.resolve(result) };
   }
 
@@ -189,7 +248,7 @@ export function computeJsonDiffOffThread(
   const promise = new Promise<JsonDiffEntry[]>((resolve, reject) => {
     pendingJson.set(id, {
       resolve: (result) => {
-        jsonCache.set(key, result);
+        lruSet(jsonCache, key, result, () => jsonCacheEvictions++);
         resolve(result);
       },
       reject,

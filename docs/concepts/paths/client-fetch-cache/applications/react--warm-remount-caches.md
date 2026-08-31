@@ -56,6 +56,30 @@ view, where a timestamp-only gate would skip the refetch *and* have no data
 to show — the exact failure the technique's "ageless latch" warning
 describes.
 
+## The second extracted primitive — the one for the map, not the slot
+
+The technique above notes that the single-slot form is deliberate, and to
+"reach for the map only when the working set genuinely holds several scopes
+at once." [`src/hooks/utility/data/useModuleSubscription.ts`](../../../../../src/hooks/utility/data/useModuleSubscription.ts)'s
+`createModuleCache` is that map's shared primitive — found late (added to
+this evidence base 2026-08-30; see `shared-fetch-cache.md` §12 item 10 for
+how the earlier sweep missed it). It is a stronger fit than
+`createTtlValueCache` for the multi-entry case specifically because it
+satisfies the "Keyed and bounded" obligation above in one construction:
+`{ ttlMs, maxSize }` at creation gives both a freshness window *and* an
+eviction order (expired entries first, then least-recently-written), where
+`createTtlValueCache` has no `maxSize` and must not be used for a key
+population that grows with every entity the user visits. It also pairs a
+`useModuleSubscription`/`useModuleCacheSubscription` hook
+(`useSyncExternalStore`-based) so a component re-renders on `notify()`
+without a manual re-render kick — useful when several components read the
+same cache and one mutation needs to reach all of them.
+
+**Division of labor going forward:** `createTtlValueCache` remains correct
+for an existing single/few-key adopter; a *new* module-scoped cache whose
+key space is an entity id (project, credential, file, …) should be built on
+`createModuleCache` with an explicit `maxSize`, not a hand-rolled `Map`.
+
 ## Deviations observed (standard kept; not fixed here)
 
 - The hand-rolled slots (both files above) revalidate on every mount —

@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Your agents need credentials to run",
+  "credentials_subtitle": "Add API keys and service connections so your agents can interact with external tools.",
+  "triggers_title": "This agent runs manually only",
+  "triggers_subtitle": "Add a trigger to automate it -- run on a schedule, when data arrives, or when something changes.",
+  "executions_title": "No executions yet",
+  "executions_subtitle": "Get started in three steps to see activity here.",
+  "step_create": "Create an agent",
+  "step_credential": "Add a credential",
+  "step_run": "Run your agent",
+  "events_title": "No event subscriptions yet",
+  "events_subtitle": "Subscribe to events so this agent reacts automatically when things happen.",
+  "tools_title": "No tools or services connected",
+  "tools_subtitle": "Connect external services so your agent can take actions and access data.",
+  "use_cases_title": "No use cases defined yet",
+  "use_cases_subtitle": "Define what this agent should do -- import from a workflow or describe it in plain language.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

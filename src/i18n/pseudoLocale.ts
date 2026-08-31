@@ -62,9 +62,22 @@ function transform(value: unknown): unknown {
 }
 
 let cached: Translations | null = null;
+let cachedVersion = -1;
 
-export function buildPseudoBundle(en: Translations): Translations {
-  if (!cached) cached = transform(en) as Translations;
+/**
+ * @param version A monotonically increasing counter (useTranslation.ts's
+ *   `bundleVersion`) that bumps every time any translation section finishes
+ *   loading. English sections are largely code-split now (see
+ *   useTranslation.ts's module header), so `en` can be partial — core
+ *   sections only — the first time pseudo mode is toggled. Keying the cache
+ *   on `version` re-derives the pseudo bundle as more sections land instead
+ *   of freezing forever on whatever was resident at the first call.
+ */
+export function buildPseudoBundle(en: Translations, version: number): Translations {
+  if (!cached || cachedVersion !== version) {
+    cached = transform(en) as Translations;
+    cachedVersion = version;
+  }
   return cached;
 }
 

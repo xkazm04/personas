@@ -8,6 +8,7 @@ import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTourStore } from '@/stores/tourStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -399,11 +400,11 @@ function ShortcutsFooterIcon() {
 
 function TourResumeFooterIcon() {
   const { t, tx } = useTranslation();
-  const tourActive = useSystemStore((s) => s.tourActive);
-  const tourDismissed = useSystemStore((s) => s.tourDismissed);
-  const tourCompleted = useSystemStore((s) => s.tourCompleted);
-  const tourId = useSystemStore((s) => s.tourActiveTourId);
-  const stepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const tourActive = useTourStore((s) => s.tourActive);
+  const tourDismissed = useTourStore((s) => s.tourDismissed);
+  const tourCompleted = useTourStore((s) => s.tourCompleted);
+  const tourId = useTourStore((s) => s.tourActiveTourId);
+  const stepCompleted = useTourStore((s) => s.tourStepCompleted);
 
   const steps = getActiveTourSteps(tourId);
   const total = steps.length;
@@ -415,8 +416,8 @@ function TourResumeFooterIcon() {
     // Resume WITHOUT an aggressive route jump: startTour reactivates the tour,
     // then tourResumePending makes GuidedTour show its "continue where you left
     // off" window first and redirect only after the user confirms.
-    useSystemStore.getState().startTour(tourId);
-    useSystemStore.setState({ tourDismissed: false, tourResumePending: true });
+    useTourStore.getState().startTour(tourId);
+    useTourStore.setState({ tourDismissed: false, tourResumePending: true });
   }, [tourId]);
 
   if (!show) return null;

@@ -461,7 +461,8 @@ enum FallbackPolicy {
 }
 
 fn fallback_policy() -> FallbackPolicy {
-    if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
+    // One strict boolean vocabulary for the crate — see `utils::env_bool_strict`.
+    if crate::utils::env_bool_strict("PERSONAS_ALLOW_FALLBACK_KEY", false) {
         FallbackPolicy::Allow
     } else {
         FallbackPolicy::Deny
@@ -1221,15 +1222,22 @@ pub fn key_source_label() -> &'static str {
 /// The master key never changes at runtime, so the cipher can be constructed
 /// once and reused for every `encrypt_for_db` / `decrypt_from_db` call.
 fn get_cipher() -> Result<&'static Aes256Gcm, CryptoError> {
-    static CIPHER: OnceLock<Result<Aes256Gcm, String>> = OnceLock::new();
-    let result = CIPHER.get_or_init(|| {
-        let key = get_master_key().map_err(|e| e.to_string())?;
-        Ok(Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key)))
-    });
-    match result {
-        Ok(cipher) => Ok(cipher),
-        Err(e) => Err(CryptoError::KeyManagement(e.clone())),
+    // Cache only a SUCCESSFULLY-built cipher (same fix as `get_master_key`):
+    // caching the first *outcome* meant one transient keychain failure returned
+    // the stale `Err` forever and bricked encryption until restart. Storing
+    // only on success lets a later call retry and succeed.
+    static CIPHER: OnceLock<Aes256Gcm> = OnceLock::new();
+
+    if let Some(cipher) = CIPHER.get() {
+        return Ok(cipher);
     }
+
+    let key = get_master_key()?;
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    // If another thread raced us, `get_or_init` returns the winner's value —
+    // both are built from the same master key, so either is correct, and the
+    // reference comes back without a second `get()` to unwrap.
+    Ok(CIPHER.get_or_init(|| cipher))
 }
 
 /// Encrypt plaintext string, returning `(base64_ciphertext, base64_nonce)` for DB storage.

@@ -1,10 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { deriveProgress, milestoneForPct } from '../RacingProgress';
 import { MILESTONES } from '../strategyPresets';
-import { getEnglishTranslations } from '@/i18n/englishSections';
+import { getEnglishTranslationsAsync } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import type { DevTask } from '@/lib/bindings/DevTask';
 
-const t = getEnglishTranslations();
+// `plugins` (and whatever other section deriveProgress reads) is a
+// code-split, non-core English section now — see src/i18n/useTranslation.ts's
+// module header — so this suite awaits every section's chunk once, up front,
+// rather than assuming the full catalog is synchronously resident.
+let t: Translations;
+beforeAll(async () => {
+  t = await getEnglishTranslationsAsync();
+});
 
 function task(overrides: Partial<DevTask>): DevTask {
   return {

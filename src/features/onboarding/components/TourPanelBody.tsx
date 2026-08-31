@@ -1,5 +1,5 @@
 import { ChevronRight, ChevronLeft, Check, Crosshair } from 'lucide-react';
-import { useSystemStore } from "@/stores/systemStore";
+import { useTourStore } from "@/stores/tourStore";
 import { getLocalizedTourSteps, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId } from '@/stores/slices/system/tourSlice';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -84,7 +84,7 @@ export function TourPanelBody({
                   <Tooltip content={t.onboarding.tour_substep_prev}>
                     <button
                       type="button"
-                      onClick={() => useSystemStore.getState().goToSubStep(subStepIndex - 1)}
+                      onClick={() => useTourStore.getState().goToSubStep(subStepIndex - 1)}
                       disabled={subStepIndex <= 0}
                       data-testid="tour-substep-prev"
                       aria-label={t.onboarding.tour_substep_prev}
@@ -96,7 +96,7 @@ export function TourPanelBody({
                   <Tooltip content={t.onboarding.tour_substep_next}>
                     <button
                       type="button"
-                      onClick={() => useSystemStore.getState().goToSubStep(subStepIndex + 1)}
+                      onClick={() => useTourStore.getState().goToSubStep(subStepIndex + 1)}
                       disabled={subStepIndex >= currentStep.subSteps.length - 1}
                       data-testid="tour-substep-next"
                       aria-label={t.onboarding.tour_substep_next}
@@ -123,7 +123,7 @@ export function TourPanelBody({
                   >
                     <button
                       type="button"
-                      onClick={() => useSystemStore.getState().goToSubStep(i)}
+                      onClick={() => useTourStore.getState().goToSubStep(i)}
                       className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1.5 text-left"
                     >
                       {done ? (

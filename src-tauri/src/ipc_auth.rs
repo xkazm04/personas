@@ -631,10 +631,12 @@ pub fn wrap_invoke_handler<R: tauri::Runtime>(
                     command = %cmd,
                     "Rejected IPC call: invalid or missing session token"
                 );
-                invoke.resolver.reject(serde_json::json!({
-                    "error": "IPC authentication failed: invalid session token",
-                    "kind": "Forbidden"
-                }));
+                // Reject through `AppError` so the payload carries the
+                // canonical envelope (kind "forbidden" + category), not an
+                // ad-hoc shape the frontend must substring-match.
+                invoke.resolver.reject(AppError::Forbidden(
+                    "IPC authentication failed: invalid session token".into(),
+                ));
                 return true; // handled (rejected)
             }
 

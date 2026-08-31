@@ -3,6 +3,7 @@
   "blast_checking_impact": "Verificando impacto…",
   "blast_safe_to_delete": "No se encontraron recursos dependientes. Seguro para eliminar.",
   "blast_impact": "Impacto",
+  "blast_check_failed": "No se pudo comprobar qué afecta esta eliminación: la vista previa de impacto no está disponible. Proceda con precaución.",
   "grid_rows": "Filas",
   "grid_showing": "Mostrando {start}–{end} de {total} elementos",
   "grid_rows_per_page": "Filas por página",

@@ -625,6 +625,7 @@
     "storage_db_size": "数据库大小",
     "storage_prune": "清理旧运行",
     "storage_pruned": "已删除 {count} 个运行。",
+    "storage_cascade_note": "总影响:{tables} 个表中的 {total} 行(含级联删除)。",
     "storage_removable": "可删除",
     "storage_subtitle": "本地数据库使用情况及已完成运行的清理。",
     "storage_title": "存储",

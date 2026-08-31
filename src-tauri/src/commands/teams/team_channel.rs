@@ -615,32 +615,324 @@ pub fn list_team_slack_bridges(
         .collect())
 }
 
+/// How many prior channel rows a summoned persona sees as conversation context.
+const SUMMON_PRIOR_MESSAGES: i64 = 12;
+/// At most this many personas answer one directive, however many are mentioned.
+const SUMMON_CAP: usize = 3;
+const SUMMON_REPLY_DEADLINE_SECS: u64 = 30 * 60;
+const SUMMON_REPLY_POLL_SECS: u64 = 2;
+
 /// Post a user directive into the team channel. C1: stored in the
-/// authoritative `team_channel_messages` table (`author_kind='user'`,
-/// `consumer='inject'`). The orchestrator injects recent channel messages
-/// addressed to a persona at each step boundary and records delivery receipts
-/// on the message (see the orchestrator hook).
+/// authoritative `team_channel_messages` table (`author_kind='user'`).
+///
+/// Two delivery shapes, decided by `@`-mentions in the content:
+///
+/// - **No mention** → `consumer='inject'`, `addressed_to=NULL` (whole team):
+///   the orchestrator injects the message at each running step boundary and
+///   records delivery receipts — the original behavior. If nothing is
+///   running, the message waits.
+/// - **`@Persona Name` mentioned** → `consumer='mention'` (the documented
+///   routes-to-an-actor value, previously unimplemented), `addressed_to` set,
+///   and each mentioned team member is *summoned*: a follow-up execution runs
+///   with the channel history + a live-context block as input, and the reply
+///   lands back in the channel as its own `author_kind='persona'` row —
+///   whether or not any assignment is running. Matching is case-insensitive
+///   on the member's display name; capped at [`SUMMON_CAP`] personas.
 #[tauri::command]
-pub fn post_team_directive(
+pub async fn post_team_directive(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     team_id: String,
     content: String,
     reply_to: Option<String>,
 ) -> Result<crate::db::models::TeamChannelMessage, AppError> {
     require_auth_sync(&state)?;
-    channel_repo::create(
+
+    let mentioned = mentioned_members(&state.db, &team_id, &content)?;
+    let consumer = if mentioned.is_empty() {
+        "inject"
+    } else {
+        "mention"
+    };
+    let addressed_to = if mentioned.is_empty() {
+        None // whole team
+    } else {
+        Some(mentioned.iter().map(|(id, _)| id.clone()).collect())
+    };
+
+    let message = channel_repo::create(
         &state.db,
         crate::db::models::CreateChannelMessageInput {
-            team_id,
+            team_id: team_id.clone(),
             author_kind: "user".into(),
             author_id: None, // NULL author = the user
-            body: content,
-            addressed_to: None, // whole team
-            reply_to,           // threading: the channel message this replies to
+            body: content.clone(),
+            addressed_to,
+            reply_to, // threading: the channel message this replies to
             assignment_id: None,
-            consumer: Some("inject".into()),
+            consumer: Some(consumer.into()),
         },
+    )?;
+
+    for (persona_id, persona_name) in mentioned {
+        summon_member(
+            &state,
+            &app,
+            &team_id,
+            &message.id,
+            &content,
+            persona_id,
+            persona_name,
+        );
+    }
+
+    Ok(message)
+}
+
+/// Resolve the team's members whose display name is `@`-mentioned in `body`,
+/// case-insensitively, deduped, capped at [`SUMMON_CAP`].
+fn mentioned_members(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+    body: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    if !body.contains('@') {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT p.id, p.name FROM persona_team_members m
+         JOIN personas p ON p.id = m.persona_id
+         WHERE m.team_id = ?1",
+    )?;
+    let members = stmt
+        .query_map(params![team_id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)?;
+
+    let haystack = body.to_lowercase();
+    let mut matched: Vec<(String, String)> = members
+        .into_iter()
+        .filter(|(_, name)| {
+            let name = name.trim();
+            !name.is_empty() && haystack.contains(&format!("@{}", name.to_lowercase()))
+        })
+        .collect();
+    matched.truncate(SUMMON_CAP);
+    Ok(matched)
+}
+
+/// Spawn the summon follow-up for one mentioned member: execute with channel
+/// context, then write the reply (or the failure record) back into the team
+/// channel. Fire-and-forget — the directive post returns immediately.
+fn summon_member(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    team_id: &str,
+    message_id: &str,
+    content: &str,
+    persona_id: String,
+    persona_name: String,
+) {
+    // Conversation context: the last few non-deliberation channel messages
+    // BEFORE this one, oldest first — same shape Lane B renders.
+    let prior_messages: Vec<serde_json::Value> = (|| -> Result<_, AppError> {
+        let conn = state.db.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT author_kind, body FROM team_channel_messages
+             WHERE team_id = ?1 AND id != ?2 AND deliberation_id IS NULL
+             ORDER BY created_at DESC, id DESC LIMIT ?3",
+        )?;
+        let mut rows: Vec<serde_json::Value> = stmt
+            .query_map(params![team_id, message_id, SUMMON_PRIOR_MESSAGES], |r| {
+                Ok(serde_json::json!({
+                    "author": r.get::<_, String>(0)?,
+                    "content": r.get::<_, String>(1)?,
+                }))
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        rows.reverse();
+        Ok(rows)
+    })()
+    .unwrap_or_default();
+
+    // Same envelope as the persona channel's Lane B follow-up (`source:
+    // "channel"` also tells dispatch the chat lane is externally owned), plus
+    // the live-context block so the reply is situated in the team's state.
+    let input_data = serde_json::json!({
+        "source": "channel",
+        "channelId": team_id,
+        "messageId": message_id,
+        "author": "user",
+        "content": content,
+        "priorMessages": prior_messages,
+        "liveContext": crate::engine::channel_live_context::build_live_context(
+            &state.db,
+            &persona_id,
+            Some(team_id),
+        ),
+    });
+    // One execution per (message, persona), ever — a retry dedupes.
+    let idempotency_key = format!("channel:{team_id}:{message_id}:{persona_id}");
+
+    let state_arc: Arc<AppState> = state.inner().clone();
+    let app = app.clone();
+    let team_id = team_id.to_string();
+    let message_id = message_id.to_string();
+    let panic_pool = state_arc.db.clone();
+    let panic_team_id = team_id.clone();
+    let panic_message_id = message_id.clone();
+    let panic_persona_id = persona_id.clone();
+    let panic_name = persona_name.clone();
+    crate::background_job::spawn_guarded(
+        "team_channel_summon",
+        persona_id.clone(),
+        async move {
+            run_summon_followup(
+                state_arc,
+                app,
+                team_id,
+                persona_id,
+                persona_name,
+                message_id,
+                input_data.to_string(),
+                idempotency_key,
+            )
+            .await;
+        },
+        move |panic_msg| async move {
+            // Failure is not empty success: even a panic leaves a record.
+            insert_summon_reply(
+                &panic_pool,
+                &panic_team_id,
+                &panic_persona_id,
+                &panic_name,
+                &panic_message_id,
+                &format!("_(summon crashed: {panic_msg})_"),
+            );
+        },
+    );
+}
+
+/// The spawned half: execute, wait for the terminal state, post the reply
+/// into the team channel.
+#[allow(clippy::too_many_arguments)]
+async fn run_summon_followup(
+    state: Arc<AppState>,
+    app: tauri::AppHandle,
+    team_id: String,
+    persona_id: String,
+    persona_name: String,
+    message_id: String,
+    input_data: String,
+    idempotency_key: String,
+) {
+    let execution = crate::commands::execution::executions::execute_persona_inner(
+        &state,
+        app,
+        persona_id.clone(),
+        None,
+        Some(input_data),
+        None,
+        None,
+        Some(idempotency_key),
+        false,
     )
+    .await;
+
+    let execution = match execution {
+        Ok(exec) => exec,
+        Err(e) => {
+            insert_summon_reply(
+                &state.db,
+                &team_id,
+                &persona_id,
+                &persona_name,
+                &message_id,
+                &format!("_(summon failed to start: {e})_"),
+            );
+            return;
+        }
+    };
+
+    let deadline =
+        tokio::time::Instant::now() + tokio::time::Duration::from_secs(SUMMON_REPLY_DEADLINE_SECS);
+    loop {
+        match crate::engine::channel_reply::build_reply_text(&state.db, &execution.id) {
+            Ok(Some(text)) => {
+                insert_summon_reply(
+                    &state.db,
+                    &team_id,
+                    &persona_id,
+                    &persona_name,
+                    &message_id,
+                    &text,
+                );
+                return;
+            }
+            Ok(None) => {
+                if tokio::time::Instant::now() >= deadline {
+                    insert_summon_reply(
+                        &state.db,
+                        &team_id,
+                        &persona_id,
+                        &persona_name,
+                        &message_id,
+                        "_(run did not finish within 30 minutes — check the execution log)_",
+                    );
+                    return;
+                }
+                tokio::time::sleep(tokio::time::Duration::from_secs(SUMMON_REPLY_POLL_SECS)).await;
+            }
+            Err(e) => {
+                insert_summon_reply(
+                    &state.db,
+                    &team_id,
+                    &persona_id,
+                    &persona_name,
+                    &message_id,
+                    &format!("_(run ended without a reply: {e})_"),
+                );
+                return;
+            }
+        }
+    }
+}
+
+/// Insert the persona's reply as a `consumer='display'` channel row threaded
+/// under the summoning directive. The 15s channel poll surfaces it.
+fn insert_summon_reply(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+    persona_id: &str,
+    _persona_name: &str,
+    reply_to: &str,
+    body: &str,
+) {
+    let result = channel_repo::create(
+        pool,
+        crate::db::models::CreateChannelMessageInput {
+            team_id: team_id.to_string(),
+            author_kind: "persona".into(),
+            author_id: Some(persona_id.to_string()),
+            body: body.to_string(),
+            addressed_to: None,
+            reply_to: Some(reply_to.to_string()),
+            assignment_id: None,
+            consumer: Some("display".into()),
+        },
+    );
+    if let Err(e) = result {
+        tracing::error!(
+            team_id = %team_id,
+            persona_id = %persona_id,
+            error = %e,
+            "team channel: failed to persist summon reply row"
+        );
+    }
 }
 
 /// Athena (the companion) posts a message into a team channel (C2).
@@ -1063,5 +1355,51 @@ mod tests {
         let turns = read_channel(&conn, TEAM, Some(10), None, None, Some(&kinds)).unwrap();
         assert_eq!(ids(&turns), vec!["turn"]);
         assert_eq!(turns[0].deliberation_id.as_deref(), Some("d1"));
+    }
+
+    fn seed_member(conn: &Connection, persona_id: &str, name: &str) {
+        conn.execute(
+            "INSERT INTO personas (id, project_id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, 'default', ?2, 'sp', datetime('now'), datetime('now'))",
+            params![persona_id, name],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO persona_team_members (id, team_id, persona_id, created_at)
+             VALUES (?1, ?2, ?3, datetime('now'))",
+            params![format!("m-{persona_id}"), TEAM, persona_id],
+        )
+        .unwrap();
+    }
+
+    /// `@Name` matching is case-insensitive, only hits actual team members,
+    /// and a mention-free body resolves to nobody (whole-team inject path).
+    #[test]
+    fn mentioned_members_matches_case_insensitively_and_only_members() {
+        let pool = init_test_db().unwrap();
+        {
+            let conn = pool.get().unwrap();
+            seed_team(&conn);
+            seed_member(&conn, "p-rev", "Code Reviewer");
+            seed_member(&conn, "p-qa", "QA Guardian");
+        }
+
+        let hits =
+            mentioned_members(&pool, TEAM, "@code reviewer can you check the diff?").unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].0, "p-rev");
+
+        // Not a member name → no summon; plain text → no summon.
+        assert!(mentioned_members(&pool, TEAM, "@Grok is this true?")
+            .unwrap()
+            .is_empty());
+        assert!(mentioned_members(&pool, TEAM, "ship it")
+            .unwrap()
+            .is_empty());
+
+        // Both members mentioned in one directive.
+        let both =
+            mentioned_members(&pool, TEAM, "@Code Reviewer + @QA Guardian: thoughts?").unwrap();
+        assert_eq!(both.len(), 2);
     }
 }

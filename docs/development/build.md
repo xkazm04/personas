@@ -109,6 +109,40 @@ ts-rs binding generation is **not** part of this pipeline — it runs via
 `cargo test export_bindings`. The `binding-drift` job in CI catches forgotten
 regenerations.
 
+## React Compiler (experimental, flag-gated)
+
+`scripts/babel/react-compiler-vite-plugin.mjs` wires `babel-plugin-react-compiler`
+into the Vite build as a **dark-launched, build-only** experiment (ADR
+"react-compiler-build-only"). It is **off by default**: set
+`PERSONAS_REACT_COMPILER=1` to opt a build in.
+
+```bash
+PERSONAS_REACT_COMPILER=1 npx vite build   # or npm run build, tauri:build*, etc.
+```
+
+- **Build-only** — the plugin's `apply: 'build'` means it never touches `vite
+  dev` / `tauri dev`; dev-loop speed for the repo's ~4,800 source files is
+  unaffected either way.
+- **Standalone Babel pass, not `react({ babel })`** — under rolldown-vite,
+  `@vitejs/plugin-react`'s `babel` option is a silent no-op because JSX is
+  lowered by oxc. The plugin runs its own `enforce: 'pre'` Babel transform
+  before oxc, the same pattern already used by
+  `scripts/babel/dev-source-loc-vite-plugin.mjs` for DevInspector.
+- **Nothing is removed** — the repo's 1,356 `useMemo` + 2,114 `useCallback` +
+  98 `memo()` sites are untouched by this change; the compiler's memoization
+  runs alongside them until individual sites are deliberately migrated.
+
+**Measurement protocol before ever flipping the default to on:**
+1. Build twice (flag unset, then `PERSONAS_REACT_COMPILER=1`) and diff
+   `dist/assets/*.js` chunk sizes.
+2. Run the `<Profiler id="app-root">` instrumentation (`src/App.tsx` →
+   `window.__PERF__.recordRender`) against both builds via the
+   `perf-nav-walk` harness (`tests/playwright/perf-nav-walk.spec.ts`,
+   `scripts/perf/render-perf-report.mjs`) for a real render-cost comparison.
+3. Only promote the default from opt-in to opt-out after both show a
+   measured win, with `npm run test -- --run` and the golden-path census
+   still green.
+
 ## ARM64 vs x64 Windows
 
 Both architectures share `src-tauri/target/debug/deps/` — Cargo doesn't

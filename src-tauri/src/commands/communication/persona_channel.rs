@@ -554,6 +554,8 @@ pub async fn post_persona_channel_message(
     // Byte-shaped like the Slack poller's input_data (slack_poller.rs), with
     // source 'channel' and the persona id as the channel id — so the dispatch
     // prompt and `channel_reply::extract_reply_from_output` work unchanged.
+    // `liveContext` situates the reply in the persona's current state (recent
+    // runs + bus events) instead of chat history alone.
     let input_data = serde_json::json!({
         "source": "channel",
         "channelId": persona_id,
@@ -561,6 +563,8 @@ pub async fn post_persona_channel_message(
         "author": "user",
         "content": content,
         "priorMessages": prior_messages,
+        "liveContext":
+            crate::engine::channel_live_context::build_live_context(&state.db, &persona_id, None),
     });
     // Mirrors Slack's `slack:{channel}:{ts}` key: one execution per posted
     // message, ever — a retry of the spawn dedupes instead of double-running.

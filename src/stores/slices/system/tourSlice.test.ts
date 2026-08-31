@@ -25,7 +25,6 @@ import {
   type TourSlice,
   type TourId,
 } from "./tourSlice";
-import type { SystemStore } from "../../storeTypes";
 
 const STORAGE_KEY = "guided-tour-state";
 
@@ -39,16 +38,18 @@ function resetGlobals() {
 }
 
 // Minimal Zustand-style harness: matches the pattern used in
-// networkSlice.test.ts. We don't need any other slice for these tests
-// since startTour only reads/writes the tour-prefixed fields.
+// networkSlice.test.ts. tourSlice is a standalone store now (see
+// src/stores/tourStore.ts — docs ADR "tour-slice-extraction"), so the
+// harness's state type is TourSlice itself rather than the combined
+// SystemStore.
 function makeHarness() {
-  let state = {} as SystemStore;
+  let state = {} as TourSlice;
   const set = (
-    partial: Partial<SystemStore> | ((s: SystemStore) => Partial<SystemStore>),
+    partial: Partial<TourSlice> | ((s: TourSlice) => Partial<TourSlice>),
   ) => {
     const patch =
       typeof partial === "function"
-        ? (partial as (s: SystemStore) => Partial<SystemStore>)(state)
+        ? (partial as (s: TourSlice) => Partial<TourSlice>)(state)
         : partial;
     state = { ...state, ...patch };
   };

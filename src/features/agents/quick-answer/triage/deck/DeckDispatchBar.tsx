@@ -16,11 +16,22 @@
  *    what you are sending.
  *  • "Cancel all" / "Retry failed" — those operate on tasks that already exist,
  *    which is the Run Desk's own subject, not the deck's.
+ *
+ * ONE ADDITION the Run Desk never had: a trash beside the selection count. This
+ * tab drains the "accepted but never became work" pile, and dispatch only
+ * drains it in the direction of yes. A reviewer who had changed their mind
+ * about eleven things had no exit here at all, so the ideas stayed `accepted`
+ * with no task forever — precisely the limbo the tab was built to empty. It is
+ * deliberately an ICON beside the count rather than a second button beside
+ * Dispatch: the two acts are not peers, and a destructive control the same size
+ * and shape as the primary one is how the wrong one gets pressed.
  */
-import { Rocket } from 'lucide-react';
+import { useState } from 'react';
+import { Rocket, Trash2 } from 'lucide-react';
 
-import { AsyncButton } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { PillGroup, type PillOption } from '@/features/shared/components/forms/PillGroup';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -35,6 +46,9 @@ import {
 export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
+  // The confirm gate is bar-local: nothing outside needs to know it is open,
+  // and the hook deliberately does not ask — `remove()` just deletes.
+  const [confirming, setConfirming] = useState(false);
 
   const total = ctl.rows.length;
   const chosen = ctl.selected.size;
@@ -71,7 +85,40 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         <span className="ml-auto typo-label tabular-nums text-foreground">
           {tx(m.triage_accepted_selected, { count: chosen })}
         </span>
+        {/* Not an `AsyncButton`: pressing this opens a DIALOG, it does not start
+            the delete. The in-flight control is the dialog's own Confirm, which
+            disables itself and its sibling while `remove()` is pending. */}
+        <Tooltip content={m.triage_accepted_delete}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={m.triage_accepted_delete}
+            disabled={chosen === 0 || ctl.dispatching || ctl.removing}
+            onClick={() => setConfirming(true)}
+            className="shrink-0 text-foreground hover:bg-status-error/10 hover:text-status-error"
+            icon={<Trash2 className="h-3.5 w-3.5" />}
+          />
+        </Tooltip>
       </div>
+
+      {/* The gate. This is a hard `DELETE FROM dev_ideas` with no undo anywhere
+          in the app, so it is confirmed even though the rows are on screen and
+          the reviewer just ticked them. `danger` styling, and a body that says
+          what actually goes (the idea AND the record that it was accepted)
+          rather than the usual "are you sure?". */}
+      {confirming && (
+        <ConfirmDialog
+          danger
+          title={tx(m.triage_accepted_delete_title, { count: chosen })}
+          body={m.triage_accepted_delete_body}
+          confirmLabel={m.triage_accepted_delete_confirm}
+          onCancel={() => setConfirming(false)}
+          onConfirm={async () => {
+            await ctl.remove();
+            setConfirming(false);
+          }}
+        />
+      )}
 
       <Tooltip content={m.triage_accepted_concurrency_hint}>
         <div aria-label={m.triage_accepted_mode_aria}>
@@ -109,9 +156,10 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         </AsyncButton>
       </div>
 
-      {/* The outcome, until the next dispatch clears it. `skipped` is printed
-          BESIDE `dispatched` and never folded into it — a dispatch that half
-          worked must not read as one that worked. */}
+      {/* The outcome of whichever act ran last, until the next one clears it.
+          Both branches print the partial result BESIDE the successful one and
+          never folded into it — an act that half worked must not read as one
+          that worked. */}
       {ctl.report && (
         <button
           type="button"
@@ -122,17 +170,33 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
               : 'bg-status-success/10 text-status-success'
           }`}
         >
-          {ctl.report.error ?? (
-            <>
-              {tx(m.triage_accepted_result, { count: ctl.report.dispatched })}
-              {ctl.report.skipped > 0 && (
-                <span className="text-status-warning">
-                  {' · '}
-                  {tx(m.triage_accepted_result_skipped, { count: ctl.report.skipped })}
-                </span>
-              )}
-            </>
-          )}
+          {ctl.report.error ??
+            (ctl.report.kind === 'dispatch' ? (
+              <>
+                {tx(m.triage_accepted_result, { count: ctl.report.dispatched })}
+                {ctl.report.skipped > 0 && (
+                  <span className="text-status-warning">
+                    {' · '}
+                    {tx(m.triage_accepted_result_skipped, { count: ctl.report.skipped })}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                {tx(m.triage_accepted_deleted, { count: ctl.report.removed })}
+                {/* Something else got there first — this app runs several
+                    sessions against one database, and a delete that found less
+                    than it asked for is a fact, not a rounding error. */}
+                {ctl.report.requested > ctl.report.removed && (
+                  <span className="text-status-warning">
+                    {' · '}
+                    {tx(m.triage_accepted_deleted_gone, {
+                      count: ctl.report.requested - ctl.report.removed,
+                    })}
+                  </span>
+                )}
+              </>
+            ))}
         </button>
       )}
     </div>

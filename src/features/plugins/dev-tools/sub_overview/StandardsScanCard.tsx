@@ -5,15 +5,15 @@
  * `dev_tools_standards_scan_status` event to know when it finishes, and renders
  * the per-rule compliance findings from `dev_standards`.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, ScanSearch } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { silentCatch } from '@/lib/silentCatch';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName } from '@/lib/eventRegistry';
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'neutral'> = {
   present: 'success',
@@ -33,19 +33,14 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
   useEffect(() => { void fetchStandards(projectId); }, [projectId, fetchStandards]);
 
   // Stop the spinner + refresh findings when the scan reports done.
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    listen<{ project_id?: string; status?: string }>('dev_tools_standards_scan_status', (e) => {
-      if (e.payload?.project_id !== projectId) return;
-      if (e.payload.status === 'complete' || e.payload.status === 'error') {
-        setScanning(false);
-        void fetchStandards(projectId);
-      }
-    })
-      .then((f) => { unlisten = f; })
-      .catch(silentCatch('StandardsScanCard:listen'));
-    return () => { unlisten?.(); };
+  const onScanStatus = useCallback((payload: { project_id?: string; status?: string }) => {
+    if (payload?.project_id !== projectId) return;
+    if (payload.status === 'complete' || payload.status === 'error') {
+      setScanning(false);
+      void fetchStandards(projectId);
+    }
   }, [projectId, fetchStandards]);
+  useTypedTauriEvent(EventName.STANDARDS_SCAN_STATUS, onScanStatus, 'StandardsScanCard:listen');
 
   const handleScan = async () => {
     setScanning(true);

@@ -85,7 +85,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   // inline arrow refetches in a loop for as long as the delete dialog is open.
   const deleteTargetId = deleteTarget?.id ?? '';
   const fetchBlastRadius = useCallback(() => getAutomationBlastRadius(deleteTargetId), [deleteTargetId]);
-  const { items: blastItems, loading: blastLoading } = useBlastRadius(
+  const { items: blastItems, loading: blastLoading, failed: blastFailed } = useBlastRadius(
     fetchBlastRadius,
     !!deleteTarget,
   );
@@ -213,7 +213,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               </div>
             </div>
 
-            <BlastRadiusPanel items={blastItems} loading={blastLoading} />
+            <BlastRadiusPanel items={blastItems} loading={blastLoading} failed={blastFailed} />
 
             <div className="flex items-center justify-end gap-2 pt-1">
               <button

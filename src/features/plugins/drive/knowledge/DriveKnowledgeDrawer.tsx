@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { Brain, MessageCircleQuestion, Table2, X } from "lucide-react";
 
 import { BaseModal } from "@/features/shared/components/modals";
@@ -7,6 +6,8 @@ import { SearchTab } from "@/features/vault/shared/vector/tabs/SearchTab";
 import { ExtractTab } from "@/features/vault/shared/vector/tabs/ExtractTab";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
+import { useTypedTauriEvent } from "@/hooks/useTauriEvent";
+import { EventName } from "@/lib/eventRegistry";
 import {
   getKnowledgeBase,
   type KnowledgeBase,
@@ -43,12 +44,13 @@ export function DriveKnowledgeDrawer({ kb: initialKb, onClose }: Props) {
 
   useEffect(() => {
     refreshKb();
-    let unlisten: (() => void) | undefined;
-    void listen("kb:ingest_complete", () => refreshKb()).then((fn) => {
-      unlisten = fn;
-    });
-    return () => unlisten?.();
   }, [refreshKb]);
+
+  useTypedTauriEvent(
+    EventName.KB_INGEST_COMPLETE,
+    useCallback(() => refreshKb(), [refreshKb]),
+    "DriveKnowledgeDrawer:ingestComplete",
+  );
 
   const tabButton = (id: Tab, label: string, Icon: typeof Brain) => (
     <button

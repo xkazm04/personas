@@ -484,7 +484,7 @@ pub struct ShipGoalsCreated {
 /// goal under nothing while the card said otherwise is a difference the
 /// operator cannot see. Omitting `context_hint` entirely is how a genuinely
 /// unfiled goal is expressed, and the refusal says so.
-fn resolve_context(
+pub(crate) fn resolve_context(
     conn: &rusqlite::Connection,
     project_id: &str,
     hint: &str,

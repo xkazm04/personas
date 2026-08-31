@@ -6,7 +6,9 @@ import {
   ALL_I18N_SECTIONS,
   getEnglishSection,
   getEnglishTranslations,
+  isCoreSection,
   isTranslationSection,
+  setLoadedEnglishSection,
   type TranslationSection,
 } from './englishSections';
 import { useActiveI18nSections } from './routeSections';
@@ -16,13 +18,23 @@ export type { Translations };
 
 /**
  * Per-locale/per-section JSON modules, discovered by Vite's import.meta.glob.
- * Each non-English top-level section is its own async chunk; English sections
- * are raw JSON strings parsed on first access so cold start no longer parses
- * the full 500KB+ English bundle.
+ * English is a first-class citizen here now — every top-level section for
+ * every one of the 14 locales (English included) is its own async chunk.
+ *
+ * Only the ~13 "core" English sections (app-shell chrome + the
+ * always-mounted consent/remote-approval/monitor surfaces — see
+ * englishSections.ts's CORE_SECTIONS) stay eagerly resident, so first paint
+ * never has to await a chunk for the sections it actually renders. Every
+ * other English section — the ~900KB majority of the catalog — used to be
+ * one eagerly-bundled `enSectionStrings.ts` object literal, statically
+ * imported by this file (and, independently, by `en.ts`'s ~48 module-init
+ * consumers via their eagerly-bundled stores), which is why `en-*.js` used to
+ * be the single largest eager chunk in the app. It now reaches the runtime
+ * exactly like a non-English locale's section: via this glob.
  *
  * The `import: 'default'` option returns the JSON's default export
  * directly (rather than a module wrapper). `eager: false` keeps each
- * locale lazily code-split.
+ * locale/section lazily code-split.
  */
 const sectionLoaders = import.meta.glob<{ default: unknown }>('./section-locales/*/*.json', {
   eager: false,
@@ -58,6 +70,11 @@ function sectionLoadKey(lang: Language, section: TranslationSection): string {
   return `${lang}:${section}`;
 }
 
+/**
+ * English's CORE sections are always "cached" (see englishSections.ts);
+ * its non-core sections and every other locale's sections funnel through
+ * the same per-language Map, populated by `loadSection` below.
+ */
 function getCachedSection(lang: Language, section: TranslationSection): unknown | undefined {
   if (lang === 'en') {
     return getEnglishSection(section);
@@ -66,6 +83,10 @@ function getCachedSection(lang: Language, section: TranslationSection): unknown 
 }
 
 function cacheSection(lang: Language, section: TranslationSection, value: unknown): void {
+  if (lang === 'en') {
+    setLoadedEnglishSection(section, value);
+    return;
+  }
   let sections = sectionCache.get(lang);
   if (!sections) {
     sections = {};
@@ -75,11 +96,9 @@ function cacheSection(lang: Language, section: TranslationSection, value: unknow
 }
 
 function loadSection(lang: Language, section: TranslationSection): Promise<void> {
-  if (lang === 'en') {
-    getEnglishSection(section);
-    return Promise.resolve();
-  }
-
+  // Covers English's core sections (always resolved — see getCachedSection)
+  // AND anything already loaded for any language, so this is a true no-op
+  // once a section has landed, not just for English.
   if (getCachedSection(lang, section) !== undefined) {
     return Promise.resolve();
   }
@@ -140,6 +159,49 @@ export function preloadSectionsAsync(
 ): Promise<void> {
   return Promise.all(sections.map((section) => loadSection(lang, section))).then(() => undefined);
 }
+
+/**
+ * Full English bundle, guaranteed complete: awaits every section's chunk
+ * (core sections resolve instantly; the rest via `loadSection`) before
+ * assembling the result. Async because most English sections are genuinely
+ * code-split now — use this from tests/tooling that need every key resolved
+ * synchronously-in-effect. Render paths must NOT use this (it would defeat
+ * the lazy loading this module exists to provide) — use `useTranslation()`
+ * or `getActiveTranslations()` instead, both of which degrade safely while a
+ * section is still in flight.
+ */
+export async function getEnglishTranslationsAsync(): Promise<Translations> {
+  await preloadSectionsAsync('en', ALL_I18N_SECTIONS);
+  return getEnglishTranslations();
+}
+
+// Kick off loading every non-core English section as soon as this module is
+// first evaluated — i.e. at app boot, since useTranslation.ts is eagerly
+// reachable from the app shell. This is what makes it safe for `en.ts`'s
+// ~48 module-init consumers (Zustand slices, modelCatalog, connectorRoles, …)
+// to keep reading `en.section.key` synchronously even though most sections
+// are no longer eagerly bundled: every one of those consumers touches `en.x`
+// from inside a function invoked later (a store action, a render, a
+// formatter call), never at pure module-top-level, so by the time any of
+// them actually run, this background load — fetching ~44 small local JSON
+// chunks, no network involved — has almost always already finished. Fired
+// immediately rather than deferred to true browser idle, since correctness
+// here depends on winning a race against user interaction, not on being
+// polite to a busy main thread.
+//
+// Residual risk, not closed by this: a pathologically fast synchronous
+// `en.section.key` read (via the `en` proxy in en.ts) for a NON-core section,
+// occurring before this promise settles, sees `undefined` once rather than
+// the real string — it does not throw (englishSections.ts returns
+// `undefined`, and property access on that is only unsafe one level up), but
+// it also has no re-render to self-heal on, unlike the React render path
+// below. No such site was found across en.ts's consumers (see the code
+// review that shipped this change), but it isn't statically provable from
+// this file alone. Flagged for a live smoke check.
+void preloadSectionsAsync(
+  'en',
+  ALL_I18N_SECTIONS.filter((section) => !isCoreSection(section)),
+);
 
 export function useLanguagePrefetch(delayMs = 100) {
   const routeSections = useActiveI18nSections();
@@ -204,12 +266,24 @@ function deepMergeSection(base: unknown, override: unknown): unknown {
   return out;
 }
 
+// Returned in place of `undefined` when neither English nor the active
+// locale has resolved a section yet. Property access on `{}` yields
+// `undefined` per key rather than throwing — so a component reading
+// `t.someSection.title` before the chunk lands renders blank for that string
+// instead of crashing on "Cannot read properties of undefined". This only
+// matters for a route visited before its sections finish loading; the
+// pre-mount gate in main.tsx and the background preload above make that
+// window small, and the listener broadcast in `loadSection` re-renders the
+// component with real data the instant the chunk resolves.
+const EMPTY_SECTION_FALLBACK: Record<string, never> = Object.freeze({});
+
 function getResolvedSection(lang: Language, section: TranslationSection): unknown {
   const english = getEnglishSection(section);
-  if (lang === 'en') return english;
+  if (lang === 'en') return english ?? EMPTY_SECTION_FALLBACK;
 
   const localized = getCachedSection(lang, section);
-  if (localized === undefined) return english;
+  if (localized === undefined) return english ?? EMPTY_SECTION_FALLBACK;
+  if (english === undefined) return localized;
 
   const cacheKey = `${lang}:${section}`;
   let merged = mergedSectionCache.get(cacheKey);
@@ -222,7 +296,13 @@ function getResolvedSection(lang: Language, section: TranslationSection): unknow
 
 function getBundle(lang: Language): Translations {
   if (import.meta.env.DEV && isPseudoActive()) {
-    return buildPseudoBundle(getEnglishTranslations());
+    // Most English sections are code-split now (see the module header above),
+    // so the very first call here — before the background preload below has
+    // finished — may see a partial bundle (core sections only). Passing
+    // `bundleVersion` busts buildPseudoBundle's cache every time a section
+    // finishes loading, so the pseudo view fills in rather than freezing on
+    // whatever was resident the first time pseudo mode was toggled.
+    return buildPseudoBundle(getEnglishTranslations(), bundleVersion);
   }
 
   if (!bundleCache.has(lang)) {
@@ -301,8 +381,9 @@ export function interpolate(template: string, vars: Record<string, string | numb
  * Non-hook accessor for the current translation bundle. Use from non-React
  * modules (Zustand store actions, IPC dispatch helpers, event listeners) where
  * `useTranslation` isn't reachable. Reads the active language from i18nStore
- * and returns the cached bundle, falling back to English while a non-English
- * bundle is still being lazy-loaded.
+ * and returns the cached bundle. A section that hasn't finished loading yet
+ * (English or otherwise — see the module header) resolves to an empty object
+ * rather than crashing; see `getResolvedSection`'s `EMPTY_SECTION_FALLBACK`.
  *
  * Honors the dev-only pseudo-locale toggle so non-React strings show up in
  * the bracketed/accented form too — keeps coverage scans honest.
@@ -317,9 +398,14 @@ export function getActiveTranslations(): Translations {
  * Primary translation hook. Returns the full translation tree for the
  * active language plus a helper `tx()` for variable interpolation.
  *
- * Non-English locale sections load lazily and temporarily fall back to the
- * matching English section until the chunk resolves. If a locale file is
- * missing keys, the coverage gate in `npm run check:i18n` fails CI.
+ * All 14 locales — English included — load their sections lazily, one async
+ * chunk per top-level key (see the module header). A section that hasn't
+ * finished loading yet resolves to English if English is ready, or to an
+ * empty object otherwise, until the chunk resolves — never a raw key, never a
+ * crash. Non-English locales additionally deep-merge over their English
+ * counterpart once both are loaded, so a translation lag never renders
+ * `undefined`. If a locale file is missing keys, the coverage gate in
+ * `npm run check:i18n` fails CI.
  *
  * Usage:
  *   const { t, tx, language } = useTranslation();

@@ -625,6 +625,7 @@
     "storage_db_size": "Ukuran database",
     "storage_prune": "Bersihkan proses lama",
     "storage_pruned": "{count} proses telah dihapus.",
+    "storage_cascade_note": "Dampak total: {total} baris di {tables} tabel (termasuk kaskade).",
     "storage_removable": "Dapat dihapus",
     "storage_subtitle": "Penggunaan database lokal dan pembersihan proses yang selesai.",
     "storage_title": "Penyimpanan",

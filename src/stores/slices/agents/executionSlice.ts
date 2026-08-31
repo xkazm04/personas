@@ -144,6 +144,15 @@ export interface ExecutionSlice {
   executionOutput: string[];
   /** Total bytes accumulated in executionOutput (for budget enforcement). */
   executionOutputBytes: number;
+  /**
+   * Incremental projections over executionOutput, maintained by executionSink
+   * so hot-path consumers (chat stream, mini player) never re-filter/re-
+   * classify the whole buffer per flush. Kept in lockstep with executionOutput
+   * via the sink's single onFlush callback below.
+   */
+  executionTextLines: string[];
+  executionMeaningfulTail: string[];
+  executionLastLine: string;
   isExecuting: boolean;
   /** Structured progress tracking (managed by RunLifecycle). */
   executionProgress: ExecutionRunProgress | null;
@@ -188,8 +197,14 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   // Bind the sink to push flushed output into the store.
   // On HMR / store recreation, re-binding automatically invalidates stale flushes.
   executionSink.reset();
-  executionSink.bind((output, totalBytes) => {
-    set({ executionOutput: output, executionOutputBytes: totalBytes });
+  executionSink.bind((output, totalBytes, projections) => {
+    set({
+      executionOutput: output,
+      executionOutputBytes: totalBytes,
+      executionTextLines: projections.textLines,
+      executionMeaningfulTail: projections.meaningfulTail,
+      executionLastLine: projections.lastLine,
+    });
   });
 
   // Dev-only size probe — surfaces ring/tail occupancy, byte total, spilled
@@ -346,6 +361,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     activeUseCaseId: null,
     executionOutput: [],
     executionOutputBytes: 0,
+    executionTextLines: [],
+    executionMeaningfulTail: [],
+    executionLastLine: '',
     isExecuting: recoveredState?.isExecuting ?? false,
     executionProgress: null,
     pipelineTrace: null,
@@ -375,7 +393,15 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       // race-window where a second call could pass the isExecuting guard.
       executionSink.reset();
       executionLifecycle.markStarted(set);
-      set({ executionOutput: [], executionOutputBytes: 0, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
+      set({
+        executionOutput: [],
+        executionOutputBytes: 0,
+        executionTextLines: [],
+        executionMeaningfulTail: [],
+        executionLastLine: '',
+        executionPersonaId: personaId,
+        activeUseCaseId: useCaseId ?? null,
+      });
     }
 
     // Track this persona as recently accessed so it appears in the sidebar Recent group.
@@ -762,7 +788,21 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // Drop any stable foreground idempotency key — the run is being abandoned.
     pendingForegroundIdem = null;
     executionLifecycle.markCancelled(set);
-    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, lastExecutionId: activeId ?? get().lastExecutionId, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
+    set({
+      executionOutput: [],
+      executionOutputBytes: 0,
+      executionTextLines: [],
+      executionMeaningfulTail: [],
+      executionLastLine: '',
+      activeExecutionId: null,
+      lastExecutionId: activeId ?? get().lastExecutionId,
+      executionPersonaId: null,
+      activeUseCaseId: null,
+      pipelineTrace: null,
+      queuePosition: null,
+      queueDepth: null,
+      isExecuting: false,
+    });
   },
 
   setQueueStatus: (position, depth) => {

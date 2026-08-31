@@ -24,15 +24,26 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 interface BlastRadiusPanelProps {
   items: BlastRadiusItem[];
   loading?: boolean;
+  /** The impact probe itself failed — render a broken-preview warning, never "safe to delete". */
+  failed?: boolean;
 }
 
-export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
+export function BlastRadiusPanel({ items, loading, failed }: BlastRadiusPanelProps) {
   const { t } = useTranslation();
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
         <LoadingSpinner size="sm" />
         <span>{t.shared.blast_checking_impact}</span>
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 mt-0.5 shrink-0" />
+        <span className="typo-body text-foreground">{t.shared.blast_check_failed}</span>
       </div>
     );
   }
@@ -73,18 +84,25 @@ export function useBlastRadius(
 ) {
   const [items, setItems] = useState<BlastRadiusItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     fetcher()
       .then((result) => {
         if (!cancelled) setItems(result);
       })
       .catch((err) => {
         silentCatch('BlastRadiusPanel:fetchBlastRadius')(err);
-        if (!cancelled) setItems([]);
+        // A failed probe is NOT an empty blast radius — flag it so the panel
+        // renders a broken-preview warning instead of "safe to delete".
+        if (!cancelled) {
+          setItems([]);
+          setFailed(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -92,13 +110,13 @@ export function useBlastRadius(
     return () => { cancelled = true; };
   }, [enabled, fetcher]);
 
-  return { items, loading };
+  return { items, loading, failed };
 }
 
 /** Self-fetching variant — pass a `fetcher` where the host can't call the
  *  `useBlastRadius` hook itself (e.g. an imperative `confirm()` config that
  *  builds a ReactNode at click time). */
 export function BlastRadiusPanelLazy({ fetcher }: { fetcher: () => Promise<BlastRadiusItem[]> }) {
-  const { items, loading } = useBlastRadius(fetcher, true);
-  return <BlastRadiusPanel items={items} loading={loading} />;
+  const { items, loading, failed } = useBlastRadius(fetcher, true);
+  return <BlastRadiusPanel items={items} loading={loading} failed={failed} />;
 }

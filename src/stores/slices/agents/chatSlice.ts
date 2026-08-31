@@ -239,7 +239,21 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // 4. Start execution — set executionPersonaId so useExecutionStream can match output.
     // Clear any prior turn error so a Retry doesn't show a stale error card next
     // to the new thinking indicator.
-    set({ chatStreaming: true, streamingChatSessionId: sessionId, streamingChatPersonaId: personaId, executionPersonaId: personaId, executionOutput: [], isExecuting: true, error: null });
+    set({
+      chatStreaming: true,
+      streamingChatSessionId: sessionId,
+      streamingChatPersonaId: personaId,
+      executionPersonaId: personaId,
+      executionOutput: [],
+      // Keep the executionSink-maintained projections (see executionSlice.ts)
+      // in lockstep with this manual reset -- otherwise useExecutionStream's
+      // textLines would show the previous turn's content for one render.
+      executionTextLines: [],
+      executionMeaningfulTail: [],
+      executionLastLine: '',
+      isExecuting: true,
+      error: null,
+    });
     try {
       const exec = await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
       if (exec?.id) {

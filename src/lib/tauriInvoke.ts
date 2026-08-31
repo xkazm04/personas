@@ -157,14 +157,53 @@ const inflightAutoDedup = new Map<string, Promise<unknown>>();
 /** TTL (ms) for auto-dedup entries after the underlying invocation settles. */
 const AUTO_DEDUP_TTL_MS = 250;
 
-/** Command prefixes considered read-only and eligible for auto-dedup. */
-const READ_ONLY_PREFIXES = ["list_", "get_", "fetch_"] as const;
+/**
+ * Verb-shaped mutation words. A command carrying ANY of these as a whole
+ * `_`-delimited segment is NEVER dedup-eligible, regardless of whether it
+ * also matches a read-shaped verb — e.g. `get_or_create_session`,
+ * `dev_tools_update_kpi`, and `fetch_and_apply` must never be folded into
+ * another caller's promise just because they also contain `get`/`fetch`.
+ *
+ * Checked as a whole underscore-delimited segment (see {@link hasMutationVerb}),
+ * not a raw substring match — a raw substring check would incorrectly
+ * exclude a genuinely read-only command like `list_settings` (contains the
+ * substring "set" inside "settings").
+ */
+const MUTATION_VERBS = new Set([
+  "create", "update", "set", "delete", "remove", "write", "run", "execute",
+  "apply", "toggle", "mark", "store", "save", "clear", "reset", "import",
+  "adopt", "start", "stop", "cancel",
+]);
 
-function isReadOnlyCommand(cmd: string): boolean {
-  for (const p of READ_ONLY_PREFIXES) {
-    if (cmd.startsWith(p)) return true;
-  }
-  return false;
+/**
+ * Matches a read verb (`list`/`get`/`fetch`) as a whole `_`-delimited segment
+ * — either at the very start of the command (`list_personas`) or after an
+ * underscore (`dev_tools_list_kpis`, `companion_get_x`). The repo names
+ * ~264 read commands with the verb as an INFIX rather than a prefix
+ * (namespaced under `dev_tools_*`, `companion_*`, …); the original
+ * prefix-only contract (`READ_ONLY_PREFIXES = ["list_", "get_", "fetch_"]`)
+ * silently bypassed auto-dedup for all of them.
+ */
+const READ_VERB_RE = /(^|_)(list|get|fetch)_/;
+
+function hasMutationVerb(cmd: string): boolean {
+  return cmd.split("_").some((segment) => MUTATION_VERBS.has(segment));
+}
+
+/**
+ * True when `cmd` is eligible for the transport-level auto-dedup (folding
+ * concurrent identical reads into one round-trip). Eligible when the command
+ * carries a read verb (`list`/`get`/`fetch`) as a whole segment — prefix or
+ * infix — AND does not also carry a mutation verb anywhere in its name. The
+ * mutation check wins over the read-verb match: a command matching both
+ * (`get_or_create_session`, `dev_tools_update_kpi`, `fetch_and_apply`) is
+ * NOT eligible.
+ *
+ * @internal — exported for unit tests only; not part of the public API.
+ */
+export function isDedupEligible(cmd: string): boolean {
+  if (hasMutationVerb(cmd)) return false;
+  return READ_VERB_RE.test(cmd);
 }
 
 /**
@@ -265,9 +304,11 @@ export interface InvokeOpts {
    */
   idempotencyKey?: string;
   /**
-   * Opt out of automatic in-flight dedup for read-only commands
-   * (`list_*`, `get_*`, `fetch_*`). Almost no caller needs this — set it
-   * only when the same read intentionally needs to hit the backend twice
+   * Opt out of automatic in-flight dedup for read-only commands (see
+   * {@link isDedupEligible} — a `list`/`get`/`fetch` verb as a prefix or
+   * infix segment, with no mutation-verb segment anywhere in the name).
+   * Almost no caller needs this — set it only when the same read intentionally
+   * needs to hit the backend twice
    * within ~250ms (e.g. cache-busting health probe).
    */
   noAutoDedup?: boolean;
@@ -343,7 +384,7 @@ export function invokeWithTimeout<T>(
   // wins) or explicitly opted out. Class-instance args (Channel, Image, ...)
   // produce a `null` hash and bypass auto-dedup.
   let autoKey: string | null = null;
-  if (!idempotencyKey && !noAutoDedup && isReadOnlyCommand(cmd)) {
+  if (!idempotencyKey && !noAutoDedup && isDedupEligible(cmd)) {
     const argHash = args === undefined ? "" : stableStringify(args);
     if (argHash !== null) {
       autoKey = `${cmd}:${argHash}`;
@@ -538,18 +579,21 @@ function _invokeCore<T>(
 
 /**
  * Returns true when an IPC rejection is the backend's "invalid session token"
- * response. Tauri serialises `AppError` as `{ error, kind }` so we match on
- * either the explicit message string or the JSON-stringified payload.
+ * response. The guard rejects with a serialised `AppError` (`{ error, kind,
+ * category, ... }`, kind `"forbidden"`), so branch on the typed `kind` plus the
+ * guard's specific message — not on a bare substring probe over any error.
  */
 function isIpcAuthFailure(err: unknown): boolean {
   if (!err) return false;
-  const probe = (s: string) => s.includes("IPC authentication failed");
-  if (typeof err === "string") return probe(err);
-  if (err instanceof Error) return probe(err.message);
   if (typeof err === "object") {
     const obj = err as Record<string, unknown>;
-    if (typeof obj.error === "string" && probe(obj.error)) return true;
-    if (typeof obj.message === "string" && probe(obj.message)) return true;
+    return (
+      obj.kind === "forbidden" &&
+      typeof obj.error === "string" &&
+      obj.error.includes("IPC authentication failed")
+    );
   }
-  return false;
+  // String/Error fallbacks (e.g. a transport that stringifies the payload).
+  const s = typeof err === "string" ? err : err instanceof Error ? err.message : "";
+  return s.includes("IPC authentication failed");
 }

@@ -915,6 +915,7 @@ export type { SystemHealthReport } from "./SystemHealthReport";
 export type { SystemMetrics } from "./SystemMetrics";
 export type { SystemOpAutomation } from "./SystemOpAutomation";
 export type { SystemOpKindMeta } from "./SystemOpKindMeta";
+export type { TableImpact } from "./TableImpact";
 export type { TablePerfStats } from "./TablePerfStats";
 export type { TableSyncStatus } from "./TableSyncStatus";
 export type { TaskComplexity } from "./TaskComplexity";

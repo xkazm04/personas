@@ -22,6 +22,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
+import { usePolling } from '@/hooks/utility/timing/usePolling';
 import { computeFleetPulse, layoutSlots, slotCountForCapacity } from '@/features/shared/chrome/fleetStripModel';
 
 /** App-settings key for the global concurrency cap (mirrors the Rust const). */
@@ -64,14 +65,19 @@ export default function FleetActivityStrip() {
   // Self-heal stale `running` entries: an execution that completed via a path
   // that never emitted `processEnded` would otherwise show "running" forever.
   // The engine hard-caps an execution at 20 min; reap past 25 min. Runs every
-  // 60s from this always-mounted chrome strip.
+  // 60s from this always-mounted chrome strip — routed through the shared
+  // polling coordinator so it suspends while the window is hidden/minimized
+  // instead of burning a tick every minute for a strip nobody can see. It's a
+  // local in-memory reconciliation (not a notification path), so there's
+  // nothing lost by catching up on visibility regain instead of ticking
+  // through the hidden window.
   const reapStaleRunning = useOverviewStore((s) => s.reapStaleRunning);
-  useEffect(() => {
-    const STALE_MS = 25 * 60 * 1000;
-    reapStaleRunning(STALE_MS); // once on mount (catches post-restart staleness)
-    const id = setInterval(() => reapStaleRunning(STALE_MS), 60_000);
-    return () => clearInterval(id);
-  }, [reapStaleRunning]);
+  const STALE_MS = 25 * 60 * 1000;
+  usePolling(() => reapStaleRunning(STALE_MS), {
+    interval: 60_000,
+    enabled: true,
+    name: 'fleetStaleReap',
+  });
 
   // Subscribe to the whole map, reduce to the pulse keyed on map identity.
   const activeProcesses = useOverviewStore((s) => s.activeProcesses);

@@ -19,7 +19,13 @@ import { en, type Translations } from '@/i18n/en';
 //   builder (3)  → + dev tools, lab, design system, raw JSON
 //
 // Runtime: users can switch tiers via Settings → Account.
-// Compile-time: set APP_TIER env var to tree-shake higher-tier code entirely.
+// Build-time: set VITE_APP_TIER to cap BUILD_MAX_TIER for a tier-specific
+// bundle (npm run build:starter / build:team / build:builder). This is
+// runtime GATING, not dead-code elimination — isTierAvailable()/
+// isTierVisible() branch at runtime on BUILD_MAX_TIER, and higher-tier
+// modules are still reachable via lazy imports gated behind those checks
+// rather than removed from the bundle. There is no build step here that
+// tree-shakes higher-tier code out entirely.
 
 export const TIERS = {
   STARTER: 'starter',
