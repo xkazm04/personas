@@ -51,16 +51,28 @@
 //!   * `fleet-registry-changed` — membership churn, which triggers a real
 //!     `fleetRefresh()` round-trip.
 //!
-//! Does NOT load, and this is a stated gap rather than a silent one:
-//!   * **channel/conversation volume** and **the triage queue** are POLL-driven
-//!     and read the database. Loading them faithfully means writing rows into
-//!     the operator's real database, which this harness will not do. They need
-//!     a synthetic read-path source before they can be included — that is the
-//!     v2 item, and until it exists any result here understates channel cost.
-//!   * **persona count.** Personas are database rows; the board's tile count
-//!     cannot be inflated without writes. Test with the fleet you have, and
-//!     read the per-tile cost from the session tiles, which the harness DOES
-//!     scale.
+//!   * `fleet-registry-changed` on CHURN — sessions spawning and dying, which
+//!     is what a fleet actually does: each one is created for a task and gone
+//!     when it lands. Churn drives a real `fleetRefresh()` round-trip and the
+//!     mount/unmount of a board node, neither of which a static population
+//!     exercises at all.
+//!
+//! Loads through the POLL path (see `load_harness_sources`, added in v2 —
+//! the gap this header used to declare):
+//!   * **channel chatter** — synthetic messages spliced into `list_team_channel`
+//!   * **reviews for triage** — synthetic pending rows spliced into
+//!     `list_manual_reviews`
+//!
+//! Still NOT loaded, and still stated rather than hidden:
+//!   * **persona count.** Personas are database rows and the harness writes no
+//!     rows, so the board's PERSONA tile count cannot be inflated. Sessions can,
+//!     and a session tile costs what a persona tile costs to lay out and paint —
+//!     so scale `sessions` to the NODE COUNT you want on the board and read the
+//!     per-node cost from that. What this cannot tell you is anything specific
+//!     to persona state derivation.
+//!   * **the database itself.** The two poll sources merge in ABOVE SQLite, so
+//!     a run measures everything from the IPC boundary up and understates query
+//!     cost. Correct for a renderer question; wrong for a query one.
 //!
 //! ## Reproducibility
 //!
@@ -81,6 +93,7 @@ use personas_core::events::event_name;
 
 use crate::commands::fleet::registry::{registry, FleetSessionInner};
 use crate::commands::fleet::types::{FleetSessionMode, FleetSessionState};
+use crate::load_harness_sources as sources;
 
 /// Prefix on every synthetic session id. Unmistakable in the UI, and the only
 /// thing `stop()` needs in order to remove exactly what the harness created and
@@ -117,6 +130,25 @@ pub struct LoadProfile {
     /// Session lifecycle transitions per second.
     #[serde(default)]
     pub state_flips_per_sec: usize,
+    /// Sessions retired and respawned per minute, holding the population
+    /// constant. Models a fleet doing its actual job: spawn for a task, die when
+    /// it lands. Exercises node mount/unmount and the refetch a registry change
+    /// triggers — neither of which a static population touches.
+    #[serde(default)]
+    pub session_churn_per_min: usize,
+    /// Chat messages per second, spread across the teams the app has polled.
+    #[serde(default)]
+    pub channel_msgs_per_sec: usize,
+    /// How many synthetic pending reviews to hold in the triage queue. A LEVEL,
+    /// not a rate: the queue is a backlog the operator works down, and its size
+    /// is what costs, not its arrival rate.
+    #[serde(default)]
+    pub reviews_pending: usize,
+    /// Persona ids to attribute synthetic chatter and reviews to. Passed in by
+    /// the runner from the app's own state so rows resolve to real names and
+    /// colours; empty means anonymous rows, which still load the same paths.
+    #[serde(default)]
+    pub persona_ids: Vec<String>,
     /// Characters per emitted output line. Real Claude output runs wide; the
     /// default is deliberately not 10, because per-event overhead and per-byte
     /// cost are different curves and a short line hides the second one.
@@ -163,6 +195,17 @@ pub struct LoadStatus {
     /// its loop, or never started). The load is not being produced; discard the
     /// run rather than reading the flat numbers as a fast renderer.
     pub driver_alive: bool,
+    /// Synthetic rows currently held by the poll sources.
+    pub held_channel: usize,
+    pub held_reviews: usize,
+    /// Synthetic rows the two read hooks have actually SERVED. Zero while a
+    /// profile asks for chatter means the frontend is not polling those teams —
+    /// the load exists and nothing is collecting it, which reads as a fast
+    /// renderer and is not one.
+    pub served_channel: usize,
+    pub served_reviews: usize,
+    /// Sessions retired-and-respawned so far.
+    pub churned: u64,
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +219,9 @@ struct Harness {
     sessions: AtomicUsize,
     lines_per_sec: AtomicUsize,
     state_flips_per_sec: AtomicUsize,
+    churn_per_min: AtomicUsize,
+    channel_msgs_per_sec: AtomicUsize,
+    churned: AtomicU64,
     line_len: AtomicUsize,
     seed: AtomicU64,
     emitted_output: AtomicU64,
@@ -190,6 +236,17 @@ struct Harness {
     /// a naive `rate / 20` floors every rate below 20/sec to nothing.
     carry_output: Mutex<f64>,
     carry_state: Mutex<f64>,
+    carry_churn: Mutex<f64>,
+    carry_msgs: Mutex<f64>,
+    /// The live synthetic session ids, in spawn order.
+    ///
+    /// An explicit list rather than the contiguous `loadgen-0000..N-1` prefix
+    /// the first version assumed, and churn is exactly why: retiring a session
+    /// from the middle of a prefix leaves a hole, and every later tick would
+    /// emit at an id the registry no longer holds — events that go nowhere, a
+    /// load level quietly below its label, and nothing anywhere to say so.
+    live: Mutex<Vec<String>>,
+    next_id: AtomicU64,
 }
 
 impl Default for Harness {
@@ -200,6 +257,9 @@ impl Default for Harness {
             sessions: AtomicUsize::new(0),
             lines_per_sec: AtomicUsize::new(0),
             state_flips_per_sec: AtomicUsize::new(0),
+            churn_per_min: AtomicUsize::new(0),
+            channel_msgs_per_sec: AtomicUsize::new(0),
+            churned: AtomicU64::new(0),
             line_len: AtomicUsize::new(default_line_len()),
             seed: AtomicU64::new(default_seed()),
             emitted_output: AtomicU64::new(0),
@@ -211,6 +271,10 @@ impl Default for Harness {
             applied_at_ms: AtomicI64::new(0),
             carry_output: Mutex::new(0.0),
             carry_state: Mutex::new(0.0),
+            carry_churn: Mutex::new(0.0),
+            carry_msgs: Mutex::new(0.0),
+            live: Mutex::new(Vec::new()),
+            next_id: AtomicU64::new(0),
         }
     }
 }
@@ -287,8 +351,8 @@ fn next_rand(state: &AtomicU64) -> u64 {
 // Synthetic sessions
 // ---------------------------------------------------------------------------
 
-fn synthetic_id(i: usize) -> String {
-    format!("{SYNTHETIC_PREFIX}{i:04}")
+fn synthetic_id(i: u64) -> String {
+    format!("{SYNTHETIC_PREFIX}{i:05}")
 }
 
 fn is_synthetic(id: &str) -> bool {
@@ -298,7 +362,7 @@ fn is_synthetic(id: &str) -> bool {
 /// Build a registry row with no PTY. Modelled on `persist::inner_from_row`,
 /// which produces the same PTY-less shape when restoring sessions after an app
 /// restart — so every consumer already handles it.
-fn synthetic_inner(i: usize, cwd: std::path::PathBuf) -> FleetSessionInner {
+fn synthetic_inner(i: u64, cwd: std::path::PathBuf) -> FleetSessionInner {
     let now = now_ms();
     FleetSessionInner {
         id: synthetic_id(i),
@@ -340,42 +404,87 @@ fn synthetic_inner(i: usize, cwd: std::path::PathBuf) -> FleetSessionInner {
 /// Bring the registry's synthetic population to `target`. Returns true when
 /// membership actually changed, so the caller only emits a registry event (and
 /// only pays for the frontend's full refetch) when there is something to say.
-fn reconcile_sessions(target: usize) -> bool {
+fn reconcile_sessions(h: &Harness, target: usize) -> bool {
     let reg = registry();
-    // Sorted by ID, explicitly, and NOT left to `list_dto`'s newest-first order.
-    // The tick loop addresses sessions as `loadgen-{0..sessions-1}`, so the
-    // population must always be exactly that contiguous prefix: if a shrink
-    // removed an arbitrary member instead of the tail, the generator would spend
-    // the rest of the run emitting at ids that are no longer in the registry —
-    // events that go nowhere, a load level quietly lower than the one on the
-    // label, and nothing anywhere to say so.
-    let mut existing: Vec<String> = reg
-        .list_dto()
-        .into_iter()
-        .filter(|s| is_synthetic(&s.id))
-        .map(|s| s.id)
-        .collect();
-    existing.sort();
-
-    if existing.len() == target {
+    let mut live = h.live.lock().unwrap_or_else(|e| e.into_inner());
+    if live.len() == target {
         return false;
     }
-
-    if existing.len() < target {
+    if live.len() < target {
         // The cwd is the current working directory: the Activity board maps a
         // session to a team column via cwd -> DevProject -> team_id, so pointing
         // synthetic sessions at a real project path exercises that join instead
         // of dumping every one of them into the Ungrouped tray.
         let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-        for i in existing.len()..target {
-            reg.insert(synthetic_inner(i, cwd.clone()));
+        while live.len() < target {
+            let id = h.next_id.fetch_add(1, Ordering::Relaxed);
+            reg.insert(synthetic_inner(id, cwd.clone()));
+            live.push(synthetic_id(id));
         }
     } else {
-        for id in existing.iter().skip(target) {
-            reg.remove(id);
+        // Retire from the TAIL — the newest first, so a shrink reads as "the
+        // most recently spawned work finished" rather than as the oldest
+        // sessions mysteriously outliving everything after them.
+        while live.len() > target {
+            if let Some(id) = live.pop() {
+                reg.remove(&id);
+            }
         }
     }
     true
+}
+
+/// Retire `n` sessions and spawn `n` replacements, holding the population
+/// constant.
+///
+/// This is what a fleet actually does, and it is a different load from a state
+/// flip: a flip repaints a node, a churn UNMOUNTS one and MOUNTS another, and
+/// the registry change behind it makes the frontend refetch the whole session
+/// list. A board that is cheap to repaint can still be expensive to rebuild.
+fn churn_sessions(app: &AppHandle, h: &Harness, n: usize) -> usize {
+    if n == 0 {
+        return 0;
+    }
+    let reg = registry();
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let mut live = h.live.lock().unwrap_or_else(|e| e.into_inner());
+    if live.is_empty() {
+        return 0;
+    }
+    let mut done = 0usize;
+    for _ in 0..n.min(live.len()) {
+        // Retire the OLDEST — a fleet session that has been up longest is the
+        // one most likely to have finished its task.
+        let dying = live.remove(0);
+        // The exit event first, so the frontend sees a lifecycle rather than a
+        // row that simply vanished on the next refetch.
+        if let Err(e) = app.emit(
+            event_name::FLEET_SESSION_EXITED,
+            serde_json::json!({ "session_id": dying, "exit_code": 0 }),
+        ) {
+            note_emit_failure(h, event_name::FLEET_SESSION_EXITED, &e);
+        }
+        reg.remove(&dying);
+
+        let id = h.next_id.fetch_add(1, Ordering::Relaxed);
+        reg.insert(synthetic_inner(id, cwd.clone()));
+        live.push(synthetic_id(id));
+        done += 1;
+    }
+    if done > 0 {
+        h.churned.fetch_add(done as u64, Ordering::Relaxed);
+        // ONE registry event for the whole batch, not one per session: the
+        // frontend's handler refetches the entire list on every `added`, so a
+        // per-session emit would turn a 4-session churn into four full refetches
+        // and measure the harness's own fan-out instead of the app's.
+        if let Err(e) = app.emit(
+            event_name::FLEET_REGISTRY_CHANGED,
+            serde_json::json!({ "kind": "updated", "session_id": "" }),
+        ) {
+            note_emit_failure(h, event_name::FLEET_REGISTRY_CHANGED, &e);
+        }
+    }
+    done
 }
 
 /// The lifecycle states a flip can land on. `Exited` is excluded deliberately:
@@ -404,12 +513,25 @@ pub fn set_profile(app: &AppHandle, profile: LoadProfile) -> LoadStatus {
         .store(profile.lines_per_sec, Ordering::Relaxed);
     h.state_flips_per_sec
         .store(profile.state_flips_per_sec, Ordering::Relaxed);
+    h.churn_per_min
+        .store(profile.session_churn_per_min, Ordering::Relaxed);
+    h.channel_msgs_per_sec
+        .store(profile.channel_msgs_per_sec, Ordering::Relaxed);
     h.line_len.store(profile.line_len.max(1), Ordering::Relaxed);
     h.seed.store(profile.seed, Ordering::Relaxed);
     h.applied_at_ms.store(now_ms(), Ordering::Relaxed);
     h.running.store(true, Ordering::Relaxed);
 
-    if reconcile_sessions(profile.sessions) {
+    // The poll sources are configured here rather than per tick: the persona
+    // roster and the review backlog are LEVELS the runner sets for a step, not
+    // rates that accumulate inside one.
+    sources::set_persona_ids(profile.persona_ids.clone());
+    {
+        let mut rand = || next_rand(&h.seed);
+        sources::set_reviews(profile.reviews_pending, &mut rand);
+    }
+
+    if reconcile_sessions(h, profile.sessions) {
         if let Err(e) = app.emit(
             event_name::FLEET_REGISTRY_CHANGED,
             serde_json::json!({ "kind": "updated", "session_id": "" }),
@@ -432,13 +554,23 @@ pub fn stop(app: &AppHandle) -> LoadStatus {
     h.state_flips_per_sec.store(0, Ordering::Relaxed);
     h.sessions.store(0, Ordering::Relaxed);
 
-    if reconcile_sessions(0) {
-        if let Err(e) = app.emit(
-            event_name::FLEET_REGISTRY_CHANGED,
-            serde_json::json!({ "kind": "updated", "session_id": "" }),
-        ) {
-            note_emit_failure(h, event_name::FLEET_REGISTRY_CHANGED, &e);
-        }
+    sources::clear();
+    reconcile_sessions(h, 0);
+    // ALWAYS emit, even when the registry was already empty.
+    //
+    // `set_profile` only signals on a real membership change, which is right: a
+    // no-op event costs the frontend a full `fleetRefresh()` round-trip. Stop is
+    // the opposite case. It is the one moment the frontend is MOST likely to be
+    // out of sync — the run that just ended may have left the webview
+    // unresponsive, so the clear-down emitted mid-saturation can be the one
+    // event it never processed. Measured: after a step that stopped answering,
+    // the registry held 0 sessions while the board still painted 144 phantom
+    // tiles until the operator interacted with it.
+    if let Err(e) = app.emit(
+        event_name::FLEET_REGISTRY_CHANGED,
+        serde_json::json!({ "kind": "updated", "session_id": "" }),
+    ) {
+        note_emit_failure(h, event_name::FLEET_REGISTRY_CHANGED, &e);
     }
     status()
 }
@@ -457,6 +589,10 @@ pub fn status() -> LoadStatus {
             sessions: h.sessions.load(Ordering::Relaxed),
             lines_per_sec: h.lines_per_sec.load(Ordering::Relaxed),
             state_flips_per_sec: h.state_flips_per_sec.load(Ordering::Relaxed),
+            session_churn_per_min: h.churn_per_min.load(Ordering::Relaxed),
+            channel_msgs_per_sec: h.channel_msgs_per_sec.load(Ordering::Relaxed),
+            reviews_pending: sources::held().1,
+            persona_ids: Vec::new(),
             line_len: h.line_len.load(Ordering::Relaxed),
             seed: h.seed.load(Ordering::Relaxed),
         },
@@ -479,6 +615,11 @@ pub fn status() -> LoadStatus {
             .lock()
             .map(|g| g.as_ref().is_some_and(|jh| !jh.inner().is_finished()))
             .unwrap_or(false),
+        held_channel: sources::held().0,
+        held_reviews: sources::held().1,
+        served_channel: sources::served().0,
+        served_reviews: sources::served().1,
+        churned: h.churned.load(Ordering::Relaxed),
     }
 }
 
@@ -491,6 +632,7 @@ pub fn reset_counters() {
     h.ticks.store(0, Ordering::Relaxed);
     h.emit_errors.store(0, Ordering::Relaxed);
     h.tick_panics.store(0, Ordering::Relaxed);
+    h.churned.store(0, Ordering::Relaxed);
     h.applied_at_ms.store(now_ms(), Ordering::Relaxed);
 }
 
@@ -562,6 +704,8 @@ fn ensure_driver(app: AppHandle) {
 struct TickOutcome {
     output: usize,
     state: usize,
+    messages: usize,
+    churned: usize,
     /// True when the cycle ran with nothing configured to emit. Distinguishes
     /// "idle by instruction" from "produced nothing but should have".
     idle: bool,
@@ -579,16 +723,49 @@ fn take(carry: &Mutex<f64>, per_sec: usize) -> usize {
     (n as usize).min(MAX_PER_TICK)
 }
 
+/// The per-MINUTE twin of `take`. Churn is expressed per minute because a fleet
+/// that turned over several times a second would not be a fleet, and a rate the
+/// operator cannot picture is a rate they cannot set correctly.
+fn take_per_min(carry: &Mutex<f64>, per_min: usize) -> usize {
+    let want = per_min as f64 * (TICK_MS as f64 / 60_000.0);
+    let mut c = carry.lock().unwrap_or_else(|e| e.into_inner());
+    *c += want;
+    let n = c.floor();
+    *c -= n;
+    (n as usize).min(MAX_PER_TICK)
+}
+
 fn tick(app: &AppHandle, h: &Harness) -> TickOutcome {
     h.ticks.fetch_add(1, Ordering::Relaxed);
-    let session_count = h.sessions.load(Ordering::Relaxed);
-    if session_count == 0 {
-        return TickOutcome {
-            idle: true,
-            ..TickOutcome::default()
-        };
-    }
     let mut outcome = TickOutcome::default();
+
+    // ── Chat + churn run even with no sessions ─────────────────────────────
+    // A profile can legitimately load only the poll path (agents talking, no
+    // fleet up), and gating everything on `sessions` would silently produce
+    // nothing for it.
+    let msgs = take(
+        &h.carry_msgs,
+        h.channel_msgs_per_sec.load(Ordering::Relaxed),
+    );
+    if msgs > 0 {
+        let mut rand = || next_rand(&h.seed);
+        outcome.messages = sources::push_messages(msgs, &mut rand);
+    }
+
+    let churn = take_per_min(&h.carry_churn, h.churn_per_min.load(Ordering::Relaxed));
+    if churn > 0 {
+        outcome.churned = churn_sessions(app, h, churn);
+    }
+
+    // A snapshot of the population, taken once: the emit loops below address
+    // sessions BY ID out of this list, so they cannot name a session that churn
+    // retired earlier in the same tick.
+    let live: Vec<String> = h.live.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let session_count = live.len();
+    if session_count == 0 {
+        outcome.idle = outcome.messages == 0 && outcome.churned == 0;
+        return outcome;
+    }
 
     // ── Terminal output ────────────────────────────────────────────────────
     let lines = take(&h.carry_output, h.lines_per_sec.load(Ordering::Relaxed));
@@ -596,11 +773,11 @@ fn tick(app: &AppHandle, h: &Harness) -> TickOutcome {
         let len = h.line_len.load(Ordering::Relaxed);
         for _ in 0..lines {
             let r = next_rand(&h.seed);
-            let target = (r as usize) % session_count;
+            let target = &live[(r as usize) % session_count];
             let chunk = synth_line(r, len);
             if let Err(e) = app.emit(
                 event_name::FLEET_SESSION_OUTPUT,
-                serde_json::json!({ "session_id": synthetic_id(target), "chunk": chunk }),
+                serde_json::json!({ "session_id": target, "chunk": chunk }),
             ) {
                 note_emit_failure(h, event_name::FLEET_SESSION_OUTPUT, &e);
             }
@@ -617,17 +794,17 @@ fn tick(app: &AppHandle, h: &Harness) -> TickOutcome {
     if flips > 0 {
         for _ in 0..flips {
             let r = next_rand(&h.seed);
-            let target = (r as usize) % session_count;
+            let target = &live[(r as usize) % session_count];
             let state = FLIP_STATES[(r >> 32) as usize % FLIP_STATES.len()];
             // Write the registry too, not just the event: the frontend patches
             // its cached row from the event, but any refetch reads the registry,
             // and a board that disagrees with itself after a refresh would look
             // like a rendering bug rather than a harness artefact.
-            registry().set_state_direct(&synthetic_id(target), state, "load harness");
+            registry().set_state_direct(target, state, "load harness");
             if let Err(e) = app.emit(
                 event_name::FLEET_SESSION_STATE,
                 serde_json::json!({
-                    "session_id": synthetic_id(target),
+                    "session_id": target,
                     "state": crate::commands::fleet::types::state_to_token(state),
                 }),
             ) {
@@ -638,7 +815,8 @@ fn tick(app: &AppHandle, h: &Harness) -> TickOutcome {
         outcome.state = flips;
     }
 
-    outcome.idle = outcome.output == 0 && outcome.state == 0;
+    outcome.idle =
+        outcome.output == 0 && outcome.state == 0 && outcome.messages == 0 && outcome.churned == 0;
     outcome
 }
 
