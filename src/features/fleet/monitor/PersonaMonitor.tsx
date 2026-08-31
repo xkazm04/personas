@@ -173,6 +173,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // A MODAL ABOVE US OWNS ESCAPE FIRST.
+      //
+      // Every modal this surface can raise — the triage card, the channel
+      // reply, a fleet terminal, the shared detail modals — portals to
+      // `document.body`, so its Escape bubbles to `window` and lands here as
+      // well as in the modal's own handler. Without this guard, one press both
+      // closed the card and tore down the whole Monitor behind it: the reviewer
+      // dismissed a card and lost the queue they were working. Measured, not
+      // theorised — it reproduced on the first Escape after this modal landed.
+      //
+      // Checked against the live DOM rather than tracked as state on purpose:
+      // the modals are owned by three different children (and the shared ones by
+      // components this file does not import), so a flag would have to be
+      // plumbed up from each of them and would go stale the moment a fourth
+      // arrives. `[role="dialog"]` is what BaseModal already stamps.
+      if (document.querySelector('[role="dialog"]')) return;
       if (selection) setSelection(null);
       else onClose();
     };
