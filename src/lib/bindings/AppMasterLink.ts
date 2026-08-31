@@ -10,11 +10,12 @@ import type { JsonValue } from "./serde_json/JsonValue";
  *
  * This is the **provenance** record: what kp sent and what Personas did with
  * it. It is deliberately NOT the enforcement authority. The mandate the
- * autonomy gate and the diff chokepoint read lives in an `app_settings` row
- * keyed by [`Self::mandate_key`], because enforcement happens per *project*
- * and only the project id is in scope at those call sites. Two copies of a
- * rung that could disagree is exactly the bug a single authority prevents —
- * so the rung is not repeated here, only the key that finds it.
+ * autonomy gate and the diff chokepoint read lives in a
+ * `persona_responsibilities` row (the hire's charter, [`Self::mandate_key`]
+ * holds its id), resolved per *project* because only the project id is in
+ * scope at those call sites. Two copies of a rung that could disagree is
+ * exactly the bug a single authority prevents — so the rung is not repeated
+ * here, only the pointer that finds it.
  */
 export type AppMasterLink = { 
 /**
@@ -47,8 +48,13 @@ unsupportedTriggers: Array<string>,
  */
 probationEndsAt: string, 
 /**
- * The `app_settings` key holding the enforceable mandate record
- * (`app_master_mandate:<project_id>`).
+ * The `persona_responsibilities` row id (`resp_…`) holding this hire's
+ * charter — the enforceable mandate record. Formerly the `app_settings`
+ * mandate key (`app_master_mandate:<project_id>`), which the boot
+ * migration retired; links stamped before that carry the legacy key
+ * string, and nothing parses either shape — enforcement resolves the
+ * charter by project, not through this pointer. Empty when the hire's
+ * charter row could not be persisted.
  */
 mandateKey: string, 
 /**

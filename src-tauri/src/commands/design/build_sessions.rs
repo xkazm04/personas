@@ -2941,9 +2941,10 @@ pub async fn promote_build_draft_inner(
                     .map(|link| (link, promoted_name))
             });
     // Same hazard, same fix, for the App master hire (P4): the binding to the
-    // project, the mandate key, the seeded KPI ids and the UNSUPPORTED cadence
-    // kinds all live on `design_context.appMaster`, and a rebuild would drop
-    // them — leaving a persona that owns an app with no record that it does.
+    // project, the charter row pointer (`mandate_key` carries the
+    // persona_responsibilities row id), the seeded KPI ids and the UNSUPPORTED
+    // cadence kinds all live on `design_context.appMaster`, and a rebuild would
+    // drop them — leaving a persona that owns an app with no record that it does.
     let app_master_link: Option<crate::db::models::AppMasterLink> =
         persona_repo::get_by_id(&state.db, &persona_id)
             .ok()

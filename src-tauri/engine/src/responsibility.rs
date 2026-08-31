@@ -374,12 +374,13 @@ fn create_from_responsibility(
 /// fresh one — the table spelling of the legacy single-key overwrite: a new
 /// hire REPLACES, which is what resets the probation bookkeeping and the
 /// tenure start (`app_master.rs` documents why inheriting either is wrong).
+/// Returns the created row, storage-assigned `id` included.
 fn replace_active(
     pool: &DbPool,
     record: &MandateRecord,
     title: Option<&str>,
     source: &str,
-) -> Result<(), AppError> {
+) -> Result<PersonaResponsibility, AppError> {
     for row in
         repo::list_by_project_domain(pool, &record.project_id, DOMAIN_SOFTWARE_ENGINEERING, true)?
     {
@@ -390,8 +391,7 @@ fn replace_active(
         resp.title = t.to_string();
     }
     validate(&resp)?;
-    create_from_responsibility(pool, &resp, source)?;
-    Ok(())
+    create_from_responsibility(pool, &resp, source)
 }
 
 /// Write a mandate record back to its charter row — the door the probation
@@ -433,12 +433,21 @@ pub fn store_mandate_record(pool: &DbPool, record: &MandateRecord) -> Result<(),
     }
     // No row for this holder: a fresh write. `kp-hire` because MandateRecord
     // IS the hire contract's shape — the operator door never passes this way.
-    replace_active(pool, record, None, "kp-hire")
+    replace_active(pool, record, None, "kp-hire").map(|_| ())
 }
 
 /// The hire door's insert: replace the project's charter with this hire's,
 /// titled for the operator (`source = 'kp-hire'`).
-pub fn record_hire(pool: &DbPool, record: &MandateRecord, title: &str) -> Result<(), AppError> {
+///
+/// Returns the created charter row so the hire flow can stamp its
+/// storage-assigned id (`resp_…`) onto the persona's
+/// `design_context.appMaster.mandateKey` — the pointer every later reader of
+/// the link follows back to this row.
+pub fn record_hire(
+    pool: &DbPool,
+    record: &MandateRecord,
+    title: &str,
+) -> Result<PersonaResponsibility, AppError> {
     if record.project_id.trim().is_empty() {
         return Err(AppError::Validation(
             "A hire needs a project id: an unbound mandate governs nothing".into(),
@@ -788,7 +797,14 @@ mod tests {
             headless_incomplete_streak: 0,
             ..record("p-new", "proj-t")
         };
-        record_hire(&pool, &second, "App master for Proj T").unwrap();
+        let hired = record_hire(&pool, &second, "App master for Proj T").unwrap();
+        // The returned row is the stored charter itself: the storage-assigned
+        // id the hire flow stamps onto `AppMasterLink.mandate_key`.
+        assert!(hired.id.starts_with("resp_"), "{}", hired.id);
+        let rows = repo::list_by_project_domain(&pool, "proj-t", DOMAIN_SOFTWARE_ENGINEERING, true)
+            .unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].id, hired.id);
         let back = mandate_for_project(&pool, "proj-t").unwrap().unwrap();
         assert_eq!(back, second);
 
