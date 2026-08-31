@@ -40,12 +40,29 @@ function isNonNetworkHost(host) {
   return bare === "localhost" || bare.endsWith(".localhost") || bare === "0.0.0.0";
 }
 
+/**
+ * Coverage counters for the POPULATION axis.
+ *
+ * The instrument-before-result assertion above covers the sensor axis — did
+ * this checker find anything to measure. It says nothing about how much of the
+ * tree the checker was never offered, and "all allowed" over a silently
+ * reduced file set is a claim the reader cannot size. This gate is sound today
+ * only because every executable file under `src/` happens to carry one of the
+ * two extensions below; that is an invariant nothing here enforces, so print
+ * the denominator and let a change in it be visible.
+ */
+const excluded = { extension: 0, prunedDir: 0 };
+
 function walk(dir, out = []) {
   for (const ent of readdirSync(dir, { withFileTypes: true })) {
-    if (ent.name === "node_modules" || ent.name === "dist") continue;
+    if (ent.name === "node_modules" || ent.name === "dist") {
+      excluded.prunedDir++;
+      continue;
+    }
     const path = join(dir, ent.name);
     if (ent.isDirectory()) walk(path, out);
     else if (/\.(ts|tsx)$/.test(path)) out.push(path);
+    else excluded.extension++;
   }
   return out;
 }
@@ -140,8 +157,9 @@ const csps = [
   ["devCsp", connectSrcHosts(security.devCsp ?? "")],
 ];
 
+const scanned = walk(SRC);
 const sites = [];
-for (const file of walk(SRC)) {
+for (const file of scanned) {
   for (const [host, line] of fetchedHosts(readFileSync(file, "utf8"))) {
     if (isNonNetworkHost(host) || host.includes("${")) continue;
     sites.push({ host, line, file: file.slice(ROOT.length + 1).replaceAll("\\", "/") });
@@ -179,7 +197,10 @@ if (violations.length) {
   process.exit(1);
 }
 
+const enumerated = scanned.length + excluded.extension;
 console.log(
   `CSP hosts OK — ${sites.length} frontend fetch target(s) across ` +
-  `${new Set(sites.map((s) => s.host)).size} host(s), all allowed by csp and devCsp.`,
+  `${new Set(sites.map((s) => s.host)).size} host(s), all allowed by csp and devCsp.\n` +
+  `  scanned ${scanned.length} of ${enumerated} file(s) under src/ ` +
+  `(${excluded.extension} excluded: not .ts/.tsx; ${excluded.prunedDir} dir(s) pruned).`,
 );
