@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Metrika úspěchu",
   "lab_hypothesis_change": "Navrhovaná změna",
   "lab_experiments_title": "Zadané experimenty",
-  "lab_deferred_note": "Kanárková kondice a povýšení jdou cestou evolučních návrhů — do této zprávy zatím nepatří."
+  "lab_deferred_note": "Kanárková kondice a povýšení jdou cestou evolučních návrhů — do této zprávy zatím nepatří.",
+  "category_charter_health": "Zdraví chart",
+  "category_core_fidelity": "Věrnost jádru"
 }

@@ -1,6 +1,8 @@
 import { ArrowLeftRight, X, Shield, FlaskConical } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { ExecutionOrigin } from '../../libs/executionOrigin';
+import { OriginFilterDropdown } from './OriginFilterDropdown';
 
 interface ExecutionListFiltersProps {
   showRaw: boolean;
@@ -8,6 +10,8 @@ interface ExecutionListFiltersProps {
   showSimulations: boolean;
   setShowSimulations: (v: boolean) => void;
   hasSimulations: boolean;
+  originFilter: ExecutionOrigin | null;
+  setOriginFilter: (v: ExecutionOrigin | null) => void;
   compareMode: boolean;
   exitCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
@@ -25,6 +29,8 @@ export function ExecutionListFilters({
   showSimulations,
   setShowSimulations,
   hasSimulations,
+  originFilter,
+  setOriginFilter,
   compareMode,
   exitCompareMode,
   setCompareMode,
@@ -70,6 +76,11 @@ export function ExecutionListFilters({
             {showRaw ? e.raw : e.masked}
           </button>
         </Tooltip>
+      )}
+      {/* Keep the dropdown mounted while a filter is active even if it empties
+          the visible list, so the filter can always be cleared. */}
+      {(hasExecutions || originFilter !== null) && (
+        <OriginFilterDropdown value={originFilter} onChange={setOriginFilter} />
       )}
       {hasEnoughToCompare && (
         <button

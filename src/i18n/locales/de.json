@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} gelesen",
       "tokens_unit": "Tokens",
       "trace_evicted_notice": "Trace unvollständig: {count} Span entfernt (Limit: 10.000)",
-      "trace_evicted_notice_other": "Trace unvollständig: {count} Spans entfernt (Limit: 10.000)"
+      "trace_evicted_notice_other": "Trace unvollständig: {count} Spans entfernt (Limit: 10.000)",
+      "attention_lane": "Spur",
+      "attention_ledger_entry": "Ledger",
+      "attention_provenance": "Attention-Lauf",
+      "attention_responsibility": "Charta",
+      "origin_attention": "Attention",
+      "origin_channel": "Kanal",
+      "origin_filter_all": "Alle Ursprünge",
+      "origin_filter_label": "Lauf-Ursprung",
+      "origin_manual": "Manuell",
+      "origin_scheduled": "Geplant",
+      "origin_simulation": "Simulation",
+      "origin_tooltip_attention": "Von der Attention-Schleife gestartet",
+      "origin_tooltip_channel": "Aus einer Kanalnachricht gestartet",
+      "origin_tooltip_scheduled": "Von einem Trigger-Zeitplan gestartet"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "Erfolgsmetrik",
     "lab_hypothesis_change": "Vorgeschlagene Änderung",
     "lab_experiments_title": "Beauftragte Experimente",
-    "lab_deferred_note": "Canary-Fitness und Beförderung laufen über den Pfad der Evolutionsvorschläge — noch nicht Teil dieses Berichts."
+    "lab_deferred_note": "Canary-Fitness und Beförderung laufen über den Pfad der Evolutionsvorschläge — noch nicht Teil dieses Berichts.",
+    "category_charter_health": "Charta-Gesundheit",
+    "category_core_fidelity": "Kerntreue"
   },
   "remote_approval": {
     "title": "Anfrage zur Fernausführung",

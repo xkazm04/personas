@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} přečteno",
       "tokens_unit": "tokenů",
       "trace_evicted_notice": "Trasování je neúplné: {count} span odstraněn (limit: 10 000)",
-      "trace_evicted_notice_other": "Trasování je neúplné: {count} spanů odstraněno (limit: 10 000)"
+      "trace_evicted_notice_other": "Trasování je neúplné: {count} spanů odstraněno (limit: 10 000)",
+      "attention_lane": "Dráha",
+      "attention_ledger_entry": "Záznam",
+      "attention_provenance": "Běh pozornosti",
+      "attention_responsibility": "Charta",
+      "origin_attention": "Pozornost",
+      "origin_channel": "Kanál",
+      "origin_filter_all": "Všechny původy",
+      "origin_filter_label": "Původ běhu",
+      "origin_manual": "Ruční",
+      "origin_scheduled": "Plánovaný",
+      "origin_simulation": "Simulace",
+      "origin_tooltip_attention": "Spuštěno smyčkou pozornosti",
+      "origin_tooltip_channel": "Spuštěno zprávou z kanálu",
+      "origin_tooltip_scheduled": "Spuštěno plánem triggeru"
     },
     "lab": {
       "mode_arena": "Aréna",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "Metrika úspěchu",
     "lab_hypothesis_change": "Navrhovaná změna",
     "lab_experiments_title": "Zadané experimenty",
-    "lab_deferred_note": "Kanárková kondice a povýšení jdou cestou evolučních návrhů — do této zprávy zatím nepatří."
+    "lab_deferred_note": "Kanárková kondice a povýšení jdou cestou evolučních návrhů — do této zprávy zatím nepatří.",
+    "category_charter_health": "Zdraví chart",
+    "category_core_fidelity": "Věrnost jádru"
   },
   "remote_approval": {
     "title": "Požadavek na vzdálené spuštění",

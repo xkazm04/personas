@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} lus",
       "tokens_unit": "jetons",
       "trace_evicted_notice": "Trace incomplète : {count} span supprimé (limite : 10 000)",
-      "trace_evicted_notice_other": "Trace incomplète : {count} spans supprimés (limite : 10 000)"
+      "trace_evicted_notice_other": "Trace incomplète : {count} spans supprimés (limite : 10 000)",
+      "attention_lane": "Voie",
+      "attention_ledger_entry": "Registre",
+      "attention_provenance": "Exécution d'attention",
+      "attention_responsibility": "Charte",
+      "origin_attention": "Attention",
+      "origin_channel": "Canal",
+      "origin_filter_all": "Toutes les origines",
+      "origin_filter_label": "Origine de l'exécution",
+      "origin_manual": "Manuel",
+      "origin_scheduled": "Planifié",
+      "origin_simulation": "Simulation",
+      "origin_tooltip_attention": "Lancée par la boucle d'attention",
+      "origin_tooltip_channel": "Démarrée depuis un message de canal",
+      "origin_tooltip_scheduled": "Démarrée par la planification d'un déclencheur"
     },
     "lab": {
       "mode_arena": "Arène",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "Métrique de succès",
     "lab_hypothesis_change": "Changement proposé",
     "lab_experiments_title": "Expériences commanditées",
-    "lab_deferred_note": "La fitness canary et la promotion passent par la voie des propositions d’évolution — pas encore incluses dans ce rapport."
+    "lab_deferred_note": "La fitness canary et la promotion passent par la voie des propositions d’évolution — pas encore incluses dans ce rapport.",
+    "category_charter_health": "Santé des chartes",
+    "category_core_fidelity": "Fidélité au noyau"
   },
   "remote_approval": {
     "title": "Demande d’exécution à distance",

@@ -553,7 +553,21 @@
     "files_read_count": "{count}개 읽음",
     "tokens_unit": "토큰",
     "trace_evicted_notice": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)",
-    "trace_evicted_notice_other": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)"
+    "trace_evicted_notice_other": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)",
+    "attention_lane": "레인",
+    "attention_ledger_entry": "장부",
+    "attention_provenance": "어텐션 실행",
+    "attention_responsibility": "차터",
+    "origin_attention": "어텐션",
+    "origin_channel": "채널",
+    "origin_filter_all": "모든 출처",
+    "origin_filter_label": "실행 출처",
+    "origin_manual": "수동",
+    "origin_scheduled": "예약됨",
+    "origin_simulation": "시뮬레이션",
+    "origin_tooltip_attention": "어텐션 루프가 실행함",
+    "origin_tooltip_channel": "채널 메시지에서 시작됨",
+    "origin_tooltip_scheduled": "트리거 일정으로 시작됨"
   },
   "lab": {
     "mode_arena": "아레나",

@@ -80,6 +80,8 @@
   "category_credentials": "Credentials",
   "category_memory": "Memory",
   "category_usefulness": "Usefulness",
+  "category_core_fidelity": "Core fidelity",
+  "category_charter_health": "Charter health",
   "period_label": "Review period",
   "period_days": "{count}d",
   "distribution_band": "Score {score}: {count} agents",

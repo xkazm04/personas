@@ -112,6 +112,19 @@ pub struct ExecutionListItem {
     pub is_simulation: bool,
     #[serde(default = "default_business_outcome")]
     pub business_outcome: String,
+    /// Run origin, derived in the list SQL (see `LIST_ITEM_COLUMNS` in the
+    /// executions repo): 'attention' | 'channel' | 'scheduled' | 'simulation'
+    /// | 'manual'. Precedence in that order; 'manual' is the fallback.
+    #[serde(default = "default_origin")]
+    pub origin: String,
+    /// The attention lane (`$._attention.lane` in input_data) when the run was
+    /// dispatched by the attention loop; `None` otherwise.
+    #[serde(default)]
+    pub origin_lane: Option<String>,
+}
+
+fn default_origin() -> String {
+    "manual".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

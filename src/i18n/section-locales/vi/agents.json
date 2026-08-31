@@ -553,7 +553,21 @@
     "files_read_count": "{count} đã đọc",
     "tokens_unit": "token",
     "trace_evicted_notice": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
-    "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)"
+    "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
+    "attention_lane": "Làn",
+    "attention_ledger_entry": "Sổ cái",
+    "attention_provenance": "Lượt chạy attention",
+    "attention_responsibility": "Hiến chương",
+    "origin_attention": "Attention",
+    "origin_channel": "Kênh",
+    "origin_filter_all": "Mọi nguồn gốc",
+    "origin_filter_label": "Nguồn gốc lượt chạy",
+    "origin_manual": "Thủ công",
+    "origin_scheduled": "Theo lịch",
+    "origin_simulation": "Mô phỏng",
+    "origin_tooltip_attention": "Được vòng lặp attention khởi chạy",
+    "origin_tooltip_channel": "Bắt đầu từ tin nhắn trong kênh",
+    "origin_tooltip_scheduled": "Bắt đầu theo lịch của trigger"
   },
   "lab": {
     "mode_arena": "Đấu trường",

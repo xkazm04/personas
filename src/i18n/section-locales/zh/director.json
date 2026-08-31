@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "成功指标",
   "lab_hypothesis_change": "拟议变更",
   "lab_experiments_title": "已委托的实验",
-  "lab_deferred_note": "金丝雀适应度与晋升走进化提案路径——暂不包含在本报告中。"
+  "lab_deferred_note": "金丝雀适应度与晋升走进化提案路径——暂不包含在本报告中。",
+  "category_charter_health": "章程健康度",
+  "category_core_fidelity": "核心忠实度"
 }

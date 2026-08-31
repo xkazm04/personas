@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Metrik keberhasilan",
   "lab_hypothesis_change": "Perubahan yang diusulkan",
   "lab_experiments_title": "Eksperimen yang ditugaskan",
-  "lab_deferred_note": "Kebugaran canary dan promosi mengikuti jalur proposal evolusi — belum menjadi bagian dari laporan ini."
+  "lab_deferred_note": "Kebugaran canary dan promosi mengikuti jalur proposal evolusi — belum menjadi bagian dari laporan ini.",
+  "category_charter_health": "Kesehatan piagam",
+  "category_core_fidelity": "Kesetiaan pada inti"
 }

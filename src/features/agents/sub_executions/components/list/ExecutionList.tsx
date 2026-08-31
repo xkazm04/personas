@@ -16,6 +16,7 @@ import { useBulkRerun } from '../../libs/useBulkRerun';
 import { isFailedExecutionStatus } from '../../libs/executionStatus';
 import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
+import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
@@ -68,6 +69,7 @@ export function ExecutionList() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
   const [showSimulations, setShowSimulations] = useState(false);
+  const [originFilter, setOriginFilter] = useState<ExecutionOrigin | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function ExecutionList() {
   const [extraRows, setExtraRows] = useState<ExecutionListItem[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [reachedEnd, setReachedEnd] = useState(false);
-  useEffect(() => { setExtraRows([]); setReachedEnd(false); }, [personaId]);
+  useEffect(() => { setExtraRows([]); setReachedEnd(false); setOriginFilter(null); }, [personaId]);
 
   // De-duplicated union of the store's first page + any loaded extra pages.
   // Backend paging is offset-based over the raw (unfiltered) ordering, so this
@@ -133,10 +135,17 @@ export function ExecutionList() {
     () => rawRows.some((e) => e.is_simulation),
     [rawRows],
   );
-  const executions = useMemo(
-    () => (showSimulations ? rawRows : rawRows.filter((e) => !e.is_simulation)),
-    [rawRows, showSimulations],
-  );
+  const executions = useMemo(() => {
+    // Origin filter first (list rows carry the server-derived origin), then
+    // the simulation-visibility toggle. Filtering for origin 'simulation'
+    // implies wanting to see simulations, so it bypasses the toggle.
+    const originFiltered = originFilter
+      ? rawRows.filter((e) => deriveExecutionOrigin(e).origin === originFilter)
+      : rawRows;
+    return showSimulations || originFilter === 'simulation'
+      ? originFiltered
+      : originFiltered.filter((e) => !e.is_simulation);
+  }, [rawRows, showSimulations, originFilter]);
 
   // Row virtualization — only visible rows mount. estimateSize is an initial
   // guess; each row wraps its content with `virtualizer.measureElement` so the
@@ -402,6 +411,7 @@ export function ExecutionList() {
           showRaw={showRaw} setShowRaw={setShowRaw}
           showSimulations={showSimulations} setShowSimulations={setShowSimulations}
           hasSimulations={hasSimulations}
+          originFilter={originFilter} setOriginFilter={setOriginFilter}
           compareMode={compareMode} exitCompareMode={exitCompareMode} setCompareMode={setCompareMode}
           hasExecutions={executions.length > 0} hasEnoughToCompare={executions.length >= 2}
           compareLeft={compareLeft} compareRight={compareRight}

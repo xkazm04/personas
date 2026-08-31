@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "مقياس النجاح",
   "lab_hypothesis_change": "التغيير المقترح",
   "lab_experiments_title": "التجارب المكلَّف بها",
-  "lab_deferred_note": "لياقة الكناري والترقية تسيران عبر مسار مقترحات التطور — ليستا جزءًا من هذا التقرير بعد."
+  "lab_deferred_note": "لياقة الكناري والترقية تسيران عبر مسار مقترحات التطور — ليستا جزءًا من هذا التقرير بعد.",
+  "category_charter_health": "صحة الميثاق",
+  "category_core_fidelity": "الوفاء للجوهر"
 }

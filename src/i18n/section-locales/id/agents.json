@@ -553,7 +553,21 @@
     "files_read_count": "{count} dibaca",
     "tokens_unit": "token",
     "trace_evicted_notice": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)",
-    "trace_evicted_notice_other": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)"
+    "trace_evicted_notice_other": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)",
+    "attention_lane": "Jalur",
+    "attention_ledger_entry": "Ledger",
+    "attention_provenance": "Eksekusi atensi",
+    "attention_responsibility": "Piagam",
+    "origin_attention": "Atensi",
+    "origin_channel": "Kanal",
+    "origin_filter_all": "Semua asal",
+    "origin_filter_label": "Asal eksekusi",
+    "origin_manual": "Manual",
+    "origin_scheduled": "Terjadwal",
+    "origin_simulation": "Simulasi",
+    "origin_tooltip_attention": "Dijalankan oleh loop atensi",
+    "origin_tooltip_channel": "Dimulai dari pesan kanal",
+    "origin_tooltip_scheduled": "Dimulai oleh jadwal trigger"
   },
   "lab": {
     "mode_arena": "Arena",

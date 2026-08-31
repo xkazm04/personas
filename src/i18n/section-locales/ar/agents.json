@@ -553,7 +553,21 @@
     "files_read_count": "{count} مقروء",
     "tokens_unit": "رموز",
     "trace_evicted_notice": "التتبع غير مكتمل: تم استبعاد {count} مقطع (الحد: 10,000)",
-    "trace_evicted_notice_other": "التتبع غير مكتمل: تم استبعاد {count} مقاطع (الحد: 10,000)"
+    "trace_evicted_notice_other": "التتبع غير مكتمل: تم استبعاد {count} مقاطع (الحد: 10,000)",
+    "attention_lane": "المسار",
+    "attention_ledger_entry": "السجل",
+    "attention_provenance": "تشغيل الانتباه",
+    "attention_responsibility": "الميثاق",
+    "origin_attention": "الانتباه",
+    "origin_channel": "القناة",
+    "origin_filter_all": "كل المصادر",
+    "origin_filter_label": "مصدر التشغيل",
+    "origin_manual": "يدوي",
+    "origin_scheduled": "مجدول",
+    "origin_simulation": "محاكاة",
+    "origin_tooltip_attention": "أُطلق بواسطة حلقة الانتباه",
+    "origin_tooltip_channel": "بدأ من رسالة في القناة",
+    "origin_tooltip_scheduled": "بدأ بواسطة جدولة مشغّل"
   },
   "lab": {
     "mode_arena": "الساحة",

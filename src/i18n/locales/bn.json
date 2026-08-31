@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} পঠিত",
       "tokens_unit": "টোকেন",
       "trace_evicted_notice": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)",
-      "trace_evicted_notice_other": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)"
+      "trace_evicted_notice_other": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)",
+      "attention_lane": "লেন",
+      "attention_ledger_entry": "লেজার",
+      "attention_provenance": "অ্যাটেনশন রান",
+      "attention_responsibility": "চার্টার",
+      "origin_attention": "অ্যাটেনশন",
+      "origin_channel": "চ্যানেল",
+      "origin_filter_all": "সব উৎস",
+      "origin_filter_label": "রানের উৎস",
+      "origin_manual": "ম্যানুয়াল",
+      "origin_scheduled": "নির্ধারিত",
+      "origin_simulation": "সিমুলেশন",
+      "origin_tooltip_attention": "অ্যাটেনশন লুপ দ্বারা চালু হয়েছে",
+      "origin_tooltip_channel": "চ্যানেল বার্তা থেকে শুরু হয়েছে",
+      "origin_tooltip_scheduled": "ট্রিগার শিডিউল দ্বারা শুরু হয়েছে"
     },
     "lab": {
       "mode_arena": "আরেনা",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "সাফল্যের মেট্রিক",
     "lab_hypothesis_change": "প্রস্তাবিত পরিবর্তন",
     "lab_experiments_title": "দায়িত্ব দেওয়া পরীক্ষা",
-    "lab_deferred_note": "ক্যানারি ফিটনেস ও প্রমোশন ইভোলিউশন প্রস্তাবের পথে চলে — এখনও এই রিপোর্টের অংশ নয়।"
+    "lab_deferred_note": "ক্যানারি ফিটনেস ও প্রমোশন ইভোলিউশন প্রস্তাবের পথে চলে — এখনও এই রিপোর্টের অংশ নয়।",
+    "category_charter_health": "চার্টারের স্বাস্থ্য",
+    "category_core_fidelity": "কোরের প্রতি বিশ্বস্ততা"
   },
   "remote_approval": {
     "title": "রিমোট রান অনুরোধ",

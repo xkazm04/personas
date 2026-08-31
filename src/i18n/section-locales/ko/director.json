@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "성공 지표",
   "lab_hypothesis_change": "제안된 변경",
   "lab_experiments_title": "의뢰된 실험",
-  "lab_deferred_note": "카나리아 적합도와 승격은 진화 제안 경로를 따릅니다. 아직 이 보고서에는 포함되지 않습니다."
+  "lab_deferred_note": "카나리아 적합도와 승격은 진화 제안 경로를 따릅니다. 아직 이 보고서에는 포함되지 않습니다.",
+  "category_charter_health": "차터 건전성",
+  "category_core_fidelity": "코어 충실도"
 }

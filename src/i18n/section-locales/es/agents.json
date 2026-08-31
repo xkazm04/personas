@@ -553,7 +553,21 @@
     "files_read_count": "{count} leídos",
     "tokens_unit": "tokens",
     "trace_evicted_notice": "Traza incompleta: {count} span descartado (límite: 10.000)",
-    "trace_evicted_notice_other": "Traza incompleta: {count} spans descartados (límite: 10.000)"
+    "trace_evicted_notice_other": "Traza incompleta: {count} spans descartados (límite: 10.000)",
+    "attention_lane": "Carril",
+    "attention_ledger_entry": "Registro",
+    "attention_provenance": "Ejecución de atención",
+    "attention_responsibility": "Carta",
+    "origin_attention": "Atención",
+    "origin_channel": "Canal",
+    "origin_filter_all": "Todos los orígenes",
+    "origin_filter_label": "Origen de la ejecución",
+    "origin_manual": "Manual",
+    "origin_scheduled": "Programado",
+    "origin_simulation": "Simulación",
+    "origin_tooltip_attention": "Lanzada por el bucle de atención",
+    "origin_tooltip_channel": "Iniciada desde un mensaje de canal",
+    "origin_tooltip_scheduled": "Iniciada por la programación de un trigger"
   },
   "lab": {
     "mode_arena": "Arena",

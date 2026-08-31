@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "成功指標",
   "lab_hypothesis_change": "提案された変更",
   "lab_experiments_title": "発注済みの実験",
-  "lab_deferred_note": "カナリアの適合度評価とプロモーションは進化提案の経路で処理されます。このレポートにはまだ含まれません。"
+  "lab_deferred_note": "カナリアの適合度評価とプロモーションは進化提案の経路で処理されます。このレポートにはまだ含まれません。",
+  "category_charter_health": "チャーターの健全性",
+  "category_core_fidelity": "コアへの忠実度"
 }

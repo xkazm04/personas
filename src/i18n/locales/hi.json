@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} पढ़ी गईं",
       "tokens_unit": "टोकन",
       "trace_evicted_notice": "ट्रेस अधूरा है: {count} स्पैन हटाया गया (सीमा: 10,000)",
-      "trace_evicted_notice_other": "ट्रेस अधूरा है: {count} स्पैन हटाए गए (सीमा: 10,000)"
+      "trace_evicted_notice_other": "ट्रेस अधूरा है: {count} स्पैन हटाए गए (सीमा: 10,000)",
+      "attention_lane": "लेन",
+      "attention_ledger_entry": "लेजर",
+      "attention_provenance": "अटेंशन रन",
+      "attention_responsibility": "चार्टर",
+      "origin_attention": "अटेंशन",
+      "origin_channel": "चैनल",
+      "origin_filter_all": "सभी स्रोत",
+      "origin_filter_label": "रन का स्रोत",
+      "origin_manual": "मैनुअल",
+      "origin_scheduled": "शेड्यूल किया गया",
+      "origin_simulation": "सिमुलेशन",
+      "origin_tooltip_attention": "अटेंशन लूप द्वारा शुरू किया गया",
+      "origin_tooltip_channel": "चैनल संदेश से शुरू हुआ",
+      "origin_tooltip_scheduled": "ट्रिगर शेड्यूल से शुरू हुआ"
     },
     "lab": {
       "mode_arena": "एरेना",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "सफलता का मापदंड",
     "lab_hypothesis_change": "प्रस्तावित बदलाव",
     "lab_experiments_title": "शुरू कराए गए प्रयोग",
-    "lab_deferred_note": "कैनरी फिटनेस और प्रमोशन इवोल्यूशन प्रस्ताव के रास्ते से चलते हैं — अभी इस रिपोर्ट का हिस्सा नहीं हैं।"
+    "lab_deferred_note": "कैनरी फिटनेस और प्रमोशन इवोल्यूशन प्रस्ताव के रास्ते से चलते हैं — अभी इस रिपोर्ट का हिस्सा नहीं हैं।",
+    "category_charter_health": "चार्टर की सेहत",
+    "category_core_fidelity": "कोर के प्रति निष्ठा"
   },
   "remote_approval": {
     "title": "रिमोट रन अनुरोध",

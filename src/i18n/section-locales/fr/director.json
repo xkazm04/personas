@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Métrique de succès",
   "lab_hypothesis_change": "Changement proposé",
   "lab_experiments_title": "Expériences commanditées",
-  "lab_deferred_note": "La fitness canary et la promotion passent par la voie des propositions d’évolution — pas encore incluses dans ce rapport."
+  "lab_deferred_note": "La fitness canary et la promotion passent par la voie des propositions d’évolution — pas encore incluses dans ce rapport.",
+  "category_charter_health": "Santé des chartes",
+  "category_core_fidelity": "Fidélité au noyau"
 }

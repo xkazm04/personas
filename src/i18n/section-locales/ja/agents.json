@@ -553,7 +553,21 @@
     "files_read_count": "{count} 件を読み取り",
     "tokens_unit": "トークン",
     "trace_evicted_notice": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)",
-    "trace_evicted_notice_other": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)"
+    "trace_evicted_notice_other": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)",
+    "attention_lane": "レーン",
+    "attention_ledger_entry": "台帳",
+    "attention_provenance": "アテンション実行",
+    "attention_responsibility": "チャーター",
+    "origin_attention": "アテンション",
+    "origin_channel": "チャンネル",
+    "origin_filter_all": "すべての起点",
+    "origin_filter_label": "実行の起点",
+    "origin_manual": "手動",
+    "origin_scheduled": "スケジュール",
+    "origin_simulation": "シミュレーション",
+    "origin_tooltip_attention": "アテンションループにより起動",
+    "origin_tooltip_channel": "チャンネルのメッセージから開始",
+    "origin_tooltip_scheduled": "トリガーのスケジュールから開始"
   },
   "lab": {
     "mode_arena": "アリーナ",

@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Métrica de éxito",
   "lab_hypothesis_change": "Cambio propuesto",
   "lab_experiments_title": "Experimentos encargados",
-  "lab_deferred_note": "La aptitud canary y la promoción siguen la vía de propuestas de evolución; aún no forman parte de este informe."
+  "lab_deferred_note": "La aptitud canary y la promoción siguen la vía de propuestas de evolución; aún no forman parte de este informe.",
+  "category_charter_health": "Salud de las cartas",
+  "category_core_fidelity": "Fidelidad al núcleo"
 }

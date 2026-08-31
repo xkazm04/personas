@@ -9,12 +9,20 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
+import { deriveExecutionOrigin } from '../../libs/executionOrigin';
 import { CostSparkline } from './CostSparkline';
+import { OriginBadge } from './OriginBadge';
 import { ExecutionValueBadges } from './ExecutionValueBadges';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
-type ExecutionRowData = ExecutionListItem & Partial<Pick<PersonaExecution, 'input_data' | 'model_used' | 'output_data' | 'tool_steps' | 'execution_flows' | 'log_file_path' | 'claude_session_id' | 'trigger_id' | 'execution_config' | 'log_truncated' | 'director_score' | 'thinking_level'>>;
+// `origin` / `origin_lane` are derived by the LIST projection only — a row
+// hydrated into a full PersonaExecution loses them (deriveExecutionOrigin
+// re-derives from input_data / trigger_id in that case), so they are optional
+// here even though ExecutionListItem itself always carries them.
+type ExecutionRowData = Omit<ExecutionListItem, 'origin' | 'origin_lane'> &
+  Partial<Pick<ExecutionListItem, 'origin' | 'origin_lane'>> &
+  Partial<Pick<PersonaExecution, 'input_data' | 'model_used' | 'output_data' | 'tool_steps' | 'execution_flows' | 'log_file_path' | 'claude_session_id' | 'trigger_id' | 'execution_config' | 'log_truncated' | 'director_score' | 'thinking_level'>>;
 
 interface ExecutionListRowProps {
   execution: ExecutionRowData;
@@ -81,6 +89,10 @@ function ExecutionListRowImpl({
       </span>
     </Tooltip>
   ) : null;
+  // List rows carry the server-derived origin; hydrated detail rows re-derive
+  // from input_data / trigger_id (same precedence, see executionOrigin.ts).
+  const rowOrigin = deriveExecutionOrigin(execution);
+  const originBadge = <OriginBadge origin={rowOrigin.origin} lane={rowOrigin.lane} />;
   const capabilityCell = (
     <span className="typo-body text-foreground/90 truncate" title={capabilityTitle ?? undefined}>
       {capabilityTitle ?? e.capability_unattributed}
@@ -132,7 +144,7 @@ function ExecutionListRowImpl({
             ) : <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />}
           </div>
         )}
-        <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}{valueBadges}</div>
+        <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}{originBadge}{valueBadges}</div>
         <div className="col-span-2 flex items-center min-w-0">{capabilityCell}</div>
         <div className={`${compareMode || bulkMode ? 'col-span-1' : 'col-span-2'} flex items-center`}>{duration}</div>
         <div className="col-span-2 typo-body text-foreground/90 flex items-center">{formatTimestamp(execution.started_at)}</div>
@@ -170,7 +182,7 @@ function ExecutionListRowImpl({
           {!bulkMode && compareMode && compareLabel && (
             <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${compareLabelClass}`}>{compareLabel}</span>
           )}
-          {chevron}{statusBadge}{retryBadge}{simulatedBadge}{valueBadges}{duration}
+          {chevron}{statusBadge}{retryBadge}{simulatedBadge}{originBadge}{valueBadges}{duration}
           <RelativeTime timestamp={execution.started_at} fallback="-" showTooltip={false} className="typo-body text-foreground ml-auto" />
         </div>
         {capabilityTitle && (

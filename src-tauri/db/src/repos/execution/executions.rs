@@ -102,9 +102,27 @@ const COLUMNS: &str = "id, persona_id, trigger_id, use_case_id, status, input_da
 /// on purpose: the list page does not need input_data / output_data / the log
 /// paths, and this is the shape whose sixteenth column went missing for three
 /// months (see `list_items_projection_covers_every_field_the_mapper_reads`).
+///
+/// The two derived columns at the end (`origin`, `origin_lane`) classify the
+/// run's provenance in SQL — attention / channel / scheduled / simulation /
+/// manual, in that precedence — so the list UI can badge + filter by origin
+/// without shipping every row's `input_data` blob. `json_valid` guards every
+/// `json_extract` because `input_data` is caller-supplied and not guaranteed
+/// to be JSON (a malformed blob must classify as manual, not fail the query).
 const LIST_ITEM_COLUMNS: &str = "id, persona_id, use_case_id, status, input_tokens, \
      output_tokens, cost_usd, error_message, duration_ms, retry_of_execution_id, \
-     retry_count, started_at, completed_at, created_at, is_simulation, business_outcome";
+     retry_count, started_at, completed_at, created_at, is_simulation, business_outcome, \
+     CASE \
+       WHEN json_valid(input_data) AND (json_extract(input_data, '$.source') = 'attention' \
+            OR json_extract(input_data, '$._attention') IS NOT NULL) THEN 'attention' \
+       WHEN json_valid(input_data) AND json_extract(input_data, '$.source') \
+            IN ('channel', 'slack', 'discord', 'team_deliberation') THEN 'channel' \
+       WHEN trigger_id IS NOT NULL AND trigger_id != '' THEN 'scheduled' \
+       WHEN COALESCE(is_simulation, 0) = 1 THEN 'simulation' \
+       ELSE 'manual' \
+     END AS origin, \
+     CASE WHEN json_valid(input_data) \
+          THEN json_extract(input_data, '$._attention.lane') END AS origin_lane";
 
 /// `COLUMNS` with every name qualified by a table alias, for the joins that
 /// used to project `e.*`. Derived from the one const rather than duplicated,
@@ -235,6 +253,13 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
+        // The CASE in LIST_ITEM_COLUMNS always yields a value ('manual' is the
+        // ELSE arm); the Option read is belt-and-suspenders against a future
+        // projection that forgets the derived column.
+        origin: row
+            .get::<_, Option<String>>("origin")?
+            .unwrap_or_else(|| "manual".to_string()),
+        origin_lane: row.get("origin_lane")?,
     })
 }
 
@@ -2288,6 +2313,102 @@ mod tests {
         assert_eq!(item.id, created.id);
         assert_eq!(item.persona_id, persona_id);
         assert_eq!(item.business_outcome, "unknown");
+        assert_eq!(item.origin, "manual", "bare run classifies as manual");
+        assert!(item.origin_lane.is_none());
+    }
+
+    /// The derived `origin` column classifies every provenance shape the app
+    /// writes into `input_data` / `trigger_id` / `is_simulation` — all five
+    /// origins, plus the precedence order (attention > channel > scheduled >
+    /// simulation > manual) and the malformed-JSON fallback.
+    #[test]
+    fn list_items_origin_covers_all_five_origins_and_precedence() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Origin Agent");
+
+        // A real trigger row so trigger_id survives the FK.
+        let trigger_id = "trg-origin-test";
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers
+                    (id, persona_id, trigger_type, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'schedule', 1, datetime('now'), datetime('now'))",
+                params![trigger_id, persona_id],
+            )
+            .unwrap();
+        }
+
+        let mk = |trigger: Option<&str>, input: Option<&str>, simulation: bool| {
+            let row = create(
+                &pool,
+                &persona_id,
+                trigger.map(String::from),
+                input.map(String::from),
+                None,
+                None,
+            )
+            .unwrap();
+            if simulation {
+                let conn = pool.get().unwrap();
+                conn.execute(
+                    "UPDATE persona_executions SET is_simulation = 1 WHERE id = ?1",
+                    params![row.id],
+                )
+                .unwrap();
+            }
+            row.id
+        };
+
+        let attention = mk(
+            None,
+            Some(
+                r#"{"source":"attention","_attention":{"ledgerId":"att_1","responsibilityId":null,"lane":"scan"},"task":"look around"}"#,
+            ),
+            false,
+        );
+        let channel = mk(None, Some(r#"{"source":"slack","text":"hi"}"#), false);
+        let scheduled = mk(Some(trigger_id), Some(r#"{"foo":1}"#), false);
+        let simulation = mk(None, Some(r#"{"foo":1}"#), true);
+        let manual = mk(None, Some(r#"{"foo":1}"#), false);
+        // Precedence: an attention envelope outranks a set trigger_id AND the
+        // simulation flag; a channel source outranks trigger_id.
+        let attention_wins = mk(
+            Some(trigger_id),
+            Some(r#"{"source":"attention","_attention":{"lane":"improve"}}"#),
+            true,
+        );
+        let channel_wins = mk(
+            Some(trigger_id),
+            Some(r#"{"source":"team_deliberation"}"#),
+            false,
+        );
+        // trigger_id outranks the simulation flag.
+        let scheduled_wins = mk(Some(trigger_id), None, true);
+        // Malformed input_data must fall through, never fail the query.
+        let malformed = mk(None, Some("not json at all"), false);
+
+        let items = list_items_by_persona_id(&pool, &persona_id, None, None).unwrap();
+        let origin_of = |id: &str| {
+            let item = items.iter().find(|i| i.id == id).unwrap();
+            (item.origin.clone(), item.origin_lane.clone())
+        };
+
+        assert_eq!(
+            origin_of(&attention),
+            ("attention".into(), Some("scan".into()))
+        );
+        assert_eq!(origin_of(&channel), ("channel".into(), None));
+        assert_eq!(origin_of(&scheduled), ("scheduled".into(), None));
+        assert_eq!(origin_of(&simulation), ("simulation".into(), None));
+        assert_eq!(origin_of(&manual), ("manual".into(), None));
+        assert_eq!(
+            origin_of(&attention_wins),
+            ("attention".into(), Some("improve".into()))
+        );
+        assert_eq!(origin_of(&channel_wins), ("channel".into(), None));
+        assert_eq!(origin_of(&scheduled_wins), ("scheduled".into(), None));
+        assert_eq!(origin_of(&malformed), ("manual".into(), None));
     }
 
     /// SQLite stores `'mock'` verbatim in a column declared

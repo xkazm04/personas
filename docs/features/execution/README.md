@@ -126,6 +126,22 @@ shows a **provenance badge** (`provenance.ts` → `analyzeProvenance`) — green
 "N sources" when the report cites sources, muted-amber "Unsourced" when it carries
 figures but no Sources section, nothing for plain operational messages.
 
+### Run origin (badge + filter)
+
+Every row of the persona execution list carries a derived **origin** —
+`attention` / `channel` / `scheduled` / `simulation` / `manual`, in that
+precedence — computed in the list SQL (`LIST_ITEM_COLUMNS` in
+`db/src/repos/execution/executions.rs`) from `input_data.source`, the
+`_attention` envelope, `trigger_id` and `is_simulation`, so the list never
+ships raw `input_data` blobs. The list UI shows a compact **origin chip** on
+attention / channel / scheduled rows (attention rows include their lane;
+manual stays unmarked and simulation keeps its existing badge) and an **origin
+filter** dropdown (All origins / Attention / Channel / Scheduled / Manual /
+Simulation). Hydrated detail rows re-derive the same classification on the
+frontend (`sub_executions/libs/executionOrigin.ts`), and the execution detail
+view renders an **attention provenance row** (ledger id, charter id, lane)
+for attention-dispatched runs.
+
 ### Execution annotations (tags, note, star)
 
 `persona_execution_annotations` is a thin write-rarely layer over

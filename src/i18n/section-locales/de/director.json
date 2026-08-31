@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Erfolgsmetrik",
   "lab_hypothesis_change": "Vorgeschlagene Änderung",
   "lab_experiments_title": "Beauftragte Experimente",
-  "lab_deferred_note": "Canary-Fitness und Beförderung laufen über den Pfad der Evolutionsvorschläge — noch nicht Teil dieses Berichts."
+  "lab_deferred_note": "Canary-Fitness und Beförderung laufen über den Pfad der Evolutionsvorschläge — noch nicht Teil dieses Berichts.",
+  "category_charter_health": "Charta-Gesundheit",
+  "category_core_fidelity": "Kerntreue"
 }

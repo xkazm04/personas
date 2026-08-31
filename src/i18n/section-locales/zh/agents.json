@@ -553,7 +553,21 @@
     "files_read_count": "已读取 {count} 个",
     "tokens_unit": "令牌",
     "trace_evicted_notice": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）",
-    "trace_evicted_notice_other": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）"
+    "trace_evicted_notice_other": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）",
+    "attention_lane": "泳道",
+    "attention_ledger_entry": "台账",
+    "attention_provenance": "注意力运行",
+    "attention_responsibility": "章程",
+    "origin_attention": "注意力",
+    "origin_channel": "频道",
+    "origin_filter_all": "全部来源",
+    "origin_filter_label": "运行来源",
+    "origin_manual": "手动",
+    "origin_scheduled": "计划",
+    "origin_simulation": "模拟",
+    "origin_tooltip_attention": "由注意力循环调度",
+    "origin_tooltip_channel": "由频道消息发起",
+    "origin_tooltip_scheduled": "由触发器计划发起"
   },
   "lab": {
     "mode_arena": "竞技场",

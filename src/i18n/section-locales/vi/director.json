@@ -160,5 +160,7 @@
   "lab_hypothesis_metric": "Chỉ số thành công",
   "lab_hypothesis_change": "Thay đổi đề xuất",
   "lab_experiments_title": "Thí nghiệm đã giao",
-  "lab_deferred_note": "Độ phù hợp canary và việc thăng hạng đi theo lộ trình đề xuất tiến hóa — chưa thuộc báo cáo này."
+  "lab_deferred_note": "Độ phù hợp canary và việc thăng hạng đi theo lộ trình đề xuất tiến hóa — chưa thuộc báo cáo này.",
+  "category_charter_health": "Sức khỏe hiến chương",
+  "category_core_fidelity": "Độ trung thành với cốt lõi"
 }

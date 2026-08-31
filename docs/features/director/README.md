@@ -68,7 +68,8 @@ The single tab stacks, top to bottom:
   that agent's score trend, value signal, active attention flags, and full
   **verdict history** (the Reviews surface, scoped to the agent, expandable to
   rationale + suggested actions) — each verdict tagged with its **category**
-  (prompt / health / triggers / credentials / memory / usefulness, via
+  (prompt / health / triggers / credentials / memory / usefulness, plus the
+  living-agent pair core_fidelity / charter_health, via
   `categoryMeta.ts`) and filterable by category — plus Review-now. When the
   **Brain** is enabled, the modal also shows a collapsible **Prior coaching
   (long-term memory)** panel rendering the agent's most recent Director vault
@@ -116,6 +117,18 @@ user resolved them), polls it to completion, and parses its output:
   `persona_manual_reviews` (the existing Human Review queue). Approving /
   rejecting them feeds the human-feedback learning loop, which the next cycle
   reads back.
+
+Two categories judge the **living-agent spine** and are gated on the payload
+actually containing it: **core_fidelity** (does recent behavior match the
+persona's authored Core — dials, principles, voice) and **charter_health**
+(are the charters alive — an unmeasured objective is a finding, a refusal
+pileup names its dominant reason, a probation window nearing its end without
+evidence is a warning). The payload renders the Core via the runtime prompt's
+`render_core`, the non-retired charters (objectives with measurement recency,
+cadence, tenure), and the last attention-ledger passes; a persona without a
+Core or charters gets the plain "No Core authored." / "No charters." lines and
+the rubric instructs the model to SKIP those two categories rather than
+hallucinate them. Both stay coaching-only — they never route to healing.
 
 Because the score lives on the execution (not a review row), healthy personas
 get a high score with **no** review-queue spam.

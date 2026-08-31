@@ -127,6 +127,11 @@ For each persona you are asked about, you will receive:
 4. A sample of its memories (facts the persona has learned).
 5. Your own past verdicts on this persona and how the user responded
    (accepted / rejected / ignored).
+6. The persona's authored Core (identity, voice, dials, principles) — or the
+   explicit line "No Core authored."
+7. Its standing charters (objectives, cadence, tenure) — or the explicit line
+   "No charters."
+8. A summary of its recent attention passes (lane / verdict / reason).
 
 First, output exactly ONE overall score line — ALWAYS, even when the persona is
 healthy and you have no coaching to add:
@@ -142,7 +147,7 @@ short reinforcements of what's earning value. Wins are NOT noise; only emit
 them when there's concrete evidence (e.g., a recent run delivered value, a
 prior coaching note has been resolved, an expensive failure mode has stopped):
 
-DIRECTOR_WIN: {"category":"prompt|health|triggers|credentials|memory|usefulness","note":"<=160 chars: what's working and the evidence"}
+DIRECTOR_WIN: {"category":"prompt|health|triggers|credentials|memory|usefulness|core_fidelity|charter_health","note":"<=160 chars: what's working and the evidence"}
 
 Coaching needs a different channel than reinforcement: emit wins for strengths,
 verdicts for things to change. Don't restate a verdict as a win.
@@ -151,7 +156,23 @@ Then produce between 0 and 4 coaching verdicts. A verdict is prose. For each,
 output a single JSON object on its own line prefixed with the literal marker
 `DIRECTOR_VERDICT: ` so the app can parse it:
 
-DIRECTOR_VERDICT: {"severity":"info|warning|error","category":"prompt|health|triggers|credentials|memory|usefulness","title":"<=60 chars imperative phrase","description":"1-3 sentences explaining the observation and why it matters","rationale":"concrete evidence from the context above","suggested_actions":["short prose suggestion","..."]}
+DIRECTOR_VERDICT: {"severity":"info|warning|error","category":"prompt|health|triggers|credentials|memory|usefulness|core_fidelity|charter_health","title":"<=60 chars imperative phrase","description":"1-3 sentences explaining the observation and why it matters","rationale":"concrete evidence from the context above","suggested_actions":["short prose suggestion","..."]}
+
+Two categories judge the persona's living-agent spine, and both are GATED on
+the context actually containing that spine:
+- core_fidelity — does recent behavior match the persona's authored Core?
+  Compare episode/output tone and choices against the Core's dials, principles
+  and voice, and flag drift WITH evidence (e.g. a risk-averse Core taking
+  unreviewed bold actions, output tone contradicting the authored voice). If
+  the context says "No Core authored", SKIP this category entirely — never
+  invent a Core to judge against.
+- charter_health — are the charters alive? An objective that has never been
+  measured is a finding (unmeasured is not zero). A pileup of attention
+  refusals is a finding that names the dominant refusal reason. A probation
+  window nearing its end without evidence of the objectives moving is a
+  warning. A cadence that is switched on but never fires (or off on a charter
+  that clearly needs it) is worth a note. If the context says "No charters",
+  SKIP this category entirely — never hallucinate charters.
 
 A verdict MAY additionally carry a typed, testable hypothesis when — and only
 when — the coaching could be verified by a controlled experiment. Add an
@@ -236,6 +257,17 @@ pub enum DirectorCategory {
     Credentials,
     Memory,
     Usefulness,
+    /// Living-agent: does recent behavior match the persona's authored Core
+    /// (dials, principles, voice)? Only judged when a Core exists — the rubric
+    /// instructs the model to SKIP it otherwise. The kebab-case alias accepts
+    /// the spelling a model may plausibly emit for a hyphenated concept.
+    #[serde(alias = "core-fidelity")]
+    CoreFidelity,
+    /// Living-agent: are the persona's charters alive (objectives measured,
+    /// cadence honored, refusals not piling up, probation on track)? Skipped
+    /// when the persona holds no charters.
+    #[serde(alias = "charter-health")]
+    CharterHealth,
 }
 
 impl DirectorCategory {
@@ -247,6 +279,8 @@ impl DirectorCategory {
             Self::Credentials => "credentials",
             Self::Memory => "memory",
             Self::Usefulness => "usefulness",
+            Self::CoreFidelity => "core_fidelity",
+            Self::CharterHealth => "charter_health",
         }
     }
 }
@@ -663,10 +697,189 @@ fn truncate(s: &str, max: usize) -> String {
     format!("{head}…")
 }
 
+/// Caps for the living-agent context blocks below — bounded with the same
+/// discipline as the 1200-char system_prompt excerpt in the identity section.
+const PAYLOAD_CORE_MAX_CHARS: usize = 1200;
+const PAYLOAD_CHARTER_LIMIT: usize = 5;
+const PAYLOAD_CHARTER_OBJECTIVES_LIMIT: usize = 6;
+const PAYLOAD_ATTENTION_ROWS: u32 = 15;
+
+/// Render the persona's authored Core for the Director's payload (input 6 of
+/// the rubric). Reuses the runtime prompt's [`render_core`] prose so the judge
+/// sees exactly the identity the persona itself runs under, capped at
+/// [`PAYLOAD_CORE_MAX_CHARS`]. Absence is stated plainly ("No Core authored.")
+/// so the rubric's gate can tell the model to skip `core_fidelity` instead of
+/// hallucinating a Core; an authored-but-unparsable Core says so and carries
+/// its own skip instruction.
+fn render_core_profile_block(persona: &Persona) -> String {
+    let mut s = String::from("## Core profile (authored identity)\n");
+    let raw = persona
+        .core_profile
+        .as_deref()
+        .map(str::trim)
+        .filter(|c| !c.is_empty());
+    match raw {
+        None => s.push_str("No Core authored.\n"),
+        Some(raw) => match serde_json::from_str::<crate::db::models::PersonaCore>(raw) {
+            Ok(core) => {
+                let rendered = super::prompt::render_core(&core);
+                let body = rendered.strip_prefix("## Core\n").unwrap_or(&rendered);
+                s.push_str(&truncate(body.trim_end(), PAYLOAD_CORE_MAX_CHARS));
+                s.push('\n');
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %persona.id, error = %e,
+                    "Director: core_profile JSON failed to parse for the payload");
+                s.push_str(
+                    "A Core is authored but could not be parsed (invalid JSON). \
+                     Skip the core_fidelity category this cycle.\n",
+                );
+            }
+        },
+    }
+    s.push('\n');
+    s
+}
+
+/// Render the persona's standing charters for the Director's payload (input 7):
+/// title, domain, status, scope rung, cadence, tenure/probation state, and each
+/// objective with its measurement recency ("NEVER measured" is load-bearing —
+/// the rubric's charter_health guidance keys on it). Capped at
+/// [`PAYLOAD_CHARTER_LIMIT`] charters x [`PAYLOAD_CHARTER_OBJECTIVES_LIMIT`]
+/// objectives. Absence is the plain "No charters." line the rubric gates on.
+fn render_charters_block(pool: &DbPool, persona_id: &str) -> String {
+    let charters = crate::db::repos::core::responsibilities::list_by_persona(
+        pool, persona_id, /* include_retired */ false,
+    )
+    .unwrap_or_default();
+
+    let mut s = String::from("## Charters (standing responsibilities)\n");
+    if charters.is_empty() {
+        s.push_str("No charters.\n\n");
+        return s;
+    }
+    for r in charters.iter().take(PAYLOAD_CHARTER_LIMIT) {
+        s.push_str(&format!(
+            "- \"{}\" [{}] status={} rung={}\n",
+            truncate(&r.title, 80),
+            r.domain,
+            r.status,
+            r.scope_rung,
+        ));
+        if r.cadence.attention_enabled {
+            let interval = r
+                .cadence
+                .interval_minutes
+                .map(|m| format!("every {m} min"))
+                .unwrap_or_else(|| "no interval set".to_string());
+            let cap = r
+                .cadence
+                .max_runs_per_day
+                .map(|n| format!(", max {n}/day"))
+                .unwrap_or_default();
+            s.push_str(&format!("    - cadence: attention ON, {interval}{cap}\n"));
+        } else {
+            s.push_str("    - cadence: attention OFF\n");
+        }
+        if let Some(hired) = r.tenure.hired_at.as_deref() {
+            s.push_str(&format!("    - tenure: hired {hired}"));
+            match (
+                r.tenure.probation_ends_at.as_deref(),
+                r.tenure.probation_decision.as_deref(),
+            ) {
+                (_, Some(decision)) => s.push_str(&format!(", probation {decision}\n")),
+                (Some(ends), None) => s.push_str(&format!(", probation undecided, ends {ends}\n")),
+                (None, None) => s.push('\n'),
+            }
+        }
+        if r.objectives.is_empty() {
+            s.push_str("    - objectives: (none declared)\n");
+        } else {
+            for obj in r.objectives.iter().take(PAYLOAD_CHARTER_OBJECTIVES_LIMIT) {
+                let mut line = format!("    - objective \"{}\"", truncate(&obj.label, 60));
+                match (obj.baseline, obj.target) {
+                    (Some(b), Some(t)) => line.push_str(&format!(": {b} -> {t}")),
+                    (None, Some(t)) => line.push_str(&format!(": target {t}")),
+                    (Some(b), None) => line.push_str(&format!(": baseline {b}")),
+                    (None, None) => {}
+                }
+                if let Some(u) = obj.unit.as_deref().filter(|u| !u.trim().is_empty()) {
+                    line.push_str(&format!(" {u}"));
+                }
+                match obj
+                    .last_measured_at
+                    .as_deref()
+                    .filter(|t| !t.trim().is_empty())
+                {
+                    Some(ts) => line.push_str(&format!("; last measured {ts}\n")),
+                    None => line.push_str("; NEVER measured\n"),
+                }
+                s.push_str(&line);
+            }
+            let hidden = r
+                .objectives
+                .len()
+                .saturating_sub(PAYLOAD_CHARTER_OBJECTIVES_LIMIT);
+            if hidden > 0 {
+                s.push_str(&format!("    - (+{hidden} more objectives)\n"));
+            }
+        }
+    }
+    let hidden = charters.len().saturating_sub(PAYLOAD_CHARTER_LIMIT);
+    if hidden > 0 {
+        s.push_str(&format!("(+{hidden} more charters not shown)\n"));
+    }
+    s.push('\n');
+    s
+}
+
+/// Render the persona's recent attention-ledger rows for the Director's payload
+/// (input 8): lane / verdict / reason per pass, newest first, with a refusal
+/// tally up front so a pileup is visible without counting lines. Bounded at
+/// [`PAYLOAD_ATTENTION_ROWS`] rows and 100 chars per reason.
+fn render_attention_block(pool: &DbPool, persona_id: &str) -> String {
+    let rows = crate::db::repos::core::attention_ledger::list_by_persona(
+        pool,
+        persona_id,
+        PAYLOAD_ATTENTION_ROWS,
+    )
+    .unwrap_or_default();
+
+    let mut s = String::from("## Recent attention passes\n");
+    if rows.is_empty() {
+        s.push_str("- (none recorded)\n\n");
+        return s;
+    }
+    let refused = rows.iter().filter(|r| r.verdict == "refused").count();
+    s.push_str(&format!(
+        "Last {} passes, {} refused:\n",
+        rows.len(),
+        refused
+    ));
+    for r in &rows {
+        let lane = r.lane.as_deref().unwrap_or("-");
+        let reason = r.reason.trim();
+        if reason.is_empty() {
+            s.push_str(&format!("- [{}] {} lane={}\n", r.verdict, r.kind, lane));
+        } else {
+            s.push_str(&format!(
+                "- [{}] {} lane={}: {}\n",
+                r.verdict,
+                r.kind,
+                lane,
+                truncate(reason, 100),
+            ));
+        }
+    }
+    s.push('\n');
+    s
+}
+
 /// Build the synthetic input payload the Director persona analyses. Mirrors the
-/// five inputs the rubric promises: identity, execution summary (incl. the
-/// value/efficiency rollup), open healing, a memory sample, and the Director's
-/// own past verdicts on this persona + how the user responded.
+/// eight inputs the rubric promises: identity, execution summary (incl. the
+/// value/efficiency rollup), open healing, a memory sample, the Director's
+/// own past verdicts on this persona + how the user responded, the authored
+/// Core, the standing charters, and the recent attention passes.
 fn build_director_payload(
     pool: &DbPool,
     ctx: &PersonaEvaluationContext,
@@ -801,6 +1014,15 @@ fn build_director_payload(
              resolved/rejected unless the situation has materially changed.\n",
         );
     }
+    s.push('\n');
+
+    // 6-8. Living-agent spine: the authored Core, the standing charters, and
+    // the recent attention passes. Each block states absence plainly ("No Core
+    // authored." / "No charters.") so the rubric's gate can skip the
+    // core_fidelity / charter_health categories instead of hallucinating them.
+    s.push_str(&render_core_profile_block(p));
+    s.push_str(&render_charters_block(pool, &p.id));
+    s.push_str(&render_attention_block(pool, &p.id));
 
     s
 }
@@ -1538,12 +1760,20 @@ const DIRECTOR_HEALING_SOURCE: &str = "director";
 /// - `prompt` / `memory` / `usefulness` → subjective, author-driven coaching
 ///   (the user rewrites the prompt, curates memories, retargets the persona);
 ///   there is nothing for an automated fix to apply, so these NEVER route.
+/// - `core_fidelity` / `charter_health` → living-agent coaching about the
+///   authored Core and the operator's charters; both are author-decided
+///   (re-author the Core, measure an objective, adjust a cadence), so they
+///   stay coaching-only too.
 fn healing_category_for(category: DirectorCategory) -> Option<&'static str> {
     match category {
         DirectorCategory::Health => Some("health"),
         DirectorCategory::Credentials => Some("config"),
         DirectorCategory::Triggers => Some("config"),
-        DirectorCategory::Prompt | DirectorCategory::Memory | DirectorCategory::Usefulness => None,
+        DirectorCategory::Prompt
+        | DirectorCategory::Memory
+        | DirectorCategory::Usefulness
+        | DirectorCategory::CoreFidelity
+        | DirectorCategory::CharterHealth => None,
     }
 }
 
@@ -2723,5 +2953,179 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
         let empty = render_unscored_review_md(&[], &[]);
         assert!(empty.contains("unscored"));
         assert!(empty.contains("No coaching notes were emitted."));
+    }
+
+    /// Living-agent categories: `core_fidelity` and `charter_health` parse in
+    /// verdicts AND wins (snake_case as the rubric asks, plus the kebab-case
+    /// alias a model may plausibly emit), while an unknown category still
+    /// drops the line without sinking the run's other verdicts.
+    #[test]
+    fn parse_accepts_living_agent_categories_and_drops_unknown() {
+        let output = "\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"core_fidelity\",\"title\":\"Tone drifts from the authored voice\"}\n\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"charter-health\",\"title\":\"Objective never measured\"}\n\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"vibes\",\"title\":\"Unknown category must drop\"}\n\
+DIRECTOR_VERDICT: {\"severity\":\"info\",\"category\":\"prompt\",\"title\":\"Existing categories untouched\"}\n";
+        let v = parse_verdicts(output, "p-la");
+        assert_eq!(v.len(), 3, "unknown category dropped, three kept");
+        assert_eq!(v[0].category, DirectorCategory::CoreFidelity);
+        assert_eq!(
+            v[1].category,
+            DirectorCategory::CharterHealth,
+            "kebab alias accepted"
+        );
+        assert_eq!(v[2].category, DirectorCategory::Prompt);
+        // Round-trip: the wire spelling stays snake_case.
+        assert_eq!(v[0].category.as_str(), "core_fidelity");
+        assert_eq!(v[1].category.as_str(), "charter_health");
+
+        let wins = parse_wins(
+            "DIRECTOR_WIN: {\"category\":\"charter_health\",\"note\":\"All three objectives measured this week.\"}\n\
+DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
+        );
+        assert_eq!(wins.len(), 1, "unknown win category dropped");
+        assert_eq!(wins[0].category, DirectorCategory::CharterHealth);
+    }
+
+    /// The payload renders the three living-agent blocks (Core, charters,
+    /// attention passes) when the persona has them: the Core as the runtime
+    /// prompt's prose, each objective with its measurement recency ("NEVER
+    /// measured" is the charter_health hook), and the ledger rows with their
+    /// lane/verdict/reason plus a refusal tally.
+    #[test]
+    fn build_payload_renders_living_agent_blocks() {
+        use crate::db::models::{
+            ResponsibilityCadence, ResponsibilityObjective, ResponsibilityTenure,
+        };
+        use crate::db::repos::core::{attention_ledger, responsibilities};
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        let pid = mk_persona(&pool, "Living Agent");
+
+        // Author a Core (risk-averse dial + one principle).
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET core_profile = ?1 WHERE id = ?2",
+                params![
+                    // camelCase keys: PersonaCore is #[serde(rename_all = "camelCase")]
+                    r#"{"motivation":"Keep the docs honest","stance":"","northStarCommitment":"","riskTolerance":0.1,"speedVsQuality":0.5,"conflictStyle":"analyst","deference":0.5,"principles":["Verify before claiming done"],"constraints":[],"decisionPrinciples":[]}"#,
+                    pid
+                ],
+            )
+            .unwrap();
+        }
+
+        // One active charter with an unmeasured objective and attention ON.
+        let cadence = ResponsibilityCadence {
+            attention_enabled: true,
+            interval_minutes: Some(60),
+            quiet_hours: None,
+            max_runs_per_day: Some(4),
+        };
+        let objectives = vec![ResponsibilityObjective {
+            key: "docs_freshness".into(),
+            label: "Docs freshness".into(),
+            target: Some(5.0),
+            ..Default::default()
+        }];
+        responsibilities::create(
+            &pool,
+            responsibilities::CreateResponsibilityInput {
+                persona_id: &pid,
+                title: "Keep the docs honest",
+                domain: "docs",
+                outcomes: &[],
+                objectives: &objectives,
+                scope_rung: 1,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "operator",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &ResponsibilityTenure::default(),
+                status: "active",
+                project_id: None,
+                source: "operator",
+            },
+        )
+        .unwrap();
+
+        // Two ledger rows: one refusal (rate cap) and one completed noop.
+        attention_ledger::insert_refusal(
+            &pool,
+            &pid,
+            None,
+            "attention",
+            Some("scan"),
+            "rate cap reached",
+        )
+        .unwrap();
+        let open =
+            attention_ledger::insert_started(&pool, &pid, None, "attention", Some("scan")).unwrap();
+        attention_ledger::complete(&pool, &open, "noop", "nothing new", None, None, None).unwrap();
+
+        let ctx = gather_context(&pool, &pid).unwrap();
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(pid.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+
+        // Core block: rendered prose, not raw JSON, and no absence line.
+        assert!(payload.contains("## Core profile (authored identity)"));
+        assert!(payload.contains("risk-averse"), "dial renders as prose");
+        assert!(payload.contains("Verify before claiming done"));
+        assert!(!payload.contains("No Core authored."));
+
+        // Charter block: title, cadence, and the unmeasured objective.
+        assert!(payload.contains("## Charters (standing responsibilities)"));
+        assert!(payload.contains("Keep the docs honest"));
+        assert!(payload.contains("cadence: attention ON, every 60 min, max 4/day"));
+        assert!(payload.contains("objective \"Docs freshness\": target 5"));
+        assert!(payload.contains("NEVER measured"));
+        assert!(!payload.contains("No charters."));
+
+        // Attention block: both rows with lane/verdict/reason + refusal tally.
+        assert!(payload.contains("## Recent attention passes"));
+        assert!(payload.contains("Last 2 passes, 1 refused:"));
+        assert!(payload.contains("[refused] attention lane=scan: rate cap reached"));
+        assert!(payload.contains("[noop] attention lane=scan: nothing new"));
+    }
+
+    /// A persona with NO Core and NO charters gets the honest-absence lines the
+    /// rubric's skip instruction keys on — never silence, never invented data.
+    #[test]
+    fn build_payload_states_living_agent_absence_plainly() {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let pid = mk_persona(&pool, "Bare Agent");
+
+        let ctx = gather_context(&pool, &pid).unwrap();
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(pid.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+
+        assert!(payload.contains("No Core authored."));
+        assert!(payload.contains("No charters."));
+        assert!(payload.contains("## Recent attention passes"));
+        assert!(payload.contains("(none recorded)"));
+    }
+
+    /// An authored-but-corrupt Core neither renders as JSON nor claims absence:
+    /// the block says it failed to parse and carries its own skip instruction.
+    #[test]
+    fn build_payload_corrupt_core_carries_skip_instruction() {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let pid = mk_persona(&pool, "Corrupt Core Agent");
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET core_profile = '{not json' WHERE id = ?1",
+                params![pid],
+            )
+            .unwrap();
+        }
+        let ctx = gather_context(&pool, &pid).unwrap();
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(pid.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+        assert!(payload.contains("could not be parsed"));
+        assert!(payload.contains("Skip the core_fidelity category"));
+        assert!(!payload.contains("No Core authored."));
     }
 }

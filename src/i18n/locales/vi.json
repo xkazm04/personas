@@ -1716,7 +1716,21 @@
       "files_read_count": "{count} đã đọc",
       "tokens_unit": "token",
       "trace_evicted_notice": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
-      "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)"
+      "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
+      "attention_lane": "Làn",
+      "attention_ledger_entry": "Sổ cái",
+      "attention_provenance": "Lượt chạy attention",
+      "attention_responsibility": "Hiến chương",
+      "origin_attention": "Attention",
+      "origin_channel": "Kênh",
+      "origin_filter_all": "Mọi nguồn gốc",
+      "origin_filter_label": "Nguồn gốc lượt chạy",
+      "origin_manual": "Thủ công",
+      "origin_scheduled": "Theo lịch",
+      "origin_simulation": "Mô phỏng",
+      "origin_tooltip_attention": "Được vòng lặp attention khởi chạy",
+      "origin_tooltip_channel": "Bắt đầu từ tin nhắn trong kênh",
+      "origin_tooltip_scheduled": "Bắt đầu theo lịch của trigger"
     },
     "lab": {
       "mode_arena": "Đấu trường",
@@ -20098,7 +20112,9 @@
     "lab_hypothesis_metric": "Chỉ số thành công",
     "lab_hypothesis_change": "Thay đổi đề xuất",
     "lab_experiments_title": "Thí nghiệm đã giao",
-    "lab_deferred_note": "Độ phù hợp canary và việc thăng hạng đi theo lộ trình đề xuất tiến hóa — chưa thuộc báo cáo này."
+    "lab_deferred_note": "Độ phù hợp canary và việc thăng hạng đi theo lộ trình đề xuất tiến hóa — chưa thuộc báo cáo này.",
+    "category_charter_health": "Sức khỏe hiến chương",
+    "category_core_fidelity": "Độ trung thành với cốt lõi"
   },
   "remote_approval": {
     "title": "Yêu cầu chạy từ xa",
