@@ -683,7 +683,7 @@ pub async fn run_execution(
                             logger.log(&format!(
                                 "[WORKTREE] isolated execution in {} on branch personas/exec/{}",
                                 ws.path().display(),
-                                &execution_id
+                                execution_id
                             ));
                             Some(ws)
                         }
@@ -718,7 +718,7 @@ pub async fn run_execution(
             if std::fs::create_dir_all(&stable_dir).is_ok() {
                 stable_dir
             } else {
-                std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+                std::env::temp_dir().join(format!("personas-exec-{}", execution_id))
             }
         }
     };

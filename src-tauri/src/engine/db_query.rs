@@ -257,10 +257,9 @@ fn extract_first_keyword(query_text: &str) -> Option<String> {
     loop {
         s = s.trim_start();
         if s.starts_with("--") {
-            if let Some(pos) = s.find('\n') {
+            {
+                let pos = s.find('\n')?;
                 s = &s[pos + 1..];
-            } else {
-                return None; // entire query is a comment
             }
         } else if s.starts_with("/*") {
             if let Some(pos) = s.find("*/") {

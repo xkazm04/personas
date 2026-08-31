@@ -1425,7 +1425,7 @@ async fn run_context_generation(
     // mostly obliges, but "Studio Hub" and "studio hub" naming the same group is
     // not a reason to orphan a context.
     let mut group_name_to_id: std::collections::HashMap<String, String> =
-        repo::list_context_groups(pool, &project_id)
+        repo::list_context_groups(pool, project_id)
             .unwrap_or_default()
             .into_iter()
             .map(|g| (group_key(&g.name), g.id))

@@ -94,7 +94,7 @@ fn content_hash(components: &[(String, String)]) -> String {
         hasher.update(path.as_bytes());
         hasher.update([0u8]);
         hasher.update(sha.as_bytes());
-        hasher.update([b'\n']);
+        hasher.update(*b"\n");
     }
     hex::encode(hasher.finalize())
 }
