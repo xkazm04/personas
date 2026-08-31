@@ -531,5 +531,10 @@
   "grid_rail_tab_messages": "Nachrichten",
   "grid_rail_tabs_aria": "Aktivitätsbereich",
   "grid_messages_empty": "Noch keine Kanalaktivität.",
-  "grid_dock_collapse": "Sendekonsole ausblenden"
+  "grid_dock_collapse": "Sendekonsole ausblenden",
+  "grid_rail_loading_more": "Weitere werden geladen…",
+  "grid_rail_unread": "Ungelesen",
+  "grid_rail_empty_reviews": "Nichts wartet auf eine Entscheidung",
+  "grid_rail_empty_reviews_sub": "Prüfungen, Ideen, Praktiken und angehaltene Fragen landen hier, sobald sie dich brauchen.",
+  "grid_rail_empty_messages_sub": "Team-Kanäle zeigen hier ihr Neuestes, sobald etwas gesagt wird."
 }

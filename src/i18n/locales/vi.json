@@ -532,7 +532,12 @@
     "grid_rail_tab_messages": "Tin nhắn",
     "grid_rail_tabs_aria": "Bảng hoạt động",
     "grid_messages_empty": "Chưa có hoạt động nào trong kênh.",
-    "grid_dock_collapse": "Ẩn bảng điều khiển gửi đi"
+    "grid_dock_collapse": "Ẩn bảng điều khiển gửi đi",
+    "grid_rail_loading_more": "Đang tải thêm…",
+    "grid_rail_unread": "Chưa đọc",
+    "grid_rail_empty_reviews": "Không có gì chờ quyết định",
+    "grid_rail_empty_reviews_sub": "Các mục chờ duyệt, ý tưởng, thực hành và câu hỏi đang giữ sẽ xuất hiện ở đây ngay khi cần bạn.",
+    "grid_rail_empty_messages_sub": "Kênh của nhóm sẽ hiển thị nội dung mới nhất ở đây ngay khi có ai đó lên tiếng."
   },
   "common": {
     "loading": "Đang tải…",

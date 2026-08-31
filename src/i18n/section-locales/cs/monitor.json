@@ -531,5 +531,10 @@
   "grid_rail_tab_messages": "Zprávy",
   "grid_rail_tabs_aria": "Panel aktivity",
   "grid_messages_empty": "Zatím žádná aktivita v kanálech.",
-  "grid_dock_collapse": "Skrýt konzoli odesílání"
+  "grid_dock_collapse": "Skrýt konzoli odesílání",
+  "grid_rail_loading_more": "Načítáme další…",
+  "grid_rail_unread": "Nepřečteno",
+  "grid_rail_empty_reviews": "Nic nečeká na rozhodnutí",
+  "grid_rail_empty_reviews_sub": "Revize, nápady, postupy a pozdržené otázky se sem dostanou ve chvíli, kdy tě potřebují.",
+  "grid_rail_empty_messages_sub": "Týmové kanály tu ukážou to nejnovější, jakmile něco zazní."
 }

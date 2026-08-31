@@ -532,7 +532,12 @@
     "grid_rail_tab_messages": "Pesan",
     "grid_rail_tabs_aria": "Panel aktivitas",
     "grid_messages_empty": "Belum ada aktivitas kanal.",
-    "grid_dock_collapse": "Sembunyikan konsol pengiriman"
+    "grid_dock_collapse": "Sembunyikan konsol pengiriman",
+    "grid_rail_loading_more": "Memuat lainnya…",
+    "grid_rail_unread": "Belum dibaca",
+    "grid_rail_empty_reviews": "Tidak ada yang menunggu keputusan",
+    "grid_rail_empty_reviews_sub": "Peninjauan, ide, praktik, dan pertanyaan yang tertahan muncul di sini begitu membutuhkan Anda.",
+    "grid_rail_empty_messages_sub": "Kanal tim menampilkan yang terbaru di sini begitu ada yang dikatakan."
   },
   "common": {
     "loading": "Memuat…",

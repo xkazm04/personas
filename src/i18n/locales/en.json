@@ -532,7 +532,12 @@
     "grid_rail_tab_messages": "Messages",
     "grid_rail_tabs_aria": "Activity panel",
     "grid_messages_empty": "No channel activity yet.",
-    "grid_dock_collapse": "Hide the dispatch console"
+    "grid_dock_collapse": "Hide the dispatch console",
+    "grid_rail_loading_more": "Loading more…",
+    "grid_rail_unread": "Unread",
+    "grid_rail_empty_reviews": "Nothing waiting on a decision",
+    "grid_rail_empty_reviews_sub": "Reviews, ideas, practices and held questions land here the moment they need you.",
+    "grid_rail_empty_messages_sub": "Team channels show their latest here as soon as anything is said."
   },
   "common": {
     "unknown_error": "Unknown error",

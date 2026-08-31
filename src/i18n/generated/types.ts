@@ -539,6 +539,11 @@ export type Translations = {
     grid_rail_tabs_aria: string;
     grid_messages_empty: string;
     grid_dock_collapse: string;
+    grid_rail_loading_more: string;
+    grid_rail_unread: string;
+    grid_rail_empty_reviews: string;
+    grid_rail_empty_reviews_sub: string;
+    grid_rail_empty_messages_sub: string;
   };
   common: {
     unknown_error: string;

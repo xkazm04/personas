@@ -532,7 +532,12 @@
     "grid_rail_tab_messages": "Mensajes",
     "grid_rail_tabs_aria": "Panel de actividad",
     "grid_messages_empty": "Aún no hay actividad en los canales.",
-    "grid_dock_collapse": "Ocultar la consola de envío"
+    "grid_dock_collapse": "Ocultar la consola de envío",
+    "grid_rail_loading_more": "Cargando más…",
+    "grid_rail_unread": "Sin leer",
+    "grid_rail_empty_reviews": "Nada esperando una decisión",
+    "grid_rail_empty_reviews_sub": "Las revisiones, ideas, prácticas y preguntas en espera aparecen aquí en cuanto te necesitan.",
+    "grid_rail_empty_messages_sub": "Los canales del equipo muestran aquí lo último en cuanto se dice algo."
   },
   "common": {
     "loading": "Cargando…",

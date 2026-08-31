@@ -532,7 +532,12 @@
     "grid_rail_tab_messages": "消息",
     "grid_rail_tabs_aria": "活动面板",
     "grid_messages_empty": "暂无频道动态。",
-    "grid_dock_collapse": "隐藏派发控制台"
+    "grid_dock_collapse": "隐藏派发控制台",
+    "grid_rail_loading_more": "正在加载更多…",
+    "grid_rail_unread": "未读",
+    "grid_rail_empty_reviews": "没有等待决定的事项",
+    "grid_rail_empty_reviews_sub": "审核、想法、实践和挂起的提问一旦需要你处理，就会出现在这里。",
+    "grid_rail_empty_messages_sub": "团队频道一有动静，最新内容就会显示在这里。"
   },
   "common": {
     "loading": "加载中…",

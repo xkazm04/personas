@@ -531,5 +531,10 @@
   "grid_rail_tab_messages": "الرسائل",
   "grid_rail_tabs_aria": "لوحة النشاط",
   "grid_messages_empty": "لا يوجد نشاط في القنوات بعد.",
-  "grid_dock_collapse": "إخفاء وحدة الإرسال"
+  "grid_dock_collapse": "إخفاء وحدة الإرسال",
+  "grid_rail_loading_more": "جارٍ تحميل المزيد…",
+  "grid_rail_unread": "غير مقروء",
+  "grid_rail_empty_reviews": "لا شيء ينتظر قرارًا",
+  "grid_rail_empty_reviews_sub": "تظهر هنا المراجعات والأفكار والممارسات والأسئلة المعلّقة فور حاجتها إليك.",
+  "grid_rail_empty_messages_sub": "تعرض قنوات الفريق آخر مستجداتها هنا بمجرد أن يُقال أي شيء."
 }

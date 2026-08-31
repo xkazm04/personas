@@ -34,9 +34,12 @@
 //     floating corner legend is gone; the state key lives in the header as
 //     count pills, which is where a key belongs when it also carries numbers;
 //   • the RAIL — `ActivityRail`, the same 320px column with the same tab
-//     styling, carrying Reviews / Dispatch / Messages;
-//   • the COMPOSER — `QuickDispatchDock`, in the exact position
-//     `ConversationComposer` occupies, collapsed until you want it.
+//     styling, carrying Reviews / Dispatch / Messages over one row model and
+//     one virtualized, infinite-loading scroller;
+//   • the COMPOSER — `QuickDispatchDock`, which now sits in the MONITOR's
+//     footer rather than inside this card, so the Timeline, Conversations and
+//     the Map can dispatch too. It replaced a legend + count strip that only
+//     restated things already on screen.
 //
 // And the tiles: 4× the width at the same height, so a persona is named rather
 // than initialled (see `PersonaTile` for why the state colour moved from the
@@ -50,7 +53,6 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import type { DrawerSection, PersonaCardModel } from '../monitorModel';
 import type { FeedTeam } from '../channels/types';
 import {
@@ -59,7 +61,6 @@ import {
 import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
-import { QuickDispatchDock } from './QuickDispatchDock';
 import { useFleetSessions } from './useFleetSessions';
 
 /**
@@ -157,21 +158,6 @@ function FleetGridViewImpl({
     }
     return orphans.length > 0 ? [...sessionGroups.ungrouped, ...orphans] : sessionGroups.ungrouped;
   }, [sessionGroups, grouped.teams]);
-
-  // The whole fleet, as channel members — the rail's Reviews tab is fleet-scoped
-  // here (in Conversations the same rail is scoped to one project's roster).
-  const railMembers: ChannelMember[] = useMemo(
-    () => personas.map((p) => ({
-      memberId: p.id, personaId: p.id, name: p.name, icon: p.icon, color: p.color,
-    })),
-    [personas],
-  );
-  // Taken from the board's own cards, so the tab badge is truthful on the first
-  // frame instead of after the rail's independent poll answers.
-  const pendingReviews = useMemo(
-    () => cards.reduce((n, c) => n + c.reviews.length, 0),
-    [cards],
-  );
 
   const stateLabels: Record<SquareState, string> = {
     running: t.monitor.grid_state_running,
@@ -283,16 +269,9 @@ function FleetGridViewImpl({
               )}
             </>
           )}
-
-          <QuickDispatchDock />
         </div>
 
-        <ActivityRail
-          members={railMembers}
-          feedTeams={feedTeams ?? []}
-          pendingReviews={pendingReviews}
-          onOpenSpeaker={onOpenSpeaker}
-        />
+        <ActivityRail feedTeams={feedTeams ?? []} onOpenSpeaker={onOpenSpeaker} />
       </div>
     </div>
   );

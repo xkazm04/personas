@@ -531,5 +531,10 @@
   "grid_rail_tab_messages": "संदेश",
   "grid_rail_tabs_aria": "गतिविधि पैनल",
   "grid_messages_empty": "अभी तक कोई चैनल गतिविधि नहीं।",
-  "grid_dock_collapse": "डिस्पैच कंसोल छिपाएं"
+  "grid_dock_collapse": "डिस्पैच कंसोल छिपाएं",
+  "grid_rail_loading_more": "और लोड हो रहा है…",
+  "grid_rail_unread": "अपठित",
+  "grid_rail_empty_reviews": "निर्णय की प्रतीक्षा में कुछ नहीं",
+  "grid_rail_empty_reviews_sub": "समीक्षाएं, विचार, प्रथाएं और रुके हुए प्रश्न आपकी ज़रूरत पड़ते ही यहाँ आ जाते हैं।",
+  "grid_rail_empty_messages_sub": "टीम चैनलों में कुछ भी कहा जाते ही उनका नवीनतम यहाँ दिखेगा।"
 }

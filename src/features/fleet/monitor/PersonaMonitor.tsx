@@ -28,6 +28,7 @@ import { Stream } from './channels/Stream';
 import { ConversationBriefing } from './channels/ConversationBriefing';
 import { ChannelMap } from './channels/map/ChannelMap';
 import { FleetGridView } from './grid/FleetGridView';
+import { QuickDispatchDock } from './grid/QuickDispatchDock';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
@@ -62,7 +63,7 @@ interface Selection {
 }
 
 export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   // All four feeds stay ON regardless of the active view — deliberately, not
   // as a leftover: the footer's review count and the header's attention badges
   // render in every view, the channel surfaces need the roster the health feed
@@ -333,10 +334,19 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       {view === 'activity' ? (
         /* Body — the fleet board with the drawer layered over it */
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
-          {/* Same wrapper the three channel surfaces get — the Activity board
-              is a card on the HUD atmosphere now, not a bare grid on the page
-              background (see FleetGridView's consolidation header). */}
-          <div className="absolute inset-0 overflow-hidden p-2 hud-atmosphere">
+          {/* Same wrapper the three channel surfaces get — the Activity board is
+              a card on the HUD atmosphere now, not a bare grid on the page
+              background (see FleetGridView's consolidation header).
+
+              TWO elements, not one, and that is load-bearing: `.hud-atmosphere`
+              declares `position: relative` in globals.css, which is UNLAYERED
+              and therefore beats Tailwind's `@layer utilities` `absolute` no
+              matter the class order. Putting both on one div silently demoted
+              the wrapper to `relative`, nothing bounded the board's height, and
+              the columns grew to 10,505px inside a 975px overlay. Same trap as
+              `typo-* font-semibold` — an unlayered rule quietly winning. */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="h-full p-2 hud-atmosphere">
             {loading && cards.length === 0 ? (
               // First-ever cold open only (the warm cache in useMonitorData makes
               // every re-open paint the last-known fleet immediately): permanent
@@ -355,6 +365,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 onOpenSpeaker={handleDrillIn}
               />
             )}
+            </div>
           </div>
 
           <AnimatePresence>
@@ -414,11 +425,14 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         </div>
       )}
 
-      {/* Footer hint */}
-      <div className="relative z-10 flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">
-        <span>{t.monitor.footer_legend}</span>
-        <span>{tx(t.monitor.footer_counts, { reviews: reviews.length, system: systemProcesses.length })}</span>
-      </div>
+      {/* THE COMMAND CONSOLE, where the footer's legend + count line used to be.
+          Both of those were passive restatements of things already on screen —
+          the legend of a colour key that now lives in the Activity header, the
+          counts of numbers the rail tabs badge. The footer strip is better spent
+          on the one thing no Monitor view could do: start work. It sits at
+          Monitor level rather than inside the Activity card so it is reachable
+          from the Timeline, Conversations and the Map too. */}
+      <QuickDispatchDock />
     </motion.div>
   );
 }

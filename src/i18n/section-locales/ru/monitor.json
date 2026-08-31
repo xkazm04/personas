@@ -531,5 +531,10 @@
   "grid_rail_tab_messages": "Сообщения",
   "grid_rail_tabs_aria": "Панель активности",
   "grid_messages_empty": "В каналах пока нет активности.",
-  "grid_dock_collapse": "Скрыть консоль отправки"
+  "grid_dock_collapse": "Скрыть консоль отправки",
+  "grid_rail_loading_more": "Загружаем ещё…",
+  "grid_rail_unread": "Непрочитано",
+  "grid_rail_empty_reviews": "Ничего не ждёт решения",
+  "grid_rail_empty_reviews_sub": "Проверки, идеи, практики и отложенные вопросы попадают сюда, как только требуют вашего участия.",
+  "grid_rail_empty_messages_sub": "Командные каналы покажут здесь последнее, как только что-нибудь прозвучит."
 }

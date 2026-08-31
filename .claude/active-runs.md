@@ -2,7 +2,11 @@
 
 ## Active
 
-### activity-consolidation — Consolidate Monitor UI into Activity: wide named tiles, Conversations-grade chrome, 3-tab rail, docked quick-dispatch
+### activity-rail-prototype — Activity: full-height fix, dock->Monitor footer, triage-backed Reviews, /prototype the rail row language
+- **[2026-08-31 10:23]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/i18n/locales/*.json`
+- **Status:** started
+
 - **[2026-08-30 21:42]**
 - **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/i18n/locales/*.json`
 - **Status:** started
@@ -506,6 +510,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### activity-consolidation — Consolidate Monitor UI into Activity: wide named tiles, Conversations-grade chrome, 3-tab rail, docked quick-dispatch
 
 ### eval-triage — measured Before/After evaluation rule: skill 2.5.0, triage 154 pending, execute accepts, retrospective
 
