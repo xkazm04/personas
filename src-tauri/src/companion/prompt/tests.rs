@@ -2,6 +2,7 @@
 //! `mod tests` wrapper became this file, so every test body is unchanged apart
 //! from four columns of indentation.
 
+use crate::companion::brain::episodic::Episode;
 use crate::companion::brain::retrieval::Recall;
 use crate::companion::brain::semantic::Fact;
 use crate::companion::observability;
@@ -640,4 +641,90 @@ fn every_measured_block_has_a_budget() {
     for (name, _) in &sizes.blocks {
         assert!(budget_for(name).is_some(), "block {name} has no budget");
     }
+}
+
+// ── Rendered-size budget for the episode block ──────────────────────────
+//
+// The cut these cover is not per-item: the section header is paid once, so
+// admitting the first episode costs more than admitting the second identical
+// one. A greedy walk subtracting per-item costs cannot express that, which is
+// why the fit measures the rendered block instead.
+
+fn test_episode(id: &str, content_len: usize) -> Episode {
+    Episode {
+        id: id.to_string(),
+        session_id: "s".to_string(),
+        role: "user".to_string(),
+        content: "x".repeat(content_len),
+        file_path: "p".to_string(),
+        created_at: "2026-08-31T00:00:00Z".to_string(),
+    }
+}
+
+#[test]
+fn episode_block_under_budget_admits_everything() {
+    let eps: Vec<Episode> = (0..5).map(|i| test_episode(&i.to_string(), 100)).collect();
+    let out = format_episodes(&eps);
+    assert!(
+        !out.contains("omitted to fit"),
+        "nothing should be cut: {out}"
+    );
+    assert_eq!(
+        out.matches("## user").count(),
+        5,
+        "all five episodes render"
+    );
+}
+
+#[test]
+fn episode_block_is_bounded_by_chars_not_by_count() {
+    // Same COUNT, wildly different rendered size: the defect the cut exists
+    // for. Twenty tiny episodes fit; twenty huge ones must not.
+    let small: Vec<Episode> = (0..20).map(|i| test_episode(&i.to_string(), 10)).collect();
+    let large: Vec<Episode> = (0..20)
+        .map(|i| test_episode(&i.to_string(), 8_000))
+        .collect();
+
+    let small_out = format_episodes(&small);
+    let large_out = format_episodes(&large);
+
+    assert!(!small_out.contains("omitted to fit"));
+    assert!(
+        large_out.len() <= EPISODE_RENDER_BUDGET,
+        "rendered {} chars, budget {}",
+        large_out.len(),
+        EPISODE_RENDER_BUDGET
+    );
+    assert!(
+        large_out.contains("omitted to fit"),
+        "a cut that does not report itself teaches the reader the recall was empty"
+    );
+}
+
+#[test]
+fn episode_block_keeps_the_newest_turns_when_it_cuts() {
+    let mut eps: Vec<Episode> = (0..20)
+        .map(|i| test_episode(&i.to_string(), 4_000))
+        .collect();
+    eps[19].content = "NEWEST-MARKER".to_string();
+    eps[0].content = "OLDEST-MARKER".to_string();
+    let out = format_episodes(&eps);
+    assert!(
+        out.contains("NEWEST-MARKER"),
+        "the recency tail must survive"
+    );
+    assert!(
+        !out.contains("OLDEST-MARKER"),
+        "the oldest turn is what goes"
+    );
+}
+
+#[test]
+fn a_single_oversized_episode_is_still_admitted() {
+    // Dropping the current turn's context to respect a tripwire trades a real
+    // regression for a cosmetic one. The over-budget warn still fires.
+    let eps = vec![test_episode("only", EPISODE_RENDER_BUDGET * 2)];
+    let out = format_episodes(&eps);
+    assert!(out.len() > EPISODE_RENDER_BUDGET);
+    assert!(out.contains("## user"));
 }

@@ -3,6 +3,7 @@
 //!
 //! Moved verbatim out of the former single-file `prompt.rs`.
 
+use super::budget::{fit_trailing_to_render, EPISODE_RENDER_BUDGET};
 use crate::companion::brain::backlog::BacklogItem;
 use crate::companion::brain::episodic::Episode;
 use crate::companion::brain::goals::Goal;
@@ -14,7 +15,34 @@ pub(super) fn format_episodes(episodes: &[Episode]) -> String {
     if episodes.is_empty() {
         return String::new();
     }
+
+    // Retrieval hands us a window sized in EPISODES, but what this block
+    // spends is CHARS, and the two are not proportional: over the live corpus
+    // a fixed 20-episode window renders anywhere from 1,560 to 39,212 chars -
+    // 25x - because episodes themselves run from 2 chars to 4,918. A count
+    // cannot bound what the prompt actually costs, so the cut happens here,
+    // against the rendered block, with EPISODE_RENDER_BUDGET as the bound.
+    let keep = fit_trailing_to_render(episodes, EPISODE_RENDER_BUDGET, |eps| {
+        render_episode_block(eps, 0)
+    });
+    render_episode_block(&episodes[episodes.len() - keep..], episodes.len() - keep)
+}
+
+/// The episode block itself. `omitted` is how many older turns the budget cut
+/// dropped; when it is non-zero the block says so, because a silently short
+/// recall reads to everything downstream as "we never discussed that".
+fn render_episode_block(episodes: &[Episode], omitted: usize) -> String {
+    if episodes.is_empty() {
+        return String::new();
+    }
     let mut s = String::from("\n\n# Recalled conversation (oldest first)\n\n");
+    if omitted > 0 {
+        s.push_str(&format!(
+            "_{omitted} older turn(s) omitted to fit the recall budget._
+
+"
+        ));
+    }
     for ep in episodes {
         s.push_str(&format!(
             "## {} — {}\n\n{}\n\n",
