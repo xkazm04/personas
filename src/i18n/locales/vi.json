@@ -544,7 +544,15 @@
     "grid_rail_unread": "Chưa đọc",
     "grid_rail_empty_reviews": "Không có gì chờ quyết định",
     "grid_rail_empty_reviews_sub": "Các mục chờ duyệt, ý tưởng, thực hành và câu hỏi đang giữ sẽ xuất hiện ở đây ngay khi cần bạn.",
-    "grid_rail_empty_messages_sub": "Kênh của nhóm sẽ hiển thị nội dung mới nhất ở đây ngay khi có ai đó lên tiếng."
+    "grid_rail_empty_messages_sub": "Kênh của nhóm sẽ hiển thị nội dung mới nhất ở đây ngay khi có ai đó lên tiếng.",
+    "grid_rail_accept_aria": "Chấp nhận {title}",
+    "grid_rail_reject_aria": "Từ chối {title}",
+    "grid_rail_triage_modal_aria": "Chi tiết duyệt",
+    "grid_rail_channel_detail": "Mở trong dòng thời gian",
+    "grid_rail_channel_reply_placeholder": "Trả lời kênh…",
+    "grid_rail_channel_reply_send": "Gửi trả lời",
+    "grid_fleet_kill": "Kết thúc phiên",
+    "grid_fleet_exited": "Phiên này đã kết thúc — terminal của nó không còn nữa."
   },
   "common": {
     "loading": "Đang tải…",

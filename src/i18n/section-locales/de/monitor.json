@@ -543,5 +543,13 @@
   "grid_rail_unread": "Ungelesen",
   "grid_rail_empty_reviews": "Nichts wartet auf eine Entscheidung",
   "grid_rail_empty_reviews_sub": "Prüfungen, Ideen, Praktiken und angehaltene Fragen landen hier, sobald sie dich brauchen.",
-  "grid_rail_empty_messages_sub": "Team-Kanäle zeigen hier ihr Neuestes, sobald etwas gesagt wird."
+  "grid_rail_empty_messages_sub": "Team-Kanäle zeigen hier ihr Neuestes, sobald etwas gesagt wird.",
+  "grid_rail_accept_aria": "{title} annehmen",
+  "grid_rail_reject_aria": "{title} ablehnen",
+  "grid_rail_triage_modal_aria": "Details der Prüfung",
+  "grid_rail_channel_detail": "In der Chronik öffnen",
+  "grid_rail_channel_reply_placeholder": "Im Kanal antworten…",
+  "grid_rail_channel_reply_send": "Antwort senden",
+  "grid_fleet_kill": "Sitzung beenden",
+  "grid_fleet_exited": "Diese Sitzung ist beendet — ihr Terminal existiert nicht mehr."
 }

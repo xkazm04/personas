@@ -544,7 +544,15 @@
     "grid_rail_unread": "غير مقروء",
     "grid_rail_empty_reviews": "لا شيء ينتظر قرارًا",
     "grid_rail_empty_reviews_sub": "تظهر هنا المراجعات والأفكار والممارسات والأسئلة المعلّقة فور حاجتها إليك.",
-    "grid_rail_empty_messages_sub": "تعرض قنوات الفريق آخر مستجداتها هنا بمجرد أن يُقال أي شيء."
+    "grid_rail_empty_messages_sub": "تعرض قنوات الفريق آخر مستجداتها هنا بمجرد أن يُقال أي شيء.",
+    "grid_rail_accept_aria": "قبول {title}",
+    "grid_rail_reject_aria": "رفض {title}",
+    "grid_rail_triage_modal_aria": "تفاصيل المراجعة",
+    "grid_rail_channel_detail": "فتح في المسار الزمني",
+    "grid_rail_channel_reply_placeholder": "رُدّ على القناة…",
+    "grid_rail_channel_reply_send": "إرسال الرد",
+    "grid_fleet_kill": "إنهاء الجلسة",
+    "grid_fleet_exited": "انتهت هذه الجلسة — لم تعد الطرفية موجودة."
   },
   "common": {
     "loading": "جارٍ التحميل…",

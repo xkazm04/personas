@@ -543,5 +543,13 @@
   "grid_rail_unread": "Nepřečteno",
   "grid_rail_empty_reviews": "Nic nečeká na rozhodnutí",
   "grid_rail_empty_reviews_sub": "Revize, nápady, postupy a pozdržené otázky se sem dostanou ve chvíli, kdy tě potřebují.",
-  "grid_rail_empty_messages_sub": "Týmové kanály tu ukážou to nejnovější, jakmile něco zazní."
+  "grid_rail_empty_messages_sub": "Týmové kanály tu ukážou to nejnovější, jakmile něco zazní.",
+  "grid_rail_accept_aria": "Přijmout {title}",
+  "grid_rail_reject_aria": "Odmítnout {title}",
+  "grid_rail_triage_modal_aria": "Detail revize",
+  "grid_rail_channel_detail": "Otevřít v časové ose",
+  "grid_rail_channel_reply_placeholder": "Odpovědět do kanálu…",
+  "grid_rail_channel_reply_send": "Odeslat odpověď",
+  "grid_fleet_kill": "Ukončit relaci",
+  "grid_fleet_exited": "Tato relace skončila — její terminál už neexistuje."
 }

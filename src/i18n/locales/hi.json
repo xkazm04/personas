@@ -544,7 +544,15 @@
     "grid_rail_unread": "अपठित",
     "grid_rail_empty_reviews": "निर्णय की प्रतीक्षा में कुछ नहीं",
     "grid_rail_empty_reviews_sub": "समीक्षाएं, विचार, प्रथाएं और रुके हुए प्रश्न आपकी ज़रूरत पड़ते ही यहाँ आ जाते हैं।",
-    "grid_rail_empty_messages_sub": "टीम चैनलों में कुछ भी कहा जाते ही उनका नवीनतम यहाँ दिखेगा।"
+    "grid_rail_empty_messages_sub": "टीम चैनलों में कुछ भी कहा जाते ही उनका नवीनतम यहाँ दिखेगा।",
+    "grid_rail_accept_aria": "{title} स्वीकारें",
+    "grid_rail_reject_aria": "{title} अस्वीकारें",
+    "grid_rail_triage_modal_aria": "समीक्षा विवरण",
+    "grid_rail_channel_detail": "टाइमलाइन में खोलें",
+    "grid_rail_channel_reply_placeholder": "चैनल पर उत्तर दें…",
+    "grid_rail_channel_reply_send": "उत्तर भेजें",
+    "grid_fleet_kill": "सत्र समाप्त करें",
+    "grid_fleet_exited": "यह सत्र समाप्त हो चुका है — इसका टर्मिनल अब नहीं है।"
   },
   "common": {
     "loading": "लोड हो रहा है…",

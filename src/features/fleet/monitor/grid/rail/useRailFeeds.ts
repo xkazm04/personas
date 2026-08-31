@@ -38,8 +38,12 @@ import {
   useAcceptedDispatch,
   type AcceptedDispatch,
 } from '@/features/agents/quick-answer/triage/deck/useAcceptedDispatch';
+import type {
+  TriageItem,
+  TriageVerdict,
+} from '@/features/agents/quick-answer/triage/triageTypes';
 import { useMergedChannels } from '../../channels/mergedFeed';
-import type { FeedTeam } from '../../channels/types';
+import type { FeedTeam, TaggedItem } from '../../channels/types';
 import { channelToRow, ideaToRow, triageToRow, type RailRow } from './railModel';
 
 /** Rows per page, every feed. Small enough that the first paint is cheap, big
@@ -54,6 +58,17 @@ export interface RailFeed {
   /** What the tab badge says. See the paging contract above. */
   total: number;
 }
+
+/**
+ * Resolve a row id back to the object it was adapted from.
+ *
+ * `RailRow` is deliberately a projection with no back-pointer — the whole reason
+ * `railModel` is React-free and store-free is that a row carries display facts
+ * and nothing else. But opening a row has to hand the FULL source to the card
+ * that renders it, so the lookup lives here, beside the adapter that built the
+ * row, rather than as a payload smuggled through the model.
+ */
+export type RowResolver<T> = (rowId: string) => T | undefined;
 
 /** Grow-a-window helper — the local half of the paging contract. */
 function useWindow(all: RailRow[]): { rows: RailRow[]; hasMore: boolean; loadMore: () => void } {
@@ -80,7 +95,13 @@ function useWindow(all: RailRow[]): { rows: RailRow[]; hasMore: boolean; loadMor
  * practices, policy diffs, build questions and finished goals sat undecided one
  * surface away. "Reviews" is the operator's word for all of it.
  */
-export function useReviewFeed(): RailFeed {
+export function useReviewFeed(): RailFeed & {
+  itemById: RowResolver<TriageItem>;
+  /** The queue's own verdict door — the same one the deck writes through, so a
+   *  verdict recorded from the rail and one recorded from the deck cannot take
+   *  different paths to the backend. */
+  decide: (item: TriageItem, verdict: TriageVerdict) => Promise<void>;
+} {
   const copy = useTriageCopy();
   const { t } = useTranslation();
   const queue = useUnifiedTriage(copy);
@@ -88,6 +109,18 @@ export function useReviewFeed(): RailFeed {
   const all = useMemo(
     () => queue.items.map((item) => triageToRow(item, kindCopy(t, item.kind).one)),
     [queue.items, t],
+  );
+
+  // `triageToRow` keys the row by `item.id`, so the index is that id straight
+  // through. Kept as a Map rather than a `find` because the rail resolves on
+  // every open and the queue runs to hundreds of items.
+  const index = useMemo(() => new Map(queue.items.map((i) => [i.id, i])), [queue.items]);
+  const itemById = useCallback<RowResolver<TriageItem>>((id) => index.get(id), [index]);
+
+  const { decide: queueDecide } = queue;
+  const decide = useCallback(
+    (item: TriageItem, verdict: TriageVerdict) => queueDecide({ item, verdict }),
+    [queueDecide],
   );
 
   // Server paging, so the window is the server's. `loadMore` is guarded on
@@ -98,6 +131,8 @@ export function useReviewFeed(): RailFeed {
     hasMore: queue.backlog.more,
     loadMore: queue.loadMore,
     total: all.length,
+    itemById,
+    decide,
   };
 }
 
@@ -116,7 +151,10 @@ export function useDispatchFeed(): RailFeed & { ctl: AcceptedDispatch } {
 }
 
 /** MESSAGES — the merged channel feed, plus the unread watermark per team. */
-export function useMessageFeed(teams: FeedTeam[]): RailFeed & { unread: number } {
+export function useMessageFeed(teams: FeedTeam[]): RailFeed & {
+  unread: number;
+  itemById: RowResolver<TaggedItem>;
+} {
   const { merged } = useMergedChannels(teams);
   const personas = useAgentStore((s) => s.personas);
   const personaOf = useCallback(
@@ -143,8 +181,17 @@ export function useMessageFeed(teams: FeedTeam[]): RailFeed & { unread: number }
     () => merged.map((tagged) => channelToRow(tagged, personaOf, seenByTeam.get(tagged.team.teamId) ?? null)),
     [merged, personaOf, seenByTeam],
   );
+
+  // `channelToRow` keys rows `${teamId}:${itemId}`; the index is built off the
+  // same expression so the two cannot drift apart when either changes.
+  const index = useMemo(
+    () => new Map(merged.map((tg) => [`${tg.team.teamId}:${tg.item.id}`, tg])),
+    [merged],
+  );
+  const itemById = useCallback<RowResolver<TaggedItem>>((id) => index.get(id), [index]);
+
   const win = useWindow(all);
   // The cache is filled by the subscription, not by this hook — "loading" here
   // would be a claim it cannot make. An empty feed is empty; the tab says so.
-  return { ...win, loading: false, total: merged.length, unread };
+  return { ...win, loading: false, total: merged.length, unread, itemById };
 }

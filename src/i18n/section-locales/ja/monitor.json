@@ -543,5 +543,13 @@
   "grid_rail_unread": "未読",
   "grid_rail_empty_reviews": "判断待ちの項目はありません",
   "grid_rail_empty_reviews_sub": "レビュー・アイデア・プラクティス・保留中の質問は、あなたが必要になった時点でここに並びます。",
-  "grid_rail_empty_messages_sub": "チームチャンネルで何か発言があれば、最新のものがここに表示されます。"
+  "grid_rail_empty_messages_sub": "チームチャンネルで何か発言があれば、最新のものがここに表示されます。",
+  "grid_rail_accept_aria": "{title} を承認",
+  "grid_rail_reject_aria": "{title} を却下",
+  "grid_rail_triage_modal_aria": "レビューの詳細",
+  "grid_rail_channel_detail": "タイムラインで開く",
+  "grid_rail_channel_reply_placeholder": "チャンネルに返信…",
+  "grid_rail_channel_reply_send": "返信を送信",
+  "grid_fleet_kill": "セッションを終了",
+  "grid_fleet_exited": "このセッションは終了しました — ターミナルはもうありません。"
 }

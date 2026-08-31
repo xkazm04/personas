@@ -54,6 +54,8 @@
  */
 import { listen } from '@tauri-apps/api/event';
 
+import { silentCatch } from '@/lib/silentCatch';
+
 import {
   subscribeIpcMetrics,
   getIpcRecords,
@@ -140,6 +142,13 @@ export interface PerfSnapshot {
     /** False -> this engine has no `longtask` entry type and the jank numbers
      *  above are all zero for that reason, not because nothing blocked. */
     longTasksSupported: boolean;
+    /** False -> the rAF sampler never attached; `frames` is null for that
+     *  reason rather than because the window was too short. */
+    framesSampled: boolean;
+    /** False -> `eventsReceived` is empty because nothing is counting, not
+     *  because nothing arrived. Without this the emitted-vs-received check
+     *  reports a saturated transport that is actually fine. */
+    eventCountersAttached: boolean;
   };
 }
 
@@ -293,6 +302,8 @@ function snapshot(): PerfSnapshot {
     diagnostics: {
       ipcSubscribed: unsubscribeIpc !== null,
       longTasksSupported,
+      framesSampled,
+      eventCountersAttached,
     },
   };
 }
@@ -386,7 +397,11 @@ function attachEventCounters(): void {
   const count = (name: string) => {
     void listen(name, () => {
       state.eventsReceived.set(name, (state.eventsReceived.get(name) ?? 0) + 1);
-    });
+      // A counter that could not register is a missing metric, never a reason
+      // to take anything else down with it — but it IS a swallowed error, so it
+      // goes through the sanctioned helper rather than an inline handler that
+      // skips the Sentry breadcrumb.
+    }).catch(silentCatch('perf:event-counter'));
   };
   count('fleet-session-output');
   count('fleet-session-state');
@@ -417,10 +432,37 @@ function mark(label: string): void {
 
 // ── Initialise on load ────────────────────────────────────────────────────
 
-const ipcSubscribed = attachIpcSubscription();
-const longTasksSupported = attachLongTaskObserver();
-attachFrameSampler();
-attachEventCounters();
+// THESE RUN AT MODULE SCOPE, SO EACH IS ISOLATED.
+//
+// This module's real job is to install `window.__PERF__` and hang the `perf*`
+// methods on the already-loaded `window.__TEST__` bridge. Everything below is a
+// metric COLLECTOR, and a collector that throws while this module evaluates
+// takes the perf surface down with it — `/perf/*` then returns empty while the
+// app looks perfectly healthy on screen, which is the worst shape a measurement
+// bug can have. No collector is allowed to be load-bearing: each failure is
+// recorded in `diagnostics` instead of thrown, and a missing metric degrades
+// that metric alone.
+function attempt(what: string, fn: () => boolean): boolean {
+  try {
+    return fn();
+  } catch {
+    // test-mode only, and a silently absent metric is worse than a console
+    // line nobody reads.
+    console.warn(`[perf] collector "${what}" did not attach; its metrics read zero`);
+    return false;
+  }
+}
+
+const ipcSubscribed = attempt('ipc', attachIpcSubscription);
+const longTasksSupported = attempt('longtask', attachLongTaskObserver);
+const framesSampled = attempt('frames', () => {
+  attachFrameSampler();
+  return true;
+});
+const eventCountersAttached = attempt('events', () => {
+  attachEventCounters();
+  return true;
+});
 
 // Expose on window so the Rust test-automation bridge can call into us
 // via eval. The bridge.ts dispatcher also picks up these methods through

@@ -22,12 +22,12 @@
 //     own (`DeckChips`) so a `danger` row is the same red on both surfaces.
 
 import type { LucideIcon } from 'lucide-react';
-import { AlertCircle, Inbox, MessageSquare } from 'lucide-react';
+import { Activity, AlertCircle, Bookmark, CheckCircle2, Inbox, MessageSquare } from 'lucide-react';
 import type { TriageItem, TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import { KIND_META } from '@/features/agents/quick-answer/triage/deck/DeckChips';
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 import type { Persona } from '@/lib/bindings/Persona';
-import { authorName } from '@/features/teams/sub_collab/collabRender';
+import { AUTHOR_KIND_META, authorName, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
 import { resolveCompact } from '../../channels/MergedRow';
 import type { TaggedItem } from '../../channels/types';
 import { cleanName } from '../fleetGridModel';
@@ -67,6 +67,26 @@ export interface RailRow {
   unread: boolean;
   /** True → the row carries a checkbox (Dispatch). */
   selectable: boolean;
+  /**
+   * True → the row can be accepted or rejected from the rail itself, without
+   * opening anything. Only the triage queue qualifies: a dispatchable idea is
+   * *selected* rather than decided, and a channel message is not a decision at
+   * all. The row renders the two verdict buttons off this flag alone, so a
+   * source that has no verdict cannot accidentally grow one.
+   */
+  decidable: boolean;
+  /**
+   * Whether `kind` may be PAINTED, or is carried for assistive tech only.
+   *
+   * The channel feed's kinds are the words "directive", "decision", "channel",
+   * "memory · decision" — and at rail width they cost the row a chunk of its
+   * title to restate what the icon and the tone already say. So channel rows
+   * set this false: the kind still rides in `kind` for the screen reader and
+   * the modal, and the eye reads it off the glyph. Triage and dispatch rows
+   * keep it true, because "Idea" vs "Review" is not derivable from a colour a
+   * reader has not been taught.
+   */
+  showKind: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +149,8 @@ export function triageToRow(item: TriageItem, kindLabel: string): RailRow {
     persona: null,
     unread: false,
     selectable: false,
+    decidable: true,
+    showKind: true,
   };
 }
 
@@ -148,6 +170,8 @@ export function ideaToRow(row: UndispatchedIdea, kindLabel: string): RailRow {
     persona: null,
     unread: false,
     selectable: true,
+    decidable: false,
+    showKind: true,
   };
 }
 
@@ -159,6 +183,12 @@ export function ideaToRow(row: UndispatchedIdea, kindLabel: string): RailRow {
  * derived from that projection's `alert` and `isError` flags rather than from
  * the item kind, because "a step failed" and "a step is held" are the only two
  * things in this feed that are urgent, and neither is a kind.
+ *
+ * THE ROW IS CONTENT-FIRST. `title` is the MESSAGE, not the author — what was
+ * said is the thing being read, and the author is context for it. The previous
+ * shape put the author on the title line and pushed the sentence into the muted
+ * second line, which spent the row's most legible space on a name that repeats
+ * down the whole column.
  */
 export function channelToRow(
   tagged: TaggedItem,
@@ -168,23 +198,69 @@ export function channelToRow(
   const { item, team } = tagged;
   const persona = item.personaId ? personaOf(item.personaId) : undefined;
   const { event, message, isError, alert } = resolveCompact(item);
+  const meta = channelKindMeta(item, isError, alert);
+  const author = cleanName(authorName(item, persona));
   return {
     id: `${team.teamId}:${item.id}`,
-    tone: isError ? 'danger' : alert ? 'warning' : 'neutral',
+    tone: meta.tone,
     code: 'MSG',
+    // Carried, never painted (see `showKind`): the glyph and the tone say this
+    // on screen, and the word survives for assistive tech and the modal.
     kind: event,
-    icon: isError || alert ? AlertCircle : MessageSquare,
-    title: cleanName(authorName(item, persona)),
-    source: cleanName(team.teamName),
+    icon: meta.icon,
+    title: message?.trim() || event,
+    // Author AND team: the rail merges every project's channel, so a message
+    // without its team is a quote with no room attached to it.
+    source: [author, cleanName(team.teamName)].filter(Boolean).join(' · '),
     at: item.at,
-    body: message,
+    body: null,
     accent: team.teamColor,
     persona: persona ? { icon: persona.icon, color: persona.color } : null,
     // The channel slice's own definition, applied per row: newer than the
     // watermark and not written by the user (see `countUnread`).
     unread: item.kind !== 'directive' && (lastSeenAt === null || item.at > lastSeenAt),
     selectable: false,
+    decidable: false,
+    showKind: false,
   };
+}
+
+/**
+ * Glyph + tone for one channel row — the two channels through which a row's
+ * KIND reaches the reader now that the word is not printed.
+ *
+ * Urgency outranks authorship on purpose: a failed step is a failed step
+ * whoever produced it, so `isError`/`alert` win the tone before the author kind
+ * is consulted. The glyph still follows the voice, because "who is talking"
+ * stays useful even when the news is bad.
+ */
+function channelKindMeta(
+  item: TaggedItem['item'],
+  isError: boolean,
+  alert: boolean,
+): { icon: LucideIcon; tone: TriageTone } {
+  const tone: TriageTone = isError
+    ? 'danger'
+    : alert
+      ? 'warning'
+      : item.kind === 'directive' || item.kind === 'athena'
+        ? 'accent'
+        : item.kind === 'memory'
+          ? 'success'
+          : 'neutral';
+
+  if (isError || alert) return { icon: AlertCircle, tone };
+  if (isAuthorKind(item.kind)) return { icon: AUTHOR_KIND_META[item.kind].Icon, tone };
+  switch (item.kind) {
+    case 'memory':
+      return { icon: Bookmark, tone };
+    case 'event':
+      return { icon: Activity, tone };
+    case 'step':
+      return { icon: CheckCircle2, tone };
+    default:
+      return { icon: MessageSquare, tone };
+  }
 }
 
 // ---------------------------------------------------------------------------

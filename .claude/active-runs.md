@@ -2,6 +2,11 @@
 
 ## Active
 
+### monitor-full-power — Monitor full-power: rail row redesign + triage/channel modals, fleet terminal modal, persona/fleet node states, Athena orb bubble
+- **[2026-08-31 21:06]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/plugins/companion/**`
+- **Status:** started
+
 - **[2026-08-31 11:52]**
 - **Paths:** `src-tauri/src/load_harness.rs` · `src-tauri/src/test_automation.rs` · `src-tauri/src/lib.rs` · `src/test/automation/perfInstrument.ts` · `scripts/perf/**`
 - **Status:** started

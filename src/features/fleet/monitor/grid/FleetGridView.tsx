@@ -44,8 +44,18 @@
 // And the tiles: 4× the width at the same height, so a persona is named rather
 // than initialled (see `PersonaTile` for why the state colour moved from the
 // fill to a leading rail at that aspect).
+//
+// TWO KINDS OF NODE, and the difference is carried by shape as well as colour.
+// A PERSONA tile is solid, states its state on a full-height leading rail, and
+// carries the one pending operation that wants the operator on its trailing
+// edge (human gate, unread report, ready draft, failed run — `actionBadges`).
+// A FLEET tile is shorter, hollow and dashed, coloured on its border from the
+// canonical `FLEET_STATE_META` the rest of the app reads, and — since this pass
+// — CLICKABLE: it opens the session's live terminal. That asymmetry is the
+// point. A persona is a permanent member you inspect; a fleet session is a
+// process you talk to, and it dies when its task lands.
 
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { LayoutGrid, Users } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -61,6 +71,7 @@ import {
 import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
+import { FleetTerminalModal } from './FleetTerminalModal';
 import { useFleetSessions } from './useFleetSessions';
 
 /**
@@ -120,7 +131,13 @@ function StateTally({ totals, labels }: { totals: Record<SquareState, number>; l
  * the column has no live sessions — an empty divider would read as "this team
  * has a session lane and it is empty", which is a different claim.
  */
-function SessionStrip({ sessions, label }: { sessions: FleetSession[]; label: string }) {
+function SessionStrip({
+  sessions, label, onOpen,
+}: {
+  sessions: FleetSession[];
+  label: string;
+  onOpen: (session: FleetSession) => void;
+}) {
   if (sessions.length === 0) return null;
   return (
     <>
@@ -131,7 +148,7 @@ function SessionStrip({ sessions, label }: { sessions: FleetSession[]; label: st
       </span>
       <div className="flex flex-col gap-1">
         {sessions.map((s) => (
-          <SessionTile key={s.id} session={s} width={TILE_W} height={SESSION_TILE_H} />
+          <SessionTile key={s.id} session={s} width={TILE_W} height={SESSION_TILE_H} onOpen={onOpen} />
         ))}
       </div>
     </>
@@ -142,6 +159,12 @@ function FleetGridViewImpl({
   cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker,
 }: Props) {
   const { t } = useTranslation();
+  // The session whose terminal is open. Held as the SESSION rather than its id:
+  // the registry patches rows underneath an open modal on every state event, and
+  // an id re-resolved per render would swap the pane's subject mid-read. The
+  // terminal itself is keyed on `session.id`, which does not change.
+  const [openSession, setOpenSession] = useState<FleetSession | null>(null);
+  const closeSession = useCallback(() => setOpenSession(null), []);
   const grouped = useMemo(() => groupFleet(cards, personas, teams), [cards, personas, teams]);
   const totals = useMemo(() => tallyStates(cards), [cards]);
 
@@ -245,6 +268,7 @@ function FleetGridViewImpl({
                         <SessionStrip
                           sessions={sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS}
                           label={t.monitor.grid_sessions}
+                          onOpen={setOpenSession}
                         />
                       </div>
                     </section>
@@ -262,7 +286,13 @@ function FleetGridViewImpl({
                   <div className="flex flex-wrap content-start items-center gap-1.5 overflow-auto pb-1">
                     {grouped.ungrouped.map(renderTile)}
                     {traySessions.map((s) => (
-                      <SessionTile key={s.id} session={s} width={TILE_W} height={SESSION_TILE_H} />
+                      <SessionTile
+                        key={s.id}
+                        session={s}
+                        width={TILE_W}
+                        height={SESSION_TILE_H}
+                        onOpen={setOpenSession}
+                      />
                     ))}
                   </div>
                 </div>
@@ -273,6 +303,8 @@ function FleetGridViewImpl({
 
         <ActivityRail feedTeams={feedTeams ?? []} onOpenSpeaker={onOpenSpeaker} />
       </div>
+
+      <FleetTerminalModal session={openSession} onClose={closeSession} />
     </div>
   );
 }

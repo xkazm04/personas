@@ -544,7 +544,15 @@
     "grid_rail_unread": "Непрочитано",
     "grid_rail_empty_reviews": "Ничего не ждёт решения",
     "grid_rail_empty_reviews_sub": "Проверки, идеи, практики и отложенные вопросы попадают сюда, как только требуют вашего участия.",
-    "grid_rail_empty_messages_sub": "Командные каналы покажут здесь последнее, как только что-нибудь прозвучит."
+    "grid_rail_empty_messages_sub": "Командные каналы покажут здесь последнее, как только что-нибудь прозвучит.",
+    "grid_rail_accept_aria": "Принять «{title}»",
+    "grid_rail_reject_aria": "Отклонить «{title}»",
+    "grid_rail_triage_modal_aria": "Детали проверки",
+    "grid_rail_channel_detail": "Открыть в хронологии",
+    "grid_rail_channel_reply_placeholder": "Ответить в канал…",
+    "grid_rail_channel_reply_send": "Отправить ответ",
+    "grid_fleet_kill": "Завершить сессию",
+    "grid_fleet_exited": "Сессия завершена — её терминала больше нет."
   },
   "common": {
     "loading": "Загрузка…",

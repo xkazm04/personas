@@ -544,7 +544,15 @@
     "grid_rail_unread": "未读",
     "grid_rail_empty_reviews": "没有等待决定的事项",
     "grid_rail_empty_reviews_sub": "审核、想法、实践和挂起的提问一旦需要你处理，就会出现在这里。",
-    "grid_rail_empty_messages_sub": "团队频道一有动静，最新内容就会显示在这里。"
+    "grid_rail_empty_messages_sub": "团队频道一有动静，最新内容就会显示在这里。",
+    "grid_rail_accept_aria": "接受 {title}",
+    "grid_rail_reject_aria": "拒绝 {title}",
+    "grid_rail_triage_modal_aria": "审核详情",
+    "grid_rail_channel_detail": "在时间线中打开",
+    "grid_rail_channel_reply_placeholder": "回复频道…",
+    "grid_rail_channel_reply_send": "发送回复",
+    "grid_fleet_kill": "终止会话",
+    "grid_fleet_exited": "该会话已结束——终端已不存在。"
   },
   "common": {
     "loading": "加载中…",

@@ -544,7 +544,15 @@
     "grid_rail_unread": "অপঠিত",
     "grid_rail_empty_reviews": "সিদ্ধান্তের অপেক্ষায় কিছু নেই",
     "grid_rail_empty_reviews_sub": "পর্যালোচনা, ধারণা, অনুশীলন ও আটকে থাকা প্রশ্ন আপনার প্রয়োজন হলেই এখানে আসে।",
-    "grid_rail_empty_messages_sub": "দলের চ্যানেলে কিছু বলা হলেই সর্বশেষটি এখানে দেখা যাবে।"
+    "grid_rail_empty_messages_sub": "দলের চ্যানেলে কিছু বলা হলেই সর্বশেষটি এখানে দেখা যাবে।",
+    "grid_rail_accept_aria": "{title} গ্রহণ করুন",
+    "grid_rail_reject_aria": "{title} প্রত্যাখ্যান করুন",
+    "grid_rail_triage_modal_aria": "পর্যালোচনার বিবরণ",
+    "grid_rail_channel_detail": "টাইমলাইনে খুলুন",
+    "grid_rail_channel_reply_placeholder": "চ্যানেলে উত্তর দিন…",
+    "grid_rail_channel_reply_send": "উত্তর পাঠান",
+    "grid_fleet_kill": "সেশন বন্ধ করুন",
+    "grid_fleet_exited": "এই সেশনটি শেষ হয়েছে — এর টার্মিনাল আর নেই।"
   },
   "common": {
     "loading": "লোড হচ্ছে…",

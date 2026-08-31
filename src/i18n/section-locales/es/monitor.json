@@ -543,5 +543,13 @@
   "grid_rail_unread": "Sin leer",
   "grid_rail_empty_reviews": "Nada esperando una decisión",
   "grid_rail_empty_reviews_sub": "Las revisiones, ideas, prácticas y preguntas en espera aparecen aquí en cuanto te necesitan.",
-  "grid_rail_empty_messages_sub": "Los canales del equipo muestran aquí lo último en cuanto se dice algo."
+  "grid_rail_empty_messages_sub": "Los canales del equipo muestran aquí lo último en cuanto se dice algo.",
+  "grid_rail_accept_aria": "Aceptar {title}",
+  "grid_rail_reject_aria": "Rechazar {title}",
+  "grid_rail_triage_modal_aria": "Detalles de la revisión",
+  "grid_rail_channel_detail": "Abrir en la cronología",
+  "grid_rail_channel_reply_placeholder": "Responder al canal…",
+  "grid_rail_channel_reply_send": "Enviar respuesta",
+  "grid_fleet_kill": "Terminar sesión",
+  "grid_fleet_exited": "Esta sesión ha finalizado: su terminal ya no existe."
 }

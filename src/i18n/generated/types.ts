@@ -551,6 +551,14 @@ export type Translations = {
     grid_rail_empty_reviews: string;
     grid_rail_empty_reviews_sub: string;
     grid_rail_empty_messages_sub: string;
+    grid_rail_accept_aria: string;
+    grid_rail_reject_aria: string;
+    grid_rail_triage_modal_aria: string;
+    grid_rail_channel_detail: string;
+    grid_rail_channel_reply_placeholder: string;
+    grid_rail_channel_reply_send: string;
+    grid_fleet_kill: string;
+    grid_fleet_exited: string;
   };
   common: {
     unknown_error: string;

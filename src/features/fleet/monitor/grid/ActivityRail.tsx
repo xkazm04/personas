@@ -26,8 +26,21 @@
 // (`rail/RailList`, virtualized + infinite-load). What differs between them is
 // data, not layout — which is what "unify the three tabs" actually required.
 //
+// OPENING A ROW. Two tabs have a full surface behind the row, and each reuses
+// the component that already renders that thing rather than growing a second
+// one: a review opens `TriageCardBody` (the deck's own card) and a message opens
+// a `TalkBubble` plus a reply composer. Dispatch rows deliberately open nothing
+// — a dispatchable idea is *selected*, not read, and the bar above the list is
+// the only act it has.
+//
+// The row-id -> source-object lookups come from the feed hooks (`itemById`)
+// rather than from the row, because `RailRow` is a projection with no
+// back-pointer and keeping it that way is what lets the model stay React-free.
+//
 import { useCallback, useState } from 'react';
 import { AlertCircle, Inbox, MessagesSquare, Rocket } from 'lucide-react';
+import type { TriageItem, TriageVerdict } from '@/features/agents/quick-answer/triage/triageTypes';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { DeckDispatchBar } from '@/features/agents/quick-answer/triage/deck/DeckDispatchBar';
@@ -36,6 +49,9 @@ import { RailList } from './rail/RailList';
 import type { RailRow } from './rail/railModel';
 import { useDispatchFeed, useMessageFeed, useReviewFeed } from './rail/useRailFeeds';
 import { RAIL_ROW_HEIGHT, RailRowView } from './rail/RailRowView';
+import { RailTriageModal } from './rail/RailTriageModal';
+import { RailChannelModal } from './rail/RailChannelModal';
+import type { TaggedItem } from '../channels/types';
 
 type RailTab = 'reviews' | 'dispatch' | 'messages';
 
@@ -48,6 +64,12 @@ export function ActivityRail({
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<RailTab>('reviews');
+  // The two open surfaces. Held as the SOURCE OBJECT rather than as a row id:
+  // a row id resolved on every render would re-resolve against a list that
+  // polls underneath the open modal, and the card would swap out from under the
+  // reader mid-decision. Captured once on open, it cannot.
+  const [openTriage, setOpenTriage] = useState<TriageItem | null>(null);
+  const [openMessage, setOpenMessage] = useState<TaggedItem | null>(null);
 
   // All three feeds are mounted unconditionally, and that is the trade: a tab
   // badge is only worth having if it is truthful before the tab is clicked, and
@@ -61,13 +83,41 @@ export function ActivityRail({
 
   const openRow = useCallback(
     (row: RailRow) => {
-      if (tab !== 'messages' || !onOpenSpeaker) return;
-      // `channelToRow` keys Messages rows `${teamId}:${itemId}`.
-      const teamId = row.id.slice(0, row.id.indexOf(':'));
-      const persona = feedTeams.find((tm) => tm.teamId === teamId)?.members[0];
-      if (teamId && persona) onOpenSpeaker(teamId, persona.personaId);
+      if (tab === 'reviews') {
+        const item = reviews.itemById(row.id);
+        if (item) setOpenTriage(item);
+        return;
+      }
+      if (tab === 'messages') {
+        const tagged = messages.itemById(row.id);
+        if (tagged) setOpenMessage(tagged);
+      }
     },
-    [tab, onOpenSpeaker, feedTeams],
+    [tab, reviews, messages],
+  );
+
+  // The two quick verdicts. They take the row id rather than the item so the
+  // row component never has to hold a `TriageItem` — it holds a projection, and
+  // the resolution stays on this side of the boundary.
+  const decideById = useCallback(
+    (id: string, verdict: TriageVerdict) => {
+      const item = reviews.itemById(id);
+      if (!item) return;
+      void reviews.decide(item, verdict).catch(toastCatch('activity-rail:decide'));
+    },
+    [reviews],
+  );
+  const acceptRow = useCallback((id: string) => decideById(id, 'accept'), [decideById]);
+  const rejectRow = useCallback((id: string) => decideById(id, 'reject'), [decideById]);
+
+  /** Escape hatch from the message modal into the Timeline scoped to its team. */
+  const drillToSpeaker = useCallback(
+    (tagged: TaggedItem) => {
+      setOpenMessage(null);
+      const speaker = tagged.item.personaId ?? tagged.team.members[0]?.personaId;
+      if (speaker && onOpenSpeaker) onOpenSpeaker(tagged.team.teamId, speaker);
+    },
+    [onOpenSpeaker],
   );
 
   const renderRow = useCallback(
@@ -79,10 +129,13 @@ export function ActivityRail({
         // a channel item id is a question with no meaning.
         selected={row.selectable ? dispatch.ctl.selected.has(row.id) : undefined}
         onToggle={row.selectable ? dispatch.ctl.toggle : undefined}
-        onOpen={openRow}
+        // A dispatch row opens nothing: it is selected, not read.
+        onOpen={row.selectable ? undefined : openRow}
+        onAccept={row.decidable ? acceptRow : undefined}
+        onReject={row.decidable ? rejectRow : undefined}
       />
     ),
-    [dispatch.ctl.selected, dispatch.ctl.toggle, openRow],
+    [dispatch.ctl.selected, dispatch.ctl.toggle, openRow, acceptRow, rejectRow],
   );
 
   // Conversations' own tab styling, verbatim.
@@ -157,6 +210,19 @@ export function ActivityRail({
             />
           </div>
         }
+      />
+
+      {/* Both modals portal to the body, so neither inherits the rail's 320px
+          width or the Monitor overlay's stacking context. */}
+      <RailTriageModal
+        item={openTriage}
+        onClose={() => setOpenTriage(null)}
+        onDecide={reviews.decide}
+      />
+      <RailChannelModal
+        tagged={openMessage}
+        onClose={() => setOpenMessage(null)}
+        onOpenDetail={onOpenSpeaker ? drillToSpeaker : undefined}
       />
     </div>
   );

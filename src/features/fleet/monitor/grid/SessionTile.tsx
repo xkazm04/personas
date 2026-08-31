@@ -11,22 +11,28 @@
 // session's real label fits, and the glyph is retired from this surface (the
 // helper stays; the compact fleet chips still use it).
 //
-// Still not a button, for the reason the square was not: the only "open this
-// session's terminal" affordance depends on `FleetGridLayer`, which App.tsx
-// mounts behind `import.meta.env.DEV`, so a wired click would do nothing in a
-// production build. Follow-up: un-gate that host (or give the Monitor its own).
+// IT IS A BUTTON NOW, and the follow-up its header used to carry is closed. The
+// old note was right at the time: the only "open this terminal" affordance in
+// the app depended on `FleetGridLayer`, which `App.tsx` mounts behind
+// `import.meta.env.DEV`, so a wired click would have done nothing in a
+// production build and a read-only square was the honest failure. The Monitor
+// now has its own host — `FleetTerminalModal` — which works in every build, so
+// the tile can finally do the thing it always looked like it did.
 
 import { memo } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { SESSION_BORDER, sessionLabel, sessionStateMeta } from './fleetSessionModel';
 
 export const SessionTile = memo(function SessionTile({
-  session, width, height,
+  session, width, height, onOpen,
 }: {
   session: FleetSession;
   width: number;
   height: number;
+  /** Open this session's terminal. Absent = the tile stays read-only. */
+  onOpen?: (session: FleetSession) => void;
 }) {
   const { t } = useTranslation();
   const meta = sessionStateMeta(session.state);
@@ -34,19 +40,48 @@ export const SessionTile = memo(function SessionTile({
   const label = sessionLabel(session);
   const title = [label, stateLabel, session.projectLabel].filter(Boolean).join(' · ');
 
-  return (
-    <span
-      role="img"
-      title={title}
-      aria-label={title}
-      data-state={session.state}
-      data-testid="fleet-grid-session"
-      className={`flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-input border-[1.5px] border-dashed px-2 ${SESSION_BORDER[session.state]} ${meta.chip}`}
-      style={{ width, height }}
-    >
+  const body = (
+    <>
       <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${meta.dot}`} aria-hidden />
       <span className={`min-w-0 flex-1 truncate typo-caption ${meta.text}`}>{label}</span>
-    </span>
+    </>
+  );
+  const cls = `flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-input border-[1.5px] border-dashed px-2 ${SESSION_BORDER[session.state]} ${meta.chip}`;
+
+  if (!onOpen) {
+    return (
+      <span
+        role="img"
+        title={title}
+        aria-label={title}
+        data-state={session.state}
+        data-testid="fleet-grid-session"
+        className={cls}
+        style={{ width, height }}
+      >
+        {body}
+      </span>
+    );
+  }
+
+  // The shared Tooltip, not `title=` — this branch is INTERACTIVE, and a native
+  // tooltip on a control is unreachable by keyboard and absent on touch, which
+  // is exactly the condition the tooltip golden path gates. The read-only span
+  // above keeps its `title`: it is not a control, and there is nothing to reach.
+  return (
+    <Tooltip content={title}>
+      <button
+        type="button"
+        onClick={() => onOpen(session)}
+        aria-label={title}
+        data-state={session.state}
+        data-testid="fleet-grid-session"
+        className={`${cls} focus-ring transition-colors hover:brightness-125`}
+        style={{ width, height }}
+      >
+        {body}
+      </button>
+    </Tooltip>
   );
 });
 

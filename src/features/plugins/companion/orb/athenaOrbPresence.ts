@@ -16,6 +16,32 @@ import type { AthenaState } from '../AthenaAvatar';
 /** Perimeter dots cap — past this the arc stops reading as countable. */
 const MAX_TASK_DOTS = 5;
 
+/** Caption budget. `OrbCaption` is `max-w-[320px]` and wraps, so this is about
+ *  how much of a paragraph is worth reading beside an orb — not about fitting. */
+const CAPTION_MAX = 180;
+
+/**
+ * One line of a possibly-long assistant reply.
+ *
+ * Takes the first sentence when there is a clean one and the reply runs on past
+ * it, because Athena's opening sentence is nearly always her verdict and the
+ * rest is the working. Falls back to a hard clip. Markdown fences and headings
+ * are stripped: a bubble that opens with "##" is showing syntax, not a remark.
+ */
+function summarise(text: string | null): string | null {
+  if (!text) return null;
+  const flat = text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/[*_`>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!flat) return null;
+  const stop = flat.search(/[.!?](\s|$)/);
+  if (stop > 0 && stop < CAPTION_MAX && flat.length > stop + 1) return flat.slice(0, stop + 1);
+  return flat.length > CAPTION_MAX ? `${flat.slice(0, CAPTION_MAX).trimEnd()}…` : flat;
+}
+
 export interface OrbPresence {
   avatarState: AthenaState;
   speaking: boolean;
@@ -71,6 +97,30 @@ export function useAthenaOrbPresence(args: {
   // the fleet — surface that as a glanceable caption.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
 
+  // THE MONITOR IS THE ONE SCREEN ATHENA CAN NARRATE.
+  //
+  // She has the overview the operator is looking at — every persona's state and
+  // every live session, across every project — so on that screen her latest
+  // remark is not chatter, it is the reading of the board that the board itself
+  // cannot give: which column deserves attention, what just went wrong, what she
+  // has already handled. Everywhere else this stays null, because a permanently
+  // pinned line over ordinary work IS chatter.
+  const monitorOpen = useSystemStore((s) => s.headerOverlay === 'monitor');
+  // A PRIMITIVE selector, deliberately: returning the message object would
+  // re-render the orb on every store write that replaces the array, and this
+  // component is mounted over every screen for the whole session.
+  const lastAthenaLine = useCompanionStore((s) => {
+    for (let i = s.messages.length - 1; i >= 0; i -= 1) {
+      const m = s.messages[i];
+      if (m && m.role === 'assistant' && m.content.trim()) return m.content;
+    }
+    return null;
+  });
+  const monitorCaption = useMemo(
+    () => (monitorOpen ? summarise(lastAthenaLine) : null),
+    [monitorOpen, lastAthenaLine],
+  );
+
   // Background tasks running (even with no turn streaming) put her in the
   // working posture, so parallel work is visible while the panel is minimized.
   const working = runningTaskCount > 0;
@@ -103,7 +153,12 @@ export function useAthenaOrbPresence(args: {
   );
 
   // Caption priority: live dictation transcript > composing an explanation >
-  // a fleet-orchestration cue > nothing.
+  // a fleet-orchestration cue > Athena's latest line on the Monitor > nothing.
+  //
+  // The Monitor line sits LAST on purpose. The three above it are all "what
+  // Athena is doing right now", which is always more urgent than "what she last
+  // said" — a caption that buried a live transcript under an old remark would
+  // be a worse orb, not a better-informed one.
   const caption =
     talking && interimText
       ? interimText
@@ -111,7 +166,7 @@ export function useAthenaOrbPresence(args: {
         ? t.plugins.companion.orb_composing_explanation
         : working && fleetGridOpen
           ? t.plugins.companion.orb_managing_fleet
-          : null;
+          : monitorCaption;
 
   const unreadLabel = tx(
     unreadReplies === 1
