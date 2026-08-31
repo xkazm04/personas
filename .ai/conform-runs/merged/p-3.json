@@ -1,0 +1,642 @@
+{
+  "worker": "p-3",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/vault/oauthGatewayApi.ts:15-27 sends clientId/clientSecret across IPC in plaintext while every credential field value crosses session-encrypted (src/api/vault/credentials.ts:112-121), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
+      "techniques": [
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/credentials.ts:99-104 — vaultStatus exposes encrypted/plaintext/legacy_ipc_decrypt_calls/key_source and migratePlaintextCredentials drives the sweep; that is the instrument-then-drain ladder with its counter surfaced on the vault's own status surface."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:61-66 — the one IPC surface that accepted a raw refresh_token was retired and refresh moved entirely server-side, so no cached proof or grant crosses the boundary."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/rotation.ts:19-53 — policy is data with one authority (list/create/update/delete), the history ledger is a first-class read, and RotationStatus/AnomalyScore/Remediation carry the graduated ladder rather than a boolean."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "deviation",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:15-27 and :45-56 — client secrets travel as plain IPC arguments; the session-encryption envelope used at src/api/vault/credentials.ts:112-121 exists one file away, so the secret sits in renderer memory and an unencrypted payload any error/telemetry path can capture."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "deviation",
+          "evidence": "src/api/vault/credentials.ts:23 — createCredential's admission contract carries no provenance field (PersonaCredential has none), so origin can only live in the free-form metadata blob; and src/api/vault/foraging.ts:12 ships ForagedCredential.fields with raw values to the renderer, which are echoed on screen at ForagingResultCard.tsx:130-138 instead of being presented by identity and location."
+        },
+        {
+          "technique": "health-probing",
+          "verdict": "conformant",
+          "evidence": "src/api/vault/credentials.ts:75-97 — HealthcheckResult carries state 'verified' | 'unverifiable' | 'failed' and BulkHealthcheckSummary keeps unverifiable as its own bucket; the sweep runs on cadence in the engine, not on render."
+        }
+      ],
+      "registryProposal": "The four acquisition ladder rungs are all present here (grant flow, Playwright tool capture, foraging, guided negotiation) — a rare complete set worth an application-layer citation for acquisition."
+    },
+    {
+      "context": "8b5d1d60-a129-4cd1-9567-d795589bde29",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/vault/credentialSlice.ts:82 declares healthcheckCredential as Promise<{success, message}> and :291-296 persists only healthcheck_last_success, so the wire's three-state probe verdict is flattened to a boolean at the store and at rest — 'could not verify' becomes 'broken' for every consumer downstream.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:82 drops the typed `state` from the slice's declared return, and :291-296 writes only a boolean into credential metadata — the third state cannot survive a reload."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/vault/rotationSlice.ts:176-179 returns [] when the ledger read fails, spelling 'could not read the rotation history' exactly like 'this credential has never rotated'; src/stores/selectors/rotationOverview.ts:12 likewise drops any credential whose status failed to load."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:154, :186, :255, :313 — every value crossing IPC is passed through encryptWithSessionKey first, with no bypass path in the slice."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:253-256 — updateCredentialField accepts plaintext from the form and seals it before the call; no slice action returns a credential value to any caller."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:78 and :163 carry healthcheck_passed as a client-supplied claim into create_credential; the admission door is asked to trust the acquiring surface's word that validation happened."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/vault/rotationSlice.ts:162-171 only triggers refresh_credential_oauth_now; the refresh engine (thresholds, single-flight, rotating grants, failure taxonomy) runs server-side, so the technique's preconditions do not hold in this context."
+        }
+      ]
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 and TriggerDetailDrawer.tsx:20 consume only credentialEventsList entries of shape {id, name}; the golden path's precondition — code that retains a foreign secret and uses it unattended — does not hold anywhere in this context.",
+      "techniques": [
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/triggerListTypes.ts — no sealed value, ciphertext or key custody appears in this context; it is trigger configuration UI."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:230 — the polling trigger names a credential event by id; no grant, proof or expiry is held here."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerStatusSummary.tsx renders trigger enablement, not credential lifecycle state; no policy, ladder or ledger exists in this context."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerExecutionHistory.tsx — no credentialed outbound call is made from this context; execution happens in the engine."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerQuickTemplates.tsx — nothing here brings a credential into custody; the credential already exists when a trigger references its event."
+        },
+        {
+          "technique": "health-probing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerModeBadge.tsx renders trigger mode, not a probe verdict about a credential the app does not control."
+        }
+      ],
+      "registryProposal": "Routing question for the registry: this pairing looks like vocabulary resonance ('credential' appears as credentialEventsList) rather than governance. Route by the golden path's precondition — retention of a foreign secret — and this context belongs to an event-trigger / scheduling subject instead. Also note the map row lists src/features/triggers/sub_triggers/TriggerList.tsx, which does not exist on disk."
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 masks a captured field only when the connector template declares it type 'password', so a captured API key typed 'text' renders in cleartext on the review screen of a capture flow where every field is by definition a secret.",
+      "techniques": [
+        {
+          "technique": "acquisition",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 — masking is conditional on the template's declared field type rather than on the field being a captured credential; consent-per-capture is otherwise correctly realized at AutoCredConsent.tsx:115-146."
+        },
+        {
+          "technique": "health-probing",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:115 — ReviewHealthcheck runs a live probe against the captured values before the save action is offered."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx — no credentialed outbound call originates here; the browser session is driven by the backend and this context renders its progress."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/index.ts — sealing happens after admission in the store/backend; no seal/unseal door lives in this wizard."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx — the wizard ends at admission; no proof is kept fresh from a grant in this context."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredCards.tsx — no policy, ladder or degradation evidence is held or rendered in this acquisition wizard."
+        }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:261-313 classifies probe/refresh failures by substring-matching the backend's prose (raw.includes('skipped automatic healthcheck'), 'Run Test Connection') and :254 pulls an HTTP status out of the message by regex, even though the wire already carries a typed state — the taxonomy dies at the boundary and breaks on the first reworded message.",
+      "techniques": [
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:254-313 — the client branches on substrings of an error message rather than on a typed kind field, which is the named tell that the failure taxonomy did not survive the boundary."
+        },
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:156-177 — canSave takes healthcheckSuccess as a bare boolean, so a credential the provider could not be reached about is indistinguishable from one the provider rejected at the gate that decides admission."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:167-177 — save is gated on OAuth consent plus a passing live healthcheck wherever the provider offers one, which is validation-before-admission at the surface."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx — this context selects and filters connectors; no credentialed call is issued from it."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/PickerGrid.tsx — no sealed value is read or written in this context."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts renders recipe availability, not rotation policy or degradation state."
+        }
+      ]
+    },
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:6-17 keys REMEDIATION_LABELS on snake_case while Remediation serializes PascalCase, so every lookup misses and `?? REMEDIATION_LABELS.healthy` renders a Disable-level credential as a green 'Healthy' badge.",
+      "techniques": [
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:6-17 — a hand-copied status vocabulary (healthy/backoff_retry/preemptive_rotation/rotate_then_alert/disable) against a wire enum of Healthy/BackoffRetry/PreemptiveRotation/RotateThenAlert/Disable; the same casing mismatch was already found and fixed in useRemediationEvaluator.ts:80-84 and remediationBus.ts:52-60, and this copy did not learn it, so the top of the ladder renders as its bottom."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_credentials/components/features/AuditLogTable.tsx:14 renders the audit trail as operation/caller/target/time from CredentialAuditEntry and never a credential value — the audit-at-the-door record surfaced without quoting the secret."
+        },
+        {
+          "technique": "health-probing",
+          "verdict": "unknown",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx renders aggregate intelligence rather than a probe verdict; I could not establish from these paths which status vocabulary its badges derive from."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "unknown",
+          "evidence": "src/features/vault/sub_credentials/components/features/RotationCountdownRing.tsx renders a countdown from next_rotation_at; whether any proof-freshness claim is rendered here is not determinable from these paths."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/EventTemplateCard.tsx — these are read-only display surfaces over metadata; no seal/unseal door exists in this context."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialScopeSection.tsx — every surface here operates on an already-admitted credential; no acquisition mode is implemented in this context."
+        }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6,13,24 accepts only {success, message}, so an 'unverifiable' probe (offline, provider outage) renders with the red XCircle failure treatment — the exact collapse that teaches an operator to ignore red.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6 and ConnectionTestSection.tsx:10 carry a boolean success only; the typed three-state verdict never reaches the badge, so could-not-verify and verified-bad share one rendering."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:49-51 renders the provider's raw message verbatim in the 'technical details' drawer with no credential scrubber in front of it, so a provider that echoes the failed request into its error body puts it on screen."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:58,119 masks secret fields with an explicit reveal, FieldCaptureHelpers.tsx:27-28 validates paste shape, and CredentialEditForm.tsx:54 keeps hand-typed keys in a ref rather than React state so they cannot be serialized into DevTools or an error report."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_credentials/components/forms/FormActions.tsx:37-52 surfaces which custody the master key is under (key_source === 'keychain' vs the fallback label) at the moment the user hands over a secret."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx — these are entry/edit forms; rotation policy and the degradation ladder live in the features and hooks contexts, not here."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/OAuthSection.tsx and OAuthProgressRing.tsx drive first consent only; no cached proof is refreshed from a grant in this context."
+        }
+      ]
+    },
+    {
+      "context": "3d2f5f87-37f7-4a94-96d3-932ebc2bf2c7",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:153-159 writes state:'failed' for any thrown error — an IPC timeout or an offline machine is recorded as a provider rejection, and :181-185 then persists only a boolean so the collapse survives a reload.",
+      "techniques": [
+        {
+          "technique": "health-probing",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:153-159 — the catch path hard-codes state:'failed' while 'unverifiable' exists in the very type declared at :42; :181-185 persists healthcheck_last_success as a boolean, so the third state cannot reach the fallback rendering path the file's own contract (:21-35) describes."
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/hooks/health/useRemediationEvaluator.ts:46-51 returns null when the anomaly metadata blob will not parse and :84 then treats a null remediation as Healthy — a corrupted score reads as a healthy credential, the inverse of the RotationStatus.healthcheck_corrupted flag the backend added for exactly this case."
+        },
+        {
+          "technique": "brokered-egress",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/hooks/useGoogleOAuth.ts:10-15 hands back a one-time oauth_session_ref the backend redeems, so token material never crosses IPC; useCredentialOAuth.ts:24-26 keeps pending client secrets in a ref to stay out of DevTools/Sentry serialization and :42 strips client_id/client_secret from the saved record."
+        },
+        {
+          "technique": "encryption-at-rest",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:202 seals preview field values with the session key before they cross IPC, and useVaultStatus.ts:44-56 is the single shared reader of the vault's custody + legacy-path counters."
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/hooks/useCredentialOAuth.ts:53 records provenance as one flow's own credential-data key (oauth_client_mode: 'app_managed') rather than a required field of the admission contract, so a record's origin is only discoverable by knowing which flow wrote which key."
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:61-66 (imported by useGoogleOAuth.ts:2) records that the only client-side refresh surface was deliberately retired; these hooks start consent and render a countdown (useRotationTicker.ts:22-30), so no threshold, single-flight or grant-rotation obligation lands here."
+        }
+      ],
+      "registryProposal": "Upward lesson for health-probing: this repo carries a correct three-state vocabulary on the wire (HealthcheckResult.state, BulkHealthcheckSummary.unverifiable) and still loses it three separate times — in a catch block, in a persisted boolean column, and in a store slice's declared return type. The technique names the display surfaces as the place the vocabulary drifts; the measured loss point here is the *persistence and boundary shape*. Worth stating that the third state must be representable in the stored column and in every intermediate type, or the badge renderer is the only place it ever existed."
+    },
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:182-213 never looks for a statement separator, so `SELECT 1; DROP TABLE audit_log` classifies as a read, raises no confirm banner and is dispatched with allowMutation:false — safe mode must refuse batches outright.",
+      "techniques": [
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:182-213 — a read leading keyword grants read-only status without a batch check, and :11 admits PRAGMA/ANALYZE into the read list, so a connection-state statement passes as a read; the stripper, CTE scan, EXPLAIN ANALYZE case and fail-closed posture (:167, :183, :209) are otherwise exemplary."
+        },
+        {
+          "technique": "introspection-architecture",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1-8 records that the client-side SQL builders were deleted in favour of the backend's parameterized introspect_db_tables/introspect_db_columns; what remains at :128 emits a SELECT for the clipboard, which is the blessed emitted-not-executed helper."
+        },
+        {
+          "technique": "dialect-capability-declaration",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:9-18 keeps one union read list mixing SQL and Redis verbs applied regardless of connector family, instead of a per-family read list the guard consults; the family map itself (introspectionQueries.ts:42-82) correctly derives language and NL dialect from one authority."
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:13-77 provides dialect-aware highlighting and a keyboard run binding but no schema-aware completion, no run-selection or statement-at-cursor, and no cancel affordance — the cancellation stack exists end to end at hooks/useDbQueryRunner.ts:60-63 and no editor surface here exposes it, which is the technique's named 'feature that does not exist for the user'."
+        },
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:198-203 announces truncation with no bound (the QueryResult wire type carries `truncated: boolean` and no cap, so the surface structurally cannot name it), :221 renders and copies SQL NULL as the literal text 'NULL', :51-60 renders an acknowledged mutation as the zero-row empty state, and safeModeUtils.ts:217-224 relays engine errors with no credential scrubber in front of the result area."
+        },
+        {
+          "technique": "nl-assist-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/SchemaManagerModal.tsx mounts the chat lane from tabs/ChatTab; no file in this context authors, gates or executes generated SQL."
+        }
+      ]
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:50 pins NULL rendering as the literal text 'NULL' and :76 pins a truncation warning carrying no bound, locking both fidelity defects into the suite as intended behaviour.",
+      "techniques": [
+        {
+          "technique": "introspection-architecture",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:7-18 pins the rendered shape produced by the single trusted-side door and records the deletion of the client-side builders it replaced."
+        },
+        {
+          "technique": "dialect-capability-declaration",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:60-77 asserts per-family classification including the unsupported fallback, and ConnectorCapabilityNote.test.tsx:24-40 asserts the note renders the backend-reported capability class rather than a client-side guess."
+        },
+        {
+          "technique": "nl-assist-gating",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:62 and :88 pin that a generated mutation is held at the same confirm banner and then run in write mode, while a generated read runs directly — the same-gate/same-door property asserted as behaviour."
+        },
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:62-88 is the only guard coverage in this context, and no fixture in the suite is shared with the Rust is_mutation; parity is maintained by the prose note at safeModeUtils.ts:25-31, which records a drift (DROP/ALTER) that already shipped, and no case covers batches or session-state statements."
+        },
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:50, :76 — the suite asserts the two defects (NULL as text, bound-less truncation) rather than the contract, so a fix would read as a regression."
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx:5-127 covers highlighting and the run bindings and nothing else; there is no case for completion, history, run-selection or cancel because none is implemented, so the suite records the editor floor as complete when it is not."
+        }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:41-44 composes and executes `TYPE \"<key>\"` client-side with hand-rolled backslash/quote escaping — a second door the introspection module's own header (introspectionQueries.ts:1-8) claims was deleted.",
+      "techniques": [
+        {
+          "technique": "introspection-architecture",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:41-44 — a user-influenced Redis key is escaped by hand and interpolated into a command fed straight to executeDbQuery; the technique's ruling on such helpers is deletion with the trusted-side door absorbing the call site, and the well-escaped variant is exactly the one it names as the vulnerability's seed."
+        },
+        {
+          "technique": "nl-assist-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:143 marks a completed generation status:'ready' with 'query generated' copy even when no SQL was extracted (the with_sql/no_sql distinction is already known at :135 and spent on telemetry only), and :202 executes without any generated-provenance marker, so history cannot tell a generated statement from a typed one weeks later."
+        },
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:211 reuses the editor's own useQuerySafeMode hook and :202 its executeDbQuery door — the same code path, not a re-implementation — and :222 voids a pending consent when the run target moves."
+        },
+        {
+          "technique": "dialect-capability-declaration",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:20-33 fetches the capability class from db_connector_capability, the authority that lives beside the execute dispatch, and ChatTab.tsx:285 renders it in the lane's chrome so the model lane never implies more than the connector supports."
+        },
+        {
+          "technique": "result-fidelity",
+          "verdict": "unknown",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatMessages.tsx renders m.result through the shared grid; the fidelity contract belongs to the QueryResult wire type judged in the shell context and is not separately determinable here."
+        },
+        {
+          "technique": "editor-ergonomics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatInput.tsx is a natural-language prompt box, not a SQL editing surface; no statement-authoring editor lives in this context."
+        }
+      ]
+    },
+    {
+      "context": "7901fd6c-0346-430b-aefe-fc4cd623b167",
+      "subject": "analytics-time-windows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position on a series that only carries non-empty buckets (pivotToolUsage.ts:49 keys off observed dates), so a quiet interval silently labels part of the current period as the baseline.",
+      "techniques": [
+        {
+          "technique": "half-open-interval-policy",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30-32 — `points.length - periodDays` is a positional cut, which only reproduces the half-open boundary on a dense series; pivotToolUsageOverTime zero-fills across tools but never across dates, so the series is sparse by construction."
+        },
+        {
+          "technique": "canonical-zone-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:86 computes 'today' in UTC via toISOString while :45-46 parses and formats the same dates in the browser's local zone with a hardcoded en-US locale; no zone constant is declared anywhere in the module that constructs the window."
+        },
+        {
+          "technique": "calendar-arithmetic",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:95 counts the custom range's days with `ceil(ms / (1000*60*60*24))`, the literal fixed-day divisor the technique names as a smell; across a seasonal shift the count shown to the user is off by one."
+        },
+        {
+          "technique": "range-precedence-resolution",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:90-95 validates the range and derives its length at the call site rather than inside the resolver (OverviewFilterContext.tsx:66-77), and the resolver returns start/end/days with no provenance and no clamp report — a surface showing 30 days cannot say which source chose it."
+        },
+        {
+          "technique": "baseline-as-window-start",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:23-33 compares volume metrics (cost, executions, invocations) that are period totals with no value at an instant; the technique's own rule sends those to a matched prior window fetched as one doubled read, which is what this does."
+        },
+        {
+          "technique": "cohort-matched-comparison",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:23-53 — the unit of these windows is a dated occurrence count, not an entity with a durable identity, so there is no cohort to intersect; the technique routes this to a matched-span comparison instead."
+        }
+      ]
+    },
+    {
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "subject": "analytics-time-windows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/schedules/components/ScheduleRowHistoryPanel.tsx:161-165 builds day buckets from local midnight but keys them with toISOString().slice(0,10) (UTC) while labelling them locally, so for any non-zero offset the key and the label describe different days and runs land in the wrong bucket.",
+      "techniques": [
+        {
+          "technique": "canonical-zone-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/schedules/components/ScheduleRowHistoryPanel.tsx:165 truncates the bucket key in UTC while :166 labels it locally and calendarHelpers.ts:153 keys calendar days locally — two zones in one pipeline, and neither reads the schedule's own agent.timezone, which is the boundary the engine actually fires on."
+        },
+        {
+          "technique": "calendar-arithmetic",
+          "verdict": "deviation",
+          "evidence": "src/features/schedules/components/ScheduleRowHistoryPanel.tsx:161 steps the day cursor by a fixed 24h across a range that can contain a seasonal shift, and the trailing grid is anchored at now rather than at the newest observation; src/features/schedules/libs/calendarHelpers.ts:62 hardcodes Sunday as the week start with no declared weekday constant beside a zone constant."
+        },
+        {
+          "technique": "range-precedence-resolution",
+          "verdict": "deviation",
+          "evidence": "src/features/schedules/components/FrequencyEditor.tsx:50 resolves the display zone as `scheduleTz ?? themeTimezone`, while src/features/schedules/components/ScheduleRow.tsx:98-100 resolves the same question from themeTimezone alone and ignores agent.timezone — two adjacent surfaces label the same schedule with different zones and neither can say why."
+        },
+        {
+          "technique": "half-open-interval-policy",
+          "verdict": "conformant",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:64 makes the week end exclusive (start + 7 days) and :135 iterates the month grid with `cursor < end`, so consecutive windows tile; the returned field is named `end` with no inclusivity statement, which is the technique's naming smell but not a second convention."
+        },
+        {
+          "technique": "baseline-as-window-start",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/components/ScheduleRowHistoryPanel.tsx:133-145 renders a failure rate over a fixed window with no period-over-period figure anywhere in this context; there is no comparison for a baseline to serve."
+        },
+        {
+          "technique": "cohort-matched-comparison",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/components/ScheduleCalendar.tsx and ScheduleRowHistoryPanel.tsx present per-schedule run outcomes; no aggregate movement figure over a changing entity population is computed in this context."
+        }
+      ],
+      "registryProposal": "Upward lesson worth an application citation: src/features/schedules/libs/calendarHelpers.ts:15-24 and :286-364 model a past scheduled slot as projected / past-success / past-failure / past-unknown and refuse to colour a slot from the trigger's overall health — 'never a fabricated outcome'. That is failure-not-empty-success applied to a calendar surface more crisply than any current technique states it, and matchPastSlotsToRuns' half-gap tolerance cap is a reusable mechanism for binding nominal slots to observed runs."
+    },
+    {
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:137 concatenates the operator's text and a carriage return into one PTY write, collapsing the typed-versus-pasted distinction that the manager's own paste path (fleetTerminalManager.ts:598-613) implements correctly — two authorities for how input reaches a session.",
+      "techniques": [
+        {
+          "technique": "attach-detach-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:947-998 tears down subscription first, then renderer, then unparents, parks by LRU under MAX_PARKED and counts budget evictions (bumpEvictions, :376-380); :831-877 reuses parked machinery instead of rebuilding and guards against a redundant re-hydrate."
+        },
+        {
+          "technique": "renderer-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:662-710 makes the WebGL addon attach-scoped, enforces MAX_WEBGL at the one door that mints renderers (:649-660) with its own eviction counter, falls back to the DOM renderer on context loss (:673-683), and :615-636 coalesces resize to a frame and skips a push whose grid did not change; FleetMobilePreview.tsx renders a renderer-free glance rather than miniature terminals."
+        },
+        {
+          "technique": "multiplexer-state",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:897 — every genuine re-attach calls term.reset() before replaying the backend tail, so the session's scroll position and its 5000-line local scrollback are destroyed by the very parking the technique says should be undetectable; the manager is otherwise exemplary (session-keyed globalThis registry :279-283, one inbound dispatcher :503-526, owner token and displacement callback :441-452)."
+        },
+        {
+          "technique": "bounded-replay-buffers",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:909 writes the backend snapshot into the emulator with no truncation marker at the seam, so an operator returning to a busy session cannot tell that replay began mid-history; the splice itself is exact (atomic snapshot-on-subscribe with a hold queue and a generation counter, :888-934). The ring's own budget lives in the Rust backend, outside this context."
+        },
+        {
+          "technique": "keystroke-injection",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:137 writes text+'\\r' as one chunk with no key notation, no separation between paste and Enter and no settle delay, so a target that coalesces one read into one event can drop the submit; there is no closed key vocabulary or parser anywhere in this context."
+        },
+        {
+          "technique": "pty-management",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:615-622 drives the resize chain to the device and :1095-1100 distinguishes an exited session from a quiet one, but the platform portability seam itself lives in src-tauri behind the fleet IPC and is not reachable from this context's paths."
+        },
+        {
+          "technique": "occupant-state-detection",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:95,118 consumes session states (exited/hibernated/awaiting_input) from the fleet registry, but the classifier, its detection buffer and its manifest live in the Rust backend outside these paths, so the technique's rules cannot be judged from here."
+        }
+      ],
+      "registryProposal": "Upward lesson for keystroke-injection: src/features/plugins/fleet/fleetTerminalManager.ts:575-613 is the best statement of the typed-versus-pasted rule I have seen in code — it routes clipboard input through term.paste() so bracketed paste is emitted only when the child enabled it, and strips a trailing newline only when the child did not. Worth an application citation. It also sharpens the technique's boundary: the defect is not only 'automation concatenates command+newline', it is that a product can hold both the correct and the naive path at once, one file apart."
+    },
+    {
+      "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+      "subject": "data-viz",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/components/shared/KpiTile.tsx:104-106 derives the sparkline's floor from the sample's own minimum, so a metric moving 99.1→99.3 fills the tile and every tile in a KPI row uses a different scale — the one scale defect no reviewer's eye can catch.",
+      "techniques": [
+        {
+          "technique": "scale-and-axis-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:104-106 — `min = Math.min(...data); range = max - min` is the sample-anchored floor; the projection computes its own domain internally rather than taking [min,max] as a required input, so the honest zero floor is not reachable from the call site."
+        },
+        {
+          "technique": "micro-visualizations",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:103-109 — a column of KPI tiles each auto-scales its own sparkline, so flat and volatile render identically, and the minimum is two points (:103), which draws a slope that reads as a trend from an anecdote."
+        },
+        {
+          "technique": "metric-identity",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/libs/fleetOptimizer.ts:128-129 computes a fourth per-persona 'success rate' from open healing issues, and :281 recomputes overall_success_rate*100 inline, neither routed through resolveMetricPercent or registered in SUCCESS_RATE_IDENTITIES; the registry itself (metricIdentity.ts:12-41) omits unit, precision and polarity, and polarity then leaks to call sites as invertPolarity (TrendIndicator.tsx:9) and invertColor (KpiTile.tsx:36)."
+        },
+        {
+          "technique": "empty-and-degraded-chart-states",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/libs/metricIdentity.ts:55-57 returns 0 for an absent or zero denominator and fleetOptimizer.ts:130 returns 100 when a persona has no executions in window, collapsing 'not measured' into a measured value before any surface gets a vote — the decision point the technique names as earlier than the rendering."
+        },
+        {
+          "technique": "encoding-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:79-100 hardcodes a nine-key Tailwind palette and then restates it as hex in SPARKLINE_HEX (:97-100) — two hand-maintained copies of one palette, with semantic hues (red, emerald) used as categorical keys; eventVisuals.ts:78-85 shows the correct shape by deriving from healthScale/statusTokens, while :32-39 in the same file still hardcodes status colours."
+        },
+        {
+          "technique": "chart-loading-economics",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/components/shared/KpiTile.tsx:102-116 draws its sparkline as inline SVG with no chart engine; no deferred chunk, placeholder geometry or per-chart failure boundary applies in this context (the engine-loading surfaces live in sub_usage)."
+        }
+      ],
+      "registryProposal": "Upward note for metric-identity: src/features/overview/libs/metricIdentity.ts:12-41 is a working instance of the technique's 'registry of declared variants' — three success-rate ids each naming source, window and derivation, resolved by one function. It also demonstrates the failure the technique should call out explicitly: a variant registry that omits unit, precision and polarity does not stop those three from forking, and polarity in particular immediately reappeared as a per-call-site boolean. Recommend the technique list those fields as required members of the registered variant, not just of the prose contract."
+    },
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "embedded-preview",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 dispatches inbound bridge messages on shape alone (d.source !== \"athena\") with no e.origin check, and :61-64 and :80-83 post every reply and route report to the parent with a \"*\" wildcard target — the injection door and the symmetric leak the technique calls the bridge's only authentication layer.",
+      "techniques": [
+        {
+          "technique": "origin-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:53 — the agent authenticates by envelope shape, which ships to the guest and is readable by any document in the frame tree; :61-64 and :80-83 address replies to \"*\", so a redirect or crash page in the frame receives the guest's location and element data."
+        },
+        {
+          "technique": "dev-server-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/devserver.rs:77-78 sends the dev server's stdout and stderr to Stdio::null(), so a server that never becomes ready has no output to attach to the failure the technique requires be declared; and start() (:56-108) has no readiness deadline or verdict — the entry never moves to an unhealthy state, leaving the eternal loading frame as the user-visible outcome. Registration, one-server-per-project replacement, process-tree teardown and stop_all on exit (:44-171, :218-237) are otherwise exactly the pattern, and http_responds (:193-213) is a stronger readiness probe than the technique asks for."
+        },
+        {
+          "technique": "convention-discovery",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/routes.rs:15-21 returns Ok(empty) when neither app/ nor src/app exists, and walk() (:25-27) swallows read_dir errors, so 'this guest matches no known convention' and 'a directory could not be read' both render as an app with no pages instead of the declared 'no routes discovered — navigate by URL'."
+        },
+        {
+          "technique": "preview-checkpoints",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:23-34 — commit_snapshot discards the result of both git add and git commit and returns (), so a project whose snapshots quietly stopped committing looks identical to a protected one until the restore list comes up short; :43-45 likewise returns an empty version list when git fails. The capture boundary (per build turn) and the turn-summary label are correct, and restore (:65-83) is non-destructive."
+        },
+        {
+          "technique": "cross-frame-protocol",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:62 echoes the request's reqId correctly, but the envelope carries no protocol version and the agent never announces a ready event, so the host cannot distinguish an absent agent from a stale one and a version mismatch is undetectable; the route events at :79-83 are also unthrottled at the source."
+        },
+        {
+          "technique": "injected-instrumentation-with-fallback",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/webbuild/preview_agent.rs:112-140 injects the agent as source into the guest's tree, re-adds it when a mutation drops it (:120-129) and skips a layout it cannot patch; the dev gate is structural (`process.env.NODE_ENV !== \"development\"` at :23 plus the build-time render gate at :146), the charter is two verbs with no evaluate, and :98-104 reaps every listener, the history patches and the highlight ring on teardown. The coarse fallback is real — plan.rs:36 carries the top/middle/bottom region anchoring used when the precise pointer is unavailable."
+        }
+      ]
+    }
+  ]
+}

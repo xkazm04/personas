@@ -1,0 +1,357 @@
+{
+  "worker": "p-9",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before spending a live discovery run, and the derived declaration is persisted and surfaced on the entry - the 'declarations can be learned' clause realized end to end.",
+      "techniques": [
+        {
+          "technique": "catalog-as-data",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 consults lookupRecipeAsDesignResult(connector.name) before a live LLM analysis; the derivation is saved keyed by identity (src/hooks/design/credential/useCredentialDesign.ts:117) with provenance (recipe.source) and the catalog card advertises that a known-good recipe exists (src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:180-195)."
+        },
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:93-112 renders only the declared fields through the shared FieldCaptureRow (secret fields masked via inputType), save is gated on a probe that received the values (steps/ReviewActions.tsx:149 with the blocker named at :120-122), and undeclared transport keys are stripped at the save door (helpers/useAutoCredSession.ts:199-205)."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "No catalog refresh, seed, or row write exists in this context - the flow writes credential recipes and credentials, never the vendor/operator columns of a connector row, so the two-writer contract has no writer here to bind."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "No foreign reference is resolved: match_existing is pinned to the already-chosen row at src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:102 and :114, so the identity is known before the flow starts."
+        },
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "The two adapters at steps/AutoCredPanel.tsx:212 are acquisition transports selected by host capability (playwright vs guided), not per-provider API translations registered under catalog identity - the precondition 'providers diverge in shape' does not hold."
+        },
+        {
+          "technique": "catalog-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "No version stamp, retirement, tombstone, alias, or dependent migration occurs in this context; the only row this flow can touch is created elsewhere."
+        }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:102-121 filters the gallery on the scalar category only and applies no lifecycle predicate, so a straddling connector is findable under one axis and a retired one is offered forever.",
+      "techniques": [
+        {
+          "technique": "catalog-as-data",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:105 filters and counts on the scalar c.category while the row type declares categories?: string[] (src/lib/types/types.ts:253-254) that no consumer in the repo reads - the single-to-multi-valued axis was never unioned behind one accessor, so a connector that straddles categories is discoverable under one of them and the multi-tag declaration rots unread."
+        },
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:228-231 hardcodes eight provider names in consumer code to decide whether save must wait on a probe, and :135-144 hardcodes which declared fields are hidden per flow kind - both are row attributes (healthcheck_config already exists on the row), so a ninth OAuth provider ships an ungated save and a new auto-filled field must be added to a switch statement."
+        },
+        {
+          "technique": "catalog-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:102-121 has no deprecation/retirement predicate and ConnectorDefinition (src/lib/types/types.ts:319-325) carries no status, shipped-revision, or alias column, so an entry removed from the shipped set stays in the discovery gallery of every existing install, indistinguishable from a supported one."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "No foreign reference is resolved to a catalog identity here; the search path is an interactive filter (src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:57-68 substring over label/name/category) that binds nothing automatically - the case the technique explicitly exempts - and no-match is a first-class outcome at picker/PickerGrid.tsx:35-42."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "This is a read-only listing surface: it obtains rows as a prop and writes none, so neither the refresh nor the edit door is present to gate."
+        },
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "No provider API is called or translated in this context; the picker reads catalog rows only."
+        }
+      ],
+      "registryProposal": "The audience/licensing bridge here is the technique's blessed transitional form realized exactly - src/lib/credentials/connectorAudiences.ts:12-16 reads the row's own metadata.audiences first, falls back to the static table, unions both, and documents the migration direction in place, consumed at usePickerFilters.ts:118. catalog-as-data describes this shape as 'observed working in the field'; it is worth citing with this file:line in the application layer."
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:227 mints an operator connector's identity from the user-typed display name, so two differently-labelled connectors collapse onto one key and a rename cannot be expressed.",
+      "techniques": [
+        {
+          "technique": "catalog-as-data",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:227 derives the row's machine key as `${serviceTypePrefix}_${sanitize(effectiveName)}` from the label the user just typed (row created at :244), violating 'identity is minted, never the display label'; every credential references that derived key via service_type, so sanitize() collisions silently bind a new credential to an existing row. Secondary: forms/TemplateFormBody.tsx:185-190 re-declares a local AuthVariant shape for metadata.auth_variants, typed unknown[] at src/lib/types/types.ts:187, giving the row's variant declaration one authority per consumer."
+        },
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "conformant",
+          "evidence": "schemas/CredentialSchemaForm.tsx:318-328 renders every subtype from its declared field list through the one generic CredentialEditForm; schemas/schemaFormTypes.ts:88-107 builds each probe by substituting declared credential fields ({{api_key}}, bearer token, basic auth, custom headers) so the gate exercises its target; and :277-286 reaps the just-minted row when the credential save fails, recording the rollback's own failure rather than swallowing it."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "This is the operator's creation door only - rows are written with is_builtin: false (CredentialSchemaForm.tsx:254) and no vendor refresh or re-seed path exists in this context to contend with them."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "No foreign-name resolution occurs; the user picks a schema type explicitly (forms/CredentialTypePicker.tsx:107-133)."
+        },
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "No heterogeneous provider API is mapped onto an internal view model here; the MCP custom healthcheck (schemaConfigs.tsx:76-81) is a probe call, not a translation layer."
+        },
+        {
+          "technique": "catalog-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "The only delete in this context is the creation rollback (CredentialSchemaForm.tsx:280), which is the schema-driven-forms reaper, not a lifecycle transition; no versioning, retirement, aliasing, or dependent migration happens here."
+        }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:88 reads a null healthcheck_config as 'no probe needed' and drops the save gate at :201, so a row that declares credential fields but has no probe recipe admits any typed value unverified.",
+      "techniques": [
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:88 treats a missing probe recipe as 'this connector needs no verification' and :201 therefore leaves save ungated - the intra-row cross-check the technique demands (declares fields => probe references one, otherwise mark the connector unauthenticated) exists nowhere, so an unprobed row is indistinguishable from a deliberately unauthenticated one. Secondary: :34-43 falls back to connector.credential_fields when the catalog row declares none, so the form can collect fields storage and redaction never saw. Note the correct guard exists elsewhere in-house: design/CredentialDesignHelpers.ts:177 requires healthcheckSuccess && testedConfig !== null."
+        },
+        {
+          "technique": "catalog-as-data",
+          "verdict": "conformant",
+          "evidence": "forms/ConnectorCredentialModal.tsx:31 and :90-96 key the health cache and the probe on connector.name, and all presentation (icon, colour, label, category) is read from the row at :109-122 - nothing load-bearing keys on the label."
+        },
+        {
+          "technique": "shipped-vs-operator-ownership",
+          "verdict": "not-applicable",
+          "evidence": "No connector row is written or refreshed in this context; it writes credential instances only."
+        },
+        {
+          "technique": "matching-and-ranking",
+          "verdict": "not-applicable",
+          "evidence": "The connector identity arrives already resolved as a prop; no foreign reference is ranked or bound."
+        },
+        {
+          "technique": "adapter-normalization",
+          "verdict": "not-applicable",
+          "evidence": "There is no per-provider adapter registry here. Worth recording anyway: the closed probe-failure taxonomy at design/CredentialDesignHelpers.ts:262-318 (timeout / dns / refused / 401 / 403 / 404 / 429 / 5xx) with an honest fallback that preserves the raw evidence behind a details disclosure (forms/HealthcheckResultDisplay.tsx:296-311) realizes the technique's 'errors are part of the model / unmappable failures stay failures' rule in a non-adapter setting."
+        },
+        {
+          "technique": "catalog-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "No lifecycle transition of a catalog row occurs in this context."
+        }
+      ]
+    },
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "proactive-nudges",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/triggers.rs:72-80 swallows every evaluator error with unwrap_or_default(), so a proactive system that has gone dark is spelled exactly like a quiet week.",
+      "techniques": [
+        {
+          "technique": "trigger-evaluators",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/triggers.rs:72-80 calls each evaluator as `.unwrap_or_default()` with no log and no counter, so 'did not run' and 'ran, found nothing' produce identical records and a broken evaluator silences its concern permanently; collect_all is also a hardcoded call list with no registry and no per-kind disable, and two evaluators deliver directly (proactive/execution_review.rs:887-888, proactive/message_triage.rs:427-428) instead of returning candidates."
+        },
+        {
+          "technique": "attention-budgets",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/budget.rs:245 keys the daily reset on Utc::now(), not the user's local midnight, so a user well east or west of UTC gets the reset mid-day and one half of their day double allowance; caps are compile-time constants (:23, :41-47) rather than data the user may edit, and refusals are only tracing lines (proactive/mod.rs:432, :442), never counted per kind per day. The claim itself is exemplary: atomic global+per-kind check-and-decrement in one transaction with rollback (:204-241), consented lane exempt from its per-kind cap but not the global ceiling (:34-36)."
+        },
+        {
+          "technique": "notice-delivery-decoupling",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:128 returns early from evaluation during quiet hours, so a candidate noticed inside a quiet window is destroyed rather than deferred - contradicting the module's own contract three hundred lines later at :392 ('Quiet hours suppress delivery, not noticing') - and no queue row ever carries a deferral reason, which lives only in tracing output. The rest of the pipeline is a model implementation: sweep before dedup (:271-277), per-kind refusal continues while only the global ceiling breaks the pass (:437-445), idempotent delivery claim (:574-584), per-kind expiry with a deliberately generous window for the no-re-fire scheduled lane (:196-210)."
+        },
+        {
+          "technique": "quiet-windows",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:549 deliver_now marks and emits with no quiet check and no budget claim, and five call sites use it (companion/night_shift/mod.rs:597, proactive/execution_review.rs:888, proactive/message_triage.rs:428 and :453, proactive/rollup.rs:58), so the quiet-crossing privilege is a function any author may call rather than a closed enumerated priority class, and crossings are neither counted nor labelled in the delivery record. The window arithmetic itself is exemplary: proactive/quiet.rs:17-56 pins inclusive/exclusive edges, the midnight wrap, the degenerate equal-endpoint case and DST behaviour in prose backed by property tests, evaluated against the local wall clock at :111-118."
+        },
+        {
+          "technique": "nudge-identity-dedup",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/mod.rs:278-293 drops a re-noticed candidate whose (trigger_kind, trigger_ref) is already live instead of superseding it, so a queued card's payload is never refreshed when the story moves and no times-noticed counter accrues for cap tuning; the one-day queued expiry (:210) bounds the staleness but does not restore the 'current state of the story, once' property. The key itself is correct - kind plus subject ref, no text, no timestamp, persisted across restart, with the state-predicate cooldown the technique prefers."
+        },
+        {
+          "technique": "efficacy-feedback",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/budget.rs:83-87 aggregates only status IN ('engaged','dismissed'), so 'ignored' - the majority outcome and the strongest negative signal - never reaches the adaptation loop; and it could not be added safely, because proactive/mod.rs writes 'expired' for both an ignored delivered card and a queued row that never won a slot, collapsing an efficacy outcome and a queue statistic into one spelling. budget.rs:73-75 also raises a well-engaged kind's cap by +1 (clamped to base+2), which the technique forbids outright, and no per-kind kill switch exists anywhere in the module."
+        }
+      ],
+      "registryProposal": "efficacy-feedback states 'Nothing raises a kind's volume' without qualification. This repo implements a bounded counter-case worth considering: budget.rs:64-78 moves a per-kind cap by at most +/-1, requires >=5 engaged+dismissed samples over 30 days, clamps to base+2, and sits under an unchanged global ceiling - so total contact cannot rise, only its mix. The technique's real target is escalation on ignore (louder because unread); raising on an explicit positive action is a different act. Proposal: narrow the rule to 'nothing raises a kind's volume in response to non-action, and no adaptation may raise total contact', which keeps the anti-pattern forbidden while admitting the measured bounded-uplift form."
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7",
+      "subject": "proactive-nudges",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/TriggerStatusSummary.tsx:54-76 shows this context configures user-authored cron/polling/webhook/event-listener rules that execute a persona - rule-authority automation, the alerting side of the boundary the golden path draws, not machine-initiated contact with a human.",
+      "techniques": [
+        {
+          "technique": "trigger-evaluators",
+          "verdict": "not-applicable",
+          "evidence": "The precondition that fails is 'an agent judged something worth your attention': these triggers fire automations on a line the user drew in advance (TriggerStatusSummary.tsx:54-76 renders cron / interval / endpoint / webhook / event-type configs), with a blast-radius mode of auto, dry-run, or approval (TriggerModeBadge.tsx:18-31). Their authority is the rule and their audience is the runtime - the golden path assigns exactly that to alerting."
+        },
+        {
+          "technique": "attention-budgets",
+          "verdict": "not-applicable",
+          "evidence": "No machine-initiated human contact is rationed here; RateLimitControls governs execution rate of an automation, which is scheduling's cooldown machinery, not an attention budget."
+        },
+        {
+          "technique": "notice-delivery-decoupling",
+          "verdict": "not-applicable",
+          "evidence": "There is no notice queue between noticing and interrupting - a fired trigger runs a persona and lands in TriggerExecutionHistory, an execution record rather than a deferred interruption."
+        },
+        {
+          "technique": "quiet-windows",
+          "verdict": "not-applicable",
+          "evidence": "ActiveHoursSection constrains when an automation may execute, not when the machine may address the user; the promise being kept is an operational one, not the attention promise this technique governs."
+        },
+        {
+          "technique": "nudge-identity-dedup",
+          "verdict": "not-applicable",
+          "evidence": "No nudge identity is minted in this context; trigger rows carry user-authored identity and their executions are a history, not repeated news."
+        },
+        {
+          "technique": "efficacy-feedback",
+          "verdict": "not-applicable",
+          "evidence": "There is no delivered-nudge outcome to record; the success signal here is execution health (triggerListTypes.ts:1-15 healthy/degraded/failing), which measures the automation, not the user's appetite for being interrupted."
+        }
+      ],
+      "registryProposal": "Coverage question, and a routing one rather than a hole. This pair looks like a technique-shaped resonance: the matcher joined on the word 'trigger', but proactive-nudges owns machine-initiated contact while this context is user-authored automation. Its real governors look like alerting (threshold rules and their lifecycle), scheduling/cooldown-and-debounce (rate limits, active hours), and hitl-approval (the auto / dry-run / approval unattended modes at TriggerModeBadge.tsx:18-31). Also stale map data: the brief's path src/features/triggers/sub_triggers/TriggerList.tsx no longer exists in the repo."
+    },
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:86-93 deletes a key with no settings-audit record while create, revoke and pair all write one, so the single irreversible mutation is the only one absent from the history the surface advertises.",
+      "techniques": [
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:86-93 (delete_external_api_key) writes no settings_audit_log row, while create (:46), revoke (:78) and pair (:187, :216) all do - so 'who removed that key, and when' is unanswerable for the one action that destroys the row too. The surface itself is right: src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:196 puts a recent-change marker at the scene linking through to the history tab, and the audit insert is best-effort relative to the write exactly as the technique requires (external_api_keys.rs:45-56 logs a warning and still returns the key)."
+        },
+        {
+          "technique": "save-experience",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:105 dismisses the dialog on a backdrop click, discarding an explicit-save draft (name, scopes, per-persona execute picks, expiry) with no unsaved-changes guard; and :228 disables submit for validation reasons rather than letting the press surface the blocker. Destructive row actions do get their ceremony - the two-step arm/confirm at ApiKeysSettings.tsx:322 via useConfirmClick - and write failures surface rather than pretending (:210-223)."
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "not-applicable",
+          "evidence": "The precondition that fails is the existence of a settings key space: this context manages rows in external_api_keys, and the settings golden path excludes exactly this material ('Secrets are not settings... if a value would be redacted in a log, it does not belong here'). There is no key to register, namespace, migrate, or reap."
+        },
+        {
+          "technique": "typed-accessors",
+          "verdict": "not-applicable",
+          "evidence": "No settings key is read in this context, so there is no accessor, default, or fail direction to judge; src/features/settings/sub_api_keys/libs/mcpServer.ts:8 is a compile-time constant, not a stored setting behind a typed door."
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "not-applicable",
+          "evidence": "No settings reads happen here, so there is no boot fan-out to collapse; the module-scoped cache at ApiKeysSettings.tsx:83 mirrors a domain list, not settings rows."
+        },
+        {
+          "technique": "setting-kinds",
+          "verdict": "not-applicable",
+          "evidence": "No registered key exists to classify by blast radius. Worth noting the instinct is present anyway outside the store: CreateApiKeyDialog.tsx:49 defaults the expiry to 90 days with 'never' available only as a deliberate pick - a ceiling that fails closed."
+        }
+      ],
+      "registryProposal": "Coverage question. Four of six techniques fail their precondition because the subject owns the durable key-value settings store while this context is credential management that merely lives under features/settings/. The match reads as directory-vocabulary rather than precondition: the material here is governed by credential-vault, and only the two surface-shaped techniques (settings-audit-and-history, save-experience) genuinely reach it. Either narrow the pairing to those two or route the context to credential-vault."
+    },
+    {
+      "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+      "subject": "usage-analytics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/analytics/activation.ts:125-127 writes the fire-once latch before the emission, so every milestone reached while telemetry is off is permanently consumed and never reported - a missing row in the funnel's denominator, per installation, forever.",
+      "techniques": [
+        {
+          "technique": "activation-and-funnel-honesty",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/activation.ts:125 persists the reached-set before :127 hands the conversion to the sink, so a milestone reached during an opted-out period (when the active sink is noopSink) is latched as consumed and can never fire - the latch records intent, not delivery. src/lib/analytics/activation.test.ts:94 pins that behaviour as intended. Activation is otherwise defined from completed actions rather than visits (ACTIVATION_FUNNEL at :30-35), and the reachability discipline is visibly applied (navCatalog.ts:72-84 removes an unreachable tab from the ignored denominator)."
+        },
+        {
+          "technique": "event-taxonomy",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/sink.ts:21-35 types action, category and label as bare strings with no registry the emit door validates against - label?: string is precisely the free-form payload field the technique forbids - and no entry anywhere declares an event's question, payload contract, version, or retirement; the emitted names ('view', 'tab_switch') also do not follow one object_action past-tense grammar."
+        },
+        {
+          "technique": "coverage-from-registries",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/navCatalog.ts:109-124 keeps TAB_DIMENSIONS as a hand-maintained list with no gate - the axis an exhaustiveness check cannot see, which the technique names by hand ('a guard that forces every value of a declared dimension to be listed does nothing about which dimensions are declared'). The section axis is genuinely derived (:60 from NAV_SECTIONS) and each dimension's value set is a compile-error-on-omission Record (:69), and the file's own header records that the previous list tracked only 6 of ~16 dimensions - the same failure one level up remains open."
+        },
+        {
+          "technique": "privacy-scrubbing",
+          "verdict": "deviation",
+          "evidence": "There is no allowlist at a single admission door: src/lib/analytics/sink.ts:30-35 lets any call site attach an arbitrary category/action/label string that src/lib/sentry.ts sets as a Sentry tag, and src/lib/analytics/index.ts:162 re-exports the raw trackFeature/trackInteraction helpers so a caller can emit outside the consent-switched sink entirely. Identity handling is right - no account id, and a locally minted random install id (activation.ts:52-60)."
+        },
+        {
+          "technique": "batching-and-quota",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:38 and :43 transmit every section and tab visit immediately through the sink to Sentry.captureMessage in addition to the beforeunload session summary (:149), so the collector receives a timestamped per-interaction stream - the behavioural trail the aggregate exists to prevent - and there is no counter checkpoint for abrupt death, no maximum accumulation window for a desktop session that runs for days, and no loss-rate instrumentation."
+        },
+        {
+          "technique": "sink-abstraction",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:162 re-exports trackFeature and trackInteraction from the Sentry module beside the safe interface - the exact bypass the technique names, where the natural import is the unswitchable door and every call site that takes it sits outside the consent switch. The seam itself is well drawn (sink.ts:70-118: one contract, a real null sink for opt-out, one composition point) but no development sink exists, so the layer cannot be observed where a developer sits."
+        }
+      ]
+    },
+    {
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/forms/DirectoryPickerInput.tsx:45-51 (and TableSelector.tsx:67-72, DesignInput.tsx:177-187) ship placeholder-only inputs with no label and no error wiring, forking the field vocabulary inside the folder that owns it.",
+      "techniques": [
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/DirectoryPickerInput.tsx:45-51, TableSelector.tsx:67-72 and DesignInput.tsx:177-187 each render a bare input/textarea whose only naming is a placeholder - no label element, no aria-label, no error slot - and DesignInputAttachments.tsx:91 uses a <label> with no htmlFor, so it names nothing programmatically. None of these controls accepts a label or error prop, so a call site cannot wire them into the field primitive that lives in the same directory (FormField.tsx); each is a private copy of the vocabulary. ColorPicker.tsx is the counter-example done right (useId, aria-invalid, aria-errormessage, role=alert at :118-139) except that :71-78 silently reverts unparseable input to the previous value on blur, inventing a value the user did not enter."
+        },
+        {
+          "technique": "validation-timing",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/ColorPicker.tsx:65-70 sets the invalid state on every keystroke of a never-blurred field, so a half-typed hex ('#8b5c') renders as an error while the user is still typing - negative feedback before the first settling point, the technique's first prohibition."
+        },
+        {
+          "technique": "error-aggregation-and-focus",
+          "verdict": "not-applicable",
+          "evidence": "None of the twelve paths in this context is a form: there is no field registry, no submit attempt, and no summary to render. The form-level machinery exists in the same directory (FormErrorContext.tsx, FormErrorSummary.tsx) but sits outside this context's paths and is imported by none of them."
+        },
+        {
+          "technique": "submit-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "No file here owns a submit state machine, an in-flight guard, dirty tracking, or an exit path; DesignInput.tsx:120-123 raises Enter to a parent-supplied onSubmit and holds no lifecycle state of its own."
+        },
+        {
+          "technique": "server-error-mapping",
+          "verdict": "not-applicable",
+          "evidence": "No control in this context performs or receives a commit against a system of record, so there is no rejection to route onto a field."
+        }
+      ]
+    }
+  ]
+}

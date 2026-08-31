@@ -1,0 +1,585 @@
+{
+  "worker": "p-4",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:76 maps an 'hourly' trigger onto the picker's 'daily' frequency, so reopening the schedule picker on an hourly capability shows daily and applying it silently rewrites the trigger the template declared.",
+      "techniques": [
+        {
+          "technique": "template-anatomy",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:76-79 — the 'hourly' Time preset has no member in the composer picker's option set, so the interview cannot represent a value the model can hold and Apply rewrites it to daily."
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:364-378 recomputes the whole impact preview from (template, answer set) on every answer change, and questionDimMap.ts:21-24 routes question->dimension through one authority rather than a second copy."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:281-294 gates Continue on globalBlocked/globalRemaining before the build session is created, and the blocked question renders a named remedy CTA instead of an unusable input."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context is the post-admission interview surface; no payload crosses a trust boundary here and nothing hashes, records or verifies a manifest entry."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the strip-and-lint pass and the bare-environment leak test run at the admission door over the payload; this context consumes an already-admitted payload and authors no bindings."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no admission, taxonomy, dedupe or retirement decision is made here — this is one template's adoption surface, not the catalog."
+        }
+      ]
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67 is the single option-normalization door that preserves value-vs-label identity and drops malformed options, and questionnaireGlyphRow.ts:45-54 makes the category vocabulary a compile-checked table; note 5 of the 12 paths this row lists no longer exist in the tree.",
+      "techniques": [
+        {
+          "technique": "template-anatomy",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67-98 normalizes both authored option shapes through one door, keeps the option's stable value distinct from its rendered label, and drops an unusable option rather than shipping an unpickable card."
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireGlyphRow.ts:195-218 recomputes the preview sigil from the live answer set on every change, so the preview is a derivation of (template, answers) and not a stock image."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:169-174 resolves a remedy category for BOTH block shapes (vault_category and dynamic_source.service_type), so QuestionnaireHeroQuestion.tsx:150-154 can never leave a blocked question without a named requirement and an add-credential path."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload crosses a trust boundary in this rendering surface; digests and manifests are a seeding-door concern."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the payload is already admitted; this context declares no environment bindings and runs no strip pass."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no admission bar, taxonomy or retirement decision is made in a single-template question renderer."
+        }
+      ]
+    },
+    {
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 defaults allowCustom to true and QuestionnaireFormGridParts.tsx:447 passes an undefined question.allow_custom, so every closed option list grows an 'Other...' free-text pill and the interview produces answers the parameter surface never declared.",
+      "techniques": [
+        {
+          "technique": "template-anatomy",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/QuestionnaireFormGridConfig.ts:24-35 — CATEGORY_META is an open Record<string,...> missing 'boundaries', one of the eight categories in questionnaireCategoryOrder.ts:21-30, so boundaries questions render under the 'Other' fallback; the sibling table at questionnaire/questionnaireGlyphRow.ts:45-54 fixed exactly this drift with `satisfies Record<QuestionnaireCategory, ...>` and this copy was not converted."
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 with QuestionnaireFormGridParts.tsx:447 lets the interview invent off-list answers, and useHydratedDesignResult.ts:97-101 silently leaves unresolved recipe_ref capabilities in place on a lookup failure, so the interview can present fewer capabilities than the template declares with no signal."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/useDynamicQuestionOptions.ts:27 and :216-231 keep a three-state verdict (ready / no_credential / fetch_failed) in which an unreadable environment never falls through to green, and errorKind decides whether the surface offers Add-credential or Retry."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: these adoption support components consume an already-seeded payload; no digest is recorded or checked at this boundary."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the strip pass and bare-environment leak test belong to the admission door; this context resolves credentials at adoption time, which is the behaviour portability asks for, not a site where leaks are introduced."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no entry is admitted, deduped or retired here."
+        }
+      ]
+    },
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 sorts and labels templates 'Ready to Deploy' from shared/adoptionReadiness.ts:48, a local score the adoption gate never computes, so the browse badge and the gate disagree on exactly the entries that matter.",
+      "techniques": [
+        {
+          "technique": "catalog-curation",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/AdminToolsDropdown.tsx:46-54 offers a bulk Deduplicate that goes straight to deletion with no deprecation state in between, so a removed near-duplicate strands the provenance stamp of every instance adopted from it — the taxonomy (searchConstants.ts:39-130) and the predicate-carrying counts (FilterChips.tsx:35-42, TemplateSearchFilterRow.tsx:54) are otherwise exemplary."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 exposes a readiness sort fed by the gallery's own simplified evaluator rather than the authoritative resolver, which is the technique's named failure mode for browse-time readiness."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the search surface renders only layer-1 browse metadata; it never parses a parameter surface or a default."
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context ends at browse; no interview, mapping, transaction or provenance stamp happens here."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload crosses a trust boundary in a search/filter surface."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload is authored, stripped or resolved here."
+        }
+      ]
+    },
+    {
+      "context": "b38217f2-397e-49a7-ac32-4cce440c7e74",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:28-30 renders a 'Verified' integrity claim derived from lib/templates/templateVerification.ts:176, where integrityValid is set from origin alone and the content hash computed at :171-173 is never compared to anything.",
+      "techniques": [
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:28-30 — the badge asserts verified integrity from a verifier that computes a digest and discards it (lib/templates/templateVerification.ts:171-176), while the repo's real checksum gate lives unconnected at lib/personas/templates/templateCatalog.ts:183-188; the badge is decoration that can never show red for a built-in."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/shared/adoptionReadiness.ts:48-71 is a second readiness evaluator sitting beside ConnectorReadiness.tsx:23-28 (which states there is deliberately no local fallback because a second opinion on readiness is the bug), and its catch at :31 plus the return-100 fallbacks at :56/:66/:69 score an unparseable design_result as fully Ready."
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: these are shared presentation primitives; every stage of the lifecycle (interview, mapping, transaction, divorce) is owned by other contexts."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no parameter surface, option list or default is read in these components."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload is authored or stripped here."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no admission, dedupe or retirement decision is taken in a badge/banner/panel set."
+        }
+      ]
+    },
+    {
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:246-247 runs the picker's delivery Test through mockTestDelivery imported from MessagingPickerShared.tsx:2-3 (a @ts-nocheck prototype whose own header says it is not wired to production), so the surface reports a successful delivery that never happened.",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:84, :151 and :246-247 build the event catalog, the default routes and the delivery preview from MOCK_EMIT_EVENTS_BY_UC / SAMPLE_MESSAGE_BY_UC / mockTestDelivery rather than from the template's declared payload — a preview that shows something other than what confirm creates."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerHelpers.ts:12-26 is a second, hardcoded rendering of the TriggerSelection vocabulary that persona-layout/adoptionDimHelpers.ts:31-59 renders through i18n, and the two disagree — a capability carrying only customCron reads 'MANUAL' here and 'monthly on day D' there; useUcPickerState.ts:130-132 also seeds an invented weekly default while the template's own UseCaseOption.defaultSelection (useCasePickerShared.ts:72) is never read."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:96-107 admits only credentials that are both category-matched and isCredentialVerified, so an unverified credential never satisfies a messaging role."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload crosses a trust boundary in this picker; digests are a seeding-door concern."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context binds channels from the adopter's own vault at adoption time and authors no payload to strip."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no catalog entry is admitted, deduped or retired here."
+        }
+      ]
+    },
+    {
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:118 resumes an in-flight adoption by matching the template's DISPLAY NAME, the exact key-by-name miss the technique measured, while its sibling handleResumeDraft at :126 correctly keys on the review id.",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:118 keys the resume lookup on test_case_name, so a renamed or duplicate-named template silently resumes the wrong entry or none; the review/compare stage is otherwise well realized (CompareTray.tsx:17, useAdoptionCompletionNotifier.ts:80-95 distinguishing completed/failed/awaiting_answers)."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:61 resolves readiness through the authoritative Rust resolver and :68 computes a second local score in the same hook, and it is the local score that drives the coverage counts (:86-101), the coverage filter (:136-143) and the readiness sort (:166-171)."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:206-216 — handleDeleteReview and handleCleanupDuplicates both hard-delete catalog rows with no deprecation state, so an adopted instance's provenance stamp can be left pointing at a row that no longer exists."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: row and card components render layer-1 browse metadata; the parameter surface is never parsed here."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the listed row/list components receive an already-computed verification object and perform no verification; the badge finding is recorded on the shared-primitives pair."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no payload is authored, stripped or resolved in a card renderer."
+        }
+      ]
+    },
+    {
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:240 stamps only source_recipe_id (its own header at :39-41 declares AdoptionMetadata unpersisted), so recipeStaleness.ts:39-41 — which reads source_recipe_version — can never fire and the whole Update-available apparatus is permanently dark.",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:240 writes a provenance stamp without the version as it stood at adoption, so the offer-not-action machinery at recipeStaleness.ts:46-59 compares against a field nothing writes; the deterministic mapping (substituteBindings.ts:31) and the idempotent, race-safe adoption transaction (useAdoption.ts:61-67) are otherwise exemplary."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/types.ts:70-71 states the defaults-within-options invariant as an authoring comment with no machine check anywhere, and recipeAdapter.ts:382 gives every backend-sourced recipe `bindings: []` with `version: def.source_version ?? '1.0.0'` at :390 — an empty parameter surface (so every {{placeholder}} survives substituteBindings.ts:17 verbatim into the adopted use case) over a constant version column."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:106-115 reports the parameter-coverage gap of a degraded adoption as a transient toast only, so the instance records nothing about what went unbound and no finish-setting-this-up surface can exist after the flow closes; the three-state verdict itself (eligibility.ts:30-49) is textbook."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:224-240 admits a recipe whose prompt_template will not parse as a valid-looking row with no connectors, trigger or policies rather than refusing it — the door-less catalog the technique's measured incident describes, with the generator trusted as a writer."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_recipes/types.ts:61-75 declares bindings as roles resolved at adoption, eligibility.ts:35 matches required connectors by generic slug rather than a named author credential, and substituteBindings.ts:10-26 resolves every environment binding at adoption time."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: these files consume recipe rows already in the store; no digest or manifest is recorded or checked at this boundary."
+        }
+      ]
+    },
+    {
+      "context": "09cf4f1d-dc6f-4c3d-b15f-6686c6ce1eb7",
+      "subject": "media-playback",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:58-59 subscribes the authoritative clock straight into React state un-throttled, re-rendering the whole preview subtree at frame rate — the exact wound hooks/useTimelinePlayback.ts:3-12 says the ref-based clock exists to prevent.",
+      "techniques": [
+        {
+          "technique": "playback-clock",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:58-59 pulls the clock back into reactive state at frame rate; TimelinePanel.tsx:176-177 additionally writes zoomRef in the render body for a rAF subscriber to read at :189, so a discarded render can place the playhead at a zoom the user never saw."
+        },
+        {
+          "technique": "engine-adapters",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: there is only one engine — native <video>/<audio> elements driven by an application-owned clock (CompositionPreview.tsx:366, :479); no foreign frame, no engine that owns playback, nothing to declare capabilities for."
+        },
+        {
+          "technique": "transport-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:145-150 awaits loadedmetadata with no watchdog, :157-160 swallows a rejected play(), and neither media element carries an error listener, so a missing or undecodable file renders as a black frame indistinguishable from the authored gap at :378."
+        },
+        {
+          "technique": "source-resilience",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the studio plays an authored composition of user-chosen local files with no automatic next-source advance, so there is no fallback ladder to bound and nothing to blacklist."
+        },
+        {
+          "technique": "timeline-scheduling",
+          "verdict": "deviation",
+          "evidence": "Clock-not-chain and multi-lane sync are realized (CompositionPreview.tsx:95/:249/:309/:317 all key on one sampled currentTime), but :270-283 seeks and plays an element at the instant its interval arrives with no lookahead window, so every clip seam pays a cold seek."
+        },
+        {
+          "technique": "media-resource-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx:195 mints an AudioContext (plus per-track source and gain nodes at :203-208) with no unmount reaper, and MediaStudioPage fully unmounts on every Artist tab switch, so each visit strands another context until the browser's per-document cap is hit and preview audio goes permanently silent."
+        }
+      ]
+    },
+    {
+      "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e",
+      "subject": "media-playback",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts:131 awaits the export and then waits on backend events with no deadline anywhere in the file, so a wedged ffmpeg leaves status 'exporting' with a frozen progress bar forever.",
+      "techniques": [
+        {
+          "technique": "playback-clock",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts:34-40 holds the clock in a mutable ref with reactive state carrying only playing/looping, subscribes with a synchronous opening sample returning its unsubscribe (:134-140), and writes shared flags only at commit points via useLayoutEffect (:49-52)."
+        },
+        {
+          "technique": "engine-adapters",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: useTimelinePlayback is an application-driven clock with no engine underneath — nothing to adapt, no capability to declare, no state to echo."
+        },
+        {
+          "technique": "transport-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts:131 has no watchdog on the awaited export and the listeners at :75-125 wait indefinitely, so a silent ffmpeg reads to the user as work still in progress rather than a declared failure (request identity and supersession at :55-59 are otherwise correct)."
+        },
+        {
+          "technique": "source-resilience",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no continuous play through a catalog — there is no automatic source advance, so the failure taxonomy, blacklist and fallback ladder have nothing to govern."
+        },
+        {
+          "technique": "timeline-scheduling",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts:181 and :207 mint fresh clip identity at duplicate and split outside the state updater, which is what keeps the recompiled schedule's diff answerable across edits."
+        },
+        {
+          "technique": "media-resource-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/artist/sub_media_studio/hooks/useVideoThumbnails.ts:107-109 tears the detached element down in a finally on every path, caches are bounded with eviction (useAudioWaveform.ts:15-22), in-flight registries drop their entry on failure so failure stays retryable (:114-117), and the rAF, listeners and idle callback are all reaped (useTimelinePlayback.ts:145-149, useMediaExport.ts:41-46, useFfmpegDetect.ts:57-66)."
+        }
+      ],
+      "registryProposal": "playback-clock's fan-out section names three consumer cadences but not the failure mode this repo produced twice: the subscription API itself is the leak. One raw subscribe(cb) makes subscribe(setState) typecheck, and a correct clock (useTimelinePlayback.ts) still grew an un-throttled consumer (CompositionPreview.tsx:59) beside a hand-throttled one (PlaybackControls.tsx:44-48). Proposed addition: the clock owner ships the coarse cadence as a first-class verb (subscribeThrottled(hz, cb) alongside a frame-rate subscribeRaw) rather than one undifferentiated subscribe, because an API whose shortest path is subscribe(setState) guarantees a consumer eventually takes it."
+    },
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:57 runs the 'deployment smoke test' through executePersona (the LOCAL path) rather than the deployed endpoint the card advertises at DeploymentCard.tsx:44, so the only verdict a user can obtain about a live deployment is a verdict about a different system.",
+      "techniques": [
+        {
+          "technique": "deploy-gate-coupling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx:68-74 issues the deploy and clears the form with no verification chained; the only test is offered after the deployment is already active (DeploymentCard.tsx:78), runs locally (useDeploymentTest.ts:57), and its verdict is dropped from state after 15 seconds (useDeploymentTest.ts:17,73-79), so a publicly-callable budget-spending endpoint goes live unverified and is then visually indistinguishable from one that passed."
+        },
+        {
+          "technique": "platform-build-parity",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (the hosting platform builds the code itself): nothing is built anywhere here — src/api/system/cloud.ts:73 ships a persona record to a third-party orchestrator, with no build command, runtime pin or install step, so there is no second builder to hold in parity."
+        },
+        {
+          "technique": "environment-promotion",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (a previous build still exists on the platform to re-point at): the orchestrator API at src/api/system/cloud.ts:73-97 exposes only deploy/pause/resume/undeploy/adopt and CloudDeployment carries no version or build identity, so there is nothing to promote from and rollback can only be undeploy-and-redeploy."
+        },
+        {
+          "technique": "direct-push-delivery",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (a version-control push topology with a default branch): this context contains no VCS act at all — deploying is a user clicking a button in a running app."
+        },
+        {
+          "technique": "deployment-config-as-code",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (configuration the repository's own hosting platform needs): the clicked state here — persona selection and a per-user monthly budget cap at CloudDeploymentsPanel.tsx:103-144 and cloudDeploymentHelpers.ts:5 — is per-user runtime data, and committing a manifest of one user's cap is not a coherent remedy."
+        }
+      ],
+      "registryProposal": "COVERAGE (corpus hole, plus technique-shaped resonance): every technique in this subject presupposes that the repository is the thing being deployed. This context is a repository whose PRODUCT deploys third-party artifacts on a user's behalf, at runtime, per user — and it reproduces the subject's exact failure shapes (an unverified artifact serving live traffic, configuration with no declared home, no version to roll back to) while four of five techniques route out because the governed object is user data rather than repo code. Lead: a subject or technique for the in-app / runtime deploy contract, where the committed manifest is replaced by reconciliation of untracked remote state — a shape this repo already invented independently (cloudAdoptDeployment, src/api/system/cloud.ts:96, plus CloudReconcileBanner). Separate upward lesson for deploy-gate-coupling: it currently worries only about WHEN the verdict arrives relative to the deploy; useDeploymentTest.ts:57 is a second failure of the same law — a verdict that arrives at the right time about the WRONG executor. Worth a line under gate-sees-target: the gate must exercise the artifact at the address production serves, not a local twin of it."
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/fanout.rs:102-109 restates the model-tier rule that session_prompt.rs:651-667 owns and drops its two hard constraints, so the same intent resolves model_override differently depending on which of the two builders ran.",
+      "techniques": [
+        {
+          "technique": "platform-build-parity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:102-109 — the fan-out lane prompt goes to a separate CLI process that never sees Rule 28 (session_prompt.rs:651-667) and restates it while omitting the never-Haiku-for-3+-tool-chains and Opus-is-overkill constraints, so the multiagent builder resolves a divergable build input under materially weaker rules than the sequential one; the CLI args and model pin are otherwise declared once at mod.rs:228-230 and threaded verbatim into both executors."
+        },
+        {
+          "technique": "environment-promotion",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:36-61 and oneshot.rs:294 make draft->production two named rungs with an explicit proof obligation, and promotion moves the tested agent_ir rather than regenerating it; where fix_pass.rs:146 does regenerate, the recomputation is named and re-gated by a retest (oneshot.rs:115-215)."
+        },
+        {
+          "technique": "deploy-gate-coupling",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:408 evaluate_promote_gate, fed by tool_tests.rs:186, makes promotion wait on a verdict that fails CLOSED (oneshot.rs:393-396: a report that cannot be read as a verdict is not a passing verdict) with `unverified` as a distinct third outcome that holds rather than passes (tool_tests.rs:50-56); the interactive path takes the other honest resolution, with gate_setup_status_on_verification at src-tauri/src/commands/design/build_sessions.rs:933-958 as the after-push watch that refuses to let promoted-before-proven read as verified."
+        },
+        {
+          "technique": "direct-push-delivery",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (a single owner deciding whether to push a default branch directly): there is no repository, branch or push in this engine — though the one-shot flow independently satisfies three of its four preconditions (whole gate before the promote act, machinery not memory, loud bypass at oneshot.rs:362-368)."
+        },
+        {
+          "technique": "deployment-config-as-code",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (an external platform holding configuration the repository cannot express): every knob is in-repo code — the orchestration variant and its PERSONAS_BUILD_ORCHESTRATION override (mod.rs:176-184) and the parallel budget (runner.rs:561) — and the one machine-local env var is documented in place at mod.rs:140-146."
+        }
+      ]
+    },
+    {
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "subject": "operator-surfaces-for-llm-spend",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 renders a build-completeness percentage and nothing else numeric — the twelve files carry no cost, budget, token, spend, margin or limit value at all, so the subject's entry precondition (a report layer over an LLM spend store) fails on both sides of its builder/operator boundary.",
+      "techniques": [
+        {
+          "technique": "single-render-layer-many-consumers",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (more than one consumer renders the same accounting payload): the only cross-variant number is `completeness`, computed once at src/features/agents/components/matrix/useBuild.ts:69 and rendered in one place at GlyphCoreContent.tsx:255; the layout variants only forward Math.round."
+        },
+        {
+          "technique": "glyph-encoded-business-thresholds",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (ranked financial or health tables for triage): the 'glyph' here is a decorative persona sigil, not a severity index over money, and GlyphCoreContent.tsx:255 correctly ships its one number with no band."
+        },
+        {
+          "technique": "agent-prompts-as-dashboards",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (packaging recurring operator journeys for a conversational agent): buildSplitPrompt at src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:64 is a one-shot refine instruction to the build LLM, not a named journey over read tools."
+        },
+        {
+          "technique": "read-tools-default-writes-gated",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (exposing a spend store to an agent over a tool protocol): this context is React view code with no agent-facing tool server in it or its direct imports."
+        },
+        {
+          "technique": "secret-surfaces-never-exposed-to-agents",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (deciding which API capabilities an agent tool server may wrap): no agent tool surface exists; the one credential touchpoint at src/features/agents/sub_glyph/GlyphMetadataPanel.tsx:136 renders only the has_credential boolean and never material."
+        },
+        {
+          "technique": "sql-panel-sets-over-the-relational-store",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails (an always-on dashboard wall over a spend store): no SQL, no panel set, no ambient surface."
+        }
+      ],
+      "registryProposal": "COVERAGE (matcher miss, not a hole): the pairing was almost certainly produced by the word 'glyph' — the context is `glyph-persona-card` and the subject owns `glyph-encoded-business-thresholds`, but one glyph is a severity index over money and the other a decorative capability sigil. The subject that actually governs this context is software-engineering/ui-surfaces/feedback-and-style/status-vocabulary (techniques vocabulary-chain-integrity and status-color-mapping), with data-viz/encoding-vocabulary secondary. Registry proposal: the golden path's boundary paragraph draws the builder/operator line but assumes spend is on screen at all; add a cheaper first gate — 'if the surface renders no cost, budget, token or margin value, this subject does not govern it, regardless of vocabulary overlap'. Live finding the mismatched pairing surfaced anyway: src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:42 declares a local TRIGGER_ICONS map (used at :155) that escapes the canonical, totality-gated and tested map at src/features/shared/glyph/triggers.ts:37 — it already disagrees (polling -> Clock vs Radio) and omits five storable TriggerKinds, so the same trigger renders a different icon in the capability preview than in the gallery and matrix, and a new TriggerKind will compile clean while rendering wrong here."
+    },
+    {
+      "context": "de8b648f-7971-452b-88dc-773b215c5f09",
+      "subject": "pipeline-dag",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/pipeline_executor.rs:153-164 and :199-206 return true for a malformed condition and an unknown operator — documented at :143-144 as 'fail-open is the safe default' — so a typo in a predicate runs the branch the condition existed to gate, side effects included, and the run still completes green.",
+      "techniques": [
+        {
+          "technique": "graph-validation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:840-843 silently continues past an execution-order entry with no matching member — inventing skip semantics for a dangling reference — and :845-859 first discovers a malformed node config mid-run; cycle and empty-graph rejection do exist, but only at the run-start caller (src-tauri/src/commands/teams/teams.rs:250-295), never at the authoring/save door."
+        },
+        {
+          "technique": "node-execution-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:795-802 holds the run's whole progress (node_outputs, skipped, statuses) in locals of one sequential loop at :828 with no restart sweep, and StatusEmitter::emit at :73-87 emits the live status event even when the DB write failed, so process death loses the run and a failed persist leaves the UI ahead of the store."
+        },
+        {
+          "technique": "conditional-edges",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:153-164 / :199-206 collapse 'unevaluable' into 'fired' (the fail-open pole the technique bans), evaluate_condition returns a bare bool so unevaluable has no spelling, and no branch record persists what the predicate saw; skip propagation itself is correctly implemented at :243-252."
+        },
+        {
+          "technique": "pause-and-gate-nodes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:737-762 is the degenerate polling waiter: the gate holds the run's only executor loop in a 1-second poll against an in-memory flag, with no durable pending record and explicitly unbounded patience (:745-748), so a restart loses the question and every other branch is blocked behind it."
+        },
+        {
+          "technique": "deterministic-vs-model-nodes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:351-369 dispatches on node_type but no determinism/effect contract is declared per class: there is no interrupted-attempt adjudication, and a model node's raw output is forwarded downstream unvalidated by resolve_node_input at :1120-1150."
+        },
+        {
+          "technique": "external-adapter-nodes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/scraper.rs:33 and :101 route every outbound fetch through the SSRF-safe client, and src-tauri/core/src/url_safety.rs:115-180 applies the full endpoint policy at one door — scheme allowlist, post-DNS private/link-local/cloud-metadata screening, and per-hop redirect re-validation."
+        }
+      ]
+    },
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/versions.rs:72-76 restores with `git checkout <sha> -- .`, which overwrites uncommitted working-tree edits that exist in no version and leaves files created after <sha> in place — a chimera tree labelled as that version.",
+      "techniques": [
+        {
+          "technique": "snapshot-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:26-33 discards the exit status of both git commands with `let _ =`, so a failed or unavailable git produces no version and no signal, and list_versions:43-45 then returns an empty list indistinguishable from 'no versions yet'; the capture is otherwise correctly atomic and single-door (its only caller is src-tauri/src/companion/session/build_turn.rs:198), but no exclusion ledger states what is deliberately left out."
+        },
+        {
+          "technique": "version-identity",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:15-19 and :40 expose only an abbreviated git sha plus a relative time, so there is no per-entity monotonic human handle at all and restore:69 accepts any 1-64 char alphanumeric as a version id."
+        },
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:72-76 performs no capture-before-restore and does not clear files added after the target sha, so it both destroys uncaptured live state and produces a merge of past over present."
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:15-19 projects each commit to {sha, message, when} and :23-25 writes only the turn summary as the message, so a restore leaves no 'restored from' edge and the history renders as a straight line it is not."
+        },
+        {
+          "technique": "promotion-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: versions here do not run — the dev server serves the working tree, there is exactly one live artifact, and no runtime reads an active-version pointer."
+        },
+        {
+          "technique": "retention-and-pruning",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:40 caps the listing at 40 commits with no declared retention policy, no pin, no reaper and no stated deletion contract for a project's history, so older versions silently disappear from the only surface that shows them."
+        }
+      ]
+    }
+  ]
+}

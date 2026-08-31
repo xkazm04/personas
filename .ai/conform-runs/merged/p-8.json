@@ -1,0 +1,422 @@
+{
+  "worker": "p-8",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:102 accepts a full `content` replacement of identity.md through the same update_identity op, and approval_autopilot.rs:11 auto-fires every proposed action under autonomous mode — so the self-model can be rewritten wholesale with no human seeing a diff.",
+      "techniques": [
+        {
+          "technique": "constitution-self-model-split",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:52 — the op vocabulary exposes `update_identity` and no counterpart that writes constitution.md, so the command surface offers the companion no write path to its law."
+        },
+        {
+          "technique": "anchored-identity-diffs",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:102 — the `content` arm calls identity::write_full on an existing document (it backs the old file up, so it is built to overwrite, not only to seed); combined with approval_autopilot.rs:11 removing the allowlist so update_identity auto-resolves under autonomous mode, the technique's two load-bearing guarantees (no whole-document operation, human-approved) are both open. The approver, when there is one, also sees no anchor-level diff for this arm."
+        },
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:87 — apply_diffs_on_disk validates every anchor against the live markdown document rather than an index row, so the gate sees its target."
+        },
+        {
+          "technique": "operator-profile-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:59 — this context carries only the approval plumbing; no observation is gathered or characterised here, so the evidence-bar/floor/consent rules have nothing to bind to."
+        },
+        {
+          "technique": "one-mind-many-mouths",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/mod.rs:18 and :30 — every approval row (a unit of work) is keyed to a session_id, so the non-Athena producers named there (backlog_triage, incident_diagnosis, night_plan, the KP bridge) and profile_synthesis all stamp DEFAULT_SESSION_ID; work started outside a conversation gets one invented for it, which is exactly the parent-key coupling the technique forbids. The second-door half is met: fleet_bridge.rs:30 writes through the same record_fleet_event/append_episode door in the same shape."
+        },
+        {
+          "technique": "brain-adoption-consent",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/companion/approvals/mod.rs:29 — every command here operates on the brain this application itself seeded; no second surface arrives at a pre-existing brain, so the probe/consent gate has no caller."
+        },
+        {
+          "technique": "capability-exercise-ledger",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/companion/approvals/approval_autopilot.rs:26 names the dispatcher's ALLOWED_ACTIONS as \"the capability boundary\" — an authoritative permitted-action list — yet nothing regenerates the companion's self-description from it and no exercise record exists, so a described action that stopped working and an action nobody documented are both invisible."
+        }
+      ]
+    },
+    {
+      "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/disk.rs:87 replaces the user's constitution.md whenever the embedded CONSTITUTION_VERSION bumps (now 59), and dev_mode.rs:24 hands the companion an approval-gated coding dispatch rooted at the checkout with no path exclusion — together a complete amendment path to a document only the human may author.",
+      "techniques": [
+        {
+          "technique": "constitution-self-model-split",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/dev_mode.rs:24 — repo_root() is the workspace for `dev_improve` dispatches and no guard excludes src-tauri/src/companion/templates/constitution.md, so the running system does expose a proposal lane onto the law; disk.rs:87 then pushes the new embedded text over the live document on the next version bump (a .bak is kept, but the human's edits stop governing). The partition itself is otherwise clean: two files, two authors, identity.md carrying its own two named subject halves."
+        },
+        {
+          "technique": "anchored-identity-diffs",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/dev_mode.rs:1492 — the only identity interaction in this context is a read-time prompt addendum; the diff grammar and its write door live in brain/identity.rs, outside these paths."
+        },
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/mod.rs:6 declares markdown-on-disk as the source of truth and SQL as an index over it, and disk.rs:50 builds the folder — but no rebuild/reindex command exists anywhere under src-tauri/src/commands or src-tauri/src/db, so the stored derivation names no recomputation and a divergence between folder and index has no first-class repair path."
+        },
+        {
+          "technique": "operator-profile-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/observability.rs:57 — the only aggregation in this context is a system-state digest about agents and executions, not a claim about the person; the profiling pass lives in brain/profile_synthesis.rs."
+        },
+        {
+          "technique": "one-mind-many-mouths",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/disk.rs:30 — brain_root() is the single location every channel resolves for constitution and identity, and athena_reaction.rs:24 routes the team-channel door through the same shared channel-write path as companion_post_team_message rather than a private store."
+        },
+        {
+          "technique": "brain-adoption-consent",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/disk.rs:50 — ensure_initialized is called by the application that owns this brain on its own first run; no second application arrives at a brain it did not write, so the non-creating probe has no caller. (templates/mod.rs:451's CONSTITUTION_VERSION is already the provenance marker the technique would need if one ever does.)"
+        },
+        {
+          "technique": "capability-exercise-ledger",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/generated_anchors.rs:1 shows this repo's own codegen pattern — a mirror regenerated from one authority with the re-run command stated in the file — applied to guidance anchors, while the companion's capability self-description stays hand-written prose (templates/constitution.md:229, \"# What you can do\", at version 59) derived from nothing and never exercised, so a phantom capability survives indefinitely."
+        }
+      ]
+    },
+    {
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/backlog.rs:114 writes status/resolved_at (and :198 reminded_count) only into the SQL sidecar while the markdown is written once at creation, so the index holds state the documents cannot express and a rebuild would resurrect every resolved item.",
+      "techniques": [
+        {
+          "technique": "constitution-self-model-split",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:288 — the behavioural pass is instructed at its definition site to write only under \"About Michal\" and never the \"About me\" self-reads, keeping the two subjects of the self-model under different writers."
+        },
+        {
+          "technique": "anchored-identity-diffs",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:315 — parse_diffs keeps only append/replace/remove diffs that parse as IdentityDiff, caps the batch at MAX_DIFFS=3 (:32) so one approval card stays reviewable, and :359 lands them as a pending approval; the reason travels only as prose inside new_text (:286) rather than as a carried field, which is the one soft spot."
+        },
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/backlog.rs:114 — resolve_item mutates status/resolved_at in companion_backlog_item and drops companion_node.importance, leaving the on-disk markdown at its creation-time content (\"The markdown stays as the audit record\"); index-only state means the declared rebuild-from-documents path would silently destroy the resolution history."
+        },
+        {
+          "technique": "operator-profile-synthesis",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:127 gathers numbers only (engagement, refine chips, walkthroughs, approvals) with no raw content, :54 keeps the feature off until the setting is flipped, :281 makes zero diffs the expected weekly output, and :286 requires every bullet to end citing the statistic behind it — all four load-bearing rules realized."
+        },
+        {
+          "technique": "one-mind-many-mouths",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/episodic.rs:205 — list_recent_conversation, documented at :195 as \"the read the RECALL window uses\", filters episodes by session_id, so the durable store carries a conversation scope that appears as a default read filter; a constraint stated in one thread is absent from the recency window of the next."
+        },
+        {
+          "technique": "brain-adoption-consent",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/brain/episodic.rs:107 — every writer here is this application's own; no probe of a foreign brain occurs in this context, so the consent gate's precondition does not hold."
+        },
+        {
+          "technique": "capability-exercise-ledger",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/companion/brain/backlog.rs:8 records `capability_gap` as a self-reported note about something the companion cannot do; the derived inventory and the self-description it would be compared against both live outside this context (the dispatcher's action list and the constitution)."
+        }
+      ]
+    },
+    {
+      "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/companion/inbox/types.ts:40 — this context is a tagged-union normalizer for approvals/messages/outputs/health issues; no constitution, self-model, profile, memory substrate, brain probe or capability inventory appears in any of its files, so companion-identity does not govern it.",
+      "techniques": [
+        {
+          "technique": "constitution-self-model-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/types.ts:40 — no identity document of either kind is read or written; the union's four kinds are all agent-execution artifacts."
+        },
+        {
+          "technique": "anchored-identity-diffs",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/hooks/adapters/index.ts:5 — the four adapters are declared pure mappers with no store access and no side effects; nothing here proposes a change to any document."
+        },
+        {
+          "technique": "disk-truth-db-index",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:9 — every input is an in-memory Zustand store; the context owns no durable substrate whose truth could sit on disk or in an index."
+        },
+        {
+          "technique": "operator-profile-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:87 — the only person-shaped read is a greeting name from the auth store; no claim about the operator is derived, so the evidence bar and consent posture have nothing to govern."
+        },
+        {
+          "technique": "one-mind-many-mouths",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/hooks/adapters/types.ts:8 — the adapters carry no channel, conversation or episode concept; there is no memory substrate here to scope or unscope."
+        },
+        {
+          "technique": "brain-adoption-consent",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/hooks/adapters/index.ts:6 — nothing in this context detects, probes, or opens a brain."
+        },
+        {
+          "technique": "capability-exercise-ledger",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/companion/inbox/_shared/inboxKindIcon.ts:11 — the only inventory here is a four-value render mapping, not a statement of what the companion can do."
+        }
+      ],
+      "registryProposal": "Coverage question, not a standard defect: the matcher paired this context to companion-identity on the word 'companion' in its path. Routing by precondition instead, the subject that governs it is an attention/inbox-normalization subject the corpus may not hold — a closed item vocabulary with per-source adapters, a severity lowering (types.ts:92 normalizeSeverity), and a needs-me rollup (useCockpitSummary.ts:92). Two technique-shaped resonances worth recording where they belong: useCockpitSummary.ts:16-19 deliberately counts a credential with a null health result as NOT connected — an unverifiable member laundered into the failed side of a connectedOk/connectedTotal rollup, which is health-checks' three-state-outcomes and health-rollup doctrine landing in a context health-checks does not govern. Suggest adding the correct pair with source:conform rather than judging this one."
+    },
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:113 — the provider audit record carries provider/model/persona/status/cost/duration and a failover bit but never the class asserted, the rule that decided, or the policy version, so it audits outcomes rather than decisions; and useByomSettings.ts:161 applies a policy edit with no diff, blast radius, approver or version.",
+      "techniques": [
+        {
+          "technique": "turn-classification",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:22 — TaskComplexity is a closed three-value vocabulary whose label map is written `satisfies Record<TaskComplexity, …>`, so the Rust-generated binding is the single authority and a vocabulary change fails the build instead of drifting into an unlabeled row."
+        },
+        {
+          "technique": "effort-calibration",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:93 — a routing rule carries only complexity, provider and a free-text model; there is no effort dimension and no field for the measurement, sample or date that justified the choice, so the table is the settings page of opinions the golden path warns against rather than an empirical artifact with a re-measure cadence."
+        },
+        {
+          "technique": "routing-policy",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:60 expresses allow/block lists, complexity rules and tag-scoped compliance rules as data and validates every rule at edit time (unknown provider in the deny-list is a blocking error at :73 precisely because the evaluator would drop it silently), and useByomSettings.ts:149 refuses the save on any error; the one risk is that this validator is a hand-written mirror of ByomPolicy::validate() (byomHelpers.ts:39), i.e. two implementations of one rule set."
+        },
+        {
+          "technique": "consumer-overrides",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:65 — the shape this surface edits is an installation-wide policy, not a per-call pin or an incident downgrade; there is no override level here whose placement or expiry could be judged."
+        },
+        {
+          "technique": "capability-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:12 — the roster has exactly one provider variant, so there is no lower tier for cost pressure or failover to route beneath and no floor to record."
+        },
+        {
+          "technique": "policy-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 — setByomPolicy replaces the whole policy with no before/after presentation, no computed blast radius, no approver or rationale recorded, and no version stamped; ByomAuditLog.tsx:113 then renders decisions with no policy version and no deciding rule, so an audit cannot distinguish 'the rule was violated' from 'the rule did not exist yet'."
+        },
+        {
+          "technique": "model-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:12 — ENGINE_LABELS_BY_KIND is exhaustive over the Rust EngineKind with a single member, so the same weights are not reachable through two providers and there is no grouping question to answer."
+        },
+        {
+          "technique": "failover-horizon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/components/ByomAuditLog.tsx:49 — this context renders a persisted was_failover flag; it contains no request path, so the first-byte horizon and the unusable-success classification have nothing to govern here."
+        },
+        {
+          "technique": "candidate-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:16 — with one provider option there is no surviving candidate set to order, so ranking terms and guardrail factors have no subject."
+        },
+        {
+          "technique": "cache-continuity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/components/ByomRoutingRules.tsx:97 — rules select a provider per task complexity for a whole persona execution; no continuing conversation with a shared cached prefix is represented in this context."
+        }
+      ],
+      "registryProposal": "effort-calibration and policy-governance both assume the routing table is the system's own calibrated artifact. BYOM is a different animal: an operator-authored policy over which providers their own installation may use. The standard's demand that every entry cite its measurement is right for the vendor's class table and unenforceable for a user's allow-list. Suggest the golden path distinguish the calibrated class→tier→effort table (measured, dated, one authority) from operator policy layered over it (validated as data, versioned, diffed) — the governance half applies to both, the calibration half only to the first."
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:72 — 'routing' in this context means wiring one agent's completion to another agent's start (a `chain` trigger), not selecting a model; no tier, effort, provider, class or decision record appears in any of its files, so model-routing does not govern it.",
+      "techniques": [
+        {
+          "technique": "turn-classification",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:24 — the only closed vocabulary here is LinkCondition (a run condition on an edge), not a call class asserted to a router."
+        },
+        {
+          "technique": "effort-calibration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:103 — the committed CreateTriggerInput carries persona_id, trigger_type and config only; no tier or effort dial exists in this context to calibrate."
+        },
+        {
+          "technique": "routing-policy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:55 — commitBlocker is the only rule evaluator here and it decides whether a drawn link is committable, not which providers a call may use."
+        },
+        {
+          "technique": "consumer-overrides",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:96 — the commit path passes no override parameter and reads no override state; there is no routing decision to deviate from."
+        },
+        {
+          "technique": "capability-floors",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/triggerStudioConstants.ts:20 — the nine templates are trigger source types, not capability tiers with a measured minimum."
+        },
+        {
+          "technique": "policy-governance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:100 — createTrigger writes wiring, not policy; there is no policy artifact here to diff, approve or version."
+        },
+        {
+          "technique": "model-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:76 — the only identities in flight are persona ids and event type strings; no model name is normalized or grouped."
+        },
+        {
+          "technique": "failover-horizon",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:118 — the context issues one create_trigger IPC call; it holds no streamed response whose first byte would close a substitution window."
+        },
+        {
+          "technique": "candidate-ranking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/useStudioComposer.ts:74 — the only ranking is healthyPersonas, a filter over agents offered as chain targets, not an ordering of eligible model endpoints."
+        },
+        {
+          "technique": "cache-continuity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:77 — the only cache is a localStorage draft of the drawing; no provider prompt prefix is held or invalidated here."
+        }
+      ],
+      "registryProposal": "Coverage question — the matcher missed the right subject on vocabulary. This context is governed by agent-chaining, not model-routing: studioCommit.ts:72 is a graph-to-wiring translation (a drawn link becomes a backend `chain` trigger), studioDraftModel.ts:24 is run-conditions' closed trigger-mode vocabulary, and studioCommit.ts:115's payload_forward is the handoff payload contract. Judged against agent-chaining a real backlog appears, so the pair is worth adding with source:conform: (a) graph-to-wiring-translation — useStudioComposer.ts:100 inserts wiring rather than reconciling to the drawing, and the picture lives in localStorage (studioDraftModel.ts:51) while the wiring lives in the backend, with no way to ask whether they agree; (b) cycle-and-depth-guards — studioCommit.ts:55 checks only source kind and output_match completeness, so A→B and B→A commit with no wiring-time cycle detection, the exact fork-bomb-with-a-UI the golden path names as an admission criterion; (c) run-conditions — studioDraftModel.ts:66 degrades any unrecognized persisted condition token to null (\"always\"), which is fail-open on an edge the technique says must fail closed and loudly."
+    },
+    {
+      "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+      "subject": "health-checks",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_health/types.ts:66 — the verdict vocabulary is ready|partial|blocked with grade healthy|degraded|unhealthy and no unverifiable state, so useHealthCheck.ts:406 turns 'the config-warning sub-check could not run' into a 2-point info penalty on the dependency's score.",
+      "techniques": [
+        {
+          "technique": "three-state-outcomes",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/types.ts:66 and :85 — neither DryRunResult.status nor HealthGrade can express 'could not determine'; useHealthCheck.ts:406 folds an unrunnable sub-check into an info-severity issue scored against the persona, and mapOverallStatus (:147) resolves any unrecognized backend string to 'partial', so a fact about the prober is rendered as a claim about the checked."
+        },
+        {
+          "technique": "probe-design",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/useHealthCheck.ts:393 — the probe is testDesignFeasibility over the persona's stored design_context, i.e. it reads configuration rather than exercising the credential or the run (the classic 'config value is set' proxy), it fabricates a minimal context when design_context is absent (:103) so the check invents its own target, and neither IPC call carries a deadline — the generation counter at :391 discards a late result but never bounds the wait."
+        },
+        {
+          "technique": "probe-caching",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/useHealthCheck.ts:375 — runHealthCheck fires a fresh IPC per caller with no keyed store beside the probe and no in-flight dedup, so two surfaces asking about one persona pay twice and can disagree; the staleness half is met (checkedAt on every result, types.ts:80, plus DIGEST_STALENESS_MS/isTimestampStale re-exported at index.ts:3), but there is no per-target TTL, no invalidation on relevant change, and no force-refresh path."
+        },
+        {
+          "technique": "remediation-affordances",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/useHealthCheck.ts:238 — the remedy is chosen by substring-matching keywords against the issue's prose rather than authored with the check by the author who knew what the failure meant; fixability is not a declared per-check property (a null proposal conflates 'unfixable from here' with 'no rule matched'); and types.ts:26 records that the executor was deleted with the health-panel UI in 2026-08, so proposals are still generated and nothing can apply them — every red is a bare red."
+        },
+        {
+          "technique": "health-rollup",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/types.ts:95 — AgentHealthDigest carries errorCount/warningCount/infoCount and no undetermined bucket, so an unverifiable member is laundered into infoCount and a 2-point score penalty; the drill-down to failing members (the personas array) and the single weights authority (useHealthCheck.ts:49, cutoffs imported from GRADE_THRESHOLDS at :62) are otherwise properly kept."
+        },
+        {
+          "technique": "check-scheduling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_health/useHealthDigestScheduler.ts:35 — the weekly cadence is only evaluated on mount and latched to one attempt per app session, so observation is coupled to app launch rather than to a per-target watch subscription; a failed run sets ran.current at :75 with the stated recovery being 'the user restarts the app' instead of backoff, there is no event-driven re-check after a fix or a config save, and the notification (:98) reports issues without ever reporting recoveries."
+        }
+      ]
+    },
+    {
+      "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:68 — the top level is derived from the navigation registry (:44) but twelve sub-destination vocabularies below it are hand-maintained arrays in the same file, and the comment at :173 records a shipped blank-page bug caused by exactly that gap.",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:44 derives the L1 rail from SIDEBAR_SECTIONS with reachability metadata so the rail cannot drift from router, palette or analytics — exactly the registry rule — but :68 through :341 hand-maintain homeItems, overviewItems, credentialItems, eventBusItems, templateItems, artistItems, devToolsItems, twinItems, researchLabItems, cloudItems, companionItems, obsidianBrainItems and getSettingsItems; the note at :173 records a 'voice' entry that was not in the TwinTab union, hidden by an `id as TwinTab` cast, that shipped and rendered a blank page. Active-state derivation is clean (SidebarLevel1.tsx:214 isActive from one location value, with aria-current at :242)."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sections/AgentsSidebarNav.tsx:7 — favorites, recent agents, live draft/exec/lab sessions and codebase personas become rows in the section's second level, so the sub-destination set comes from the user's data instead of the product's structure and the nav's vocabulary is neither closed nor learnable by position. Depth and posture are otherwise exemplary: the former Level-3 push panes were removed (PluginsSidebarNav.tsx:13, SidebarLevel2.tsx:462) and collapse state is the user's persisted setting (Sidebar.tsx:23) with icons, badges and a title/aria-label name reveal surviving it (SidebarLevel1.tsx:240)."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:53 — filterByTier removes every entry the tier does not include, so the shell has only hidden and enabled; there is no locked state and no upsell affordance anywhere in the subtree, which is the all-hidden posture the technique names (users cannot want what they cannot see). The destination is guarded by the same tier authority, but Sidebar.tsx:114 handles a forbidden location by silently resetting to 'home' rather than landing on an explanation surface."
+        },
+        {
+          "technique": "badge-and-attention",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/sidebar/BadgeSlot.tsx:6 — the grade set is exactly count|pulse|dot with one shell-level treatment each, only the highest-priority badge renders with a +N overflow (:89) so the rail cannot glow everywhere, the tooltip lists every active state as text (:73) and Sidebar.tsx:178 announces counts through an aria-live region; the values are derived from the unified attention registry rather than hand-incremented (useBadgeCounts.ts:6, re-polled on the shared 30s coordinator tick)."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:169 — this context is the navigation surface only; it mounts no session-lifetime service and contains no host region, so the admission test, mount order and teardown story have no subject here."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:225 — the sidebar renders no section content and owns no code-split boundary or Suspense fallback, so the placeholder contract, prefetch-on-intent and chunk-failure honesty live outside these paths. It does hold the frame still and restores per-section scroll (:87), which is the shell's half of that contract."
+        }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "agent-chaining",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/generated/types.ts:13467 — the chain_stop vocabulary is thirteen error-shaped tokens with no success-shaped stop (no completed), no cancelled, and no condition_unevaluable distinct from predicate_unmet, so a chain that ended naturally and a chain whose predicate could not be evaluated are not spellable.",
+      "techniques": [
+        {
+          "technique": "stop-reason-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/i18n/generated/types.ts:13467 — the closed set (depth_limit, handoff_suppressed, cycle_detected, predicate_unmet, outside_window, malformed_config, cas_lost, quarantined, publish_failed, budget_exceeded, breadth_exceeded, healing_abandoned, healing_capped) covers the machinery-side family unusually well but carries no completed, no cancelled and no unevaluable, so 'the graph chose to stop' cannot be told from 'the chain finished' and the collapse of unevaluable into predicate_unmet reproduces the lie the evaluator refuses. The one-authority half is also only mitigated, not met: chainStopReasons.parity.test.ts:15 re-types the Rust consts by hand and compares that copy to en.json, so the guard checks two hand-maintained lists rather than its target — the test's own header (:4) records why (reason_token crosses ts-rs as a raw String, and tokenLabel falls back to printing the raw snake_case token behind a DEV-only warn)."
+        },
+        {
+          "technique": "graph-to-wiring-translation",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:13467 — this context is a generated translation type plus two tests; no edge is translated into subscription rows and no reconcile pass exists here to judge for idempotence, cleanup or drift."
+        },
+        {
+          "technique": "handoff-payload-contracts",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:37 — the only structure asserted is a label catalog; no handoff envelope, compartment bound or receiving validation door appears in this context."
+        },
+        {
+          "technique": "cycle-and-depth-guards",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:13468 — depth_limit and cycle_detected exist here only as labels for stops recorded elsewhere; the static detection pass and the runtime depth bound live in the Rust chain engine, outside these paths."
+        },
+        {
+          "technique": "run-conditions",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:13471 — predicate_unmet is a rendered outcome, not an evaluator; no trigger mode is declared and no predicate is evaluated in this context."
+        },
+        {
+          "technique": "chain-identity-and-rollup",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:15 — nothing in this context mints, forwards or rolls up a chain identity; the files hold a translation catalog and its guards."
+        }
+      ],
+      "registryProposal": "Upward lesson worth an application entry rather than a correction: the technique predicts that a mature stop vocabulary grows a second, machinery-side family, and this repo landed six of the exact reasons it names — publish_failed (event publish failed after the edge was claimed), cas_lost (a concurrent evaluator won the race), quarantined (a repeatedly-failing edge), malformed_config (a guard's stored configuration found corrupt), handoff_suppressed (a stand-down rule because another driver owns the flow) and outside_window — arrived at independently. The token names are worth citing in the applications layer as a real-world spelling of that family. The same file also supplies a measured counter-example to the one-authority rule's usual remedy: because the token crosses the Rust/TS boundary as a raw String, the only available guard is a hand-mirrored parity test that cannot see its target (chainStopReasons.parity.test.ts:15) — a case where 'one authority' needs a codegen'd enum, not a test, and the standard could say so."
+    }
+  ]
+}

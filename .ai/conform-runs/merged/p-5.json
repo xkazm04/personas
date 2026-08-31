@@ -1,0 +1,599 @@
+{
+ "worker": "p-5",
+ "project": "personas",
+ "evaluatedAt": "2026-08-29",
+ "pairs": [
+  {
+   "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:276 binds executors by string match with an `other => Err` fallback, so a catalog kind with no executor is a runtime shrug rather than a startup failure; combined with the retired set-equality parity test the five-copy vocabulary drifts unchecked.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:256-440 holds the fleet cycle's batch queue, generation tracking and wedge recovery inside a Tauri command module rather than behind a declared host seam, so the runtime cannot be constructed without the application."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/companion/observability.rs:429-446 audits every headless leg to the one door (`athena_reaction::cli_text_tracked`) and ships an empty foreign-ledger allowlist at :466 that a test pins, so the enumeration is closed by construction."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:617-700 parses the model's per-session verdict lines and applies session state inside the command module; deleting this adapter would lose behaviour, not just reachability over its channel."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:148-277 restates 60+ kinds as a hand-written match ending in `other => Err`, and src-tauri/src/commands/companion/approvals/approval_autopilot.rs:11-50 removed the autoapprove allowlist so every mutation, including connector writes, auto-fires unattended under autonomous mode."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:799 launches the autonomous one-shot build with `max_budget_usd: None` and :938 reads the ceiling from model-supplied params defaulting to None, so a cycle that spends unattended declares no ceiling in advance."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:31 consumes `orchestration::operative_memory` (process-lifetime, TTL-pruned) for the present tense while durable writes go through `brain::fleet::record_fleet_event` episodes; nothing persists the working set."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:1940-1998 `classify_fleet_note`/`handle_fleet_defer` is a producer-side typed report-or-absorb verdict (AllFine absorbed to the debug ledger, NeedsYou escalated) evaluated before any attention budget is consulted."
+    }
+   ]
+  },
+  {
+   "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/disk.rs:22-26 and 85 further `use crate::db::` sites across the module import the host application directly, so the runtime has one host forever; the offsetting strength is a real second consumer at src-tauri/src/companion/remote_jobs.rs:1-32 that calls the runtime rather than re-implementing it.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/disk.rs:22-26 imports `crate::db::repos`, `crate::db::DbPool` and `crate::db::settings_keys` directly (85 `use crate::db::` sites module-wide, 27 of 139 files importing `tauri::`); no capability object is handed in at construction and no doubles ship with the runtime."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/athena_reaction.rs:435 `cli_text_inner` is the single spawn door, leg kind is a required argument at :369, one parser reads usage at :517, and :1541 pins that unknown cost stays NULL rather than zero."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/session/locks.rs:19-37 keys the turn lock on conversation identity (never a socket or window) and :23-27 declares the second-arrival policy as a bounded queue rather than leaving the race undefined."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/generated_anchors.rs:1-8 shows the correct generated shape, but src-tauri/src/companion/templates/constitution.md is a hand-written teaching text with nothing checking it against `ALLOWED_ACTIONS`, and dispatcher/envelope.rs:14 types params as untyped JSON so payload shape is restated per kind instead of derived from the table."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/wake_window.rs:118-145 `log_wake` records only actual wakes — the gate at :77-117 returns a named refusal reason that nothing persists, so 'why has it not run' is unanswerable from the autonomy ledger."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/observability.rs:1-13 and :57 rebuild the 'right now' digest from durable sources on every turn rather than restoring a persisted snapshot, so a restart can never publish a stale present as fact."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/athena_reaction.rs:236-246 records a restraint decision only as a tracing line, so absorbed outcomes are not countable or retrievable on demand and the reported/absorbed ratio the technique names as the instrument cannot be computed."
+    }
+   ]
+  },
+  {
+   "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/brain/cockpit.rs:1-7 and dashboard.rs:1-9 let a model-composed spec overwrite the singleton with no reset-to-known-good action, so the worst arrangement the model produces is permanent for a user who never chose the previous one.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/brain/goals.rs:17-18 and backlog.rs:20-22 take `crate::db::UserDbPool` and `companion::disk` directly rather than a store capability, and brain/graph.rs:1-8 is still a Phase-0 stub that brain/mod.rs:21 publicly declares."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:8 routes its weekly pass through the one headless CLI door, and observability.rs:435 enumerates it among the `cli_text_tracked` callers that write a `companion_turn` ledger row."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/companion/brain/mod.rs:1-40 — this context is the memory-store and synthesis layer; it hosts no turn callable and no transport adapter, so the technique's precondition (a turn function something could couple a surface to) does not hold here."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/companion/brain/cockpit.rs:1-7 overwrites the singleton spec on every `compose_cockpit`, `compose_dashboard` auto-fires with no approval card per dispatcher/catalog.rs:43-45, and neither module offers a reset path — the model-composed surface has no floor under it."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:1-16 runs a gated weekly pass whose only structural output is at most three evidence-cited `update_identity` diffs landing as approval cards — propose-only for structural change, with cadence keyed on a stored last-completion stamp."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/brain/episodic.rs:1-7 keeps the durable layer append-only and never-deleted on disk, and nothing in this context persists a 'what is happening now' view that a restart could republish as current."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/companion/brain/cycle_report.rs:30-37 records absorbed cycle outcomes as retrievable structured rows plus a narrative node and refuses to guess between 'the process died' and 'still working', which is exactly the absence-versus-emptiness distinction the contract needs (file is inside this context's module but outside the map's sampled paths)."
+    }
+   ]
+  },
+  {
+   "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/companion/athenaLabels.ts:13-16 documents a manual three-step procedure for adding each backend action slug to a frontend switch, making the rendering surface a fourth hand-maintained copy of the action vocabulary that no check compares to the backend table.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/companionStore.ts:1-31 — this context is the host's surface, not a file inside the runtime, so the dependency-direction rule the technique states ('a file inside the runtime that imports from the host application') has no target here."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/companionStore.ts:33-41 consumes an already-metered `CompanionTurnSummaryEvent`; the store issues no model call, so there is no leg for the door to enclose."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/companionStore.ts:261-280 keys live-turn state by conversation id with a stated mirror invariant and models the second-arrival policy as a declared `'queue' | 'interrupt'` mode at :130 rather than as whatever the race produced."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/companion/athenaLabels.ts:31 hand-switches every action slug, companionRoutes.ts:5 mirrors the backend `ALLOWED_ROUTES`, and companionStore.ts:52-62 mirrors `ACTIONABLE_KINDS` from chat_cards.rs — three unchecked frontend copies, so a new kind renders as a title-cased identifier instead of a label."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/companionStore.ts:1-31 — no autonomous cycle is admitted, claimed or bounded in this context; cycles are hosted in the Rust runtime and this store only renders their results."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/companionStore.ts:1414-1418 persists only `draftsByConversation`; `liveTurns`, `streaming` and the streaming narration die with the process by construction, so a reload cannot republish a stale 'right now'."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "unknown",
+     "evidence": "src/features/plugins/companion/companionStore.ts:449-540 holds proactive messages and job state, but whether a report-or-absorb verdict travels as a typed field on each item was not established from the sampled paths."
+    }
+   ]
+  },
+  {
+   "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "tests/playwright/companion-stop-button.spec.ts:18-20 and every sibling spec require a real running Tauri app, so the technique's acceptance test — the runtime exercised with no interface, no network and no real model — has no lane in this context.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/companion-stop-button.spec.ts:18-20 states the pre-req `npm run tauri:dev:test`; the runtime's behaviour is only reachable through a live application, which is the specific proof the technique says a portable seam must be able to give without one."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "not-applicable",
+     "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:5-14 states the suite deliberately avoids real model turns, so no leg passes through this context for the seam to enclose."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/companion-stop-button.spec.ts:69-81 asserts only that clicking Stop 'didn't throw' over a synthetically forced streaming flag (:36), so the interrupted verdict, the preserved partial and the released lock — the three obligations the technique names — are unasserted."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "tests/playwright/athena-guided-walkthrough.spec.ts:10-15 drives the walkthrough through the bridge instead of the op grammar, so nothing in this suite pins that the anchors the surface renders are the set the catalog declares and the executor resolves."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "not-applicable",
+     "evidence": "tests/playwright/companion-autonomous-mode.spec.ts:5-13 scopes the suite to the header toggle's store effect and explicitly defers the scheduled-tick chain to another suite, so no cycle is hosted or observed here."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "not-applicable",
+     "evidence": "tests/playwright/companion-stop-button.spec.ts:33-43 manipulates store flags directly; the context holds no working set of its own for the durable/operative split to apply to."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "unknown",
+     "evidence": "tests/playwright/companion-header-controls.spec.ts and the sibling specs were not read closely enough to say whether any pins the report-or-absorb gate or a count's clearing affordance."
+    }
+   ]
+  },
+  {
+   "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:70-80 keeps `LOW_RISK_ACTIONS`, a hand-maintained subset of the backend action vocabulary that decides what Athena recommends approving; a new low-risk kind silently falls to the cautious branch.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:34-52 — a host-side surface, not a file inside the runtime, so the technique's dependency-direction rule has no target."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/decision/resolveDecision.ts:22-24 calls `companionSendMessage`, an already-metered runtime entry point; no model leg originates here."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/decision/resolveDecision.ts:1-20 makes one module the single resolution path for all three input surfaces (chip, key, voice) so the surfaces cannot drift — the adapter-carries-no-logic rule applied to input."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:70-80 hard-codes a risk classification per action slug on the frontend, a second authority over a read/mutate distinction the catalog already owns per kind."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/decision/types.ts:1-11 — decisions are ephemeral store state produced from existing rows; this context hosts no cycle to admit, claim or bound."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/decision/types.ts:8 states decisions are ephemeral store state, never persisted — the present-tense queue dies with the process rather than being restored as a stale claim about now."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/decision/resolveDecision.ts:38-51 keeps a decision pending and surfaces the error on the surface the user acted on when the run fails, so a decision that did not resolve is spelled differently from one that did."
+    }
+   ]
+  },
+  {
+   "context": "11fe7642-7a1a-47c5-8910-499850aa04fe",
+   "subject": "companion-runtime",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:51-52 and :105 present `inboxCount` as a total while documenting it as post-cap-of-50, so the badge silently understates the backlog exactly when it is largest.",
+   "techniques": [
+    {
+     "technique": "host-seam-contracts",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/inbox/hooks/adapters/index.ts:1-5 — pure host-side adapters over store records; no file here is inside the runtime, so the dependency rule has no target."
+    },
+    {
+     "technique": "metered-llm-seam",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:6-7 states the hook introduces zero new IPC surface and derives from existing stores; no model leg exists here."
+    },
+    {
+     "technique": "headless-turn-stream",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/inbox/types.ts:1-6 — this context normalizes already-produced records for rendering; it hosts no turn callable and no transport for one to leak into."
+    },
+    {
+     "technique": "action-catalog-single-source",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/companion/inbox/hooks/adapters/outputAdapter.ts:25-45 falls back to an English keyword heuristic to classify an item's kind when the backend `content_type` signal is absent, adding a second lossy authority over a vocabulary the backend already declares."
+    },
+    {
+     "technique": "autonomous-cycle-hosting",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/companion/inbox/hooks/adapters/index.ts:1-5 — the adapters are pure functions with no side effects; no cycle is hosted in this context."
+    },
+    {
+     "technique": "operative-working-set",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:80-108 derives the whole snapshot inside a `useMemo` over live stores, so the present tense is recomputed rather than restored from a persisted copy."
+    },
+    {
+     "technique": "signal-economy-contract",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/companion/inbox/hooks/useCockpitSummary.ts:105 emits `inboxCount: inbox.length` as a total although :51-52 records it is capped at 50, so the count travels without the predicate that would let a reader trust it; `needsMeCount` at :46-50 and the `isHydrated` empty-versus-unloaded split at :53-58 are the conformant half."
+    }
+   ]
+  },
+  {
+   "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+   "subject": "draft-editing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:209-212 `clearAll()` clears the dirty map without reverting the draft to baseline, so after a Discard every indicator reads clean while the buffer still holds the edits, and the next patch autosaves them.",
+   "techniques": [
+    {
+     "technique": "draft-model",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:209-212 discards by clearing flags rather than reconstructing from baseline, and src/features/agents/sub_editor/components/DeepFanoutToggle.tsx:49,74 keeps a field in local state and writes it straight to `updatePersona`, outside the patch door at hooks/useEditorDraft.ts:26-28."
+    },
+    {
+     "technique": "dirty-tracking",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_editor/libs/EditorDocument.tsx:120-126 and :170 store the derived per-region result as a boolean map that EditorBody.tsx:97-99 mirrors again into zustand, so 'clean' can be asserted by a path that never compared draft to baseline; the region map itself at libs/PersonaDraft.ts:49-66 is exemplary (compile-time exhaustiveness over every draft field)."
+    },
+    {
+     "technique": "debounced-save-groups",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_editor/libs/useEditorSave.ts:166-168 returns early on an empty name, which `useDebouncedSave` records as success — `lastError` stays null while the region stays dirty, so a save that did not happen is spelled exactly like a save with nothing to do; there is also no synchronous last-gasp drain on window close (useUnsavedGuard.ts:58-67 prompts, never flushes)."
+    },
+    {
+     "technique": "navigation-guards",
+     "verdict": "deviation",
+     "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:58-67 gates `beforeunload` on derived dirtiness alone — no in-flight (`isSaving`) check and no flush — and the exit paths are four separate interceptors (sidebar nav :70-89, beforeunload :58-67, store-level switch personaSlice.ts:470-473, opt-in settings-tab :92-112) rather than one, so the next exit added is unguarded by default."
+    },
+    {
+     "technique": "field-defaults-and-bounds",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx:175 tells the user `maxConcurrent` ranges 1--10 while :187-188 admits 1--50, with no shared definition to disagree with; bounds are enforced in the control (:204-211) rather than at the patch door. The timeout default at libs/PersonaDraft.ts:5-16 is the technique's documented-incident discipline done exactly right."
+    },
+    {
+     "technique": "completeness-derivation",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:34-51 derives a named two-requirement checklist on demand with a region pointer, PersonaEditorHeader.tsx:127-153 renders the unmet reasons, and no save path consults it (libs/useEditorSave.ts) so an incomplete draft saves freely."
+    }
+   ],
+   "registryProposal": "The map's sampled paths for this context are the twelve component files, but every load-bearing realization of this subject lives in the sibling `libs/` and `hooks/` directories (PersonaDraft.ts, EditorDocument.tsx, useEditorSave.ts, useEditorDraft.ts). A context whose paths sample only the view layer will read as unimplemented for any subject whose machinery sits one directory over."
+  },
+  {
+   "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+   "subject": "draft-editing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts:89-105 saves `state.designResultJson` when it is non-empty, so on the refetch completion path every edit made in DraftEditStep is silently excluded from the payload; even the fallback branch omits seven fields the Settings tab lets the user edit.",
+   "techniques": [
+    {
+     "technique": "draft-model",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts:89-105 — the apply step re-serializes a hand-listed subset (or the generator's untouched output), dropping `max_budget_usd`, `max_turns`, `design_context`, `notification_channels`, `triggers`, `tools` and `required_connectors` that DraftSettingsTab.tsx:85-90,136-147 accepts edits for; and src/hooks/useWizardReducer.ts:75-81 gives the buffer two mutation doors with no retained baseline."
+    },
+    {
+     "technique": "dirty-tracking",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/generation/useCreateTemplateReducer.ts:36-61 carries no dirty or baseline field of any granularity, so the surface cannot answer whether anything is unsaved — which is what leaves the close path at useCreateTemplateActions.ts:155-164 with nothing to consult."
+    },
+    {
+     "technique": "debounced-save-groups",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/draft-editor/DraftEditStep.tsx:20-40 exposes no save or dirty prop and the surface commits exactly once through CreateTemplateModal.tsx:180-193; the technique's precondition — a long-lived draft that saves continuously and partially — does not hold for a compose-then-submit-once step."
+    },
+    {
+     "technique": "navigation-guards",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts:155-164 calls `reducer.reset()` on close, discarding a draft that cost a paid background generation, with no prompt and no persistence — every exit path is unguarded."
+    },
+    {
+     "technique": "field-defaults-and-bounds",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/draft-editor/DraftSettingsTab.tsx:136-147 coerces `max_budget_usd` and `max_turns` with `Number(v)` and no bound at all, and the colour default `'#8b5cf6'` is a literal in three places (DraftEditStep.tsx:86, :90 for the icon, DraftSettingsTab.tsx:118) with no definition to share and no rationale."
+    },
+    {
+     "technique": "completeness-derivation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/draft-editor/DraftEditStep.tsx and CreateTemplateModal.tsx:180-193 — the save IS the terminal action; there is no downstream publish/activate transition for a requirement checklist to gate, so the technique's promotion gate does not exist here."
+    }
+   ],
+   "registryProposal": "Route this context to `form`, not `draft-editing`. The subject's own boundary section says a form is 'the one-shot cousin: compose a valid mutation, submit it once, leave', and that a draft editor's defining lifecycle is continuous partial saves with a publish gate rather than a submit button. This surface composes once and submits once (CreateTemplateModal.tsx:180-193). The matcher paired it on the literal directory name `draft-editor`; routing by the golden path's stated precondition instead of its vocabulary would have sent it elsewhere. The two techniques that still bite here (draft-model's apply contract, navigation-guards) do so because a paid generation produced the buffer — which may be worth a `form` technique about guarding an expensively-produced one-shot payload."
+  },
+  {
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "subject": "accessibility",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx:55-78 hand-rolls its buttons instead of consuming the shared `Button` primitive, so eleven of the twelve widgets sit outside the door that carries focus-ring, aria-busy and the 44px coarse-pointer target.",
+   "techniques": [
+    {
+     "technique": "primitive-level-a11y",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx:55-78 (and WalkthroughOfferWidget.tsx:117-141, DecisionsPanelWidget.tsx:52-64, TemplateSuggestionsWidget.tsx:152-159, PersonaWalkthroughWidget.tsx:58-66, PersonaReadyWidget.tsx:149-157) are near-primitives — hand-rolled natives outside the shared Button at src/features/shared/components/buttons/Button.tsx:195,226,51-56 — so every focus-indicator and touch-target guarantee is re-derived per call site."
+    },
+    {
+     "technique": "keyboard-navigation-models",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx (rendered from DecisionsPanelWidget.tsx:69) wires Escape at :30-32 but has no focus trap and no focus restore on close, so dismissing the drawer destroys the focused content and strands the keyboard user at the document body."
+    },
+    {
+     "technique": "live-region-architecture",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:91-92 and :111 mount per-feature live regions instead of calling the shell-mounted provider at src/features/shared/components/feedback/AriaLiveProvider.tsx:135, and the other async widgets (BrowserTestReportWidget.tsx:116-124, TemplateSuggestionsWidget.tsx:99-103) announce nothing at all — a region that mounts with its text is the platform's silent case."
+    },
+    {
+     "technique": "name-and-description-wiring",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:75 hardcodes `aria-label=\"Close\"` in English rather than routing it through `t` as every other user-facing string is, so the only name a non-English screen-reader user hears on that control is untranslated; the twelve widgets' own controls are all correctly named by visible text (e.g. PersonaCreationOfferWidget.tsx:63)."
+    },
+    {
+     "technique": "preference-respect",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:95,100-102 and TemplateSuggestionsWidget.tsx:89-90 animate unconditionally while seven sibling cockpit widgets derive from the single signal at src/hooks/utility/interaction/useMotion.ts:56-58 — the tenth-screen failure the technique names, on the exact surfaces a first-run user meets; `forced-colors` has no implementation anywhere in src/."
+    },
+    {
+     "technique": "a11y-verification",
+     "verdict": "deviation",
+     "evidence": "No axe/jest-axe dependency, no a11y test lane and no keyboard walk exist in the repo; the eight widget tests assert text rather than roles (src/features/home/sub_cockpit/widgets/__tests__/PersonaWalkthroughWidget.test.tsx:30) and four widgets have none. The one real gate, scripts/check-themes.mjs:182-185, is absent from package.json's aggregate `check` script, so the contrast floor is not enforced on a change."
+    }
+   ],
+   "registryProposal": "Two upward data points worth an application-layer entry rather than a correction. src/features/shared/components/feedback/AriaLiveProvider.tsx:34-59 implements the drain queue AND the keyed-remount defeat of platform deduplication in one provider — the technique prescribes both but shows neither. And src/hooks/utility/interaction/useMotion.ts:20-41 realizes 'the product's own setting layered over the platform's, feeding the same single signal' by projecting the in-app toggle as `<html data-motion=\"reduce\">` and observing it with a MutationObserver alongside the media query, which is a concrete mechanism for a rule the technique states abstractly."
+  },
+  {
+   "context": "dc471d31-ae30-4ac9-b015-d51969df458d",
+   "subject": "long-form-reading-surface",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:93-104 fires exactly the technique's in-place-navigation effect — a prevSectionRef guard on content swap — but restores scroll position instead of moving focus, so a keyboard reader stays on the sidebar button while the entire content region is replaced.",
+   "techniques": [
+    {
+     "technique": "anchor-id-single-assigner",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts is a static route vocabulary, not a document; the technique's precondition — two consumers independently deriving a heading's address from its text — has no address space to contend over here."
+    },
+    {
+     "technique": "fixed-chrome-offset-budget",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:152-153 publishes `--sidebar-width` as the one derived offset (the right shape), yet the same 52/88/240 geometry is restated at SidebarLevel1.tsx:206,237 and again at OrbitDots.tsx:35-38, and the vertical axis has no budget at all — `--titlebar-height` is never defined, so Sidebar.tsx:207's siblings all fall back to 40px against the 48px bar at src/styles/globals.css:118-124."
+    },
+    {
+     "technique": "scroll-spy-reading-band",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:75-77 reads the current section from store state, not from the reader's scroll position; there is no document being scrolled through for a band to be carved out of."
+    },
+    {
+     "technique": "focus-transfer-on-in-place-navigation",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:93-104 guards on `prevSectionRef` and restores `scrollTop` on every section change but never moves focus to the new content; there is no skip link anywhere and the single `role=\"main\"` target has nothing pointing at it, so a non-visual user is given no handoff when the whole view is replaced."
+    },
+    {
+     "technique": "server-parsed-once-reused",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts supplies the nav structure as authored data; nothing here derives structure from a document body, so there is no parse that could happen twice."
+    }
+   ]
+  },
+  {
+   "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+   "subject": "long-form-reading-surface",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:54-64 defines the reading position as the last section past a single 28px edge rather than a band, so the highlight flips on any nudge near a boundary and there is no unchanged-when-nothing-intersects rule.",
+   "techniques": [
+    {
+     "technique": "anchor-id-single-assigner",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:95 stamps `id={s.id}` on the section and :66-72 links the nav to the same `s.id` from one `sections` list, so the nav and the target read one address space rather than two derivations of it."
+    },
+    {
+     "technique": "fixed-chrome-offset-budget",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:47 pins to `var(--titlebar-height,40px)`, a property nothing in src/ defines, against the 48px bar at src/styles/globals.css:118-124 — one of seven call sites repeating the same wrong literal — while ContentLayout.tsx:74 restates the 328px sidebar sum across six breakpoint literals; no module hands out derived offsets. The scrolling-ancestor constraint is the one part handled explicitly, at useSectionScrollSpy.ts:11-19."
+    },
+    {
+     "technique": "scroll-spy-reading-band",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/layout/settings/useSectionScrollSpy.ts:54-64 picks the last section whose top clears a single `ACTIVATION_OFFSET = 28` edge and :67-68 polls `getBoundingClientRect` from a scroll listener rather than observing intersections, so the highlight has the flicker-at-the-boundary failure the technique exists to prevent."
+    },
+    {
+     "technique": "focus-transfer-on-in-place-navigation",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx:71 calls `jumpTo(s.id)`, which scrolls the viewport (useSectionScrollSpy.ts:77-88) without moving focus, and the sections at :95 are not programmatically focusable — the exact scrolls-but-does-not-move-focus defect the technique names, where every static check passes and Tab resumes from the top."
+    },
+    {
+     "technique": "server-parsed-once-reused",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/components/layout/settings/SettingsScaffold.tsx receives its `sections` list as an authored prop; no document body is parsed here, so there is no derived structure that could be recomputed on arrival."
+    }
+   ],
+   "registryProposal": "Both of these contexts are mis-routed, and the golden path says so itself: 'The frame around whole routes — primary navigation, section vocabulary, the never-unmounting host and its services — belongs to app-shell.' `shared-chrome` IS that frame and `shared-components-layout` is its primitive set; neither renders a document. This is the technique-shaped resonance the conform method describes — two techniques (fixed-chrome-offset-budget, focus-transfer-on-in-place-navigation) bit hard and produced real, anchored defects, but they bit because their doctrine is about a shell, not about an article. Proposal: pair both contexts to `app-shell`, and consider marking `fixed-chrome-offset-budget` `shared_with: [app-shell]` — its failure mode (N independent estimates of one geometry, every estimate nearly right) is a property of any surface with fixed chrome, and this repo's instance of it, seven readers of an undefined `--titlebar-height` falling back 8px short of the real bar, is a better field example than a contents panel would be."
+  },
+  {
+   "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+   "subject": "codebase-scanning",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:106,109 and :157-160 run the passport and KPI emitters with no failure boundary, so one throw inside an emitter takes down a sweep whose other seven sensors are individually isolated.",
+   "techniques": [
+    {
+     "technique": "sensor-pipeline",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:106,109,157-160 leave the passport and KPI emitters outside the per-sensor try/catch the other seven have, and emitters.ts:201,250,306,398 slice each family to a TOP_N whose discarded count never reaches SweepResult — undisclosed truncation inside a pipeline whose global cap (findingConfig.ts:43-45) explicitly refuses it."
+    },
+    {
+     "technique": "rule-precision-discipline",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/emitters.ts:43-46 and every sibling emitter ship with hand-assigned impact/effort constants and no recorded precision figure, and sweep.ts:157-160,218-220 treat a zero-match emitter as a healthy state, so a rule that has silently stopped matching is indistinguishable from a clean project."
+    },
+    {
+     "technique": "finding-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:268 files every new draft with `createFinding` without any confirming pass — verify.ts only judges findings whose work already shipped (:153-157) — and sweep.ts:253 dedups against every existing key including rejected ones with no expiry, so a finding has no Expired exit and can never be re-raised."
+    },
+    {
+     "technique": "llm-assisted-scanning",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:402-406 sanitizes the model-supplied `lens` as free text instead of validating it against a declared set, while NODE_KINDS and EDGE_RELS at :38-39 are closed sets in the same file — so a scan can grade against a lens nothing declares and its findings land in the database invisible to the panel that filters on the registry (DeepScanRecommendations.tsx:54). Counting malformed lines rather than dropping them (memory_ledger.rs:259-262) is the conformant half."
+    },
+    {
+     "technique": "incremental-scanning",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/types.ts:53-76 — SweepResult carries no scan-mode field because every sweep re-runs every wired sensor; the technique's precondition, a scan that examined only what changed and must therefore label itself as a narrower claim, does not arise here."
+    },
+    {
+     "technique": "dead-code-detection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/emitters.ts:43-447 enumerates the nine sensors, none of which reasons about reachability or reconciles an inventory of what should exist; the technique's precondition — a scanner asked to prove an absence — is not among this pipeline's questions."
+    },
+    {
+     "technique": "ingestion-budget",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts:102-228 reads locally registered projects through in-process IPC, and the HTTP bridge at src-tauri/src/commands/infrastructure/dev_tools_http.rs:1-11 is loopback-only against registered roots; contents are not metered, so there is no allocation decision for a budget to make."
+    },
+    {
+     "technique": "evidence-scoping",
+     "verdict": "not-applicable",
+     "evidence": "The technique's stated precondition is a scanner pointed at arbitrary foreign codebases where the population-first order is unavailable; every target here is a project the operator registered and the scanner may read freely, so precision is buyable by calibration rather than by scoping."
+    },
+    {
+     "technique": "verify-after-generate",
+     "verdict": "unknown",
+     "evidence": "src/features/plugins/dev-tools/sub_triage/findings/usePassportForProject.ts:1-46 consumes generated state, and an invariant audit plus a dry-run repair protocol exist in Rust (context_audit.rs:26-38, dev_tools_http.rs:40-42), but I did not read them closely enough to say whether the repair names its anti-remedy or whether a drift journal exists for the unreachable-generator case."
+    }
+   ],
+   "registryProposal": "Wall 3 of the golden path — 'Location down to the line, plus the matched content itself, quoted' — over-fits to text-pattern sensors and has no formulation for the threshold-over-telemetry sensor this pipeline is built from. Six of its nine emitters (LLM cost pinpoints, Sentry issue rates, dormant skills, doc rot, disputed memories, KPI attention) produce findings of the form 'this measured number crossed its threshold', for which there is no line to quote; emitters.ts:11-13 states the honest alternative — carry the raw numbers the threshold decision was made on. That choice then makes verify.ts:4-6,14 possible ('a fresh emit IS the probe'), which re-measures the quantity rather than re-reading a location, and is arguably a stronger verifier than the golden path's re-grep because it distinguishes moved from unchanged (verify.ts:134-145) rather than merely present from absent. Proposal: split wall 3's evidence requirement by sensor class — quoted-and-located for pattern sensors, measured-value-plus-threshold for aggregate sensors — and let finding-lifecycle's verification pass name the re-measure as a legitimate second form."
+  },
+  {
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "subject": "webhook-ingestion",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/tools/triggers.rs:1742 replays `log_entry.body`, which src-tauri/src/engine/webhook.rs:304 already replaced with the literal string '[redacted: see encrypted persona_event payload]', so every replay delivers that placeholder instead of the bytes that exposed the bug.",
+   "techniques": [
+    {
+     "technique": "sender-authentication",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/smee_relay.rs:418 makes verification opt-in and absent by default ('when unset (the default) we cannot authenticate inbound events and accept them as before', :41-43), which is the accept-everything fallback the technique bans, on the mouth the file itself calls the highest-volume attacker-reachable producer (:727-739); src-tauri/src/engine/cloud_webhook_relay.rs has no sender verification at all. The direct listener is exemplary by contrast — raw bytes verified before parse (webhook.rs:287-292,435,519) with a constant-time compare that equalizes the invalid-hex path (:587-609) and fails closed on a missing secret (:462-477)."
+    },
+    {
+     "technique": "payload-bounds",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/webhook.rs:521-529 wraps a body that fails JSON parsing as `{\"raw\": text}` and admits it, so the content-type allowlist stage is inverted into accept-anything; and :108 serves with no connection or read timeout, leaving a slow client to hold a connection indefinitely. The size cap is correct — a tower layer at :93 enforced during extraction, therefore ahead of both auth and parse."
+    },
+    {
+     "technique": "ingress-topology",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/cloud_webhook_relay.rs mints events from a polled intermediary with no end-to-end verification at the final hop, which the technique forbids delegating to the middle, and its liveness is a literal `true` passed at every call site (:159,210,283,468) so a dead relay is indistinguishable from a live one."
+    },
+    {
+     "technique": "delivery-logging-and-replay",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/tools/triggers.rs:1742 replays the redaction placeholder rather than the delivery (set at webhook.rs:304), :1750-1761 re-signs from the stored secret so a replay always authenticates and can never reproduce a rejection verdict, and webhook.rs:273-284 logs every header verbatim with no filter — the signature, and any authorization or cookie a sender attached, all land in the record the body was redacted to protect."
+    },
+    {
+     "technique": "duplicate-and-replay-dedup",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/webhook.rs:629 mints a fresh UUID with no delivery-identity check and never reads `x-github-delivery`, so on the one mouth with mandatory authentication a sender's at-least-once retry fires the trigger a second time; smee_relay.rs:225-256 shows the correct bounded shape on a different mouth."
+    },
+    {
+     "technique": "listener-lifecycle",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/background/lifecycle.rs:481 sets `webhook_alive` true before the port probe and before the bind, so `get_webhook_status` (triggers.rs:1250-1258) reports a listening ingress throughout the up-to-six-minute window in which nothing is bound, and :571-580 downgrades EADDRINUSE to a warn kept out of Sentry — the two-copies-own-the-port case the technique says must be loud. Graceful drain (webhook.rs:108-113) and the traffic-independent health route (:192-208) are conformant."
+    }
+   ],
+   "registryProposal": "The technique pairs 'record everything, verbatim' with 'redact at write time' but never says what replay replays once redaction has run, and this repo fell straight into the gap: it redacted the whole body (webhook.rs:294-305) and thereby voided its own replay door (triggers.rs:1742) without anything failing. Proposal: state that redaction is field-scoped within the payload, never whole-body, precisely because a wholesale redaction silently converts the debugging lifeline into a placeholder generator; and where a system already keeps an encrypted verbatim copy elsewhere (as this one does at webhook.rs:634), the replay door must read from that copy and the record must name it. A second, smaller point: the technique says replay 're-earns admission', which this repo honours by re-POSTing through the live route — but it re-signs the payload to get past authentication, so the replay proves the pipeline works on a well-formed delivery and can never reproduce the rejection it was invoked to debug. Replay should carry the recorded signature, and a replay that now fails verification is a result, not a malfunction."
+  }
+ ]
+}

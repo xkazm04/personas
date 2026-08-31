@@ -1,0 +1,1030 @@
+{
+  "worker": "p-1",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/fleet/commands.rs:28 spawns a session with a cwd and no declared write set, so N sessions share one repo with no disjointness check; and src-tauri/src/commands/fleet/stale.rs:640 writes session.state inline instead of through one transition door.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:727 - state is mutated by ~12 sibling methods (set_state_direct, mark_alive, revive_to_running_on_activity, mark_exited, escalate_to_awaiting, park_recovered, mark_finished, finish_unanswered) plus direct writes in stale.rs:640/664/700, each re-implementing its own legality guard; there is no single (state, observation) transition door, so a new observation kind can be mapped inconsistently in one lane, and the entry carries no write-scope claim to release on exit. The closed vocabulary itself IS single-sourced (types.rs:25-97)."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:414 - tick_once performs the staleness check but never asks the OS whether the recorded child_pid is alive and never runs an orphan scan; orphan detection is a frontend 60s poll gated on page mount and window visibility (src/features/plugins/fleet/useFleetOrphanScan.ts:22,38) that only badges a count, so a claude process that outlives the app is unaccounted until a human opens the Fleet page. The rest of tier one/tier two is exemplary: three provenance-separated recency stamps (registry.rs:264-270), a per-workload staleness multiplier with its reason written down (stale.rs:91), and baseline-at-first-sweep revival of spurious awaits (stale.rs:577-600)."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/persist.rs:150 - every restored row becomes a dozing tombstone with child_pid=None regardless of whether its process survived, so reconciliation never reaches 'alive -> adopt' or 'ambiguous -> quarantine'; and src-tauri/src/commands/fleet/run.rs:191 builds the run harvest from FleetSessionRow, making the crash-recovery mirror a user-facing query surface whose writes are best-effort and warn-only (persist.rs:82-86). The piggyback write path (persist.rs:15-19,103) and the identity-not-handles projection (persist.rs:122) are exactly right."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:1058 - hibernate() kills the child immediately with no quiesce or bounded grace, and the manual path passes require_resting=false (commands.rs:175), so an operator sleeping a Running session loses the in-flight turn and the entry records no interrupt marker for the resume to see. Everything else is conformant and unusually complete: two park depths (doze at registry.rs:1095), policy re-validation inside the lock (registry.rs:1046-1056), restart recovery reusing the doze path (persist.rs:23-26), edge-checked wake (resume_target registry.rs:1328) and lineage adoption (registry.rs:1305)."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:28 - no session declares a write set and no admission check proves disjointness; the DTO comment at types.rs:152-155 actively encourages 'multiple parallel sessions on the same project', so two claude sessions in one repo is a supported configuration with collision detection nowhere. The cap is also enforced by eviction rather than queueing (commands.rs:41 free_slot_for_spawn, stale.rs:1520) and there is no per-member deadline or straggler reaper at mint. The slot cap itself (stale.rs:154) and the run roster (run.rs:59) do exist."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/run.rs:206 - roster accounting has three buckets and '_ => active_count' swallows stale, lost, awaiting-input and running into one class; a session that reported finished but whose declared summary is unreadable still counts as finished_count (run.rs:207 vs 226), so 'succeeded, result missing' cannot be seen, and there is no straggler deadline, so a run can never be declared closed. The result contract is otherwise exact: summary_from_reason (run.rs:169-183) reports only what a session declared and never a paraphrase, and finish_unanswered (registry.rs:1265) deliberately refuses the completion prefix for a session that only ever asked a question."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:1234 - mark_finished accepts a FLEET:DONE declaration at face value and parks the session in Finished with the model's own summary; nothing checks the claim against the artifact even though the transcript rollup already knows files_touched (run.rs:228), so a fabricated completion enters the run report as a delivered result. No per-member step budget is set at dispatch either."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/commands.rs:31 - this module transports the task as an opaque args vector and never authors it; brief composition lives in the dispatcher (companion/approvals/approval_exec_fleet.rs) and in engine/build_session/fanout.rs, so the technique's decision rules have no subject here."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "The fleet is task-parallel - N sessions, N tasks, one claude binary; no seat ever answers the same question as another, so the precondition (one question across independently trained members) does not hold."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "Sessions are local PTY children of the orchestrator process (registry.rs:290-311 holds master/writer inline); there is no executor plane separated from the control plane, so the dial-out topology question does not arise in these paths."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "The substrate is in-process PTY children reaped by their own task; there is no container, volume or worktree daemon holding an inventory that can drift from the registry. The related orphan-process gap is recorded once, under lifecycle-signals."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No post-mortem lane classifies failed multi-session runs. The repo's stale_kind taxonomy (types.rs:210-218) answers a different question - why is this session parked - not which of specification/misalignment/verification owned a run failure."
+        }
+      ],
+      "registryProposal": "durable-fleet-state's 'the mirror is not a query surface' rule is stated absolutely, but this repo has a legitimate second reader: a harvest that must survive an orchestrator restart can only account a roster from the durable copy, because the in-memory registry forgot the sessions that ended before the crash. Worth a paragraph on the one sanctioned second reader (post-hoc run accounting) and the freshness contract it then owes, rather than leaving implementers to violate the rule silently."
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/fanout.rs:100 instructs each dispatched sub-agent to 'pick sensible defaults' instead of asking, which is the silent-inference outcome the brief technique exists to convert into a question; note the whole fan-out module is still #![allow(dead_code)] and unwired (fanout.rs:13-15), so its conformances are designed but not yet running.",
+      "techniques": [
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:100 - 'do NOT ask clarifying questions; pick sensible defaults' inverts the technique's closing rule; a constraint the dispatcher settled with the user but omitted from the brief becomes a guess nobody can see. Mitigated only for the highest-risk field (fanout.rs:88-93 tells the worker to leave connectors unresolved rather than guess a destination). Everything else is a model realization: invariants restated in full every time (SCOPE RULES, fanout.rs:78-93), the user's authoritative answers carried as settled decisions (fanout.rs:76), siblings listed so the worker knows what is NOT its job (fanout.rs:74-75), and self-sufficiency stated as a design property (fanout.rs:58-59)."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/orchestrator.rs:57 - one semaphore-bounded door, panics isolated per lane, outcomes returned in input order tagged with a lane id; write sets fall out disjoint by construction because each capability resolves in its own fresh temp dir with no --continue (fanout.rs:5-6), and every member names its reaper at mint (FANOUT_LANE_TIMEOUT, fanout.rs:135). Live use is in tool_tests.rs:1006."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/orchestrator.rs:29 - LaneOutcome is (lane, Result), so the accounting sums to the roster by construction: every dispatched lane yields exactly one outcome and a lane that panicked is reported as an error, never dropped. CapabilityResolution carries a per-member error field (fanout.rs:47-52)."
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/mod.rs:98 - BuildSessionManager keys one handle per session_id with a monotonic generation, HandleDropGuard releases the entry on any exit path including panic (mod.rs:80-95), the phase vocabulary is the single-sourced BuildPhase, and mode is validated at the one start door (mod.rs:159-170) so callers cannot smuggle a state the machine does not define."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:49 - MAX_TEST_RETRIES is a recovery budget set at dispatch that kills the loop (oneshot.rs:183); and the completion claim is verified against the artifact rather than believed: evaluate_promote_gate (oneshot.rs:400-407) cross-checks the model's declared counts against the results array and refuses to read cli_native:true as evidence a call was made."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "unknown",
+          "evidence": "The build-session staleness lane (BuildWatcher, engine/background) is outside the listed paths; fix_pass.rs:38-42 shows a per-invocation timeout exists, but whether a periodic sweeper reconciles wedged Resolving sessions was not verified."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "unknown",
+          "evidence": "mod.rs:4-5 names checkpoint-based SQLite persistence, but nothing in the listed paths shows a startup reconciliation pass over build_sessions rows, and I did not read the repo layer."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "A build session has no park state - it runs to a terminal BuildPhase or fails; there is no 'exists but holds no process' rung in its lifecycle."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "fanout.rs:104-111 assigns a per-capability model_override, but that is cost routing across tiers of one family, not N members answering one question; no seat's answer is compared against another's."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "Sub-agents are local CLI child processes spawned by the same process that holds the registry; there is no separated executor plane."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "The only substrate is a per-lane temp dir owned and dropped by the lane itself; no external daemon holds resources whose inventory could drift."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "The promote-gate decision table (tool_tests.rs:35-62) classifies test outcomes, not run failures by owner class; no lane sorts failed multi-agent runs into specification/misalignment/verification before proposing a fix."
+        }
+      ]
+    },
+    {
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 drives a multi-round debate as the default path for team decisions with every seat on one model family, which the panel technique names as a sampling run in costume; and channels/types.ts:21 adds a third informal persona-state vocabulary beside the store's closed one.",
+      "techniques": [
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 - advance / run-to-budget / split / merge drive a multi-round persona debate whose seats are personas, not independently trained models (TeamDeliberation carries a rosterIds list and no per-seat model), and it is the default path for routine team work with no voting-baseline comparison on record; the product is the transcript plus a proposal, never a concordance structure. Two rules ARE realized well: the run is bounded by cost rather than turns (costBudgetUsd, rail line 56) and by consecutiveStallRounds rather than a fixed round cap, which is a better answer to 'rounds continued after an unchanged-positions round'."
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/types.ts:21 - PresenceMap introduces a two-value persona state ('working'|'waiting') alongside the store's closed ActiveProcessStatus and the monitor's own ExecState, so a persona that is failed, queued or input_required has no presence value and reads on the live map as merely waiting."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "A deliberation resolves into a proposal, not a dispatch roster; there is no set of members whose terminal accounts must sum, so the roster arithmetic has no referent here."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "not-applicable",
+          "evidence": "These surfaces consume a channel subscription; they neither emit lifecycle signals nor own a sweeper, so the two-tier mechanism has no implementation site in this context."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "The rail's split/runAllTracks buttons request a backend fan-out; capacity, assignment and roster accounting are all decided in engine/deliberation.rs, outside these paths."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "Read-only view over the pipeline store's channel cache; it holds no registry to mirror."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "No park/wake concept: a deliberation is paused or escalated as a status on the backend row, not by freeing a process under a preserved identity."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "The composer emits a directive into a channel a persona already subscribes to; no fresh worker session is minted here whose inherited context could be enumerated."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "The rail shows a deliberation's round and spend, never a member's step trajectory; there is no per-worker recovery budget or completion claim to verify at this layer."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "An escalated deliberation is handed to a human with a free-text decision (rail lines 113-135); nothing classifies it into the three-class taxonomy before a fix is chosen."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane in these paths."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No substrate resources are owned or reconciled here."
+        }
+      ],
+      "registryProposal": "heterogeneous-model-panels splits the world into cross-family panels and same-weights sampling runs, and this repo sits in a third place the technique does not name: seats that are one provider's tiers (haiku/sonnet/opus) driven by materially different role prompts. That is not cross-family concordance, but it is also not variants of the same weights sampled N times. A sentence on where role-diverse, same-provider panels fall - and what, if anything, their agreement is evidence of - would stop implementers reading themselves into the conformant column."
+    },
+    {
+      "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/fleet/monitor/monitorModel.ts:130 widens the store's closed ActiveProcessStatus union to string and defaults an unknown status to `running`, so a status added upstream renders as a live pulsing process instead of failing the build.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:130 - processStatusMeta takes `status: string` and falls back to PROCESS_STATUS_META.running, while the authority (src/stores/slices/processActivitySlice.ts:4-6) keeps a closed ActiveProcessStatus union with exhaustive `never` checks elsewhere (line 434); processStatusLabel's default (monitorModel.ts:145) likewise echoes the raw token. This is the mapping layer the technique names as where new states get silently dropped, and the chosen default is the worst available one: an unrecognized state impersonates a working process."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "not-applicable",
+          "evidence": "useMonitorData.ts:14 polls its feeds; it neither receives lifecycle signals nor owns the staleness sweep (the reap-running-past-cutoff pass lives in processActivitySlice.ts:399), so the two-tier mechanism has no site here."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "The monitor aggregates standing per-persona counts, not a dispatch roster; there is no run whose members must each reach a terminal account."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "MonitorCapabilities.tsx:33 fires a single execute_persona per click with a local re-fire lock; no capacity, assignment or roster decision is made in this context."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "Read-only dashboard; it holds no registry and mirrors nothing."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "No park/wake concept exists for personas in this surface."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "No worker session is dispatched with an authored brief here."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "The drawer shows a reasoning trace for a process but sets no recovery budget and verifies no completion claim; both are execution-engine concerns."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "No panel is convened in this context."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane in these paths."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No substrate resources are owned or reconciled here."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No run-failure classification lane exists in this surface."
+        }
+      ]
+    },
+    {
+      "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:69 - GROUP_ORDER enumerates 7 of the 8 lifecycle states and omits `finished`, and the session list is built only from GROUP_ORDER, so a session that declared FLEET:DONE vanishes from the Sessions list while its Finished pill still counts it.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:69 - GROUP_ORDER is typed `id: FleetSessionState` but is not exhaustive: `finished` is missing, and `groups` filters GROUP_ORDER (line ~381), so Finished sessions never render a row. The shared authority beside it is complete (src/features/plugins/fleet/fleetStateMeta.ts:33-42 lists all eight), so FleetSummaryPills renders a teal 'Finished - N' pill whose filter resolves to an empty list. Everything else in this context derives correctly from the binding, including the tiles-never-move ordering that keeps a woken session in its slot (fleetSessionScope.ts:22)."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:328 - every spawn from this page uses activeProject.root_path as its cwd, so the Spawn / Spawn-with-task / Broadcast controls fan work into one shared write scope by construction, with no per-session scope declaration and no collision surface anywhere in the UI."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/useFleetOrphanScan.ts:22 - a periodic orphan scan over the OS process table, deliberately budgeted across visibility changes (lines 34-56), feeding a count the operator resolves through fleet_resume_orphan (adopt) or fleet_kill_pid (terminate); live state changes arrive as events rather than polls (FleetGridPage.tsx:189)."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:196 - a policy park is announced to the operator rather than silently rearranging the fleet ('the tile just vanished... 2026-07-16 UAT F-MAJOR-14'), and hibernated/exited sessions stay as in-place tombstones the operator dismisses explicitly (fleetSessionScope.ts:5-13)."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "unknown",
+          "evidence": "FleetGridPage.tsx:48 mounts a FleetHarvestPanel, but src/features/plugins/fleet/sub_harvest/ is outside the listed paths and I did not read it; the harvest accounting defects are recorded against src-tauri/src/commands/fleet/run.rs."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "The spawn-with-task modal collects free prose from a human at the keyboard; the technique's decision rules bind a dispatching agent composing a brief for a worker it cannot see, which in this repo is approval_exec_fleet.rs, outside this context."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "The view reads snapshots and events; the mirror and its reconciliation live entirely in src-tauri/src/commands/fleet/persist.rs."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "FleetStateSparkline surfaces a session's state history, but the recovery budget and the completion-claim check are registry-side obligations recorded against commands-fleet; nothing in this view can set or enforce either."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "Broadcast sends one task to many sessions of one runtime; no seat answers the same question as another."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane; sessions are local children."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No container/volume/worktree substrate is reconciled from this surface."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No failed-run classification lane in this view."
+        }
+      ]
+    },
+    {
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_design/DesignTab.tsx:5 drives ONE design conversation for one persona at a time; the subject's precondition - many concurrent sessions whose existence, state, capacity and collective product must be tracked - never holds, so this is single-session lifecycle, the sibling subject the golden path explicitly draws the line against.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_design/DesignTab.tsx:18 keeps a conversation LIST for resume, but there is no concurrent roster and no capacity or ownership question to answer; the closed-vocabulary discipline the technique also carries IS honoured here (PhaseIndicator.tsx:11-21 maps every DesignPhase exhaustively via `satisfies Record<DesignPhase, StageKey>`), which is why the matcher resonated."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "not-applicable",
+          "evidence": "One attached conversation reports its own phase to a mounted component; there is no population of unwatched sessions whose silence must be converted into information."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "Analysis is started for the selected persona only (handleStartAnalysis, DesignTab.tsx:17); there is no fan-out, no cap and no roster."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "One result is previewed and applied (handleApply, DesignTab.tsx:17); there is no roster whose members must each reach a terminal account."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "No registry exists to mirror; conversation persistence is per-persona draft state, not fleet state surviving an orchestrator restart."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "handleResumeConversation reopens a stored transcript in a fresh analysis; no process is parked under a preserved identity."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "The instruction is typed by the human in the tab, not composed by a dispatcher for a worker it cannot see."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "No panel is convened."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No substrate inventory."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No multi-agent run failures to classify."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "No dispatched worker whose trajectory is supervised; the human watches the phase indicator directly."
+        }
+      ],
+      "registryProposal": "Coverage question, technique-shaped resonance: the matcher paired this context on the vocabulary 'session / phase / awaiting-input / resume', all of which appear, while the subject's stated precondition (a fleet) fails outright. The context is a staged single-conversation design wizard, better governed by wizard-flows plus the single-session lifecycle sibling; routing by precondition rather than vocabulary would have skipped it."
+    },
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:25 and its siblings are inline chat cards Athena emits into a cockpit; none of them creates, tracks, dispatches or harvests a session, so no technique in this subject has an implementation site.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "The widgets render a config blob passed as CockpitWidgetProps; they hold no entity whose lifecycle state must be single-sourced."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "DecisionsPanelWidget.tsx:28 lists unified-inbox items - a standing decision surface, which is what the golden path's operator-medium section prescribes, but not a roster accounting over a dispatch."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "not-applicable",
+          "evidence": "No session emits signals to these cards and no sweeper runs from them."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "BrowserTestReportWidget.tsx:5 fires one report request per click; there is no capacity, assignment or accounting decision."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "No registry to mirror."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "No parked sessions."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "No worker is dispatched from these cards."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "ModelTierChoiceWidget presents a tier recommendation for one persona's own runs; it convenes nothing."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "No worker trajectory is observed."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No substrate."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No run failures classified here."
+        }
+      ],
+      "registryProposal": "Coverage question: these widgets are a decision/observability surface, not fleet machinery. ObservabilityPlanWidget.tsx:20-25 encodes a real standard ('failures go to a queue a human can review, not a silent log; at least one success metric tracked') and DecisionsPanelWidget is a review-queue projection - so hitl-approval (review-queues) and an observability-plan subject govern this context, not fleet-orchestration."
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_releases/HomeReleases.tsx:1 and src/features/home/sub_learning/HomeLearning.tsx:1 are a what's-new roadmap view and a guided-tour catalogue; there is no session, roster, dispatch or harvest anywhere in the context.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "The only enumerated states here are a fetch's freshness grades (useLiveRoadmap.ts:5-15: loading/fresh/cached/stale/unavailable) - cache provenance, not session lifecycle."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "not-applicable",
+          "evidence": "No session reports anything; the roadmap fetches once on mount."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "not-applicable",
+          "evidence": "The disk cache backs content delivery, not a registry surviving an orchestrator restart."
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "Nothing is dispatched."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "No roster to account."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "No processes to park."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "not-applicable",
+          "evidence": "No worker briefs."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "No panel."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "No workers."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "No executor plane."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "No substrate."
+        },
+        {
+          "technique": "coordination-failure-triage",
+          "verdict": "not-applicable",
+          "evidence": "No runs to triage."
+        }
+      ],
+      "registryProposal": "Coverage question, likely a corpus hole: useLiveRoadmap.ts:5-15 draws exactly the distinction the corpus values - `cached` (healthy reuse) vs `stale` (a rescue because the network failed) vs `unavailable` (no cache and no network), so a degraded read is never spelled like a healthy one, and roadmapItems.ts:6-8 keeps a schema-valid-but-empty live payload from blanking the view. That is a content-delivery-degradation subject worth a forge lead; fleet-orchestration governs none of it."
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/harness/types.ts:3 declares an autonomous Plan -> Execute -> Verify loop over a codebase; its 'scenario' is a set of quality goals with gate commands (scenario-parser.ts:23-56), not an input with an expected property, and nothing here scores a model's output, runs a cell N times, or pins a judge.",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/harness/scenario-parser.ts:23 - a ScenarioGoal is a title, a description and prose successCriteria for the repository; it is a specification, not a versioned fixture with an input and a declared expected property, so scenario identity and cache-key scoping have no subject."
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "not-applicable",
+          "evidence": "No model scores another model's output anywhere in these paths; verification is shell commands (verifier.ts:13-34)."
+        },
+        {
+          "technique": "metric-role-contract",
+          "verdict": "not-applicable",
+          "evidence": "types.ts:21 carries a 1-5 `quality` per feature, but nothing is optimized against thresholds - the loop's verdict is a gate report, not a metric set."
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "not-applicable",
+          "evidence": "Everything is deterministic by construction; there is no judged property, so the layering decision never arises."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "not-applicable",
+          "evidence": "There are no candidates to compare - one repository is improved in place."
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "not-applicable",
+          "evidence": "No matrix of models x variants x scenarios x trials exists to budget."
+        },
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "not-applicable",
+          "evidence": "There is no candidate that can be deprived of the material under test; the gates read the repository directly."
+        },
+        {
+          "technique": "overshoot-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "The loop adds work rather than bounding a reduction search; the suite is not used as a bound to push against."
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "not-applicable",
+          "evidence": "A red gate is a shell exit code attributed to the area under work; there is no label/dataset/prompt/model ownership question."
+        },
+        {
+          "technique": "certification-levels",
+          "verdict": "not-applicable",
+          "evidence": "No theoretical level gates an empirical one; there is one level, running commands."
+        },
+        {
+          "technique": "discriminating-task-selection",
+          "verdict": "not-applicable",
+          "evidence": "No population of candidates is ranked."
+        }
+      ],
+      "registryProposal": "Corrected pairing, and it matters: src/lib/harness is governed by quality-gates, which the matcher never proposed (it paired on the word 'harness'). Judged against quality-gates the context carries a severe deviation on severity-by-construction and gate-liveness: every custom audit gate's command ends in `| wc -l` (verifier.ts:41-53, 57-70), so the pipeline's exit status is wc's and is always 0; runGate returns passed:true whenever execSync does not throw (verifier.ts:104-110), and the '0 means pass' branch that would interpret the count lives in the catch block (verifier.ts:116-125), which those gates can never reach. The result is a gate that reports 37 violations as a pass. Both audits are also `required:false` while verify() counts only required failures (verifier.ts:143-150), so the severity label is neutralized twice over. Recommend adding the quality-gates pair to this context in the map."
+    },
+    {
+      "context": "908be532-ef83-412b-8da3-caff9ff4d8ad",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/bindings/Judge.ts:10 - the judge read-model carries dims, personas and notes but no model, version, rubric or parameters, and JudgePanel.tsx:64 renders scores without them, so RunHistoryView's cross-run trend cannot distinguish a system change from a judge upgrade.",
+      "techniques": [
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_certification/components/JudgePanel.tsx:64 - the panel shows meanJudge / minPersonaOutput / portfolioBalance and per-persona dimension grades with no judge identity anywhere in the type (src/lib/bindings/Judge.ts:10); no anchor-set drift is surfaced, and no own-family disclosure accompanies scores produced by a model of the same family as the candidates. RunHistoryView ranks runs by verdict and score across time (RunHistoryView.tsx:10-15), which is exactly the artifact an unpinned judge turns into fiction."
+        },
+        {
+          "technique": "certification-levels",
+          "verdict": "conformant",
+          "evidence": "src/lib/bindings/Judge.ts:6-7 - judge is null for deterministic-only scorecards, and VerdictBadge.tsx:24-51 marks those verdicts `provisional` with a trailing asterisk and a distinct title, so a candidate certified by the cheap level is never presented as having passed the expensive one; the four-level ladder itself is a declared closed vocabulary (VerdictBadge.tsx:17-22)."
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_certification/components/GateBreakdown.tsx:44 - deterministic build/lint/test steps render as the outer gate with a three-state read (pass / fail / '-' for absent, lines 13-19), and the judged dimensions sit inside it in JudgePanel; a missing gate step is never painted as a pass."
+        },
+        {
+          "technique": "metric-role-contract",
+          "verdict": "unknown",
+          "evidence": "DimensionBars.tsx:5-9 applies one uniform 80/60 band to all five deterministic dimensions including grounding, and the surface shows them as peers under a composite verdict - but whether the bundle producer declares one optimized metric and N thresholds is decided in the eval_runs backend, outside these paths."
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "Read-only viewer of bundles produced elsewhere; the run's seed is surfaced (RunHistoryView.tsx:68-73, RunDetailView.tsx:64) but scenario identity, sourcing and cache keys are all decided in the docs/test/runs producer."
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "not-applicable",
+          "evidence": "The technique prescribes a manual review over a sample of both tails, producing classes; this context neither performs nor records attribution, and there is no field for an owner class on a red case."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "not-applicable",
+          "evidence": "The viewer shows absolute per-run scorecards; no pairwise or matrix comparison is constructed here."
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "not-applicable",
+          "evidence": "Cadence, caps, caches and mock modes are producer-side; the viewer only reads finished bundles from disk."
+        },
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "not-applicable",
+          "evidence": "No deprived-candidate control can be run from a read-only surface."
+        },
+        {
+          "technique": "overshoot-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "The harness is used as a certification gate, not as a bound on a reduction search."
+        },
+        {
+          "technique": "discriminating-task-selection",
+          "verdict": "not-applicable",
+          "evidence": "The surface reports per-team certification status, not a selection search ranking a population."
+        }
+      ],
+      "registryProposal": "Upward lesson for policy-projection (quality-gates) with a real anchor: DimensionBars.tsx:14-15 clamps a bar's visual width to 100% while printing the true number, with the reason written next to it ('Bars can exceed 100... clamp the visual width but show the true number'). That is the display-cap-is-not-a-data-cap rule realized as a two-line habit rather than as a postmortem, and it belongs in the application layer as a positive citation."
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/eval.rs:607 pins the judge to DEFAULT_BALANCED, which is an alias for SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44), so the pin moves whenever the alias is bumped and no run records which judge produced it; and eval.rs:380 folds three metrics into one weighted composite scored from a single run.",
+      "techniques": [
+        {
+          "technique": "judge-stability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:605-607 - the intent is right and documented ('Pinned deliberately so scoring runs on a consistent judge rather than the undeclared account default'), but the pin resolves through DEFAULT_BALANCED -> SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44): bumping the alias silently re-judges every future run against a different instrument, and the run artifact records the model only in the spend ledger (eval.rs:654), not against the score. No anchor set is re-scored for drift, and the judge is the same family as the candidate with no disclosure."
+        },
+        {
+          "technique": "metric-role-contract",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:380 - tool_accuracy, output_quality and protocol_compliance are combined by fixed weights into one composite with `passed: Some(composite_score >= 50)` (eval.rs:400), so a high score on one dimension buys a failing score on another and no dimension is declared the constraint. One half IS right, and is the important half: confusion detection is a hard threshold that overrides the composite to zero rather than being weighted into it (eval.rs:366-379)."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:400 - a verdict is rendered from a single run with no N, no declared aggregation and no variance; the `confidence` field beside it (eval.rs:116,129,161) is a hardcoded per-branch heuristic, not a measurement over repeated trials, so a score that travels carries no aggregation rule and flakiness is invisible rather than reported."
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:1-5 is a full deterministic band - regex, contains, not_contains, json_path, json_schema and length rules with per-assertion persisted results - and src-tauri/engine/src/verification_command.rs:1-9 adds the exit-code primitive precisely because the previous quality_gate 'only pattern-matches output text; it cannot run a deterministic check'; the judge is reserved for what is left, behind a structured JSON verdict channel (eval.rs:595-601)."
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/queue.rs:8-10 caps depth per persona and global concurrency; rate_limiter.rs:24 bounds per-key event rates; both caches declare lifetimes and eviction (prepared_run_cache.rs:10-11, session_pool.rs:20 with explicit invalidation on config change or failure); and every judge call lands in the dev_llm_spend ledger with its model and trigger (eval.rs:645-658), so the budget is an observable design input rather than an afterthought."
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/eval.rs:428-436 - the per-metric rationale fields are `#[serde(default)]` specifically because their absence once failed deserialization and 'silently degraded EVERY LLM eval to the keyword-match heuristic'; the fix keeps an instrument failure from masquerading as a low score, which is the third-state discipline this technique pushes down to the case."
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "prepared_run_cache.rs:30-64 keys on the persona's own prompt, tools and input - correctly, because it caches the candidate's prepared prompt rather than a generated scenario; there is no generated-scenario cache in these paths whose key scope could exclude candidate material."
+        },
+        {
+          "technique": "certification-levels",
+          "verdict": "not-applicable",
+          "evidence": "This lane runs the live level only; the theoretical/empirical promotion ladder lives in the eval_runs certification bundles, surfaced by the overview-certification context."
+        },
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "not-applicable",
+          "evidence": "No deprived-candidate control exists; the strategies score a persona against its own expected behaviour with nothing withheld."
+        },
+        {
+          "technique": "overshoot-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "The suite is used as a scoring gate, never as a bound an agent pushes against to find a minimum."
+        },
+        {
+          "technique": "discriminating-task-selection",
+          "verdict": "not-applicable",
+          "evidence": "One persona is scored per run; no population is ranked, so scenario selection has nothing to discriminate."
+        }
+      ],
+      "registryProposal": "Two notes. (1) The brief's path src-tauri/engine/src/test_runner.rs no longer exists - the map row is stale for this context. (2) judge-stability says 'the judge is pinned (model, version, parameters, rubric, exemplars)'; this repo pins deliberately and still fails, because the pin points at a semantic alias (DEFAULT_BALANCED -> SONNET_CURRENT) that a routine model-roster bump moves. Worth one explicit line: a pin must be to a concrete dated identifier AND recorded onto the run artifact, because a constant named for a tier is a moving target that reads as pinned in review."
+    },
+    {
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "Five independent sites default an unrecognized severity to the mildest bucket (ReviewListItem.tsx:11, ReviewDetailPanel.tsx:116, reviewFocusHelpers.tsx:107 and :143, ReviewFocusFlow.tsx:46) with no marker, and this repo auto-resolves reviews unattended overnight - the exact composition fail-loud-classification-default warns about.",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ReviewListItem.tsx:11 - `SEVERITY_LABELS[severity] ?? 'Info'`, repeated at ReviewDetailPanel.tsx:116, reviewFocusHelpers.tsx:107, reviewFocusHelpers.tsx:143 and ReviewFocusFlow.tsx:46, and again in the shared severityBucket (src/features/fleet/monitor/monitorModel.ts:49-53). An item whose severity payload cannot be read takes the quietest bucket, carries no marker saying why, and - because Night Shift resolves approvals unattended (documented at src/lib/decisions/rowWrites.ts:22-25) - a genuinely critical event with an unreadable payload can be waved through with nobody having seen it."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:60-87 - whether a verdict was made by a human or by machine policy is recovered by regex over free-text reviewer_notes, with the comment stating outright 'there is no structured auto_resolved column'. The decider is therefore not a field: a reworded backend note silently reclassifies an auto-approval as a human decision, and the record cannot answer who decided."
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:7 - the queue's status vocabulary is pending/approved/rejected/resolved with no deadline, overdue state or terminal action anywhere, and the filter bar offers status, source and persona but never age (ReviewFilterTrailing.tsx:19-28); a pending decision is immortal, so nothing gets louder as it waits and no severity has a declared clock."
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "conformant",
+          "evidence": "src/lib/decisions/rowWrites.ts:1-30 - one write door per decidable row type, every door rejects on a failed write, and every door carries the status the caller saw so the backend turns it into a compare-and-swap; a verdict written against a row somebody else already decided loses loudly (isDecisionConflict) rather than overwriting, which is transition authority separated from work authority done in code."
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_manual-review/components/BulkActionBar.tsx:30 - homogeneous items are one decision with an explicit confirm step, and the queue stays O(viewport) at any volume through server-side status/persona filters, keyset paging and a counts layer that badges without loading rows (useManualReviewQueue.ts:22-33)."
+        },
+        {
+          "technique": "unattended-mode",
+          "verdict": "unknown",
+          "evidence": "The surface does render an auto-resolution badge with the machine's reasoning (AutoResolvedBadge.tsx via reviewHelpers.ts:78-85), but whether the grant is scoped, expiring and audited is decided in engine/dispatch.rs and engine/auto_triage.rs, outside these paths."
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "unknown",
+          "evidence": "Approving a review that carries assignment_id/step_id resumes a held team step, but the continuation runs backend-side; I did not verify that approve resumes without re-generation or that reject leaves no zombie."
+        },
+        {
+          "technique": "consent-gates",
+          "verdict": "not-applicable",
+          "evidence": "This is the review flow - the machine has already produced something and a human rules on it. The consent flow (first use, impact disclosure, autonomy dial) lives in the vault autoCred context."
+        },
+        {
+          "technique": "human-performed-steps",
+          "verdict": "not-applicable",
+          "evidence": "No step here is one the machine must not perform; the human decides and the machine acts."
+        },
+        {
+          "technique": "cosmetic-vs-enforced-threshold-invariant",
+          "verdict": "not-applicable",
+          "evidence": "The invariant holds between two ladders - an urgency ladder that only paints and an enforcing ladder that acts. This queue has neither: no elapsed-time styling and no timed terminal action, so there is no pair to order."
+        },
+        {
+          "technique": "fixed-policy-amendable-plan",
+          "verdict": "not-applicable",
+          "evidence": "The queue rules on completed items; it never carries an executor's scope record or a route it may amend mid-run."
+        }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "The whole gate lives in component state: AutoCredPanel.tsx:70-83 kills the browser session on unmount and handleCancel resets it, so a guided runbook the operator navigates away from loses its position, the values already supplied, and any record that consent was ever given. One root cause, three unmet obligations.",
+      "techniques": [
+        {
+          "technique": "consent-gates",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:60 - informed consent with a numbered what-will-happen disclosure specific to the chosen mode, a security notice, the connector's own docs, and explicit start/cancel, all before any browser touches the user's account; and the human then decides on the real thing, not a summary - AutoCredReview.tsx:5 renders the actual extracted values in editable capture rows with a partial-extraction warning and a healthcheck before save. Consent is re-asked every time rather than remembered, which is the safe direction of the first-use rule."
+        },
+        {
+          "technique": "human-performed-steps",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:70 - the guided mode IS the runbook the technique asks for (a sequenced five-step flow that holds state, prompts for exactly what only the person can supply, and verifies via healthcheck: AutoCredConsent.tsx:63-70), but it does not resume where it stopped - unmount cancels the browser session and handleCancel calls session.reset() - and it hands back no record of what ran and what was verified: the run log is ephemeral component state rendered by AutoCredLogEntries.tsx, copyable at best."
+        },
+        {
+          "technique": "gate-state-machines",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:53 - the gate's state is `session.phase` inside a React hook, so the pending question exists only in a running component's memory; a remount re-opens the gate at 'consent' (the file documents a prior bug where a re-render bounced the phase back, lines 91-97) and a crash or navigation discards it silently rather than leaving durable pending state."
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:117 - onConsent is `session.startBrowser`, a local phase advance; authorizing a browser to drive the user's live account and extract credential material leaves no durable who/what/when/on-which-version/having-seen-what, so the authorization cannot be audited or bounded afterwards."
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:77-83 - the reject/abandon path is explicit cleanup, not a zombie: the effect cancels a live browser session through a ref that always targets the current session rather than a stale closure, and handleCancel resets before handing control back."
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "not-applicable",
+          "evidence": "The flow is synchronous and single-item with the operator present; there is no queue of pending judgments to batch or triage."
+        },
+        {
+          "technique": "unattended-mode",
+          "verdict": "not-applicable",
+          "evidence": "The flow cannot run unattended by construction - the guided mode exists precisely because a person must perform the login step."
+        },
+        {
+          "technique": "severity-sla-ladder",
+          "verdict": "not-applicable",
+          "evidence": "Nothing here is classified by severity or waits on a deadline; the human is at the keyboard for the duration."
+        },
+        {
+          "technique": "cosmetic-vs-enforced-threshold-invariant",
+          "verdict": "not-applicable",
+          "evidence": "Neither an urgency ladder nor an enforcing one exists in this flow."
+        },
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "not-applicable",
+          "evidence": "No payload is classified into severity buckets here; a failed extraction is surfaced as a typed error display (AutoCredErrorDisplay) rather than bucketed."
+        },
+        {
+          "technique": "fixed-policy-amendable-plan",
+          "verdict": "not-applicable",
+          "evidence": "There is no executor operating under a scope record; the machine follows one fixed adapter sequence chosen at start (playwright or guided)."
+        }
+      ]
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:1-6 has a scratch Claude CLI compose the test plan, and oneshot.rs:215 re-runs it after every fix pass, so the oracle is re-authored by a model inside the repair loop it is meant to judge.",
+      "techniques": [
+        {
+          "technique": "oracle-frozen-during-repair",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:1-6 - the test plan is composed fresh by a spawned CLI on each attempt, and oneshot.rs:215 loops fix -> re-test up to MAX_TEST_RETRIES, so 'make it pass' has a second solution the green result cannot distinguish: a weaker plan. There is no red-first ordering (the check is authored in the same cycle as the fix). Two code-authored fences bound how weak it can get - the platform-builtin allow-list is CODE a model cannot extend (tool_tests.rs:66-80) and an unexecuted entry classifies as unverified rather than pass - but the oracle itself is not read-only to the fixer."
+        },
+        {
+          "technique": "blocking-by-input-determinism",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:1-6 - the blocking verdict is produced by live curl calls against third-party APIs, so the same draft can be refused tomorrow by an upstream outage nobody here caused; worse, a transient 5xx lands as tools_failed, which routes to Failed rather than Held (oneshot.rs:373-379) and spends the fix-pass budget rewriting a correct agent_ir. The invocation is not split into a deterministic half that blocks and an externally-fed half that reports."
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:389-396 - the promote predicate used to be `report.get(\"tools_failed\").unwrap_or(0) == 0`, which the file documents as failing OPEN on every malformed shape; it now fails CLOSED, and the exit path from finding to effect is traced in the doc comment rather than asserted by a label."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:52-58 - `unverified` is a third outcome distinct from pass and fail ('an LLM boolean is not a call', 'a vault row is not a test'), and it HOLDS promotion (oneshot.rs:366-379) without being reported as a failure; a hole in the gate's instrument therefore never reads as compliance."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:398-407 - the instrument is asserted before the result (shape, then integrity, then verdict), including a cross-check that the declared counts do not undercount what the results array actually contains, and roughly twenty unit tests around the predicate (oneshot.rs:981-1334) feed it known-bad reports and assert it holds."
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:362-368 - one Held reason string is the single enumeration every surface renders: error_message, the OS notification body and the companion-chat episode, with the full detail kept in last_test_report, so no projection can understate what blocked."
+        },
+        {
+          "technique": "false-positive-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:56-58 - the unverified class exists so the fix-pass model does not 'burn retries trying to correct' something that never failed; the trust budget being protected belongs to an automated repairer rather than a human, and the reasoning is identical."
+        },
+        {
+          "technique": "gate-laddering",
+          "verdict": "unknown",
+          "evidence": "The cost tiers are right in shape - cheap capability gates during the conversation (gates.rs:13-20), the expensive real-API run at promote - but I did not verify the binding-rung invariant, that every gated field checked during the conversation is re-validated at promote."
+        },
+        {
+          "technique": "ratchet-design",
+          "verdict": "not-applicable",
+          "evidence": "No committed baseline exists for any metric here; the gate is a hard pass/hold, with nothing that may only fall."
+        },
+        {
+          "technique": "hook-hygiene",
+          "verdict": "not-applicable",
+          "evidence": "There is no version-control hook in this context; the gate runs inside a build session, not in an author's working tree."
+        },
+        {
+          "technique": "chokepoint-tag-registry",
+          "verdict": "not-applicable",
+          "evidence": "No routing convention is being proven here - there is no wrapper whose call sites need a bijection against a registry."
+        }
+      ],
+      "registryProposal": "blocking-by-input-determinism reads as if the gated subject is always a code tree, and prescribes 'split the invocation so the deterministic half blocks'. This context is the case the rule does not cover: the gated act is ARMING a live integration against real credentials and a public webhook, so a verdict that never touched the third party is exactly the false green the gate exists to prevent (tool_tests.rs:37-42 settles this explicitly). The repo's answer is better than the technique's - keep the externally-fed gate blocking, but give it a third terminal outcome (Held: refuse to promote, spend no repair budget) distinct from Failed. Recommend the technique name that outcome for externally-fed gates whose subject is an irreversible activation, and pair it with the corollary this repo has NOT applied: an upstream transport failure must classify as Held, not Failed."
+    },
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "self-healing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:64 ranks an unrecognized severity at 0 - below `low` - and groupIncidents.ts:33 uses that rank to pick a group's worst severity, so unclassifiable incidents sort quieter than everything else instead of louder.",
+      "techniques": [
+        {
+          "technique": "incident-promotion",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/groupIncidents.ts:5 - the inbox groups by agent, severity, source or nothing; there is no signature dimension, so recurring failures are never deduped into one louder row carrying their healing history, and nothing counts recurrence. Compounding it, incidentTaxonomy.ts:64 returns rank 0 for an unknown severity while severityBadgeClass paints it `medium` (line 57), so worstSeverityOf (groupIncidents.ts:33-38) can rank a group of unclassified incidents below a group of `low` - the failures the healer could not classify get quieter over time, the inverse of what the technique requires."
+        },
+        {
+          "technique": "effectiveness-accounting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/components/IncidentsInboxKpiHeader.tsx:28-36 - the only outcome vocabulary on this surface is the human-triage triple open/acknowledged/resolved; there is no confirmed-fixed vs reverted vs unknown split and no per-strategy-per-category rate, so a heal that was rolled back and a heal that worked both land as `resolved` and an operator cannot answer 'did it help' from the surface the subject says must answer it."
+        },
+        {
+          "technique": "failure-diagnosis",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts:13-22 - the surface consumes the source and severity the backend row already carries across nine authorities and never re-derives a category from message text; an unrecognized source echoes its raw token (line 52) rather than being folded into an invented class, and IncidentDetailBreakdown.tsx:35 renders an empty detail as an explicit 'no detail' instead of a blank."
+        },
+        {
+          "technique": "strategy-selection",
+          "verdict": "not-applicable",
+          "evidence": "The precedence tree and its mutual exclusions live in the healing engine; this read-only inbox selects no strategy and can express no 'do nothing, recorded with its reason'."
+        },
+        {
+          "technique": "blast-radius-bounds",
+          "verdict": "not-applicable",
+          "evidence": "The allowlist of what a healer may mutate, and the consent gates on its risky tiers, are enforced backend-side; nothing in this context authorizes or bounds a mutation."
+        },
+        {
+          "technique": "auto-rollback",
+          "verdict": "not-applicable",
+          "evidence": "Watching aggregate error rates in a healing change's wake and undoing it is machinery designed at apply time; this surface neither observes the attribution window nor triggers a revert."
+        }
+      ]
+    },
+    {
+      "context": "5dc3cb6a-6612-4909-995d-86e92394ec94",
+      "subject": "import-normalization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "There is no loss ledger: N8nParserResults.tsx:57-59 counts only the tools, triggers and connectors that survived, never reconciling them against the element count the detector found, and the IR (src/lib/types/designTypes.ts:70-94) carries neither a conversion grade nor provenance.",
+      "techniques": [
+        {
+          "technique": "lossy-conversion-disclosure",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/steps/N8nParserResults.tsx:57 - toolCount / triggerCount / connectorCount are counts of what was produced, shown without their predicate; nothing enumerates the foreign node types that did not map, no entity carries a conversion grade (mapped cleanly / approximated / inert / dropped), and the only 'unmapped' surface in the whole context is a connector warning in the wizard footer (N8nWizardFooter.tsx:94). The detector already knows the source element count (workflowDetector.ts:22), so 'imported 40 of 50' is computable and is not computed - the four hours of rebuilding stay hidden until runtime."
+        },
+        {
+          "technique": "intermediate-representation",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/designTypes.ts:70-94 - AgentIR is a genuine narrow waist that all four platform adapters lower into, but it carries no provenance (source format, source version, foreign identifier) and no loss ledger; `platform` travels beside it as a view prop (N8nParserResults.tsx:22), so a committed persona keeps no record of which foreign format and version produced it and re-import collision detection has nothing to key on."
+        },
+        {
+          "technique": "format-detection",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/parsers/workflowDetector.ts:10-24 - DetectionResult carries platform, confidence and format but no version stamp, and the walk always returns exactly one platform, so the technique's ambiguity outcome (more than one candidate, resolved with the user) cannot be expressed and the operator-posture counter 'detection outcomes by format and version' cannot exist. The rest is strong: structural fingerprints not extensions, ordered discriminators, an honest `unknown` platform, format-constrained candidates (FORMAT_PLATFORMS, line 39), and one walk in which the count always comes from the collection that named the platform - the file documents the two-table divergence bug that rule was written to kill (lines 50-63)."
+        },
+        {
+          "technique": "review-before-commit",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_n8n/steps/N8nParserResultsSections.tsx:24 - per-entity opt-in via SelectionCheckbox on every tool, trigger and connector rather than all-or-nothing, ahead of the commit step; and N8nParserResults.tsx:23-26 carries `platformNeedsConfirmation` - 'True when platform was guessed and needs user confirmation' - which is exactly the one bit of state that separates disciplined speculative adaptation from a silent fall-through into the most permissive parser."
+        },
+        {
+          "technique": "import-validation",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_n8n/steps/upload/n8nUploadTypes.ts:2-8 - the size cap is imported from a GENERATED mirror of the Rust authority (n8nLimits.generated, 'Single source of truth: src-tauri/src/commands/design/n8n_limits.rs') and bounds file, paste and URL modes alike before deserialization; discovered credential material is routed out as `connectorsNeedingSetup` requirements the user fulfils rather than persisted with the entities (confirm/n8nConfirmTypes.ts:10), and per-entity failures come back itemized as EntityError rather than as a partial silent commit. Depth caps were not verified."
+        },
+        {
+          "technique": "adapter-capability-tables",
+          "verdict": "unknown",
+          "evidence": "The detector's own tables are declarative data (workflowDetector.ts:27-41), but the node-type and parameter maps that do the actual adapting live in the Rust parser, outside the listed paths; the standard already asserts a dated finding about this repo ('left its mapping tables as two hand-maintained twins') which I did not re-verify and will not restate as a verdict."
+        }
+      ]
+    }
+  ]
+}

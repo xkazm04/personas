@@ -1,0 +1,349 @@
+{
+  "worker": "p-10",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/companionPluginSlice.ts:294 defaults speech capture to the browser engine, which on WebView2 ships raw microphone audio to the OS vendor's cloud — the residency default is inverted, and the preview channel in sub_voice/voiceEngineShared.tsx:314 can start speaking after the user pressed stop.",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "unknown",
+          "evidence": "sub_voice/SttPanel.tsx:48 configures engines and models only; permission/arming states, the level meter and endpointing live in capture hooks outside this context's paths (companionStore.voiceCaptureActive is only mirrored in at SttPanel.tsx:56), so the pipeline's honesty obligations cannot be judged from here."
+        },
+        {
+          "technique": "tts-pipeline",
+          "verdict": "deviation",
+          "evidence": "sub_voice/voiceEngineShared.tsx:314-341 — useVoicePreview holds per-row state with no utterance identity claimed synchronously at request time: pressing stop while state is 'synth' clears a null audio ref and returns, but the in-flight synthesize() promise still resolves and calls play() at line 330, so audio starts after stop; and each KokoroVoiceRow owns its own hook instance (KokoroVoicePanel.tsx:216), so two rows can be audible at once. voicePlayback.ts:47 additionally hands callers the raw HTMLAudioElement, delegating the identity-and-gap discipline the technique says must stay inside the channel."
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "deviation",
+          "evidence": "KokoroVoicePanel.tsx:75 derives readiness as engineInstalled && modelInstalled over the two booleans of KokoroStatus (src/api/companion.ts:537-548): absent and broken collapse into one 'not installed' state, so an installed-but-failing engine reads as ready and unlocks the enable toggle, stripping the user of the fact that decides whether to download or repair. The retired-engine door is otherwise exemplary — one read-time normalizer at src/stores/slices/system/companionPluginSlice.ts:85 that never eagerly rewrites the stored choice — but the engine roster is hand-listed a second time in the surface at sub_voice/VoicePanel.tsx:80-93."
+        },
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "No transcript-to-typed-command crossing exists in these paths — dictated text lands in the composer as free text; the technique's precondition (a listening channel with a closed contextual grammar) does not hold for the chat-bubble surface."
+        },
+        {
+          "technique": "voice-ux-integration",
+          "verdict": "deviation",
+          "evidence": "sub_voice/voiceEngineShared.tsx:322 requests synthesis directly through synthesize()/play() rather than through an arbiter, so at-most-one-audible is enforced nowhere and the companionVoiceEnabled toggle (VoicePanel.tsx:59) does not outrank a preview — a mute enforced at N call sites. The read-aloud affordance contract itself is met (PreviewButton at voiceEngineShared.tsx:354 is a toggle whose start control is its stop control, with idle/synth/playing visible), and playback volume is honored globally and live at voicePlayback.ts:56-60."
+        },
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/companionPluginSlice.ts:294 sets companionSttEngine: 'browser' as the shipped default, and sub_voice/SttPanel.tsx:43-45 states that on WebView2 that path sends the audio to the OS vendor's cloud STT — the capture direction's defensible default is on-device with cloud as an affirmative opt-in, so raw room audio leaves the machine unless the user finds the Voice tab and opts out. The disclosure banner (SttPanel.tsx:84-90) discloses but does not invert the default."
+        },
+        {
+          "technique": "duplex-agent-sessions",
+          "verdict": "not-applicable",
+          "evidence": "No vendor owns the middle here — the product runs its own capture and synthesis engines (SttPanel.tsx:48, KokoroVoicePanel.tsx:38); the technique's precondition (a hosted live session that listens, decides and speaks) does not hold."
+        },
+        {
+          "technique": "portable-provider-package",
+          "verdict": "not-applicable",
+          "evidence": "The technique's own 'when not to package' precondition holds: one app, adapters kept in the app, no second host and no host seam object anywhere in sub_voice/. Worth noting as an upward signal that the compare-by-ear surface the technique asks for does exist for capture (SttPanel.tsx:97-111, SttCompareModal)."
+        },
+        {
+          "technique": "speech-ready-text",
+          "verdict": "deviation",
+          "evidence": "voicePlayback.ts:24 sends caller text straight to companion_tts with no markup door and no chunker, while the same content is rendered as markdown in the transcript (Bubble.tsx:207 MarkdownRenderer) — an assistant reply read aloud carries headings, bullets, emphasis markers and link addresses into the engine verbatim, and long replies pay full synthesis latency before the first word. (The voice preview path is exempt by the technique's own rule: it speaks a fixed sentence authored for the ear, voiceEngineShared.tsx:323.)"
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "The technique's 'when not to apply' clause governs: the dictated transcript's destination is the companion's language model, which holds the whole thread, so a small normalizer in between would be a lossy edit by the less-informed party. The stage is correctly absent."
+        }
+      ]
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/build_session/ contains no audio capture, synthesis, engine adapter or transcript; every technique's precondition fails, and the match is lexical resonance on 'voice' as persona tone (fanout.rs:395) and 'synthesize' as gate-question generation (gates.rs:886).",
+      "techniques": [
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/build_session/runner.rs:623 drives a text CLI turn loop; no microphone, capture buffer or transcript exists in this context." },
+        { "technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "No utterance queue or playback resource anywhere in build_session/; the only 'synthesis' is gates.rs:886 synthesize_all_unopen_gates, which mints clarifying questions." },
+        { "technique": "engine-abstraction", "verdict": "not-applicable", "evidence": "There is no transcription or synthesis engine to sit behind an interface; build_session/reference.rs and templates.rs handle persona templates." },
+        { "technique": "spoken-intent-parsing", "verdict": "not-applicable", "evidence": "parser.rs:1 parses the model's JSON event lines, not speech; no transcript enters this context." },
+        { "technique": "voice-ux-integration", "verdict": "not-applicable", "evidence": "Backend module with no surface; events.rs:1 emits build-progress events to the UI, none of them audio affordances." },
+        { "technique": "on-device-vs-cloud", "verdict": "not-applicable", "evidence": "No engine placement decision exists — the residency question this technique owns is about raw audio, and no audio is captured here." },
+        { "technique": "duplex-agent-sessions", "verdict": "not-applicable", "evidence": "runner.rs:683 resumes a text session with --continue; there is no live duplex voice session with a vendor." },
+        { "technique": "portable-provider-package", "verdict": "not-applicable", "evidence": "No engine layer to package." },
+        { "technique": "speech-ready-text", "verdict": "not-applicable", "evidence": "session_prompt.rs:176 assembles text for a model to read, never for an engine to voice; the 'voice' at fanout.rs:395 is the persona's written tone." },
+        { "technique": "transcript-normalization", "verdict": "not-applicable", "evidence": "No speech transcript reaches this context." }
+      ],
+      "registryProposal": "Coverage question, not a standard defect: the matcher routed by vocabulary ('voice', 'synthesize') rather than by the golden path's precondition (a product that listens and speaks). This pair should be dropped from the map; build_session is governed by prompt-assembly, which is separately paired here."
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "The webhook/relay and engine-pipeline files carry no audio path; the match is lexical on template_v3.rs:839 (persona 'voice' block: style + output_format) and template_checksums.rs:24 (a template file named audio-briefing-host.json).",
+      "techniques": [
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/webhook.rs and smee_relay.rs carry HTTP payloads; no capture device, permission state or transcript exists in this context." },
+        { "technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "No synthesis request, utterance queue or playback resource in any listed file." },
+        { "technique": "engine-abstraction", "verdict": "not-applicable", "evidence": "cli_capabilities.rs:1 declares CLI capabilities, not voice-engine capabilities; there is no per-direction voice interface to abstract." },
+        { "technique": "spoken-intent-parsing", "verdict": "not-applicable", "evidence": "No transcript-to-command crossing; webhook bodies are structured payloads, not speech." },
+        { "technique": "voice-ux-integration", "verdict": "not-applicable", "evidence": "Backend ingestion modules with no user-facing affordance." },
+        { "technique": "on-device-vs-cloud", "verdict": "not-applicable", "evidence": "cloud_webhook_relay.rs makes a transport residency choice, not an audio residency choice; the technique's subject is where raw microphone audio runs." },
+        { "technique": "duplex-agent-sessions", "verdict": "not-applicable", "evidence": "No vendor-run conversation session in this context." },
+        { "technique": "portable-provider-package", "verdict": "not-applicable", "evidence": "No engine layer exists to travel as a package." },
+        { "technique": "speech-ready-text", "verdict": "not-applicable", "evidence": "template_v3.rs:838-855 prepends a persona's written 'Voice' block to identity text for a model to read; nothing is handed to a synthesis engine." },
+        { "technique": "transcript-normalization", "verdict": "not-applicable", "evidence": "No speech transcript exists in this context." }
+      ],
+      "registryProposal": "Coverage question plus a stale brief: the pairing is vocabulary resonance on the persona 'voice' block, and the brief lists src-tauri/engine/src/dream_replay.rs, which does not exist on disk — the map row's paths should be regenerated."
+    },
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/prompt/assemble.rs:855 returns a bare String with no budget and no seal — assemble.rs:810-812 states there is no prompt-level budget by design, and a caller appends the memory layer after the door closes (src-tauri/src/commands/execution/executions.rs:547), so memory rides outside the budget, the trust classifier and the fingerprint.",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:93 is a genuine single assembler with owned sections, but the stability gradient is broken in both directions: per-call sections render above the standing layers (render_correction_required at assemble.rs:159 and '## Triggering Event' at assemble.rs:165 precede '## Identity'/'## Instructions' at assemble.rs:214-231), so no byte-stable prefix survives; and the door does not seal — the returned String is appended to by prepared_run_cache::append_memories at src-tauri/src/commands/execution/executions.rs:547, after '## EXECUTE NOW'."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:18 reads chrono::Utc::now() inside the rendering pass, so assembly is not a pure function of declared inputs and no fingerprint over it can be stable; and variables.rs:122 renders an unresolved placeholder as literal {{key}} text the model reads as scaffolding — one of the two outcomes the technique names as dishonest, with the warn at variables.rs:128 reaching only the operator. Trust classification is otherwise correct (trusted magic vars vs sanitized input_data at variables.rs:21/85) and the announced truncation at runtime_safety.rs:180-185 is a model realization of naming what was dropped."
+        },
+        {
+          "technique": "house-vocabulary-layer",
+          "verdict": "deviation",
+          "evidence": "No owned vocabulary section with one authority exists; the project's terms are scattered across constant blobs the assembler pushes (templates.rs:13 MEMORY_SYSTEM_PREAMBLE, assemble.rs:613 'Personas Tool Semantics'), so a term's definition can be sharpened in one blob and not the other, and there is no single file the assembler renders."
+        },
+        {
+          "technique": "context-reachability",
+          "verdict": "deviation",
+          "evidence": "No feeder declares whether what it contributes is reachable or unreachable — every section between assemble.rs:379 and assemble.rs:698 is pushed unconditionally with no class attached — so nothing marks which material may be cut first, and the material the provider's tail truncation reaches first is the task itself (assemble.rs:813-829)."
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:810-812 states outright that there is no prompt-level byte budget, and assemble.rs:813-821 dumps the entire input_data JSON uncapped: no floors, no elastic allowances, no per-section ladder and no per-section token accounting, so the provider's silent tail truncation is the de-facto degradation policy. (The per-variable cap with its announced marker at runtime_safety.rs:98-185 is the one rung done well.)"
+        },
+        {
+          "technique": "history-compaction",
+          "verdict": "not-applicable",
+          "evidence": "The message list is owned by the Claude Code CLI, not by this assembler — cli_args.rs:101-112 pipes one prompt on stdin and cli_args.rs:288-298 resumes by session id — so the pairing invariant, the dangling-call repair and both compaction paths have no surface here."
+        },
+        {
+          "technique": "capability-documentation",
+          "verdict": "deviation",
+          "evidence": "The tool and capability layers are correctly derived (capabilities.rs:367 build_tool_documentation over the registered tools, capabilities.rs:108 render_active_capabilities filtered to enabled use cases), but the protocol-tool roster is hand-written prose at assemble.rs:403-424, restated a second time at templates.rs:272 (PROTOCOL_INTEGRATION_REQUIREMENTS) and a third time as a dead constant at templates.rs:130, whose own comment records that it 'was never wired into any prompt assembly'. Three copies of one vocabulary with no sync check against engine::dispatch is the drift the technique exists to prevent."
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation",
+          "evidence": "capabilities.rs:203-224 stamps a session-pool key from the enabled capability set, which is the right gate, but the digest is a join of id@title only — not the template version, not the persona's identity/instructions text, not the model family. A capability whose body was rewritten hashes identical, so a pooled warm session keeps running the prompt it was born with; this is the technique's 'digest identities, not summaries that collide' caution realized."
+        },
+        {
+          "technique": "cache-breakpoint-allocation",
+          "verdict": "not-applicable",
+          "evidence": "The prompt leaves as one stdin blob to the Claude CLI (cli_args.rs:101-103) and caching is delegated to it by environment (cli_args.rs:174-199 PROMPT_CACHE_POLICY and the DISABLE_PROMPT_CACHING removals); there are no caller-declared cut points to allocate, which is this technique's stated precondition."
+        },
+        {
+          "technique": "continuation-prompts",
+          "verdict": "deviation",
+          "evidence": "resume_prompt.rs:9 is a correct delta prompt for the preserved-session regime — it re-derives the volatile ground (credential hints, connector hints) rather than replaying — but nothing compares a stamped fingerprint before continuing: resume_prompt.rs:16 opens with 'Continue the previous execution.' and cli_args.rs:285 attaches --resume unconditionally, so a session opened before a capability or persona edit continues under rules that no longer exist in the source."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "assemble.rs:826-829 opens the task layer with 'You are {name}. Execute your task now.' — a competence re-assertion in the primacy position of every call, which the measured record prices at nothing. Done is present and machine-checkable (the required protocol lines, assemble.rs:837-841); Locate is absent (no pointer to where the task's material lives) and Check exists only in DELIBERATE mode (templates.rs:234), so the default AUTONOMOUS path ships no verification step."
+        }
+      ]
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:177-179 interpolates the per-call intent, language preamble and user reference context into the first line, ahead of ~500 lines of standing framework text, so no two builds share a byte-stable prefix and the opening also spends the primacy position on an expertise claim.",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "session_prompt.rs:32 is one assembler for the build family and the one-shot override is a section inside it (session_prompt.rs:691), which is correct — but the order is inverted at the head: the volatile intent/language/context values are interpolated at session_prompt.rs:177-179, above every standing layer, and the standing layers themselves are one monolithic format! literal rather than independently renderable sections."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "Missing inputs are handled honestly — the reference-context section is omitted entirely when absent (session_prompt.rs:49-69) and credentials/connectors substitute declared defaults (session_prompt.rs:71-85), with no literal placeholder or empty-string render anywhere. But the two list variables have no cap: session_prompt.rs:74 and :82 join every credential and every connector into the prompt, which the technique names as a budget leak wearing a loop."
+        },
+        {
+          "technique": "house-vocabulary-layer",
+          "verdict": "conformant",
+          "evidence": "session_prompt.rs:181-241 is a real house-vocabulary section — the concepts (behavior_core, capability, envelope) with the distinctions they draw, and the highest-value half, the deliberate exclusions: 'Mission is NOT a task description' (session_prompt.rs:203-211), 'Error-recovery flows are NOT capabilities' (:231), 'Built-in capabilities are not connectors' (rule 13, :426)."
+        },
+        {
+          "technique": "context-reachability",
+          "verdict": "deviation",
+          "evidence": "No feeder declares a class. The reference-template block (build_session/templates.rs:212 build_template_context) is precomputed reachable material injected into every build from an index cached for the whole process lifetime (templates.rs:24 LazyLock), with no freshness check against scripts/templates/ — precisely the stale-precomputed-digest case the technique warns steers the model away from checking."
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "Only one input is bounded — the user reference context at session_prompt.rs:48-57, and it names its drop with a '[reference context truncated]' marker, which is the rule done right. There is no global budget, no floor/elastic split and no ladder: the ~600-line standing rule block (session_prompt.rs:412-684) is billed on turn 0 of every build with no per-section accounting to argue from."
+        },
+        {
+          "technique": "history-compaction",
+          "verdict": "not-applicable",
+          "evidence": "The transcript lives in the Claude CLI session — runner.rs:683-690 appends --continue rather than re-sending a message list — so this system never holds the call/result pairs the technique's invariants govern."
+        },
+        {
+          "technique": "capability-documentation",
+          "verdict": "deviation",
+          "evidence": "session_prompt.rs:656-658 hardcodes the model-id tier vocabulary (claude-haiku-4-5-20251001 / claude-sonnet-4-6 / claude-opus-4-8) in prose while the same map lives in code at src-tauri/engine/src/prompt/capabilities.rs:9-16; the connector-category token list (rule 17, session_prompt.rs:464) is hand-maintained and hedged 'not limited to'; and the module's own doc-comment at session_prompt.rs:22-25 instructs authors to mirror rule changes by hand into gates.rs::intent_implies_*. A convention maintained by comment is the two-copies race the technique replaces with an asserted sync check."
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation",
+          "evidence": "No fingerprint over the standing prompt exists for this family — runner.rs:616 design_fingerprint digests the emerging agent_ir for stall detection, not the prompt — so no turn log carries a prompt version stamp and a behavior shift after a session_prompt.rs edit has no bisectable cause. (The staleness consequence is muted here because the turn loop lives inside one process; the missing version stamp is the real cost.)"
+        },
+        {
+          "technique": "cache-breakpoint-allocation",
+          "verdict": "not-applicable",
+          "evidence": "The build prompt is handed to the Claude CLI as one stdin blob (runner.rs:683 adds only --continue to the argv built by prompt::build_cli_args); the caller declares no cut points, which is this technique's precondition."
+        },
+        {
+          "technique": "continuation-prompts",
+          "verdict": "conformant",
+          "evidence": "runner.rs:633-660 picks the regime explicitly (turn 0 sends the full standing stack; turn 1+ sends a delta into a session preserved by --continue) and the delta is a distillation, not a replay: the user's answer plus a 'Progress: resolved [...]' claim derived from resolved_cells, with the live capability state re-derived rather than carried as a frozen snapshot."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "session_prompt.rs:177 opens with 'You are a senior AI agent architect' — the expertise claim in the primacy position that the controlled comparison prices at nothing. Done is stated as an enumeration of parts (the 11 fields per capability, session_prompt.rs:251-265), and session_prompt.rs:265 explicitly licenses satisfying it with an empty value — the enumerated done criterion the technique names as the failure that fires exactly when it should not. No Check step is named before agent_ir is emitted."
+        }
+      ]
+    },
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "This context is a management-API key CRUD surface with an HTTP request audit trail (ApiKeyAuditDrawer.tsx:2-5: method/path/status/origin/time); no LLM call event, token counter, cost field or ingest path exists in any listed file, so none of the subject's five field families has a record to live on.",
+      "techniques": [
+        { "technique": "dual-clock-event-time", "verdict": "not-applicable", "evidence": "ApiKeyAuditDrawer.tsx:131 renders a single server-written `at` on an audit row; there is no client-reported event time and no accounting window keying on anything, so the split has nothing to split." },
+        { "technique": "token-usage-quadruple", "verdict": "not-applicable", "evidence": "No token counter of any class appears in the eight files of this context (grep over components/ and libs/ finds no input/output/cached/reasoning field); there is no usage block to model." },
+        { "technique": "nullable-cost-never-zero", "verdict": "not-applicable", "evidence": "No cost or price field exists in this context; there is no aggregate over a nullable measure to disclose an unpriced count for." },
+        { "technique": "metadata-attribution-keys", "verdict": "not-applicable", "evidence": "The keys the technique governs ride on a call event's metadata map; this context has no such record — ApiKeysSettings.tsx manages key rows themselves rather than events attributed to them." },
+        { "technique": "ingest-skew-rejection", "verdict": "not-applicable", "evidence": "There is no ingest surface accepting client-reported timestamps here; libs/mcpServer.ts:8 only names the local management-API base URL." },
+        { "technique": "server-owned-fields", "verdict": "not-applicable", "evidence": "The technique's api_key_id stamp is a field on a call telemetry record; this context is the credential's own management UI and writes no telemetry record, so there is no stamp-and-strip door to review." }
+      ],
+      "registryProposal": "Coverage question: the matcher routed on the credential vocabulary ('api key') that server-owned-fields uses for its writing-credential stamp, not on the golden path's precondition (a receiving schema for LLM call events arriving over an untrusted channel). The right governing subject for this context is a credential/API-key management subject; this pair should be dropped rather than judged."
+    },
+    {
+      "context": "ade5a251-866a-4352-9a03-012d78fe9b74",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "vitest.config.ts:17 includes src/**/*.test.{ts,tsx} with no exclude, so the e2e suite's own files (src/test/e2e/cli-*.e2e.test.ts, declared at vitest.e2e.config.ts:15) are also discovered by the default unit run — the partition is not disjoint and `npm test` runs them at the unit tier's budget.",
+      "techniques": [
+        {
+          "technique": "suite-partitioning",
+          "verdict": "deviation",
+          "evidence": "The portfolio is real and legible — five vitest configs plus playwright, membership by location — but the default suite's discovery boundary is not explicit: vitest.config.ts:17 matches every src/**/*.test.ts, which includes the e2e lane's src/test/e2e/cli-*.e2e.test.ts (vitest.e2e.config.ts:15). Each file must be matched by exactly one configuration; here two configurations claim the same files with different environments and budgets. Separately, vitest.integration.config.ts:14 points at src/test/integration/rounds/, which does not exist on disk, so that lane certifies nothing while appearing to exist."
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "The precondition is a suite split across parallel workers whose assignment can be made duration-aware; the unit lane declares no sharding and no retained timing history (vitest.config.ts carries no pool/shard configuration), so there is no allocation for this technique to correct."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "These tests sit at the cheapest fixture rung the technique prescribes for unit tier — in-memory construction, no environment build: the scan() factory at src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:7, the shared __tests__/passportFactory.ts builder, and a per-test reset of the module singleton at __tests__/persistence.test.ts:17 (__resetLayoutStoreForTests). No shared mutable fixture and no per-test rebuild."
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "Every claim in this context is a pure-logic derivation (deriveScene.*, tidyLayout, hex geometry) that nothing cheaper than a unit test could witness more cheaply; the repo carries its live lane elsewhere (playwright.config.ts, `test:smoke`), so this context correctly has no business on that rung."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "Parallelism and environment are per-suite policy, not per-test discovery: vitest.config.ts:11 fixes jsdom for this lane while vitest.integration.config.ts:12/18 and vitest.cli.config.ts:9/13 declare node + forks for theirs; the lane inherits nothing from the developer's machine because the Tauri IPC surface is stubbed in the lane's own setup (src/test/setup.ts:5-13), and the one module singleton in this context is reset between tests (persistence.test.ts:17)."
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "The precondition is a class of failure firing before the first test runs; a jsdom vitest lane over TypeScript sources in this repo has no such loader/manifest/architecture failure mode, and the quirks this project does absorb live in its Rust runner (scripts/build/run-rust-tests.mjs), outside this context."
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "stage: team precondition fails for this repo, and the technique's own stated prerequisite is absent with it: there is no retained, stably-keyed cross-run result history for this suite to detect outcome transitions from, and no quarantine register. Worth recording that no retry is configured either (vitest.config.ts declares none), so the suite at least does not mask flakes."
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "No endurance, load or chaos lane governs this context; these files run in seconds at the commit tier and judge boolean assertions, not statistical criteria."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "not-applicable",
+          "evidence": "The technique's own 'when not to use it' clause governs the bulk of this context: these are pure-logic assertions over derivation functions that go red on ordinary mistakes during development, so a ceremonial control adds nothing. One assertion would earn one — sceneStore.test.ts:78 asserts a concurrency ceiling (peak <= 4) that passes vacuously if the mapper ran serially or not at all — and no test in the context records the mutation that proved it can fail."
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "This context ships no artifact outside a gated root — the mastermind feature lives entirely under src/, which the default suite's declared membership reaches; the technique's population question (a shipped artifact no gated root builds) has no instance here."
+        }
+      ]
+    },
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "subject": "sync-replication",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/cloud/sync/mod.rs:407 propagates persona deletes from a tombstone table that nothing ever writes — grep over the workspace finds only the DDL (db/src/migrations/incremental/e06_teams_and_sync.rs:239) and the reader (rows.rs:907) — so a locally deleted persona lives in the cloud forever while the machinery reads as shipped.",
+      "techniques": [
+        {
+          "technique": "topology-declaration",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:58-75 is the per-stream declaration the engine is generic over — the pass, the cursor keys, the backfill policy and the status grid all derive from SYNC_TABLES, and mod.rs:593-606 guards its length and cursor-key uniqueness in a test. Direction and authority are declared once at mod.rs:1-15 (desktop projects up; the replica is RLS-scoped and never writes back in these paths)."
+        },
+        {
+          "technique": "change-tracking-and-cursors",
+          "verdict": "deviation",
+          "evidence": "The loop realizes most of the technique exactly — durable per-stream cursors (cursor.rs:33-51), the tick + lossy wake + persistent dirty mark triad (mod.rs:36-44, 498-531), advance-to-observed-max with the clock-capture race named in the comment (mod.rs:294-304), and error kept distinct from nothing-to-do (mod.rs:238-251, 484-486). Two rules fail: the watermark column is created_at with a 24-hour re-read window standing in for in-place mutations (mod.rs:56-57, 277-281), which the technique calls a stopgap with a measured margin — an execution or review updated more than a day after creation never reaches the cloud; and the first run is not chunked-and-resumable (mod.rs:287-305 reads the whole epoch backlog in one pass and advances the cursor only after every chunk settles, so an interrupted backfill restarts from zero)."
+        },
+        {
+          "technique": "tombstone-propagation",
+          "verdict": "deviation",
+          "evidence": "The consumer side is complete and correct — table plus index at src-tauri/db/src/migrations/incremental/e06_teams_and_sync.rs:239, reader at rows.rs:907, cascade propagator with its own cursor at mod.rs:388-442 — and there is no producer: no code path in the workspace inserts into persona_tombstones, so no delete has ever propagated. This is the technique's named field defect ('name the line that writes the tombstone') verbatim. Two further gaps: the tombstone cursor advances to a wall clock captured before the read (mod.rs:409 and :436), the exact race the sibling cursor fixed 130 lines earlier; and only personas carry tombstones, so the other ten streams' deletes never transfer and the replica accretes rows forever."
+        },
+        {
+          "technique": "conflict-detection-and-policy",
+          "verdict": "deviation",
+          "evidence": "Where a second device signs into the same account — which the design provides for (cursor.rs:110 mints a per-device id and mod.rs:315 heartbeats it into synced_devices) — two spokes write the same primary keys through client.rs:77's `resolution=merge-duplicates` upsert with no version, base hash or read-back, so resolution is last-arrival-wins: a race decided by network timing, whose loser is never told and which is declared nowhere. SYNC_TABLES (mod.rs:58) carries no conflict-policy column to declare it in."
+        },
+        {
+          "technique": "projection-security",
+          "verdict": "conformant",
+          "evidence": "Both halves are realized. Outbound is an allowlist built at one door per stream — the SELECTs enumerate columns and structurally never read the encrypted or vault classes (rows.rs:1-16) — with a payload projection that redacts by key needle and by value shape and bounds its size (rows.rs:36-80), and the projected key set is asserted in tests (rows.rs:926-944). Inbound scope is derived from the authenticated channel rather than the payload: user_id is deliberately absent from every row so Supabase defaults it from auth.uid() under RLS (rows.rs:14-16)."
+        },
+        {
+          "technique": "sync-observability",
+          "verdict": "deviation",
+          "evidence": "Most of the snapshot is there — per-table rows/error/cursor watermark with 'never synced' distinct from a placeholder (mod.rs:98-108, cursor.rs:56-62), fault isolation that lets the pass continue past a failed table (mod.rs:238-251), and last-success advanced only on a clean pass (mod.rs:484-486). What is missing is the pair that makes a cursor mean anything: TableSyncStatus (mod.rs:98-108) carries no source tail and no pending count, so a stalled stream whose local rows are piling up is indistinguishable from a healthy idle one, and the published `syncing` flag (mod.rs:117) is lifecycle state sitting beside health state."
+        }
+      ],
+      "registryProposal": "Upward proposal for topology-declaration: its three shapes (one-way mirror, hub and spoke, peer merge) do not name the shape this repo is actually in — N spokes belonging to one principal, converging on a hub that orders nothing (a PostgREST upsert). It reads as a one-way mirror per device and behaves as a hub with no adjudication, which is why the conflict policy went undeclared here. The technique could name that fourth case and route it to conflict-detection's in-scope last-writer-wins lane (same mind at several keyboards), with the demand that the spoke's write carry what it believed was current."
+    }
+  ]
+}

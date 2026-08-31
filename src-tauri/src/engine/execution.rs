@@ -698,7 +698,45 @@ impl ExecutionEngine {
                 .await;
                 Ok(())
             }
-            AdmitResult::Queued { position } => {
+            AdmitResult::Queued {
+                position,
+                displaced,
+            } => {
+                // This arrival outranked the weakest resident at a full queue,
+                // so the queue evicted it to make room. An evicted waiter that
+                // finds out by silence is a data-loss bug, not a shed policy:
+                // it is dropped from the pending contexts and given the same
+                // terminal record a cancel-while-queued produces, with the
+                // reason naming what displaced it.
+                if let Some(displaced_id) = displaced {
+                    self.queued_contexts.lock().await.remove(&displaced_id);
+                    persist_status_update(
+                        &pool,
+                        None,
+                        &displaced_id,
+                        UpdateExecutionStatus {
+                            status: ExecutionState::Cancelled,
+                            error_message: Some(format!(
+                                "Displaced from the queue by a higher-priority execution ({execution_id})"
+                            )),
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+                    tracing::warn!(
+                        persona_id = %persona.id,
+                        displaced_execution_id = %displaced_id,
+                        admitted_execution_id = %execution_id,
+                        "Queued execution displaced by a higher-priority arrival at the depth bound",
+                    );
+                    process_activity::emit_process_activity(
+                        &app,
+                        "execution",
+                        "cancelled",
+                        Some(&displaced_id),
+                        Some(&persona.name),
+                    );
+                }
                 let queue_depth = self.tracker.lock().await.queue_depth(&persona.id);
                 tracing::info!(
                     persona_id = %persona.id,

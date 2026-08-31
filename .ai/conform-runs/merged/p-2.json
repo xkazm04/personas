@@ -1,0 +1,683 @@
+{
+  "worker": "p-2",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/mcp_server/tools.rs:1466 emits frontmatter by replacing quotes rather than escaping and writes with a truncating std::fs::write at :1471, so a note the AI writes can be torn or silently mis-keyed in the human's own vault.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1466-1470 escapes a title by mutating it (`\"` -> `'`) instead of quoting it, no minted id reaches frontmatter, identity is the slugged filename (:1457-1461) so two titles that slug alike overwrite each other, and there is no emit->parse round-trip test anywhere in the sidecar."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1471 uses std::fs::write, which truncates then streams, so Obsidian refreshing mid-write renders a torn note — the app crate already has atomic_write (src-tauri/src/commands/obsidian_brain/mod.rs:59) and the sidecar does not use it."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/vault.rs:21-56 is a second hand-rolled walker whose own header (:5-8) admits it duplicates graph.rs and must be kept in sync by hand; depth 12, dot-skip and skip-silently are hardcoded rather than the WalkOptions the app crate already extracted."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/vault.rs:77-119 — the sidecar resolves no links at all (TF-IDF over titles and bodies only); the precondition 'a feature that needs the link graph' does not hold here."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1190-1191 — the sidecar exposes exactly two vault tools (search, write_note) and no defect-reporting surface; the precondition 'a pass that measures corpus integrity' does not hold."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1369-1387 reads obsidian_mirror_config only as an on/off gate; the sidecar maintains no derived store beside the vault, so there is no derivation to keep honest."
+        }
+      ]
+    },
+    {
+      "context": "0c029a55-8e0a-47aa-a636-6e941425a7dc",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 counts orphans with no exemption while lint.rs:118 exempts entry points, so two surfaces report different orphan counts for one vault; and graph.rs:778 leaks an unreapable debounce thread past stop_watcher at :816.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/markdown.rs:17 escapes every scalar, :286 accepts bare/single-quoted values it did not write, :384 drives hostile values through the full round trip; a minted id lives in frontmatter (:96,:112) and writes are temp+rename (mod.rs:59). Two named path funnels — mod.rs:1479 for relative fragments, graph.rs:268 for absolute candidates — with an explicit standing rule against a third."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/vault_fs.rs:78 is one shared walker with depth, hidden-file and error policy as explicit options; :18-54 records which original caller each default traces to, and lint.rs:142 opts into Abort while graph.rs:115 and revitalize.rs:104 keep SkipSilently — behaviour-preserving unification, exactly as the technique prescribes."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/lint.rs:29 detects all three defect classes read-only, the orphan exemption is one visible predicate at :160, and :142 aborts on an unreadable directory so a partial scan can never report clean; repair is a separate bounded goal-declared pass (revitalize.rs:39,:43,:75) measured before/after even when it fails (:429,:460-462)."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:334 gates each mirrored write on the ledgered content hash, mirror errors are logged not raised (:445), a full rebuild is a first-class command (:453), and conflict.rs:44 runs the real three-way comparison with lucky convergence surfaced distinctly rather than collapsed into NoChange."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:778 spawns an unowned debounce thread that graph.rs:816 never stops (it drops only WatcherHandle._watcher), so every vault switch or Graph-tab remount leaks a thread that keeps emitting obsidian:vault-changed for the previous vault path — the watcher names a reaper, its debounce machinery does not."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 (stats) and :431 (list) count every note with no incoming link, while lint.rs:118 exempts top-level and index-style entry points; the same vault therefore yields two different 'orphan' numbers and neither surface states its exemptions. The shared extractor (vault_fs.rs:148) and the watcher+30s-TTL cache (graph.rs:95-116) are otherwise realized well."
+        }
+      ]
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:210 renders a bare 'Orphans' stat beside a differently-exempted orphan list, so the number the user reads carries no predicate.",
+      "techniques": [
+        {
+          "technique": "editor-interop",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:7 addresses the note by full vault-relative path (never basename), normalizes separators, encodes the components, and :17 degrades to a visible no-op before a vault is known; GraphPanel.tsx:85-107 starts the backend watcher in an effect and stops it in the cleanup on unmount and on vault switch."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:210 renders stats.orphanCount as 'Orphans' with no exemption predicate, next to the lint tab's orphan list computed under a different exemption policy — the predicate-free count the technique names."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx:26-28 makes prune/merge/refresh explicit operator input and :45-49 refuses to start with no goal selected, so the repair pass is goal-declared rather than the repairer's mood; detection is a separate surface and never mutates."
+        },
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:22-34 — the renderer only calls IPC commands; no frontmatter is emitted or parsed and no caller-supplied path is resolved here, so the record contract's preconditions all fail in this layer."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:1-38 — nothing in this context traverses a filesystem; the walk's three decisions have no site here."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "unknown",
+          "evidence": "src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx:11-18 is the Google Drive vault backup, not the app-to-vault mirror; the conflict/sync surface that would carry the direction contract lives in sub_sync/, outside this context's declared paths, so I cannot judge it honestly from here."
+        }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:18 — this 'vault' is the credential vault (connector auth capture), not a markdown note store; every technique's precondition (a directory of markdown records) fails.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:18 — the records here are connector credentials fetched over IPC, not files with frontmatter; there is no emitter, parser, filename or vault root."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredCards.tsx:1 — no note store, so no inline links to extract."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredErrorDisplay.tsx:1 — the defect classes (broken links, orphans, staleness) have no referent in a credential-capture flow."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:1 — nothing traverses a directory tree here."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:1 — there is no second store derived from a file vault in this context."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:1 — no peer writer (a human's text editor) shares custody of anything this context touches."
+        }
+      ],
+      "registryProposal": "Matcher miss, not a corpus hole: five contexts under src/features/vault/** are the CREDENTIAL vault, and the registry already holds the subject that governs them — knowledge/software-engineering/security/credential-vault/credential-vault.md, which p2p-networking's golden path links by name as the custody boundary secrets live behind. markdown-vault matched on the bare word 'vault'. Route on the subject's precondition (is the store a directory of markdown records?) before its vocabulary, and add credential-vault as the pairing for the five vault-* contexts."
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 — a connector/credential picker grid; no markdown record store exists in this context, so no technique's precondition holds.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 imports ConnectorDefinition/CredentialMetadata — DB rows over IPC, not files with frontmatter."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/PickerGrid.tsx:1 — no notes, no inline links."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:1 — filtering a connector catalog is not corpus integrity; the three defect classes have no referent."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:1 — no directory traversal."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/design/orchestratorDerived.ts:1 derives view state from props, not a second store beside a file vault."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:1 — no external peer writer shares custody of these records."
+        }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 imports @/api/vault/credentials — credential entry forms and OAuth flows, not a markdown store; every precondition fails.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 — the record is an encrypted credential row; there is no file, no frontmatter, no filename identity."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/EditFormFields.tsx:1 — no note bodies to scan for links."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:1 — this is a connector reachability check, not knowledge-corpus rot detection."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:1 — no filesystem walk."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:1 — no derived store beside a file vault."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/OAuthSection.tsx:1 — the browser/OAuth provider is a peer, but not a peer WRITER to a shared file store, which is the constraint this technique exists for."
+        }
+      ]
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:1 — tests for SQL database introspection UI under the credential vault; no markdown record store is under test.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:1 — the 'database' here is a real relational engine the user connected, the inverse of the files-as-records mapping this technique governs."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:1 — no note links."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/SchemaManagerModal.test.tsx:1 — no corpus whose rot these detectors would measure."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/DatabaseListView.test.tsx:1 — no directory traversal."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/DatabaseCard.test.tsx:1 — no derivation of a file vault."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx:1 — the SQL editor is the app's own; no external peer writer shares custody."
+        }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 — a SQL table browser and chat tab over connected databases; the markdown record store this subject governs does not exist here.",
+      "techniques": [
+        {
+          "technique": "vault-as-database",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 imports introspectionQueries — a real engine enforces this schema, so the whole 'no engine to enforce it' asymmetry the technique is built on does not apply."
+        },
+        {
+          "technique": "link-graph-extraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TableDetailPanel.tsx:1 — foreign keys are relational, not inline wikilinks; the shared-extractor problem has no site."
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:1 — no knowledge corpus to lint."
+        },
+        {
+          "technique": "vault-walking",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:1 — enumeration is a SQL introspection query, not a directory walk."
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:1 — no second store derived from a file vault."
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/AssistantSqlBlock.tsx:1 — no human text editor holds concurrent custody of these records."
+        }
+      ]
+    },
+    {
+      "context": "eba8081c-3a43-4529-b172-9bef07493935",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/p2p/types.rs:12 auto_connect is read by nothing, retry_count is written 0 at connection.rs:500 and never incremented, and mdns.rs:470 DELETEs absent peers instead of demoting them to stale — three knobs promising reconnection that does not exist, over a peer list with no stale state.",
+      "techniques": [
+        {
+          "technique": "discovery-advertisement",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/mdns.rs:219 broadcasts only peer_id, display_name and protocol version plus the port; the first-run display name is opaque (engine/src/identity.rs:149 'User-<id prefix>', never the hostname); peer_ids are structurally validated (:39), names truncate on character boundaries with the listener-killing crash they prevent documented (:49-66), addresses are parsed and capped (:69), and bursts are buffered and flushed on cadence, cancellation and channel close (:301-328)."
+        },
+        {
+          "technique": "connection-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/connection.rs:26 is an RAII guard that releases the in-flight-dial entry even when the future is abandoned (:244); :273-347 does tie-break, capacity and insert in one write lock with the TOCTOU rationale and a standing rule against a second capacity check; per-phase 10s handshake timeouts at :408,:579,:662; a failed DB write rolls back the in-memory insert (:517) so observers never see a phantom-connected peer."
+        },
+        {
+          "technique": "manifest-negotiation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:24 caps accepted entries, connection.rs:426 refuses a version mismatch before anything else, the per-peer digest cache skips unchanged re-offers (manifest_sync.rs:67) and is reaped for departed peers with the leak it prevents named (:378-387), and the supersede is a DELETE+INSERT inside one transaction (:274)."
+        },
+        {
+          "technique": "peer-state-honesty",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/mdns.rs:470 DELETEs the discovered_peers row once a peer goes quiet, so absence erases the peer rather than demoting it — there is no stale state carrying 'last seen N ago', and types.rs:35 offers no 'reachable' rung at all while types.rs:60 carries one undifferentiated last_seen_at, so hearing a multicast packet and completing a probe are recorded as the same fact. (Restart-voids-connected is correctly realized at mod.rs:86-95 and identity failure at types.rs:113-119.)"
+        },
+        {
+          "technique": "resilience-and-reconnection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/types.rs:12 NetworkConfig.auto_connect is exported to TypeScript and read by no Rust code; PeerConnectionInfo.retry_count is set to 0 at connection.rs:500 and :711 and never incremented or read (the struct is #[allow(dead_code)], types.rs:122); and stale_peer_timeout_secs only sets the prune task's interval while the cutoff is hardcoded 120 at mod.rs:238 — this is the technique's named failure mode verbatim, a config surface promising auto-reconnect that a reader can only disprove by tracing consumers."
+        },
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/p2p/manifest_sync.rs:233-241 builds the local manifest with no peer predicate and connection.rs:914-916 serves that identical result to any connected peer, so 'it is paired, so it is trusted' is exactly the implication in force. (The requires_auth fail-closed rule at manifest_sync.rs:225-232 and the expiry reaper at db/src/repos/resources/exposure.rs:70 are both realized well.)"
+        }
+      ]
+    },
+    {
+      "context": "219fe76c-1a70-4d42-88e2-393b7b98121a",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/exposure.rs:101 carries no peer identity on the grant and src-tauri/src/commands/network/exposure.rs:94 returns the whole exposure set from one un-scoped command, so the allowlist is global rather than per-peer.",
+      "techniques": [
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/exposure.rs:101-113 defines ExposedResource with resource, level, fields and expiry but no peer_id, and src-tauri/src/commands/network/exposure.rs:94-109 assembles the manifest from every exposed resource with no requesting peer in scope — the per-peer declaration the technique makes the whole authorization artifact does not exist."
+        },
+        {
+          "technique": "peer-state-honesty",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/network/discovery.rs:128-139 resolves the local identity through local_peer_id_for_status and returns identity_degraded rather than an empty peer id, and ships is_running alongside discovered_peer_count so an empty list can be told from a dead subsystem."
+        },
+        {
+          "technique": "discovery-advertisement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/network/discovery.rs:31-37 only reads the peer table; the advertisement's contents, sanitisation and consent all live in the engine's mdns module, so this command layer has no advertisement surface to design."
+        },
+        {
+          "technique": "connection-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/network/discovery.rs:41-84 delegates connect/disconnect straight to ConnectionManager; no state machine, timeout or teardown path exists in this context to judge."
+        },
+        {
+          "technique": "manifest-negotiation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/network/discovery.rs:98-106 is a one-line delegation to ManifestSync::sync_manifest; the negotiation, capping and verification are the engine's."
+        },
+        {
+          "technique": "resilience-and-reconnection",
+          "verdict": "unknown",
+          "evidence": "src-tauri/src/commands/network/discovery.rs:41 exposes only manual connect/disconnect; whether a reconnection policy is wired at all is decided in the engine's start loop (engine/src/p2p/mod.rs:115), outside this context, and I could not find its caller within the paths I am allowed to read."
+        }
+      ]
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:126-131 creates an exposure with an access level but no peer selection and fields_exposed hardcoded empty, so the UI can express neither the per-peer allowlist nor the field enumeration the model already supports.",
+      "techniques": [
+        {
+          "technique": "exposure-controls",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:126-131 posts { fields_exposed: [], access_level, requires_auth: false } with no peer in the form at all — the grant surface offers the user no way to say which peer may see what, and the field-level enumeration the technique calls the allowlist going 'all the way down' is passed empty even though :48 renders it back."
+        },
+        {
+          "technique": "peer-state-honesty",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:285-292 renders the identity_degraded failure as its own warning rather than a healthy-looking blank identifier, and :300-330 gates the peer counts on isRunning so a stopped subsystem never renders as an empty network."
+        },
+        {
+          "technique": "discovery-advertisement",
+          "verdict": "unknown",
+          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:122-141 lets the user edit the broadcast display name (the consent-relevant field), but I found no discoverability on/off control in this context's paths and could not establish from here whether the responder is silenced anywhere else, so the 'discoverability is consent' rule is untested rather than failed."
+        },
+        {
+          "technique": "connection-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:250-255 polls a snapshot; no connection is established, supervised or torn down in a settings surface, so the state machine's obligations have no site here."
+        },
+        {
+          "technique": "manifest-negotiation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/BundlePreviewContent.tsx:1 previews an exported bundle file, not a live capability/content manifest exchange between two sessions."
+        },
+        {
+          "technique": "resilience-and-reconnection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/NetworkDashboard.tsx:251 — the 30s poll is a staleness backstop over pushed state, not a reconnection policy; absence handling, backoff and interface transitions are all engine concerns with no representation in this context."
+        }
+      ],
+      "registryProposal": "Upward note, not a correction: the whole p2p subsystem compiles behind a cargo feature (src-tauri/src/commands/network/mod.rs:1) exactly as the golden path's capability-flag economics prescribe, and ExposureManager.tsx:253 renders a first-class 'this build was compiled without the p2p feature' state. The technique layer says to gate the subsystem but does not say the UI owes the flag an honest empty state; that is a real practice worth folding into capability-feature-gating's application evidence."
+    },
+    {
+      "context": "1d3f934a-fae4-4cc8-a55c-a098b77b0bee",
+      "subject": "time-travel-replay",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/useReplayTimeline.ts:83 gives every log line an evenly-apportioned timestamp instead of its recorded one, so dead air is smeared away, no gap can render as disclosed silence, and the whole playback asserts a tempo the record never contained.",
+      "techniques": [
+        {
+          "technique": "timeline-derivation",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:83 computes timestamp_ms as (index / (n-1)) * totalMs — every line's position is invented by apportionment, which is the technique's named interpolation failure; the measured tool-step stream (real started_at_ms) and the fabricated line stream then share one axis with no stated time authority, and a gap can never exist to be disclosed."
+        },
+        {
+          "technique": "accrual-overlays",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:156-165 computes accumulatedCost as (completed-step fraction + active-step fraction) x the settled total rather than a prefix sum over cost records, so the end-state reconciliation invariant holds by construction and can never surface a disagreement between the replay fold and the rollup — the cross-check the technique exists to provide is structurally unreachable."
+        },
+        {
+          "technique": "renderer-reuse",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/replay/ReplayTerminalPanel.tsx:109 is a second, replay-only renderer of the same log-line vocabulary the live surface renders in src/features/shared/components/terminal/TerminalBody.tsx:42, and the two have already diverged: JSON pretty-printing exists only in replay (ReplayTerminalPanel.tsx:9-89) while virtualization, filtering and summary lines exist only live — so a replay frame cannot be indistinguishable from the live frame it imitates, and 'replay looks wrong' has no single defect behind it."
+        },
+        {
+          "technique": "estimate-labeling",
+          "verdict": "deviation",
+          "evidence": "The cost half is exemplary — ReplayCostPanel.tsx:41-46 prefixes '~' with the reason recorded, CostAccrualOverlay.tsx:95-107 dashes the curve unconditionally and distinguishes two different estimate facts, PipelineWaterfall.tsx:103-110 badges a synthetic trace — but the apportioned line timings (useReplayTimeline.ts:16,:83) are marked nowhere, and ReplaySandbox.tsx:134-160 opens straight into the transport with no idle-state provenance or coverage disclosure, so the viewer consents to the fiction without learning its genre."
+        },
+        {
+          "technique": "transport-and-time-mapping",
+          "verdict": "deviation",
+          "evidence": "TimelineScrubber.tsx:160-161 shows only elapsed/total offsets with no gap markers or compressed regions (dead-air compression cannot exist once the timeline is apportioned), and useReplayTimeline.ts:215 makes jumpToStart force-pause, so the gesture toggles intent rather than only moving the viewpoint. Correct parts: scrubTo leaves isPlaying alone (:208), speed is an exchange rate applied forward (:177), and 'ended' leaves the run scrubbable (:194-196)."
+        },
+        {
+          "technique": "scrub-performance",
+          "verdict": "conformant",
+          "evidence": "src/hooks/execution/useReplayTimeline.ts:88-97 finds the visible-line cutoff by binary search rather than folding at render time, :99-100 and :179-184 throttle playback flushes to ~12/s so derived lists do not recompute at 60fps, ReplayTerminalPanel.tsx:97-106 memoizes per-line classification and highlighting, and every cache is memo-scoped so it dies with the replay session."
+        }
+      ],
+      "registryProposal": "timeline-derivation names a stated failure for records too damaged to parse, but not for the far commoner case this repo is in: a record that parses perfectly and simply contains no per-item timing (here, a log blob plus a duration and a total cost). That record cannot support a timeline, yet the honest-looking move — apportion and play — is exactly what shipped, and it defeats gap disclosure, dead-air compression and the accrual reconciliation invariant all at once, silently. Worth a third outcome alongside 'built' and 'could not build': 'the record does not support a timeline; offer the settled view instead', with apportionment named as the failure mode it is."
+    },
+    {
+      "context": "4810daf8-0549-4899-95d2-99c81cde6455",
+      "subject": "breach-alerting-and-attribution",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/alertSlice.ts:431 keys the cooldown on rule.id alone while the evaluation window is not a rule field at all, and :460 ships a payload with no contributors — the same rule deduped across two different windows, and a 'cost is $12.34' alert that hands the diagnosis back to the operator.",
+      "techniques": [
+        {
+          "technique": "scoped-dedup-keys",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:431 — the level-not-edge cooldown is genuinely realized (FIRED_COOLDOWN_MS at :210, plus a persisted-history fallback at :433 so a reload does not re-fire, and one shared key space across the JS and Rust evaluators per the reasoning at useGlobalAlertEvaluator.ts:36-42, which correctly keeps the detection path out of the key); the missing axis is the window — AlertRule (src/lib/bindings/AlertRule.ts:6) has no window field, so the fixed 1-day background evaluation (useGlobalAlertEvaluator.ts:19) and the tab-range evaluation (alertSlice.ts:400) of one rule share a single hour-long cooldown and silence each other, and the fired alert cannot say which window it measured."
+        },
+        {
+          "technique": "off-request-path-delivery",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:60 — the precondition 'detection sits inside an admission decision, on a tenant request's latency budget' fails: there is no ingest path and no enforcing cap in this app, evaluation is already a 60s timer off any request path, and persistence (alertSlice.ts:495) is fire-and-forget with no tenant awaiting it."
+        },
+        {
+          "technique": "top-contributor-attribution",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:142-154 — formatAlertMessage emits only label/value/threshold ('Cost is $12.34 (threshold: > $10)') and FiredAlert (src/lib/bindings/FiredAlert.ts:5) carries no contributor field, so the cost alert never names what burned the money even though the per-persona rollups exist and the repo already computes a correlated-cause drilldown for anomalies (libs/useAnomalyDrilldown.ts:42); the operator must leave the alert and reconstruct the window by hand."
+        },
+        {
+          "technique": "scope-inverted-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:153 — the precondition 'the alert computes a contributor breakdown along some axis' fails, because no attribution section exists to invert; this technique becomes applicable only once the top-contributor deviation above is fixed, at which point persona_id (the pinned axis) would need the breakdown to vary a different one."
+        },
+        {
+          "technique": "identity-scope-attribution-refusal",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_observability/components/AlertToastContainer.tsx:100-108 — the precondition 'a broadcast payload to an audience the alerting system cannot enumerate' fails: delivery is an in-process toast plus a local history panel on the single operator's own machine, and the only scope axis (persona_id, AlertRule.ts:6) is the user's own agent, i.e. infrastructure rather than a key/customer identity."
+        },
+        {
+          "technique": "notification-channel-security",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/overview/alertSlice.ts:495 — the precondition 'operator-supplied outbound webhook destinations' fails: the only sinks are an in-window toast and a local-DB write over Tauri IPC, never leaving the machine; the technique itself exempts the delivery channel with no external dependency."
+        },
+        {
+          "technique": "pre-breach-forecasting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_observability/components/AnomalyDrilldownPanel.tsx:1 — the precondition 'a forecast is produced' fails: nothing in the context projects forward (no level/slope, ETA, or burn rate anywhere in the tree), and the anomaly machinery here is present-tense deviation-from-baseline detection with root-cause correlation, not a projection; this is an unbuilt maturity tier, not a defect in what is built."
+        }
+      ],
+      "registryProposal": "The subject's own builder-vs-operator seam predicts most of this row, and the matcher did not use it. Four of seven techniques are structurally not-applicable here for one shared reason — the audience is a single local operator with full read access, not a broadcast channel with unknowable membership — while the two that transfer (scoped-dedup-keys' level-not-edge cooldown, top-contributor-attribution's 'answer the next question') are audience-independent and found real defects. Proposal: mark those two techniques as transferring to builder-side/local alerting, and route this subject on the audience precondition (is the payload broadcast to an unenumerable audience?) rather than on cost/budget/alert vocabulary, which is what matched here."
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "codegen",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:22 — the whole context is hand-authored React that maps a user's draft link to a CreateTriggerInput database row; no file under it is generated, none writes to the filesystem, and none of the 16 tasks in scripts/run-codegen.mjs:22-82 declares an output root here, so no derived-artifact invariant exists to govern.",
+      "techniques": [
+        {
+          "technique": "task-registry-design",
+          "verdict": "not-applicable",
+          "evidence": "scripts/run-codegen.mjs:22-87 — the repo's generator registry is real, flat and preset-driven, but it contains no task writing into src/features/triggers/sub_studio/; the precondition 'this context contributes a generation task to the pipeline' fails. (triggerStudioConstants.ts:11 is a registry of UI trigger-source templates — a runtime data table, not a build-task registry.)"
+        },
+        {
+          "technique": "trigger-wiring",
+          "verdict": "not-applicable",
+          "evidence": "package.json:30,33 — predev/prebuild ambiently run scripts/run-codegen.mjs, but nothing in this context is regenerated by that pipeline; the precondition 'a derived artifact whose freshness must be made a side effect of opening a door' fails. The 'trigger' in this context is a user-facing automation trigger, not a build trigger."
+        },
+        {
+          "technique": "commit-vs-derive-policy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:1-13 — the precondition 'a derived artifact class facing the commit-or-derive question' fails: these are authored source files, and the module's 'commit' means writing a user's draft trigger to the backend at runtime, not committing generated output to version control."
+        },
+        {
+          "technique": "drift-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/__tests__/studioCommit.test.ts:1 — the precondition 'a committed artifact carrying the invariant that it equals what a generator would produce now' fails; the tests here assert commit-blocker business logic, not regenerate-and-diff freshness."
+        },
+        {
+          "technique": "generated-file-hygiene",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:1 — no file in the tree carries a generated/do-not-edit header (a recursive grep for generated / DO NOT EDIT / .gen. across all 12 files returns nothing), so the precondition 'a generated file impersonating an authored one' fails; these files are authored and correctly have no header."
+        },
+        {
+          "technique": "generator-failure-isolation",
+          "verdict": "not-applicable",
+          "evidence": "scripts/run-codegen.mjs:91-131 — the runner's budget/fan-out/exit-code contract governs the pipeline, and this context spawns no task and runs under no runner; the precondition 'a task whose failure the pipeline must isolate and report' fails."
+        }
+      ],
+      "registryProposal": "This pairing is a lexical false positive and should be dropped: the matcher hit 'trigger' (trigger-wiring), 'commit' (commit-vs-derive-policy's settle commits), and the constants file's template 'registry' (task-registry-design), while the subject's actual precondition — committed source derived from other committed source by a registered generator — fails outright. Two corrections are owed. (1) codegen DOES govern this repo, strongly, just elsewhere: scripts/run-codegen.mjs:22-87 is a flat explicit registry with per-entry provenance comments, named presets, and a per-task SIGKILL budget (:111), feeding output roots such as src/lib/bindings/, src/i18n/generated/, and src/features/plugins/dev-tools/constants/scanMatchRules.gen.ts — that pairing should be added and judged. Concrete evidence it would find a real defect on the first pass: src/lib/bindings/SemanticLintReport.ts still exists and is still re-exported from src/lib/bindings/index.ts:843, but its Rust source (src-tauri/src/commands/obsidian_brain/semantic_lint.rs) has been deleted — precisely drift-gating's 'orphan whose source died' blind spot, live in the tree. (2) The subjects that should govern THIS context are canvas-graph for TriggerStudioCanvas.tsx and StudioPatchbay.tsx, and draft-editing for studioDraftModel.ts and useStudioComposer.ts, whose draft-model and completeness-derivation techniques are realized here almost by name (commitBlocker() at studioCommit.ts:54)."
+    },
+    {
+      "context": "e62d5595-2bbd-480a-a757-2d3a126545a0",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:141-143 the merge resolution hard-deletes both originals after conflictHelpers.tsx:58-60 concatenates their bodies, so a two-item family is replaced by a machine-written summary with no supersedence link and no surviving members to audit.",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:92-107 — the precondition fails: every piece of state here is the persisted belief store plus view filters; there is no per-unit-of-work operative state (goal, constraints, open threads) for a session in flight."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/components/CreateMemoryForm.tsx:58-76 — the precondition fails: this surface writes durable beliefs directly and never records an episode; episode boundaries and distilled bodies live in the Rust capture path, not in this context."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:141-143 merge replaces two beliefs by hard-deleting both, violating supersede-don't-replace and leaving a store that was never wrong; the keep_a/keep_b path (:117) archives correctly and memoryConflicts.ts:121-124 carries both a min-normalized and a union-normalized measure, so the rule is realizable here and simply skipped on the merge branch."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:95-117 retires the losing memory to the 'archive' tier instead of deleting and refuses to retire a core memory — demotion tiers, not a trapdoor — and memoryActions.ts:40-59 declares a TTL plus a cap on the derived action cache and prunes on every read and write."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:474 — the precondition fails: this context renders stored access counts but performs no selection, packing or injection into an agent context; the one recall-adjacent decision (MemoryClaimsSection.tsx:5-7, declining a 'helpful' button because injections already carry the access signal) reasons about the loop without implementing it."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_memories/components/MemoryClaimsSection.tsx:1-7,82-94 gives the human correction lane its own door — wrong/outdated claims apply a bounded recall penalty and stay open until reverified, deprecated or dismissed — and MemoryConflictReview.tsx:95-101 makes user-pinned core memories un-retirable by the heuristic surface."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:188-197 — the precondition fails: sorting is over raw stored fields and no value score is computed in this context, so there is no shared recall/forgetting ranking function to judge here."
+        },
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/libs/conflictHelpers.tsx:58-60 merges by concatenating both bodies behind a '---' rule — the mechanical stand-in the technique forbids outright — applied to a family of two (which is a supersedence case, not a rollup) whose members are then destroyed; only the confidence ceiling (:67, Math.max of members) is honoured."
+        },
+        {
+          "technique": "coverage-instrumentation",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoriesPageDense.tsx:251-257 builds the memory-health picker from memoryStats.agent_counts, so it enumerates only personas that already hold memories and an agent with zero memories is invisible; the KPI strip (:210-232,:380-384) is admirably honest about what it could not measure but its denominator is always the store, never the tracked population."
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/libs/memoryActions.ts:148-176 and MemoryActionCard.tsx:28-35 — the precondition fails: extracted 'actions' are advisory cards with a dismiss button and no invocation path, so no promotion door exists and nothing is ever minted as a capability the agent runs."
+        }
+      ],
+      "registryProposal": "Upward lesson for consolidation's 'the measure follows the question' section: the standard frames the min-normalized (directional) measure as belonging to duplicate-and-correction detection, but memoryConflicts.ts:121-124,143 found a sharper split — min-normalized topic overlap drives contradiction and supersedence while union-normalized similarity drives duplicate — and, more importantly, that CHECK ORDER is load-bearing in a way the standard does not state: every negation pair is a one-word swap ('always'/'never'), so a genuine contradiction scores above the duplicate threshold and, if the duplicate branch runs first, the sharpest contradictions in the store are the ones guaranteed to be mislabelled and offered a Merge button. Worth adding to the technique as 'check contradiction before duplicate' with this repo's file:line as the field evidence."
+    },
+    {
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:117-128,142-153 retires beliefs by hard delete and corrects them by in-place overwrite, so this shared ledger keeps neither a demotion tier nor a supersedence link — the sibling memories surface already refuses exactly this (MemoryConflictReview.tsx:102-117), so the machinery exists and is not used here.",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:43-72 — the precondition fails: the hook serves a durable per-team ledger with list/count/stats and filters; there is no in-session operative state for a unit of work."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/AddTeamMemoryForm.tsx:25-42 — the precondition fails: rows are created as beliefs directly; run_id/member_id are provenance pointers on a belief, not an episode layer with boundaries and distilled bodies."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryRowDetail.tsx:43-48 feeding useTeamMemories.ts:142-153 overwrites a belief's title, content, category and importance in place with no superseding item and no lineage — the 'a system that was never wrong' failure — and the kind vocabulary at MemoryRowDetail.tsx:10 (observation/decision/context/learning) carries no failed-approaches kind."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:117-128, wired to an unconfirmed trash button at MemoryRowActions.tsx:28-37, deletes outright with no dormant/archive tier and no tombstone; TeamMemoryStats carries a max_memories cap that TeamMemoryPanel.tsx:245-266 fetches and never surfaces, so the store's declared bound is invisible to the people filling it."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:90-102 — the precondition fails: this context lists and pages rows for human reading; no selection, packing, labelling or budget against an agent context happens here."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/MemoryProvenance.tsx:25-59 renders 'who wrote this belief, and out of what' — persona, member and run — on every row, with :27-34 keeping a dangling id visibly distinct from an absent one, and AddTeamMemoryForm.tsx:25-42 stamps the manual lane with a fixed shape (origin ids null, tags 'manual') so a machine-written row is distinguishable from a colleague's at a glance."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/libs/memoryConstants.ts:20-42 — the precondition fails: importance is a stored operator-graded input, not a computed value score, and no ranking shared between recall and forgetting is implemented in this context."
+        },
+        {
+          "technique": "rollup-compaction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/libs/memoryDiff.ts:50-97 — the precondition fails: the only cross-item pass here is a run-to-run set diff by id; there is no family clustering, no summary proposal and no supersedence, so the technique has nothing to govern."
+        },
+        {
+          "technique": "coverage-instrumentation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/components/panel/TeamMemoryPanel.tsx:245-266 — the precondition fails: the panel is a per-team ledger view and the TeamMemoryStats it receives (total, category_counts, run_counts) carries no join to a tracked population, so no coverage denominator is available or claimed here. Noted but not scored: the whole stats block is gated on stats.total > 0, so an empty team renders no numbers rather than an honest zero."
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/TeamMemoryPane.tsx:9-33 — the precondition fails: the pane composes a text-belief ledger with CRUD handlers; nothing in this context mints, versions, invokes or retires a capability."
+        }
+      ],
+      "registryProposal": "Map accuracy, not a standard problem: four paths the brief lists do not exist on disk — src/features/teams/sub_teamMemory/index.ts, src/features/teams/sub_teamMemory/components/panel/TeamMemoryBadge.tsx, src/features/overview/sub_memories/index.ts, and (in the markdown-vault brief) src/commands/obsidian_brain/semantic_lint.rs. The panel's real entry points are TeamMemoryPane.tsx and components/panel/TeamMemoryPanel.tsx; TeamMemoryRow.tsx and MemoryProvenance.tsx carry most of what the brief expected under the listed names, and MemoryProvenance in particular is where this context's strongest conformance evidence lives. The context path lists need regenerating against the current tree."
+    }
+  ]
+}
