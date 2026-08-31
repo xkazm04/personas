@@ -2,6 +2,15 @@
 
 ## Active
 
+### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later
+- **[2026-08-30 17:01]**
+- **Paths:** `src-tauri/core/src/models/persona.rs` · `src-tauri/core/src/models/memory.rs` · `src-tauri/core/src/models/deliberation.rs` · `src-tauri/db/src/migrations/**` · `src-tauri/db/src/repos/core/**` · `src-tauri/db/src/memory_recall.rs` · `src-tauri/engine/src/prompt/**` · `src-tauri/engine/src/template_v3.rs` · `src-tauri/engine/src/app_master.rs` · `src-tauri/engine/src/app_master_memory.rs` · `src-tauri/engine/src/archetype_catalog.rs` · `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/runner/**` · `src-tauri/src/commands/core/personas.rs` · `src-tauri/src/commands/design/**` · `src/features/agents/sub_glyph/**` · `src/api/agents/**` · `docs/features/personas/**` · `scripts/templates/_archetypes.json`
+- **Status:** started
+
+- **[2026-08-30 15:38]**
+- **Paths:** `src/App.tsx` · `vite.config.ts` · `src/features/fleet/**` · `src/features/agents/executionPlayer/**` · `src/hooks/execution/**` · `src/lib/async/**` · `src/i18n/**` · `eslint.config.js` · `scripts/lib/bundle-budget.mjs` · `docs/concepts/**`
+- **Status:** started
+
 - **[2026-08-29 21:25]**
 - **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/headless.rs` · `docs/architecture/cloud-integration-bridge.md` · `docs/api/management-api.openapi.yaml`
 - **Status:** started
@@ -515,6 +524,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### architect-client-runtime — /architect client redesign: runtime CPU/RAM findings + bundle/gate repairs + codifications (worktree architect-client-runtime)
+
+### grok-bot-compare — C:/Program Files/Git/research on Grok bot popularity vs personas agentic mgmt + Channels
+- **[2026-08-30 14:19]** Source: web: Grok bot research
+- **Paths:** `C:/Users/kazda/Documents/Obsidian/personas/Research/**` · `C:/Users/kazda/Documents/Obsidian/personas/Lessons/**`
+- **Status:** completed (commits: ae52ac71d, 139c56652, a2ef6400e)
 
 ### kp-bench-retire-and-proposals — kp App-master bench: /api/kp/test/retire + proposals/declines on the overnight tick summary
 
