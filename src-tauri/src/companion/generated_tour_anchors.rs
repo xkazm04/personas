@@ -5,7 +5,7 @@
 // twin (src/features/onboarding/anchors/tourAnchorManifest.json) is used by
 // the frontend; both are generated from the same scan so they never drift.
 
-/// Every statically-declared `data-testid` in src/ (1110).
+/// Every statically-declared `data-testid` in src/ (1109).
 pub const TOUR_TESTIDS: &[&str] = &[
     "active-chain-row",
     "active-chains-badge",
@@ -435,8 +435,6 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "fleet-frozen-minutes",
     "fleet-grid-badge",
     "fleet-grid-column",
-    "fleet-grid-message-row",
-    "fleet-grid-messages",
     "fleet-grid-open",
     "fleet-grid-page",
     "fleet-grid-refresh",
@@ -775,6 +773,7 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "quick-dispatch-suggestions",
     "quick-dispatch-suggestions-hint",
     "quick-stats-bar",
+    "rail-row",
     "reauth-reconnect",
     "recipe-adopt-cta",
     "recipe-alternative-modal",

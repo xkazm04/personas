@@ -26,38 +26,18 @@
 // (`rail/RailList`, virtualized + infinite-load). What differs between them is
 // data, not layout — which is what "unify the three tabs" actually required.
 //
-// -----------------------------------------------------------------------------
-// PROTOTYPE SWITCHER — THROWAWAY. The `variant` state, the `VARIANTS` table and
-// the second strip below exist for the /prototype round only and are deleted at
-// consolidation, along with the two losing `rail/Rail*Variant.tsx` files. Their
-// labels are deliberately NOT in the i18n catalog: adding six strings to
-// fourteen locale files for a control that will not survive the week is the
-// wrong trade. That is also why `custom/no-hardcoded-jsx-text` warns three times
-// in this file — expected, and it goes away with the switcher.
-// -----------------------------------------------------------------------------
-
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AlertCircle, Inbox, MessagesSquare, Rocket } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DeckDispatchBar } from '@/features/agents/quick-answer/triage/deck/DeckDispatchBar';
 import type { FeedTeam } from '../channels/types';
 import { RailList } from './rail/RailList';
 import type { RailRow } from './rail/railModel';
 import { useDispatchFeed, useMessageFeed, useReviewFeed } from './rail/useRailFeeds';
-import { FEED_ROW_HEIGHT, FeedRow } from './rail/RailFeedVariant';
-import { LEDGER_ROW_HEIGHT, LedgerRow } from './rail/RailLedgerVariant';
-import { DigestRow, digestRowHeight } from './rail/RailDigestVariant';
+import { RAIL_ROW_HEIGHT, RailRowView } from './rail/RailRowView';
 
 type RailTab = 'reviews' | 'dispatch' | 'messages';
-type RailVariant = 'feed' | 'ledger' | 'digest';
-
-const VARIANTS: Array<{ id: RailVariant; label: string; hint: string }> = [
-  { id: 'feed', label: 'Feed', hint: 'A — baseline: the Messages row, applied to all three tabs' },
-  { id: 'ledger', label: 'Ledger', hint: 'B — fixed kind gutter, two type sizes, no chips' },
-  { id: 'digest', label: 'Digest', hint: 'C — section bands per kind, no row rules, brighter titles' },
-];
 
 export function ActivityRail({
   feedTeams, onOpenSpeaker,
@@ -68,7 +48,6 @@ export function ActivityRail({
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<RailTab>('reviews');
-  const [variant, setVariant] = useState<RailVariant>('feed');
 
   // All three feeds are mounted unconditionally, and that is the trade: a tab
   // badge is only worth having if it is truthful before the tab is clicked, and
@@ -91,24 +70,19 @@ export function ActivityRail({
     [tab, onOpenSpeaker, feedTeams],
   );
 
-  const rowHeight = useMemo(() => {
-    if (variant === 'digest') return digestRowHeight(active.rows);
-    return variant === 'ledger' ? LEDGER_ROW_HEIGHT : FEED_ROW_HEIGHT;
-  }, [variant, active.rows]);
-
   const renderRow = useCallback(
-    (row: RailRow, index: number, rows: RailRow[]) => {
-      const selected = row.selectable ? dispatch.ctl.selected.has(row.id) : undefined;
-      const onToggle = row.selectable ? dispatch.ctl.toggle : undefined;
-      if (variant === 'digest') {
-        return (
-          <DigestRow row={row} rows={rows} index={index} selected={selected} onToggle={onToggle} onOpen={openRow} />
-        );
-      }
-      const Row = variant === 'ledger' ? LedgerRow : FeedRow;
-      return <Row row={row} selected={selected} onToggle={onToggle} onOpen={openRow} />;
-    },
-    [variant, dispatch.ctl.selected, dispatch.ctl.toggle, openRow],
+    (row: RailRow) => (
+      <RailRowView
+        row={row}
+        // Only Dispatch rows are selectable, and only they should cost a Set
+        // lookup — a Messages feed asking a dispatch selection whether it holds
+        // a channel item id is a question with no meaning.
+        selected={row.selectable ? dispatch.ctl.selected.has(row.id) : undefined}
+        onToggle={row.selectable ? dispatch.ctl.toggle : undefined}
+        onOpen={openRow}
+      />
+    ),
+    [dispatch.ctl.selected, dispatch.ctl.toggle, openRow],
   );
 
   // Conversations' own tab styling, verbatim.
@@ -158,37 +132,17 @@ export function ActivityRail({
         })}
       </div>
 
-      {/* THROWAWAY — see the file header. */}
-      <div className="flex h-7 flex-shrink-0 items-center gap-1 border-b border-border bg-secondary/10 px-2">
-        {VARIANTS.map((v) => (
-          // The shared Tooltip, not `title=` — throwaway or not, a native
-          // tooltip is unreachable by keyboard and on touch, and the census
-          // gates that condition everywhere (golden path: tooltip).
-          <Tooltip key={v.id} content={v.hint}>
-            <button
-              type="button"
-              onClick={() => setVariant(v.id)}
-              aria-pressed={variant === v.id}
-              data-testid={`activity-rail-variant-${v.id}`}
-              className={tabClass(variant === v.id)}
-            >
-              {v.label}
-            </button>
-          </Tooltip>
-        ))}
-      </div>
-
       {/* The Dispatch tab is the only one with a control bar; it stays pinned
           above its own scroller so the selection count never scrolls away. */}
       {tab === 'dispatch' && <DeckDispatchBar ctl={dispatch.ctl} />}
 
-      {/* `key` on the tab AND the variant: neither should inherit the other's
-          scroll position, and the virtualizer must re-measure when the row
-          height changes under it. */}
+      {/* Keyed by tab so the three feeds never share a scroll position — and so
+          the virtualizer re-measures instead of restoring one list's offset
+          into another list's rows. */}
       <RailList
-        key={`${tab}:${variant}`}
+        key={tab}
         rows={active.rows}
-        rowHeight={rowHeight}
+        rowHeight={RAIL_ROW_HEIGHT}
         renderRow={renderRow}
         hasMore={active.hasMore}
         loading={active.loading}

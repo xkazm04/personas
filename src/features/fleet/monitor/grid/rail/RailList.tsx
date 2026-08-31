@@ -17,12 +17,10 @@
 //    threshold — without the latch a slow page turns one arrival into a request
 //    per scroll event.
 //
-// Row heights are per-variant and may vary per row (the digest variant emits
-// section headers), so this takes `rowHeight` as a number OR an index function
-// and drives `useVirtualizer` directly. `useVirtualList` is the shared wrapper
-// for the constant-height case and is deliberately not used here: it hard-codes
-// a constant `estimateSize`, which would misplace every row after the first
-// header.
+// Rows are a CONSTANT height, supplied by the caller and applied to both the
+// virtualizer and the row element from that one number — the arithmetic
+// `DeckQueueRail` had to learn the hard way, where an `estimateSize` and a
+// padding-implied height drifted and misplaced every row past the 40th.
 
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -36,17 +34,9 @@ const END_THRESHOLD = 220;
 
 export interface RailListProps {
   rows: RailRow[];
-  /** Constant height, or a per-index height for lists with section headers. */
-  rowHeight: number | ((index: number) => number);
-  /**
-   * The whole row array is handed to the renderer alongside the row, so a
-   * variant can render a SECTION BAND inline when `rows[index - 1]` belongs to
-   * a different group. That is how the digest variant groups a virtualized list
-   * without synthetic header rows — the alternative (splicing fake rows into
-   * the model) would put presentation state in the shared model, which is the
-   * one thing `railModel` exists to prevent.
-   */
-  renderRow: (row: RailRow, index: number, rows: RailRow[]) => ReactNode;
+  /** Fixed px height of every row. See the header. */
+  rowHeight: number;
+  renderRow: (row: RailRow) => ReactNode;
   hasMore: boolean;
   loading: boolean;
   onEndReached: () => void;
@@ -60,10 +50,7 @@ export function RailList({
 }: RailListProps) {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
-  const sizeOf = useCallback(
-    (i: number) => (typeof rowHeight === 'function' ? rowHeight(i) : rowHeight),
-    [rowHeight],
-  );
+  const sizeOf = useCallback(() => rowHeight, [rowHeight]);
 
   const virtualize = rows.length > VIRTUALIZE_ABOVE;
   const virtualizer = useVirtualizer({
@@ -123,15 +110,15 @@ export function RailList({
               className="absolute inset-x-0 top-0"
               style={{ height: v.size, transform: `translateY(${v.start}px)` }}
             >
-              {renderRow(rows[v.index]!, v.index, rows)}
+              {renderRow(rows[v.index]!)}
             </li>
           ))}
         </ul>
       ) : (
         <ul>
-          {rows.map((row, i) => (
-            <li key={row.id} style={{ height: sizeOf(i) }}>
-              {renderRow(row, i, rows)}
+          {rows.map((row) => (
+            <li key={row.id} style={{ height: rowHeight }}>
+              {renderRow(row)}
             </li>
           ))}
         </ul>
