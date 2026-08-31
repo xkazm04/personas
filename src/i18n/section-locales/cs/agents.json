@@ -2083,8 +2083,7 @@
     "cost_per_run": "Cena/běh",
     "last_run": "Poslední běh",
     "rank": "Pořadí",
-    "view_in_leaderboard": "Zobrazit v žebříčku",
-    "tab_life": "Život"
+    "view_in_leaderboard": "Zobrazit v žebříčku"
   },
   "health_proposals": {
     "link_credential": "Propojit přihlašovací údaje pro {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Odběry událostí pro konkrétní persony a konfigurace spouštěčů budou k dispozici v této záložce.",
     "messaging_desc": "Notifikační kanály a směrování doručené pošty pro tohoto agenta budou zde.",
     "automations_desc": "Samostatná pravidla automatizace pro tohoto agenta budou zde.",
-    "parameters": "Parametry"
+    "parameters": "Parametry",
+    "brain": "Mozek",
+    "core": "Jádro",
+    "responsibilities": "Odpovědnosti"
   },
   "parameters_card": {
     "title": "Parametry",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Zkušební doba končí",
     "resp_title_label": "Název",
     "save_failed": "Změnu se nepodařilo uložit",
-    "sub_brain": "Mozek",
     "sub_core": "Jádro",
-    "sub_responsibilities": "Odpovědnosti",
     "activity_attention_unavailable": "Průchody pozornosti se nepodařilo načíst"
   }
 }

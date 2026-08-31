@@ -1907,6 +1907,7 @@
   "fr:overview.activity_timeline.messages",
   "fr:overview.annotate_modal.annotation_label",
   "fr:overview.athena.triage_attention",
+  "fr:overview.attention_loop.today_consolidations",
   "fr:overview.certification.gate_test",
   "fr:overview.cockpit.title_default",
   "fr:overview.dashboard.status_sources",

@@ -147,11 +147,11 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     expect(useSystemStore.getState().editorTab).toBe('settings');
   });
 
-  it("preserves the 'life' editorTab (living-agent surface) untouched", async () => {
+  it("migrates legacy 'life' editorTab to design+core sub-tab", async () => {
     seedPersistedSystemStore({ editorTab: 'life' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
-    expect(state.editorTab).toBe('life');
-    expect(state.designSubTab).toBe('use-cases');
+    expect(state.editorTab).toBe('design');
+    expect(state.designSubTab).toBe('core');
   });
 });

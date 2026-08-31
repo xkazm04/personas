@@ -2280,5 +2280,20 @@
     "legend_size": "大小",
     "legend_low": "低",
     "legend_high": "高"
+  },
+  "attention_loop": {
+    "last_activity": "最近活动",
+    "none_yet": "尚未记录任何巡检。",
+    "off": "关",
+    "on": "开",
+    "subtitle": "对角色章程的自主巡检",
+    "title": "注意力循环",
+    "today_consolidations": "整理",
+    "today_dispatched": "已调度",
+    "today_label": "今日",
+    "today_refused": "已拒绝",
+    "toggle_failed": "无法更新注意力循环设置",
+    "toggle_label": "切换自主注意力循环",
+    "unavailable": "循环状态不可用。"
   }
 }

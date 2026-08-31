@@ -3246,8 +3246,7 @@
       "cost_per_run": "Coût/exéc.",
       "last_run": "Dernière exéc.",
       "rank": "Rang",
-      "view_in_leaderboard": "Voir dans le classement",
-      "tab_life": "Vie"
+      "view_in_leaderboard": "Voir dans le classement"
     },
     "health_proposals": {
       "link_credential": "Lier l’identifiant {connector}",
@@ -3325,7 +3324,10 @@
       "triggers_desc": "Les abonnements aux événements et la configuration des déclencheurs par persona seront disponibles dans cet onglet.",
       "messaging_desc": "Les canaux de notification et le routage de la boîte de réception pour cet agent seront disponibles ici.",
       "automations_desc": "Les règles d’automatisation autonomes pour cet agent seront disponibles ici.",
-      "parameters": "Paramètres"
+      "parameters": "Paramètres",
+      "brain": "Cerveau",
+      "core": "Noyau",
+      "responsibilities": "Responsabilités"
     },
     "parameters_card": {
       "title": "Paramètres",
@@ -4122,9 +4124,7 @@
       "resp_tenure_probation": "Fin de la période d'essai",
       "resp_title_label": "Titre",
       "save_failed": "La modification n'a pas pu être enregistrée",
-      "sub_brain": "Cerveau",
       "sub_core": "Noyau",
-      "sub_responsibilities": "Responsabilités",
       "activity_attention_unavailable": "Impossible de charger les passes d'attention"
     }
   },
@@ -8697,6 +8697,21 @@
       "legend_size": "Taille",
       "legend_low": "Faible",
       "legend_high": "Élevée"
+    },
+    "attention_loop": {
+      "last_activity": "Dernière activité",
+      "none_yet": "Aucune passe enregistrée pour le moment.",
+      "off": "Désactivée",
+      "on": "Activée",
+      "subtitle": "passes autonomes sur les chartes des personas",
+      "title": "Boucle d'attention",
+      "today_consolidations": "consolidations",
+      "today_dispatched": "lancées",
+      "today_label": "Aujourd'hui",
+      "today_refused": "refusées",
+      "toggle_failed": "Le réglage de la boucle d'attention n'a pas pu être mis à jour",
+      "toggle_label": "Basculer la boucle d'attention autonome",
+      "unavailable": "Statut de la boucle indisponible."
     }
   },
   "matrix_v3": {

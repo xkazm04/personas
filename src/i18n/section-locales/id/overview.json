@@ -2280,5 +2280,20 @@
     "legend_size": "Ukuran",
     "legend_low": "Rendah",
     "legend_high": "Tinggi"
+  },
+  "attention_loop": {
+    "last_activity": "Aktivitas terakhir",
+    "none_yet": "Belum ada lintasan yang tercatat.",
+    "off": "Nonaktif",
+    "on": "Aktif",
+    "subtitle": "lintasan otonom atas piagam persona",
+    "title": "Loop Atensi",
+    "today_consolidations": "konsolidasi",
+    "today_dispatched": "dikirim",
+    "today_label": "Hari ini",
+    "today_refused": "ditolak",
+    "toggle_failed": "Pengaturan loop atensi tidak dapat diperbarui",
+    "toggle_label": "Alihkan loop atensi otonom",
+    "unavailable": "Status loop tidak tersedia."
   }
 }

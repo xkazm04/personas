@@ -2083,8 +2083,7 @@
     "cost_per_run": "খরচ/রান",
     "last_run": "শেষ রান",
     "rank": "র‌্যাংক",
-    "view_in_leaderboard": "লিডারবোর্ডে দেখুন",
-    "tab_life": "জীবন"
+    "view_in_leaderboard": "লিডারবোর্ডে দেখুন"
   },
   "health_proposals": {
     "link_credential": "{connector} ক্রেডেনশিয়াল লিঙ্ক করুন",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "প্রতি-পার্সোনা ইভেন্ট সাবস্ক্রিপশন ও ট্রিগার কনফিগারেশন এই ট্যাবে আসবে।",
     "messaging_desc": "এই এজেন্টের নোটিফিকেশন চ্যানেল ও ইনবক্স রাউটিং এখানে থাকবে।",
     "automations_desc": "এই এজেন্টের স্বতন্ত্র অটোমেশন নিয়মগুলো এখানে থাকবে।",
-    "parameters": "প্যারামিটার"
+    "parameters": "প্যারামিটার",
+    "brain": "ব্রেন",
+    "core": "কোর",
+    "responsibilities": "দায়িত্ব"
   },
   "parameters_card": {
     "title": "প্যারামিটার",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "পরীক্ষাকাল শেষ",
     "resp_title_label": "শিরোনাম",
     "save_failed": "পরিবর্তনটি সংরক্ষণ করা যায়নি",
-    "sub_brain": "ব্রেন",
     "sub_core": "কোর",
-    "sub_responsibilities": "দায়িত্ব",
     "activity_attention_unavailable": "অ্যাটেনশন পর্বগুলি লোড করা যায়নি"
   }
 }

@@ -3246,8 +3246,7 @@
       "cost_per_run": "비용/실행",
       "last_run": "마지막 실행",
       "rank": "순위",
-      "view_in_leaderboard": "리더보드에서 보기",
-      "tab_life": "라이프"
+      "view_in_leaderboard": "리더보드에서 보기"
     },
     "health_proposals": {
       "link_credential": "{connector} 자격 증명 연결",
@@ -3325,7 +3324,10 @@
       "triggers_desc": "퍼소나별 이벤트 구독 및 트리거 설정이 이 탭에 제공될 예정입니다.",
       "messaging_desc": "이 에이전트의 알림 채널 및 인박스 라우팅이 여기에 표시됩니다.",
       "automations_desc": "이 에이전트의 독립 자동화 규칙이 여기에 표시됩니다.",
-      "parameters": "파라미터"
+      "parameters": "파라미터",
+      "brain": "브레인",
+      "core": "코어",
+      "responsibilities": "책임"
     },
     "parameters_card": {
       "title": "파라미터",
@@ -4122,9 +4124,7 @@
       "resp_tenure_probation": "수습 종료",
       "resp_title_label": "제목",
       "save_failed": "변경을 저장하지 못했습니다",
-      "sub_brain": "브레인",
       "sub_core": "코어",
-      "sub_responsibilities": "책임",
       "activity_attention_unavailable": "어텐션 패스를 불러오지 못했습니다"
     }
   },
@@ -8697,6 +8697,21 @@
       "legend_size": "크기",
       "legend_low": "낮음",
       "legend_high": "높음"
+    },
+    "attention_loop": {
+      "last_activity": "최근 활동",
+      "none_yet": "아직 기록된 패스가 없습니다.",
+      "off": "꺼짐",
+      "on": "켜짐",
+      "subtitle": "페르소나 헌장에 대한 자율 패스",
+      "title": "어텐션 루프",
+      "today_consolidations": "통합",
+      "today_dispatched": "실행",
+      "today_label": "오늘",
+      "today_refused": "거부",
+      "toggle_failed": "어텐션 루프 설정을 업데이트하지 못했습니다",
+      "toggle_label": "자율 어텐션 루프 전환",
+      "unavailable": "루프 상태를 확인할 수 없습니다."
     }
   },
   "matrix_v3": {

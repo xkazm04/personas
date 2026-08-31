@@ -2280,5 +2280,20 @@
     "legend_size": "الحجم",
     "legend_low": "منخفضة",
     "legend_high": "مرتفعة"
+  },
+  "attention_loop": {
+    "last_activity": "آخر نشاط",
+    "none_yet": "لم تُسجَّل أي جولات بعد.",
+    "off": "متوقف",
+    "on": "مفعّل",
+    "subtitle": "جولات مستقلة على مواثيق الشخصيات",
+    "title": "حلقة الانتباه",
+    "today_consolidations": "عمليات دمج",
+    "today_dispatched": "مُرسلة",
+    "today_label": "اليوم",
+    "today_refused": "مرفوضة",
+    "toggle_failed": "تعذّر تحديث إعداد حلقة الانتباه",
+    "toggle_label": "تبديل حلقة الانتباه المستقلة",
+    "unavailable": "حالة الحلقة غير متاحة."
   }
 }

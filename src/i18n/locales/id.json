@@ -3246,8 +3246,7 @@
       "cost_per_run": "Biaya/run",
       "last_run": "Terakhir dijalankan",
       "rank": "Peringkat",
-      "view_in_leaderboard": "Lihat di Papan Peringkat",
-      "tab_life": "Kehidupan"
+      "view_in_leaderboard": "Lihat di Papan Peringkat"
     },
     "health_proposals": {
       "link_credential": "Tautkan kredensial {connector}",
@@ -3325,7 +3324,10 @@
       "triggers_desc": "Langganan acara per-persona dan konfigurasi pemicu akan tersedia di tab ini.",
       "messaging_desc": "Saluran notifikasi dan perutean kotak masuk untuk agen ini akan ada di sini.",
       "automations_desc": "Aturan otomasi mandiri untuk agen ini akan ada di sini.",
-      "parameters": "Parameter"
+      "parameters": "Parameter",
+      "brain": "Otak",
+      "core": "Inti",
+      "responsibilities": "Tanggung jawab"
     },
     "parameters_card": {
       "title": "Parameter",
@@ -4122,9 +4124,7 @@
       "resp_tenure_probation": "Masa percobaan berakhir",
       "resp_title_label": "Judul",
       "save_failed": "Perubahan tidak dapat disimpan",
-      "sub_brain": "Otak",
       "sub_core": "Inti",
-      "sub_responsibilities": "Tanggung jawab",
       "activity_attention_unavailable": "Putaran atensi tidak dapat dimuat"
     }
   },
@@ -8697,6 +8697,21 @@
       "legend_size": "Ukuran",
       "legend_low": "Rendah",
       "legend_high": "Tinggi"
+    },
+    "attention_loop": {
+      "last_activity": "Aktivitas terakhir",
+      "none_yet": "Belum ada lintasan yang tercatat.",
+      "off": "Nonaktif",
+      "on": "Aktif",
+      "subtitle": "lintasan otonom atas piagam persona",
+      "title": "Loop Atensi",
+      "today_consolidations": "konsolidasi",
+      "today_dispatched": "dikirim",
+      "today_label": "Hari ini",
+      "today_refused": "ditolak",
+      "toggle_failed": "Pengaturan loop atensi tidak dapat diperbarui",
+      "toggle_label": "Alihkan loop atensi otonom",
+      "unavailable": "Status loop tidak tersedia."
     }
   },
   "matrix_v3": {

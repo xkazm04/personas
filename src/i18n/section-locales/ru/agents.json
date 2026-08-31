@@ -2083,8 +2083,7 @@
     "cost_per_run": "Стоимость/запуск",
     "last_run": "Последний запуск",
     "rank": "Рейтинг",
-    "view_in_leaderboard": "Посмотреть в рейтинге",
-    "tab_life": "Жизнь"
+    "view_in_leaderboard": "Посмотреть в рейтинге"
   },
   "health_proposals": {
     "link_credential": "Привязать учётные данные {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Подписки на события и настройка триггеров для каждой персоны появятся в этой вкладке.",
     "messaging_desc": "Каналы уведомлений и маршрутизация входящих для этого агента будут здесь.",
     "automations_desc": "Отдельные правила автоматизации для этого агента будут здесь.",
-    "parameters": "Параметры"
+    "parameters": "Параметры",
+    "brain": "Мозг",
+    "core": "Ядро",
+    "responsibilities": "Обязанности"
   },
   "parameters_card": {
     "title": "Параметры",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Испытательный срок до",
     "resp_title_label": "Название",
     "save_failed": "Не удалось сохранить изменение",
-    "sub_brain": "Мозг",
     "sub_core": "Ядро",
-    "sub_responsibilities": "Обязанности",
     "activity_attention_unavailable": "Не удалось загрузить проходы внимания"
   }
 }

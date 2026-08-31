@@ -12,8 +12,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::companion::brain::identity::IdentityDiff;
-use crate::db::models::PersonaEpisode;
+use crate::db::models::{AttentionLoopStatus, PersonaEpisode};
+use crate::db::repos::core::attention_ledger;
 use crate::db::repos::core::episodes as episodes_repo;
+use crate::engine::autonomy;
 use crate::engine::persona_brain::identity;
 use crate::engine::persona_jobs;
 use crate::error::AppError;
@@ -62,6 +64,19 @@ pub fn list_persona_episodes(
             "keyset cursor needs BOTH before_created_at and before_id (or neither)".into(),
         )),
     }
+}
+
+/// The attention loop's global switch (`autonomous_attention_loop`) plus a
+/// fleet-wide ledger aggregate for the Overview status tile: the newest pass
+/// overall and today's dispatched / refused / consolidation counts.
+#[tauri::command]
+pub fn get_attention_loop_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<AttentionLoopStatus, AppError> {
+    require_auth_sync(&state)?;
+    let enabled = autonomy::global_enabled(&state.db, autonomy::Action::AttentionLoop);
+    let summary = attention_ledger::summary_today(&state.db)?;
+    Ok(AttentionLoopStatus { enabled, summary })
 }
 
 /// The persona's current self-model (`identity.md`), or `None` when it has

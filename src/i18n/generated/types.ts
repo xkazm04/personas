@@ -1185,6 +1185,9 @@ export type Translations = {
       triggers: string;
       messaging: string;
       automations: string;
+      core: string;
+      responsibilities: string;
+      brain: string;
       triggers_desc: string;
       messaging_desc: string;
       automations_desc: string;
@@ -3211,8 +3214,6 @@ export type Translations = {
     };
     life: {
       sub_core: string;
-      sub_responsibilities: string;
-      sub_brain: string;
       save_failed: string;
       core_empty_title: string;
       core_empty_body: string;
@@ -3411,7 +3412,6 @@ export type Translations = {
       tab_connectors: string;
       tab_chat: string;
       tab_design: string;
-      tab_life: string;
       tab_settings: string;
       design_sub_design: string;
       design_sub_prompt: string;
@@ -8373,6 +8373,21 @@ export type Translations = {
       ask_athena_prompt: string;
       ask_athena_focus_persona: string;
       ask_athena_focus_general: string;
+    };
+    attention_loop: {
+      title: string;
+      subtitle: string;
+      on: string;
+      off: string;
+      toggle_label: string;
+      toggle_failed: string;
+      unavailable: string;
+      last_activity: string;
+      none_yet: string;
+      today_label: string;
+      today_dispatched: string;
+      today_refused: string;
+      today_consolidations: string;
     };
     upcoming_routines: {
       title: string;

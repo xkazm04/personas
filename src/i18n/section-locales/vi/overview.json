@@ -2280,5 +2280,20 @@
     "legend_size": "Kích thước",
     "legend_low": "Thấp",
     "legend_high": "Cao"
+  },
+  "attention_loop": {
+    "last_activity": "Hoạt động gần nhất",
+    "none_yet": "Chưa có lượt nào được ghi nhận.",
+    "off": "Tắt",
+    "on": "Bật",
+    "subtitle": "các lượt tự hành trên hiến chương persona",
+    "title": "Vòng chú ý",
+    "today_consolidations": "hợp nhất",
+    "today_dispatched": "đã điều phối",
+    "today_label": "Hôm nay",
+    "today_refused": "bị từ chối",
+    "toggle_failed": "Không thể cập nhật cài đặt vòng chú ý",
+    "toggle_label": "Bật/tắt vòng chú ý tự hành",
+    "unavailable": "Không có trạng thái vòng lặp."
   }
 }

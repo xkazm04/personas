@@ -413,11 +413,14 @@ export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "lear
 export type GoalsTab = "board" | "timeline" | "progress";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
 export type KpisTab = "dashboard" | "proposals";
-export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions" | "life";
-/** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
-export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations";
-/** Legacy EditorTab values kept only for migrating persisted state. */
-export type LegacyEditorTab = "prompt" | "connectors" | "health";
+export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
+/** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing.
+ *  `core` | `responsibilities` | `brain` are the living-agent surfaces, folded in
+ *  from the short-lived top-level Life tab (2026-08-31). */
+export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations" | "core" | "responsibilities" | "brain";
+/** Legacy EditorTab values kept only for migrating persisted state.
+ *  "life" was the top-level living-agent tab, folded into Design sub-tabs. */
+export type LegacyEditorTab = "prompt" | "connectors" | "health" | "life";
 // "sla" | "health" | "leaderboard" were retired 2026-08-25: those tabs were
 // consolidated into Mission Control ("home").
 // "extracted" was retired 2026-08-26 (the execution-extracted knowledge graph page).

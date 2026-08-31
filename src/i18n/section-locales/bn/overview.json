@@ -2280,5 +2280,20 @@
     "legend_size": "আকার",
     "legend_low": "কম",
     "legend_high": "বেশি"
+  },
+  "attention_loop": {
+    "last_activity": "সর্বশেষ কার্যকলাপ",
+    "none_yet": "এখনও কোনো পাস রেকর্ড হয়নি।",
+    "off": "বন্ধ",
+    "on": "চালু",
+    "subtitle": "পারসোনা সনদের ওপর স্বায়ত্তশাসিত পাস",
+    "title": "অ্যাটেনশন লুপ",
+    "today_consolidations": "একীকরণ",
+    "today_dispatched": "প্রেরিত",
+    "today_label": "আজ",
+    "today_refused": "প্রত্যাখ্যাত",
+    "toggle_failed": "অ্যাটেনশন লুপ সেটিং আপডেট করা যায়নি",
+    "toggle_label": "স্বায়ত্তশাসিত অ্যাটেনশন লুপ টগল করুন",
+    "unavailable": "লুপের অবস্থা পাওয়া যাচ্ছে না।"
   }
 }

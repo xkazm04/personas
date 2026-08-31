@@ -87,10 +87,10 @@ const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, f
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
 const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
-const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true, life: true });
+const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true });
 // `parameters` was missing from the old subset-tolerant guard too — the exact
 // Record caught it on conversion (third omission after mastermind + missions).
-const DESIGN_SUB_TABS = exact<DesignSubTab>({ 'use-cases': true, prompt: true, parameters: true, connectors: true, triggers: true, messaging: true, automations: true });
+const DESIGN_SUB_TABS = exact<DesignSubTab>({ 'use-cases': true, prompt: true, parameters: true, connectors: true, triggers: true, messaging: true, automations: true, core: true, responsibilities: true, brain: true });
 const CLOUD_TABS = exact<CloudTab>({ cloud: true, gitlab: true, unified: true });
 const SETTINGS_TABS = exact<SettingsTab>({ account: true, appearance: true, notifications: true, radio: true, engine: true, byom: true, portability: true, network: true, devices: true, admin: true, 'api-keys': true, history: true, limits: true });
 const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, artist: true, 'obsidian-brain': true, 'research-lab': true, drive: true, twin: true, companion: true, scraper: true });

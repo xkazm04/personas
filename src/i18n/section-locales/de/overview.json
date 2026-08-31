@@ -2280,5 +2280,20 @@
     "legend_size": "Größe",
     "legend_low": "Niedrig",
     "legend_high": "Hoch"
+  },
+  "attention_loop": {
+    "last_activity": "Letzte Aktivität",
+    "none_yet": "Noch keine Durchläufe aufgezeichnet.",
+    "off": "Aus",
+    "on": "An",
+    "subtitle": "autonome Durchläufe über Persona-Chartas",
+    "title": "Aufmerksamkeitsschleife",
+    "today_consolidations": "Konsolidierungen",
+    "today_dispatched": "angestoßen",
+    "today_label": "Heute",
+    "today_refused": "abgelehnt",
+    "toggle_failed": "Die Einstellung der Aufmerksamkeitsschleife konnte nicht aktualisiert werden",
+    "toggle_label": "Autonome Aufmerksamkeitsschleife umschalten",
+    "unavailable": "Schleifenstatus nicht verfügbar."
   }
 }

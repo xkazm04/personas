@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { AttentionLoopStatus } from "@/lib/bindings/AttentionLoopStatus";
 import type { PersonaEpisode } from "@/lib/bindings/PersonaEpisode";
 
 // ============================================================================
@@ -34,6 +35,14 @@ export const listPersonaEpisodes = (
     beforeId,
     limit,
   });
+
+/**
+ * The attention loop's global switch (`autonomous_attention_loop`) plus a
+ * fleet-wide ledger aggregate for the Overview status tile: the newest pass
+ * overall and today's dispatched / refused / consolidation counts.
+ */
+export const getAttentionLoopStatus = () =>
+  invoke<AttentionLoopStatus>("get_attention_loop_status");
 
 /**
  * The persona's current self-model (`identity.md` markdown), or `null` when

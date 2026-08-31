@@ -3246,8 +3246,7 @@
       "cost_per_run": "लागत/रन",
       "last_run": "अंतिम रन",
       "rank": "रैंक",
-      "view_in_leaderboard": "लीडरबोर्ड में देखें",
-      "tab_life": "जीवन"
+      "view_in_leaderboard": "लीडरबोर्ड में देखें"
     },
     "health_proposals": {
       "link_credential": "{connector} क्रेडेंशियल लिंक करें",
@@ -3325,7 +3324,10 @@
       "triggers_desc": "प्रति-पर्सोना ईवेंट सब्सक्रिप्शन और ट्रिगर कॉन्फ़िगरेशन इस टैब में आएगा।",
       "messaging_desc": "इस एजेंट के नोटिफिकेशन चैनल और इनबॉक्स रूटिंग यहाँ होंगे।",
       "automations_desc": "इस एजेंट के लिए स्वतंत्र ऑटोमेशन नियम यहाँ होंगे।",
-      "parameters": "पैरामीटर"
+      "parameters": "पैरामीटर",
+      "brain": "ब्रेन",
+      "core": "कोर",
+      "responsibilities": "ज़िम्मेदारियाँ"
     },
     "parameters_card": {
       "title": "पैरामीटर्स",
@@ -4122,9 +4124,7 @@
       "resp_tenure_probation": "परिवीक्षा समाप्ति",
       "resp_title_label": "शीर्षक",
       "save_failed": "बदलाव सहेजा नहीं जा सका",
-      "sub_brain": "ब्रेन",
       "sub_core": "कोर",
-      "sub_responsibilities": "ज़िम्मेदारियाँ",
       "activity_attention_unavailable": "अटेंशन दौर लोड नहीं हो सके"
     }
   },
@@ -8697,6 +8697,21 @@
       "legend_size": "आकार",
       "legend_low": "कम",
       "legend_high": "अधिक"
+    },
+    "attention_loop": {
+      "last_activity": "अंतिम गतिविधि",
+      "none_yet": "अभी तक कोई पास दर्ज नहीं हुआ।",
+      "off": "बंद",
+      "on": "चालू",
+      "subtitle": "पर्सोना चार्टर पर स्वायत्त पास",
+      "title": "अटेंशन लूप",
+      "today_consolidations": "समेकन",
+      "today_dispatched": "प्रेषित",
+      "today_label": "आज",
+      "today_refused": "अस्वीकृत",
+      "toggle_failed": "अटेंशन लूप सेटिंग अपडेट नहीं हो सकी",
+      "toggle_label": "स्वायत्त अटेंशन लूप टॉगल करें",
+      "unavailable": "लूप की स्थिति उपलब्ध नहीं है।"
     }
   },
   "matrix_v3": {

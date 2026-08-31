@@ -84,3 +84,36 @@ pub struct AttentionLedgerEntry {
     #[ts(optional)]
     pub completed_at: Option<String>,
 }
+
+/// Fleet-wide aggregate of the attention loop's ledger for the Overview
+/// status tile: the newest row overall plus today's (UTC) verdict counts.
+/// Produced by `attention_ledger::summary_today`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AttentionLoopSummary {
+    /// The newest ledger row across all personas — `None` only while the
+    /// ledger has never recorded a pass ("no activity yet", not zero).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub latest: Option<AttentionLedgerEntry>,
+    /// Attention lanes dispatched today (verdict 'dispatched').
+    pub dispatched_today: i64,
+    /// Passes refused today (rate caps, quiet hours, budget).
+    pub refused_today: i64,
+    /// Sleep-consolidation jobs enqueued today (kind 'consolidation',
+    /// verdict 'enqueued').
+    pub consolidations_today: i64,
+    /// Distinct personas with a non-refused pass today.
+    pub personas_served_today: i64,
+}
+
+/// The `get_attention_loop_status` command payload: the global
+/// `autonomous_attention_loop` switch plus today's ledger aggregate.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AttentionLoopStatus {
+    pub enabled: bool,
+    pub summary: AttentionLoopSummary,
+}

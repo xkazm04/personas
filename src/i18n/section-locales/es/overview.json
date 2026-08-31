@@ -2280,5 +2280,20 @@
     "legend_size": "Tamaño",
     "legend_low": "Baja",
     "legend_high": "Alta"
+  },
+  "attention_loop": {
+    "last_activity": "Última actividad",
+    "none_yet": "Aún no hay pasadas registradas.",
+    "off": "Desactivado",
+    "on": "Activado",
+    "subtitle": "pasadas autónomas sobre los estatutos de las personas",
+    "title": "Bucle de atención",
+    "today_consolidations": "consolidaciones",
+    "today_dispatched": "despachadas",
+    "today_label": "Hoy",
+    "today_refused": "rechazadas",
+    "toggle_failed": "No se pudo actualizar el ajuste del bucle de atención",
+    "toggle_label": "Alternar el bucle de atención autónomo",
+    "unavailable": "Estado del bucle no disponible."
   }
 }

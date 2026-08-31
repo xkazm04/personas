@@ -2083,8 +2083,7 @@
     "cost_per_run": "Costo/ejecución",
     "last_run": "Última ejecución",
     "rank": "Rango",
-    "view_in_leaderboard": "Ver en la tabla de clasificación",
-    "tab_life": "Vida"
+    "view_in_leaderboard": "Ver en la tabla de clasificación"
   },
   "health_proposals": {
     "link_credential": "Vincular credencial de {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Las suscripciones de eventos por persona y la configuración de disparadores estarán disponibles en esta pestaña.",
     "messaging_desc": "Los canales de notificación y el enrutamiento de bandeja de entrada para este agente se encontrarán aquí.",
     "automations_desc": "Las reglas de automatización independientes para este agente se encontrarán aquí.",
-    "parameters": "Parámetros"
+    "parameters": "Parámetros",
+    "brain": "Cerebro",
+    "core": "Núcleo",
+    "responsibilities": "Responsabilidades"
   },
   "parameters_card": {
     "title": "Parámetros",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Fin del período de prueba",
     "resp_title_label": "Título",
     "save_failed": "No se pudo guardar el cambio",
-    "sub_brain": "Cerebro",
     "sub_core": "Núcleo",
-    "sub_responsibilities": "Responsabilidades",
     "activity_attention_unavailable": "No se pudieron cargar las pasadas de atención"
   }
 }

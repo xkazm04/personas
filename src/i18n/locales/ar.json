@@ -3246,8 +3246,7 @@
       "cost_per_run": "التكلفة/تشغيل",
       "last_run": "آخر تشغيل",
       "rank": "الترتيب",
-      "view_in_leaderboard": "عرض في لوحة المتصدرين",
-      "tab_life": "الحياة"
+      "view_in_leaderboard": "عرض في لوحة المتصدرين"
     },
     "health_proposals": {
       "link_credential": "ربط بيانات اعتماد {connector}",
@@ -3325,7 +3324,10 @@
       "triggers_desc": "ستظهر هنا اشتراكات الأحداث وإعدادات المحفّزات الخاصة بكل شخصية.",
       "messaging_desc": "ستُوجَد هنا قنوات الإشعارات وتوجيه صندوق الوارد لهذا الوكيل.",
       "automations_desc": "ستُوجَد هنا قواعد الأتمتة المستقلة لهذا الوكيل.",
-      "parameters": "المعاملات"
+      "parameters": "المعاملات",
+      "brain": "الدماغ",
+      "core": "النواة",
+      "responsibilities": "المسؤوليات"
     },
     "parameters_card": {
       "title": "المعاملات",
@@ -4122,9 +4124,7 @@
       "resp_tenure_probation": "نهاية فترة التجربة",
       "resp_title_label": "العنوان",
       "save_failed": "تعذّر حفظ التغيير",
-      "sub_brain": "الدماغ",
       "sub_core": "النواة",
-      "sub_responsibilities": "المسؤوليات",
       "activity_attention_unavailable": "تعذّر تحميل جولات الانتباه"
     }
   },
@@ -8697,6 +8697,21 @@
       "legend_size": "الحجم",
       "legend_low": "منخفضة",
       "legend_high": "مرتفعة"
+    },
+    "attention_loop": {
+      "last_activity": "آخر نشاط",
+      "none_yet": "لم تُسجَّل أي جولات بعد.",
+      "off": "متوقف",
+      "on": "مفعّل",
+      "subtitle": "جولات مستقلة على مواثيق الشخصيات",
+      "title": "حلقة الانتباه",
+      "today_consolidations": "عمليات دمج",
+      "today_dispatched": "مُرسلة",
+      "today_label": "اليوم",
+      "today_refused": "مرفوضة",
+      "toggle_failed": "تعذّر تحديث إعداد حلقة الانتباه",
+      "toggle_label": "تبديل حلقة الانتباه المستقلة",
+      "unavailable": "حالة الحلقة غير متاحة."
     }
   },
   "matrix_v3": {

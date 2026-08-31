@@ -2280,5 +2280,20 @@
     "legend_size": "आकार",
     "legend_low": "कम",
     "legend_high": "अधिक"
+  },
+  "attention_loop": {
+    "last_activity": "अंतिम गतिविधि",
+    "none_yet": "अभी तक कोई पास दर्ज नहीं हुआ।",
+    "off": "बंद",
+    "on": "चालू",
+    "subtitle": "पर्सोना चार्टर पर स्वायत्त पास",
+    "title": "अटेंशन लूप",
+    "today_consolidations": "समेकन",
+    "today_dispatched": "प्रेषित",
+    "today_label": "आज",
+    "today_refused": "अस्वीकृत",
+    "toggle_failed": "अटेंशन लूप सेटिंग अपडेट नहीं हो सकी",
+    "toggle_label": "स्वायत्त अटेंशन लूप टॉगल करें",
+    "unavailable": "लूप की स्थिति उपलब्ध नहीं है।"
   }
 }

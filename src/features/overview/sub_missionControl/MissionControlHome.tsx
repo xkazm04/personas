@@ -43,6 +43,7 @@ import { LeaderboardSection } from './sections/LeaderboardSection';
 
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultActivityCard = lazyRetry(() => import('./cards/VaultActivityCard'));
+const AttentionLoopCard = lazyRetry(() => import('./cards/AttentionLoopCard'));
 
 // Suspense fallback for the lazy routine/vault cards — delayed-invisible
 // silhouette (docs/design/overview-loading.md §D): a warm chunk never paints it.
@@ -280,14 +281,24 @@ export default function MissionControlHome() {
                 </motion.div>
               )}
 
-              {!isEmpty && !hiddenSections.includes('routines') && (
+              {!isEmpty && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Suspense fallback={<CardFrameSkeleton rows={3} rowHeight={44} />}>
-                    <UpcomingRoutinesCard />
+                  {/* The attention-loop tile is deliberately outside the
+                      'routines' customize toggle — it carries the loop's
+                      global on/off switch, which must stay reachable. */}
+                  <Suspense fallback={<CardFrameSkeleton rows={2} rowHeight={44} />}>
+                    <AttentionLoopCard />
                   </Suspense>
-                  <Suspense fallback={<CardFrameSkeleton rows={4} rowHeight={32} />}>
-                    <VaultActivityCard />
-                  </Suspense>
+                  {!hiddenSections.includes('routines') && (
+                    <>
+                      <Suspense fallback={<CardFrameSkeleton rows={3} rowHeight={44} />}>
+                        <UpcomingRoutinesCard />
+                      </Suspense>
+                      <Suspense fallback={<CardFrameSkeleton rows={4} rowHeight={32} />}>
+                        <VaultActivityCard />
+                      </Suspense>
+                    </>
+                  )}
                 </motion.div>
               )}
             </motion.div>

@@ -1179,6 +1179,9 @@
       "triggers": "Events & Triggers",
       "messaging": "Notifications",
       "automations": "Automations",
+      "core": "Core",
+      "responsibilities": "Responsibilities",
+      "brain": "Brain",
       "triggers_desc": "Per-persona event subscriptions and trigger configuration will land in this tab.",
       "messaging_desc": "Notification channels and inbox routing for this agent will live here.",
       "automations_desc": "Standalone automation rules for this agent will live here."
@@ -3205,8 +3208,6 @@
     },
     "life": {
       "sub_core": "Core",
-      "sub_responsibilities": "Responsibilities",
-      "sub_brain": "Brain",
       "save_failed": "The change could not be saved",
       "core_empty_title": "No Core authored yet",
       "core_empty_body": "The Core is this persona's character: what it cares about, where it stands, and how it argues. It seeds at creation and a rebuild never overwrites it. Author it here to give the persona a durable point of view.",
@@ -3405,7 +3406,6 @@
       "tab_connectors": "Connectors",
       "tab_chat": "Chat",
       "tab_design": "Design",
-      "tab_life": "Life",
       "tab_settings": "Settings",
       "design_sub_design": "Design",
       "design_sub_prompt": "Prompt",
@@ -8367,6 +8367,21 @@
       "ask_athena_prompt": "I'm reviewing a fleet optimization suggestion for my agents: \"{title}\". {description} Suggested action: {action}. {focus}",
       "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
       "ask_athena_focus_general": "Please look into this and recommend what to change."
+    },
+    "attention_loop": {
+      "title": "Attention Loop",
+      "subtitle": "autonomous passes over persona charters",
+      "on": "On",
+      "off": "Off",
+      "toggle_label": "Toggle the autonomous attention loop",
+      "toggle_failed": "The attention-loop setting could not be updated",
+      "unavailable": "Loop status unavailable.",
+      "last_activity": "Last activity",
+      "none_yet": "No passes recorded yet.",
+      "today_label": "Today",
+      "today_dispatched": "dispatched",
+      "today_refused": "refused",
+      "today_consolidations": "consolidations"
     },
     "upcoming_routines": {
       "title": "Upcoming Routines",

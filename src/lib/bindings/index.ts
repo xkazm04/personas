@@ -52,6 +52,8 @@ export type { AthenaUsageDay } from "./AthenaUsageDay";
 export type { AthenaUsageTotals } from "./AthenaUsageTotals";
 export type { AttentionItem } from "./AttentionItem";
 export type { AttentionLedgerEntry } from "./AttentionLedgerEntry";
+export type { AttentionLoopStatus } from "./AttentionLoopStatus";
+export type { AttentionLoopSummary } from "./AttentionLoopSummary";
 export type { AttentionQueue } from "./AttentionQueue";
 export type { AttentionThresholds } from "./AttentionThresholds";
 export type { AudioStage } from "./AudioStage";

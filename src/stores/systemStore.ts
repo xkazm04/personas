@@ -191,6 +191,11 @@ export const useSystemStore = create<SystemStore>()(
         } else if (legacyTab === 'use-cases') {
           state.editorTab = 'design';
           state.designSubTab = 'use-cases';
+        } else if (legacyTab === 'life') {
+          // The top-level Life tab (living-agent surface) folded into the
+          // Design hub as the core / responsibilities / brain sub-tabs.
+          state.editorTab = 'design';
+          state.designSubTab = 'core';
         }
         // Migrate legacy designSubTab value: 'design' (former LLM-wizard tab) → 'prompt'.
         const legacySubTab = state.designSubTab as unknown as string;

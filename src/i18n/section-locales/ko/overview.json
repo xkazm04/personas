@@ -2280,5 +2280,20 @@
     "legend_size": "크기",
     "legend_low": "낮음",
     "legend_high": "높음"
+  },
+  "attention_loop": {
+    "last_activity": "최근 활동",
+    "none_yet": "아직 기록된 패스가 없습니다.",
+    "off": "꺼짐",
+    "on": "켜짐",
+    "subtitle": "페르소나 헌장에 대한 자율 패스",
+    "title": "어텐션 루프",
+    "today_consolidations": "통합",
+    "today_dispatched": "실행",
+    "today_label": "오늘",
+    "today_refused": "거부",
+    "toggle_failed": "어텐션 루프 설정을 업데이트하지 못했습니다",
+    "toggle_label": "자율 어텐션 루프 전환",
+    "unavailable": "루프 상태를 확인할 수 없습니다."
   }
 }

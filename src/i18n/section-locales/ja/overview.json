@@ -2280,5 +2280,20 @@
     "legend_size": "サイズ",
     "legend_low": "低",
     "legend_high": "高"
+  },
+  "attention_loop": {
+    "last_activity": "最終アクティビティ",
+    "none_yet": "まだパスは記録されていません。",
+    "off": "オフ",
+    "on": "オン",
+    "subtitle": "ペルソナの憲章に対する自律パス",
+    "title": "アテンションループ",
+    "today_consolidations": "統合",
+    "today_dispatched": "実行",
+    "today_label": "本日",
+    "today_refused": "拒否",
+    "toggle_failed": "アテンションループの設定を更新できませんでした",
+    "toggle_label": "自律アテンションループを切り替える",
+    "unavailable": "ループの状態を取得できません。"
   }
 }

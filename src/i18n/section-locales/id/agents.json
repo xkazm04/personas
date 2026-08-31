@@ -2083,8 +2083,7 @@
     "cost_per_run": "Biaya/run",
     "last_run": "Terakhir dijalankan",
     "rank": "Peringkat",
-    "view_in_leaderboard": "Lihat di Papan Peringkat",
-    "tab_life": "Kehidupan"
+    "view_in_leaderboard": "Lihat di Papan Peringkat"
   },
   "health_proposals": {
     "link_credential": "Tautkan kredensial {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Langganan acara per-persona dan konfigurasi pemicu akan tersedia di tab ini.",
     "messaging_desc": "Saluran notifikasi dan perutean kotak masuk untuk agen ini akan ada di sini.",
     "automations_desc": "Aturan otomasi mandiri untuk agen ini akan ada di sini.",
-    "parameters": "Parameter"
+    "parameters": "Parameter",
+    "brain": "Otak",
+    "core": "Inti",
+    "responsibilities": "Tanggung jawab"
   },
   "parameters_card": {
     "title": "Parameter",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Masa percobaan berakhir",
     "resp_title_label": "Judul",
     "save_failed": "Perubahan tidak dapat disimpan",
-    "sub_brain": "Otak",
     "sub_core": "Inti",
-    "sub_responsibilities": "Tanggung jawab",
     "activity_attention_unavailable": "Putaran atensi tidak dapat dimuat"
   }
 }

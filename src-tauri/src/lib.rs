@@ -252,6 +252,7 @@ pub fn run() {
             commands::core::persona_brain::run_persona_consolidation_now,
             commands::core::persona_brain::list_persona_episodes,
             commands::core::persona_brain::get_persona_identity,
+            commands::core::persona_brain::get_attention_loop_status,
             commands::core::persona_brain::propose_persona_identity_diffs,
             // Core -- Custom persona icons (desktop only — image decode pipeline)
             #[cfg(feature = "desktop")]

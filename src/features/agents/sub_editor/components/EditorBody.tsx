@@ -15,7 +15,7 @@ import { PersonaChangeHistory } from './PersonaChangeHistory';
 import {
   ActivityTab,
   PersonaSettingsTab,
-  LabTab, DesignTab, LifeTab,
+  LabTab, DesignTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
 import { SubTabSurface } from './SubTabSurface';
@@ -182,7 +182,6 @@ export function EditorBody() {
           <Suspense fallback={<SuspenseFallback />}>
             {editorTab === 'activity' && <ActivityTab />}
             {editorTab === 'lab' && <LabTab />}
-            {editorTab === 'life' && <LifeTab />}
             {editorTab === 'design' && (
               <DesignTab
                 draft={draft}

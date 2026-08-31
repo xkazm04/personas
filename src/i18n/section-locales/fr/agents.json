@@ -2083,8 +2083,7 @@
     "cost_per_run": "Coût/exéc.",
     "last_run": "Dernière exéc.",
     "rank": "Rang",
-    "view_in_leaderboard": "Voir dans le classement",
-    "tab_life": "Vie"
+    "view_in_leaderboard": "Voir dans le classement"
   },
   "health_proposals": {
     "link_credential": "Lier l’identifiant {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Les abonnements aux événements et la configuration des déclencheurs par persona seront disponibles dans cet onglet.",
     "messaging_desc": "Les canaux de notification et le routage de la boîte de réception pour cet agent seront disponibles ici.",
     "automations_desc": "Les règles d’automatisation autonomes pour cet agent seront disponibles ici.",
-    "parameters": "Paramètres"
+    "parameters": "Paramètres",
+    "brain": "Cerveau",
+    "core": "Noyau",
+    "responsibilities": "Responsabilités"
   },
   "parameters_card": {
     "title": "Paramètres",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Fin de la période d'essai",
     "resp_title_label": "Titre",
     "save_failed": "La modification n'a pas pu être enregistrée",
-    "sub_brain": "Cerveau",
     "sub_core": "Noyau",
-    "sub_responsibilities": "Responsabilités",
     "activity_attention_unavailable": "Impossible de charger les passes d'attention"
   }
 }

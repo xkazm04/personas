@@ -2083,8 +2083,7 @@
     "cost_per_run": "Chi phí/lần chạy",
     "last_run": "Lần chạy cuối",
     "rank": "Hạng",
-    "view_in_leaderboard": "Xem trong bảng xếp hạng",
-    "tab_life": "Đời sống"
+    "view_in_leaderboard": "Xem trong bảng xếp hạng"
   },
   "health_proposals": {
     "link_credential": "Liên kết thông tin xác thực {connector}",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Đăng ký sự kiện và cấu hình trigger theo từng persona sẽ được hiển thị ở tab này.",
     "messaging_desc": "Kênh thông báo và định tuyến hộp thư đến cho agent này sẽ nằm ở đây.",
     "automations_desc": "Các quy tắc tự động hóa độc lập cho agent này sẽ nằm ở đây.",
-    "parameters": "Tham số"
+    "parameters": "Tham số",
+    "brain": "Bộ não",
+    "core": "Cốt lõi",
+    "responsibilities": "Trách nhiệm"
   },
   "parameters_card": {
     "title": "Thông số",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Hết thử việc",
     "resp_title_label": "Tiêu đề",
     "save_failed": "Không thể lưu thay đổi",
-    "sub_brain": "Bộ não",
     "sub_core": "Cốt lõi",
-    "sub_responsibilities": "Trách nhiệm",
     "activity_attention_unavailable": "Không thể tải các lượt chú ý"
   }
 }

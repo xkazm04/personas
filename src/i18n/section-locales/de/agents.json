@@ -2083,8 +2083,7 @@
     "cost_per_run": "Kosten/Lauf",
     "last_run": "Letzter Lauf",
     "rank": "Rang",
-    "view_in_leaderboard": "In Bestenliste anzeigen",
-    "tab_life": "Leben"
+    "view_in_leaderboard": "In Bestenliste anzeigen"
   },
   "health_proposals": {
     "link_credential": "{connector}-Zugangsdaten verknüpfen",
@@ -2162,7 +2161,10 @@
     "triggers_desc": "Personenbezogene Ereignisabonnements und Trigger-Konfiguration werden in diesem Tab verfügbar sein.",
     "messaging_desc": "Benachrichtigungskanäle und Posteingangs-Routing für diesen Agenten werden hier zu finden sein.",
     "automations_desc": "Eigenständige Automatisierungsregeln für diesen Agenten werden hier zu finden sein.",
-    "parameters": "Parameter"
+    "parameters": "Parameter",
+    "brain": "Gehirn",
+    "core": "Kern",
+    "responsibilities": "Verantwortungen"
   },
   "parameters_card": {
     "title": "Parameter",
@@ -2959,9 +2961,7 @@
     "resp_tenure_probation": "Probezeit endet",
     "resp_title_label": "Titel",
     "save_failed": "Die Änderung konnte nicht gespeichert werden",
-    "sub_brain": "Gehirn",
     "sub_core": "Kern",
-    "sub_responsibilities": "Verantwortungen",
     "activity_attention_unavailable": "Aufmerksamkeitsdurchläufe konnten nicht geladen werden"
   }
 }

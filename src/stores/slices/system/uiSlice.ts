@@ -246,7 +246,7 @@ export interface UiSlice {
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
   /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
-  setEditorTab: (tab: EditorTab | "prompt" | "connectors" | "health") => void;
+  setEditorTab: (tab: EditorTab | "prompt" | "connectors" | "health" | "life") => void;
   setDesignSubTab: (tab: DesignSubTab) => void;
   setCloudTab: (tab: CloudTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
@@ -503,6 +503,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     if (tab === "health") return set({ editorTab: "design", designSubTab: "prompt" });
     // Use Cases moved from a top-level tab into the Design hub.
     if (tab === "use-cases") return set({ editorTab: "design", designSubTab: "use-cases" });
+    // Life (living-agent surface) folded into the Design hub; land on Core.
+    if (tab === "life") return set({ editorTab: "design", designSubTab: "core" });
     set({ editorTab: tab });
   }),
   setDesignSubTab: (tab) => startTransition(() => set({ designSubTab: tab })),

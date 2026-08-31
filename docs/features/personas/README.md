@@ -534,11 +534,14 @@ the optional `UpdatePersonaInput.source`), and a timestamp.
 - Read via the `list_persona_change_log` IPC command. Restore/rollback is out of
   scope — this is an inspection surface only.
 
-## Life tab (Core · Responsibilities · Brain)
+## Living-agent surfaces (Design › Core · Responsibilities · Brain)
 
-The **Life** editor tab (`src/features/agents/sub_life/`, spark
-`living-agent-core`) is the living-agent surface — three sub-surfaces under a
-segmented switch, all keyed to the selected persona:
+The living-agent surface (`src/features/agents/sub_life/`, spark
+`living-agent-core`) lives in the **Design** hub as three sub-tabs — Core,
+Responsibilities, Brain — all keyed to the selected persona. (It shipped
+briefly as a top-level **Life** editor tab; the post-ship checklist folded it
+into Design on 2026-08-31, and a persisted `editorTab: 'life'` migrates to
+Design › Core on rehydrate.)
 
 - **Core** — the persona's character: three 0..1 dials (risk tolerance,
   speed-vs-quality, deference), the conflict style (challenger · harmonizer ·

@@ -11,7 +11,7 @@
 use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
-use crate::models::AttentionLedgerEntry;
+use crate::models::{AttentionLedgerEntry, AttentionLoopSummary};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -289,6 +289,57 @@ pub fn count_today(
     )
 }
 
+/// Fleet-wide aggregate for the Overview status tile: the newest ledger row
+/// overall (any persona, any verdict — `None` only when the ledger is empty)
+/// plus today's (UTC) counts: dispatched lanes, refusals, enqueued
+/// consolidations, and distinct personas served (non-refused).
+pub fn summary_today(pool: &DbPool) -> Result<AttentionLoopSummary, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::summary_today",
+        {
+            let conn = pool.conn("attention_ledger::summary_today")?;
+            let latest = {
+                let mut stmt = conn.prepare_cached(&format!(
+                    "SELECT {COLUMNS} FROM persona_attention_ledger
+                 ORDER BY started_at DESC, id DESC
+                 LIMIT 1"
+                ))?;
+                stmt.query_row([], row_to_entry)
+                    .optional()
+                    .map_err(AppError::Database)?
+            };
+            // CASE-form conditional aggregates (not FILTER) so the one scan
+            // stays portable across the SQLite versions the app links.
+            let (dispatched, refused, consolidations, personas) = conn.query_row(
+                "SELECT
+                    COALESCE(SUM(CASE WHEN verdict = 'dispatched' THEN 1 ELSE 0 END), 0) AS dispatched,
+                    COALESCE(SUM(CASE WHEN verdict = 'refused' THEN 1 ELSE 0 END), 0) AS refused,
+                    COALESCE(SUM(CASE WHEN kind = 'consolidation' AND verdict = 'enqueued' THEN 1 ELSE 0 END), 0) AS consolidations,
+                    COUNT(DISTINCT CASE WHEN verdict != 'refused' THEN persona_id END) AS personas
+                 FROM persona_attention_ledger
+                 WHERE date(started_at) = date('now')",
+                [],
+                |r| {
+                    Ok((
+                        r.get::<_, i64>("dispatched")?,
+                        r.get::<_, i64>("refused")?,
+                        r.get::<_, i64>("consolidations")?,
+                        r.get::<_, i64>("personas")?,
+                    ))
+                },
+            )?;
+            Ok(AttentionLoopSummary {
+                latest,
+                dispatched_today: dispatched,
+                refused_today: refused,
+                consolidations_today: consolidations,
+                personas_served_today: personas,
+            })
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -447,6 +498,56 @@ mod tests {
             [],
         )?;
         assert_eq!(count_today(&pool, "p1", "attention", None)?, 1);
+        Ok(())
+    }
+
+    #[test]
+    fn summary_today_aggregates_the_fleet_and_scopes_to_today() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+
+        // Empty ledger: no latest row, all counts a measured zero.
+        let empty = summary_today(&pool)?;
+        assert!(empty.latest.is_none());
+        assert_eq!(empty.dispatched_today, 0);
+        assert_eq!(empty.refused_today, 0);
+        assert_eq!(empty.consolidations_today, 0);
+        assert_eq!(empty.personas_served_today, 0);
+
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+
+        // p1: a dispatched attention lane + a refused pass.
+        let a = insert_started(&pool, "p1", None, "attention", Some("advance"))?;
+        complete(&pool, &a, "dispatched", "", None, None, None)?;
+        insert_refusal(&pool, "p1", None, "attention", Some("advance"), "daily cap")?;
+        // p2: a consolidation decision recorded as 'enqueued'.
+        let c = insert_started(&pool, "p2", None, "consolidation", None)?;
+        complete(&pool, &c, "enqueued", "", None, None, None)?;
+        // Yesterday's dispatched pass must not count toward today.
+        let old = insert_started(&pool, "p2", None, "attention", Some("advance"))?;
+        complete(&pool, &old, "dispatched", "", None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET started_at = '2020-01-01T00:00:00Z'
+             WHERE id = ?1",
+            params![old],
+        )?;
+
+        let s = summary_today(&pool)?;
+        assert_eq!(
+            s.dispatched_today, 1,
+            "yesterday's dispatch is out of scope"
+        );
+        assert_eq!(s.refused_today, 1);
+        assert_eq!(s.consolidations_today, 1);
+        // p1 (dispatched) + p2 (enqueued consolidation) served; the refusal
+        // alone would not have counted p1.
+        assert_eq!(s.personas_served_today, 2);
+
+        // Latest is the newest row overall regardless of verdict or kind —
+        // here the ledger's last insert (p2's backdated row sorts last by
+        // started_at, so the consolidation or refusal wins on recency).
+        let latest = s.latest.expect("non-empty ledger has a latest row");
+        assert_ne!(latest.id, old, "a backdated row can never be the latest");
         Ok(())
     }
 }

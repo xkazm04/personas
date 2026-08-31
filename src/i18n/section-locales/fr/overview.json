@@ -2280,5 +2280,20 @@
     "legend_size": "Taille",
     "legend_low": "Faible",
     "legend_high": "Élevée"
+  },
+  "attention_loop": {
+    "last_activity": "Dernière activité",
+    "none_yet": "Aucune passe enregistrée pour le moment.",
+    "off": "Désactivée",
+    "on": "Activée",
+    "subtitle": "passes autonomes sur les chartes des personas",
+    "title": "Boucle d'attention",
+    "today_consolidations": "consolidations",
+    "today_dispatched": "lancées",
+    "today_label": "Aujourd'hui",
+    "today_refused": "refusées",
+    "toggle_failed": "Le réglage de la boucle d'attention n'a pas pu être mis à jour",
+    "toggle_label": "Basculer la boucle d'attention autonome",
+    "unavailable": "Statut de la boucle indisponible."
   }
 }

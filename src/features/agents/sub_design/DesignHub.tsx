@@ -1,8 +1,9 @@
 import { Suspense, lazy, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Sliders, Plug, Zap, Bell } from 'lucide-react';
+import { ListChecks, FileText, Sliders, Plug, Zap, Bell, Sparkles, ClipboardList, Brain } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { DesignTab } from './DesignTab';
 import {
   DesignParametersPanel,
@@ -19,6 +20,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 const PersonaUseCasesTab = lazy(() =>
   import('@/features/agents/sub_use_cases/components/core/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
+);
+
+// The living-agent panels (former top-level Life tab) stay one deferred chunk:
+// three lazyRetry boundaries over the same module dedupe into a single import.
+const DesignCorePanel = lazyRetry(() =>
+  import('./components/DesignLifePanels').then((m) => ({ default: m.DesignCorePanel })),
+);
+const DesignResponsibilitiesPanel = lazyRetry(() =>
+  import('./components/DesignLifePanels').then((m) => ({ default: m.DesignResponsibilitiesPanel })),
+);
+const DesignBrainPanel = lazyRetry(() =>
+  import('./components/DesignLifePanels').then((m) => ({ default: m.DesignBrainPanel })),
 );
 
 interface DesignHubProps {
@@ -42,6 +55,8 @@ interface SubTabDef {
 // Notifications each get their own sub-tab (the sections that used to stack
 // inside the saved Prompt view). `prompt` is relabelled "Properties" and
 // `messaging` "Notifications" via the design_subtabs i18n values.
+// core / responsibilities / brain are the living-agent surfaces, folded in
+// from the former top-level Life editor tab (operator decision, 2026-08-31).
 const SUB_TABS: SubTabDef[] = [
   { id: 'use-cases', labelKey: 'use_cases', icon: ListChecks },
   { id: 'prompt', labelKey: 'prompt', icon: FileText },
@@ -49,6 +64,9 @@ const SUB_TABS: SubTabDef[] = [
   { id: 'connectors', labelKey: 'connectors', icon: Plug },
   { id: 'triggers', labelKey: 'triggers', icon: Zap },
   { id: 'messaging', labelKey: 'messaging', icon: Bell },
+  { id: 'core', labelKey: 'core', icon: Sparkles },
+  { id: 'responsibilities', labelKey: 'responsibilities', icon: ClipboardList },
+  { id: 'brain', labelKey: 'brain', icon: Brain },
 ];
 
 export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
@@ -113,6 +131,9 @@ export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
           {activeSubTab === 'connectors' && <DesignConnectorsPanel />}
           {activeSubTab === 'triggers' && <DesignEventsPanel />}
           {activeSubTab === 'messaging' && <DesignNotificationsPanel />}
+          {activeSubTab === 'core' && <DesignCorePanel />}
+          {activeSubTab === 'responsibilities' && <DesignResponsibilitiesPanel />}
+          {activeSubTab === 'brain' && <DesignBrainPanel />}
         </Suspense>
       </div>
     </div>
