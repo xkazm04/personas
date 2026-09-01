@@ -71,8 +71,7 @@ export const MAX_PARALLEL = 8;
  *
  * In both branches the partial outcome is reported ALONGSIDE the successful
  * one and never folded into it — `skipped` beside `dispatched`, `requested`
- * beside `removed`. A half-worked act must not read as one that worked (the
- * same rule `DispatchPanel` upholds).
+ * beside `removed`. A half-worked act must not read as one that worked.
  */
 export type AcceptedReport =
   | {
@@ -149,10 +148,29 @@ export function useAcceptedDispatch({
   /** Resolves an error into a message the reviewer can read. Injected rather
    *  than imported so this module stays free of the translation proxy. */
   resolveErrorMessage,
+  /**
+   * Narrow what this hook considers to BE the list — the Activity rail scopes
+   * it to one project column.
+   *
+   * Applied at the source rather than by the caller filtering `rows` after the
+   * fact, and that is the whole reason it lives here: `toggleAll`, `dispatch`
+   * and `remove` all derive from `rows`, and the selection is pruned against
+   * it. Filter downstream and select-all silently ticks rows nobody can see,
+   * while the count beside it reports a different number from the list under
+   * it. Filter here and every one of those follows for free.
+   *
+   * Must be referentially stable or the list re-derives every render.
+   */
+  visible,
 }: {
   resolveErrorMessage: (err: unknown) => string;
+  visible?: (row: UndispatchedIdea) => boolean;
 }): AcceptedDispatch {
-  const [rows, setRows] = useState<UndispatchedIdea[]>(() => warmRows ?? []);
+  const [allRows, setRows] = useState<UndispatchedIdea[]>(() => warmRows ?? []);
+  const rows = useMemo(
+    () => (visible ? allRows.filter(visible) : allRows),
+    [allRows, visible],
+  );
   // A warm open is not loading: it has rows on its first frame, and reporting
   // `true` there is what produces a ghost over data already on screen.
   const [loading, setLoading] = useState(() => warmRows === null);
@@ -187,15 +205,11 @@ export function useAcceptedDispatch({
         warmRows = next;
         if (!aliveRef.current) return;
         setRows(next);
-        // Prune the selection against what actually came back. A dispatched row
-        // leaves this list, and a selection that outlives its row is how a
-        // second press sends ids the reviewer can no longer see.
-        setSelected((prev) => {
-          if (prev.size === 0) return prev;
-          const live = new Set(next.map((r) => r.id));
-          const kept = new Set([...prev].filter((id) => live.has(id)));
-          return kept.size === prev.size ? prev : kept;
-        });
+        // The selection is pruned by the effect below rather than here. It
+        // used to be pruned against `next`, which was correct for the one way
+        // a row could leave the list (it got dispatched) and wrong for the
+        // second way there is now (the caller narrowed `visible`). One prune,
+        // against what is actually on screen, covers both.
       })
       .catch(silentCatch('triage/useAcceptedDispatch:load'))
       .finally(() => {
@@ -218,6 +232,19 @@ export function useAcceptedDispatch({
       return next;
     });
   }, []);
+
+  // Prune the selection against what is VISIBLE, not merely against what came
+  // back from the backend. Narrowing the filter must drop the rows that left
+  // the list with it, or the count keeps reporting ticks the reader can no
+  // longer see or untick.
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const live = new Set(rows.map((r) => r.id));
+      const kept = new Set([...prev].filter((id) => live.has(id)));
+      return kept.size === prev.size ? prev : kept;
+    });
+  }, [rows]);
 
   const toggleAll = useCallback(() => {
     setSelected((prev) =>

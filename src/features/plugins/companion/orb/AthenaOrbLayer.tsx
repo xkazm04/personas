@@ -42,9 +42,20 @@ function isTypingTarget(target: EventTarget | null): boolean {
  */
 export default function AthenaOrbLayer() {
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
-  // While the Fleet grid overlay (z-200) is open, float the orb above it so
-  // Athena stays visible + reactable there; otherwise the normal z-50.
+  // While a full-screen overlay is up, float the orb above it so Athena stays
+  // visible and reactable there; otherwise the normal z-50.
+  //
+  // TWO overlays qualify, and the Monitor is the newer one. The Fleet grid sits
+  // at z-200 and the Monitor at z-50 — and z-50 is precisely the orb's own
+  // resting layer, so on the Monitor the orb was not "behind" Athena's own
+  // surface in any meaningful sense, it was simply painted over by an opaque
+  // full-screen background and gone. That mattered more there than anywhere
+  // else: the Monitor is the one screen where Athena has something to say about
+  // what is on it (see the caption source in `athenaOrbPresence`), and she was
+  // the one thing the screen could not show.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
+  const monitorOpen = useSystemStore((s) => s.headerOverlay === 'monitor');
+  const overOverlay = fleetGridOpen || monitorOpen;
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const talk = useHoldToTalk();
@@ -182,7 +193,7 @@ export default function AthenaOrbLayer() {
 
   return createPortal(
     <div
-      className={`pointer-events-none fixed inset-0 ${fleetGridOpen ? 'z-[210]' : 'z-50'}`}
+      className={`pointer-events-none fixed inset-0 ${overOverlay ? 'z-[210]' : 'z-50'}`}
       aria-live="polite"
       data-testid="companion-orb-layer"
     >

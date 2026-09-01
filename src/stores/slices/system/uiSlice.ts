@@ -81,9 +81,7 @@ export type HeaderOverlay =
   | 'monitor'
   | 'notifications'
   | 'quick-answer'
-  | 'schedules'
-  /** The dispatch panel — what I approved, whether it was sent, how stale it is. */
-  | 'dispatch';
+  | 'schedules';
 
 export interface UiSlice {
   // State
@@ -206,7 +204,7 @@ export interface UiSlice {
    * set by a live pop-up's "open in Timeline" click. Cleared once consumed.
    * Never persisted.
    */
-  monitorInitialView: 'fleet' | 'channels' | null;
+  monitorInitialView: 'fleet' | 'channels' | 'conversations' | null;
 
   /**
    * Transient lens preset accompanying `monitorInitialView: 'channels'` — the
@@ -215,6 +213,19 @@ export interface UiSlice {
    * consumed. Never persisted.
    */
   monitorChannelPreset: { teamId: string | null; personaId: string | null } | null;
+
+  /**
+   * A board node the Monitor should scroll to and flash — `p:<personaId>` or
+   * `s:<sessionId>`, the keys `gridGeometry.columnRows` assigns.
+   *
+   * The channel exists because the two ends live in different trees: Athena's
+   * orb is an overlay island mounted from `App.tsx`, the board is inside the
+   * Monitor overlay, and neither can hand the other a ref. Same transient
+   * contract as `monitorInitialView` above — the board consumes it, flashes,
+   * and clears it. Never persisted, and never a navigation: it points at
+   * something already on screen.
+   */
+  monitorFocusNode: string | null;
 
   /**
    * Ids of below-the-fold Home (Mission Control) sections the user has hidden
@@ -233,8 +244,9 @@ export interface UiSlice {
   toggleMonitorGroupCollapsed: (groupId: string) => void;
   setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
-  setMonitorInitialView: (view: 'fleet' | 'channels' | null) => void;
+  setMonitorInitialView: (view: 'fleet' | 'channels' | 'conversations' | null) => void;
   setMonitorChannelPreset: (preset: { teamId: string | null; personaId: string | null } | null) => void;
+  setMonitorFocusNode: (key: string | null) => void;
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
@@ -380,6 +392,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   monitorLiveMode: true,
   monitorInitialView: null,
   monitorChannelPreset: null,
+  monitorFocusNode: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
@@ -450,6 +463,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),
   setMonitorChannelPreset: (preset) => set({ monitorChannelPreset: preset }),
+  setMonitorFocusNode: (key) => set({ monitorFocusNode: key }),
   toggleHomeSection: (sectionId) =>
     set((state) => {
       const idx = state.homeHiddenSections.indexOf(sectionId);

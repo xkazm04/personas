@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "브리프에서 뽑은 목표",
     "ship_goals_remove_row": "이 목표 제거",
     "ship_goals_title_label": "목표 제목",
-    "ship_goals_title_placeholder": "몇 단어로, 예: 이야기 구성하기"
+    "ship_goals_title_placeholder": "몇 단어로, 예: 이야기 구성하기",
+    "orb_focus_node": "보드에서 {name} 보기"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

@@ -12,15 +12,25 @@
 // 2. INFINITE LOAD IS DRIVEN BY THE SCROLLER, NOT BY A BUTTON. `onEndReached`
 //    fires once per arrival at the tail, from the SAME scroll position the
 //    virtualizer is measuring, so paging and virtualization cannot disagree
-//    about where the end is. It is guarded three ways: `hasMore`, an in-flight
-//    latch that clears when the row count actually grows, and a distance
-//    threshold — without the latch a slow page turns one arrival into a request
-//    per scroll event.
+//    about where the end is. It is guarded by `hasMore`, a distance threshold,
+//    and an in-flight latch.
 //
-// Rows are a CONSTANT height, supplied by the caller and applied to both the
-// virtualizer and the row element from that one number — the arithmetic
-// `DeckQueueRail` had to learn the hard way, where an `estimateSize` and a
-// padding-implied height drifted and misplaced every row past the 40th.
+//    THE LATCH HAS A COOLDOWN, and that is a bug fix, not a refinement. It used
+//    to clear only when `rows.length` CHANGED — so a page that returned nothing
+//    (a slow query, a transient failure, a source that had not caught up yet)
+//    left the latch armed against a row count that never moved again, and
+//    paging was dead for the life of that list. Scrolling did nothing, forever,
+//    silently. Now a request may be re-made once the rows grow OR once the
+//    cooldown lapses, which keeps the anti-spam property while making a single
+//    empty page recoverable instead of terminal.
+//
+// Row heights come from ONE function supplied by the caller (`heightOf`) and
+// are applied to both the virtualizer and the row element from it — the
+// arithmetic `DeckQueueRail` had to learn the hard way, where an `estimateSize`
+// and a padding-implied height drifted and misplaced every row past the 40th.
+// It was a constant until the Messages tab grew project bands; a function
+// rather than a constant plus a special case, so there is still exactly one
+// place that decides how tall a row is.
 
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -31,11 +41,19 @@ import type { RailRow } from './railModel';
 const VIRTUALIZE_ABOVE = 30;
 /** How close to the bottom counts as "arrived", in pixels. */
 const END_THRESHOLD = 220;
+/**
+ * How long a request stays latched before another is allowed at the same row
+ * count. Long enough that a page in flight is not asked for twice; short enough
+ * that a page which came back empty is retried while the reader is still at the
+ * bottom looking at it.
+ */
+const RETRY_AFTER_MS = 2_000;
 
 export interface RailListProps {
   rows: RailRow[];
-  /** Fixed px height of every row. See the header. */
-  rowHeight: number;
+  /** Px height of one row — the single authority, see the header. Must be
+   *  referentially stable, or the virtualizer re-measures on every render. */
+  heightOf: (row: RailRow) => number;
   renderRow: (row: RailRow) => ReactNode;
   hasMore: boolean;
   loading: boolean;
@@ -46,11 +64,20 @@ export interface RailListProps {
 }
 
 export function RailList({
-  rows, rowHeight, renderRow, hasMore, loading, onEndReached, empty, testId,
+  rows, heightOf, renderRow, hasMore, loading, onEndReached, empty, testId,
 }: RailListProps) {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
-  const sizeOf = useCallback(() => rowHeight, [rowHeight]);
+  // Indexed, because that is the signature the virtualizer measures with. The
+  // guard is for the frame where `count` has grown but this callback still
+  // closes over the shorter array.
+  const sizeOf = useCallback(
+    (index: number) => {
+      const row = rows[index];
+      return row ? heightOf(row) : 0;
+    },
+    [rows, heightOf],
+  );
 
   const virtualize = rows.length > VIRTUALIZE_ABOVE;
   const virtualizer = useVirtualizer({
@@ -60,32 +87,38 @@ export function RailList({
     overscan: 6,
   });
 
-  // The in-flight latch. `asked` holds the row count at which we last asked for
-  // a page; a second request is refused until the count moves, so a page that
-  // takes a second does not turn every scroll event into another call.
-  const asked = useRef(-1);
-  useEffect(() => {
-    if (rows.length !== asked.current) asked.current = -1;
-  }, [rows.length]);
+  // The in-flight latch: the row count we last asked at, and when. See the
+  // header for why the timestamp is load-bearing rather than belt-and-braces.
+  const asked = useRef<{ len: number; at: number }>({ len: -1, at: 0 });
+
+  /** May we ask for another page right now? */
+  const mayAsk = useCallback(() => {
+    if (!hasMore) return false;
+    const { len, at } = asked.current;
+    return rows.length !== len || Date.now() - at > RETRY_AFTER_MS;
+  }, [hasMore, rows.length]);
+
+  const requestMore = useCallback(() => {
+    asked.current = { len: rows.length, at: Date.now() };
+    onEndReached();
+  }, [onEndReached, rows.length]);
 
   const onScroll = useCallback(() => {
     const el = parentRef.current;
-    if (!el || !hasMore || asked.current !== -1) return;
+    if (!el || !mayAsk()) return;
     if (el.scrollHeight - el.scrollTop - el.clientHeight > END_THRESHOLD) return;
-    asked.current = rows.length;
-    onEndReached();
-  }, [hasMore, onEndReached, rows.length]);
+    requestMore();
+  }, [mayAsk, requestMore]);
 
   // A short feed can already BE at its end on first paint — a rail whose first
   // page does not fill the column would otherwise need a scroll gesture that is
   // impossible to make, and infinite load would never start.
   useEffect(() => {
     const el = parentRef.current;
-    if (!el || !hasMore || asked.current !== -1) return;
+    if (!el || !mayAsk()) return;
     if (el.scrollHeight > el.clientHeight + END_THRESHOLD) return;
-    asked.current = rows.length;
-    onEndReached();
-  }, [hasMore, onEndReached, rows.length]);
+    requestMore();
+  }, [mayAsk, requestMore]);
 
   if (rows.length === 0) {
     // Nothing yet AND still reading is not "nothing waiting" — the empty state
@@ -117,7 +150,7 @@ export function RailList({
       ) : (
         <ul>
           {rows.map((row) => (
-            <li key={row.id} style={{ height: rowHeight }}>
+            <li key={row.id} style={{ height: heightOf(row) }}>
               {renderRow(row)}
             </li>
           ))}

@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "Цели из брифа",
     "ship_goals_remove_row": "Убрать эту цель",
     "ship_goals_title_label": "Название цели",
-    "ship_goals_title_placeholder": "Пара слов, например «Собрать историю»"
+    "ship_goals_title_placeholder": "Пара слов, например «Собрать историю»",
+    "orb_focus_node": "Показать «{name}» на доске"
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

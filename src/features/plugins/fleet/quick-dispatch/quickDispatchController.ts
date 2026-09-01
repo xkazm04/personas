@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
-import { useQuickDispatchStore } from '@/stores/quickDispatchStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { companionDispatchFleetPlan } from '@/api/companion';
 import { renameSession, spawnHeadlessSession } from '@/api/fleet/fleet';
@@ -32,26 +31,22 @@ import {
  * door call (interactive + headless fallback), the recent-sessions snapshot,
  * ARIA stamping — lives here; a variant decides only WHERE things render.
  *
- * The controller is instantiated per mounted variant; the reset effect keys on
- * the store's `open` flag, so summon → fresh composer regardless of variant.
+ * The controller is instantiated per mounted host, and the reset effect runs
+ * once on mount — a host that mounts the composer IS the summon. There is no
+ * longer a summoned variant: the Quick Dispatch overlay was retired once the
+ * Monitor grew its own docked console, so `inline` had one live value and an
+ * open-flag store nothing could set.
  */
 
 export const QUICK_DISPATCH_LISTBOX_ID = 'quick-dispatch-typeahead-listbox';
 
 export interface QuickDispatchOptions {
   /**
-   * Host the composer inline (docked into a surface) rather than as the
-   * summoned overlay. See the `inline` handling in the hook: it decouples the
-   * controller's lifecycle from `quickDispatchStore.open`, so a docked console
-   * warms once on mount instead of never.
-   */
-  inline?: boolean;
-  /**
    * DOM id for the typeahead listbox, stamped into the textarea's
    * `aria-controls` / `aria-activedescendant`. Defaults to the module constant.
-   * A second host mounted at the same time (the Activity dock while the overlay
-   * is summoned over it) MUST pass its own, or the two composers advertise the
-   * same id and the ARIA reference resolves to whichever painted first.
+   * A second host mounted at the same time MUST pass its own, or the two
+   * composers advertise the same id and the ARIA reference resolves to
+   * whichever painted first.
    */
   listboxId?: string;
 }
@@ -72,16 +67,7 @@ const cycleNext = <T,>(presets: ReadonlyArray<T>, current: T): T => {
 
 export function useQuickDispatchController(options?: QuickDispatchOptions) {
   const { t, tx } = useTranslation();
-  // INLINE mode (the Activity board's docked console): the composer is not
-  // summoned, it is simply there. The store's `open` flag is what drives the
-  // reset-and-warm effect below, and an inline host never sets it — so it is
-  // pinned true for the life of the mount. Everything else about the controller
-  // is identical, which is the point: one brain, two hosts.
-  const inline = options?.inline ?? false;
   const listboxId = options?.listboxId ?? QUICK_DISPATCH_LISTBOX_ID;
-  const summoned = useQuickDispatchStore((s) => s.open);
-  const open = inline || summoned;
-  const closeQuickDispatch = useQuickDispatchStore((s) => s.closeQuickDispatch);
 
   // No useShallow (zustand-domain-slices golden path, deviation A): bare
   // property selectors; a refetched list holds fresh objects anyway.
@@ -116,9 +102,9 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
   }, []);
 
   // CommandPalette's focus idiom: reset, then focus on the next frame. Also
-  // warm the project registry + the fleet session snapshot.
+  // warm the project registry + the fleet session snapshot. Runs once per
+  // mount — the host mounting this composer is what "summoned" used to mean.
   useEffect(() => {
-    if (!open) return;
     setValue('');
     setProjectChip(null);
     setSkillChip(null);
@@ -135,7 +121,7 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
       .catch(silentCatch('quick dispatch: list projects'));
     fleetStartSessionListeners();
     void fleetRefresh();
-  }, [open, focusInput, fleetStartSessionListeners, fleetRefresh]);
+  }, [focusInput, fleetStartSessionListeners, fleetRefresh]);
 
   // Skill typeahead is scoped to the picked project.
   useEffect(() => {
@@ -371,8 +357,7 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     setSidebarSection('plugins');
     setPluginTab('dev-tools');
     setDevToolsTab('fleet');
-    closeQuickDispatch();
-  }, [setSidebarSection, setPluginTab, setDevToolsTab, closeQuickDispatch]);
+  }, [setSidebarSection, setPluginTab, setDevToolsTab]);
 
   // Quick-dispatched sessions are recognizable by the door's `athena` naming
   // sentinel; when none exist yet, fall back to the most recent of any origin.
@@ -402,8 +387,6 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     t,
     tx,
     quickT,
-    open,
-    closeQuickDispatch,
     cardRef,
     /** The typeahead listbox's DOM id — the panel half of the combobox contract.
      *  Render `QuickDispatchSuggestions` with THIS, never the constant. */

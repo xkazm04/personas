@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "ব্রিফ থেকে লক্ষ্য",
     "ship_goals_remove_row": "এই লক্ষ্যটি সরান",
     "ship_goals_title_label": "লক্ষ্যের শিরোনাম",
-    "ship_goals_title_placeholder": "কয়েকটি শব্দ, যেমন গল্পটি সাজান"
+    "ship_goals_title_placeholder": "কয়েকটি শব্দ, যেমন গল্পটি সাজান",
+    "orb_focus_node": "বোর্ডে {name} দেখান"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

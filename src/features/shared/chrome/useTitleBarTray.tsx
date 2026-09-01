@@ -13,12 +13,6 @@ import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChu
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
 const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
-// Same reason: the dispatch panel drags in the faceted table + the Backlog
-// queue, and the tray only needs a number until someone opens it.
-const DispatchPanel = lazy(() =>
-  import('@/features/overview/sub_manual-review/components/dispatch/DispatchPanel')
-    .then((m) => ({ default: m.DispatchPanel })),
-);
 // And the two heaviest surfaces of all: the Persona Monitor drags the whole
 // fleet feature tree (channel grid, triage columns, drawer, grid view) and the
 // Quick Answer deck pulls the unified 7-queue triage machinery. Both were
@@ -81,12 +75,6 @@ export function useTitleBarTray() {
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
   const pendingTotal = useSystemStore((s) => s.pendingCounts?.total ?? 0);
   const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
-  // Accepted ideas with no task. `null` until the first read lands, and the
-  // capsule collapses at zero either way — so "not asked yet" and "nothing
-  // waiting" both render as a bare glyph rather than a confident number.
-  const undispatchedCount = useSystemStore((s) => s.undispatchedIdeas?.length ?? 0);
-  const refreshUndispatchedIdeas = useSystemStore((s) => s.refreshUndispatchedIdeas);
-
   /**
    * The badge's own poll, on the shared coordinator's 30s bucket.
    *
@@ -105,22 +93,6 @@ export function useTitleBarTray() {
     );
     return dispose;
   }, [refreshPendingCounts]);
-
-  /**
-   * The dispatch badge rides the same 30s bucket. A separate registration
-   * rather than a term folded into `refreshPendingCounts`: that count is the
-   * DECISION queue (things to say yes/no to) and this one is the EXECUTION
-   * queue (things already said yes to). Summing them would make one number
-   * that answers neither question.
-   */
-  useEffect(() => {
-    const { dispose } = getPollingCoordinator().register(
-      'titleBarUndispatchedIdeas',
-      refreshUndispatchedIdeas,
-      { interval: POLLING_CONFIG.dashboardRefresh.interval },
-    );
-    return dispose;
-  }, [refreshUndispatchedIdeas]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -153,7 +125,6 @@ export function useTitleBarTray() {
   const reviewOpen = headerOverlay === 'quick-answer';
   const monitorOpen = headerOverlay === 'monitor';
   const isScheduleActive = headerOverlay === 'schedules';
-  const dispatchOpen = headerOverlay === 'dispatch';
 
   const toggleNotifications = () => {
     if (!notificationsOpen) {
@@ -168,26 +139,22 @@ export function useTitleBarTray() {
   const toggleSchedules = () => setHeaderOverlay(isScheduleActive ? 'none' : 'schedules');
   const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
-  const toggleDispatch = () => setHeaderOverlay(dispatchOpen ? 'none' : 'dispatch');
   const openSearch = () => openPalette('settings');
 
   return {
     todayScheduleCount,
     quickCount,
     monitorAttention,
-    undispatchedCount,
     unreadCount,
     running,
     notificationsOpen,
     reviewOpen,
     monitorOpen,
-    dispatchOpen,
     isScheduleActive,
     toggleNotifications,
     toggleSchedules,
     toggleReview,
     toggleMonitor,
-    toggleDispatch,
     openSearch,
   };
 }
@@ -223,11 +190,6 @@ export function TrayOverlays() {
             onClose={() => setHeaderOverlay('none')}
             onOpenMonitor={() => setHeaderOverlay('monitor')}
           />
-        </Suspense>
-      )}
-      {headerOverlay === 'dispatch' && (
-        <Suspense key="dispatch" fallback={null}>
-          <DispatchPanel onClose={() => setHeaderOverlay('none')} />
         </Suspense>
       )}
       {headerOverlay === 'schedules' && (

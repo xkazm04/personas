@@ -995,10 +995,28 @@ pub fn list_manual_reviews(
     status: Option<String>,
 ) -> Result<Vec<PersonaManualReview>, AppError> {
     require_auth_sync(&state)?;
-    match persona_id {
-        Some(pid) => manual_repo::get_by_persona(&state.db, &pid, status.as_deref()),
-        None => manual_repo::get_all(&state.db, status.as_deref()),
+    #[allow(unused_mut)]
+    let mut rows = match persona_id {
+        Some(ref pid) => manual_repo::get_by_persona(&state.db, pid, status.as_deref())?,
+        None => manual_repo::get_all(&state.db, status.as_deref())?,
+    };
+    // LOAD-HARNESS HOOK — see the twin in `commands::teams::team_channel`.
+    // Pending reads only: a caller asking for approved or rejected rows is
+    // reconciling history, and answering that with rows that were never decided
+    // would corrupt the counts this surface exists to report.
+    #[cfg(feature = "test-automation")]
+    {
+        let synthetic = crate::load_harness_sources::review_overlay(status.as_deref());
+        if !synthetic.is_empty() {
+            let wanted = persona_id.as_deref();
+            rows.extend(
+                synthetic
+                    .into_iter()
+                    .filter(|r| wanted.is_none_or(|p| r.persona_id == p)),
+            );
+        }
     }
+    Ok(rows)
 }
 
 /// Decode an opaque `"<created_at>|<id>"` page cursor. `created_at` is

@@ -142,14 +142,35 @@ pub fn list_team_channel(
 ) -> Result<Vec<TeamChannelItem>, AppError> {
     require_auth_sync(&state)?;
     let conn = state.db.get()?;
-    read_channel(
+    #[allow(unused_mut)]
+    let mut items = read_channel(
         &conn,
         &team_id,
         limit,
         before.as_deref(),
         before_id.as_deref(),
         kinds.as_deref(),
-    )
+    )?;
+    // LOAD-HARNESS HOOK. Compile-gated on `test-automation`, so it does not
+    // exist in a shipped binary. Synthetic chatter is spliced in here rather
+    // than written to the database, because a load run must leave no residue in
+    // the operator's real channels. Newest first, matching the read-model's own
+    // order. See `crate::load_harness_sources`.
+    #[cfg(feature = "test-automation")]
+    {
+        let cap = limit.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT);
+        let synthetic = crate::load_harness_sources::channel_overlay(
+            &team_id,
+            cap,
+            before.as_deref(),
+            kinds.as_deref(),
+        );
+        if !synthetic.is_empty() {
+            items.splice(0..0, synthetic);
+            items.truncate(cap as usize);
+        }
+    }
+    Ok(items)
 }
 
 /// The read-model itself, over a bare connection — the command is auth + this.

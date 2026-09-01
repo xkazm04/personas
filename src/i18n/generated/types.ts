@@ -210,7 +210,7 @@ export type Translations = {
     columns_active_goals: string;
     columns_no_team: string;
     columns_all_clear: string;
-    live_open_timeline: string;
+    live_open_conversation: string;
     live_dismiss: string;
     live_clear_all: string;
     live_more: string;
@@ -548,9 +548,34 @@ export type Translations = {
     grid_dock_collapse: string;
     grid_rail_loading_more: string;
     grid_rail_unread: string;
+    grid_rail_resize: string;
+    grid_rail_scoped_to: string;
+    grid_rail_scope_clear: string;
+    grid_column_scope: string;
     grid_rail_empty_reviews: string;
     grid_rail_empty_reviews_sub: string;
     grid_rail_empty_messages_sub: string;
+    grid_rail_accept_aria: string;
+    grid_rail_reject_aria: string;
+    grid_rail_triage_modal_aria: string;
+    grid_rail_channel_detail: string;
+    grid_rail_channel_reply_placeholder: string;
+    grid_rail_channel_reply_send: string;
+    grid_fleet_kill: string;
+    grid_fleet_exited: string;
+    grid_session_recap_open: string;
+    grid_session_recap_summary: string;
+    grid_session_recap_last_said: string;
+    grid_session_recap_empty: string;
+    grid_session_recap_unbound: string;
+    grid_session_recap_ai_title: string;
+    grid_session_recap_last_prompt: string;
+    grid_session_recap_live_title: string;
+    grid_session_recap_pending_tool: string;
+    grid_session_recap_started: string;
+    grid_session_recap_last_activity: string;
+    grid_session_recap_state_reason: string;
+    grid_session_recap_truncated: string;
   };
   common: {
     unknown_error: string;
@@ -16978,6 +17003,7 @@ export type Translations = {
       ship_goals_cancel: string;
       ship_goals_confirm: string;
       ship_goals_created: string;
+      orb_focus_node: string;
     };
     artist_gallery: {
       loading_viewer: string;

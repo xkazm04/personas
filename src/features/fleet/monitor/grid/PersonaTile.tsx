@@ -48,13 +48,15 @@ function badgeLine(
 }
 
 export const PersonaTile = memo(function PersonaTile({
-  card, selected, onSelect, width, height,
+  card, selected, onSelect, width, height, flash = false,
 }: {
   card: PersonaCardModel;
   selected: boolean;
   onSelect: (personaId: string, section: DrawerSection) => void;
   width: number;
   height: number;
+  /** Athena pointed at this node — ring it until the board clears the signal. */
+  flash?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const st = squareState(card);
@@ -84,7 +86,7 @@ export const PersonaTile = memo(function PersonaTile({
         selected
           ? 'border-primary/50 bg-primary/10'
           : 'border-border bg-foreground/[0.02] hover:border-primary/30 hover:bg-secondary/40'
-      }`}
+      } ${flash ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`}
       style={{ width, height }}
     >
       {/* The state rail — the whole leading edge, so a column of tiles reads as

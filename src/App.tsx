@@ -126,7 +126,6 @@ function OverlayIsland({ name, children }: { name: string; children: ReactNode }
 // forever and brick the overlay until a full page reload.
 const BackgroundServices = lazyRetry(() => import("@/features/shared/chrome/BackgroundServices"));
 const CommandPalette = lazyRetry(() => import("@/features/shared/chrome/CommandPalette"));
-const QuickDispatchOverlay = lazyRetry(() => import("@/features/plugins/fleet/quick-dispatch/QuickDispatchOverlay"));
 const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"));
@@ -163,7 +162,6 @@ const TourHandoffOffer = lazyRetry(() => import("@/features/onboarding/component
 const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/chrome/BackgroundServices"),
   () => import("@/features/shared/chrome/CommandPalette"),
-  () => import("@/features/plugins/fleet/quick-dispatch/QuickDispatchOverlay"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
   () => import("@/features/onboarding/components/OnboardingOverlay"),
@@ -417,7 +415,6 @@ export default function App() {
                   <OverlayIsland name="tour-handoff"><TourHandoffOffer /></OverlayIsland>
                   <OverlayIsland name="execution-mini-player"><ExecutionMiniPlayer /></OverlayIsland>
                   <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
-                  <OverlayIsland name="quick-dispatch"><QuickDispatchOverlay /></OverlayIsland>
                   <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
                   <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
                   <OverlayIsland name="companion-panel"><CompanionPanel /></OverlayIsland>

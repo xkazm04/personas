@@ -1,0 +1,1183 @@
+{
+  "label": "react-soak",
+  "ramp": "soak",
+  "holdSec": 45,
+  "at": "2026-09-01T07:57:02.176Z",
+  "rows": [
+    {
+      "label": "idle",
+      "sessions": 0,
+      "linesPerSec": 0,
+      "emitted": 0,
+      "received": 0,
+      "emitErrors": 0,
+      "tickPanics": 0,
+      "driverAlive": true,
+      "sinceLastTickMs": 27,
+      "commits": 32,
+      "actualMs": 56.2,
+      "longTasks": 0,
+      "blockedPct": 0,
+      "p95Frame": 33.4,
+      "framesOver50": 0,
+      "heapMb": 143.6,
+      "heapDeltaMb": 0,
+      "ipcCalls": 54,
+      "msgs": 0,
+      "heldChannel": 0,
+      "servedChannel": 0,
+      "servedReviews": 0,
+      "churned": 0,
+      "unresponsive": false,
+      "raw": {
+        "snapshot": {
+          "resetAt": 3144367,
+          "snapshotAt": 3189382.100000143,
+          "durationMs": 45015.1,
+          "marks": [],
+          "ipc": {
+            "totalCount": 54,
+            "totalDurationMs": 588,
+            "byCommand": [
+              {
+                "command": "get_system_metrics",
+                "count": 23,
+                "totalMs": 170.6,
+                "avgMs": 7.42
+              },
+              {
+                "command": "list_team_channel",
+                "count": 6,
+                "totalMs": 122.5,
+                "avgMs": 20.42
+              },
+              {
+                "command": "dev_tools_pending_counts",
+                "count": 2,
+                "totalMs": 15,
+                "avgMs": 7.5
+              },
+              {
+                "command": "dev_tools_undispatched_ideas",
+                "count": 2,
+                "totalMs": 17.8,
+                "avgMs": 8.9
+              },
+              {
+                "command": "list_manual_reviews_page",
+                "count": 2,
+                "totalMs": 17.3,
+                "avgMs": 8.65
+              },
+              {
+                "command": "list_manual_reviews",
+                "count": 2,
+                "totalMs": 31.1,
+                "avgMs": 15.55
+              },
+              {
+                "command": "list_reports",
+                "count": 2,
+                "totalMs": 30.8,
+                "avgMs": 15.4
+              },
+              {
+                "command": "get_persona_summaries",
+                "count": 2,
+                "totalMs": 30,
+                "avgMs": 15
+              },
+              {
+                "command": "get_pending_review_count",
+                "count": 2,
+                "totalMs": 64,
+                "avgMs": 32
+              },
+              {
+                "command": "get_unread_report_count",
+                "count": 2,
+                "totalMs": 17.1,
+                "avgMs": 8.55
+              },
+              {
+                "command": "list_events",
+                "count": 2,
+                "totalMs": 20.4,
+                "avgMs": 10.2
+              },
+              {
+                "command": "get_all_monthly_spend",
+                "count": 2,
+                "totalMs": 19.6,
+                "avgMs": 9.8
+              },
+              {
+                "command": "get_director_portfolio",
+                "count": 2,
+                "totalMs": 20,
+                "avgMs": 10
+              },
+              {
+                "command": "list_alert_rules",
+                "count": 1,
+                "totalMs": 4.8,
+                "avgMs": 4.8
+              },
+              {
+                "command": "list_fired_alerts",
+                "count": 1,
+                "totalMs": 3.4,
+                "avgMs": 3.4
+              },
+              {
+                "command": "get_overview_bundle",
+                "count": 1,
+                "totalMs": 3.6,
+                "avgMs": 3.6
+              }
+            ]
+          },
+          "render": {
+            "commitCount": 32,
+            "totalActualDurationMs": 56.2,
+            "totalBaseDurationMs": 2032.7,
+            "avgActualMs": 1.76
+          },
+          "dom": {
+            "nodeCount": 1332
+          },
+          "longTasks": {
+            "count": 0,
+            "totalMs": 0,
+            "maxMs": 0,
+            "blockedPct": 0
+          },
+          "frames": {
+            "count": 1393,
+            "over33ms": 1302,
+            "over50ms": 0,
+            "p95Ms": 33.4,
+            "avgMs": 32.32,
+            "truncated": false
+          },
+          "eventsReceived": [],
+          "memory": {
+            "usedJSHeapSize": 150545703,
+            "totalJSHeapSize": 153683347,
+            "jsHeapSizeLimit": 4395630592
+          },
+          "diagnostics": {
+            "ipcSubscribed": true,
+            "longTasksSupported": true,
+            "framesSampled": true,
+            "eventCountersAttached": true
+          }
+        },
+        "status": {
+          "running": true,
+          "profile": {
+            "sessions": 0,
+            "linesPerSec": 0,
+            "stateFlipsPerSec": 0,
+            "sessionChurnPerMin": 0,
+            "channelMsgsPerSec": 0,
+            "reviewsPending": 0,
+            "personaIds": [],
+            "lineLen": 120,
+            "seed": 6840143426475590000
+          },
+          "liveSessions": 0,
+          "emittedOutput": 0,
+          "emittedState": 0,
+          "ticks": 848,
+          "uptimeMs": 45026,
+          "emitErrors": 0,
+          "tickPanics": 0,
+          "sinceLastTickMs": 27,
+          "driverAlive": true,
+          "heldChannel": 0,
+          "heldReviews": 0,
+          "servedChannel": 0,
+          "servedReviews": 0,
+          "churned": 0
+        }
+      }
+    },
+    {
+      "label": "soak-1",
+      "sessions": 60,
+      "linesPerSec": 200,
+      "emitted": 8565,
+      "received": 8565,
+      "emitErrors": 0,
+      "tickPanics": 0,
+      "driverAlive": true,
+      "sinceLastTickMs": 35,
+      "commits": 1054,
+      "actualMs": 9594.1,
+      "longTasks": 4,
+      "blockedPct": 0.49,
+      "p95Frame": 33.4,
+      "framesOver50": 15,
+      "heapMb": 181.9,
+      "heapDeltaMb": 38.3,
+      "ipcCalls": 940,
+      "msgs": 4,
+      "heldChannel": 167,
+      "servedChannel": 264,
+      "servedReviews": 60,
+      "churned": 4,
+      "unresponsive": false,
+      "raw": {
+        "snapshot": {
+          "resetAt": 3190899.4000000954,
+          "snapshotAt": 3235942.100000143,
+          "durationMs": 45042.7,
+          "marks": [],
+          "ipc": {
+            "totalCount": 940,
+            "totalDurationMs": 59467.5,
+            "byCommand": [
+              {
+                "command": "companion_record_fleet_event",
+                "count": 488,
+                "totalMs": 36150,
+                "avgMs": 74.08
+              },
+              {
+                "command": "fleet_set_auto_hibernate",
+                "count": 117,
+                "totalMs": 6633.3,
+                "avgMs": 56.69
+              },
+              {
+                "command": "fleet_set_state_cutoffs",
+                "count": 117,
+                "totalMs": 6693.5,
+                "avgMs": 57.21
+              },
+              {
+                "command": "fleet_set_live_slots",
+                "count": 117,
+                "totalMs": 6692.3,
+                "avgMs": 57.2
+              },
+              {
+                "command": "fleet_list_sessions",
+                "count": 47,
+                "totalMs": 1332,
+                "avgMs": 28.34
+              },
+              {
+                "command": "get_system_metrics",
+                "count": 22,
+                "totalMs": 963.4,
+                "avgMs": 43.79
+              },
+              {
+                "command": "companion_get_operative_memory_digest",
+                "count": 11,
+                "totalMs": 223,
+                "avgMs": 20.27
+              },
+              {
+                "command": "list_team_channel",
+                "count": 6,
+                "totalMs": 270.3,
+                "avgMs": 45.05
+              },
+              {
+                "command": "dev_tools_list_projects",
+                "count": 4,
+                "totalMs": 255.8,
+                "avgMs": 63.95
+              },
+              {
+                "command": "dev_tools_pending_counts",
+                "count": 1,
+                "totalMs": 8,
+                "avgMs": 8
+              },
+              {
+                "command": "dev_tools_undispatched_ideas",
+                "count": 1,
+                "totalMs": 8.9,
+                "avgMs": 8.9
+              },
+              {
+                "command": "list_manual_reviews_page",
+                "count": 1,
+                "totalMs": 10.5,
+                "avgMs": 10.5
+              },
+              {
+                "command": "list_manual_reviews",
+                "count": 1,
+                "totalMs": 19.2,
+                "avgMs": 19.2
+              },
+              {
+                "command": "list_reports",
+                "count": 1,
+                "totalMs": 18.7,
+                "avgMs": 18.7
+              },
+              {
+                "command": "get_persona_summaries",
+                "count": 1,
+                "totalMs": 18.2,
+                "avgMs": 18.2
+              },
+              {
+                "command": "get_pending_review_count",
+                "count": 1,
+                "totalMs": 24.6,
+                "avgMs": 24.6
+              },
+              {
+                "command": "get_unread_report_count",
+                "count": 1,
+                "totalMs": 10.5,
+                "avgMs": 10.5
+              },
+              {
+                "command": "list_events",
+                "count": 1,
+                "totalMs": 45.3,
+                "avgMs": 45.3
+              },
+              {
+                "command": "get_all_monthly_spend",
+                "count": 1,
+                "totalMs": 45.4,
+                "avgMs": 45.4
+              },
+              {
+                "command": "get_director_portfolio",
+                "count": 1,
+                "totalMs": 44.6,
+                "avgMs": 44.6
+              }
+            ]
+          },
+          "render": {
+            "commitCount": 1054,
+            "totalActualDurationMs": 9594.1,
+            "totalBaseDurationMs": 51663.6,
+            "avgActualMs": 9.1
+          },
+          "dom": {
+            "nodeCount": 1584
+          },
+          "longTasks": {
+            "count": 4,
+            "totalMs": 222,
+            "maxMs": 66,
+            "blockedPct": 0.49
+          },
+          "frames": {
+            "count": 1361,
+            "over33ms": 1300,
+            "over50ms": 15,
+            "p95Ms": 33.4,
+            "avgMs": 33.06,
+            "truncated": false
+          },
+          "eventsReceived": [
+            {
+              "name": "fleet-session-output",
+              "count": 8080
+            },
+            {
+              "name": "fleet-session-state",
+              "count": 485
+            }
+          ],
+          "memory": {
+            "usedJSHeapSize": 190723048,
+            "totalJSHeapSize": 266784748,
+            "jsHeapSizeLimit": 4395630592
+          },
+          "diagnostics": {
+            "ipcSubscribed": true,
+            "longTasksSupported": true,
+            "framesSampled": true,
+            "eventCountersAttached": true
+          }
+        },
+        "status": {
+          "running": true,
+          "profile": {
+            "sessions": 60,
+            "linesPerSec": 200,
+            "stateFlipsPerSec": 12,
+            "sessionChurnPerMin": 6,
+            "channelMsgsPerSec": 4,
+            "reviewsPending": 60,
+            "personaIds": [],
+            "lineLen": 120,
+            "seed": 9269773929313438000
+          },
+          "liveSessions": 60,
+          "emittedOutput": 8080,
+          "emittedState": 485,
+          "ticks": 808,
+          "uptimeMs": 45054,
+          "emitErrors": 0,
+          "tickPanics": 0,
+          "sinceLastTickMs": 35,
+          "driverAlive": true,
+          "heldChannel": 167,
+          "heldReviews": 60,
+          "servedChannel": 264,
+          "servedReviews": 60,
+          "churned": 4
+        }
+      }
+    },
+    {
+      "label": "soak-2",
+      "sessions": 60,
+      "linesPerSec": 200,
+      "emitted": 8670,
+      "received": 8670,
+      "emitErrors": 0,
+      "tickPanics": 0,
+      "driverAlive": true,
+      "sinceLastTickMs": 32,
+      "commits": 1001,
+      "actualMs": 10982.5,
+      "longTasks": 18,
+      "blockedPct": 2.13,
+      "p95Frame": 33.5,
+      "framesOver50": 31,
+      "heapMb": 180.6,
+      "heapDeltaMb": -1.3,
+      "ipcCalls": 809,
+      "msgs": 4,
+      "heldChannel": 336,
+      "servedChannel": 624,
+      "servedReviews": 180,
+      "churned": 4,
+      "unresponsive": false,
+      "raw": {
+        "snapshot": {
+          "resetAt": 3237495.3000001907,
+          "snapshotAt": 3282518.9000000954,
+          "durationMs": 45023.6,
+          "marks": [],
+          "ipc": {
+            "totalCount": 809,
+            "totalDurationMs": 39091.4,
+            "byCommand": [
+              {
+                "command": "companion_record_fleet_event",
+                "count": 495,
+                "totalMs": 23668.3,
+                "avgMs": 47.81
+              },
+              {
+                "command": "fleet_set_auto_hibernate",
+                "count": 73,
+                "totalMs": 4193.2,
+                "avgMs": 57.44
+              },
+              {
+                "command": "fleet_set_state_cutoffs",
+                "count": 73,
+                "totalMs": 4249.8,
+                "avgMs": 58.22
+              },
+              {
+                "command": "fleet_set_live_slots",
+                "count": 73,
+                "totalMs": 4253.9,
+                "avgMs": 58.27
+              },
+              {
+                "command": "fleet_list_sessions",
+                "count": 31,
+                "totalMs": 695.9,
+                "avgMs": 22.45
+              },
+              {
+                "command": "get_system_metrics",
+                "count": 23,
+                "totalMs": 375.8,
+                "avgMs": 16.34
+              },
+              {
+                "command": "companion_get_operative_memory_digest",
+                "count": 6,
+                "totalMs": 69.5,
+                "avgMs": 11.58
+              },
+              {
+                "command": "list_team_channel",
+                "count": 6,
+                "totalMs": 308,
+                "avgMs": 51.33
+              },
+              {
+                "command": "dev_tools_list_projects",
+                "count": 4,
+                "totalMs": 365.9,
+                "avgMs": 91.47
+              },
+              {
+                "command": "dev_tools_pending_counts",
+                "count": 2,
+                "totalMs": 55.8,
+                "avgMs": 27.9
+              },
+              {
+                "command": "dev_tools_undispatched_ideas",
+                "count": 2,
+                "totalMs": 54.6,
+                "avgMs": 27.3
+              },
+              {
+                "command": "list_manual_reviews_page",
+                "count": 2,
+                "totalMs": 52.3,
+                "avgMs": 26.15
+              },
+              {
+                "command": "list_manual_reviews",
+                "count": 2,
+                "totalMs": 111.7,
+                "avgMs": 55.85
+              },
+              {
+                "command": "list_reports",
+                "count": 2,
+                "totalMs": 110.6,
+                "avgMs": 55.3
+              },
+              {
+                "command": "get_persona_summaries",
+                "count": 2,
+                "totalMs": 110.1,
+                "avgMs": 55.05
+              },
+              {
+                "command": "get_pending_review_count",
+                "count": 2,
+                "totalMs": 83.8,
+                "avgMs": 41.9
+              },
+              {
+                "command": "get_unread_report_count",
+                "count": 2,
+                "totalMs": 32.7,
+                "avgMs": 16.35
+              },
+              {
+                "command": "list_events",
+                "count": 2,
+                "totalMs": 33,
+                "avgMs": 16.5
+              },
+              {
+                "command": "get_all_monthly_spend",
+                "count": 2,
+                "totalMs": 121.4,
+                "avgMs": 60.7
+              },
+              {
+                "command": "get_director_portfolio",
+                "count": 2,
+                "totalMs": 122.1,
+                "avgMs": 61.05
+              },
+              {
+                "command": "list_alert_rules",
+                "count": 1,
+                "totalMs": 5.6,
+                "avgMs": 5.6
+              },
+              {
+                "command": "list_fired_alerts",
+                "count": 1,
+                "totalMs": 8.6,
+                "avgMs": 8.6
+              },
+              {
+                "command": "get_overview_bundle",
+                "count": 1,
+                "totalMs": 8.8,
+                "avgMs": 8.8
+              }
+            ]
+          },
+          "render": {
+            "commitCount": 1001,
+            "totalActualDurationMs": 10982.5,
+            "totalBaseDurationMs": 53532.1,
+            "avgActualMs": 10.97
+          },
+          "dom": {
+            "nodeCount": 1584
+          },
+          "longTasks": {
+            "count": 18,
+            "totalMs": 958,
+            "maxMs": 61,
+            "blockedPct": 2.13
+          },
+          "frames": {
+            "count": 1348,
+            "over33ms": 1273,
+            "over50ms": 31,
+            "p95Ms": 33.5,
+            "avgMs": 33.42,
+            "truncated": false
+          },
+          "eventsReceived": [
+            {
+              "name": "fleet-session-output",
+              "count": 8180
+            },
+            {
+              "name": "fleet-session-state",
+              "count": 490
+            }
+          ],
+          "memory": {
+            "usedJSHeapSize": 189351192,
+            "totalJSHeapSize": 264445656,
+            "jsHeapSizeLimit": 4395630592
+          },
+          "diagnostics": {
+            "ipcSubscribed": true,
+            "longTasksSupported": true,
+            "framesSampled": true,
+            "eventCountersAttached": true
+          }
+        },
+        "status": {
+          "running": true,
+          "profile": {
+            "sessions": 60,
+            "linesPerSec": 200,
+            "stateFlipsPerSec": 12,
+            "sessionChurnPerMin": 6,
+            "channelMsgsPerSec": 4,
+            "reviewsPending": 60,
+            "personaIds": [],
+            "lineLen": 120,
+            "seed": 5486273019068234000
+          },
+          "liveSessions": 60,
+          "emittedOutput": 8180,
+          "emittedState": 490,
+          "ticks": 818,
+          "uptimeMs": 45064,
+          "emitErrors": 0,
+          "tickPanics": 0,
+          "sinceLastTickMs": 32,
+          "driverAlive": true,
+          "heldChannel": 336,
+          "heldReviews": 60,
+          "servedChannel": 624,
+          "servedReviews": 180,
+          "churned": 4
+        }
+      }
+    },
+    {
+      "label": "soak-3",
+      "sessions": 60,
+      "linesPerSec": 200,
+      "emitted": 8682,
+      "received": 8671,
+      "emitErrors": 0,
+      "tickPanics": 0,
+      "driverAlive": true,
+      "sinceLastTickMs": 3,
+      "commits": 986,
+      "actualMs": 11985.5,
+      "longTasks": 70,
+      "blockedPct": 8.51,
+      "p95Frame": 33.5,
+      "framesOver50": 57,
+      "heapMb": 216.2,
+      "heapDeltaMb": 35.6,
+      "ipcCalls": 764,
+      "msgs": 4,
+      "heldChannel": 506,
+      "servedChannel": 984,
+      "servedReviews": 240,
+      "churned": 4,
+      "unresponsive": false,
+      "raw": {
+        "snapshot": {
+          "resetAt": 3284071.100000143,
+          "snapshotAt": 3329086.4000000954,
+          "durationMs": 45015.3,
+          "marks": [],
+          "ipc": {
+            "totalCount": 764,
+            "totalDurationMs": 48501.9,
+            "byCommand": [
+              {
+                "command": "companion_record_fleet_event",
+                "count": 495,
+                "totalMs": 29298.9,
+                "avgMs": 59.19
+              },
+              {
+                "command": "fleet_set_auto_hibernate",
+                "count": 64,
+                "totalMs": 5104.7,
+                "avgMs": 79.76
+              },
+              {
+                "command": "fleet_set_state_cutoffs",
+                "count": 64,
+                "totalMs": 5128.1,
+                "avgMs": 80.13
+              },
+              {
+                "command": "fleet_set_live_slots",
+                "count": 64,
+                "totalMs": 5162.3,
+                "avgMs": 80.66
+              },
+              {
+                "command": "fleet_list_sessions",
+                "count": 27,
+                "totalMs": 769.6,
+                "avgMs": 28.5
+              },
+              {
+                "command": "get_system_metrics",
+                "count": 23,
+                "totalMs": 807.8,
+                "avgMs": 35.12
+              },
+              {
+                "command": "list_team_channel",
+                "count": 6,
+                "totalMs": 723.4,
+                "avgMs": 120.57
+              },
+              {
+                "command": "dev_tools_list_projects",
+                "count": 4,
+                "totalMs": 493.7,
+                "avgMs": 123.43
+              },
+              {
+                "command": "companion_get_operative_memory_digest",
+                "count": 3,
+                "totalMs": 128.8,
+                "avgMs": 42.93
+              },
+              {
+                "command": "dev_tools_pending_counts",
+                "count": 1,
+                "totalMs": 10.5,
+                "avgMs": 10.5
+              },
+              {
+                "command": "dev_tools_undispatched_ideas",
+                "count": 1,
+                "totalMs": 12.5,
+                "avgMs": 12.5
+              },
+              {
+                "command": "list_manual_reviews_page",
+                "count": 1,
+                "totalMs": 12.9,
+                "avgMs": 12.9
+              },
+              {
+                "command": "list_manual_reviews",
+                "count": 1,
+                "totalMs": 12.5,
+                "avgMs": 12.5
+              },
+              {
+                "command": "list_reports",
+                "count": 1,
+                "totalMs": 75.1,
+                "avgMs": 75.1
+              },
+              {
+                "command": "get_persona_summaries",
+                "count": 1,
+                "totalMs": 75.1,
+                "avgMs": 75.1
+              },
+              {
+                "command": "get_pending_review_count",
+                "count": 1,
+                "totalMs": 87.6,
+                "avgMs": 87.6
+              },
+              {
+                "command": "get_unread_report_count",
+                "count": 1,
+                "totalMs": 141,
+                "avgMs": 141
+              },
+              {
+                "command": "list_events",
+                "count": 1,
+                "totalMs": 147.4,
+                "avgMs": 147.4
+              },
+              {
+                "command": "get_all_monthly_spend",
+                "count": 1,
+                "totalMs": 146.8,
+                "avgMs": 146.8
+              },
+              {
+                "command": "get_director_portfolio",
+                "count": 1,
+                "totalMs": 146.2,
+                "avgMs": 146.2
+              },
+              {
+                "command": "list_alert_rules",
+                "count": 1,
+                "totalMs": 6.2,
+                "avgMs": 6.2
+              },
+              {
+                "command": "list_fired_alerts",
+                "count": 1,
+                "totalMs": 4.7,
+                "avgMs": 4.7
+              },
+              {
+                "command": "get_overview_bundle",
+                "count": 1,
+                "totalMs": 6.1,
+                "avgMs": 6.1
+              }
+            ]
+          },
+          "render": {
+            "commitCount": 986,
+            "totalActualDurationMs": 11985.5,
+            "totalBaseDurationMs": 54764.1,
+            "avgActualMs": 12.16
+          },
+          "dom": {
+            "nodeCount": 1578
+          },
+          "longTasks": {
+            "count": 70,
+            "totalMs": 3833,
+            "maxMs": 68,
+            "blockedPct": 8.51
+          },
+          "frames": {
+            "count": 1304,
+            "over33ms": 1261,
+            "over50ms": 57,
+            "p95Ms": 33.5,
+            "avgMs": 34.55,
+            "truncated": false
+          },
+          "eventsReceived": [
+            {
+              "name": "fleet-session-output",
+              "count": 8180
+            },
+            {
+              "name": "fleet-session-state",
+              "count": 491
+            }
+          ],
+          "memory": {
+            "usedJSHeapSize": 226744806,
+            "totalJSHeapSize": 301915850,
+            "jsHeapSizeLimit": 4395630592
+          },
+          "diagnostics": {
+            "ipcSubscribed": true,
+            "longTasksSupported": true,
+            "framesSampled": true,
+            "eventCountersAttached": true
+          }
+        },
+        "status": {
+          "running": true,
+          "profile": {
+            "sessions": 60,
+            "linesPerSec": 200,
+            "stateFlipsPerSec": 12,
+            "sessionChurnPerMin": 6,
+            "channelMsgsPerSec": 4,
+            "reviewsPending": 60,
+            "personaIds": [],
+            "lineLen": 120,
+            "seed": 12525273630077299000
+          },
+          "liveSessions": 60,
+          "emittedOutput": 8190,
+          "emittedState": 492,
+          "ticks": 819,
+          "uptimeMs": 45052,
+          "emitErrors": 0,
+          "tickPanics": 0,
+          "sinceLastTickMs": 3,
+          "driverAlive": true,
+          "heldChannel": 506,
+          "heldReviews": 60,
+          "servedChannel": 984,
+          "servedReviews": 240,
+          "churned": 4
+        }
+      }
+    },
+    {
+      "label": "soak-4",
+      "sessions": 60,
+      "linesPerSec": 200,
+      "emitted": 8681,
+      "received": 8681,
+      "emitErrors": 0,
+      "tickPanics": 0,
+      "driverAlive": true,
+      "sinceLastTickMs": 30,
+      "commits": 975,
+      "actualMs": 11481.6,
+      "longTasks": 64,
+      "blockedPct": 7.84,
+      "p95Frame": 33.5,
+      "framesOver50": 45,
+      "heapMb": 212.4,
+      "heapDeltaMb": -3.8,
+      "ipcCalls": 685,
+      "msgs": 4,
+      "heldChannel": 675,
+      "servedChannel": 1344,
+      "servedReviews": 360,
+      "churned": 4,
+      "unresponsive": false,
+      "raw": {
+        "snapshot": {
+          "resetAt": 3330625,
+          "snapshotAt": 3375634.8000001907,
+          "durationMs": 45009.8,
+          "marks": [],
+          "ipc": {
+            "totalCount": 685,
+            "totalDurationMs": 46759.7,
+            "byCommand": [
+              {
+                "command": "companion_record_fleet_event",
+                "count": 496,
+                "totalMs": 28342.4,
+                "avgMs": 57.14
+              },
+              {
+                "command": "fleet_set_auto_hibernate",
+                "count": 37,
+                "totalMs": 4960.1,
+                "avgMs": 134.06
+              },
+              {
+                "command": "fleet_set_state_cutoffs",
+                "count": 37,
+                "totalMs": 4975,
+                "avgMs": 134.46
+              },
+              {
+                "command": "fleet_set_live_slots",
+                "count": 37,
+                "totalMs": 4951.5,
+                "avgMs": 133.82
+              },
+              {
+                "command": "get_system_metrics",
+                "count": 22,
+                "totalMs": 718.8,
+                "avgMs": 32.67
+              },
+              {
+                "command": "fleet_list_sessions",
+                "count": 15,
+                "totalMs": 736.9,
+                "avgMs": 49.13
+              },
+              {
+                "command": "companion_get_operative_memory_digest",
+                "count": 7,
+                "totalMs": 260.1,
+                "avgMs": 37.16
+              },
+              {
+                "command": "list_team_channel",
+                "count": 6,
+                "totalMs": 514.7,
+                "avgMs": 85.78
+              },
+              {
+                "command": "dev_tools_list_projects",
+                "count": 4,
+                "totalMs": 406.7,
+                "avgMs": 101.67
+              },
+              {
+                "command": "dev_tools_pending_counts",
+                "count": 2,
+                "totalMs": 17.2,
+                "avgMs": 8.6
+              },
+              {
+                "command": "dev_tools_undispatched_ideas",
+                "count": 2,
+                "totalMs": 28,
+                "avgMs": 14
+              },
+              {
+                "command": "list_manual_reviews_page",
+                "count": 2,
+                "totalMs": 29.7,
+                "avgMs": 14.85
+              },
+              {
+                "command": "list_manual_reviews",
+                "count": 2,
+                "totalMs": 78.5,
+                "avgMs": 39.25
+              },
+              {
+                "command": "list_reports",
+                "count": 2,
+                "totalMs": 79,
+                "avgMs": 39.5
+              },
+              {
+                "command": "get_persona_summaries",
+                "count": 2,
+                "totalMs": 94.7,
+                "avgMs": 47.35
+              },
+              {
+                "command": "get_pending_review_count",
+                "count": 2,
+                "totalMs": 122,
+                "avgMs": 61
+              },
+              {
+                "command": "get_unread_report_count",
+                "count": 2,
+                "totalMs": 109.4,
+                "avgMs": 54.7
+              },
+              {
+                "command": "list_events",
+                "count": 2,
+                "totalMs": 81.2,
+                "avgMs": 40.6
+              },
+              {
+                "command": "get_all_monthly_spend",
+                "count": 2,
+                "totalMs": 121.3,
+                "avgMs": 60.65
+              },
+              {
+                "command": "get_director_portfolio",
+                "count": 2,
+                "totalMs": 121,
+                "avgMs": 60.5
+              },
+              {
+                "command": "list_fired_alerts",
+                "count": 1,
+                "totalMs": 6,
+                "avgMs": 6
+              },
+              {
+                "command": "get_overview_bundle",
+                "count": 1,
+                "totalMs": 5.5,
+                "avgMs": 5.5
+              }
+            ]
+          },
+          "render": {
+            "commitCount": 975,
+            "totalActualDurationMs": 11481.6,
+            "totalBaseDurationMs": 54886,
+            "avgActualMs": 11.78
+          },
+          "dom": {
+            "nodeCount": 1572
+          },
+          "longTasks": {
+            "count": 64,
+            "totalMs": 3528,
+            "maxMs": 70,
+            "blockedPct": 7.84
+          },
+          "frames": {
+            "count": 1325,
+            "over33ms": 1262,
+            "over50ms": 45,
+            "p95Ms": 33.5,
+            "avgMs": 33.99,
+            "truncated": false
+          },
+          "eventsReceived": [
+            {
+              "name": "fleet-session-output",
+              "count": 8190
+            },
+            {
+              "name": "fleet-session-state",
+              "count": 491
+            }
+          ],
+          "memory": {
+            "usedJSHeapSize": 222731398,
+            "totalJSHeapSize": 288247550,
+            "jsHeapSizeLimit": 4395630592
+          },
+          "diagnostics": {
+            "ipcSubscribed": true,
+            "longTasksSupported": true,
+            "framesSampled": true,
+            "eventCountersAttached": true
+          }
+        },
+        "status": {
+          "running": true,
+          "profile": {
+            "sessions": 60,
+            "linesPerSec": 200,
+            "stateFlipsPerSec": 12,
+            "sessionChurnPerMin": 6,
+            "channelMsgsPerSec": 4,
+            "reviewsPending": 60,
+            "personaIds": [],
+            "lineLen": 120,
+            "seed": 1153604774381147600
+          },
+          "liveSessions": 60,
+          "emittedOutput": 8190,
+          "emittedState": 491,
+          "ticks": 819,
+          "uptimeMs": 45029,
+          "emitErrors": 0,
+          "tickPanics": 0,
+          "sinceLastTickMs": 30,
+          "driverAlive": true,
+          "heldChannel": 675,
+          "heldReviews": 60,
+          "servedChannel": 1344,
+          "servedReviews": 360,
+          "churned": 4
+        }
+      }
+    }
+  ]
+}

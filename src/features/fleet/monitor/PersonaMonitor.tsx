@@ -21,6 +21,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import { useChannelWorkspace } from './channels';
@@ -57,6 +58,15 @@ type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map';
  */
 let lastView: MonitorView = 'activity';
 
+/** The store's deep-link vocabulary → this router's destinations. One function
+ *  rather than the same ternary at the initializer and the effect, which is how
+ *  a third value gets added to one of them and not the other. */
+function viewForSignal(signal: 'fleet' | 'channels' | 'conversations'): MonitorView {
+  if (signal === 'channels') return 'timeline';
+  if (signal === 'conversations') return 'conversations';
+  return 'activity';
+}
+
 interface Selection {
   personaId: string;
   section: DrawerSection;
@@ -64,40 +74,71 @@ interface Selection {
 
 export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const { t } = useTranslation();
-  // All four feeds stay ON regardless of the active view — deliberately, not
-  // as a leftover: the footer's review count and the header's attention badges
-  // render in every view, the channel surfaces need the roster the health feed
-  // fills, and gating `feeds` per view would tear pollers down and refetch on
-  // every tab switch. The per-surface gating this hook supports is for OTHER
-  // mounts (the triage deck passes DECK_FEEDS); the Monitor is the one surface
-  // that legitimately renders everything.
-  const {
-    personas, healthMap, reviews, unreadMessages, activeProcesses,
-    loading, isProcessing, handleReviewAction, handleMarkRead,
-  } = useMonitorData();
 
-  const { cards, systemProcesses } = useMemo(
-    () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap),
-    [personas, reviews, unreadMessages, activeProcesses, healthMap],
-  );
-
-  // A live pop-up can deep-link straight into the Timeline via the transient
-  // `monitorInitialView` signal. The store's vocabulary predates the router and
-  // is left untouched: 'channels' means "the merged Timeline", 'fleet' means
-  // "the fleet board", which is Activity now.
+  // A live pop-up can deep-link straight into a Monitor destination via the
+  // transient `monitorInitialView` signal. Two of the three names predate the
+  // router and are left alone: 'channels' means "the merged Timeline", 'fleet'
+  // means "the fleet board", which is Activity now. 'conversations' is the one
+  // added deliberately — a channel message arriving as a pop-up belongs in the
+  // room where you can answer it, not in the read-only merged stream, so that
+  // is where the corner cards now land.
   const monitorInitialView = useSystemStore((s) => s.monitorInitialView);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
   const [view, setView] = useState<MonitorView>(() =>
-    monitorInitialView ? (monitorInitialView === 'channels' ? 'timeline' : 'activity') : lastView,
+    monitorInitialView ? viewForSignal(monitorInitialView) : lastView,
   );
   useEffect(() => {
     lastView = view;
   }, [view]);
   useEffect(() => {
     if (!monitorInitialView) return;
-    setView(monitorInitialView === 'channels' ? 'timeline' : 'activity');
+    setView(viewForSignal(monitorInitialView));
     setMonitorInitialView(null);
   }, [monitorInitialView, setMonitorInitialView]);
+
+  // WHICH FEEDS THIS VIEW ACTUALLY RENDERS.
+  //
+  // The four header destinations are PEERS, and only Activity draws anything
+  // built out of `reviews` / `unreadMessages` / `healthMap`: the grid cards, the
+  // drawer over them, and the system band. Timeline, Conversations and Map draw
+  // the channel surfaces and nothing else.
+  //
+  // This block used to read "all four feeds stay ON regardless of the active
+  // view — deliberately", and justified it by "the footer's review count and the
+  // header's attention badges render in every view". That footer no longer
+  // exists: the legend + count line was replaced by `QuickDispatchDock` (see the
+  // note above it), and the header router carries no badges. The justification
+  // outlived the pixels it pointed at, so the three polls kept running for a
+  // model with nothing behind it — `list_manual_reviews`, `list_reports(300)`
+  // and `get_persona_summaries`, measured at 3 calls each per 60s on the live
+  // app through the :17320 perf bridge.
+  //
+  // Its OTHER argument was real and is preserved: gating must not make a tab
+  // switch feel like a cold load. It does not. The hook keeps its state across
+  // the flag change, so returning to Activity paints the last-known fleet
+  // immediately; `usePolling` fires a ticker the moment it re-registers, so the
+  // refresh is instant rather than a cadence away; and the mount-time reads are
+  // not gated at all, so `loading` still resolves on a Monitor that opens
+  // straight into Timeline. Nothing here is remembered longer than it is true.
+  // The app's one visibility primitive (`@/lib/documentVisibility` via
+  // `useSyncExternalStore`) — the same source `PollingCoordinator` suspends its
+  // cadence buckets from. Used below for the elapsed-time tick.
+  const visible = useDocumentVisibility();
+
+  const isActivityView = view === 'activity';
+  const feeds = useMemo(
+    () => ({ reviews: isActivityView, messages: isActivityView, personaHealth: isActivityView }),
+    [isActivityView],
+  );
+  const {
+    personas, healthMap, reviews, unreadMessages, activeProcesses,
+    loading, isProcessing, handleReviewAction, handleMarkRead,
+  } = useMonitorData(feeds);
+
+  const { cards, systemProcesses } = useMemo(
+    () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap),
+    [personas, reviews, unreadMessages, activeProcesses, healthMap],
+  );
 
   // The lens preset riding along with a Timeline deep-link (team/persona
   // scope). Captured once per mount, then cleared — the same transient
@@ -153,10 +194,26 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     // `now` drives the SystemBand's elapsed times and the drawer's live timers,
     // both of which are Activity-only. The channel surfaces consume none of it,
     // so ticking there would re-render the whole workspace for nothing.
-    if (!anyRunning || view !== 'activity') return;
+    //
+    // The third condition is the window itself. This is the Monitor's only raw
+    // `setInterval` — everything else runs on the PollingCoordinator, which
+    // suspends on `visibilitychange` — so it was the one loop that kept
+    // re-rendering the entire Monitor tree once a second behind a hidden
+    // window, painting a clock nobody could see. `useDocumentVisibility` is the
+    // app's single visibility primitive and reads the same store the
+    // coordinator subscribes to, so the two cannot disagree about what
+    // "hidden" means.
+    //
+    // Re-stamping `now` up front is what makes re-show honest rather than just
+    // cheap: while hidden, `now` freezes at the last tick, so a window restored
+    // after a minute away would render every elapsed time a minute short until
+    // the next second elapsed. The effect re-runs on the false→true edge and
+    // corrects it in the same commit that restarts the tick.
+    if (!anyRunning || view !== 'activity' || !visible) return;
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning, view]);
+  }, [anyRunning, view, visible]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
   // Stable open handler (takes personaId) so the memoized grid squares don't
@@ -173,6 +230,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // A MODAL ABOVE US OWNS ESCAPE FIRST.
+      //
+      // Every modal this surface can raise — the triage card, the channel
+      // reply, a fleet terminal, the shared detail modals — portals to
+      // `document.body`, so its Escape bubbles to `window` and lands here as
+      // well as in the modal's own handler. Without this guard, one press both
+      // closed the card and tore down the whole Monitor behind it: the reviewer
+      // dismissed a card and lost the queue they were working. Measured, not
+      // theorised — it reproduced on the first Escape after this modal landed.
+      //
+      // Checked against the live DOM rather than tracked as state on purpose:
+      // the modals are owned by three different children (and the shared ones by
+      // components this file does not import), so a flag would have to be
+      // plumbed up from each of them and would go stale the moment a fourth
+      // arrives. `[role="dialog"]` is what BaseModal already stamps.
+      if (document.querySelector('[role="dialog"]')) return;
       if (selection) setSelection(null);
       else onClose();
     };

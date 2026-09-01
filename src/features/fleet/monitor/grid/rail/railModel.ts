@@ -22,12 +22,12 @@
 //     own (`DeckChips`) so a `danger` row is the same red on both surfaces.
 
 import type { LucideIcon } from 'lucide-react';
-import { AlertCircle, Inbox, MessageSquare } from 'lucide-react';
+import { Activity, AlertCircle, Bookmark, CheckCircle2, Inbox, MessageSquare } from 'lucide-react';
 import type { TriageItem, TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import { KIND_META } from '@/features/agents/quick-answer/triage/deck/DeckChips';
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 import type { Persona } from '@/lib/bindings/Persona';
-import { authorName } from '@/features/teams/sub_collab/collabRender';
+import { AUTHOR_KIND_META, authorName, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
 import { resolveCompact } from '../../channels/MergedRow';
 import type { TaggedItem } from '../../channels/types';
 import { cleanName } from '../fleetGridModel';
@@ -67,6 +67,66 @@ export interface RailRow {
   unread: boolean;
   /** True → the row carries a checkbox (Dispatch). */
   selectable: boolean;
+  /**
+   * True → the row can be accepted or rejected from the rail itself, without
+   * opening anything. Only the triage queue qualifies: a dispatchable idea is
+   * *selected* rather than decided, and a channel message is not a decision at
+   * all. The row renders the two verdict buttons off this flag alone, so a
+   * source that has no verdict cannot accidentally grow one.
+   */
+  decidable: boolean;
+  /**
+   * The label that OPENS a group, or null.
+   *
+   * Non-null on the FIRST row of a run of rows sharing a project, and null
+   * on every other row — including the rest of that same run. One field
+   * rather than a `group` on every row plus a derived `isFirst`, because two
+   * fields that must agree are two fields that can disagree, and the row is
+   * the only thing that knows whether it is drawing a header.
+   *
+   * Set before paging, on the whole ordered list, so a page boundary falling
+   * inside a group leaves the continuation rows correctly headerless — their
+   * header is already on screen above them.
+   */
+  groupHeader: string | null;
+  /**
+   * Whether the row's instant is worth printing.
+   *
+   * False for reviews and dispatchable ideas, and that is a judgement about
+   * what those queues ARE: they are backlogs, worked from the top, and
+   * "3 days ago" on every line is a column of noise that pushes the title
+   * into truncation without changing a single decision. A message feed is
+   * the opposite — it is a chronology, and an undated one is unreadable.
+   */
+  showTime: boolean;
+  /**
+   * Whether this row's feed has a read watermark, so a row that is NOT
+   * `unread` has genuinely been seen.
+   *
+   * Distinct from `!unread`, which is also what a review row reports — and a
+   * review has not been "read", it simply has no such concept. Dimming those
+   * would dim the entire Reviews tab to mean nothing at all.
+   */
+  tracksRead: boolean;
+  /**
+   * Whether `kind` may be PAINTED, or is carried for assistive tech only.
+   *
+   * The channel feed's kinds are the words "directive", "decision", "channel",
+   * "memory · decision" — and at rail width they cost the row a chunk of its
+   * title to restate what the icon and the tone already say. So channel rows
+   * set this false: the kind still rides in `kind` for the screen reader and
+   * the modal, and the eye reads it off the glyph.
+   *
+   * REVIEWS JOINED THEM (2026-09-01). The argument for keeping it true there
+   * was that "Idea" vs "Review" is not derivable from a colour a reader has
+   * not been taught — which was answering the wrong question, because the
+   * kind is not carried by the colour, it is carried by the ICON on line 1,
+   * which is `KIND_META[kind].icon` and is per-kind by construction. The word
+   * was restating the glyph directly above it. Dispatch keeps it, and there
+   * the word IS redundant with the tab name — left alone deliberately rather
+   * than swept in, since nobody asked and it is one line to change.
+   */
+  showKind: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +189,11 @@ export function triageToRow(item: TriageItem, kindLabel: string): RailRow {
     persona: null,
     unread: false,
     selectable: false,
+    decidable: true,
+    groupHeader: null,
+    showTime: false,
+    tracksRead: false,
+    showKind: false,
   };
 }
 
@@ -148,6 +213,11 @@ export function ideaToRow(row: UndispatchedIdea, kindLabel: string): RailRow {
     persona: null,
     unread: false,
     selectable: true,
+    decidable: false,
+    groupHeader: null,
+    showTime: false,
+    tracksRead: false,
+    showKind: true,
   };
 }
 
@@ -159,6 +229,12 @@ export function ideaToRow(row: UndispatchedIdea, kindLabel: string): RailRow {
  * derived from that projection's `alert` and `isError` flags rather than from
  * the item kind, because "a step failed" and "a step is held" are the only two
  * things in this feed that are urgent, and neither is a kind.
+ *
+ * THE ROW IS CONTENT-FIRST. `title` is the MESSAGE, not the author — what was
+ * said is the thing being read, and the author is context for it. The previous
+ * shape put the author on the title line and pushed the sentence into the muted
+ * second line, which spent the row's most legible space on a name that repeats
+ * down the whole column.
  */
 export function channelToRow(
   tagged: TaggedItem,
@@ -168,23 +244,121 @@ export function channelToRow(
   const { item, team } = tagged;
   const persona = item.personaId ? personaOf(item.personaId) : undefined;
   const { event, message, isError, alert } = resolveCompact(item);
+  const meta = channelKindMeta(item, isError, alert);
+  const author = cleanName(authorName(item, persona));
   return {
     id: `${team.teamId}:${item.id}`,
-    tone: isError ? 'danger' : alert ? 'warning' : 'neutral',
+    tone: meta.tone,
     code: 'MSG',
+    // Carried, never painted (see `showKind`): the glyph and the tone say this
+    // on screen, and the word survives for assistive tech and the modal.
     kind: event,
-    icon: isError || alert ? AlertCircle : MessageSquare,
-    title: cleanName(authorName(item, persona)),
-    source: cleanName(team.teamName),
+    icon: meta.icon,
+    title: message?.trim() || event,
+    // The AUTHOR only. This used to be "author · team", because the rail
+    // merges every project's channel and a quote with no room attached to it
+    // is unreadable. The room is now the GROUP HEADER above the run of rows
+    // it belongs to, so repeating it per row spends the meta line restating
+    // the heading three pixels above it.
+    source: author || null,
     at: item.at,
-    body: message,
+    body: null,
     accent: team.teamColor,
     persona: persona ? { icon: persona.icon, color: persona.color } : null,
     // The channel slice's own definition, applied per row: newer than the
     // watermark and not written by the user (see `countUnread`).
     unread: item.kind !== 'directive' && (lastSeenAt === null || item.at > lastSeenAt),
     selectable: false,
+    decidable: false,
+    // Filled by the feed once the rows are ordered — whether a row opens a
+    // group is a fact about its NEIGHBOURS, which an adapter handed one item
+    // cannot know.
+    groupHeader: null,
+    showTime: true,
+    tracksRead: true,
+    showKind: false,
   };
+}
+
+/**
+ * The Messages tab's rows: a merged channel feed ORDERED BY PROJECT, with each
+ * group's first row carrying the project's name.
+ *
+ * The rail merges every team's channel into one column, which answers "what
+ * just happened" and refuses to answer "what is happening in THIS project" —
+ * any one project's rows arrive interleaved with nineteen others'. Grouping
+ * settles that without giving up the chronology twice over:
+ *
+ *   • PROJECTS are ordered by their own newest message, so the project that
+ *     just said something is still the first thing you see. Alphabetical would
+ *     be tidier and would bury live activity under whichever team starts with
+ *     an A. `merged` arrives newest-first, so first appearance already IS that
+ *     order and no second sort is needed.
+ *   • WITHIN a project, newest first, unchanged.
+ *
+ * Grouping happens HERE rather than after paging, deliberately: the header
+ * belongs to the first row of the whole group, not of whichever page it landed
+ * on. A page boundary inside a group therefore yields continuation rows with
+ * no header — which is right, because the header is already above them.
+ */
+export function channelRowsByProject(
+  merged: TaggedItem[],
+  personaOf: (id: string) => Persona | undefined,
+  lastSeenOf: (teamId: string) => string | null,
+): RailRow[] {
+  const buckets = new Map<string, TaggedItem[]>();
+  for (const tagged of merged) {
+    const bucket = buckets.get(tagged.team.teamId);
+    if (bucket) bucket.push(tagged);
+    else buckets.set(tagged.team.teamId, [tagged]);
+  }
+
+  const rows: RailRow[] = [];
+  for (const bucket of buckets.values()) {
+    bucket.forEach((tagged, i) => {
+      const row = channelToRow(tagged, personaOf, lastSeenOf(tagged.team.teamId));
+      rows.push(i === 0 ? { ...row, groupHeader: cleanName(tagged.team.teamName) } : row);
+    });
+  }
+  return rows;
+}
+
+/**
+ * Glyph + tone for one channel row — the two channels through which a row's
+ * KIND reaches the reader now that the word is not printed.
+ *
+ * Urgency outranks authorship on purpose: a failed step is a failed step
+ * whoever produced it, so `isError`/`alert` win the tone before the author kind
+ * is consulted. The glyph still follows the voice, because "who is talking"
+ * stays useful even when the news is bad.
+ */
+function channelKindMeta(
+  item: TaggedItem['item'],
+  isError: boolean,
+  alert: boolean,
+): { icon: LucideIcon; tone: TriageTone } {
+  const tone: TriageTone = isError
+    ? 'danger'
+    : alert
+      ? 'warning'
+      : item.kind === 'directive' || item.kind === 'athena'
+        ? 'accent'
+        : item.kind === 'memory'
+          ? 'success'
+          : 'neutral';
+
+  if (isError || alert) return { icon: AlertCircle, tone };
+  if (isAuthorKind(item.kind)) return { icon: AUTHOR_KIND_META[item.kind].Icon, tone };
+  switch (item.kind) {
+    case 'memory':
+      return { icon: Bookmark, tone };
+    case 'event':
+      return { icon: Activity, tone };
+    case 'step':
+      return { icon: CheckCircle2, tone };
+    default:
+      return { icon: MessageSquare, tone };
+  }
 }
 
 // ---------------------------------------------------------------------------

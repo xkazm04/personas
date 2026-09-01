@@ -46,29 +46,29 @@ describe('uiSlice — headerOverlay controller', () => {
     expect(h.overlay()).toBe('none');
   });
 
-  it('the dispatch panel joins the same single slot', () => {
+  it('a third surface joins the same single slot', () => {
     // Adding a variant means the panel closes the monitor and vice versa —
     // that is the contract, not a regression. Pinned so a future surface
     // cannot quietly grow a second, stacking overlay.
     const h = makeHarness();
-    h.get().setHeaderOverlay('dispatch');
-    expect(h.overlay()).toBe('dispatch');
+    h.get().setHeaderOverlay('schedules');
+    expect(h.overlay()).toBe('schedules');
     h.get().setHeaderOverlay('monitor');
     expect(h.overlay()).toBe('monitor');
-    h.get().setHeaderOverlay('dispatch');
-    expect(h.overlay()).toBe('dispatch');
+    h.get().setHeaderOverlay('schedules');
+    expect(h.overlay()).toBe('schedules');
     h.get().setHeaderOverlay('none');
     expect(h.overlay()).toBe('none');
   });
 
-  it('setMonitorOpen(false) does not clobber the dispatch panel', () => {
-    const h = makeHarness({ headerOverlay: 'dispatch' });
+  it('setMonitorOpen(false) does not clobber a sibling overlay', () => {
+    const h = makeHarness({ headerOverlay: 'schedules' });
     h.get().setMonitorOpen(false);
-    expect(h.overlay()).toBe('dispatch');
+    expect(h.overlay()).toBe('schedules');
   });
 
-  it('navigating a route dismisses the dispatch panel too', () => {
-    const h = makeHarness({ sidebarSection: 'home', headerOverlay: 'dispatch', navigationHistory: [] });
+  it('navigating a route dismisses a sibling overlay too', () => {
+    const h = makeHarness({ sidebarSection: 'home', headerOverlay: 'schedules', navigationHistory: [] });
     h.get().setSidebarSection('overview');
     expect(h.overlay()).toBe('none');
   });

@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "ब्रीफ से बने लक्ष्य",
     "ship_goals_remove_row": "यह लक्ष्य हटाएँ",
     "ship_goals_title_label": "लक्ष्य का शीर्षक",
-    "ship_goals_title_placeholder": "कुछ ही शब्द, जैसे कहानी गढ़ना"
+    "ship_goals_title_placeholder": "कुछ ही शब्द, जैसे कहानी गढ़ना",
+    "orb_focus_node": "बोर्ड पर {name} दिखाएँ"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

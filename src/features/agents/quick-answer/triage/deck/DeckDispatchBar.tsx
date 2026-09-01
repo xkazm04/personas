@@ -8,6 +8,23 @@
  * the Run Desk had for a selection: one at a time, the runner's default, or a
  * width you name. See {@link useAcceptedDispatch} for what each maps to.
  *
+ * ## Fitting the rail (2026-09-01)
+ *
+ * The bar is hosted in two rails now — the deck's, and the Activity board's,
+ * whose floor is narrower. Three things were sized for neither:
+ *
+ *  • The dispatch button was `accent`/amber. Amber is not a colour either
+ *    rail uses for anything else, so the one control that should read as "the
+ *    primary act here" instead read as "a warning about something". It is the
+ *    `primary` variant now, which is what a primary action is.
+ *  • The concurrency stepper was full-width-flexible beside a `flex-1`
+ *    button, so at rail floor the two fought over the same row and the button
+ *    lost its label. It has a fixed compact width now, and the row it shares
+ *    is aligned rather than stretched.
+ *  • `PillGroup` paints its labels in monospace micro-type, which is the
+ *    right call in the numeric surfaces it was built for and a foreign object
+ *    in a panel that is `typo-*` throughout. The bar passes `typo-label`.
+ *
  * Three deliberate omissions, none of them oversights:
  *  • "New task" — this bar acts on a selection of ideas the reviewer just
  *    accepted; authoring a task from nothing is not a triage act.
@@ -66,9 +83,9 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   ];
 
   return (
-    <div className="shrink-0 space-y-2 border-b border-primary/10 px-3 py-2">
+    <div className="shrink-0 space-y-1.5 border-b border-border px-2.5 py-2">
       <div className="flex items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-2 typo-body text-foreground">
+        <label className="inline-flex cursor-pointer items-center gap-2 typo-label text-foreground">
           <input
             type="checkbox"
             checked={allSelected}
@@ -121,15 +138,26 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
       )}
 
       <Tooltip content={m.triage_accepted_concurrency_hint}>
-        <div aria-label={m.triage_accepted_mode_aria}>
-          <PillGroup options={modes} value={ctl.mode} onChange={ctl.setMode} />
+        <div aria-label={m.triage_accepted_mode_aria} className="flex">
+          {/* Full width so the three modes divide the rail evenly instead of
+              huddling at its left edge under a full-width button. */}
+          <PillGroup
+            options={modes}
+            value={ctl.mode}
+            onChange={ctl.setMode}
+            labelClass="typo-label"
+          />
         </div>
       </Tooltip>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Only in `parallel`: in the other two modes the width is not the
             reviewer's to set (1, and the runner's own default), and a stepper
-            that does nothing is worse than no stepper. */}
+            that does nothing is worse than no stepper.
+
+            FIXED WIDTH, not flexible. Sharing a row with a `flex-1` button, a
+            stepper that grows takes the label off the button at rail floor —
+            and the field only ever holds one digit. */}
         {ctl.mode === 'parallel' && (
           <NumberStepper
             value={ctl.maxParallel}
@@ -137,15 +165,14 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
             min={MIN_PARALLEL}
             max={MAX_PARALLEL}
             ariaLabel={m.triage_accepted_concurrency_hint}
-            className="shrink-0"
+            className="w-[74px] shrink-0"
           />
         )}
         {/* An ACTION, so a real spinner on the control the reviewer pressed —
             `AsyncButton` with a promise-returning onClick, never a `useState`
             busy flag (docs/concepts/golden-paths/inline-busy-state.md). */}
         <AsyncButton
-          variant="accent"
-          accentColor="amber"
+          variant="primary"
           size="sm"
           className="flex-1"
           icon={<Rocket className="h-3.5 w-3.5" />}
@@ -164,7 +191,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         <button
           type="button"
           onClick={ctl.dismissReport}
-          className={`focus-ring block w-full rounded-interactive px-2 py-1 text-left typo-label ${
+          className={`focus-ring block w-full rounded-interactive px-2 py-1 text-left typo-caption ${
             ctl.report.error
               ? 'bg-status-error/10 text-status-error'
               : 'bg-status-success/10 text-status-success'

@@ -58,6 +58,12 @@ pub use state::AppState;
 // screenshot deps `xcap` and `image` - made `cargo test --features desktop`,
 // which is what CI runs, fail to compile.
 pub mod load_harness;
+// Ungated for the same reason as `load_harness` above: it is called from there
+// unconditionally. The INJECTION HOOKS that read it (in `commands::teams::
+// team_channel` and `commands::design::reviews`) stay compile-gated on
+// `test-automation`, so no shipped binary contains a path that can splice
+// synthetic rows into a channel or a review queue.
+pub mod load_harness_sources;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;
@@ -2126,6 +2132,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::transcript_read::fleet_session_metadata,
             commands::fleet::transcript_read::fleet_token_summary,
+            commands::fleet::transcript_read::fleet_session_recap,
             commands::fleet::monitor_stats::fleet_monitor_stats,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,

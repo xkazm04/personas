@@ -4,6 +4,24 @@
 
 - **[2026-08-31 14:48]**
 - **Paths:** `src/features/agents/sub_life/**` · `src/features/agents/sub_editor/**` · `src/features/agents/sub_design/**` · `src/features/overview/sub_missionControl/**` · `src/i18n/**` · `src-tauri/db/src/repos/core/attention_ledger.rs` · `src-tauri/src/commands/core/**`
+- **[2026-09-01 15:39]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/shared/chrome/TitleBarDock.tsx` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src/features/overview/sub_manual-review/components/dispatch/**` · `src/features/plugins/fleet/quick-dispatch/**` · `src/features/agents/quick-answer/triage/deck/DeckDispatchBar.tsx`
+- **Status:** started
+
+- **[2026-09-01 11:49]**
+- **Paths:** `src/features/plugins/companion/orb/**` · `src/features/fleet/monitor/grid/**` · `src/stores/slices/system/**`
+- **Status:** started
+
+- **[2026-09-01 10:17]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src/api/fleet/fleet.ts`
+- **Status:** started
+
+- **[2026-09-01 10:10]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src/api/fleet/fleet.ts`
+- **Status:** started
+
+- **[2026-08-31 21:06]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/plugins/companion/**`
 - **Status:** started
 
 - **[2026-08-31 11:52]**
@@ -542,6 +560,15 @@
 ### living-agent-checklist — post-ship checklist: fold Life into Design + attention toggle/Overview tile + follow-up fixes
 
 ### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later
+### monitor-consolidation-cleanup — Post-consolidation cleanup: retire Approved/QuickDispatch overlays, LiveComms routing, ActivityRail grouping+resize+project filter
+
+### athena-points — /perfect wave 2: Athena's orb caption points at a board node
+
+### perfect-wave-monitor — /perfect wave 1: board virtualization + session recap (lot A), Monitor poll visibility gate (lot B)
+
+### perfect-lotA-grid — /perfect Lot A: virtualize Activity board + session recap without xterm
+
+### monitor-full-power — Monitor full-power: rail row redesign + triage/channel modals, fleet terminal modal, persona/fleet node states, Athena orb bubble
 
 ### perf-load-harness — Synthetic load harness: Rust event/session generator + perf instrument (long tasks, frames) + ramp runner
 

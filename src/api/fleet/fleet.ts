@@ -11,6 +11,7 @@ import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
+import type { FleetSessionRecap } from '@/lib/bindings/FleetSessionRecap';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 import type { FleetDebugLogStatus } from '@/lib/bindings/FleetDebugLogStatus';
 import type { FleetRunSummary } from '@/lib/bindings/FleetRunSummary';
@@ -227,6 +228,23 @@ export const sessionMetadata = (claudeSessionId: string) =>
  */
 export const tokenSummary = (claudeSessionIds: string[]) =>
   invoke<FleetTokenAggregate>('fleet_token_summary', { claudeSessionIds });
+
+/**
+ * "What is this session doing" — read from the TAIL of its transcript instead
+ * of its terminal.
+ *
+ * The point of this call is what it does NOT do: it attaches no PTY and mounts
+ * no xterm, so an operator can interrogate any tile on a 200-session board
+ * without taking a live subscription per glance (see `fleetTerminalManager` for
+ * what a real attach costs). The backend reads a bounded window off the end of
+ * the file, so cost does not grow with a session's age.
+ *
+ * Returns `null` when the session has no transcript yet — a normal state (not
+ * yet started, or an id never bound), which the UI states rather than showing a
+ * blank panel.
+ */
+export const sessionRecap = (claudeSessionId: string) =>
+  invoke<FleetSessionRecap | null>('fleet_session_recap', { claudeSessionId });
 
 /**
  * Summarize the most recently-active transcripts across all projects — the
