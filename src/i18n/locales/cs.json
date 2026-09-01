@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "Cíle ze zadání",
       "ship_goals_remove_row": "Odebrat tento cíl",
       "ship_goals_title_label": "Název cíle",
-      "ship_goals_title_placeholder": "Pár slov, například Poskládat příběh"
+      "ship_goals_title_placeholder": "Pár slov, například Poskládat příběh",
+      "orb_focus_node": "Zobrazit {name} na přehledu"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

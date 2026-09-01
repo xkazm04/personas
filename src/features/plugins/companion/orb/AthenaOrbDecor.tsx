@@ -6,6 +6,8 @@
 
 import { MessageSquareText } from 'lucide-react';
 import type { RefObject } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { splitOnMention, type ResolvedMention } from './athenaOrbMention';
 
 /**
  * Speaking bloom. When motion is allowed the node is driven imperatively from
@@ -123,14 +125,47 @@ export function OrbTaskDots({
  * Wraps instead of truncating — a cut-off "Preparing an explanat…" reads as
  * broken; the cap only bounds line length.
  */
-export function OrbCaption({ text, dockedLeft }: { text: string; dockedLeft: boolean }) {
+export function OrbCaption({
+  text,
+  dockedLeft,
+  mention,
+  onFollow,
+}: {
+  text: string;
+  dockedLeft: boolean;
+  /** A resolved board node named in `text`, or null for plain prose. */
+  mention?: ResolvedMention | null;
+  onFollow?: (key: string) => void;
+}) {
+  const { t, tx } = useTranslation();
+  const parts = mention ? splitOnMention(text, mention) : null;
+
   return (
     <div
       className={`absolute top-1/2 -translate-y-1/2 w-max max-w-[320px] px-3 py-1.5 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 typo-caption text-foreground break-words ${
         dockedLeft ? 'left-full ml-2' : 'right-full mr-2'
       }`}
     >
-      {text}
+      {/* The bubble is `pointer-events-none` at the LAYER, so the button below
+          re-enables them for itself alone — the caption must never become a
+          click shield over the board it is describing. */}
+      {parts && mention && onFollow ? (
+        <>
+          {parts.before}
+          <button
+            type="button"
+            onClick={() => onFollow(mention.key)}
+            aria-label={tx(t.plugins.companion.orb_focus_node, { name: parts.label })}
+            data-testid="orb-caption-focus"
+            className="pointer-events-auto rounded-interactive font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary focus-ring"
+          >
+            {parts.label}
+          </button>
+          {parts.after}
+        </>
+      ) : (
+        text
+      )}
     </div>
   );
 }

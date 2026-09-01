@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "Mục tiêu rút ra từ bản tóm tắt",
       "ship_goals_remove_row": "Bỏ mục tiêu này",
       "ship_goals_title_label": "Tiêu đề mục tiêu",
-      "ship_goals_title_placeholder": "Vài từ thôi, ví dụ Dựng nên câu chuyện"
+      "ship_goals_title_placeholder": "Vài từ thôi, ví dụ Dựng nên câu chuyện",
+      "orb_focus_node": "Hiển thị {name} trên bảng"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

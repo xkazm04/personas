@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "Sasaran dari ringkasan",
       "ship_goals_remove_row": "Hapus sasaran ini",
       "ship_goals_title_label": "Judul sasaran",
-      "ship_goals_title_placeholder": "Beberapa kata saja, misalnya Menyusun ceritanya"
+      "ship_goals_title_placeholder": "Beberapa kata saja, misalnya Menyusun ceritanya",
+      "orb_focus_node": "Tampilkan {name} di papan"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

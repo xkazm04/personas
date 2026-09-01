@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "来自简报的目标",
       "ship_goals_remove_row": "移除这个目标",
       "ship_goals_title_label": "目标标题",
-      "ship_goals_title_placeholder": "几个词就好，例如「构建故事」"
+      "ship_goals_title_placeholder": "几个词就好，例如「构建故事」",
+      "orb_focus_node": "在看板上显示 {name}"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

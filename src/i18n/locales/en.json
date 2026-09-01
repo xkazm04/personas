@@ -16865,7 +16865,8 @@
       "ship_goals_core_note": "Every goal is added to the core cut. Moving one to later or never stays yours.",
       "ship_goals_cancel": "Cancel",
       "ship_goals_confirm": "Create goals",
-      "ship_goals_created": "Added to {name}: {created} created, {bound} already existed."
+      "ship_goals_created": "Added to {name}: {created} created, {bound} already existed.",
+      "orb_focus_node": "Show {name} on the board"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

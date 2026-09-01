@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "Objectifs issus du brief",
     "ship_goals_remove_row": "Retirer cet objectif",
     "ship_goals_title_label": "Titre de l’objectif",
-    "ship_goals_title_placeholder": "Quelques mots, par exemple Composer l’histoire"
+    "ship_goals_title_placeholder": "Quelques mots, par exemple Composer l’histoire",
+    "orb_focus_node": "Afficher {name} sur le tableau"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "Ziele aus dem Briefing",
       "ship_goals_remove_row": "Dieses Ziel entfernen",
       "ship_goals_title_label": "Zieltitel",
-      "ship_goals_title_placeholder": "Ein paar Worte, zum Beispiel Die Story aufbauen"
+      "ship_goals_title_placeholder": "Ein paar Worte, zum Beispiel Die Story aufbauen",
+      "orb_focus_node": "{name} auf dem Board zeigen"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

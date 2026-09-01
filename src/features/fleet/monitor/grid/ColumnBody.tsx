@@ -32,7 +32,7 @@
 // same DOM the board rendered before this change — a six-persona team is not
 // asked to pay for a measure pass it cannot benefit from.
 
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { VIRTUALIZE_ABOVE, type ColumnRow } from './gridGeometry';
 
@@ -40,9 +40,19 @@ export interface ColumnBodyProps {
   rows: ColumnRow[];
   /** Paints one row. The row's HEIGHT is the caller's, not this function's. */
   renderRow: (row: ColumnRow) => ReactNode;
+  /**
+   * A row key to bring into view, or null. Only the column that HOLDS the key
+   * acts; the others are handed the same value and correctly do nothing.
+   *
+   * A virtualized column cannot be scrolled to by the DOM, because the target
+   * row is not in the DOM until it is scrolled to — the request has to reach
+   * the virtualizer, which is why this is a prop rather than something the
+   * caller could do with a ref from outside.
+   */
+  focusKey?: string | null;
 }
 
-export function ColumnBody({ rows, renderRow }: ColumnBodyProps) {
+export function ColumnBody({ rows, renderRow, focusKey }: ColumnBodyProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   // Heights are known constants per row kind (see gridGeometry), so the
   // virtualizer is handed exact sizes and never measures the DOM.
@@ -56,11 +66,33 @@ export function ColumnBody({ rows, renderRow }: ColumnBodyProps) {
     overscan: 6,
   });
 
+  // Bring a focused row into view. Two paths, because the two branches below
+  // render two different DOMs: a virtualized column has to ask the virtualizer
+  // (its target row does not exist yet), a plain one can use the element.
+  //
+  // `virtualizer` re-identifies on every measure pass, so it is deliberately
+  // NOT a dependency — scrolling on that would fight the operator's own
+  // scrolling. The focus key changing is the only reason to move the viewport.
+  useEffect(() => {
+    if (!focusKey) return;
+    const index = rows.findIndex((r) => r.key === focusKey);
+    if (index < 0) return; // not this column's node
+    if (virtualize) {
+      virtualizer.scrollToIndex(index, { align: 'center' });
+      return;
+    }
+    // jsdom has no layout, so `scrollIntoView` is not always defined.
+    parentRef.current
+      ?.querySelector(`[data-row-key="${CSS.escape(focusKey)}"]`)
+      ?.scrollIntoView?.({ block: 'center' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey, rows, virtualize]);
+
   if (!virtualize) {
     return (
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
         {rows.map((row) => (
-          <div key={row.key} style={{ height: row.height }}>
+          <div key={row.key} data-row-key={row.key} style={{ height: row.height }}>
             {renderRow(row)}
           </div>
         ))}
@@ -77,6 +109,7 @@ export function ColumnBody({ rows, renderRow }: ColumnBodyProps) {
           return (
             <div
               key={row.key}
+              data-row-key={row.key}
               className="absolute inset-x-0 top-0"
               style={{ height: v.size, transform: `translateY(${v.start}px)` }}
             >

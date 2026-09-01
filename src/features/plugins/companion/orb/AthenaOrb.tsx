@@ -57,6 +57,10 @@ export function AthenaOrb({
   const reduceMotion = useReducedMotion();
   const streaming = useCompanionStore((s) => s.streaming);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
+  // The focus channel into the Monitor's board. A setter, so this subscribes to
+  // nothing that changes — the orb is mounted over every screen for the whole
+  // session and cannot afford a subscription it does not read.
+  const setMonitorFocusNode = useSystemStore((s) => s.setMonitorFocusNode);
   // Guided-walkthrough drive: while a walkthrough is active the orb is steered
   // by the runner (`orbGuideTarget`), not the user.
   const orbGuideTarget = useCompanionStore((s) => s.orbGuideTarget);
@@ -105,7 +109,14 @@ export function AthenaOrb({
       animate={{ x: renderLeft, y: renderTop }}
       transition={glideTransition}
     >
-      {presence.caption && <OrbCaption text={presence.caption} dockedLeft={dockedLeft} />}
+      {presence.caption && (
+        <OrbCaption
+          text={presence.caption}
+          dockedLeft={dockedLeft}
+          mention={presence.captionMention}
+          onFollow={setMonitorFocusNode}
+        />
+      )}
 
       <button
         type="button"

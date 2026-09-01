@@ -3052,7 +3052,8 @@
     "ship_goals_heading": "Objetivos del resumen",
     "ship_goals_remove_row": "Quitar este objetivo",
     "ship_goals_title_label": "Título del objetivo",
-    "ship_goals_title_placeholder": "Unas pocas palabras, por ejemplo Componer la historia"
+    "ship_goals_title_placeholder": "Unas pocas palabras, por ejemplo Componer la historia",
+    "orb_focus_node": "Mostrar {name} en el tablero"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

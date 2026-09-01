@@ -217,6 +217,19 @@ export interface UiSlice {
   monitorChannelPreset: { teamId: string | null; personaId: string | null } | null;
 
   /**
+   * A board node the Monitor should scroll to and flash — `p:<personaId>` or
+   * `s:<sessionId>`, the keys `gridGeometry.columnRows` assigns.
+   *
+   * The channel exists because the two ends live in different trees: Athena's
+   * orb is an overlay island mounted from `App.tsx`, the board is inside the
+   * Monitor overlay, and neither can hand the other a ref. Same transient
+   * contract as `monitorInitialView` above — the board consumes it, flashes,
+   * and clears it. Never persisted, and never a navigation: it points at
+   * something already on screen.
+   */
+  monitorFocusNode: string | null;
+
+  /**
    * Ids of below-the-fold Home (Mission Control) sections the user has hidden
    * via the dashboard Customize popover. Stored as a string[] (not Set) so the
    * persist middleware can JSON-serialize it. Empty = every section visible.
@@ -235,6 +248,7 @@ export interface UiSlice {
   toggleMonitorLiveMode: () => void;
   setMonitorInitialView: (view: 'fleet' | 'channels' | null) => void;
   setMonitorChannelPreset: (preset: { teamId: string | null; personaId: string | null } | null) => void;
+  setMonitorFocusNode: (key: string | null) => void;
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
@@ -380,6 +394,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   monitorLiveMode: true,
   monitorInitialView: null,
   monitorChannelPreset: null,
+  monitorFocusNode: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
@@ -450,6 +465,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),
   setMonitorChannelPreset: (preset) => set({ monitorChannelPreset: preset }),
+  setMonitorFocusNode: (key) => set({ monitorFocusNode: key }),
   toggleHomeSection: (sectionId) =>
     set((state) => {
       const idx = state.homeHiddenSections.indexOf(sectionId);

@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "أهداف من الموجز",
       "ship_goals_remove_row": "إزالة هذا الهدف",
       "ship_goals_title_label": "عنوان الهدف",
-      "ship_goals_title_placeholder": "بضع كلمات، مثل: صياغة القصة"
+      "ship_goals_title_placeholder": "بضع كلمات، مثل: صياغة القصة",
+      "orb_focus_node": "إظهار {name} على اللوحة"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

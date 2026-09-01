@@ -10,11 +10,30 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useCompanionStore } from '../companionStore';
 import type { AthenaState } from '../AthenaAvatar';
+import {
+  resolveMention,
+  type MentionCandidate,
+  type ResolvedMention,
+} from './athenaOrbMention';
 
 /** Perimeter dots cap — past this the arc stops reading as countable. */
 const MAX_TASK_DOTS = 5;
+
+/** Frozen empties for the closed-Monitor path. Referentially stable, so the
+ *  gated selectors above cannot re-render the orb by handing it a fresh `[]`. */
+const EMPTY_PERSONAS: never[] = [];
+const EMPTY_SESSIONS: never[] = [];
+
+/** The board strips the same team/role prefixes before it labels a tile
+ *  (`fleetGridModel.cleanName`), so the name Athena is matched against is the
+ *  name the operator can actually see. Duplicated rather than imported: this
+ *  module must not pull the Monitor's grid into the orb's bundle. */
+function cleanPersonaName(n: string): string {
+  return n.replace(/^T:\s*/, '').replace(/^SDLC[ —-]*/i, '').trim() || n;
+}
 
 /** Caption budget. `OrbCaption` is `max-w-[320px]` and wraps, so this is about
  *  how much of a paragraph is worth reading beside an orb — not about fitting. */
@@ -60,6 +79,11 @@ export interface OrbPresence {
   taskDots: Array<{ left: number; top: number; delay: number }>;
   /** Transient line beside the orb, or null. */
   caption: string | null;
+  /**
+   * The one board node this caption unambiguously names, or null. Present only
+   * while the Monitor is open — everywhere else there is no board to point at.
+   */
+  captionMention: ResolvedMention | null;
 }
 
 export function useAthenaOrbPresence(args: {
@@ -119,6 +143,36 @@ export function useAthenaOrbPresence(args: {
   const monitorCaption = useMemo(
     () => (monitorOpen ? summarise(lastAthenaLine) : null),
     [monitorOpen, lastAthenaLine],
+  );
+
+  // THE CANDIDATE LIST IS BUILT ONLY WHILE THE MONITOR IS OPEN.
+  //
+  // This component is mounted over every screen for the whole session, which is
+  // why every other selector in this file returns a primitive. These two return
+  // arrays, so they are gated at the SELECTOR: closed Monitor -> the shared
+  // frozen empty, which is referentially stable, so the memo below never
+  // recomputes and the orb never re-renders for a roster change it is not
+  // using. Reading the arrays unconditionally would put a persona-list
+  // subscription on every screen in the app to serve one overlay.
+  const personas = useAgentStore((s) => (monitorOpen ? s.personas : EMPTY_PERSONAS));
+  const sessions = useSystemStore((s) => (monitorOpen ? s.fleetSessions : EMPTY_SESSIONS));
+
+  const candidates = useMemo<MentionCandidate[]>(() => {
+    if (!monitorOpen) return [];
+    const out: MentionCandidate[] = personas.map((p) => ({
+      key: `p:${p.id}`,
+      name: cleanPersonaName(p.name),
+    }));
+    for (const sn of sessions) {
+      const name = (sn.title?.trim() || sn.name?.trim() || '').trim();
+      if (name) out.push({ key: `s:${sn.id}`, name });
+    }
+    return out;
+  }, [monitorOpen, personas, sessions]);
+
+  const captionMention = useMemo(
+    () => resolveMention(monitorCaption, candidates),
+    [monitorCaption, candidates],
   );
 
   // Background tasks running (even with no turn streaming) put her in the
@@ -188,6 +242,7 @@ export function useAthenaOrbPresence(args: {
         : t.plugins.companion.orb_talk_hint;
 
   return {
+    captionMention,
     avatarState,
     speaking: avatarState === 'speaking',
     working,

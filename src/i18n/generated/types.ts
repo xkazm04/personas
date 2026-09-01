@@ -16872,6 +16872,7 @@ export type Translations = {
       ship_goals_cancel: string;
       ship_goals_confirm: string;
       ship_goals_created: string;
+      orb_focus_node: string;
     };
     artist_gallery: {
       loading_viewer: string;

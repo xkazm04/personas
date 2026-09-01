@@ -16608,7 +16608,8 @@
       "ship_goals_heading": "ブリーフから起こしたゴール",
       "ship_goals_remove_row": "このゴールを削除",
       "ship_goals_title_label": "ゴールのタイトル",
-      "ship_goals_title_placeholder": "ひと言で、例: ストーリーを組み立てる"
+      "ship_goals_title_placeholder": "ひと言で、例: ストーリーを組み立てる",
+      "orb_focus_node": "ボードで {name} を表示"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",

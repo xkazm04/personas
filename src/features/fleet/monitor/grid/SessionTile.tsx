@@ -27,11 +27,13 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { SESSION_BORDER, sessionLabel, sessionStateMeta } from './fleetSessionModel';
 
 export const SessionTile = memo(function SessionTile({
-  session, width, height, onOpen, onRecap,
+  session, width, height, onOpen, onRecap, flash = false,
 }: {
   session: FleetSession;
   width: number;
   height: number;
+  /** Athena pointed at this node — ring it until the board clears the signal. */
+  flash?: boolean;
   /** Open this session's terminal. Absent = the tile stays read-only. */
   onOpen?: (session: FleetSession) => void;
   /**
@@ -52,7 +54,9 @@ export const SessionTile = memo(function SessionTile({
       <span className={`min-w-0 flex-1 truncate typo-caption ${meta.text}`}>{label}</span>
     </>
   );
-  const cls = `flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-input border-[1.5px] border-dashed px-2 ${SESSION_BORDER[session.state]} ${meta.chip}`;
+  const cls = `flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-input border-[1.5px] border-dashed px-2 ${SESSION_BORDER[session.state]} ${meta.chip} ${
+    flash ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''
+  }`;
 
   if (!onOpen) {
     return (

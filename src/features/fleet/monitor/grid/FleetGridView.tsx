@@ -55,7 +55,7 @@
 // point. A persona is a permanent member you inspect; a fleet session is a
 // process you talk to, and it dies when its task lands.
 
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutGrid, Users } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -73,6 +73,7 @@ import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
 import { FleetTerminalModal } from './FleetTerminalModal';
 import { SessionRecapModal } from './SessionRecapModal';
+import { useSystemStore } from '@/stores/systemStore';
 import { useFleetSessions } from './useFleetSessions';
 import { ColumnBody } from './ColumnBody';
 import { UngroupedTray } from './UngroupedTray';
@@ -82,6 +83,10 @@ import {
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
+
+/** How long a node Athena pointed at stays ringed. Long enough to find with the
+ *  eye once the scroll settles, short enough that it never becomes chrome. */
+const FOCUS_FLASH_MS = 2600;
 
 interface Props {
   cards: PersonaCardModel[];
@@ -147,6 +152,21 @@ function FleetGridViewImpl({
   // the registry patches rows underneath an open modal on every state event, and
   // an id re-resolved per render would swap the pane's subject mid-read. The
   // terminal itself is keyed on `session.id`, which does not change.
+  // ATHENA'S POINTER. She names a node in her caption over this board; the orb
+  // writes its key here and this is the end that acts on it. Consumed and then
+  // cleared, like every other transient Monitor signal — a focus that persisted
+  // would re-scroll the board every time the operator came back to it.
+  //
+  // The ring outlives the scroll deliberately: a scroll that lands with no mark
+  // leaves the operator looking at a column, guessing which tile was meant.
+  const focusNode = useSystemStore((s) => s.monitorFocusNode);
+  const setFocusNode = useSystemStore((s) => s.setMonitorFocusNode);
+  useEffect(() => {
+    if (!focusNode) return;
+    const id = setTimeout(() => setFocusNode(null), FOCUS_FLASH_MS);
+    return () => clearTimeout(id);
+  }, [focusNode, setFocusNode]);
+
   const [openSession, setOpenSession] = useState<FleetSession | null>(null);
   const closeSession = useCallback(() => setOpenSession(null), []);
   // The recap is the CHEAP read of a session — it mounts no xterm, so it can be
@@ -201,9 +221,10 @@ function FleetGridViewImpl({
         onSelect={onSelect}
         width={TILE_W}
         height={TILE_H}
+        flash={focusNode === `p:${c.personaId}`}
       />
     ),
-    [selectedPersonaId, onSelect],
+    [selectedPersonaId, onSelect, focusNode],
   );
 
   const renderSessionTile = useCallback(
@@ -215,9 +236,10 @@ function FleetGridViewImpl({
         height={SESSION_TILE_H}
         onOpen={setOpenSession}
         onRecap={setRecapSession}
+        flash={focusNode === `s:${s.id}`}
       />
     ),
-    [],
+    [focusNode],
   );
 
   const renderColumnRow = useCallback(
@@ -297,7 +319,7 @@ function FleetGridViewImpl({
                         />
                       </div>
                       {/* Roster + sessions — one windowed stack of rows. */}
-                      <ColumnBody rows={g.rows} renderRow={renderColumnRow} />
+                      <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
                     </section>
                   ))}
                 </div>
