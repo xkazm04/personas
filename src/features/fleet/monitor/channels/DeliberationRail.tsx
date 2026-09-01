@@ -1,9 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CircleDot, GitBranch, Merge, Play, SkipForward, Square, Wand2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { useTeamDeliberations } from '@/features/teams/sub_deliberations/useTeamDeliberations';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+
+/** A capability a persona asked to run, as the engine stores it on the row. */
+interface PendingAction { persona_id?: string; use_case_id?: string; rationale?: string }
+/** The converged proposal, as the engine stores it on the row. */
+interface Proposal { title?: string; objective?: string; summary?: string }
+
+/** Deliberation status -> the caption key that names it in the user's words.
+ *  The raw enum used to render here verbatim (`awaiting_action`), which is the
+ *  one string on this rail that was never translated. Keys already existed for
+ *  every status on `deliberation.*`; this rail just never reached for them. */
+const STATUS_KEY = {
+  open: 'status_open',
+  converging: 'status_converging',
+  resolved: 'status_resolved',
+  escalated: 'status_escalated',
+  awaiting_action: 'status_awaiting_action',
+  action_running: 'status_action_running',
+  tracking: 'status_tracking',
+  paused: 'status_paused',
+  aborted: 'status_aborted',
+} as const;
 
 /* ----------------------------------------------------------------------------
  * DELIBERATION RAIL — the focused deliberation's controls (plan D1).
@@ -27,24 +49,37 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
   const [note, setNote] = useState('');
 
   // Focusing a card in the conversation selects it in the hook, which is what
-  // loads its agenda / tracks / pending action.
+  // loads its agenda / tracks / pending action. Depend on the SETTER, not on
+  // the whole hook value: `d` changes identity on every poll tick, and the
+  // only thing that kept this effect from re-firing six times a minute was
+  // useState's own bail-out on an unchanged id.
+  const { setSelectedId } = d;
   useEffect(() => {
-    d.setSelectedId(deliberationId);
-  }, [deliberationId, d]);
+    setSelectedId(deliberationId);
+  }, [deliberationId, setSelectedId]);
 
   const detail = d.detail;
+
+  // Engine-written JSON, parsed ONCE per raw string and never thrown from: a
+  // malformed blob used to take the whole rail down mid-render, because the
+  // parse sat unguarded in the component body.
+  const pending = useMemo(
+    () => parseJsonOrDefault<PendingAction | null>(detail?.pendingAction, null),
+    [detail?.pendingAction],
+  );
+  const proposal = useMemo(
+    () => parseJsonOrDefault<Proposal | null>(detail?.resolution, null),
+    [detail?.resolution],
+  );
+
   if (!detail) {
     return <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.delib_loading}</p>;
   }
 
   const spent = Number(detail.costSpentUsd ?? 0);
   const budget = Number(detail.costBudgetUsd ?? 5);
-  const pending = detail.pendingAction ? JSON.parse(detail.pendingAction) as {
-    persona_id?: string; use_case_id?: string; rationale?: string;
-  } : null;
-  const proposal = detail.resolution ? JSON.parse(detail.resolution) as {
-    title?: string; objective?: string; summary?: string;
-  } : null;
+  const statusKey = STATUS_KEY[detail.status as keyof typeof STATUS_KEY];
+  const statusLabel = statusKey ? t.deliberation[statusKey] : detail.status;
   const terminal = ['resolved', 'aborted'].includes(detail.status);
 
   const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40';
@@ -54,7 +89,7 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
       <div>
         <p className="typo-body font-medium text-foreground">{detail.topic}</p>
         <p className="typo-caption text-foreground opacity-50 mt-0.5">
-          {detail.status} · {tx(t.monitor.delib_round, { round: Number(detail.round) })} ·{' '}
+          {statusLabel} · {tx(t.monitor.delib_round, { round: Number(detail.round) })} ·{' '}
           <Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} />
         </p>
       </div>

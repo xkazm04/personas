@@ -2,7 +2,7 @@
 // loads the selected one's detail + agenda + turns, and exposes create / approve
 // / dismiss. Polls the selected deliberation while it's active, since the
 // autonomous moderator tick mutates it server-side.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   advanceTeamDeliberation,
@@ -345,33 +345,48 @@ export function useTeamDeliberations(teamId: string) {
     [refreshDetail, refreshList],
   );
 
-  return {
-    list,
-    selectedId,
-    setSelectedId,
-    detail,
-    agenda,
-    turns,
-    tracks,
-    loading,
-    busy,
-    advancing,
-    actionBusy,
-    decisionBusy,
-    trackBusy,
-    running,
-    create,
-    advance,
-    runToBudget,
-    stopRun,
-    approveAction,
-    skipAction,
-    resolveEscalation,
-    split,
-    merge,
-    runAllTracks,
-    approve,
-    dismiss,
-    refreshList,
-  };
+  // Memoized so the value has an identity that only changes when something in
+  // it changed. A fresh object literal per render is safe to READ, but it is a
+  // trap for any consumer that puts this value in a dependency array — the
+  // effect then re-fires on every poll tick, and only a useState bail-out
+  // downstream stops it from looping. Consumers should still prefer the
+  // specific field they need; this makes the whole-value dep merely wasteful
+  // rather than wrong.
+  return useMemo(
+    () => ({
+      list,
+      selectedId,
+      setSelectedId,
+      detail,
+      agenda,
+      turns,
+      tracks,
+      loading,
+      busy,
+      advancing,
+      actionBusy,
+      decisionBusy,
+      trackBusy,
+      running,
+      create,
+      advance,
+      runToBudget,
+      stopRun,
+      approveAction,
+      skipAction,
+      resolveEscalation,
+      split,
+      merge,
+      runAllTracks,
+      approve,
+      dismiss,
+      refreshList,
+    }),
+    [
+      list, selectedId, detail, agenda, turns, tracks, loading, busy, advancing,
+      actionBusy, decisionBusy, trackBusy, running, create, advance, runToBudget,
+      stopRun, approveAction, skipAction, resolveEscalation, split, merge,
+      runAllTracks, approve, dismiss, refreshList,
+    ],
+  );
 }
