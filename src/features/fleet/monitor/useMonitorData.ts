@@ -396,13 +396,44 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const personaCountRef = useRef(personas.length);
   personaCountRef.current = personas.length;
 
+  /**
+   * FIRST load only — every later refresh belongs to the pollers.
+   *
+   * This effect re-runs whenever a feed flag flips, which used to happen once
+   * (at mount) because no caller changed its flags after mounting. The Monitor
+   * now does, on every switch between Activity and the three channel views, and
+   * an unguarded body would have made the gate cost more than it saved: a read
+   * on the way OUT for a surface being left, and on the way back IN a duplicate
+   * of the read `usePolling` already performs when it re-registers a ticker —
+   * six reads per round trip where three are wanted.
+   *
+   * So the loader identity is the guard, not a boolean: it also re-fires when
+   * `reviewLimit` genuinely changes the query, while a mere flag flip does not
+   * touch it. Re-enabling a feed still refreshes at once, through
+   * `usePolling`'s fire-on-register, which is the one place that read belongs.
+   */
+  const ranReviewLoader = useRef<typeof reloadReviews | null>(null);
+  const ranMessageLoader = useRef<typeof reloadMessages | null>(null);
+  const filledRoster = useRef(false);
   useEffect(() => {
-    void reloadReviews();
-    if (wantsMessages) void reloadMessages();
+    // Ungated: `loading` has to resolve and the warm cache has to fill even for
+    // a host that currently renders something else (a Monitor opened straight
+    // into Timeline still owes the Activity board a queue when it lands there).
+    if (ranReviewLoader.current !== reloadReviews) {
+      ranReviewLoader.current = reloadReviews;
+      void reloadReviews();
+    }
+    if (wantsMessages && ranMessageLoader.current !== reloadMessages) {
+      ranMessageLoader.current = reloadMessages;
+      void reloadMessages();
+    }
     // Even a surface that does not want the health POLL needs a roster: the
     // review cards resolve persona name/colour through it (see `personaMap`
     // above). So a cold store is filled once, and only once.
-    if (wantsPersonaHealth || personaCountRef.current === 0) void fetchPersonaSummaries();
+    if (!filledRoster.current && (wantsPersonaHealth || personaCountRef.current === 0)) {
+      filledRoster.current = true;
+      void fetchPersonaSummaries();
+    }
   }, [wantsMessages, wantsPersonaHealth, reloadReviews, reloadMessages, fetchPersonaSummaries]);
   useEffect(() => { if (isCloudConnected) void fetchCloudReviews(); }, [isCloudConnected, fetchCloudReviews]);
 
