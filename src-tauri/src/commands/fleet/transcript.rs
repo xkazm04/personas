@@ -25,7 +25,7 @@ use std::time::Duration;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::AppHandle;
 
-use super::registry::{now_ms, registry};
+use super::registry::{apply_transition, now_ms, registry};
 use super::types::FleetSessionState;
 
 /// Returns `~/.claude/projects/` if the home dir is resolvable.
@@ -245,13 +245,25 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
         if let Some(sid) = best_id {
             if let Some(s) = map.get_mut(&sid) {
                 s.claude_session_id = Some(claude_session_id.to_string());
-                s.last_activity_ms = now_ms();
                 // Binding ≠ working: mirror the SessionStart hook (Idle on launch).
                 // Real progress (a tool firing, transcript growth) drives Running.
-                s.state = FleetSessionState::Idle;
-                s.state_reason =
-                    Some("Bound to transcript — ready (SessionStart hook missed)".into());
-                bound = Some(sid);
+                //
+                // Through the door (`registry::apply_transition`), which also
+                // stamps `last_activity_ms` and the reason, and wakes the
+                // waiters in `super::wait`. The edge cannot be refused here —
+                // the loop above already skipped `Exited`/`Hibernated`, and
+                // `Idle` is legal from every remaining state — but the binding
+                // is the load-bearing half and stands either way, so the emit
+                // below is what gets gated on the verdict.
+                let outcome = apply_transition(
+                    s,
+                    FleetSessionState::Idle,
+                    "Bound to transcript — ready (SessionStart hook missed)",
+                    "transcript:bind-by-cwd",
+                );
+                if outcome.accepted() {
+                    bound = Some(sid);
+                }
             }
         }
     }
@@ -289,9 +301,15 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
             // If we'd promoted this to Stale, the JSONL append proves it's
             // not — drop back to Idle (hooks will refine to AwaitingInput /
             // Running on the next event).
-            if matches!(session.state, FleetSessionState::Stale) {
-                session.state = FleetSessionState::Idle;
-                session.state_reason = Some("Transcript append — session re-engaged".into());
+            if matches!(session.state, FleetSessionState::Stale)
+                && apply_transition(
+                    session,
+                    FleetSessionState::Idle,
+                    "Transcript append — session re-engaged",
+                    "transcript:append",
+                )
+                .accepted()
+            {
                 maybe_emit = Some((
                     session.id.clone(),
                     FleetSessionState::Idle,
