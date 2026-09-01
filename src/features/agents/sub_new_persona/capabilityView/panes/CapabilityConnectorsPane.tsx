@@ -53,7 +53,7 @@ export function CapabilityConnectorsPane({ capability }: Props) {
               type="button"
               onClick={() => update(value.filter((_, idx) => idx !== i))}
               className="text-foreground hover:text-foreground"
-              aria-label="Remove"
+              aria-label={t.matrix_v3.capability_connector_remove_aria}
             >
               ×
             </button>
@@ -71,7 +71,7 @@ export function CapabilityConnectorsPane({ capability }: Props) {
             }
           }}
           onBlur={add}
-          placeholder="connector_name"
+          placeholder={t.matrix_v3.capability_connector_add_placeholder}
           className="min-w-[140px] flex-1 rounded-full border border-border/40 bg-transparent px-3 py-1 typo-body-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
       </div>

@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "字段",
     "clarifying_question_heading": "一个问题",
     "clarifying_question_answer_placeholder": "选择一个选项或输入您的答案",
-    "clarifying_question_submit": "发送回答"
+    "clarifying_question_submit": "发送回答",
+    "capability_connector_add_placeholder": "连接器名称",
+    "capability_connector_remove_aria": "移除连接器",
+    "capability_policy_context_placeholder": "上下文"
   },
   "templates": {
     "gallery": {

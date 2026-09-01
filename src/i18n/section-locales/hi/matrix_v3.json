@@ -76,5 +76,8 @@
   "clarifying_scope_field": "फ़ील्ड",
   "clarifying_question_heading": "एक प्रश्न",
   "clarifying_question_answer_placeholder": "एक विकल्प चुनें या अपना जवाब लिखें…",
-  "clarifying_question_submit": "जवाब भेजें"
+  "clarifying_question_submit": "जवाब भेजें",
+  "capability_connector_add_placeholder": "कनेक्टर नाम",
+  "capability_connector_remove_aria": "कनेक्टर हटाएँ",
+  "capability_policy_context_placeholder": "संदर्भ"
 }

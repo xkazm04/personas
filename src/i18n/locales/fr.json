@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "Champ",
     "clarifying_question_heading": "Une question",
     "clarifying_question_answer_placeholder": "Choisissez une option ou saisissez votre réponse",
-    "clarifying_question_submit": "Envoyer la réponse"
+    "clarifying_question_submit": "Envoyer la réponse",
+    "capability_connector_add_placeholder": "Nom du connecteur",
+    "capability_connector_remove_aria": "Retirer le connecteur",
+    "capability_policy_context_placeholder": "Contexte"
   },
   "templates": {
     "gallery": {

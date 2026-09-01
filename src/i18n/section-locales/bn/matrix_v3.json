@@ -76,5 +76,8 @@
   "clarifying_scope_field": "ফিল্ড",
   "clarifying_question_heading": "একটি প্রশ্ন",
   "clarifying_question_answer_placeholder": "একটি বিকল্প বেছে নিন অথবা নিজের উত্তর লিখুন",
-  "clarifying_question_submit": "উত্তর পাঠান"
+  "clarifying_question_submit": "উত্তর পাঠান",
+  "capability_connector_add_placeholder": "কানেক্টর নাম",
+  "capability_connector_remove_aria": "কানেক্টর সরান",
+  "capability_policy_context_placeholder": "প্রেক্ষাপট"
 }

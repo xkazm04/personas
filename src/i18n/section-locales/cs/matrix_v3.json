@@ -76,5 +76,8 @@
   "clarifying_scope_field": "Pole",
   "clarifying_question_heading": "Jedna otázka",
   "clarifying_question_answer_placeholder": "Vyberte možnost nebo napište vlastní odpověď",
-  "clarifying_question_submit": "Odeslat odpověď"
+  "clarifying_question_submit": "Odeslat odpověď",
+  "capability_connector_add_placeholder": "Název konektoru",
+  "capability_connector_remove_aria": "Odebrat konektor",
+  "capability_policy_context_placeholder": "Kontext"
 }

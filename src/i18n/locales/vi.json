@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "Trường",
     "clarifying_question_heading": "Một câu hỏi",
     "clarifying_question_answer_placeholder": "Chọn một tùy chọn hoặc nhập câu trả lời của bạn",
-    "clarifying_question_submit": "Gửi câu trả lời"
+    "clarifying_question_submit": "Gửi câu trả lời",
+    "capability_connector_add_placeholder": "Tên trình kết nối",
+    "capability_connector_remove_aria": "Xóa trình kết nối",
+    "capability_policy_context_placeholder": "Ngữ cảnh"
   },
   "templates": {
     "gallery": {

@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "필드",
     "clarifying_question_heading": "질문 1개",
     "clarifying_question_answer_placeholder": "옵션을 선택하거나 답변을 입력하세요",
-    "clarifying_question_submit": "답변 보내기"
+    "clarifying_question_submit": "답변 보내기",
+    "capability_connector_add_placeholder": "커넥터 이름",
+    "capability_connector_remove_aria": "커넥터 제거",
+    "capability_policy_context_placeholder": "문맥"
   },
   "templates": {
     "gallery": {

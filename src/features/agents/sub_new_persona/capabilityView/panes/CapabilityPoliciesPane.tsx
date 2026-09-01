@@ -72,7 +72,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
           type="text"
           value={review.context}
           onChange={(e) => onReview({ ...review, context: e.target.value })}
-          placeholder="Context"
+          placeholder={t.matrix_v3.capability_policy_context_placeholder}
           className={inputClass}
         />
       </section>
@@ -103,7 +103,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
           type="text"
           value={memory.context}
           onChange={(e) => onMemory({ ...memory, context: e.target.value })}
-          placeholder="Context"
+          placeholder={t.matrix_v3.capability_policy_context_placeholder}
           className={inputClass}
         />
       </section>

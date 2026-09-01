@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "Bidang",
     "clarifying_question_heading": "Satu pertanyaan",
     "clarifying_question_answer_placeholder": "Pilih opsi atau ketik jawaban Anda",
-    "clarifying_question_submit": "Kirim jawaban"
+    "clarifying_question_submit": "Kirim jawaban",
+    "capability_connector_add_placeholder": "Nama konektor",
+    "capability_connector_remove_aria": "Hapus konektor",
+    "capability_policy_context_placeholder": "Konteks"
   },
   "templates": {
     "gallery": {

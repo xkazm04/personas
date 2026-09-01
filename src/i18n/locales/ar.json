@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "الحقل",
     "clarifying_question_heading": "سؤال واحد",
     "clarifying_question_answer_placeholder": "اختر خيارًا أو اكتب إجابتك",
-    "clarifying_question_submit": "إرسال الإجابة"
+    "clarifying_question_submit": "إرسال الإجابة",
+    "capability_connector_add_placeholder": "اسم الموصّل",
+    "capability_connector_remove_aria": "إزالة الموصّل",
+    "capability_policy_context_placeholder": "السياق"
   },
   "templates": {
     "gallery": {

@@ -76,5 +76,8 @@
   "clarifying_scope_field": "Campo",
   "clarifying_question_heading": "Una pregunta",
   "clarifying_question_answer_placeholder": "Elija una opción o escriba su respuesta",
-  "clarifying_question_submit": "Enviar respuesta"
+  "clarifying_question_submit": "Enviar respuesta",
+  "capability_connector_add_placeholder": "Nombre del conector",
+  "capability_connector_remove_aria": "Quitar conector",
+  "capability_policy_context_placeholder": "Contexto"
 }

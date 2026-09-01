@@ -8897,6 +8897,9 @@ export type Translations = {
     capability_row_field_memory: string;
     capability_row_field_events: string;
     capability_row_field_pending: string;
+    capability_connector_remove_aria: string;
+    capability_connector_add_placeholder: string;
+    capability_policy_context_placeholder: string;
     capability_title_label: string;
     capability_summary_label: string;
     capability_goal_label: string;

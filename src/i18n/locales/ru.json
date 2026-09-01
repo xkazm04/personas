@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "Поле",
     "clarifying_question_heading": "Один вопрос",
     "clarifying_question_answer_placeholder": "Выберите вариант или введите свой ответ",
-    "clarifying_question_submit": "Отправить ответ"
+    "clarifying_question_submit": "Отправить ответ",
+    "capability_connector_add_placeholder": "Имя коннектора",
+    "capability_connector_remove_aria": "Удалить коннектор",
+    "capability_policy_context_placeholder": "Контекст"
   },
   "templates": {
     "gallery": {

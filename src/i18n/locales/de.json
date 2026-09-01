@@ -8717,7 +8717,10 @@
     "clarifying_scope_field": "Feld",
     "clarifying_question_heading": "Eine Frage",
     "clarifying_question_answer_placeholder": "Option auswählen oder Antwort eingeben",
-    "clarifying_question_submit": "Antwort senden"
+    "clarifying_question_submit": "Antwort senden",
+    "capability_connector_add_placeholder": "Konnektor-Name",
+    "capability_connector_remove_aria": "Konnektor entfernen",
+    "capability_policy_context_placeholder": "Kontext"
   },
   "templates": {
     "gallery": {
