@@ -38,6 +38,24 @@ import {
 
 export const QUICK_DISPATCH_LISTBOX_ID = 'quick-dispatch-typeahead-listbox';
 
+export interface QuickDispatchOptions {
+  /**
+   * Host the composer inline (docked into a surface) rather than as the
+   * summoned overlay. See the `inline` handling in the hook: it decouples the
+   * controller's lifecycle from `quickDispatchStore.open`, so a docked console
+   * warms once on mount instead of never.
+   */
+  inline?: boolean;
+  /**
+   * DOM id for the typeahead listbox, stamped into the textarea's
+   * `aria-controls` / `aria-activedescendant`. Defaults to the module constant.
+   * A second host mounted at the same time (the Activity dock while the overlay
+   * is summoned over it) MUST pass its own, or the two composers advertise the
+   * same id and the ARIA reference resolves to whichever painted first.
+   */
+  listboxId?: string;
+}
+
 /** Cycle presets for the model chip. `null` = leave the CLI default. */
 export const MODEL_PRESETS: ReadonlyArray<string | null> = [null, 'haiku', 'sonnet', 'opus'];
 
@@ -52,9 +70,17 @@ const cycleNext = <T,>(presets: ReadonlyArray<T>, current: T): T => {
   return presets[(idx + 1) % presets.length] as T;
 };
 
-export function useQuickDispatchController() {
+export function useQuickDispatchController(options?: QuickDispatchOptions) {
   const { t, tx } = useTranslation();
-  const open = useQuickDispatchStore((s) => s.open);
+  // INLINE mode (the Activity board's docked console): the composer is not
+  // summoned, it is simply there. The store's `open` flag is what drives the
+  // reset-and-warm effect below, and an inline host never sets it — so it is
+  // pinned true for the life of the mount. Everything else about the controller
+  // is identical, which is the point: one brain, two hosts.
+  const inline = options?.inline ?? false;
+  const listboxId = options?.listboxId ?? QUICK_DISPATCH_LISTBOX_ID;
+  const summoned = useQuickDispatchStore((s) => s.open);
+  const open = inline || summoned;
   const closeQuickDispatch = useQuickDispatchStore((s) => s.closeQuickDispatch);
 
   // No useShallow (zustand-domain-slices golden path, deviation A): bare
@@ -179,12 +205,12 @@ export function useQuickDispatchController() {
     if (token) {
       ta.setAttribute('role', 'combobox');
       ta.setAttribute('aria-expanded', suggestions.length > 0 ? 'true' : 'false');
-      ta.setAttribute('aria-controls', QUICK_DISPATCH_LISTBOX_ID);
+      ta.setAttribute('aria-controls', listboxId);
       ta.setAttribute('aria-autocomplete', 'list');
       if (suggestions.length > 0) {
         ta.setAttribute(
           'aria-activedescendant',
-          quickDispatchOptionId(QUICK_DISPATCH_LISTBOX_ID, Math.min(activeIndex, suggestions.length - 1)),
+          quickDispatchOptionId(listboxId, Math.min(activeIndex, suggestions.length - 1)),
         );
       } else {
         ta.removeAttribute('aria-activedescendant');
@@ -196,7 +222,7 @@ export function useQuickDispatchController() {
       ta.removeAttribute('aria-autocomplete');
       ta.removeAttribute('aria-activedescendant');
     }
-  }, [token, suggestions.length, activeIndex]);
+  }, [token, suggestions.length, activeIndex, listboxId]);
 
   const pickSuggestion = useCallback(
     (item: QuickDispatchSuggestion) => {
@@ -379,6 +405,12 @@ export function useQuickDispatchController() {
     open,
     closeQuickDispatch,
     cardRef,
+    /** The typeahead listbox's DOM id — the panel half of the combobox contract.
+     *  Render `QuickDispatchSuggestions` with THIS, never the constant. */
+    listboxId,
+    /** Focus the composer's textarea on the next frame. Exported for hosts that
+     *  reveal the input themselves (the docked console expands into it). */
+    focusInput,
     value,
     setValue,
     projectChip,

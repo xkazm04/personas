@@ -57,7 +57,15 @@ pub enum AdmitResult {
     /// Execution was admitted to a running slot immediately.
     Running,
     /// Execution was queued at the given position (0-indexed).
-    Queued { position: usize },
+    ///
+    /// `displaced` names the execution evicted to make room, when this
+    /// arrival outranked the weakest resident at a full queue. The caller
+    /// owes that execution a refusal: an evicted waiter that finds out by
+    /// silence is a data-loss bug, not a shed policy.
+    Queued {
+        position: usize,
+        displaced: Option<String>,
+    },
     /// Queue is full -- backpressure rejection.
     QueueFull { max_depth: usize },
 }
@@ -280,12 +288,31 @@ impl ConcurrencyTracker {
             );
         }
 
-        // Check backpressure
+        // Check backpressure. Depth alone cannot decide this: a queue that
+        // carries priority levels but consults them only when choosing an
+        // insertion point has a refuse-newest shed policy regardless of what
+        // the levels say, because the gate that refuses never sees the class.
+        // Reject-by-class needs the class evaluated BEFORE the depth verdict,
+        // and it needs a displacement rule -- the comparison alone is the easy
+        // half.
         let queue = self.queues.entry(persona_id.to_string()).or_default();
+        let mut displaced: Option<String> = None;
         if queue.len() >= self.max_queue_depth {
-            return AdmitResult::QueueFull {
-                max_depth: self.max_queue_depth,
-            };
+            // The queue is held in descending priority order, FIFO within a
+            // level, so the back is the lowest-ranked entry and the newest
+            // among its equals -- the correct victim on both counts. A strict
+            // `<` keeps refuse-newest for an arrival that does not outrank it.
+            match queue.back() {
+                Some(weakest) if weakest.priority < priority => {
+                    let evicted = queue.pop_back().expect("back() was Some");
+                    displaced = Some(evicted.execution_id);
+                }
+                _ => {
+                    return AdmitResult::QueueFull {
+                        max_depth: self.max_queue_depth,
+                    };
+                }
+            }
         }
 
         // Insert into queue respecting priority (higher priority = closer to front)
@@ -305,7 +332,10 @@ impl ConcurrencyTracker {
             .unwrap_or(queue.len());
         queue.insert(pos, entry);
 
-        AdmitResult::Queued { position: pos }
+        AdmitResult::Queued {
+            position: pos,
+            displaced,
+        }
     }
 
     /// Remove an execution from the running set.
@@ -618,7 +648,13 @@ mod tests {
         tracker.add_running("p1", "exec-1");
 
         let result = tracker.admit("p1", "exec-2", 1, ExecutionPriority::Normal);
-        assert!(matches!(result, AdmitResult::Queued { position: 0 }));
+        assert!(matches!(
+            result,
+            AdmitResult::Queued {
+                position: 0,
+                displaced: None
+            }
+        ));
         assert_eq!(tracker.running_count("p1"), 1);
         assert_eq!(tracker.queue_depth("p1"), 1);
     }
@@ -636,6 +672,46 @@ mod tests {
         let result = tracker.admit("p1", "exec-q3", 1, ExecutionPriority::Normal);
         assert!(matches!(result, AdmitResult::QueueFull { max_depth: 2 }));
         assert_eq!(tracker.queue_depth("p1"), 2);
+    }
+
+    #[test]
+    fn test_urgent_arrival_displaces_low_at_the_bound() {
+        // The intersection the depth tests and the priority tests both miss:
+        // a bounded queue that is FULL of low-priority work, and an Urgent
+        // arrival (a healing retry, a chain trigger, a manual re-run).
+        // Priority must decide admission here, not only insertion order.
+        let mut tracker = ConcurrencyTracker::with_max_queue_depth(2);
+        tracker.add_running("p1", "exec-run");
+
+        tracker.admit("p1", "bulk-1", 1, ExecutionPriority::Low);
+        tracker.admit("p1", "bulk-2", 1, ExecutionPriority::Low);
+        assert_eq!(tracker.queue_depth("p1"), 2);
+
+        let result = tracker.admit("p1", "heal-1", 1, ExecutionPriority::Urgent);
+
+        // The urgent execution is admitted; the lowest-ranked resident leaves.
+        assert!(
+            matches!(result, AdmitResult::Queued { .. }),
+            "urgent arrival was refused at a queue full of Low work: {result:?}"
+        );
+        let ids = tracker.queued_ids("p1");
+        assert_eq!(ids, vec!["heal-1", "bulk-1"]);
+        assert_eq!(tracker.queue_depth("p1"), 2, "the bound still holds");
+    }
+
+    #[test]
+    fn test_equal_priority_arrival_still_refused_at_the_bound() {
+        // Displacement is not a bypass: an arrival that does not outrank the
+        // weakest resident is refused exactly as before.
+        let mut tracker = ConcurrencyTracker::with_max_queue_depth(2);
+        tracker.add_running("p1", "exec-run");
+
+        tracker.admit("p1", "q1", 1, ExecutionPriority::Normal);
+        tracker.admit("p1", "q2", 1, ExecutionPriority::Normal);
+
+        let result = tracker.admit("p1", "q3", 1, ExecutionPriority::Normal);
+        assert!(matches!(result, AdmitResult::QueueFull { max_depth: 2 }));
+        assert_eq!(tracker.queued_ids("p1"), vec!["q1", "q2"]);
     }
 
     #[test]
@@ -771,7 +847,13 @@ mod tests {
 
         // 5th execution should be queued even though persona has unlimited capacity
         let result = tracker.admit("p5", "e5", 0, ExecutionPriority::Normal);
-        assert!(matches!(result, AdmitResult::Queued { position: 0 }));
+        assert!(matches!(
+            result,
+            AdmitResult::Queued {
+                position: 0,
+                displaced: None
+            }
+        ));
         assert_eq!(tracker.total_running(), 4);
         assert_eq!(tracker.queue_depth("p5"), 1);
 
@@ -924,7 +1006,10 @@ mod tests {
         // At the cap of 2 -> third is queued.
         assert!(matches!(
             tracker.admit("pc", "e3", 0, ExecutionPriority::Normal),
-            AdmitResult::Queued { position: 0 }
+            AdmitResult::Queued {
+                position: 0,
+                displaced: None
+            }
         ));
         assert!(!tracker.has_global_capacity());
 

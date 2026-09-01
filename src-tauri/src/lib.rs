@@ -51,6 +51,13 @@ pub mod state;
 /// of the ~849 that reference these modules.
 pub use personas_core::retrieval;
 pub use state::AppState;
+// Not feature-gated: the harness needs no optional dependency (std, tokio,
+// serde, tauri and the fleet types), and `test_automation` calls into it
+// unconditionally from four HTTP handlers whose routes are always registered.
+// Gating it behind `test-automation` - a feature that exists to pull in the
+// screenshot deps `xcap` and `image` - made `cargo test --features desktop`,
+// which is what CI runs, fail to compile.
+pub mod load_harness;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;

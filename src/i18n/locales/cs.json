@@ -533,7 +533,18 @@
     "triage_accepted_delete_confirm": "Smazat",
     "triage_accepted_deleted": "Odstraněno {count} z backlogu",
     "triage_accepted_deleted_gone": "{count} už bylo pryč",
-    "triage_accepted_row_aria": "Vybrat {title}"
+    "triage_accepted_row_aria": "Vybrat {title}",
+    "grid_board_aria": "Přehled flotily",
+    "grid_rail_tab_dispatch": "Odeslat",
+    "grid_rail_tab_messages": "Zprávy",
+    "grid_rail_tabs_aria": "Panel aktivity",
+    "grid_messages_empty": "Zatím žádná aktivita v kanálech.",
+    "grid_dock_collapse": "Skrýt konzoli odesílání",
+    "grid_rail_loading_more": "Načítáme další…",
+    "grid_rail_unread": "Nepřečteno",
+    "grid_rail_empty_reviews": "Nic nečeká na rozhodnutí",
+    "grid_rail_empty_reviews_sub": "Revize, nápady, postupy a pozdržené otázky se sem dostanou ve chvíli, kdy tě potřebují.",
+    "grid_rail_empty_messages_sub": "Týmové kanály tu ukážou to nejnovější, jakmile něco zazní."
   },
   "common": {
     "loading": "Načítání…",

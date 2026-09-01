@@ -65,7 +65,6 @@ base64 = "0.22"
 # ml-gated: f32 embedding vectors -> byte blobs for sqlite-vec.
 bytemuck = "1"
 whoami = "1"
-ammonia = "4"
 tokio = { version = "1", features = [
     "rt-multi-thread", "macros", "sync", "time",
     "process", "io-util", "fs", "net", "signal",

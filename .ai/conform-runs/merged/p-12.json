@@ -1,0 +1,411 @@
+{
+  "worker": "p-12",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/interaction/useMotion.ts:131-153 strips `delay` and collapses to exact `duration: 0` in the reduced clone, so timing-load-bearing invisibility windows vanish and zero-duration completion events may never fire for awaiting code.",
+      "techniques": [
+        {
+          "technique": "gesture-decomposition",
+          "verdict": "not-applicable",
+          "evidence": "No gesture is authored in this context — useMotion.ts is a reduction transform over variants supplied elsewhere and useProgressiveReveal.ts is a mount-cadence driver; the precondition (a composite movement resisting a single curve, awaiting an input axis and tracks) does not arise here."
+        },
+        {
+          "technique": "preset-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:73-81 inlines `duration: 0.25`, `ease: [0.22,1,0.36,1]` and `staggerDelay: 0.04` while importing MOTION only for `spring.snappy` (:78) — the `normal` rung of the token ladder is re-typed here, forking the time axis the ladder exists to own."
+        },
+        {
+          "technique": "engine-selection",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:9-19 writes down the engine inventory and the kill-switch story (OS media query + the in-app `data-motion` toggle, CSS reaching only CSS), and :56-58 wraps the raw platform reader in a subscribing resolver rather than sampling it once."
+        },
+        {
+          "technique": "performance-discipline",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:92 calls setRect inside a requestAnimationFrame driven by scroll, so the tracked overlay re-renders through React state once per frame while scrolling — the per-frame reactive write the technique routes through a mutable ref instead."
+        },
+        {
+          "technique": "taste-budgets",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:32 and :61 default `targetMs` to 2000, so the entrance choreography withholds rows past the ~1s entrance cap — content already in memory is delayed for theatre."
+        },
+        {
+          "technique": "one-shot-guarding",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:184-199 keeps a ref-backed Set keyed by item id at surface scope so it survives virtualized unmount/remount, with the reset expressed as one comparison against resetKey (:190-193)."
+        },
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:131-134 puts `delay` in TIMING_KEYS and :143 drops it unconditionally with no way to mark a duration timing-load-bearing, and :153/:173 collapse to exact `duration: 0` while :86 uses an 0.01 epsilon — placeholder delay windows collapse and awaited completion contracts can hang."
+        },
+        {
+          "technique": "content-bearing-degradation",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:89-91 and :134-137 set `revealAll` under reduced motion or `enabled:false`, painting the whole resolved set on the first frame with the stagger collapsed to zero rather than rendering a partial list."
+        },
+        {
+          "technique": "unprompted-motion-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:69-75 and :115-120 terminate the reveal at `total`; it is a gesture that completes and stops, so it owes a reduced form (present) rather than a visible stop control."
+        },
+        {
+          "technique": "loop-pause-governance",
+          "verdict": "not-applicable",
+          "evidence": "No looping gesture exists in this context — every gesture these hooks drive terminates — so the precondition (a loop asked to stop by several independent deciders) does not hold."
+        }
+      ],
+      "registryProposal": "taste-budgets writes the entrance cap as a pure attention budget, and it has no vocabulary for a stagger adopted to protect the frame budget rather than to decorate. useProgressiveReveal.ts:5-14 spreads the MOUNTING of already-fetched rows so a large table does not insert every row on one frame — the 2000ms window is a concurrency control that performance-discipline's 'unbounded concurrency' clause arguably asks for, and the entrance cap forbids. The techniques should say which wins, or the cap should be stated over the interval in which content becomes VISIBLE rather than over the choreography's wall-clock length."
+    },
+    {
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/utils/rafAnimationEngine.ts:66-76 resolves reduced motion from the OS media query alone, ignoring the in-app Appearance toggle that useMotion.ts:9-19 documents as the app's second signal — a user who enables Reduce Motion in the app's own settings still gets full spring travel from every scripted animation.",
+      "techniques": [
+        {
+          "technique": "gesture-decomposition",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/utils/animation/animationPresets.ts:91-147 defines single-track, time-driven fades; the decomposition step's precondition (a composite movement that resists one curve) does not arise for these gestures."
+        },
+        {
+          "technique": "preset-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/animation/animationPresets.ts:127-147 ships dashboardContainer/dashboardItem with no declared reduced-motion fallback (only staggerContainer/staggerItem get one, hand-written separately at :182-204), and src/lib/utils/designTokens.ts:56-58 argues the springs out of the budget instead of giving each a settle bound."
+        },
+        {
+          "technique": "engine-selection",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/designTokens.ts:24-37 writes down which engine owns what (CSS custom properties vs the JS registry, with the JS side's consumers enumerated), and src/lib/utils/rafAnimationEngine.ts:1-18 names the owned scripted engine and what it replaced."
+        },
+        {
+          "technique": "performance-discipline",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:34-35 holds one registry and one clock, :135 writes frame values straight through a callback with no React state, :148-153 makes idle cost structurally zero, :86 clamps dt centrally, and :216 names the reaper."
+        },
+        {
+          "technique": "taste-budgets",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/animation/animationPresets.ts:91-98 and :127-132 fix stagger steps (0.04/0.05) but the vocabulary's home declares no entrance cap, no ambient travel bound and no stagger-count cutoff, so no budget is enforceable where the presets are built."
+        },
+        {
+          "technique": "one-shot-guarding",
+          "verdict": "not-applicable",
+          "evidence": "Nothing in this context plays or records an entrance; the seen-set lives in useProgressiveReveal.ts's useRevealTracker, judged in the hooks-utility-interaction pair."
+        },
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:66-76 is a second, narrower resolver reading only the OS media query, so the app's own Reduce Motion toggle never reaches any scripted spring; src/lib/utils/animation/animationPresets.ts:15-20 emits `motion-reduce:duration-0 motion-reduce:transition-none` — exact zero rather than the epsilon the completion contract needs."
+        },
+        {
+          "technique": "content-bearing-degradation",
+          "verdict": "conformant",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts:181-199 states the litmus for its own gestures (a counter's figure is the number the reader came for) and snaps to the resolved end state under the preference — never nothing, never a slower version of the same travel."
+        },
+        {
+          "technique": "unprompted-motion-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "No unprompted loop, autoplay or scroll-triggered reveal is authored here; every gesture the engine and the presets drive is started by a caller and terminates."
+        },
+        {
+          "technique": "loop-pause-governance",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/utils/rafAnimationEngine.ts drives springs that settle (:121-127), not loops, so the precondition (a looping gesture with several independent pause deciders) does not hold in this context."
+        }
+      ],
+      "registryProposal": "Upward lesson for reduced-motion-mechanics. The technique's liveness rule stops at 'subscribe, and where the platform's own reader does not subscribe, wrap it' — which is the right shape for a React consumer but leaves a scripted frame engine one rung short. rafAnimationEngine.ts:53-58 and :89-92 record the failure the subscribe rule does not catch: the preference was sampled at target-set time, so turning it on mid-flight left the current travel running to completion, and an entry whose target never moved again never re-read it at all. The fix they landed — re-evaluate the merged signal once per frame inside the loop, before any physics runs, so the resolved end state arrives on the very next frame — is a third liveness shape worth naming in the technique alongside the subscription, with its cost stated (one matchMedia read per frame, only while something is animating)."
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "motion",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32,40 inlines an off-ladder 1.1s duration and a fourth call-site spring (320/22); the folder is per-component keyframes with no preset, no ladder reference and no declared reduced fallback.",
+      "techniques": [
+        {
+          "technique": "gesture-decomposition",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:24-45 cuts the motif into independent tracks — a pathLength draw and a staggered node drop — each with its own timing and character, which is the property separation the technique asks for."
+        },
+        {
+          "technique": "preset-vocabulary",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/parts.tsx:49,57 and MotionEmptyState.tsx:34 inline raw milliseconds (0.15/0.24/0.4/0.5) off the 50/150/250/400 ladder, and four distinct springs are minted at call sites (ActivityMotif.tsx:40, KnowledgeMotif.tsx:39, MemoriesMotif.tsx:37,49) against designTokens.ts:48-49's rule of one entry per intended gesture."
+        },
+        {
+          "technique": "engine-selection",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/MemoriesMotif.tsx:37,49 spends scripted springs on fire-and-forget entrance gestures nothing ever retargets, and no preset here records what runs it or what can turn it off — the vocabulary's only off switch is a library-global setting outside this folder."
+        },
+        {
+          "technique": "performance-discipline",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/KnowledgeMotif.tsx:29-40 animates only opacity, scale and pathLength (paint, not layout) with transformBox/transformOrigin declared, and concurrency is bounded at four to six elements per motif."
+        },
+        {
+          "technique": "taste-budgets",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 runs a 1.1s draw and KnowledgeMotif.tsx:39 starts its last node at 0.95s before a spring settle, so the empty state's full entrance runs well past the ~1s cap."
+        },
+        {
+          "technique": "one-shot-guarding",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:30-33 couples the entrance to mount via initial/animate with no seen-set anywhere in the folder, so every remount of the empty region (a filter change that empties it, a tab return) replays the full draw."
+        },
+        {
+          "technique": "reduced-motion-mechanics",
+          "verdict": "deviation",
+          "evidence": "No preset in src/features/overview/shared/emptyStatePrototype/ declares a reduced form — parts.tsx:45-60 and the three motifs delegate reduction entirely to a library-global switch, so the audit the technique wants (every preset, its full form, its reduced form) has nothing to read."
+        },
+        {
+          "technique": "content-bearing-degradation",
+          "verdict": "unknown",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/parts.tsx:47,55 set the title and subtitle to `initial={{ opacity: 0 }}`, so any path where the animate branch does not run leaves the empty state's payload invisible; whether the library guarantees that branch under every degradation path is not decidable from this context."
+        },
+        {
+          "technique": "unprompted-motion-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 states and the code shows entry-only gestures that complete in under two seconds, so no visible stop control is owed and no loop can be left running."
+        },
+        {
+          "technique": "loop-pause-governance",
+          "verdict": "not-applicable",
+          "evidence": "Every gesture in this folder is entry-only and terminates (MotionEmptyState.tsx:10); there is no loop for a merged pause signal to govern."
+        }
+      ]
+    },
+    {
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "subject": "async-ui-states",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:19-22 keys the empty-state variant by module rather than by cause and EmptyStateContent (:46-55) carries no cause discriminator, so a no-match empty renders the same hero-scale first-run treatment as a genuine first run.",
+      "techniques": [
+        {
+          "technique": "state-model",
+          "verdict": "not-applicable",
+          "evidence": "This context owns no request machinery — src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:15-21 renders a state the caller has already derived, holding no inFlight, settled or error input."
+        },
+        {
+          "technique": "placeholder-design",
+          "verdict": "not-applicable",
+          "evidence": "No loading placeholder is rendered anywhere in src/features/overview/shared/emptyStatePrototype/; the folder covers only the settled-empty rendering."
+        },
+        {
+          "technique": "action-busy-states",
+          "verdict": "unknown",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:26 types the CTA as `onClick: () => void`, which structurally cannot hand an operation's lifetime to the control (parts.tsx:18-25 renders no busy or disabled path) — but whether any caller's empty-state action starts asynchronous work is not decidable from this context."
+        },
+        {
+          "technique": "empty-state-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:19-22 and :46-55 type the variant per module with no cause field, and parts.tsx:7-38 renders two CTAs plus a children slot — the cause-typed taxonomy and the one-idea-one-action posture both collapse into a single hero treatment."
+        },
+        {
+          "technique": "failure-states",
+          "verdict": "not-applicable",
+          "evidence": "No failure signal reaches this context — src/features/overview/shared/emptyStatePrototype/index.ts:1-9 exports only empty-state renderers, so the empty/failure conflation this technique guards is decided by the callers."
+        },
+        {
+          "technique": "arrival-choreography",
+          "verdict": "not-applicable",
+          "evidence": "The cascade in src/features/overview/shared/emptyStatePrototype/motifs/KnowledgeMotif.tsx:24-45 is a decorative motif entrance, not content arriving on a loading surface; the technique's trigger edge (loading -> settled-data) does not exist here."
+        }
+      ]
+    },
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/errors/errorRegistry.ts:60-80 stores user-facing message and suggestion sentences in a constant table instead of catalog keys, and src/i18n/useTranslatedError.ts:227-240 chains into it as a final fallback — every rule without a paired key renders English in all 14 locales.",
+      "techniques": [
+        {
+          "technique": "catalog-architecture",
+          "verdict": "conformant",
+          "evidence": "src/i18n/en.ts:1-21 names en.json as the single authored source with codegen'd types, :30-47 resolves through a lazy Proxy so no consumer captures a string at module scope, and src/i18n/routeSections.ts:1-15 declares the pure-read design together with the static gate that keeps the route-sections map a correctness dependency."
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "conformant",
+          "evidence": "src/i18n/locales.manifest.ts:8 binds key parity to `npm run check:i18n` for every locale, and src/i18n/DebtText.tsx:14-19 records both value-level gates and the scanner blindness that let the debt channel sit 0% translated behind a green board until it was fixed."
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "deviation",
+          "evidence": "src/i18n/tokenMaps.ts:40 gates the unknown-token report behind `import.meta.env.DEV` and emits only a console warning, so version skew — a production phenomenon — mints raw tokens on screen with no signal an operator can ever see."
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "deviation",
+          "evidence": "src/i18n/generated/enSectionStrings.ts:5 carries `\"quick_aria\":\"Quick Answer — {count} item(s) need you\"` and a hand-rolled `quick_send_one`/`quick_send_many` pair, imposing English's two plural categories on locales (ru, ar) whose grammar distinguishes more."
+        },
+        {
+          "technique": "locale-runtime",
+          "verdict": "deviation",
+          "evidence": "src/i18n/pseudoLocale.ts:34-51 wraps and accents every string but never expands its length, so the pseudo-locale sweep catches hardcoded strings and concatenation seams while missing truncation and overflow — the first defect class the technique names it for."
+        },
+        {
+          "technique": "string-extraction-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/lib/errors/errorRegistry.ts:69-72 is the exact shape the technique names as a violation — display sentences in a constant table where a key field belongs — across a 743-line rule set that no catalog gate or pseudo-locale sweep can see."
+        },
+        {
+          "technique": "encoding-corruption-ratchet",
+          "verdict": "unknown",
+          "evidence": "No byte-signature detector or per-file baseline appears in any listed path; the check, if it exists, would live in scripts/i18n/ which is outside this context."
+        },
+        {
+          "technique": "incomplete-bundle-kill-switch",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales.manifest.ts:16-25 gives LocaleDescriptor no shippable flag and :10-13 prescribes deleting the file plus editing LOCALES to withdraw a language — a code change and a release, with no setter no-op and no rehydration scrub for readers already persisted on it."
+        },
+        {
+          "technique": "script-aware-presentation",
+          "verdict": "unknown",
+          "evidence": "src/i18n/locales.manifest.ts:16-25 carries only `dir` and no script discriminator for the six non-Latin scripts it ships (ar, bn, hi, ja, ko, zh), but whether per-script metrics exist keyed off the locale in the stylesheet is not decidable from this context."
+        }
+      ]
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "i18n",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:15-29 diffs the catalog against a hand-copied replica of the Rust stop_reason vocabulary rather than the vocabulary itself, so a chain.rs edit that skips the copy ships an untranslated raw token in 14 locales with a green board.",
+      "techniques": [
+        {
+          "technique": "catalog-architecture",
+          "verdict": "conformant",
+          "evidence": "src/i18n/generated/types.ts:1-5 marks the type tree AUTO-GENERATED with its named regeneration step running in prebuild, so the derived artifact names its own recomputation and is never hand-edited."
+        },
+        {
+          "technique": "completeness-gates",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:4-14 admits the list is kept byte-for-byte in sync by hand with src-tauri/db/src/chain.rs:45-81, and :32-33 pins the count at 13 as the only tripwire — the domain-coverage gate observes a copy of its target, not the target."
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:36-40 is the only build-time vocabulary diff, while src/i18n/tokenMaps.ts:30 spans every category under status_tokens — any other Rust enum can grow a member with no build signal at all."
+        },
+        {
+          "technique": "interpolation-and-plurals",
+          "verdict": "not-applicable",
+          "evidence": "No message is authored in this context; src/i18n/generated/types.ts faithfully encodes whatever placeholder and plural shapes en.json already holds, and those are judged in the sibling i18n context."
+        },
+        {
+          "technique": "locale-runtime",
+          "verdict": "not-applicable",
+          "evidence": "This context holds only generated types and two test files; no first-paint, switch, direction or pseudo-locale machinery runs here."
+        },
+        {
+          "technique": "string-extraction-enforcement",
+          "verdict": "not-applicable",
+          "evidence": "Nothing here authors display text — src/i18n/generated/types.ts is codegen and the two test files are fixtures, which the technique's exemption list names explicitly."
+        },
+        {
+          "technique": "encoding-corruption-ratchet",
+          "verdict": "unknown",
+          "evidence": "src/i18n/generated/types.ts is an always-delivered generated artifact and so belongs in the technique's hard-zero lane, but no detector or baseline is visible in any listed path."
+        },
+        {
+          "technique": "incomplete-bundle-kill-switch",
+          "verdict": "not-applicable",
+          "evidence": "No locale reachability decision is made in this context; the registry and its predicate live in src/i18n/locales.manifest.ts, judged in the sibling pair."
+        },
+        {
+          "technique": "script-aware-presentation",
+          "verdict": "not-applicable",
+          "evidence": "Nothing in this context renders text or sets typography; the generated type tree carries no presentation."
+        }
+      ]
+    },
+    {
+      "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0",
+      "subject": "entity-lifecycle",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/core/personas.rs:632-645 returns a preview whose probes swallow query errors into zero and count only active dependents (src-tauri/db/src/repos/core/personas.rs:1969-1978) while the delete takes every row — a failed or narrower probe reads to the user as 'safe to delete'.",
+      "techniques": [
+        {
+          "technique": "blast-radius-computation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/personas.rs:1972 and :2025 wrap counts in `.unwrap_or(0)` so a probe error renders as no dependents, :1969 counts only `deployment_status = 'active'` automations while the cascade takes every row, and src-tauri/src/commands/core/personas.rs:626-630 gives BlastRadiusItem no casualty/survivor/blocker class, baking the numbers into prose. The ceremony half is conformant: the drain, the pure blocker guard (:653-662) and the DeletePersonaResult receipt (:610-621)."
+        },
+        {
+          "technique": "archive-restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:29-30 and :48-54 fold archived into a `lifecycle` status that also holds domain states (draft, active), so existence state and domain state share one axis with no archived-at or archived-by fact, and :56-61 makes restore a bare status flip with no revalidation against the current world."
+        },
+        {
+          "technique": "cascade-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:1149-1151 asserts as intended that events the persona sourced are hard-deleted, where the technique declares history a survivor that detaches; and the out-of-store reaper's failures are logged only (src-tauri/src/commands/core/persona_icons.rs:275), never counted into the receipt. The three postures themselves are declared and tested (:1092-1173)."
+        },
+        {
+          "technique": "provenance-denormalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/personas.rs:1155-1162 keeps a surviving event by nulling `target_persona_id` with no denormalized copy of the identity or contemporaneous name, so the record loses its past; and :1107,:1151 erase the events the persona sourced outright — deletion rewrites what happened."
+        },
+        {
+          "technique": "change-logging",
+          "verdict": "deviation",
+          "evidence": "No lifecycle transition is recorded anywhere: archive (src-tauri/src/commands/core/personas.rs:52-54), restore (:59-61) and delete (:691-849) emit no record, and the only log is a field-level diff written inside update_persona (src-tauri/db/src/repos/resources/persona_change_log.rs:223), keyed per persona and trimmed — so after a delete no account of who, when or what it took survives."
+        },
+        {
+          "technique": "bulk-deletion-rails",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memories.rs:189-193 exposes `delete_all_memories` with no scope parameter and no dry-run count, returning a bare usize — the module's most destructive operation is one unparameterized IPC call. The preserved core is enforced inside the operation (:550-551) and bulk_delete_personas returns per-id outcomes (personas.rs:68-72)."
+        }
+      ]
+    },
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx:56 orders with localeCompare while :64-69 matches with raw toLowerCase/includes — the matching policy is re-derived per call site with no diacritic folding, in an app shipping 14 locales.",
+      "techniques": [
+        {
+          "technique": "query-parsing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/SearchAutocomplete.tsx:20-23 and filters/ComponentFilterDropdown.tsx:64-69 each re-derive lowercase substring matching with no diacritic folding and no min-token or max-term bound, and useStructuredQuery.ts:106 emits the free text unnormalized. The two-grammar half is conformant: a closed prefix set (:26), structure lifted into typed chips and unrecognized prefixes left as literals (:70-89)."
+        },
+        {
+          "technique": "full-text-indexing",
+          "verdict": "not-applicable",
+          "evidence": "This context neither owns nor queries an index — src/features/templates/sub_generated/gallery/search/TemplateSearchBarTypes.ts:5-6 hands the query upward as a string, so index-vs-scan, tokenization and rebuild all live in the data tier behind @/api/overview/reviews."
+        },
+        {
+          "technique": "ranking-and-excerpts",
+          "verdict": "deviation",
+          "evidence": "src/lib/ui/highlightMatch.ts:9 re-finds the raw query in the display label, while filters/ComponentFilterDropdown.tsx:69 also matches on `item.key` — a row matched by its key renders with no visible reason. Escape-then-mark is safe by JSX construction, and the relevance-ranking clauses are not-applicable because this surface serves the filter intent."
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx:52-56 discloses the window as a bare `loaded/total` fraction with neither number named, filters/FilterChips.tsx:182 suppresses the count on zero-count coverage values leaving them clickable dead ends, and :64, :90 and :119 spell 'has the user filtered' three inconsistent ways with no clear-all across the whole set."
+        },
+        {
+          "technique": "saved-views",
+          "verdict": "not-applicable",
+          "evidence": "No predicate is ever named or persisted as an artifact here — suggestions/useStructuredQuery.ts:40-41 keeps query state in module-scope variables for the session only, which is navigational state, not a saved view."
+        },
+        {
+          "technique": "command-surface",
+          "verdict": "not-applicable",
+          "evidence": "This surface serves the filter intent over a bounded gallery (TemplateSearchBarTypes.ts:4-18 carries facet selections and counts, not commands); there is no palette, no command registry and no blind-enter contract to hold."
+        }
+      ]
+    }
+  ]
+}

@@ -533,7 +533,18 @@
     "triage_accepted_delete_confirm": "Löschen",
     "triage_accepted_deleted": "{count} aus dem Backlog entfernt",
     "triage_accepted_deleted_gone": "{count} waren bereits weg",
-    "triage_accepted_row_aria": "{title} auswählen"
+    "triage_accepted_row_aria": "{title} auswählen",
+    "grid_board_aria": "Flotten-Board",
+    "grid_rail_tab_dispatch": "Senden",
+    "grid_rail_tab_messages": "Nachrichten",
+    "grid_rail_tabs_aria": "Aktivitätsbereich",
+    "grid_messages_empty": "Noch keine Kanalaktivität.",
+    "grid_dock_collapse": "Sendekonsole ausblenden",
+    "grid_rail_loading_more": "Weitere werden geladen…",
+    "grid_rail_unread": "Ungelesen",
+    "grid_rail_empty_reviews": "Nichts wartet auf eine Entscheidung",
+    "grid_rail_empty_reviews_sub": "Prüfungen, Ideen, Praktiken und angehaltene Fragen landen hier, sobald sie dich brauchen.",
+    "grid_rail_empty_messages_sub": "Team-Kanäle zeigen hier ihr Neuestes, sobald etwas gesagt wird."
   },
   "common": {
     "loading": "Laden…",

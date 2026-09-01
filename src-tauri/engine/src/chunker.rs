@@ -21,7 +21,17 @@ pub struct ChunkResult {
     /// scanned images. They contribute zero chunks, so without this counter a
     /// scanned PDF ingests "successfully" as an empty document and the user is
     /// never told why searches come back blank.
+    ///
+    /// This is `unreadable_pages.len()`, kept as its own field because it is
+    /// what the `kb_documents` column and the twin export/import carry.
     pub empty_pages: u32,
+    /// *Which* pages those were, 1-based and ascending. The count above says
+    /// how bad; this says where, and only "where" can be handed to something
+    /// that fixes it — the OCR path already in this binary takes pages, not a
+    /// total. A count also cannot be rendered as "pages 2, 5-7 of 12", which
+    /// is what a reader deciding whether to trust a citation needs to see.
+    /// Empty for flat text, and for a paginated source whose pages all read.
+    pub unreadable_pages: Vec<u32>,
 }
 
 /// A single text chunk with positional metadata.
@@ -81,6 +91,7 @@ pub fn chunk_text(text: &str, max_chars: usize, overlap_chars: usize) -> ChunkRe
         byte_size,
         page_count: None,
         empty_pages: 0,
+        unreadable_pages: Vec::new(),
     }
 }
 
@@ -204,15 +215,39 @@ pub fn chunk_pdf(
         })?;
 
     let page_count = pages.len() as u32;
+    let (chunks, unreadable_pages) = chunk_pages(&pages, max_chars, overlap_chars);
+
+    Ok(ChunkResult {
+        chunks,
+        content_hash,
+        byte_size,
+        page_count: Some(page_count),
+        empty_pages: unreadable_pages.len() as u32,
+        unreadable_pages,
+    })
+}
+
+/// Chunk already-extracted page texts, returning the chunks and the 1-based
+/// numbers of the pages that yielded no text at all.
+///
+/// Split out from [`chunk_pdf`] so the page classification can be tested
+/// without a PDF fixture: everything interesting here is a decision about
+/// page text, and none of it needs a parser to exercise.
+#[cfg(feature = "ml")]
+fn chunk_pages(
+    pages: &[String],
+    max_chars: usize,
+    overlap_chars: usize,
+) -> (Vec<TextChunk>, Vec<u32>) {
     let mut chunks: Vec<TextChunk> = Vec::new();
-    let mut empty_pages = 0u32;
+    let mut unreadable_pages: Vec<u32> = Vec::new();
 
     for (i, page_text) in pages.iter().enumerate() {
         let page_no = (i + 1) as u32;
         let trimmed = page_text.trim();
 
         if trimmed.is_empty() {
-            empty_pages += 1;
+            unreadable_pages.push(page_no);
             continue;
         }
 
@@ -233,13 +268,33 @@ pub fn chunk_pdf(
         ));
     }
 
-    Ok(ChunkResult {
-        chunks,
-        content_hash,
-        byte_size,
-        page_count: Some(page_count),
-        empty_pages,
-    })
+    (chunks, unreadable_pages)
+}
+
+/// Render ascending 1-based page numbers as `2, 5-7, 12`.
+///
+/// The surfaces that report unreadable pages are a one-line warning in a
+/// context digest and a one-line ingest error; both show text and nothing
+/// else, so the page identity has to survive *into the sentence* or it is not
+/// reported at all. A scanned 200-page document must not print 200 numbers.
+pub fn format_page_ranges(pages: &[u32]) -> String {
+    let mut ranges: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < pages.len() {
+        let start = pages[i];
+        let mut end = start;
+        while i + 1 < pages.len() && pages[i + 1] == end + 1 {
+            i += 1;
+            end = pages[i];
+        }
+        ranges.push(if end > start {
+            format!("{start}-{end}")
+        } else {
+            start.to_string()
+        });
+        i += 1;
+    }
+    ranges.join(", ")
 }
 
 /// Find the best sentence break point searching backward from `end`.
@@ -377,6 +432,65 @@ mod tests {
     #[test]
     fn segment_empty_span_yields_nothing() {
         assert!(segment("   \n  ", 500, 50, Some(1), 1.0, 0).is_empty());
+    }
+
+    /// The partial-scan case: most pages read, some do not. The count alone
+    /// says "4 pages", which no caller can act on; the list says which four,
+    /// which is what the OCR path and the digest both need.
+    #[test]
+    fn unreadable_pages_are_named_not_just_counted() {
+        let body = "word ".repeat(60);
+        let pages: Vec<String> = (1..=12)
+            .map(|p| {
+                if matches!(p, 2 | 5 | 6 | 7) {
+                    String::new()
+                } else {
+                    body.clone()
+                }
+            })
+            .collect();
+
+        let (chunks, unreadable) = chunk_pages(&pages, 500, 50);
+
+        assert_eq!(unreadable, vec![2, 5, 6, 7]);
+        // The readable pages still index — this document is not refused.
+        assert!(chunks.iter().any(|c| c.page == Some(1)));
+        assert!(chunks
+            .iter()
+            .all(|c| !matches!(c.page, Some(2 | 5 | 6 | 7))));
+        assert_eq!(format_page_ranges(&unreadable), "2, 5-7");
+    }
+
+    /// A whitespace-only page is unreadable, not sparse: it must land in the
+    /// list rather than becoming a low-confidence chunk of nothing.
+    #[test]
+    fn whitespace_only_page_counts_as_unreadable() {
+        let pages = vec!["   \n \t ".to_string(), "word ".repeat(60)];
+        let (chunks, unreadable) = chunk_pages(&pages, 500, 50);
+        assert_eq!(unreadable, vec![1]);
+        assert!(chunks.iter().all(|c| c.page == Some(2)));
+    }
+
+    /// A fully scanned document keeps the existing all-empty behavior, and the
+    /// list is what the caller's refusal message can now name.
+    #[test]
+    fn fully_scanned_document_lists_every_page() {
+        let pages = vec![String::new(), String::new(), String::new()];
+        let (chunks, unreadable) = chunk_pages(&pages, 500, 50);
+        assert!(chunks.is_empty());
+        assert_eq!(unreadable, vec![1, 2, 3]);
+        assert_eq!(format_page_ranges(&unreadable), "1-3");
+    }
+
+    /// The digest and the ingest error are one-line text surfaces, so a
+    /// 200-page scan must not print 200 numbers.
+    #[test]
+    fn page_ranges_collapse_runs() {
+        assert_eq!(format_page_ranges(&[]), "");
+        assert_eq!(format_page_ranges(&[4]), "4");
+        assert_eq!(format_page_ranges(&[2, 5, 6, 7, 12]), "2, 5-7, 12");
+        assert_eq!(format_page_ranges(&[1, 2, 3]), "1-3");
+        assert_eq!(format_page_ranges(&[1, 3, 5]), "1, 3, 5");
     }
 
     #[test]

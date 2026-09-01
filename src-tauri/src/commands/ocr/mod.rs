@@ -98,13 +98,30 @@ impl Drop for CancelGuard<'_> {
 #[derive(Debug, Deserialize)]
 struct GeminiResponse {
     candidates: Option<Vec<GeminiCandidate>>,
+    /// Present when the *prompt* was rejected before generation started. It is
+    /// the only place the reason appears in that case: `candidates` is absent
+    /// entirely, so without this field a refusal is indistinguishable from a
+    /// document that genuinely contains no text.
+    #[serde(rename = "promptFeedback")]
+    prompt_feedback: Option<GeminiPromptFeedback>,
     #[serde(rename = "usageMetadata")]
     usage_metadata: Option<GeminiUsage>,
 }
 
 #[derive(Debug, Deserialize)]
+struct GeminiPromptFeedback {
+    #[serde(rename = "blockReason")]
+    block_reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct GeminiCandidate {
     content: Option<GeminiContent>,
+    /// Why generation stopped. `STOP` is the healthy value; `MAX_TOKENS` means
+    /// the text we got is a prefix of the page, and `SAFETY` / `RECITATION`
+    /// mean it is not the page at all.
+    #[serde(rename = "finishReason")]
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,6 +138,77 @@ struct GeminiPart {
 struct GeminiUsage {
     #[serde(rename = "totalTokenCount")]
     total_token_count: Option<u32>,
+}
+
+/// Text recovered from a response, plus whether it is the whole of what the
+/// model meant to send.
+#[derive(Debug)]
+struct ExtractedText {
+    text: String,
+    /// The model stopped at its output limit, so `text` is a prefix of the
+    /// page rather than the page. Recorded rather than refused: a partial
+    /// reading is still worth having, but it must not be stored as if it were
+    /// complete.
+    truncated: bool,
+}
+
+/// Pull the OCR text out of a response, or say why there is none.
+///
+/// This used to end in `.unwrap_or_default()`, which turned every unmatched
+/// response shape — a safety block, a recitation stop, an empty candidate
+/// list — into an empty string that was persisted as a document and returned
+/// as success. The user was shown a completed OCR containing no text, and
+/// nothing anywhere recorded that the provider had refused. Failure has to be
+/// spelled differently from "this page was blank".
+///
+/// It also read only `parts[0]`, so a response the provider split across
+/// several parts was silently truncated at the first one.
+fn extract_text(response: &GeminiResponse) -> Result<ExtractedText, String> {
+    // A blocked prompt has no candidates at all, so check it first: it is the
+    // most specific reason available and the only one present in that case.
+    if let Some(reason) = response
+        .prompt_feedback
+        .as_ref()
+        .and_then(|f| f.block_reason.as_deref())
+    {
+        return Err(format!("the provider blocked the request ({reason})"));
+    }
+
+    let Some(candidate) = response.candidates.as_ref().and_then(|c| c.first()) else {
+        return Err("the provider returned no candidates".into());
+    };
+
+    // Every part, not just the first: the provider may split one page's text
+    // across several, and taking `parts[0]` drops the rest without a trace.
+    let text = candidate
+        .content
+        .as_ref()
+        .and_then(|c| c.parts.as_ref())
+        .map(|parts| {
+            parts
+                .iter()
+                .filter_map(|p| p.text.as_deref())
+                .collect::<Vec<_>>()
+                .concat()
+        })
+        .unwrap_or_default();
+
+    let finish = candidate.finish_reason.as_deref();
+
+    if text.trim().is_empty() {
+        return Err(match finish {
+            Some("MAX_TOKENS") => "the model hit its output limit before emitting any text".into(),
+            Some(reason) if reason != "STOP" => {
+                format!("the provider stopped without returning text ({reason})")
+            }
+            _ => "the provider returned an empty result".into(),
+        });
+    }
+
+    Ok(ExtractedText {
+        text,
+        truncated: finish == Some("MAX_TOKENS"),
+    })
 }
 
 /// Detect MIME type from file extension.
@@ -284,15 +372,25 @@ async fn run_gemini_ocr(
     let gemini: GeminiResponse = serde_json::from_str(&resp_text)
         .map_err(|e| AppError::Internal(format!("Failed to parse Gemini response: {e}")))?;
 
-    let extracted_text = gemini
-        .candidates
-        .as_ref()
-        .and_then(|c| c.first())
-        .and_then(|c| c.content.as_ref())
-        .and_then(|c| c.parts.as_ref())
-        .and_then(|p| p.first())
-        .and_then(|p| p.text.clone())
-        .unwrap_or_default();
+    let ExtractedText {
+        text: extracted_text,
+        truncated,
+    } = extract_text(&gemini).map_err(|why| {
+        tracing::warn!(model = model_name, reason = %why, "OCR returned no text");
+        AppError::Internal(format!("OCR produced no text: {why}"))
+    })?;
+
+    // A prefix of the page is worth keeping, but it must not be stored as if
+    // it were the page. Nothing else on this record can say so, so it is
+    // recorded here and logged.
+    let structured_data = truncated.then(|| {
+        tracing::warn!(
+            model = model_name,
+            chars = extracted_text.len(),
+            "OCR hit the model's output limit; extracted text is truncated"
+        );
+        serde_json::json!({ "truncated": true, "reason": "MAX_TOKENS" }).to_string()
+    });
 
     let token_count = gemini.usage_metadata.and_then(|u| u.total_token_count);
 
@@ -311,7 +409,7 @@ async fn run_gemini_ocr(
         provider: "gemini".into(),
         model: Some(model_name.into()),
         extracted_text,
-        structured_data: None,
+        structured_data,
         prompt,
         duration_ms,
         token_count,
@@ -626,6 +724,20 @@ async fn run_claude_ocr(
         return Err(AppError::Internal(format!("Claude Code failed: {stderr}")));
     };
 
+    // Exiting 0 with nothing on stdout is a failure wearing a success's exit
+    // code, and storing it would put an empty document in the user's OCR
+    // history with no record that anything went wrong. Same rule as the
+    // Gemini path above: an empty extraction is never a result.
+    if extracted_text.is_empty() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let detail = stderr.trim();
+        return Err(AppError::Internal(if detail.is_empty() {
+            "OCR produced no text: Claude Code exited successfully but wrote nothing".into()
+        } else {
+            format!("OCR produced no text: Claude Code wrote only: {detail}")
+        }));
+    }
+
     let now = Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -654,3 +766,94 @@ async fn run_claude_ocr(
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(json: &str) -> Result<ExtractedText, String> {
+        extract_text(&serde_json::from_str::<GeminiResponse>(json).expect("fixture parses"))
+    }
+
+    #[test]
+    fn healthy_response_yields_its_text() {
+        let got = parse(
+            r#"{"candidates":[{"content":{"parts":[{"text":"Invoice 41"}]},
+                "finishReason":"STOP"}]}"#,
+        )
+        .expect("should extract");
+        assert_eq!(got.text, "Invoice 41");
+        assert!(!got.truncated);
+    }
+
+    /// The provider may split one page across several parts. Reading only
+    /// `parts[0]` dropped the rest with no error and no log line.
+    #[test]
+    fn every_part_is_concatenated() {
+        let got = parse(
+            r#"{"candidates":[{"content":{"parts":[
+                {"text":"page one "},{"text":"and "},{"text":"page two"}]},
+                "finishReason":"STOP"}]}"#,
+        )
+        .expect("should extract");
+        assert_eq!(got.text, "page one and page two");
+    }
+
+    /// The bug this module was carrying: a refusal has no candidates at all,
+    /// and the reason lives only in `promptFeedback`.
+    #[test]
+    fn blocked_prompt_is_an_error_naming_the_reason() {
+        let err = parse(r#"{"promptFeedback":{"blockReason":"SAFETY"}}"#)
+            .expect_err("a block is not a result");
+        assert!(err.contains("blocked"), "{err}");
+        assert!(err.contains("SAFETY"), "{err}");
+    }
+
+    #[test]
+    fn safety_stop_after_generation_is_an_error_naming_the_reason() {
+        let err = parse(r#"{"candidates":[{"finishReason":"SAFETY"}]}"#)
+            .expect_err("a refusal is not a result");
+        assert!(err.contains("SAFETY"), "{err}");
+    }
+
+    #[test]
+    fn no_candidates_is_an_error_not_an_empty_string() {
+        assert!(parse(r#"{}"#).is_err());
+        assert!(parse(r#"{"candidates":[]}"#).is_err());
+    }
+
+    /// Whitespace-only is the same failure as empty; it must not persist as a
+    /// document that looks like a blank page.
+    #[test]
+    fn whitespace_only_text_is_an_error() {
+        assert!(parse(
+            r#"{"candidates":[{"content":{"parts":[{"text":"   \n  "}]},
+                "finishReason":"STOP"}]}"#
+        )
+        .is_err());
+    }
+
+    /// A prefix of the page is kept, but flagged - storing it as complete is
+    /// the same defect one layer down.
+    #[test]
+    fn output_limit_with_text_is_kept_but_marked_truncated() {
+        let got = parse(
+            r#"{"candidates":[{"content":{"parts":[{"text":"first half"}]},
+                "finishReason":"MAX_TOKENS"}]}"#,
+        )
+        .expect("partial text is still worth keeping");
+        assert_eq!(got.text, "first half");
+        assert!(got.truncated);
+    }
+
+    #[test]
+    fn output_limit_with_no_text_is_an_error() {
+        let err = parse(r#"{"candidates":[{"finishReason":"MAX_TOKENS"}]}"#)
+            .expect_err("no text is no result");
+        assert!(err.contains("output limit"), "{err}");
+    }
+}

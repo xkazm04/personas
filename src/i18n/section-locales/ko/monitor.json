@@ -532,5 +532,16 @@
   "triage_accepted_delete_confirm": "삭제",
   "triage_accepted_deleted": "백로그에서 {count}개를 삭제했습니다",
   "triage_accepted_deleted_gone": "{count}개는 이미 없었습니다",
-  "triage_accepted_row_aria": "{title} 선택"
+  "triage_accepted_row_aria": "{title} 선택",
+  "grid_board_aria": "플릿 보드",
+  "grid_rail_tab_dispatch": "보내기",
+  "grid_rail_tab_messages": "메시지",
+  "grid_rail_tabs_aria": "활동 패널",
+  "grid_messages_empty": "아직 채널 활동이 없습니다.",
+  "grid_dock_collapse": "디스패치 콘솔 숨기기",
+  "grid_rail_loading_more": "더 불러오는 중…",
+  "grid_rail_unread": "읽지 않음",
+  "grid_rail_empty_reviews": "결정을 기다리는 항목이 없습니다",
+  "grid_rail_empty_reviews_sub": "검토, 아이디어, 프랙티스, 보류된 질문은 당신이 필요해지는 순간 여기에 모입니다.",
+  "grid_rail_empty_messages_sub": "팀 채널에서 무언가 오가면 최신 내용이 여기에 표시됩니다."
 }

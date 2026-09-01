@@ -34,6 +34,85 @@ pub fn budget_for(block: &str) -> Option<usize> {
         .map(|(_, max)| *max)
 }
 
+/// Char budget for the recalled-episode section specifically.
+///
+/// A share of the `recall` block's 40,000, left deliberately short of it: the
+/// same block folds five other memory sections (facts, goals, procedurals,
+/// backlog, doctrine) that must still fit beside the episodes.
+pub(super) const EPISODE_RENDER_BUDGET: usize = 24_000;
+
+/// Stop bisecting once a render lands within this fraction of the budget.
+/// The probes needed to close the last few percent cost real work and buy a
+/// block nobody can tell apart.
+const FIT_TOLERANCE: f64 = 0.15;
+
+/// How many *trailing* items of `items` may be admitted before the block they
+/// render into exceeds `budget`.
+///
+/// Not a per-item cut, and that is the whole point. `render` emits a section
+/// header once and then one entry per item, so an item's cost depends on
+/// whether anything else is already in the section: the first admission pays
+/// the header, the second does not. Walking the list subtracting per-item
+/// costs from a remainder cannot see that, and for the smallest episodes the
+/// header is a sixth of the rendered block.
+///
+/// So we do not price items, we measure artifacts — bisect on how many to
+/// admit, render the whole section at each probe, and keep the largest render
+/// that fit. Trailing rather than leading because the caller's list is
+/// oldest-first with the recency tail last: when something has to go, it is
+/// the oldest turn.
+///
+/// Always returns at least 1 for a non-empty `items`. A single entry that
+/// cannot fit is still admitted — dropping the current turn's context to
+/// respect a tripwire trades a real regression for a cosmetic one — and the
+/// over-budget `warn!` then fires as it always did.
+pub(super) fn fit_trailing_to_render<T>(
+    items: &[T],
+    budget: usize,
+    render: impl Fn(&[T]) -> String,
+) -> usize {
+    let n = items.len();
+    if n == 0 {
+        return 0;
+    }
+    if render(items).len() <= budget {
+        return n;
+    }
+
+    // Seed the search from a calibrated cost-per-item rather than the midpoint:
+    // it starts the bisection near the answer and saves more probes than any
+    // other refinement here.
+    let avg = render(items).len() / n.max(1);
+    let mut lo = 1usize;
+    let mut hi = n;
+    let mut probe = (budget / avg.max(1)).clamp(1, n);
+    let mut best = 1usize;
+
+    while lo <= hi {
+        let rendered = render(&items[n - probe..]).len();
+        if rendered <= budget {
+            if probe > best {
+                best = probe;
+            }
+            let err = (budget - rendered) as f64 / budget as f64;
+            if err < FIT_TOLERANCE {
+                break;
+            }
+            lo = probe + 1;
+        } else {
+            if probe == 1 {
+                break;
+            }
+            hi = probe - 1;
+        }
+        if lo > hi {
+            break;
+        }
+        probe = (lo + hi) / 2;
+    }
+    best
+}
+
 // ── Per-block content hash ──────────────────────────────────────────────
 //
 // Sizes alone cannot answer the question the cache bill asks. Athena's chat

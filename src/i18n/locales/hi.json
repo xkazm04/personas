@@ -533,7 +533,18 @@
     "triage_accepted_delete_confirm": "हटाएँ",
     "triage_accepted_deleted": "बैकलॉग से {count} हटाए गए",
     "triage_accepted_deleted_gone": "{count} पहले से ही मौजूद नहीं थे",
-    "triage_accepted_row_aria": "{title} चुनें"
+    "triage_accepted_row_aria": "{title} चुनें",
+    "grid_board_aria": "फ़्लीट बोर्ड",
+    "grid_rail_tab_dispatch": "भेजें",
+    "grid_rail_tab_messages": "संदेश",
+    "grid_rail_tabs_aria": "गतिविधि पैनल",
+    "grid_messages_empty": "अभी तक कोई चैनल गतिविधि नहीं।",
+    "grid_dock_collapse": "डिस्पैच कंसोल छिपाएं",
+    "grid_rail_loading_more": "और लोड हो रहा है…",
+    "grid_rail_unread": "अपठित",
+    "grid_rail_empty_reviews": "निर्णय की प्रतीक्षा में कुछ नहीं",
+    "grid_rail_empty_reviews_sub": "समीक्षाएं, विचार, प्रथाएं और रुके हुए प्रश्न आपकी ज़रूरत पड़ते ही यहाँ आ जाते हैं।",
+    "grid_rail_empty_messages_sub": "टीम चैनलों में कुछ भी कहा जाते ही उनका नवीनतम यहाँ दिखेगा।"
   },
   "common": {
     "loading": "लोड हो रहा है…",

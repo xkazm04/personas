@@ -532,5 +532,16 @@
   "triage_accepted_delete_confirm": "削除",
   "triage_accepted_deleted": "バックログから {count} 件を削除しました",
   "triage_accepted_deleted_gone": "{count} 件はすでにありませんでした",
-  "triage_accepted_row_aria": "{title} を選択"
+  "triage_accepted_row_aria": "{title} を選択",
+  "grid_board_aria": "フリートボード",
+  "grid_rail_tab_dispatch": "送信",
+  "grid_rail_tab_messages": "メッセージ",
+  "grid_rail_tabs_aria": "アクティビティパネル",
+  "grid_messages_empty": "チャンネルの動きはまだありません。",
+  "grid_dock_collapse": "送信コンソールを隠す",
+  "grid_rail_loading_more": "さらに読み込み中…",
+  "grid_rail_unread": "未読",
+  "grid_rail_empty_reviews": "判断待ちの項目はありません",
+  "grid_rail_empty_reviews_sub": "レビュー・アイデア・プラクティス・保留中の質問は、あなたが必要になった時点でここに並びます。",
+  "grid_rail_empty_messages_sub": "チームチャンネルで何か発言があれば、最新のものがここに表示されます。"
 }

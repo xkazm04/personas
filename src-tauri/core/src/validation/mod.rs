@@ -20,6 +20,8 @@ pub fn strip_html_tags(input: &str) -> String {
         .tags(std::collections::HashSet::new())
         .clean(input)
         .to_string();
+    // Decode entities that ammonia introduced for non-tag angle brackets.
+    // Order matters: &amp; must be last so we do not double-decode.
     cleaned
         .replace("&lt;", "<")
         .replace("&gt;", ">")
@@ -264,4 +266,39 @@ fn windows_file_identity(file: &std::fs::File) -> Result<WindowsFileIdentity, Ap
         file_index_high: info.nFileIndexHigh,
         file_index_low: info.nFileIndexLow,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_html_tags() {
+        // Plain text passes through unchanged
+        assert_eq!(strip_html_tags("hello world"), "hello world");
+        assert_eq!(strip_html_tags(""), "");
+
+        // Actual HTML tags are stripped
+        assert_eq!(strip_html_tags("<b>bold</b>"), "bold");
+        assert_eq!(
+            strip_html_tags("<img src=x onerror=alert(1)>payload"),
+            "payload"
+        );
+        assert_eq!(
+            strip_html_tags("<script>alert('xss')</script>safe text"),
+            "safe text"
+        );
+
+        // Comparison operators and math expressions are preserved
+        assert_eq!(strip_html_tags("a < b and c > d"), "a < b and c > d");
+        assert_eq!(strip_html_tags("no < tags > here"), "no < tags > here");
+        assert_eq!(strip_html_tags("if x < 10"), "if x < 10");
+        assert_eq!(strip_html_tags("latency > 500ms"), "latency > 500ms");
+
+        // Valid-looking HTML tags are still stripped (e.g. Vec<String> looks like a tag)
+        assert_eq!(strip_html_tags("Vec<String>"), "Vec");
+
+        // Ampersands preserved
+        assert_eq!(strip_html_tags("a & b"), "a & b");
+    }
 }

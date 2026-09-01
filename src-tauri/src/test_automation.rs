@@ -372,6 +372,37 @@ async fn handle_perf_mark(
     eval_bridge_method(&state, "perfMark", &params).await
 }
 
+// ── Synthetic load harness ─────────────────────────────────────────────────
+//
+// The generator itself lives in `crate::load_harness`; these are only the HTTP
+// mouths. They take and return the harness's own types, so the runner script
+// and the Rust side cannot disagree about the shape of a profile.
+
+async fn handle_load_set(
+    AxumState(state): AxumState<ServerState>,
+    Json(profile): Json<crate::load_harness::LoadProfile>,
+) -> Result<String, (StatusCode, String)> {
+    let status = crate::load_harness::set_profile(&state.app_handle, profile);
+    serde_json::to_string(&status).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+async fn handle_load_stop(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    let status = crate::load_harness::stop(&state.app_handle);
+    serde_json::to_string(&status).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+async fn handle_load_reset_counters() -> Result<String, (StatusCode, String)> {
+    crate::load_harness::reset_counters();
+    Ok("{\"success\":true}".to_string())
+}
+
+async fn handle_load_status() -> Result<String, (StatusCode, String)> {
+    let status = crate::load_harness::status();
+    serde_json::to_string(&status).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
 async fn handle_screenshot(
     AxumState(_state): AxumState<ServerState>,
     Json(req): Json<ScreenshotRequest>,
@@ -1369,6 +1400,11 @@ fn build_router(state: ServerState) -> Router {
         .route("/perf/reset", post(handle_perf_reset))
         .route("/perf/snapshot", get(handle_perf_snapshot))
         .route("/perf/mark", post(handle_perf_mark))
+        // Synthetic load harness — see `crate::load_harness`.
+        .route("/load/set", post(handle_load_set))
+        .route("/load/stop", post(handle_load_stop))
+        .route("/load/reset-counters", post(handle_load_reset_counters))
+        .route("/load/status", get(handle_load_status))
         // Workflow macros
         .route("/select-agent", post(handle_select_agent))
         .route("/open-editor-tab", post(handle_open_editor_tab))

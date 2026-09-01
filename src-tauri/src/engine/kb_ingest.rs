@@ -357,13 +357,28 @@ async fn ingest_single_file(
     let doc_id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
+    // Which pages had no text layer, not just how many. `empty_pages` is a
+    // count, and a count cannot be handed to anything that fixes it: the OCR
+    // path in this binary takes pages, and a reader deciding whether to trust
+    // a citation needs "pages 2, 5-7 of 12" rather than "4 pages". Stored as
+    // a rendered range string in the existing metadata blob so this needs no
+    // migration and rides the twin export/import that already carries it.
+    let metadata_json = (!chunk_result.unreadable_pages.is_empty()).then(|| {
+        serde_json::json!({
+            "unreadable_pages": chunker::format_page_ranges(
+                &chunk_result.unreadable_pages,
+            ),
+        })
+        .to_string()
+    });
+
     // Insert document record
     {
         let conn = user_db.get()?;
         conn.execute(
             "INSERT INTO kb_documents (id, kb_id, source_type, source_path, title, content_hash, byte_size,
-                                       page_count, empty_pages, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                                       metadata_json, page_count, empty_pages, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 doc_id,
                 kb.id,
@@ -372,6 +387,7 @@ async fn ingest_single_file(
                 title,
                 chunk_result.content_hash,
                 chunk_result.byte_size as i64,
+                metadata_json,
                 chunk_result.page_count,
                 chunk_result.empty_pages,
                 "indexing",
@@ -394,6 +410,12 @@ async fn ingest_single_file(
         mark_document_failed(user_db, &doc_id, &msg)?;
         return Err(AppError::Validation(msg));
     }
+
+    // The guard above only fires when *every* page was unreadable. A document
+    // with a text layer on most pages and scans on the rest indexes fine, and
+    // for a knowledge base that is the right call — eight readable pages are
+    // worth having. What was wrong was losing which pages the other four were;
+    // they are recorded in `metadata_json` at insert, above.
 
     match store_chunks_and_vectors(
         user_db,
@@ -764,12 +786,34 @@ pub fn kb_corpus_map(user_db: &UserDbPool, kb_id: &str) -> Result<String, AppErr
                 .map(|p| p.to_string())
                 .unwrap_or_else(|| "—".into());
             // Surface the unreadable fraction inline, where a reader deciding
-            // whether to trust this document will actually see it.
+            // whether to trust this document will actually see it — and name
+            // the pages, not just the count. A reader who has just been given
+            // an answer citing p. 6 needs to know whether 6 is one of them;
+            // "4 pages" cannot answer that and "pages 2, 5-7" can.
             let notes = if d.empty_pages > 0 {
-                format!(
-                    "⚠ {} page(s) are scanned images with no readable text — content on them is NOT searchable",
-                    d.empty_pages
-                )
+                let which = d
+                    .metadata_json
+                    .as_deref()
+                    .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+                    .and_then(|m| {
+                        m.get("unreadable_pages")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_owned)
+                    });
+                match which {
+                    Some(ranges) => format!(
+                        "⚠ pages {} of {} are scanned images with no readable text — content on them is NOT searchable",
+                        ranges,
+                        d.page_count
+                            .map(|p| p.to_string())
+                            .unwrap_or_else(|| "?".into())
+                    ),
+                    // Documents ingested before the page list was recorded.
+                    None => format!(
+                        "⚠ {} page(s) are scanned images with no readable text — content on them is NOT searchable",
+                        d.empty_pages
+                    ),
+                }
             } else {
                 String::new()
             };

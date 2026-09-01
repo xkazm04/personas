@@ -6,6 +6,17 @@
 - **Paths:** `src/features/agents/sub_life/**` · `src/features/agents/sub_editor/**` · `src/features/agents/sub_design/**` · `src/features/overview/sub_missionControl/**` · `src/i18n/**` · `src-tauri/db/src/repos/core/attention_ledger.rs` · `src-tauri/src/commands/core/**`
 - **Status:** started
 
+- **[2026-08-31 11:52]**
+- **Paths:** `src-tauri/src/load_harness.rs` · `src-tauri/src/test_automation.rs` · `src-tauri/src/lib.rs` · `src/test/automation/perfInstrument.ts` · `scripts/perf/**`
+- **Status:** started
+
+- **[2026-08-31 10:23]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-08-30 21:42]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/i18n/locales/*.json`
+### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later
 - **[2026-08-30 17:01]**
 - **Paths:** `src-tauri/core/src/models/persona.rs` · `src-tauri/core/src/models/memory.rs` · `src-tauri/core/src/models/deliberation.rs` · `src-tauri/db/src/migrations/**` · `src-tauri/db/src/repos/core/**` · `src-tauri/db/src/memory_recall.rs` · `src-tauri/engine/src/prompt/**` · `src-tauri/engine/src/template_v3.rs` · `src-tauri/engine/src/app_master.rs` · `src-tauri/engine/src/app_master_memory.rs` · `src-tauri/engine/src/archetype_catalog.rs` · `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/runner/**` · `src-tauri/src/commands/core/personas.rs` · `src-tauri/src/commands/design/**` · `src/features/agents/sub_glyph/**` · `src/api/agents/**` · `docs/features/personas/**` · `scripts/templates/_archetypes.json`
 - **Status:** started
@@ -532,6 +543,11 @@
 
 ### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later
 
+### perf-load-harness — Synthetic load harness: Rust event/session generator + perf instrument (long tasks, frames) + ramp runner
+
+### activity-rail-prototype — Activity: full-height fix, dock->Monitor footer, triage-backed Reviews, /prototype the rail row language
+
+### activity-consolidation — Consolidate Monitor UI into Activity: wide named tiles, Conversations-grade chrome, 3-tab rail, docked quick-dispatch
 ### architect-client-runtime — /architect client redesign: runtime CPU/RAM findings + bundle/gate repairs + codifications (worktree architect-client-runtime)
 
 ### grok-bot-compare — C:/Program Files/Git/research on Grok bot popularity vs personas agentic mgmt + Channels

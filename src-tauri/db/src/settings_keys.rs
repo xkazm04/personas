@@ -1028,7 +1028,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 )),
             }
         }
-        MONTHLY_COST_CEILING_USD | CHAIN_MAX_COST_USD => match value.parse::<f64>() {
+        MONTHLY_COST_CEILING_USD | CHAIN_MAX_COST_USD | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD => match value.parse::<f64>() {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
@@ -1649,6 +1649,30 @@ mod tests {
             audit_category("execution_retention_months:persona-3"),
             Some("retention")
         );
+    }
+
+    /// Every key `category()` files under "limits" is a ceiling or a rate cap,
+    /// and a ceiling that accepts a malformed value is a ceiling that silently
+    /// reverts to its default. This asserts the whole category at once so a
+    /// ceiling added later cannot ship unvalidated.
+    #[test]
+    fn every_limits_key_rejects_a_malformed_value() {
+        for key in [
+            MONTHLY_COST_CEILING_USD,
+            DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
+            SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
+            EVENT_RETENTION_MAX_COUNT,
+        ] {
+            assert_eq!(
+                audit_category(key),
+                Some("limits"),
+                "test list drifted from audit_category()"
+            );
+            assert!(
+                validate_value(key, "abc").is_err(),
+                "limits key '{key}' accepts a non-numeric value at the write door"
+            );
+        }
     }
 
     #[test]

@@ -2,7 +2,7 @@ import { ChevronRight, Terminal } from 'lucide-react';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { QuickDispatchSuggestions } from './QuickDispatchSuggestions';
-import { QUICK_DISPATCH_LISTBOX_ID, type QuickDispatchController } from './quickDispatchController';
+import type { QuickDispatchController } from './quickDispatchController';
 import {
   QuickDispatchChips,
   QuickDispatchMetaLine,
@@ -58,7 +58,7 @@ export function QuickDispatchConsole({ c }: { c: QuickDispatchController }) {
               {showSuggestions ? (
                 <div className="max-h-[38vh] overflow-y-auto p-1.5">
                   <QuickDispatchSuggestions
-                    listboxId={QUICK_DISPATCH_LISTBOX_ID}
+                    listboxId={c.listboxId}
                     items={c.suggestions}
                     activeIndex={c.activeIndex}
                     hint={c.suggestionHint}

@@ -1,0 +1,345 @@
+{
+  "worker": "p-11",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/project_tracking/watchers/git.rs:59 a watcher that cannot read its project returns Ok(vec![]) and src-tauri/src/engine/project_tracking/scheduler.rs:177 stamps last_pulse_at anyway, so a blind project is stored and rendered identically to a quiet one — and its unread window is skipped forever.",
+      "techniques": [
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/push.rs:190 resolves a project by matching `companion_known_project.path` (case-insensitively) because the tracking subsystem keys on a SECOND minted registry (`companion_known_project.id`, joined at subscription.rs:45) while the portfolio's real registry is `dev_projects.id`; the only bridge between the two id namespaces is a path string, which is exactly the path-as-join-key defect — a move or re-clone detaches a project's pulse history from its Dev Tools record, and only the dev_projects side self-heals (src-tauri/db/src/project_identity.rs:10-17)."
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/project_tracking/scheduler.rs:113-147 logs every watcher failure at warn and continues; git.rs:59, watchers/ledger.rs:38,47 and watchers/obsidian.rs:61-65 all return an empty event list on failure; subscription.rs:21-34 carries no unwatched-since/reason field, so the three-outcome rule (observed-changes / observed-quiet / could-not-observe) collapses to two and every surface renders calm for a project the manager can no longer see. Conformant on the other clauses: read-only exhaust watchers (watchers/mod.rs:5-10), 1h baseline with push acceleration and a 5-minute per-project debounce (scheduler.rs:36, push.rs:44,206-223), one closed event vocabulary (events.rs:24-46), a bounded consolidated pulse with carry-forward/retire continuity (consolidator.rs:276-299,389-390) and per-run cost accounting (consolidator.rs:187-191 into pulse.rs:25-26)."
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/mod.rs:11-18 scopes this module to watchers/scheduler/consolidator/pulse rows; there is no drill level, no wall and no render path here, so the density-budget precondition does not hold."
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/mod.rs:11-18 — no working set, tab strip or view state exists in this context; the precondition (an operator holding N projects open) is a front-end concern owned by other contexts."
+        },
+        {
+          "technique": "cross-project-comparison",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/pulse.rs:16-29 holds narrative + raw counts only; no dimension registry, normalization or ranking exists in this context, so the shared-dimension precondition fails."
+        },
+        {
+          "technique": "project-onboarding-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/mod.rs:14-16 explicitly assigns the project registry and its lifecycle to the Dev Tools plugin; this context only reads `dev_tools_project_subscription.enabled`, so the admission-door precondition fails here (the archival-reaper gap it exposes is recorded against the dev-tools context instead)."
+        }
+      ],
+      "registryProposal": "passive-signal-ingestion says a watch attempt ends in one of three verdicts but does not say where the verdict is stored when the watcher is a stateless poll function. Personas' shape — a poll returning Result<Vec<Event>> plus a subscription row — makes 'could-not-observe' need a durable column on the subscription AND a rule that the freshness watermark must not advance on a failed pass. The second half (a failed observation must not advance the since-cursor) is a real, separable claim the technique does not currently make, and it is what turns a transient blindness into permanent data loss."
+    },
+    {
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:244 the wall's columns are name/members/tech/status/created — no liveness, no pulse fragment, no attention flag — so the portfolio's face cannot answer 'which project needs me?' and cannot render a blind project as broken even though the engine maintains a per-project pulse.",
+      "techniques": [
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:517 keys rows by `p.id` and every join (rosters by teamId, selection, active project) uses minted ids; admission goes through one door that resolves identity from a `.personas/project.json` marker and hard-gates a clone collision (src-tauri/db/src/project_identity.rs:10-17,86-98), so the rename/re-path/re-clone tests hold. ProjectManagerPage.tsx:152's exact-path pre-check is a UI convenience over that door, not the identity."
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:244-400 spends the wall's whole budget on static registry fields; nothing on the card is a rollup of activity, freshness or attention, so level 1 cannot triage and level parity with reality (a stale or unwatched project must look stale) is unreachable. The fetch-budget half is conformant — team counts and rosters are batched, explicitly to avoid per-row IPC (ProjectManagerPage.tsx:77,83-89)."
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:92 the working set is a single `activeProjectId` (persisted at src/stores/systemStore.ts:63) plus a one-active-workspace filter; there is no ordered multi-project tab set and no per-tab live status, so a project cannot raise its hand while the operator works elsewhere. The workspace strip does get the identity-keyed, stale-guarded persistence right (sub_workspaces/workspaceStore.ts:55-64,69)."
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:63 builds every row from the registry list alone; the consumer-side clause (surfaces read the digest, and unwatched is surfaced at every drill level) is unrealized — `engine_project_pulse` is never read here, so the wall has no channel through which either the pulse or a broken watcher could reach the operator."
+        },
+        {
+          "technique": "cross-project-comparison",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:442 renders a cross-project similarity as `{Math.round(sim.similarity * 100)}%` with no rubric, no anchor policy (fleet-relative vs fixed), no per-project coverage statement and no drill-through to evidence; the pair is identified by display name only (:410, :443-444) and rows are keyed by array index (:430). Partially conformant: the map carries its generated-at stamp (:374) and an unscanned project renders an explicit gap rather than a zero (:95-100)."
+        },
+        {
+          "technique": "project-onboarding-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:127 bulk-archive writes `status: 'archived'` and names no reaper — src-tauri/src/engine/project_tracking/subscription.rs:38-46 selects enabled subscriptions with no archived filter, so an archived project's watchers, ticks and Sonnet consolidations keep running and keep spending. The vocabulary is also open at the boundary: projectManagerTypes.tsx:54 casts an arbitrary backend string into the `active|archived|paused` union without a membership test, and the closed set omits candidate/onboarding. Conformant on the equip step: pipeline/ProjectPipelineView.tsx:55-59 renders each contract stage as complete/incomplete, so a deferred item is a visible gap rather than a silent absence."
+        }
+      ]
+    },
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/studio/StudioTabBar.tsx:15-18,137,153 plus src/features/studio/studioHistory.ts:44-45,74-103 realize the persisted, ordered, identity-keyed working set with per-tab live status — including the technique's workbench-tab exception, where close is the named reaper and reopening re-attaches to still-running work.",
+      "techniques": [
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/studioHistory.ts:44-45,104 persists openTabIds + activeTabId keyed by dev-project id and src/features/studio/studioStore.ts:572-596 restores them, re-attaching to the live dev server rather than rebooting; :583 skips a deleted project and studioHistory.ts:74-103 prunes it out, so no ghost tab is restored and a bad row cannot break its siblings. StudioTabBar.tsx:29-53 subscribes to the narrowest projection (name + dot class as string records, explicitly to avoid re-rendering the strip on every stream delta); studioBuildModel.ts:85-91 is one closed status vocabulary that only animates the awaiting-input state. The workbench exception is deliberate and uniform: studioStore.ts:600-627 stops the session then the dev server on close, with the refused-stop case surfaced to the user (:611-619). Per-project view state is scoped by id, bounded (studioHistory.ts:23,31) and reaped by prune."
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/StudioTabBar.tsx:64-70,137 and studioHistory.ts:34 key every tab, history entry and picker row by the dev-project id; src/features/studio/studioStore.ts:642 registers an imported folder through the same admission door rather than minting a Studio-local identity."
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "not-applicable",
+          "evidence": "The precondition is watching a managed project's native exhaust; src/features/studio/studioStore.ts:601-603 polls runtimes this context itself spawned (its own build session and dev server), which the technique's workbench-tab carve-out places outside the portfolio signal path."
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/StudioTabBar.tsx renders exactly one project at a time plus a lateral open/resume picker; there is no wall or matrix level here, so the per-level density budget has nothing to apply to."
+        },
+        {
+          "technique": "cross-project-comparison",
+          "verdict": "not-applicable",
+          "evidence": "No scored dimension is read or rendered in this context; src/features/studio/StudioTabBar.tsx:66 orders the picker by last-worked time, which is recency, not a normalized comparison."
+        },
+        {
+          "technique": "project-onboarding-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:639-650 delegates registration to `webbuildRegisterExisting`; the admission contract, its refreshers and the archival door are owned by the dev-tools context, not this one."
+        }
+      ],
+      "registryProposal": "per-project-tabs-and-state says a tab strip is one kind or the other by design. Personas has BOTH shapes in one product — a workbench strip (Studio) and a grouping strip whose tab is a SET of projects (dev-tools WorkspaceTabs) — and the second is not a row of navigation buttons: it persists an identity-keyed active group with a stale-id guard and scopes bulk actions to the group so a select-all cannot reach outside it. A 'workspace/grouping strip' is worth naming as a third legitimate shape alongside handle-tabs and workbench-tabs, with its own invariant (destructive actions are scoped to the active group)."
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/home/sub_learning/HomeLearning.tsx:116-140 and useComposedTours.ts:47-60 realize the registry as a two-directional coverage surface where a drifted tour is retired to a visible, non-startable state rather than deleted or silently played.",
+      "techniques": [
+        {
+          "technique": "tour-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_learning/HomeLearning.tsx:179-180 reads the real registry and counts completions per tour (denominator deliberately excludes composed tours, :170-174); :116-140 renders a stale tour visibly but without a start affordance — retirement as explicit state, not deletion — and makes it dismissible so the list cannot become a permanent pile. useComposedTours.ts:20-27 keeps `failed` distinct from a loaded-but-empty list, so a broken IPC cannot read as 'nothing composed yet'."
+        },
+        {
+          "technique": "anchor-contracts",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_learning/useComposedTours.ts:48-52 re-proves every composed tour against the current anchor manifest server-side and then passes it through the one frontend validation gate before it becomes playable; the built-in registry is held by the same contract via the drift gate at src/stores/slices/system/__tests__/tourAnchors.test.ts:1-41, which walks the real TOUR_REGISTRY against the source corpus."
+        },
+        {
+          "technique": "missing-anchor-degradation",
+          "verdict": "not-applicable",
+          "evidence": "No anchor is resolved in this context — it is a catalog surface; the stale/playable split at HomeLearning.tsx:116 is content retirement, decided before any step runs, so the runtime degradation policy has no site here."
+        },
+        {
+          "technique": "action-driven-advancement",
+          "verdict": "not-applicable",
+          "evidence": "This context contains no step engine; HomeLearning.tsx:157 hands off to `startTour` and the completion conditions live entirely in the onboarding context."
+        },
+        {
+          "technique": "overlay-precedence",
+          "verdict": "not-applicable",
+          "evidence": "No tour overlay is mounted here; src/features/home/sub_learning/TourDetailModal.tsx is an ordinary product modal governed by modal-stack, not by the tour's conduct rules."
+        },
+        {
+          "technique": "narration-and-pacing",
+          "verdict": "not-applicable",
+          "evidence": "No narration is coupled in this context; the tour's audio machinery is mounted only while a tour runs (src/features/onboarding/components/GuidedTour.tsx:99-103)."
+        }
+      ],
+      "registryProposal": "The map pairs this subject with a context that bundles `sub_learning` (genuinely guided-tours) with `sub_releases` (HomeReleases / roadmapItems / useLiveRoadmap — a release-roadmap surface the subject does not govern at all). Half this context's listed paths are outside the subject's precondition; the roadmap half looks like a coverage hole (a roadmap/changelog-surface subject) rather than a match."
+    },
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/tourSlice.ts:1401 hardcodes `defaultTourId = 'getting-started'` at slice construction, so the resume pair loses its 'which tour' half — a user interrupted mid-teams-orchestration returns to a different tour at its own saved step, with their real position intact on disk and unreachable.",
+      "techniques": [
+        {
+          "technique": "anchor-contracts",
+          "verdict": "conformant",
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:204-208 anchors every step by `highlightTestId`, i.e. the identifiers the test suite already keeps honest, maintained on the elements themselves; src/stores/slices/system/tourSlice.ts:1709-1719 validates identifier syntax at the single setter door and refuses a malformed id; src/stores/slices/system/__tests__/tourAnchors.test.ts is the generated, source-derived manifest gate that fails at commit time on a vanished anchor; and geometry is a live derivation with re-resolution rather than a cached rect (src/hooks/utility/interaction/useTrackedElementRect.ts:36-53)."
+        },
+        {
+          "technique": "narration-and-pacing",
+          "verdict": "conformant",
+          "evidence": "src/features/onboarding/components/useTourNarration.ts:15-16 states and enforces that narration never advances or blocks a step; :71 makes it inert when no voice is configured, :116/:141 keep synthesis errors as a control status rather than a tour error, and :148-179 stop playback on step change, mute and unmount, with mute persisted as a preference rather than a per-step toggle."
+        },
+        {
+          "technique": "tour-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/tourSlice.ts:1401-1402 rebuilds the slice against a hardcoded default tour, so the active-tour half of the resume pair is never persisted; and :1452 stores the cursor as `currentStepIndex`, position-based identity the technique explicitly refuses (inserting a step mid-tour resumes the wrong one), even though completion is correctly keyed by step id at :1607. The rest is strong: per-tour progress written on every transition (:1446-1457), a versioned payload (:1130), completion/dismissed as separate recorded outcomes, an out-of-range clamp on hydrate (:1409), a storage probe that surfaces unavailable persistence once with a Sentry breadcrumb instead of silently resetting (:1167-1199), and skip-on-the-last-step refusing to force-mark the tour complete (:1570-1584)."
+        },
+        {
+          "technique": "missing-anchor-degradation",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/tourSlice.ts:1388,1471 provide exactly one global degradation flag (`tourHighlightMissing`, set at src/features/onboarding/components/TourSpotlight.tsx:31-33) and every step re-centers with a 'not on screen yet' note — a single global policy where the technique requires skip-or-recenter declared per step, because only the author knows whether the step survives its anchor's absence. The degradation also leaves no trace: nothing records which tour, step, anchor and policy fired, so a step whose anchor rots is invisible in completion accounting even though the repo already ships Sentry. Conformant on the invariant that matters most — the overlay is pointer-events-none, the panel controls and exit never depend on resolution, and patience is bounded at 4×500ms (src/hooks/utility/interaction/useTrackedElementRect.ts:40-41)."
+        },
+        {
+          "technique": "action-driven-advancement",
+          "verdict": "deviation",
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:155,205 choreograph a mid-tour route change with fixed 100/300/400ms timers and then resolve the anchor, rather than waiting on observed arrival from the product's navigation state — the raced transition the technique refuses, currently masked by the tracker's retry window. The completion half is exemplary and worth keeping: TourPanelBody.tsx:191-213 labels the forward control 'Skip' (de-emphasized) on an incomplete step and 'Continue' only once the step is genuinely done, so no user can advance believing they performed an action they did not; completion fires from real product state (GuidedTour.tsx:187,197 → tourSlice.ts:1613-1621) and nothing auto-advances on a timer."
+        },
+        {
+          "technique": "overlay-precedence",
+          "verdict": "deviation",
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:462 (and TourNarrativeDeck.tsx:86-90, which hand-coordinates 9998 vs 9999 in a comment) mint the tour's own layer numbers; the product has no layering authority to register into — z-values are ad hoc per feature (z-50 in CrossProjectMetadataModal.tsx, z-[120] in StudioTabBar.tsx, z-[60] in StudioAttention.tsx) — so the tour's rank against dialogs and alerts is unstated and unprovable. Escape is also reinterpreted: GuidedTour.tsx:255 minimizes instead of leaving, while the tour is dimming the product behind it. Conformant on conduct at collision: :260 yields the screen entirely to the onboarding modal and resumes at the same step, and the tour runs no focus trap."
+        }
+      ]
+    },
+    {
+      "context": "14c7d145-2166-454b-aee5-d69d9d527d79",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/styles/globals.css:832 applies the brightness axis as `filter: brightness()` on <html> — the whole-surface pixel filter the standard names as a trap — so every contrast number the product computes (CustomThemeCreator.tsx:33) describes declarations that never reach the screen, and the compensation list it forces (globals.css:852-857) is already growing.",
+      "techniques": [
+        {
+          "technique": "density-and-scale-axes",
+          "verdict": "deviation",
+          "evidence": "src/styles/globals.css:831-833 implements brightness (and dim, :838-840) as a pixel filter over the rendered output instead of rebinding the surface ramp, which escapes the token layer on both teeth the technique names: gates read values the screen never shows, and distinct tints are clamped — visible in the counter-measures it requires, `brightness-lock` (:847-850), a hardcoded compensated-class list (:852-857) and a TS list of exempt tokens re-read through getComputedStyle (src/stores/themeStore.ts:219-241). The axes are also not disjoint: both density and text-scale rebind the same `.typo-body` overrides (globals.css:811-814, 'Mirrors the data-text-scale typo overrides'), so source order decides and the settings screen can lie. And only theme + text-scale are stamped before first paint (public/theme-init.js) — density, brightness, dim, contrast and motion are applied after rehydrate (src/stores/themeStore.ts:379-383), so a compact, dimmed user gets a flash of the defaults at every launch. Conformant on the core move for density and text scale: each is one root attribute driving token overrides (themeStore.ts:167,211), and components never learn the axis exists."
+        },
+        {
+          "technique": "theme-architecture",
+          "verdict": "deviation",
+          "evidence": "There is no follow-the-platform state: no `prefers-color-scheme` or matchMedia read exists anywhere in src/stores/themeStore.ts or public/theme-init.js, and the default is a hardcoded `dark-midnight` (themeStore.ts:286) with `class=\"dark\"` baked into index.html — so the model is two-state where the standard requires three, and the most common state (never opened the setting) is the untested one. Custom themes also ship without passing a contrast gate: src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:266 gates Save only on a non-empty label while :33-35 renders the WCAG ratios as an advisory readout, moving the accessibility floor into the user's hands. Conformant on rebinding at a scope root (themeStore.ts:149-151), on a retired-theme migration that cannot strand a user (:369-372), and — notably well — on derived themes naming their derivation: the seed config is what is stored and `deriveCustomThemeVars` re-runs it on every rehydrate (:373-374), so adding a role does not orphan the theme."
+        },
+        {
+          "technique": "token-enforcement",
+          "verdict": "deviation",
+          "evidence": "eslint.config.js:96-105 sets every token rule the repo wrote to `warn` and `custom/no-raw-spacing-classes` to `off` — the advisory neutering the technique names as the most common way this gate dies; not one raw-value rule can fail a build, so the floor is persuasion. The in-context consequence is visible immediately: AppearanceThemingSection.tsx:53 inlines a raw `minmax(140px, 1fr)` grid track and AppearanceBrightnessSettings.tsx:49 sizes with raw `w-5 h-5`, neither of which any gate can stop. The rule family itself is unusually complete (no-raw-text/spacing/shadow/radius-classes, no-low-contrast-text-classes, no-direct-white-colors) — only the severity is missing."
+        },
+        {
+          "technique": "token-taxonomy",
+          "verdict": "deviation",
+          "evidence": "AppearanceThemingSection.tsx:34 (`text-violet-400`), AppearanceBrightnessSettings.tsx:49 (`text-amber-400`) and AppearanceDensitySettings.tsx:123 consume Tailwind palette primitives directly at call sites while the product does define semantic roles for exactly this (`--brand-violet`, `--status-*`, enumerated at src/stores/themeStore.ts:219-231) — the skipped-layer anti-pattern, and a fixed hex that no theme can rebind. Conformant on typography, which is recipe-shaped throughout (`typo-body`, `typo-caption`, `typo-heading`) rather than loose size/weight ingredients, and on radius roles (`rounded-modal`, `rounded-card`, `rounded-interactive`)."
+        },
+        {
+          "technique": "cross-language-token-parity",
+          "verdict": "deviation",
+          "evidence": "src/stores/themeStore.ts:219-231 hand-maintains a TypeScript list of CSS custom-property names and reads them back with getComputedStyle at :239-241, guarded by `if (current)` — so renaming or removing a token in the stylesheet makes it silently lose its brightness immunity with no gate and no error. The brightness ladder is duplicated too: the authored values live in themeStore.ts:34-45 and are restated in a globals.css comment (:818-819), with the `--app-brightness: 1.25` default (globals.css:826) a third copy of `brightness: 'low'` (themeStore.ts:289) — hand-sync with a comment, which the technique classifies as not a strategy."
+        },
+        {
+          "technique": "motion-tokens",
+          "verdict": "conformant",
+          "evidence": "src/stores/themeStore.ts:198-204 makes reduced motion a token-layer decision — one `data-motion=\"reduce\"` attribute at the scope root that CSS honors globally (relied on at src/features/onboarding/components/TourSpotlight.tsx:50-54) — backed by a dedicated lint rule, eslint-rules/enforce-reduced-motion-fallback.cjs. The duration/easing ladders themselves are defined outside this context and were not evaluated here."
+        }
+      ],
+      "registryProposal": "density-and-scale-axes warns that a whole-surface pixel filter escapes the token layer. This repo is a measured field case worth citing in the application layer: the filter forced a compensation vocabulary — an exempt-token list, a `brightness-lock` utility, and a hardcoded list of Tailwind class prefixes to counter-filter (globals.css:852-857) — which is the exact 'growing dialect' signature the enforcement technique predicts, arriving through the axis rather than through a deadline commit. The trap's second tooth also has a sharper form than the technique states: the product's own contrast instrument (CustomThemeCreator.tsx:33) measures the pre-filter declarations, so the filter does not merely evade an external gate, it invalidates the one the product shows its users."
+    },
+    {
+      "context": "ade5a251-866a-4352-9a03-012d78fe9b74",
+      "subject": "client-state",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:109-118 dispatches family loads with no latest-wins token and no in-flight dedup, so a slow first load landing after a newer one silently repaints the canvas with superseded data — and src/features/teams/sub_mastermind/lib/layoutStore.ts:216 re-stamps any future-version document as the current version, destroying fields a newer build wrote.",
+      "techniques": [
+        {
+          "technique": "status-fsms",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:120-133 runs a per-project invalidation with no per-entity status: its failure is swallowed with a comment, leaving no state anywhere, so that one project's scan cells keep rendering as current — the keyed-machine rule (one machine per independently-running operation instance) is unmet exactly where the operations became per-entity. Also, loadScans/loadMeta set `loading` on every refresh (:110,:99) even when data is held, conflating loading with the stale-with-data case the same file otherwise models. The core is strong and tested: FamilyStatus is one enumerated set per family (:34-38), and `failStatus` (:74-76) is the single shared transition-on-failure function the technique asks for, sending loaded/stale→stale and idle/loading→failed, asserted at __tests__/sceneStore.test.ts:49-58."
+        },
+        {
+          "technique": "async-race-guards",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts contains no request token, dedup registry or abort anywhere (grep: reqId/seq/token/inFlight/dedup/abort → none); loadScans (:109), loadMeta (:98) and loadSentry (:135) all write their response into the slot unconditionally, so two concurrent loads of the same family resolve last-writer-wins by arrival order. The throttles at :75,:80 bound frequency but are not guards — `force: true` bypasses them into exactly the racing case. The repo already owns the right primitive (`createLatestWins`, used at src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:54), so this is an unused utility rather than a missing one."
+        },
+        {
+          "technique": "persistence-and-migration",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/layoutStore.ts:216 unconditionally writes `version: LAYOUT_DOC_VERSION` onto whatever it parsed, so a v3 document written by a newer build is silently downgraded to v2 and re-saved — the future-payload direction the technique requires be handled deliberately (preserve-and-default), and the same file gets it right one level down for panel specs (:191, membership test against SUPPORTED_PANEL_SPEC_VERSIONS, unknown versions dropped rather than coerced). Everything else is exemplary and tested: the durable app DB is the authority with localStorage demoted to a fallback (__tests__/layoutStore.test.ts:155-168), the version lives inside the payload under a stable key (:39-43, 'the version FIELD is what moves'), the v1→v2 author backfill is a real migration step (:172-183), legacy localStorage keys are imported once and written through (test :100-118), and a corrupt document falls back to empty without throwing (test :93-98)."
+        },
+        {
+          "technique": "singleton-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/layoutStore.ts:103 holds the debounce timer (and the in-memory doc and listener set) at module scope with no generation token and no globalThis anchor — and this is the case the technique says is real rather than benign, because a superseded copy's pending timer performs a write observable outside the process: after an HMR re-evaluation the old module flushes its stale doc to the shared `mastermind.layout.v1` row and reverts canvas edits the new copy already hydrated. The test-reset hatch half is present and exercised (`__resetLayoutStoreForTests`, __tests__/persistence.test.ts:7,17 and layoutStore.test.ts:60,130)."
+        },
+        {
+          "technique": "invalidation-strategy",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:7-9 states and implements the discipline — surgical event-driven invalidation instead of a timer — with `invalidateScans(projectId)` (:120-133) patching one project's entry rather than dropping the family, and the remote families keeping only a demoted refresh floor (MONITOR_MIN_INTERVAL :75, LLM_SPEND_MIN_INTERVAL :80) as a backstop."
+        },
+        {
+          "technique": "rehydration-narrowing",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/layoutStore.ts:205-222 guards every field independently against its own default, so one corrupt key cannot reset the whole canvas; :185-196 validates panel specs by membership in an enumerable closed set (`SUPPORTED_PANEL_SPEC_VERSIONS.has(...)`) — a run-time test on the value, not a type assertion; and __tests__/persistence.test.ts:51-59 pins that getters hand out fresh containers so a caller cannot mutate the store through a read."
+        },
+        {
+          "technique": "store-slicing",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:84-133 is one slice per domain of change whose every mutation goes through an operation it defines (loadX / invalidateScans / retryFailed), and the derived view is computed at read time rather than stored — `deriveScene` is a pure function over the families, covered at __tests__/deriveScene.*.test.ts. The repo also enforces the subscription half with a dedicated lint rule (eslint-rules/no-whole-store-subscription.cjs)."
+        },
+        {
+          "technique": "optimistic-write-path",
+          "verdict": "not-applicable",
+          "evidence": "The canvas layout's authority is local: src/features/teams/sub_mastermind/lib/layoutStore.ts writes memory first and debounces through to the app's own DB, with no remote authority that can disagree and nothing to reconcile or revert; the precondition (painting a change before an authority has agreed to it) does not hold."
+        },
+        {
+          "technique": "identity-scoped-eviction",
+          "verdict": "not-applicable",
+          "evidence": "The families this context caches are read from the local application database (dev projects, scans, goals, runner tasks) rather than fetched on behalf of a switchable remote identity, so an account flip cannot make an entry illegitimate here. Noted for the registry rather than as a deviation of this pair: src/stores/authStore.ts:79-93 clears only auth fields and the crypto cache on logout, evicting no caches at all — worth judging in whichever context owns auth."
+        },
+        {
+          "technique": "store-dependency-topology",
+          "verdict": "unknown",
+          "evidence": "No dependency manifest, derived init order or acyclicity assertion was found (grep for storeGraph/topolog/acyclic across src/stores and src/lib returned nothing relevant), but I did not measure the real edge count or look for a cycle among the module stores this context uses (sceneStore, layoutStore, focusStore, canvasActionStore), so I cannot say whether the technique's precondition — a graph that outgrew one author's memory — holds here."
+        }
+      ],
+      "registryProposal": "This context is a test directory, and it surfaced something the subject does not currently say: several of these techniques are testable as behaviours, and the repo proves it — the shared failure-transition function is pinned at __tests__/sceneStore.test.ts:49-58, the restart round-trip and the IPC-unavailable fallback at __tests__/layoutStore.test.ts:120-168, and the reset hatch is exercised in every beforeEach. status-fsms, persistence-and-migration and singleton-lifecycle would each be stronger with a named verification shape (the fixtures that prove them), the way project-identity-and-joins already carries its three tests."
+    },
+    {
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamMemory/libs/memoryDiff.ts:50-55 aligns two runs by memory id, but `get_by_run` selects `WHERE run_id = ?1` (src-tauri/db/src/repos/resources/team_memories.rs:99), so the two sets are disjoint by construction — every run diff reports 100% of B as 'new learnings' and 100% of A as 'no longer present'.",
+      "techniques": [
+        {
+          "technique": "diff-honesty",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/memoryDiff.ts:48 documents the alignment ('matching is by memory ID -- memories created in different runs have different IDs') while :18-21 labels the output `added` = 'new learnings' and `removed` = 'no longer present'; because a memory row carries exactly one run_id, no element of run A can ever match an element of run B, so the vocabulary is strictly stronger than the alignment supports and the panel asserts knowledge creation and loss that never happened. src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:82-87 carries the same defect into the timeline markers, where added always equals current.length and removed always equals prev.length. The file elsewhere shows the author holds the principle — :73-84 refuses to emit an importance shift for a category present on only one side precisely because it would be 'a fabricated claim about a comparison that was never made' — which is what makes the id-alignment gap a defect rather than an oversight."
+        },
+        {
+          "technique": "semantic-level-selection",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/memoryDiff.ts:50-55 operates at the set-membership level over ids and never descends to the entity's fields, so a memory whose text or importance was edited between runs has no representation at all — and, given disjoint id sets, keyed alignment degenerates rather than aligning. The technique's honest fallback (align by a derived content key for immutable values, or fall back and say so) is not taken; the per-category rollup at :64-85 is a coarser summary layered beside the broken alignment, not a level chosen for the entity."
+        },
+        {
+          "technique": "presentation-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:6-9 renders the triage mode as bare `added`/`removed` integers with no predicate — no unit, no level, no statement of what alignment produced them — so the counts cannot be compared against anything and inherit the alignment defect invisibly. Conformant on the hardest part of this mode: :64-79 refuses to emit a summary at all when the window's oldest run has no fetched baseline, on the explicit ground that 'everything counted as added' would be a fabricated claim on the one marker the reader cannot check — zero-vs-not-computed kept distinct, which is where this mode usually fails."
+        },
+        {
+          "technique": "computation-offload",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:49-77 mints a request identity at issue time and applies the response only if it still answers the current pair, on the success, error and finally paths alike, through the repo's one shared `createLatestWins` implementation; src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:43,92 pairs a cancellation flag with a per-mount cache bounded at :20 and reaped by unmount, and :12 caps the fan-out at 12 runs. Failure is spelled as failure rather than as an empty diff (RunDiffView.tsx:75 sets an error state distinct from a computed result)."
+        },
+        {
+          "technique": "pair-and-baseline-selection",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:24-25,38-44 makes both sides of the pair explicit and user-chosen, seeds the default once so a background stats refetch cannot snap the reader's chosen baseline out from under them (:30-35), and guards the degenerate self-comparison at :47 (`runA !== runB`) instead of rendering (X, X) as an empty diff. The baseline species is temporal and the sides are chosen by the question rather than by a property of the results."
+        },
+        {
+          "technique": "drift-against-declared",
+          "verdict": "not-applicable",
+          "evidence": "Both sides of every comparison in this context are past states of the same team's memory (src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:52); there is no declared expectation, manifest or contract acting as the left side, so the promise-as-baseline species has no instance here."
+        }
+      ],
+      "registryProposal": "Two of this context's listed paths do not exist in the repo — src/features/teams/sub_teamMemory/index.ts and src/features/teams/sub_teamMemory/components/panel/TeamMemoryBadge.tsx — while the files that actually carry this subject (components/diff/RunDiffView.tsx and components/diff/DiffContent.tsx) are not listed; the context's path set has drifted and the pair is only evaluable through the libs/ entries. Separately, diff-honesty's 'the vocabulary matches the alignment' clause is confirmed here in its strongest form: the alignment is not merely weak but provably empty (a schema-level one-run-per-row constraint), so the technique could offer a cheap detection rule — if the two sides are drawn from a partition of the same table, an id-set difference cannot be a diff — which a reviewer can check without running anything."
+    }
+  ]
+}

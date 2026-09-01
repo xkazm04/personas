@@ -1,0 +1,493 @@
+{
+  "worker": "p-7",
+  "project": "personas",
+  "evaluatedAt": "2026-08-29",
+  "pairs": [
+    {
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/mcp_server/auth.rs:86 exact-matches `personas:execute` while the HTTP surface honours resource-scoped grants, so least-privilege keys cannot call any MCP tool and the only working token is the never-expiring blanket grant install.rs:67-74 mints",
+      "techniques": [
+        {
+          "technique": "transport-selection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/mcp_server/install.rs:85 spawns the server as a stdio child process for a tool that touches the local DB and filesystem — decision-table row 1, identity by parenthood; cross-call handles (execution ids) are not principal-bound, but src-tauri/src/mcp_server/mod.rs:101 re-authenticates every tools/call at the door, so handle possession alone grants nothing."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth.rs:86 tests scope equality against a single `personas:execute` string while src-tauri/src/engine/management_api.rs:289 prefix-matches `personas:execute:persona:<id>`; the UI's only execute path mints the resource-scoped form (src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:90), so those keys are rejected by the MCP door, and `tool_name` (auth.rs:61) is used only for the audit path — every one of the ~33 tools requires the same one grant, so the token/operation intersection is all-or-nothing."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1194 returns an unknown tool as an in-band `isError` result and handlers return missing-argument failures the same way (tools.rs:1852), so an invalid call is indistinguishable from a domain outcome; the gmail/gdrive bridge handlers (tools.rs:1590) also return raw upstream payloads inside the tool's own text block with no attribution separating upstream content from the server's voice."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:747 (the hand-built listing array) and tools.rs:1159 (the dispatch match) are two authorities for one tool set that can drift; the door validates no arguments against the published `inputSchema`, enforces no timeout or result-size cap, and the listing is unpaginated."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/install.rs:110-122 inserts/overwrites the `personas` mcpServers entry and writes the file with default permissions and no consent display of the exact command line, while install.rs:67-74 mints the token it embeds with `expires_at: None` — the technique's named characteristic failure, a never-expiring bearer credential in a config file with no reaper."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: all three of the technique's layers (framing, application gates, the human seat) are owned by the host that assembles the model's context. This context publishes a tool server; the consuming host is a third-party CLI configured elsewhere (src-tauri/engine/src/cli_mcp_config.rs). The publisher-side slice is judged under tool-schema-design above."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails twice: the technique gates a host's outbound calls over a schema it does not own, and this context owns its own schemas; and no tool in the catalog (src-tauri/src/mcp_server/tools.rs:747-1155) accepts a recipient or an audience — there is no send, share or grant operation for a gate to read."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "unknown",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1133-1136 records a real tool-surface reduction (scraper tools moved onto the event bus, only `query_dataset` kept) with a rationale but no measurement; I cannot tell from the listed paths whether a fixed-model-roster comparison exists elsewhere in the repo."
+        }
+      ]
+    },
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:88-91 mints one per-persona execute scope instead of a blanket grant and defaults to a 90-day expiry (:49); every applicable technique here is realized",
+      "techniques": [
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:88-91 builds one `personas:execute:persona:<id>` scope per named persona (no omnibus execute), :49 defaults expiry to 90 days, and src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:140/155 expose revoke and delete while :51-60 flag keys that are old and unused — a review surface for standing grants the technique asks for but does not describe."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:79-88 requires an explicit approval per pairing with the requesting origin shown, an arm delay (:24) against accidental one-click grants, per-request scope narrowing (:71-77) and a 30-day default expiry (:33); src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx:50-65 shows the whole generated config entry verbatim rather than a summary."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 points clients at a loopback HTTP service, which is decision-table row 3 rather than the local-port trap — it genuinely serves remote paired apps — and the identity work the table demands is present: token middleware (McpServerInfoPanel.tsx:4-8) plus origin-bound paired keys (ApiKeysSettings.tsx:169-171)."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context issues and manages credentials; it declares no tool, schema or result contract."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no registry and no dispatch door live here — the panel is a read-only reference to a server implemented in src-tauri."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no tool result enters a model's context anywhere in this context's paths."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no outbound tool calls are composed or gated here."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context exposes no capability to a reasoning loop, so nothing sits on the orchestration/agency dial."
+        }
+      ]
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:105-109 renders load-failure, not-yet-discovered and honestly-empty as three distinct states, and McpToolResultDisplay.tsx:27 propagates the server's is_error flag rather than flattening it",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:105/107/109 distinguish 'could not be reached', 'not discovered yet' and 'honestly empty' — the technique's failure-at-the-seam rule, which most hosts collapse into one blank list; every invocation is an explicit human click (McpToolRow.tsx:48-54), so the consent seat is the surface itself."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:27 renders the server's `is_error` flag as a distinct state rather than persisting a failed call as a successful row, and :8 renders null content as '(empty)' instead of a blank success; McpToolInputForm.tsx:40-50 drives the form from the declared schema's required-ness and types."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the technique defends a model that holds tool-invocation authority over its own context. In this context a human operator triggers discovery (McpToolsTab.tsx:32-44) and execution and reads the output in a <pre>; no model consumes these results or descriptions."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the gate exists because a model composes the arguments. Here the arguments are typed by the operator (McpToolsTab.tsx:51-56) who is the sanctioning party."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the transport is fixed by the vault credential's gateway configuration; this surface passes a credentialId to a backend command (src/api/agents/mcpTools.ts:20-32) and makes no transport choice."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no token is minted, scoped or validated here — the credential is resolved backend-side from the credentialId."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this is the consuming side; no registry, door or listing is published here."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: an explorer surface has no pipeline stage to move onto the tool surface."
+        }
+      ]
+    },
+    {
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/tool_usage.rs:15,24 record and aggregate tool invocations with no success/error dimension, so the usage ledger cannot distinguish a working tool from a failing one even though the audit ledger beside it can",
+      "techniques": [
+        {
+          "technique": "tool-schema-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:16,22 correctly carry `result_status` and a typed `error_kind` into the persisted audit row, but the parallel usage ledger stores only `invocation_count` (src-tauri/core/src/models/tool_usage.rs:15) and aggregates only `total_invocations` (:24) — a failed call and a successful call are the same row in every usage analytic, which is the technique's named empty-success-as-failure rebuilt one layer up."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/tool_audit.rs:13-15 attributes every tool execution to a persona and a credential, so 'which consumer invoked this tool' is a lookup rather than a guess; src-tauri/core/src/models/audit_log.rs:8-18 keeps the same per-credential trail immutable."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: these files are model/DTO definitions; no registry, dispatch door or listing surface exists in this context."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no transport is chosen or implemented here."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no install flow, connection lifecycle or consent surface lives in these model definitions."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: nothing here assembles a model's context."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no call arguments are inspected or gated here."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no pipeline stage or tool surface is defined in this context."
+        }
+      ]
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/cli_mcp_config.rs:255 marks the sidecar always-loaded, defeating the host CLI's progressive discovery so every persona spawn carries the full ~33-tool catalog into the model's prompt",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:255 calls `.always_loaded()` to skip the CLI's tool-search deferral so the whole personas catalog is deterministically present on every spawn — the opposite of progressive discovery, and the catalog sprawl the golden path calls a quality defect; :273 also writes the secret-bearing config with default file permissions. The rest of the technique is strongly realized: :129-135 deliberately refuses to auto-merge `mcpServers` entries from an untrusted project repo because that would spawn an arbitrary command with no consent, and :167/:297 scrub the run's plaintext credentials before every write and on every exit path."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:250-256 configures the sidecar as a stdio child process — identity by parenthood for a local-DB/local-file tool — and src-tauri/engine/src/cli_process.rs:332,590 set `kill_on_drop(true)` so the spawner reaps what it created; the :9420 listener (src-tauri/src/engine/webhook.rs:98,170) is the multi-client case the decision table sends to HTTP and does the identity work (token middleware, HMAC on webhooks, paired-origin allowlist warmed at webhook.rs:132)."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:183-192 injects a short-lived per-run system bridge key rather than a standing credential, and :297 names its reaper explicitly — the config carrying it is deleted on every execution exit path, so the token that reaches the child dies with the run."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context relays webhooks and configures a spawned client; it composes no tool server of its own."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no tool schema or result contract is declared in these paths."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no model context is assembled here — the spawned CLI owns its own transcript."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no tool call arguments pass through this context."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: this context wires a fixed toolbelt into a spawn; it holds no pipeline stage that could migrate onto the tool surface."
+        }
+      ]
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "triage-queues",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:369-373 has no identity tiebreak, so equal-weight equal-timestamp items have no defined position and a poll can reorder the deck under the reviewer; everything else in the subject is realized unusually well",
+      "techniques": [
+        {
+          "technique": "source-normalization",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:26-135 declares one item contract (closed kind vocabulary, universal verdict spine, per-item branches, facts, origin links) that seven adapters fill, with pre-translated labels so no downstream surface branches per source; src/features/agents/quick-answer/triage/useUnifiedTriage.ts:456,468 track per-source failure and capped-page status separately, so a source that failed to load never renders as a source with zero items and a full fixed-limit page is reported as a slice."
+        },
+        {
+          "technique": "queue-ordering-and-identity",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:372 returns 0 when weight and createdAt both tie, so the ordering is not total — two items raised in the same second have no defined relative position and a wholesale poll replacement can swap them under the reviewer; separately src/features/agents/quick-answer/triage/triageAdapters.ts:1013 mints a build-question's identity from its unanswered field keys, so answering one field elsewhere mints a new id and orphans that item's skip-ledger and resolved-set entries."
+        },
+        {
+          "technique": "focus-mode",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:300-305 arms a 1200 ms watchdog on every throw so a lost flight cannot wedge the deck; :255,:266 bind the verdict to the identity of the card that was displayed and drop a mismatched flight report rather than redirecting it to the new head; :268-282 versus :364-370 ask a rejection's reason after a gesture and before a key, without re-firing a departure that already happened; src/features/agents/quick-answer/triage/triageQueue.ts:42,133 bound skips at two passes and :170-171 make the progress denominator decided-plus-pending so it can never be exceeded."
+        },
+        {
+          "technique": "verdict-writeback",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:12 states and enforces the invariant that every decision defers, writes or throws — never nothing — with all writes injected as ports (:35-116) so every branch is exercisable without the surface mounted, and `seenStatus` threaded through each port (:44-52) makes each verdict a single-winner compare-and-swap at the owning store."
+        },
+        {
+          "technique": "bulk-triage",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the deck deals exactly one item at a time (src/features/agents/quick-answer/triage/deck/useDeckControls.tsx:158) and offers no multi-select, so no single judgment can cover many items."
+        },
+        {
+          "technique": "queue-lifecycle",
+          "verdict": "conformant",
+          "evidence": "Verdicts transition items to recorded terminal states at their owning stores (src/features/agents/quick-answer/triage/triageDispatch.ts:36-102) rather than deleting them, undo restores through the same ports (:110-111), badge counts derive live from the remaining set (src/features/agents/quick-answer/triage/triageQueue.ts:169), and every item carries an origin link (triageTypes.ts:129-134). Expiry is correctly absent here: source-normalization's read-model rule forbids this aggregator holding state a refresh cannot rebuild, and each source's pending list contains one row per condition, so entrance dedup has nothing to fold."
+        }
+      ]
+    },
+    {
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "subject": "triage-queues",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:426 renders a failed fetch as the celebratory empty state because `reviewQueue.error` is never read, telling the operator there is nothing to do when the queue could not be loaded",
+      "techniques": [
+        {
+          "technique": "source-normalization",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/data/useLayeredList.ts:219 exposes `error` and src/features/overview/sub_manual-review/components/ManualReviewList.tsx never reads it — a failed fetch falls through to :426 and renders IllustrationEmptyState with 'no reviews, create a persona', the exact lie the technique names: the operator sees a calm queue and the unloaded source's items age unseen."
+        },
+        {
+          "technique": "bulk-triage",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/BulkActionBar.tsx:73-86 offers approve-all and reject-all as visually and behaviourally symmetric buttons behind one identical confirm step, and the confirmation at :33-37 states a bare count with no predicate (which filter, which persona, which severity); since some manual reviews gate held team steps, a bulk approve performs unreviewed actions with no more friction than a bulk dismiss."
+        },
+        {
+          "technique": "verdict-writeback",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:257-259 reports batch partial failure as a bare count toast ('3 failed') without naming the items, so the operator cannot tell which of their judgments were consumed and discarded; the reload at :263 does converge the surface, but per-item truth — the technique's stated contract — is never rendered."
+        },
+        {
+          "technique": "queue-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:169-181 recovers 'a machine resolved this, not a human' by regex over free-text `reviewer_notes` because, as :158-160 says outright, there is no structured auto-resolved column — the automated triage door and the operator write the same terminal status, so the distinction every dismissal-rate and 'was this handled' instrument depends on exists only as a substring that any note rewording erases."
+        },
+        {
+          "technique": "queue-ordering-and-identity",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/KnowledgeApprovalsPanel.tsx:34-35 tracks progress as an integer index into a snapshotted id array rather than a cursor holding an item identity over a remaining set (the sibling deck does it correctly at triageQueue.ts:164), so a row resolved elsewhere leaves the index pointing at a different item; and src/features/overview/sub_manual-review/components/DecisionModeTabs.tsx:232-243 splits the decision center into three separate collections with their own bodies rather than one ordered set with group headers, so the global ordering policy holds nowhere."
+        },
+        {
+          "technique": "focus-mode",
+          "verdict": "unknown",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:446 switches the pending filter into a focus view implemented in ReviewFocusFlow.tsx / FocusedDecisionCard.tsx, which are not in this context's declared paths; I did not read them and will not guess at the deck contract, watchdog or skip semantics."
+        }
+      ]
+    },
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14-45 is a template-instantiation wizard's prop contract — 'adoption' here means a user configuring one persona from a template, not measuring a population's uptake of a practice",
+      "techniques": [
+        {
+          "technique": "attribution-provenance-tiers",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: there is no adoption signal to grade. src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx and adoptionImpact.ts:15-53 translate one user's in-flight configuration answers into plain-language impact statements; nothing is observed, allocated or declared about anyone's behaviour."
+        },
+        {
+          "technique": "adoption-distribution-bands",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no eligible population and no denominator exist. The surface configures a single persona for the operator running it (personaLayoutAdoptionTypes.ts:17-21)."
+        },
+        {
+          "technique": "dormancy-verdicts",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: nothing here records or evaluates use of a shared artifact over time; there is no activity ledger and no recency window."
+        },
+        {
+          "technique": "before-after-outcome-pairing",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no assessment instrument and no adoption instant are recorded, so there is nothing to pair."
+        },
+        {
+          "technique": "mentor-learner-pairing",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: there is no population of units with measured depth on a practice from which to propose a pairing."
+        },
+        {
+          "technique": "adoption-vs-outcome-separation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: neither an adoption ledger nor an outcome ledger exists in this context; adoptionImpact.ts:15-24 produces UI copy, not a metric."
+        }
+      ],
+      "registryProposal": "This pairing is a vocabulary collision, not a coverage hole. The matcher scored `adoption-measurement` against a context whose directory is literally named `adoption/` but whose subject is a template-instantiation wizard. Routing by the golden path's precondition — 'you are measuring other people's behaviour, observed at second hand, across a stated eligible population' — rejects it immediately, where routing by the word 'adoption' accepts it. Suggest the map-builder demote lexical matches on a subject's own headline noun when the golden path's stated precondition is population-level measurement and the context has no population; and that these two contexts be re-paired against a form/wizard subject in ui-surfaces or client-architecture."
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "adoption-measurement",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:10-36 summarizes one user's answers in a template-configuration questionnaire; no uptake signal, population or ledger exists in this context",
+      "techniques": [
+        {
+          "technique": "attribution-provenance-tiers",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the only recorded values are the operator's own answers to configuration questions (questionnaireHelpers.ts:52-57), which are inputs to a build, not signals about anyone's practice."
+        },
+        {
+          "technique": "adoption-distribution-bands",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no eligible population is defined or countable anywhere in this context."
+        },
+        {
+          "technique": "dormancy-verdicts",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no use records are written or read; the questionnaire is a single-session form."
+        },
+        {
+          "technique": "before-after-outcome-pairing",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no assessment readings and no adoption instant exist to pair."
+        },
+        {
+          "technique": "mentor-learner-pairing",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: no measured units and no capability dimension exist here."
+        },
+        {
+          "technique": "adoption-vs-outcome-separation",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: there is no uptake figure and no outcome figure in this context to keep apart."
+        }
+      ],
+      "registryProposal": "Same vocabulary collision as the sibling context b88ef121 — see that row's proposal."
+    },
+    {
+      "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+      "subject": "realtime-events",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/realtime/useRealtimeEvents.ts:112 builds the displayed list and its derived stats purely from pushed payloads with no authoritative read path, so a counted drop or a late mount produces a confidently wrong events-per-minute and success rate that nothing heals",
+      "techniques": [
+        {
+          "technique": "subscription-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:96-100 drops the newest early arrival once the 50-entry buffer is full and keeps the oldest — the inverse of the newest-retained rule, so a consumer attaching milliseconds late replays a stale prefix and misses exactly the recent transitions the buffer exists to close the race on; :57-60 also fans out over the live subscriber Set rather than a snapshot, leaving mid-dispatch detach behaviour undefined rather than decided. The rest is strong: one native listener per name, teardown that handles the in-flight handshake (:109-115,:120-130), and counted evictions with a named channel (:65-76)."
+        },
+        {
+          "technique": "coalescing-and-batching",
+          "verdict": "deviation",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:39,103 hold the frame buffer as a list rather than a keyed map, so N facts about one entity in a burst are applied N times instead of collapsing by supersession; and when the last consumer detaches (:163-168) the pending frameQueue is neither flushed nor counted as discarded — the scheduled rAF at :52-62 fires into an empty subscriber set and the batch vanishes silently, the same shed-without-counting hole the golden path forbids."
+        },
+        {
+          "technique": "event-registry",
+          "verdict": "deviation",
+          "evidence": "src/lib/eventRegistry.ts:30 is a genuine closed vocabulary with a Rust mirror and a real parity gate (scripts/check-event-registry.mjs:34-51, reading both live artifacts), but src/hooks/realtime/useRunEventListener.ts:60,83 accepts a free-text `eventName` and calls raw `listen`, and the gate only diffs the two name lists — it never asserts it found the emit/subscribe sites, so an off-registry subscription is invisible to it and presents at runtime as 'nothing happened'. src/lib/eventRegistry.ts:5 also names `src-tauri/src/engine/event_registry.rs` as the mirrored authority; that file does not exist."
+        },
+        {
+          "technique": "push-vs-refetch-reconciliation",
+          "verdict": "deviation",
+          "evidence": "src/hooks/realtime/useRealtimeEvents.ts:112 initializes from an empty array and never reads the persona-events store; :189 applies each pushed payload as state with an unchecked `as RealtimeEvent` cast, and :67-108 derives eventsPerMinute and successRate from that push-only window — so the two drops the hook honestly counts (:113-114,:157) degrade the display from late to wrong, with no refetch-on-mount, on-focus or periodic sweep to heal them."
+        },
+        {
+          "technique": "change-data-capture",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: storage-level change hooks, transaction staging and the bounded capture channel live in the backend; this context holds only frontend consumers of an already-published bus."
+        },
+        {
+          "technique": "outbound-fan-out",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: src/hooks/realtime/useSmeeRelayStatus.ts and useCloudWebhookRelay.ts render a relay's status payload; the durable-watermark pull loop, per-tick caps and dead-letter records they report on are implemented in src-tauri, not here."
+        }
+      ]
+    },
+    {
+      "context": "68e3a26f-d83a-447b-a2d0-ad875004506f",
+      "subject": "web-scraping",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/scraper/useScrapeForm.ts:13-23 has no failure-semantics member on a rule, so no field can be required and extraction collapse is indistinguishable from a quiet day — and ScrapeEditorWizard.tsx:84 lets an unpreviewed rule set save armed",
+      "techniques": [
+        {
+          "technique": "extraction-rule-dsl",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/useScrapeForm.ts:13-23 declares target field, locator and (for css only) cardinality but omits the technique's mandatory failure-semantics member and any post-processing step, so no rule set can declare a required field and the subject's honesty law has no instrument to stand on; field names are free text (:29,:65) rather than drawn from a dataset schema, and :65 silently drops any rule whose name is blank instead of failing at a validation door — `canSave` (:154) never checks that a selector parses, a regex compiles or a pointer is well-formed. The flat-editable-form-serialized-only-at-the-edges rule is realized well (:51-68)."
+        },
+        {
+          "technique": "llm-assisted-rule-authoring",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/LlmRuleBuilder.tsx:74 advertises 'No URL yet — Claude will infer from your description' and :33 passes a possibly-undefined `urls[0]`, so rules can be authored from the model's imagination rather than the real fetched page — the precise failure the technique names; :39 then adopts the proposal into the form on a bare non-empty-count check, with no execution against the authoring page, no per-rule verification shown to the human, no fetch/time/digest provenance stamp, and replace-vs-merge chosen automatically rather than as an informed human act."
+        },
+        {
+          "technique": "dry-run-preview",
+          "verdict": "deviation",
+          "evidence": "The preview itself has all four properties — src/features/scraper/EditorSteps.tsx:127 runs the edited rules against the live URLs through the production `scraper_preview_extract` and writes nothing — but the gate does not exist: src/features/scraper/ScrapeEditorWizard.tsx:84 disables Save only on `!form.canSave`, and the step rail at :43 lets the author jump straight past Preview to Schedule and save; src/features/scraper/useScrapeForm.ts:121 defaults `enabled` to true, so never-previewed rules enter the scheduler armed rather than as marked-unverified drafts."
+        },
+        {
+          "technique": "shape-change-detection",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/useScraperData.ts:179-187 derives a run's health by prefix-matching a free-text `lastStatus` string, so a run that fetched successfully and extracted nothing renders as a green pill (src/features/scraper/ScraperControlRoom.tsx:132,204); there are no per-rule hit counts, no baseline from the authoring preview, no record-count expectation, and no collapse, quarantine or re-authoring state anywhere on the operator surface."
+        },
+        {
+          "technique": "dedup-and-datasets",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/useScrapeForm.ts:163 makes `key_field` optional and :154 omits it from `canSave`, so a scrape can be created with a dataset and no identity key — re-scraping the same page then has nothing to reconcile against and appends rather than updating, which is the dataset corruption the technique exists to prevent."
+        },
+        {
+          "technique": "scrape-scheduling",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/EditorSteps.tsx:192-199 accepts a raw 5-field cron string with no validation and no minimum-cadence floor, and neither the step nor useScrapeForm.ts:164 surfaces any politeness posture — nothing prevents a per-minute schedule against a third-party host, and the guest obligations the golden path states are absent from the one surface where cadence is chosen."
+        },
+        {
+          "technique": "soak-mode-and-verdict-replay",
+          "verdict": "not-applicable",
+          "evidence": "Precondition fails: the technique governs the rollout of a shape-change detector from observing to consequential, and no detector exists anywhere in this system (see shape-change-detection above) — there are no stored verdicts to replay and no consequences to place behind a flag."
+        }
+      ]
+    }
+  ]
+}
