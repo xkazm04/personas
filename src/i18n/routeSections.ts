@@ -34,6 +34,9 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'radio',
   // Persona Monitor is reachable from the always-mounted titlebar button.
   'monitor',
+  // `deliberation` — the Monitor's Conversations view renders deliberation
+  // status captions from it (DeliberationRail), so it rides with `monitor`.
+  'deliberation',
   // Rendered by App.tsx directly, before/above any route:
   //   consent          → FirstUseConsentModal (blocks first use, all routes)
   //   remote_approval  → RemoteApprovalPrompt (pairing prompt, all routes)

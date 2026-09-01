@@ -66,10 +66,9 @@ import { scanSectionReferences, parseRouteSections } from './lib/section-refs.mj
  * weight in all 14 locales.
  */
 const UNREFERENCED_SECTIONS = {
-  deliberation:
-    '2026-08-09 — 51 keys, zero call sites. Team-deliberation UI was rebuilt as ' +
-    'features/fleet/monitor/channels/* and features/teams/sub_deliberations/*, which ' +
-    'carry their own strings; this catalog was never repointed. Retire candidate.',
+  // `deliberation` left this registry 2026-09-01: DeliberationRail (Monitor →
+  // Conversations) now renders its status captions from t.deliberation.status_*,
+  // so the section is live again and rides in BASE_SECTIONS beside `monitor`.
   planner:
     '2026-08-09 — 67 keys, zero call sites. A standalone Planner page (nav_label, ' +
     'page_title, steps_heading, …) that no longer exists; the surviving planner UI is ' +
