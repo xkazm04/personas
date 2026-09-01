@@ -234,8 +234,15 @@ pub fn spawn_headless_session(
     registry().insert(inner);
     emit_registry_changed(&app, "added", &id);
 
-    // Cheap LLM naming from the task, same as spawn-with-task on the PTY lane.
-    super::naming::name_session_from_task(app.clone(), id.clone(), task);
+    // Cheap LLM naming from the task, same as spawn-with-task on the PTY lane -
+    // INCLUDING its guard, which this lane was missing: the one-shot is an extra
+    // `claude` process with a 30 s timeout per session, and it is pure waste when
+    // the spawn args already carry `--name` (the CLI titles itself with it) or a
+    // `--resume` (the woken conversation keeps its own identity, and the
+    // transcript watcher adopts its on-disk `ai-title` for free).
+    if !super::naming::args_supply_name(&extra_args) {
+        super::naming::name_session_from_task(app.clone(), id.clone(), task);
+    }
 
     // stdout reader — parses stream-json events, drives state, feeds the ring.
     let app_out = app.clone();

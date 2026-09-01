@@ -127,6 +127,12 @@ struct RollupAcc {
     last_context_tokens: i64,
     parse_errors: i32,
     total_lines: i32,
+    /// Claude Code's OWN model-generated session title, from the `ai-title`
+    /// record it writes into the transcript. Folded here (and not only in the
+    /// 256 KB tail `recap_from_lines` reads) so the incremental ingest sees it
+    /// the moment it is appended - which is what makes it a FREE alternative
+    /// to paying a Haiku process for the same string. Latest record wins.
+    ai_title: Option<String>,
     /// `message.id` of the assistant record folded last — the de-duplication
     /// key. See [`RollupAcc::fold_line`]'s assistant arm for why one slot is
     /// enough (and why a `HashSet` would be the wrong shape here: this
@@ -271,6 +277,23 @@ impl RollupAcc {
             }
             "user" if is_real_user_prompt(message) => {
                 self.user_messages += 1;
+            }
+            // Claude Code names the session itself, AFTER it has run - which is
+            // why this is a deferred adoption pass and not a replacement for
+            // naming at spawn.
+            //
+            // Supply, re-measured 2026-09-01 across `~/.claude/projects`:
+            // 197 of 3,287 transcripts carry the record all-time (6.0%), and
+            // 30 of the 200 newest (15%). NOT the 32/60 an older measurement
+            // recorded - a free title is available for a minority of sessions,
+            // so this backfills, it does not replace the naming path.
+            "ai-title" => {
+                if let Some(t) = v.get("aiTitle").and_then(|x| x.as_str()) {
+                    let t = t.trim();
+                    if !t.is_empty() {
+                        self.ai_title = Some(t.to_string());
+                    }
+                }
             }
             _ => {}
         }
@@ -649,6 +672,51 @@ fn ingest_pass(claude_session_id: &str, path: &Path, budget: u64) -> bool {
     }
     st.offset += consumed;
     consumed > 0 && st.offset < size
+}
+
+/// Claude Code's own `ai-title` for a session, if the ingest has folded one.
+/// Cheap (one map lookup) and `None` for the overwhelming majority of ids, so
+/// it is safe to consult on the watcher's per-append path.
+pub fn ai_title_for(claude_session_id: &str) -> Option<String> {
+    let store = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    store
+        .entries
+        .get(claude_session_id)
+        .and_then(|st| st.acc.ai_title.clone())
+}
+
+// TODO(lotC-insert): local copy of `registry::is_generic_claude_title`, which
+// is private in a file a sibling lot owns. The Director makes it `pub(super)`
+// and deletes this copy at quiescence - the two must not drift in the meantime.
+/// True when a title is just Claude Code's bare generic name.
+fn is_generic_session_title(title: &str) -> bool {
+    let core = title
+        .trim()
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .trim();
+    core.eq_ignore_ascii_case("claude") || core.eq_ignore_ascii_case("claude code")
+}
+
+/// Whether a session's `ai-title` read off disk should replace its current
+/// registry title.
+///
+/// **It can never clobber an operator rename.** `fleet_rename_session` writes
+/// `FleetSessionInner::name`; `title` is only ever written by `set_title` (the
+/// OSC stream and the Haiku one-shot). Nothing marks a title as
+/// Haiku-generated, so the conservative rule is the one adopted here: take the
+/// disk title only when the session has NO real title of its own. A live OSC
+/// title is a summary of what the session is doing *now*, which beats a title
+/// the model wrote about the run once - so it wins, and the free title is a
+/// backfill for the sessions that never got one.
+pub fn should_adopt_disk_title(current_title: Option<&str>, disk_title: &str) -> bool {
+    let disk = disk_title.trim();
+    if disk.is_empty() || is_generic_session_title(disk) {
+        return false;
+    }
+    match current_title.map(str::trim) {
+        None | Some("") => true,
+        Some(cur) => is_generic_session_title(cur),
+    }
 }
 
 /// Current rollup for a session, if any bytes have been ingested.
@@ -1502,6 +1570,75 @@ mod tests {
             whole.total_lines
         );
         evict_ingest(id);
+    }
+
+    // -- Free titles: fold Claude Code's own `ai-title`, and the rule that
+    // decides when it may replace a session's registry title.
+
+    #[test]
+    fn the_rollup_folds_claude_s_own_ai_title() {
+        // The captured recap fixture carries a real `ai-title` record; the
+        // rollup fold saw it only in the 256 KB recap tail before this.
+        let s = fixture(FIXTURE_RECAP);
+        let mut acc = RollupAcc::default();
+        for l in &s {
+            acc.fold_line(l);
+        }
+        assert_eq!(acc.ai_title.as_deref(), Some("REDACTED"));
+
+        // Latest record wins, and a blank one never overwrites a real title.
+        acc.fold_line(r#"{"type":"ai-title","aiTitle":"  "}"#);
+        assert_eq!(acc.ai_title.as_deref(), Some("REDACTED"));
+        acc.fold_line(r#"{"type":"ai-title","aiTitle":"Fleet Ingest Eviction"}"#);
+        assert_eq!(acc.ai_title.as_deref(), Some("Fleet Ingest Eviction"));
+
+        // A transcript with no such record leaves it unset. Folded from the
+        // CAPTURED tool-pair fixture, not an invented envelope - the same
+        // discipline the fixtures above are built on (census rule
+        // `invented-stream-envelope-fixture`).
+        let mut none = RollupAcc::default();
+        for l in fixture(FIXTURE_TOOL_PAIR) {
+            none.fold_line(&l);
+        }
+        assert!(none.ai_title.is_none());
+    }
+
+    #[test]
+    fn ai_title_is_readable_through_the_ingest_map() {
+        let id = "lotd-ai-title-readback";
+        let (_dir, path) = write_fixture("t.jsonl", FIXTURE_RECAP);
+        assert!(ai_title_for(id).is_none(), "nothing ingested yet");
+        ingest_catch_up(id, &path);
+        assert_eq!(ai_title_for(id).as_deref(), Some("REDACTED"));
+        evict_ingest(id);
+        assert!(ai_title_for(id).is_none(), "evicted with the rollup");
+    }
+
+    #[test]
+    fn a_disk_title_only_fills_a_gap_it_never_overwrites_a_real_one() {
+        // Backfill: no title at all, or an empty one.
+        assert!(should_adopt_disk_title(None, "JWT Auth Refactor"));
+        assert!(should_adopt_disk_title(Some("   "), "JWT Auth Refactor"));
+        // A generic Claude title is not a title.
+        assert!(should_adopt_disk_title(Some("claude"), "JWT Auth Refactor"));
+        assert!(should_adopt_disk_title(
+            Some("* Claude Code"),
+            "JWT Auth Refactor"
+        ));
+
+        // A real title - an OSC summary or the Haiku name - is left alone.
+        assert!(!should_adopt_disk_title(
+            Some("claude - fixing auth"),
+            "JWT Auth Refactor"
+        ));
+        assert!(!should_adopt_disk_title(
+            Some("Dark Mode Toggle"),
+            "JWT Auth Refactor"
+        ));
+
+        // A worthless disk title is never adopted, whatever the current one.
+        assert!(!should_adopt_disk_title(None, "   "));
+        assert!(!should_adopt_disk_title(None, "Claude Code"));
     }
 
     #[test]

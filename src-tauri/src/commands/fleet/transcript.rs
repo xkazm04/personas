@@ -122,8 +122,52 @@ fn handle_event(app: &AppHandle, event: Event) {
                 if !refresh_activity(app, &claude_session_id) {
                     bind_unbound_by_cwd(app, path, &claude_session_id);
                 }
+                // A title Claude Code already wrote beats one we pay Haiku for.
+                adopt_ai_title(app, &claude_session_id);
             }
         }
+    }
+}
+
+/// Adopt Claude Code's own `ai-title` as the session's title when the session
+/// has no real title of its own.
+///
+/// The record is written into the transcript AFTER the session has run, so this
+/// is a deferred backfill, not a replacement for naming at spawn - but it is
+/// free, and it is the model's own name for the run. The rollup already folded
+/// it during `ingest_delta` above; the precedence rule (and why this can never
+/// clobber an operator rename, which lives in `name` and not `title`) is
+/// [`super::transcript_read::should_adopt_disk_title`].
+fn adopt_ai_title(app: &AppHandle, claude_session_id: &str) {
+    // Cheap gate first: `None` for the overwhelming majority of transcripts, so
+    // the registry scan below is only paid when there is something to adopt.
+    let Some(disk_title) = super::transcript_read::ai_title_for(claude_session_id) else {
+        return;
+    };
+    let bound = {
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .find(|s| s.claude_session_id.as_deref() == Some(claude_session_id))
+            .map(|s| (s.id.clone(), s.title.clone()))
+    };
+    let Some((session_id, current)) = bound else {
+        return; // not a Fleet session - nothing to title
+    };
+    if !super::transcript_read::should_adopt_disk_title(current.as_deref(), &disk_title) {
+        return;
+    }
+    // `set_title` re-checks (generic values, and no-op on an unchanged title),
+    // and returns true only on a real change - so this emits only when the UI
+    // has something new to render.
+    if registry().set_title(&session_id, &disk_title) {
+        tracing::debug!(
+            session_id = %session_id,
+            "fleet: adopted Claude Code's own ai-title (no Haiku call)"
+        );
+        super::pty::emit_registry_changed(app, "updated", &session_id);
     }
 }
 

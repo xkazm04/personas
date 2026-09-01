@@ -112,6 +112,24 @@ pub fn cli_name_args(label: Option<&str>, spawn_args: &[String]) -> Vec<String> 
     vec!["--name".to_string(), label.to_string()]
 }
 
+/// True when a spawn's args already settle the session's name, so the Haiku
+/// one-shot would be paying for a string the session is going to get for free.
+///
+/// Two cases, both of which the PTY lane already skipped inline and the
+/// headless lane did not (it called [`name_session_from_task`]
+/// unconditionally): an explicit `--name`/`-n`, which the CLI also uses as the
+/// terminal title, and a `--resume`, where the positional we pass is a
+/// continuation nudge rather than a task and the resumed conversation already
+/// has its own identity (plus its own `ai-title` on disk, which the transcript
+/// watcher adopts for free).
+pub fn args_supply_name(args: &[String]) -> bool {
+    if args.iter().any(|a| a == "--resume") {
+        return true;
+    }
+    args.windows(2)
+        .any(|w| (w[0] == "--name" || w[0] == "-n") && !w[1].trim().is_empty())
+}
+
 /// Cheap, fast model for the one-shot name — mirrors the smart-search default.
 const NAMING_MODEL: &str = "claude-haiku-4-5-20251001";
 const NAMING_TIMEOUT_SECS: u64 = 30;
@@ -243,9 +261,34 @@ pub fn name_session_from_task(app: AppHandle, session_id: String, task: String) 
 #[cfg(test)]
 mod tests {
     use super::{
-        clean_name, cli_name_args, cli_part_of_display_name, cli_safe_label, disambiguate,
-        result_field, task_from_args, CLI_NAME_MAX_CHARS,
+        args_supply_name, clean_name, cli_name_args, cli_part_of_display_name, cli_safe_label,
+        disambiguate, result_field, task_from_args, CLI_NAME_MAX_CHARS,
     };
+
+    fn argv(raw: &[&str]) -> Vec<String> {
+        raw.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn args_that_already_settle_the_name_skip_the_paid_one_shot() {
+        // The two cases pty.rs guarded inline and headless.rs did not.
+        assert!(args_supply_name(&argv(&["--name", "athena-writer"])));
+        assert!(args_supply_name(&argv(&["-n", "athena-writer"])));
+        assert!(args_supply_name(&argv(&[
+            "--resume", "abc-123", "continue"
+        ])));
+        assert!(args_supply_name(&argv(&[
+            "--model", "opus", "--name", "kp", "task"
+        ])));
+
+        // Nothing that settles a name - the fallback still earns its cost.
+        assert!(!args_supply_name(&argv(&[])));
+        assert!(!args_supply_name(&argv(&["fix the auth bug"])));
+        assert!(!args_supply_name(&argv(&["--model", "opus"])));
+        // A dangling / empty flag value settles nothing.
+        assert!(!args_supply_name(&argv(&["--name"])));
+        assert!(!args_supply_name(&argv(&["--name", "   "])));
+    }
     use crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
 
     #[test]
