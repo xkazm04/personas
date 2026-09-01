@@ -25,7 +25,12 @@ export type ConversationRow =
   | { kind: 'assignment'; key: string; at: string; assignmentId: string; items: TeamChannelItem[] }
   | { kind: 'deliberation'; key: string; at: string; deliberationId: string; items: TeamChannelItem[] }
   | { kind: 'proposal'; key: string; at: string; proposal: AssignProposal }
-  | { kind: 'queued'; key: string; at: string; prompt: QueuedPrompt };
+  // `at` is empty on purpose: a queued prompt has no timestamp anyone else
+  // agrees with. Minting one from the renderer's clock would give it a position
+  // in a stream ordered by the server's (census:
+  // `feed-item-ordered-by-the-renderers-clock`), so it carries none and is
+  // appended outside the fold instead.
+  | { kind: 'queued'; key: string; at: ''; prompt: QueuedPrompt };
 
 /** A decomposed goal awaiting the user's Confirm — the composer's output. */
 export interface AssignProposal {
@@ -55,7 +60,6 @@ export interface QueuedPrompt {
   /** A goal ROUTES (decompose → proposal card); a plain prompt POSTS. */
   goal: boolean;
   phase: 'queued' | 'sending' | 'failed';
-  at: string;
 }
 
 /** What the drain should do next: one post, covering one or more prompts. */

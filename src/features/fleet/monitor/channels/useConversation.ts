@@ -97,7 +97,7 @@ export function useConversation(teamId: string | null) {
     // they have not been sent yet — so they sit at the very bottom, after the
     // proposals, in the order they were typed.
     for (const p of queue) {
-      base.push({ kind: 'queued', key: `queued:${p.id}`, at: p.at, prompt: p });
+      base.push({ kind: 'queued', key: `queued:${p.id}`, at: '', prompt: p });
     }
     return base;
   }, [talk.items, turns.items, proposals, queue]);
@@ -126,7 +126,7 @@ export function useConversation(teamId: string | null) {
     const body = text.trim();
     if (!body) return null;
     const id = `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued', at: new Date().toISOString() }]);
+    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued' }]);
     const key = `queued:${id}`;
     setPinKey(key);
     return key;

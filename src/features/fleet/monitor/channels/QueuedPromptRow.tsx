@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Clock, Loader2, Wand2 } from 'lucide-react';
+import { Clock, SendHorizontal, Wand2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import type { QueuedPrompt } from './conversationModel';
@@ -50,11 +50,14 @@ export const QueuedPromptRow = memo(function QueuedPromptRow({
             </span>
           )}
           {prompt.phase === 'sending' && (
+            // No spinner: this is a SURFACE row reporting on itself, not a
+            // control the operator is holding down. The phase word is the
+            // state, and the row's own dashed edge is the pending affordance.
             <span className="flex items-center gap-1 text-foreground opacity-45">
               {prompt.goal ? (
                 <Wand2 className="w-3 h-3" aria-hidden />
               ) : (
-                <Loader2 className="w-3 h-3 animate-spin" aria-hidden />
+                <SendHorizontal className="w-3 h-3" aria-hidden />
               )}
               {prompt.goal ? t.monitor.conv_composer_routing : t.monitor.conv_queued_sending}
             </span>

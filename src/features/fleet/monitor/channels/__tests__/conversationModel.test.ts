@@ -214,7 +214,6 @@ describe('nextPromptBatch', () => {
     text: id,
     goal: false,
     phase: 'queued',
-    at: '2026-08-24T10:00:00Z',
     ...patch,
   });
 
