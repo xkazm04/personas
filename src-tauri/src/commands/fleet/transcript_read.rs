@@ -16,7 +16,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -445,54 +445,218 @@ struct IngestState {
     /// Byte offset through the last *complete* line already folded.
     offset: u64,
     acc: RollupAcc,
+    /// When this entry was last folded (or touched) — the TTL clock.
+    ///
+    /// `Instant`, not wall-clock ms, deliberately: a system clock adjustment
+    /// must not be able to make an entry look ancient (evicting a live
+    /// session's rollup) or immortal (never evicting a dead one).
+    last_touch: Instant,
 }
 
-fn ingest_map() -> &'static Mutex<HashMap<String, IngestState>> {
-    static M: OnceLock<Mutex<HashMap<String, IngestState>>> = OnceLock::new();
-    M.get_or_init(|| Mutex::new(HashMap::new()))
+/// Idle window after which an ingest rollup is dropped.
+///
+/// The map is fed by the watcher on EVERY append under `~/.claude/projects`,
+/// **before** anything checks whether the transcript belongs to a Fleet
+/// session — so a machine that also runs Claude Code by hand accretes entries
+/// Fleet will never look at. 30 minutes is comfortably longer than any gap the
+/// staleness ticker tolerates for a live session (it promotes to `Stale` far
+/// sooner), and eviction is never a correctness loss: a revived id simply
+/// re-folds from offset 0, bounded by [`INGEST_MAX_BYTES_PER_PASS`].
+const INGEST_TTL: Duration = Duration::from_secs(30 * 60);
+
+/// Minimum spacing between TTL sweeps. The sweep is a `retain` over a map of
+/// tens of entries — cheap, but not something to do on every append, so it is
+/// rate-limited and runs from the ingest path itself (no extra thread: this
+/// map has no life of its own, it only exists while ingests happen).
+const INGEST_SWEEP_INTERVAL: Duration = Duration::from_secs(60);
+
+/// Hard cap on live ingest rollups. Enforced on every ingest (an O(1) `len`
+/// check), independently of the rate-limited TTL sweep, so a burst cannot
+/// outrun the reaper. Local measurement: 60 transcripts exist in total across
+/// all projects and all time, so 256 concurrently-appending ones is generous
+/// headroom while still being a bound.
+const INGEST_MAX_ENTRIES: usize = 256;
+
+/// Bytes folded per ingest pass.
+///
+/// The watcher's `notify` drain thread calls [`ingest_delta`] inline, and the
+/// FIRST touch of a session starts at offset 0 — i.e. it read the WHOLE file
+/// (median 1.6 MB, max 6.3 MB locally) on the thread that also has to keep
+/// draining events. The cap bounds that read; the rest is picked up by the
+/// next append event, or by the on-demand [`ingest_catch_up`] callers
+/// (`fleet_session_metadata`, `fleet_token_summary`, `summary_for_session`),
+/// which run on `spawn_blocking` and loop until the file is fully folded.
+/// A pass overshoots by at most one record: the cap is checked between whole
+/// lines, so a single >1 MB record still makes progress instead of wedging.
+pub const INGEST_MAX_BYTES_PER_PASS: u64 = 1024 * 1024;
+
+/// Safety bound on [`ingest_catch_up`]'s loop, so a file being appended to
+/// faster than it can be read can never hold the loop forever.
+const INGEST_MAX_PASSES: usize = 64;
+
+/// The ingest rollups plus the sweep clock, under ONE lock — so the reaper
+/// never needs a second lock ordering.
+struct IngestStore {
+    entries: HashMap<String, IngestState>,
+    last_sweep: Instant,
+}
+
+fn ingest_map() -> &'static Mutex<IngestStore> {
+    static M: OnceLock<Mutex<IngestStore>> = OnceLock::new();
+    M.get_or_init(|| {
+        Mutex::new(IngestStore {
+            entries: HashMap::new(),
+            last_sweep: Instant::now(),
+        })
+    })
+}
+
+/// Evict idle rollups (TTL) and enforce the entry cap (LRU-ish). Called with
+/// the store lock already held, from the ingest path.
+///
+/// TTL is rate-limited by [`INGEST_SWEEP_INTERVAL`]; the cap is checked every
+/// time, because it is an O(1) `len` comparison and a burst of new ids must not
+/// be able to outrun the sweep interval.
+fn maintain_locked(store: &mut IngestStore, now: Instant) {
+    let ttl_due = now.duration_since(store.last_sweep) >= INGEST_SWEEP_INTERVAL;
+    let over_cap = store.entries.len() > INGEST_MAX_ENTRIES;
+    if !ttl_due && !over_cap {
+        return;
+    }
+    let before = store.entries.len();
+    if ttl_due {
+        store.last_sweep = now;
+        // Same shape as every sibling map in `stale.rs` (`retain`-swept).
+        store
+            .entries
+            .retain(|_, st| now.duration_since(st.last_touch) < INGEST_TTL);
+    }
+    if store.entries.len() > INGEST_MAX_ENTRIES {
+        // LRU-ish: drop the least-recently-touched down to the cap.
+        let mut by_age: Vec<(String, Instant)> = store
+            .entries
+            .iter()
+            .map(|(k, st)| (k.clone(), st.last_touch))
+            .collect();
+        by_age.sort_by_key(|(_, t)| *t);
+        let excess = store.entries.len() - INGEST_MAX_ENTRIES;
+        for (id, _) in by_age.into_iter().take(excess) {
+            store.entries.remove(&id);
+        }
+    }
+    let evicted = before - store.entries.len();
+    if evicted > 0 {
+        tracing::debug!(
+            evicted,
+            remaining = store.entries.len(),
+            "fleet transcript ingest: evicted idle rollups"
+        );
+    }
+}
+
+/// Drop one session's ingest rollup.
+///
+/// The explicit half of the eviction story: the registry forgetting a dead
+/// session is the earliest, cheapest moment to release its rollup, long before
+/// [`INGEST_TTL`] would. Returns `true` if an entry was actually removed.
+///
+/// Lock order note: this takes ONLY the ingest lock and never reaches into the
+/// registry, so it is safe to call while holding the registry's session map.
+// TODO(lotC-insert): the production caller is ONE line inside
+// `registry.rs::forget_dead`, which a sibling lot owns and is editing right
+// now — the Director applies it at quiescence, and this attribute comes off
+// with it. Until then the only callers are the tests below, so `dead_code`
+// would fire in a non-test build. The TTL/cap sweep in `maintain_locked` is
+// the standalone half and needs no insert: eviction works without this.
+#[allow(dead_code)]
+pub fn evict_ingest(claude_session_id: &str) -> bool {
+    let mut store = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    store.entries.remove(claude_session_id).is_some()
 }
 
 /// Fold any newly-appended bytes of `path` into the session's running rollup.
-/// Reads only `[offset, EOF)`, folds complete lines (a half-written trailing
-/// line is left for next time), and discards the raw text. Cheap + idempotent
-/// — safe to call on every transcript append. Seeking always lands on a
-/// newline boundary, so the delta is valid UTF-8.
+/// Reads only `[offset, EOF)` and at most [`INGEST_MAX_BYTES_PER_PASS`], folds
+/// complete lines (a half-written trailing line is left for next time), and
+/// discards the raw text. Cheap + idempotent — safe to call on every transcript
+/// append, which is exactly what the watcher does.
 pub fn ingest_delta(claude_session_id: &str, path: &Path) {
+    ingest_pass(claude_session_id, path, INGEST_MAX_BYTES_PER_PASS);
+}
+
+/// Fold every appended byte, looping the bounded pass until the file is caught
+/// up. For callers already on a blocking thread that want the rollup to be
+/// current *now* — never the watcher's drain thread.
+pub fn ingest_catch_up(claude_session_id: &str, path: &Path) {
+    for _ in 0..INGEST_MAX_PASSES {
+        if !ingest_pass(claude_session_id, path, INGEST_MAX_BYTES_PER_PASS) {
+            return;
+        }
+    }
+}
+
+/// One bounded fold pass. Returns `true` when bytes remain after it — i.e. the
+/// budget stopped it short and a later pass (or the next append event) has more
+/// to do. `budget` is a parameter rather than the constant so the bound itself
+/// is testable against a small fixture.
+fn ingest_pass(claude_session_id: &str, path: &Path, budget: u64) -> bool {
+    use std::io::BufRead;
+
     let Ok(size) = std::fs::metadata(path).map(|m| m.len()) else {
-        return;
+        return false;
     };
-    let mut map = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
-    let st = map
+    let now = Instant::now();
+    let mut store = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    maintain_locked(&mut store, now);
+    let st = store
+        .entries
         .entry(claude_session_id.to_string())
         .or_insert_with(|| IngestState {
             offset: 0,
             acc: RollupAcc::default(),
+            last_touch: now,
         });
+    // Touch even on a no-growth call: the id is demonstrably still of interest.
+    st.last_touch = now;
     if size <= st.offset {
-        return; // no growth (or truncated/rotated — leave the rollup as-is)
+        return false; // no growth (or truncated/rotated — leave the rollup as-is)
     }
     let Ok(mut f) = std::fs::File::open(path) else {
-        return;
+        return false;
     };
     if f.seek(SeekFrom::Start(st.offset)).is_err() {
-        return;
+        return false;
     }
-    let mut buf = String::new();
-    if f.take(size - st.offset).read_to_string(&mut buf).is_err() {
-        return;
+    // Record-at-a-time so the budget is enforced ON A LINE BOUNDARY: a byte cap
+    // applied to the buffer instead could split a UTF-8 char, and — worse —
+    // would never advance at all on a record longer than the budget.
+    let mut reader = std::io::BufReader::new(&mut f);
+    let mut line = Vec::new();
+    let mut consumed: u64 = 0;
+    loop {
+        line.clear();
+        let Ok(n) = reader.read_until(b'\n', &mut line) else {
+            break;
+        };
+        if n == 0 || !line.ends_with(b"\n") {
+            // EOF, or a half-written trailing record — leave it for next time.
+            break;
+        }
+        st.acc.fold_line(&String::from_utf8_lossy(&line));
+        consumed += n as u64;
+        if consumed >= budget {
+            break;
+        }
     }
-    // Fold only through the last newline; keep a partial trailing line for next time.
-    let consumed = buf.rfind('\n').map(|i| i + 1).unwrap_or(0);
-    for line in buf[..consumed].lines() {
-        st.acc.fold_line(line);
-    }
-    st.offset += consumed as u64;
+    st.offset += consumed;
+    consumed > 0 && st.offset < size
 }
 
 /// Current rollup for a session, if any bytes have been ingested.
 pub fn metadata_for(claude_session_id: &str, path: &str) -> Option<FleetTranscriptSummary> {
-    let map = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
-    map.get(claude_session_id)
+    let store = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    store
+        .entries
+        .get(claude_session_id)
         .map(|st| st.acc.to_summary(claude_session_id, path))
 }
 
@@ -508,7 +672,7 @@ pub async fn fleet_session_metadata(
         let Some(path) = find_transcript(&claude_session_id) else {
             return Ok(None);
         };
-        ingest_delta(&claude_session_id, &path);
+        ingest_catch_up(&claude_session_id, &path);
         Ok(metadata_for(&claude_session_id, &path.to_string_lossy()))
     })
     .await
@@ -522,7 +686,7 @@ pub async fn fleet_session_metadata(
 /// find + ingest + read dance.
 pub fn summary_for_session(claude_session_id: &str) -> Option<FleetTranscriptSummary> {
     let path = find_transcript(claude_session_id)?;
-    ingest_delta(claude_session_id, &path);
+    ingest_catch_up(claude_session_id, &path);
     metadata_for(claude_session_id, &path.to_string_lossy())
 }
 
@@ -718,7 +882,7 @@ pub async fn fleet_token_summary(
             let Some(path) = find_transcript(id) else {
                 continue;
             };
-            ingest_delta(id, &path);
+            ingest_catch_up(id, &path);
             if let Some(s) = metadata_for(id, &path.to_string_lossy()) {
                 summaries.push(s);
             }
@@ -1177,5 +1341,178 @@ mod tests {
         assert_eq!(a, normalize_cwd("C:/Users/kazda/kiro/ascent"));
         assert_eq!(a, normalize_cwd(r"c:\users\kazda\kiro\ascent\"));
         assert_ne!(a, normalize_cwd(r"C:\Users\kazda\kiro\personas"));
+    }
+
+    // -- Ingest-map lifetime (eviction + the bounded pass) ------------------
+    //
+    // The map is fed by the watcher on EVERY append under `~/.claude/projects`
+    // - including transcripts no Fleet session owns - and had no reaper at all.
+    // These tests pin the two halves of the fix (explicit evict, TTL/cap
+    // sweep) and the bounded pass.
+
+    /// A fixture of REAL records (the three captured fixtures above,
+    /// concatenated) - 8 records over ~7 KB, so a small budget splits it across
+    /// several passes.
+    const FIXTURE_MULTIPASS: &str = include_str!("testdata/lotD-ingest-multipass.jsonl");
+
+    fn write_fixture(name: &str, body: &str) -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join(name);
+        std::fs::write(&path, body).expect("write fixture");
+        (dir, path)
+    }
+
+    fn store_with(entries: &[(&str, Instant)]) -> IngestStore {
+        let mut s = IngestStore {
+            entries: HashMap::new(),
+            last_sweep: Instant::now(),
+        };
+        for (id, touch) in entries {
+            s.entries.insert(
+                (*id).to_string(),
+                IngestState {
+                    offset: 0,
+                    acc: RollupAcc::default(),
+                    last_touch: *touch,
+                },
+            );
+        }
+        s
+    }
+
+    #[test]
+    fn evict_ingest_drops_the_rollup_for_one_session() {
+        let id = "lotd-evict-explicit";
+        let (_dir, path) = write_fixture("t.jsonl", FIXTURE_MULTIPASS);
+
+        ingest_catch_up(id, &path);
+        assert!(
+            metadata_for(id, "/x").is_some(),
+            "the ingest allocated a rollup"
+        );
+
+        assert!(evict_ingest(id), "the entry existed and was removed");
+        assert!(
+            metadata_for(id, "/x").is_none(),
+            "forgetting a dead session releases its rollup"
+        );
+        // Idempotent - forgetting twice is not an error.
+        assert!(!evict_ingest(id));
+    }
+
+    #[test]
+    fn ttl_sweep_evicts_idle_entries_and_keeps_fresh_ones() {
+        let now = Instant::now();
+        let mut store = store_with(&[
+            ("idle", now - INGEST_TTL - Duration::from_secs(1)),
+            ("fresh", now - Duration::from_secs(5)),
+        ]);
+        // Force the rate limiter open - a sweep is due.
+        store.last_sweep = now - INGEST_SWEEP_INTERVAL - Duration::from_secs(1);
+
+        maintain_locked(&mut store, now);
+
+        assert!(
+            !store.entries.contains_key("idle"),
+            "past the TTL - evicted"
+        );
+        assert!(store.entries.contains_key("fresh"), "still live - kept");
+    }
+
+    #[test]
+    fn ttl_sweep_is_rate_limited_but_the_cap_is_not() {
+        let now = Instant::now();
+        // An idle entry the TTL would take - but no sweep is due yet.
+        let mut store = store_with(&[("idle", now - INGEST_TTL - Duration::from_secs(1))]);
+        store.last_sweep = now;
+        maintain_locked(&mut store, now);
+        assert_eq!(store.entries.len(), 1, "TTL waits for its interval");
+
+        // The cap, by contrast, is enforced on every call: an unbound-transcript
+        // burst (ids no Fleet session will ever own) cannot outrun the interval.
+        let mut store = IngestStore {
+            entries: HashMap::new(),
+            last_sweep: now,
+        };
+        for i in 0..(INGEST_MAX_ENTRIES + 10) {
+            store.entries.insert(
+                format!("unbound-{i}"),
+                IngestState {
+                    offset: 0,
+                    acc: RollupAcc::default(),
+                    // Ascending touch times - `unbound-0` is the least recent.
+                    last_touch: now - Duration::from_secs(1000 - i as u64),
+                },
+            );
+        }
+        maintain_locked(&mut store, now);
+        assert_eq!(store.entries.len(), INGEST_MAX_ENTRIES, "capped");
+        assert!(
+            !store.entries.contains_key("unbound-0"),
+            "LRU-ish: the least-recently-touched go first"
+        );
+        assert!(
+            store
+                .entries
+                .contains_key(&format!("unbound-{}", INGEST_MAX_ENTRIES + 9)),
+            "the most recently touched survives"
+        );
+    }
+
+    #[test]
+    fn a_bounded_pass_reads_part_of_the_file_and_converges_over_passes() {
+        let id = "lotd-bounded-first-pass";
+        let (_dir, path) = write_fixture("t.jsonl", FIXTURE_MULTIPASS);
+        let all = fixture(FIXTURE_MULTIPASS);
+        let whole = summarize_lines(id, "/x", &all);
+        assert!(all.len() > 2, "fixture has several records");
+
+        // A budget far below the file size: the first pass must stop short -
+        // this is the drain thread NOT blocking on a multi-MB read.
+        let more = ingest_pass(id, &path, 200);
+        assert!(more, "the budget stopped the pass short");
+        let partial = metadata_for(id, "/x").expect("a partial rollup exists");
+        assert!(
+            partial.total_lines < whole.total_lines,
+            "partial ({}) < whole ({})",
+            partial.total_lines,
+            whole.total_lines
+        );
+
+        // A quiescent file still converges: every later pass (the next append
+        // event, or an on-demand `ingest_catch_up`) resumes from the stored
+        // offset until the fold matches a whole-file read exactly.
+        let mut passes = 1;
+        while ingest_pass(id, &path, 200) {
+            passes += 1;
+            assert!(passes < 100, "each pass must make progress");
+        }
+        let settled = metadata_for(id, "/x").expect("rollup");
+        assert!(passes > 1, "convergence really took several passes");
+        assert_eq!(settled.total_lines, whole.total_lines);
+        assert_eq!(settled.assistant_messages, whole.assistant_messages);
+        assert_eq!(settled.tokens.input, whole.tokens.input);
+        assert_eq!(settled.tokens.output, whole.tokens.output);
+        assert_eq!(settled.tools.len(), whole.tools.len());
+
+        // Idempotent once settled - no double-counting on a no-growth call.
+        ingest_catch_up(id, &path);
+        assert_eq!(
+            metadata_for(id, "/x").expect("rollup").total_lines,
+            whole.total_lines
+        );
+        evict_ingest(id);
+    }
+
+    #[test]
+    fn a_record_longer_than_the_budget_still_makes_progress() {
+        // The budget is checked BETWEEN records, so a single record larger than
+        // it overshoots by that record rather than wedging the ingest forever.
+        let id = "lotd-oversized-record";
+        let (_dir, path) = write_fixture("t.jsonl", FIXTURE_MULTIPASS);
+        assert!(ingest_pass(id, &path, 1), "one record folded, more remains");
+        let s = metadata_for(id, "/x").expect("rollup");
+        assert_eq!(s.total_lines, 1, "exactly one record consumed");
+        evict_ingest(id);
     }
 }
