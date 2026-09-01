@@ -1,5 +1,6 @@
 import { useTranslation } from "@/i18n/useTranslation";
 import { useAgentStore } from "@/stores/agentStore";
+import { AccessibleToggle } from "@/features/shared/components/forms/AccessibleToggle";
 import type {
   CapabilityState,
   MemoryPolicy,
@@ -71,21 +72,13 @@ export function CapabilityPoliciesPane({ capability }: Props) {
           {t.matrix_v3.capability_row_field_memory}
         </label>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={memory.enabled}
-            onClick={() => onMemory({ ...memory, enabled: !memory.enabled })}
-            className={`relative h-6 w-11 rounded-full transition ${
-              memory.enabled ? "bg-primary/60" : "bg-secondary/50"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-foreground shadow transition-all ${
-                memory.enabled ? "left-[22px]" : "left-0.5"
-              }`}
-            />
-          </button>
+          <AccessibleToggle
+            checked={memory.enabled}
+            onChange={() => onMemory({ ...memory, enabled: !memory.enabled })}
+            label={t.matrix_v3.capability_row_field_memory}
+            size="sm"
+            data-testid={`capability-memory-toggle-${capability.id}`}
+          />
           <span className="typo-body-sm text-foreground">
             {memory.enabled
               ? t.matrix_v3.memory_enabled_true
