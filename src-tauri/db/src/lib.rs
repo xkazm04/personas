@@ -1683,13 +1683,27 @@ pub fn seed_builtin_credentials(conn: &rusqlite::Connection) -> Result<(), AppEr
     Ok(())
 }
 
+/// Path of a SQLite sidecar (`-wal` / `-shm`) for `db_path`.
+///
+/// SQLite derives sidecar names by appending the suffix to the FULL file
+/// name — `store` → `store-wal`, `data.sqlite` → `data.sqlite-wal`. It is
+/// tempting to reach for `Path::with_extension("db-wal")`, which is only
+/// correct while the store happens to be named `*.db`; a store named without
+/// an extension, or with a different one, gets a name SQLite never wrote, and
+/// a delete or permission pass that uses it silently misses the real sidecar.
+pub(crate) fn sidecar_path(db_path: &Path, suffix: &str) -> std::path::PathBuf {
+    let mut name = db_path.as_os_str().to_os_string();
+    name.push(suffix);
+    std::path::PathBuf::from(name)
+}
+
 /// Set owner-only permissions on the database file and its WAL/SHM journal files.
 ///
 /// On Unix: chmod 0600 (owner read/write only).
 /// On Windows: icacls to remove inherited permissions and grant owner-only access.
 fn restrict_db_file_permissions(db_path: &Path) {
-    let wal_path = db_path.with_extension("db-wal");
-    let shm_path = db_path.with_extension("db-shm");
+    let wal_path = sidecar_path(db_path, "-wal");
+    let shm_path = sidecar_path(db_path, "-shm");
 
     for path in [db_path, wal_path.as_path(), shm_path.as_path()] {
         if path.exists() {
@@ -2454,7 +2468,7 @@ mod boot_tests {
         let db_path = data_dir.join("personas.db");
         std::fs::write(&db_path, b"stand-in db bytes").unwrap();
         // Sidecar present → every backup set gets a -wal sibling too.
-        std::fs::write(db_path.with_extension("db-wal"), b"wal bytes").unwrap();
+        std::fs::write(sidecar_path(&db_path, "-wal"), b"wal bytes").unwrap();
 
         let mut created: Vec<PathBuf> = Vec::new();
         for _ in 0..5 {
@@ -2481,19 +2495,50 @@ mod boot_tests {
         for old in &created[..2] {
             assert!(!old.exists(), "rotated-out backup still on disk: {old:?}");
             assert!(
-                !old.with_extension("db-wal").exists(),
+                !sidecar_path(old, "-wal").exists(),
                 "rotated-out backup left its WAL sibling behind: {old:?}"
             );
         }
         for kept in &created[2..] {
             assert!(kept.exists(), "surviving backup missing: {kept:?}");
             assert!(
-                kept.with_extension("db-wal").exists(),
+                sidecar_path(kept, "-wal").exists(),
                 "surviving backup missing its WAL sibling: {kept:?}"
             );
         }
 
         let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// The sidecar names come from SQLite's rule (append to the FULL file
+    /// name), not from the path library's extension swap. A store named
+    /// without the conventional `.db` is where the two diverge, so that is
+    /// the case this test pins: open under WAL, write, and assert the
+    /// constructed path is the file SQLite actually created.
+    #[test]
+    fn sidecar_path_matches_what_sqlite_writes() {
+        let dir =
+            std::env::temp_dir().join(format!("personas_sidecar_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in ["store", "data.sqlite", "personas.db"] {
+            let db_path = dir.join(name);
+            let conn = rusqlite::Connection::open(&db_path).unwrap();
+            conn.execute_batch(
+                "PRAGMA journal_mode = WAL; CREATE TABLE t(x); INSERT INTO t VALUES (1);",
+            )
+            .unwrap();
+            let wal = sidecar_path(&db_path, "-wal");
+            assert!(
+                wal.exists(),
+                "SQLite wrote no sidecar at the constructed path {wal:?}"
+            );
+            assert_eq!(
+                wal.file_name().unwrap().to_str().unwrap(),
+                format!("{name}-wal")
+            );
+            drop(conn);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 
