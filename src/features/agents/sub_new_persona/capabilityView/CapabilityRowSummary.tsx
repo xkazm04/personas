@@ -27,13 +27,23 @@ export function CapabilityRowSummary({ capability }: Props) {
         className="inline-flex items-center gap-2 rounded-full bg-secondary/30 px-2.5 py-1"
         data-testid={`capability-progress-${capability.id}`}
       >
-        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-background/60">
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-valuenow={resolved}
+          aria-labelledby={`capability-progress-label-${capability.id}`}
+          className="h-1.5 w-16 overflow-hidden rounded-full bg-background/60"
+        >
           <div
             className="h-full bg-primary transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="typo-caption font-medium text-foreground">
+        <span
+          id={`capability-progress-label-${capability.id}`}
+          className="typo-caption font-medium text-foreground"
+        >
           {resolved}/{total}
         </span>
       </div>
