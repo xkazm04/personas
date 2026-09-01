@@ -76,15 +76,55 @@ export interface RailRow {
    */
   decidable: boolean;
   /**
+   * The label that OPENS a group, or null.
+   *
+   * Non-null on the FIRST row of a run of rows sharing a project, and null
+   * on every other row — including the rest of that same run. One field
+   * rather than a `group` on every row plus a derived `isFirst`, because two
+   * fields that must agree are two fields that can disagree, and the row is
+   * the only thing that knows whether it is drawing a header.
+   *
+   * Set before paging, on the whole ordered list, so a page boundary falling
+   * inside a group leaves the continuation rows correctly headerless — their
+   * header is already on screen above them.
+   */
+  groupHeader: string | null;
+  /**
+   * Whether the row's instant is worth printing.
+   *
+   * False for reviews and dispatchable ideas, and that is a judgement about
+   * what those queues ARE: they are backlogs, worked from the top, and
+   * "3 days ago" on every line is a column of noise that pushes the title
+   * into truncation without changing a single decision. A message feed is
+   * the opposite — it is a chronology, and an undated one is unreadable.
+   */
+  showTime: boolean;
+  /**
+   * Whether this row's feed has a read watermark, so a row that is NOT
+   * `unread` has genuinely been seen.
+   *
+   * Distinct from `!unread`, which is also what a review row reports — and a
+   * review has not been "read", it simply has no such concept. Dimming those
+   * would dim the entire Reviews tab to mean nothing at all.
+   */
+  tracksRead: boolean;
+  /**
    * Whether `kind` may be PAINTED, or is carried for assistive tech only.
    *
    * The channel feed's kinds are the words "directive", "decision", "channel",
    * "memory · decision" — and at rail width they cost the row a chunk of its
    * title to restate what the icon and the tone already say. So channel rows
    * set this false: the kind still rides in `kind` for the screen reader and
-   * the modal, and the eye reads it off the glyph. Triage and dispatch rows
-   * keep it true, because "Idea" vs "Review" is not derivable from a colour a
-   * reader has not been taught.
+   * the modal, and the eye reads it off the glyph.
+   *
+   * REVIEWS JOINED THEM (2026-09-01). The argument for keeping it true there
+   * was that "Idea" vs "Review" is not derivable from a colour a reader has
+   * not been taught — which was answering the wrong question, because the
+   * kind is not carried by the colour, it is carried by the ICON on line 1,
+   * which is `KIND_META[kind].icon` and is per-kind by construction. The word
+   * was restating the glyph directly above it. Dispatch keeps it, and there
+   * the word IS redundant with the tab name — left alone deliberately rather
+   * than swept in, since nobody asked and it is one line to change.
    */
   showKind: boolean;
 }
@@ -150,7 +190,10 @@ export function triageToRow(item: TriageItem, kindLabel: string): RailRow {
     unread: false,
     selectable: false,
     decidable: true,
-    showKind: true,
+    groupHeader: null,
+    showTime: false,
+    tracksRead: false,
+    showKind: false,
   };
 }
 
@@ -171,6 +214,9 @@ export function ideaToRow(row: UndispatchedIdea, kindLabel: string): RailRow {
     unread: false,
     selectable: true,
     decidable: false,
+    groupHeader: null,
+    showTime: false,
+    tracksRead: false,
     showKind: true,
   };
 }
@@ -209,9 +255,12 @@ export function channelToRow(
     kind: event,
     icon: meta.icon,
     title: message?.trim() || event,
-    // Author AND team: the rail merges every project's channel, so a message
-    // without its team is a quote with no room attached to it.
-    source: [author, cleanName(team.teamName)].filter(Boolean).join(' · '),
+    // The AUTHOR only. This used to be "author · team", because the rail
+    // merges every project's channel and a quote with no room attached to it
+    // is unreadable. The room is now the GROUP HEADER above the run of rows
+    // it belongs to, so repeating it per row spends the meta line restating
+    // the heading three pixels above it.
+    source: author || null,
     at: item.at,
     body: null,
     accent: team.teamColor,
@@ -221,8 +270,57 @@ export function channelToRow(
     unread: item.kind !== 'directive' && (lastSeenAt === null || item.at > lastSeenAt),
     selectable: false,
     decidable: false,
+    // Filled by the feed once the rows are ordered — whether a row opens a
+    // group is a fact about its NEIGHBOURS, which an adapter handed one item
+    // cannot know.
+    groupHeader: null,
+    showTime: true,
+    tracksRead: true,
     showKind: false,
   };
+}
+
+/**
+ * The Messages tab's rows: a merged channel feed ORDERED BY PROJECT, with each
+ * group's first row carrying the project's name.
+ *
+ * The rail merges every team's channel into one column, which answers "what
+ * just happened" and refuses to answer "what is happening in THIS project" —
+ * any one project's rows arrive interleaved with nineteen others'. Grouping
+ * settles that without giving up the chronology twice over:
+ *
+ *   • PROJECTS are ordered by their own newest message, so the project that
+ *     just said something is still the first thing you see. Alphabetical would
+ *     be tidier and would bury live activity under whichever team starts with
+ *     an A. `merged` arrives newest-first, so first appearance already IS that
+ *     order and no second sort is needed.
+ *   • WITHIN a project, newest first, unchanged.
+ *
+ * Grouping happens HERE rather than after paging, deliberately: the header
+ * belongs to the first row of the whole group, not of whichever page it landed
+ * on. A page boundary inside a group therefore yields continuation rows with
+ * no header — which is right, because the header is already above them.
+ */
+export function channelRowsByProject(
+  merged: TaggedItem[],
+  personaOf: (id: string) => Persona | undefined,
+  lastSeenOf: (teamId: string) => string | null,
+): RailRow[] {
+  const buckets = new Map<string, TaggedItem[]>();
+  for (const tagged of merged) {
+    const bucket = buckets.get(tagged.team.teamId);
+    if (bucket) bucket.push(tagged);
+    else buckets.set(tagged.team.teamId, [tagged]);
+  }
+
+  const rows: RailRow[] = [];
+  for (const bucket of buckets.values()) {
+    bucket.forEach((tagged, i) => {
+      const row = channelToRow(tagged, personaOf, lastSeenOf(tagged.team.teamId));
+      rows.push(i === 0 ? { ...row, groupHeader: cleanName(tagged.team.teamName) } : row);
+    });
+  }
+  return rows;
 }
 
 /**

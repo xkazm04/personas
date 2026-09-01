@@ -24,10 +24,13 @@
 //    cooldown lapses, which keeps the anti-spam property while making a single
 //    empty page recoverable instead of terminal.
 //
-// Rows are a CONSTANT height, supplied by the caller and applied to both the
-// virtualizer and the row element from that one number — the arithmetic
-// `DeckQueueRail` had to learn the hard way, where an `estimateSize` and a
-// padding-implied height drifted and misplaced every row past the 40th.
+// Row heights come from ONE function supplied by the caller (`heightOf`) and
+// are applied to both the virtualizer and the row element from it — the
+// arithmetic `DeckQueueRail` had to learn the hard way, where an `estimateSize`
+// and a padding-implied height drifted and misplaced every row past the 40th.
+// It was a constant until the Messages tab grew project bands; a function
+// rather than a constant plus a special case, so there is still exactly one
+// place that decides how tall a row is.
 
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -48,8 +51,9 @@ const RETRY_AFTER_MS = 2_000;
 
 export interface RailListProps {
   rows: RailRow[];
-  /** Fixed px height of every row. See the header. */
-  rowHeight: number;
+  /** Px height of one row — the single authority, see the header. Must be
+   *  referentially stable, or the virtualizer re-measures on every render. */
+  heightOf: (row: RailRow) => number;
   renderRow: (row: RailRow) => ReactNode;
   hasMore: boolean;
   loading: boolean;
@@ -60,11 +64,20 @@ export interface RailListProps {
 }
 
 export function RailList({
-  rows, rowHeight, renderRow, hasMore, loading, onEndReached, empty, testId,
+  rows, heightOf, renderRow, hasMore, loading, onEndReached, empty, testId,
 }: RailListProps) {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
-  const sizeOf = useCallback(() => rowHeight, [rowHeight]);
+  // Indexed, because that is the signature the virtualizer measures with. The
+  // guard is for the frame where `count` has grown but this callback still
+  // closes over the shorter array.
+  const sizeOf = useCallback(
+    (index: number) => {
+      const row = rows[index];
+      return row ? heightOf(row) : 0;
+    },
+    [rows, heightOf],
+  );
 
   const virtualize = rows.length > VIRTUALIZE_ABOVE;
   const virtualizer = useVirtualizer({
@@ -137,7 +150,7 @@ export function RailList({
       ) : (
         <ul>
           {rows.map((row) => (
-            <li key={row.id} style={{ height: rowHeight }}>
+            <li key={row.id} style={{ height: heightOf(row) }}>
               {renderRow(row)}
             </li>
           ))}

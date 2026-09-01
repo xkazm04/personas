@@ -33,9 +33,12 @@
 //   • the HEADER — one 44px strip, round icon chip, one semibold title. The
 //     floating corner legend is gone; the state key lives in the header as
 //     count pills, which is where a key belongs when it also carries numbers;
-//   • the RAIL — `ActivityRail`, the same 320px column with the same tab
-//     styling, carrying Reviews / Dispatch / Messages over one row model and
-//     one virtualized, infinite-loading scroller;
+//   • the RAIL — `ActivityRail`, the same column with the same tab styling,
+//     carrying Reviews / Dispatch / Messages over one row model and one
+//     virtualized, infinite-loading scroller. Since 2026-09-01 it is
+//     resizable, and a CLICK ON A COLUMN HEADER scopes all three of its tabs
+//     to that project — see `rail/railFilter` for what each tab can honestly
+//     match a project on, which is not the same handle in all three;
 //   • the COMPOSER — `QuickDispatchDock`, which now sits in the MONITOR's
 //     footer rather than inside this card, so the Timeline, Conversations and
 //     the Map can dispatch too. It replaced a legend + count strip that only
@@ -62,12 +65,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import type { DevProject } from '@/lib/bindings/DevProject';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { DrawerSection, PersonaCardModel } from '../monitorModel';
 import type { FeedTeam } from '../channels/types';
 import {
   groupFleet, tallyStates, SQUARE_VISUAL, SQUARE_STATE_ORDER, cleanName, type SquareState,
 } from './fleetGridModel';
+import { normalizeName, type RailProjectFilter } from './rail/railFilter';
 import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
@@ -83,6 +88,9 @@ import {
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
+
+/** Stable empty list for the project lookup while the store is cold. */
+const NO_PROJECTS: DevProject[] = [];
 
 /** How long a node Athena pointed at stays ringed. Long enough to find with the
  *  eye once the scroll settles, short enough that it never becomes chrome. */
@@ -147,7 +155,7 @@ function SessionDivider({ label }: { label: string }) {
 function FleetGridViewImpl({
   cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // The session whose terminal is open. Held as the SESSION rather than its id:
   // the registry patches rows underneath an open modal on every state event, and
   // an id re-resolved per render would swap the pane's subject mid-read. The
@@ -166,6 +174,14 @@ function FleetGridViewImpl({
     const id = setTimeout(() => setFocusNode(null), FOCUS_FLASH_MS);
     return () => clearTimeout(id);
   }, [focusNode, setFocusNode]);
+
+  // THE RAIL'S PROJECT SCOPE, owned here because the board is the only thing
+  // that knows what its own columns are made of. Clicking the header that is
+  // already scoping clears it — a toggle, so the gesture that applied a scope
+  // is also the one that removes it and there is nothing to hunt for.
+  const [scope, setScope] = useState<RailProjectFilter | null>(null);
+  const projects = useSystemStore((st) => st.projects) ?? NO_PROJECTS;
+  const clearScope = useCallback(() => setScope(null), []);
 
   const [openSession, setOpenSession] = useState<FleetSession | null>(null);
   const closeSession = useCallback(() => setOpenSession(null), []);
@@ -210,6 +226,43 @@ function FleetGridViewImpl({
       rows: columnRows(g.cards, sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS),
     })),
     [grouped.teams, sessionGroups.byTeam],
+  );
+
+  /**
+   * Everything the three feeds can match this column on, gathered in one
+   * place: the team's id, the ids of the `dev_projects` bound to it, and the
+   * names — team, projects, personas — that a triage item's source label
+   * could carry, since that queue has no project id to match instead.
+   *
+   * BOTH the raw and the cleaned form of every name go in. The board prints
+   * `cleanName(teamName)` and the backend stores the raw one; matching on
+   * either alone silently drops whichever half of the queue used the other.
+   */
+  const scopeFor = useCallback(
+    (teamId: string, teamName: string, roster: PersonaCardModel[]): RailProjectFilter => {
+      const names = new Set<string>();
+      const add = (raw: string | null | undefined) => {
+        if (!raw) return;
+        names.add(normalizeName(raw));
+        names.add(normalizeName(cleanName(raw)));
+      };
+      add(teamName);
+      for (const card of roster) add(card.personaName);
+      const projectIds = new Set<string>();
+      for (const project of projects) {
+        if (project.team_id !== teamId) continue;
+        projectIds.add(project.id);
+        add(project.name);
+      }
+      return { teamId, label: cleanName(teamName), projectIds, names };
+    },
+    [projects],
+  );
+
+  const toggleScope = useCallback(
+    (teamId: string, teamName: string, roster: PersonaCardModel[]) =>
+      setScope((prev) => (prev?.teamId === teamId ? null : scopeFor(teamId, teamName, roster))),
+    [scopeFor],
   );
 
   const renderTile = useCallback(
@@ -298,20 +351,32 @@ function FleetGridViewImpl({
                           rather than `sticky` against a shared one — the same
                           property, held structurally. */}
                       <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
-                        <div className="flex items-baseline gap-1.5">
-                          {/* The shared Tooltip, not `title=` — the name is the
-                              one thing on this column that can truncate, so its
-                              full form has to be reachable by keyboard and on
-                              touch (golden path: tooltip). */}
-                          <Tooltip content={cleanName(g.teamName)}>
-                            <span className="min-w-0 flex-1 truncate typo-label text-foreground">
+                        {/* THE HEADER IS THE SCOPE CONTROL. The tooltip carries
+                            what the click does as well as the full name — the
+                            name is the one thing here that can truncate, and a
+                            control whose only affordance is a hover colour has
+                            to say what it does somewhere. Shared Tooltip, not
+                            `title=`, so it is reachable by keyboard and touch. */}
+                        <Tooltip content={tx(t.monitor.grid_column_scope, { project: cleanName(g.teamName) })}>
+                          <button
+                            type="button"
+                            onClick={() => toggleScope(g.teamId, g.teamName, g.cards)}
+                            aria-pressed={scope?.teamId === g.teamId}
+                            data-testid="fleet-grid-column-header"
+                            className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
+                              scope?.teamId === g.teamId
+                                ? 'bg-primary/15 text-foreground'
+                                : 'text-foreground hover:bg-secondary/40'
+                            }`}
+                          >
+                            <span className="min-w-0 flex-1 truncate typo-label">
                               {cleanName(g.teamName)}
                             </span>
-                          </Tooltip>
-                          <span className="flex-shrink-0 typo-caption tabular-nums text-foreground opacity-50">
-                            {g.cards.length}
-                          </span>
-                        </div>
+                            <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+                              {g.cards.length}
+                            </span>
+                          </button>
+                        </Tooltip>
                         <span
                           aria-hidden
                           className="h-0.5 w-full rounded-full"
@@ -344,7 +409,12 @@ function FleetGridViewImpl({
           )}
         </div>
 
-        <ActivityRail feedTeams={feedTeams ?? []} onOpenSpeaker={onOpenSpeaker} />
+        <ActivityRail
+          feedTeams={feedTeams ?? []}
+          onOpenSpeaker={onOpenSpeaker}
+          filter={scope}
+          onClearFilter={clearScope}
+        />
       </div>
 
       <FleetTerminalModal session={openSession} onClose={closeSession} />

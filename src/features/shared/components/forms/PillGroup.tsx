@@ -20,6 +20,14 @@ interface PillGroupProps<T extends string | number> {
   activeBorder?: string;
   /** Optional custom input (e.g. number field) shown after the pills */
   customInput?: React.ReactNode;
+  /**
+   * Type scale for the pill labels. Defaults to the monospace micro-type this
+   * component shipped with, which reads correctly in the dense numeric
+   * surfaces it was built for and reads like a foreign object in a panel that
+   * is otherwise `typo-*` throughout. A host that has a type strategy passes
+   * its own rather than this component guessing which of the two it is in.
+   */
+  labelClass?: string;
   /** Whether the custom input is currently focused / expanded */
   customInputActive?: boolean;
   'data-testid'?: string;
@@ -35,6 +43,7 @@ export function PillGroup<T extends string | number>({
   activeBorder = 'border-primary/25',
   customInput,
   customInputActive = false,
+  labelClass = 'text-xs font-mono font-medium',
   'data-testid': testId,
 }: PillGroupProps<T>) {
   const autoId = useId();
@@ -61,7 +70,7 @@ export function PillGroup<T extends string | number>({
               role="radio"
               aria-checked={isActive}
               onClick={() => onChange(opt.value)}
-              className={`relative z-10 px-2.5 py-1 text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`relative z-10 px-2.5 py-1 transition-colors cursor-pointer ${labelClass} ${
                 isActive ? activeText : 'text-foreground hover:text-foreground/80'
               }`}
               data-testid={testId ? `${testId}-${opt.value}` : undefined}

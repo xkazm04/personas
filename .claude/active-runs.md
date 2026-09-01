@@ -2,7 +2,6 @@
 
 ## Active
 
-### monitor-consolidation-cleanup — Post-consolidation cleanup: retire Approved/QuickDispatch overlays, LiveComms routing, ActivityRail grouping+resize+project filter
 - **[2026-09-01 15:39]**
 - **Paths:** `src/features/fleet/monitor/**` · `src/features/shared/chrome/TitleBarDock.tsx` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src/features/overview/sub_manual-review/components/dispatch/**` · `src/features/plugins/fleet/quick-dispatch/**` · `src/features/agents/quick-answer/triage/deck/DeckDispatchBar.tsx`
 - **Status:** started
@@ -555,6 +554,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### monitor-consolidation-cleanup — Post-consolidation cleanup: retire Approved/QuickDispatch overlays, LiveComms routing, ActivityRail grouping+resize+project filter
 
 ### athena-points — /perfect wave 2: Athena's orb caption points at a board node
 

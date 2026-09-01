@@ -18,8 +18,30 @@
 // the row to read it — which defeats a rail whose whole job is to let you decide
 // what to open.
 //
-// LINE 2 IS EVERYTHING ELSE, muted: when, where from, and — for rows that carry
-// a verdict — the two buttons that resolve it without opening anything.
+// LINE 2 IS EVERYTHING ELSE, muted: where it came from, and then — pushed to
+// the trailing edge — either the two verdict buttons or the timestamp. The
+// instant used to LEAD that line, which put the least decision-relevant thing
+// on the row in the first place the eye lands after the title. It reads better
+// last and it is not printed at all on the two tabs that are backlogs rather
+// than chronologies (`RailRow.showTime`).
+//
+// ## Groups, and why the header is a band inside the row
+//
+// The Messages tab is ordered by project. A group's first row draws the
+// project name above itself rather than the list interleaving separate header
+// elements, for one reason: `RailList` virtualizes on an index, and two kinds
+// of entry in one index space is how a virtualized list starts misplacing
+// things. One entry type, a variable height, one `railRowHeight` both the
+// virtualizer and the row are measured from.
+//
+// ## Read and unread are not the same weight
+//
+// A merged channel feed is mostly history. Rendering all of it at one weight
+// makes the four lines that are actually new indistinguishable from the four
+// hundred that are not, which is the whole job of the tab. Unread titles keep
+// full-strength foreground and gain medium weight; read ones step back. Only
+// feeds that HAVE a watermark do this (`RailRow.tracksRead`) — dimming a review
+// for not being "read" would dim the Reviews tab to mean nothing.
 //
 // ## Why the verdict buttons are here and not in a menu
 //
@@ -33,9 +55,11 @@
 // ## What did not change
 //
 // The state colour is still a full-height rail on the leading edge, the persona
-// still gets a face where it has one, and rows are still a fixed
-// {@link RAIL_ROW_HEIGHT} because `RailList` virtualizes them — a row that grows
-// with its content misplaces every row below it.
+// still gets a face where it has one, and a row's height is still DECIDED here
+// and nowhere else, because `RailList` virtualizes from it — a row that grows
+// with its content misplaces every row below it. What changed is that the
+// height is a function ({@link railRowHeight}) rather than a constant, since a
+// group's opening row wears a band the others do not.
 
 import { memo } from 'react';
 import { Check, X } from 'lucide-react';
@@ -50,6 +74,19 @@ import { TONE_TEXT, type RailRow } from './railModel';
  * here, so the two cannot drift.
  */
 export const RAIL_ROW_HEIGHT = 56;
+
+/** The project band a group's first row wears above itself: `typo-label` on
+ *  one line plus its own padding. */
+export const RAIL_GROUP_HEADER_HEIGHT = 26;
+
+/**
+ * What this row occupies. The ONE height authority — `RailList` measures the
+ * virtualizer from it and the row element is sized by it, so a group band that
+ * grew here could not silently misplace every row beneath it.
+ */
+export function railRowHeight(row: RailRow): number {
+  return RAIL_ROW_HEIGHT + (row.groupHeader ? RAIL_GROUP_HEADER_HEIGHT : 0);
+}
 
 /** The two quick verdicts. Icon-only — at rail width a labelled button pair
  *  would take the whole meta line, and the icons are the app's own verdict
@@ -111,6 +148,29 @@ export const RailRowView = memo(function RailRowView({
 
   const body = (
     <>
+      {/* The project band. Inside the row, above its own content, so the list
+          keeps ONE entry per index (see the header). `sticky` is deliberately
+          NOT used: a sticky band inside an absolutely-positioned virtual row
+          sticks to the row, not the scroller, which looks like a bug. */}
+      {row.groupHeader && (
+        <span
+          className="flex items-center gap-1.5 border-b border-border pb-1 typo-label text-foreground opacity-70"
+          style={{ height: RAIL_GROUP_HEADER_HEIGHT }}
+          data-testid="rail-group-header"
+        >
+          {/* The board column's own colour. The band and the column it names
+              are the same thing seen twice, and a shared accent is what says
+              so without a second label. */}
+          {row.accent && (
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+              style={{ backgroundColor: colorWithAlpha(row.accent, 0.85) }}
+            />
+          )}
+          <span className="min-w-0 truncate">{row.groupHeader}</span>
+        </span>
+      )}
       {/* The state rail — the whole leading edge, so a column reads as a colour
           strip you can scan without reading a word. */}
       <span
@@ -128,32 +188,52 @@ export const RailRowView = memo(function RailRowView({
           <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${TONE_TEXT[row.tone]}`} aria-hidden />
         )}
         <RailUnread unread={row.unread} />
-        <span className="min-w-0 flex-1 truncate typo-body text-foreground">{row.title}</span>
+        {/* Read steps BACK; unread is simply left alone. The difference is
+            carried by opacity and nothing else, and that is not a stylistic
+            preference — it is the only axis available here:
+              • WEIGHT is unavailable. `typo-*` sets `font-weight` from an
+                UNLAYERED rule, so it beats Tailwind's `@layer utilities` and
+                `typo-body font-medium` is a silent no-op (typography.css says
+                so twice, in as many words). Emphasis is meant to move up a
+                token instead — but `typo-title` also changes line-height 1.65
+                → 1.4 and tints the colour, which would make every unread row
+                lay out three pixels shorter than its neighbours in a list whose
+                heights are fixed and measured.
+              • HUE is available and wrong: a second colour down this column
+                reads as a second KIND of row, not the same row unread.
+            Rows from a feed with no watermark are never stepped back at all —
+            see `tracksRead`. */}
+        <span
+          className={`min-w-0 flex-1 truncate typo-body text-foreground ${
+            row.tracksRead && !row.unread ? 'opacity-50' : ''
+          }`}
+        >
+          {row.title}
+        </span>
         {/* The kind is on screen only where a colour could not teach it (see
             `RailRow.showKind`); everywhere else it is here for assistive tech
             alone, because an icon is not a label. */}
         {!row.showKind && <span className="sr-only">{row.kind}</span>}
       </span>
 
-      {/* LINE 2 — when, where, and the verdicts. */}
+      {/* LINE 2 — where it came from, then the trailing slot. The two things
+          that can occupy that slot (a verdict pair, an instant) never occur on
+          the same row: a decidable row is a backlog entry and prints no time,
+          a timed row is a message and has no verdict. */}
       <span className="mt-0.5 flex items-center gap-1.5 pl-5 typo-caption text-foreground opacity-55">
-        <RailTime at={row.at} />
-        {row.source && (
-          <>
-            <span aria-hidden>·</span>
-            <span className="min-w-0 truncate">{row.source}</span>
-          </>
-        )}
+        {row.source && <span className="min-w-0 truncate">{row.source}</span>}
         {row.showKind && (
           <>
-            <span aria-hidden>·</span>
+            {row.source && <span aria-hidden>·</span>}
             <span className={`flex-shrink-0 ${TONE_TEXT[row.tone]}`}>{row.kind}</span>
           </>
         )}
-        {canDecide && (
+        {canDecide ? (
           <span className="ml-auto flex items-center">
             <VerdictButtons row={row} onAccept={onAccept} onReject={onReject} />
           </span>
+        ) : (
+          row.showTime && <RailTime at={row.at} className="ml-auto" />
         )}
       </span>
     </>

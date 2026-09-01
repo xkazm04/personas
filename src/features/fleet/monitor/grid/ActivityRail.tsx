@@ -1,9 +1,9 @@
 // ActivityRail — the Activity board's decision surface.
 //
 // A direct lift of the Conversations rail (`ConversationBriefing`'s right-hand
-// column): same width, same border, same tint, same tab styling. That is the
-// point — Activity and Conversations are the same room seen from two angles, and
-// a rail that looked different in each would say they are different apps.
+// column): same border, same tint, same tab styling. That is the point —
+// Activity and Conversations are the same room seen from two angles, and a rail
+// that looked different in each would say they are different apps.
 //
 // THE RULE THE RAIL ENFORCES, inherited from Conversations: a decision surface
 // is not a message and not a tile. The board answers "what is every persona
@@ -17,12 +17,12 @@
 //                ideas, practices, policy diffs, build questions and finished
 //                goals sat undecided. Badge = items in hand.
 //   • Dispatch — accepted work nobody has sent to a runner. Badge = rows.
-//   • Messages — the peripheral channel read. Badge = UNREAD, not total: the
-//                other two badge a backlog you must work off, and this one
-//                badges what changed since you last looked, which is the only
-//                number a message tab has ever meant.
+//   • Messages — the peripheral channel read, GROUPED BY PROJECT. Badge =
+//                UNREAD, not total: the other two badge a backlog you must work
+//                off, and this one badges what changed since you last looked,
+//                which is the only number a message tab has ever meant.
 //
-// All three now render through ONE row model (`rail/railModel`) and ONE scroller
+// All three render through ONE row model (`rail/railModel`) and ONE scroller
 // (`rail/RailList`, virtualized + infinite-load). What differs between them is
 // data, not layout — which is what "unify the three tabs" actually required.
 //
@@ -37,33 +37,54 @@
 // rather than from the row, because `RailRow` is a projection with no
 // back-pointer and keeping it that way is what lets the model stay React-free.
 //
+// ---------------------------------------------------------------------------
+// TWO THINGS THE RAIL GAINED ON 2026-09-01
+//
+// IT IS RESIZABLE, and remembers (`useRailWidth`). 320px is the right floor and
+// was the wrong ceiling: this is a column of titles, and on a wide display it
+// was truncating them while eight hundred pixels sat unused to its left.
+//
+// IT CAN BE SCOPED TO ONE PROJECT. Clicking a column header on the board
+// narrows all three tabs at once — the commonest question a twenty-column board
+// raises is "this one — what does it need?", and the rail beside it was the one
+// surface that could not answer it. While a scope is applied the rail says so,
+// out loud, in a chip that clears it: `railFilter` documents what each tab can
+// and cannot match on, and a filter that hides rows owes the reader that much.
+//
 import { useCallback, useState } from 'react';
-import { AlertCircle, Inbox, MessagesSquare, Rocket } from 'lucide-react';
+import { AlertCircle, Inbox, MessagesSquare, Rocket, X } from 'lucide-react';
 import type { TriageItem, TriageVerdict } from '@/features/agents/quick-answer/triage/triageTypes';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { DeckDispatchBar } from '@/features/agents/quick-answer/triage/deck/DeckDispatchBar';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { FeedTeam } from '../channels/types';
 import { RailList } from './rail/RailList';
 import type { RailRow } from './rail/railModel';
+import type { RailProjectFilter } from './rail/railFilter';
 import { useDispatchFeed, useMessageFeed, useReviewFeed } from './rail/useRailFeeds';
-import { RAIL_ROW_HEIGHT, RailRowView } from './rail/RailRowView';
+import { railRowHeight, RailRowView } from './rail/RailRowView';
 import { RailTriageModal } from './rail/RailTriageModal';
 import { RailChannelModal } from './rail/RailChannelModal';
+import { useRailWidth } from './rail/useRailWidth';
 import type { TaggedItem } from '../channels/types';
 
 type RailTab = 'reviews' | 'dispatch' | 'messages';
 
 export function ActivityRail({
-  feedTeams, onOpenSpeaker,
+  feedTeams, onOpenSpeaker, filter = null, onClearFilter,
 }: {
   /** Teams whose channels the Messages tab merges. */
   feedTeams: FeedTeam[];
   onOpenSpeaker?: (teamId: string, personaId: string) => void;
+  /** The one project column all three tabs are scoped to, or null for all. */
+  filter?: RailProjectFilter | null;
+  onClearFilter?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [tab, setTab] = useState<RailTab>('reviews');
+  const rail = useRailWidth();
   // The two open surfaces. Held as the SOURCE OBJECT rather than as a row id:
   // a row id resolved on every render would re-resolve against a list that
   // polls underneath the open modal, and the card would swap out from under the
@@ -96,9 +117,12 @@ export function ActivityRail({
   //    rail's "nothing is waiting on you" over a queue that is not empty,
   //    which is the same lie a stale badge would be, told about the list
   //    instead. Not a trade worth making for zero.
-  const reviews = useReviewFeed(tab === 'reviews');
-  const dispatch = useDispatchFeed(tab === 'dispatch');
-  const messages = useMessageFeed(feedTeams, tab === 'messages');
+  //
+  // The project scope is passed to all three, ALWAYS — including inactive ones,
+  // because it is what their badges count.
+  const reviews = useReviewFeed(tab === 'reviews', filter);
+  const dispatch = useDispatchFeed(tab === 'dispatch', filter);
+  const messages = useMessageFeed(feedTeams, tab === 'messages', filter);
 
   const active = tab === 'reviews' ? reviews : tab === 'dispatch' ? dispatch : messages;
 
@@ -178,63 +202,118 @@ export function ActivityRail({
   };
 
   return (
-    <div
-      className="flex min-h-0 w-[320px] flex-shrink-0 flex-col border-l border-border bg-foreground/[0.012]"
-      data-testid="activity-rail"
-    >
+    <div className="flex min-h-0 flex-shrink-0" style={{ width: rail.width }}>
+      {/* THE RESIZE HANDLE, standing in for the rail's left border rather than
+          sitting beside it — so the affordance is exactly where the edge the
+          operator wants to move already is. `handleProps` carries the splitter
+          ARIA (`separator`, orientation, valuenow/min/max), the tab stop and
+          the arrow keys along with the pointer wiring: a resize reachable only
+          by pointer is not a smaller feature, it is an inoperable one for
+          anyone who needs the wider rail most. */}
       <div
-        className="flex h-9 flex-shrink-0 items-center gap-1 border-b border-border px-2"
-        role="group"
-        aria-label={t.monitor.grid_rail_tabs_aria}
+        {...rail.handleProps}
+        aria-label={t.monitor.grid_rail_resize}
+        data-testid="activity-rail-resize"
+        className={`group relative w-1 flex-shrink-0 cursor-col-resize border-l border-border transition-colors focus-ring ${
+          rail.dragging ? 'bg-primary/40' : 'hover:bg-primary/25'
+        }`}
       >
-        {TABS.map((v) => {
-          const Icon = v.icon;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setTab(v.id)}
-              aria-pressed={tab === v.id}
-              data-testid={`activity-rail-tab-${v.id}`}
-              className={tabClass(tab === v.id)}
-            >
-              <Icon className="mr-1 inline h-3 w-3" />
-              {v.label}
-              {v.count > 0 && <span className="ml-1 tabular-nums opacity-60">{v.count}</span>}
-            </button>
-          );
-        })}
+        {/* A 1px target is not a target. The hit area is widened either side
+            without widening the paint. */}
+        <span aria-hidden className="absolute inset-y-0 -left-1.5 -right-1.5" />
+        <span
+          aria-hidden
+          className={`absolute left-1/2 top-1/2 h-8 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors ${
+            rail.dragging ? 'bg-primary' : 'bg-border group-hover:bg-primary/50'
+          }`}
+        />
       </div>
 
-      {/* The Dispatch tab is the only one with a control bar; it stays pinned
-          above its own scroller so the selection count never scrolls away. */}
-      {tab === 'dispatch' && <DeckDispatchBar ctl={dispatch.ctl} />}
+      <div
+        className="flex min-h-0 min-w-0 flex-1 flex-col bg-foreground/[0.012]"
+        data-testid="activity-rail"
+      >
+        <div
+          className="flex h-9 flex-shrink-0 items-center gap-1 border-b border-border px-2"
+          role="group"
+          aria-label={t.monitor.grid_rail_tabs_aria}
+        >
+          {TABS.map((v) => {
+            const Icon = v.icon;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setTab(v.id)}
+                aria-pressed={tab === v.id}
+                data-testid={`activity-rail-tab-${v.id}`}
+                className={tabClass(tab === v.id)}
+              >
+                <Icon className="mr-1 inline h-3 w-3" />
+                {v.label}
+                {v.count > 0 && <span className="ml-1 tabular-nums opacity-60">{v.count}</span>}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Keyed by tab so the three feeds never share a scroll position — and so
-          the virtualizer re-measures instead of restoring one list's offset
-          into another list's rows. */}
-      <RailList
-        key={tab}
-        rows={active.rows}
-        rowHeight={RAIL_ROW_HEIGHT}
-        renderRow={renderRow}
-        hasMore={active.hasMore}
-        loading={active.loading}
-        onEndReached={active.loadMore}
-        testId={`activity-rail-list-${tab}`}
-        empty={
-          <div className="px-3 py-8">
-            <EmptyIllustration
-              icon={tab === 'messages' ? MessagesSquare : tab === 'dispatch' ? Inbox : AlertCircle}
-              heading={EMPTY[tab].heading}
-              description={EMPTY[tab].description}
-            />
+        {/* THE SCOPE CHIP. Present only while a scope is, and it is the only
+            control that clears one — a filter applied from a surface OTHER than
+            this one (the board's column header) must be visible and revocable
+            from here, or the rail reads as mysteriously empty. */}
+        {filter && (
+          <div className="flex h-7 flex-shrink-0 items-center gap-1.5 border-b border-border bg-primary/[0.06] px-2">
+            <span className="min-w-0 flex-1 truncate typo-caption text-foreground">
+              {tx(t.monitor.grid_rail_scoped_to, { project: filter.label })}
+            </span>
+            {onClearFilter && (
+              <Tooltip content={t.monitor.grid_rail_scope_clear}>
+                <button
+                  type="button"
+                  onClick={onClearFilter}
+                  aria-label={t.monitor.grid_rail_scope_clear}
+                  data-testid="activity-rail-scope-clear"
+                  className="focus-ring flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-foreground opacity-60 transition-opacity hover:opacity-100"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Tooltip>
+            )}
           </div>
-        }
-      />
+        )}
 
-      {/* Both modals portal to the body, so neither inherits the rail's 320px
-          width or the Monitor overlay's stacking context. */}
+        {/* The Dispatch tab is the only one with a control bar; it stays pinned
+            above its own scroller so the selection count never scrolls away. */}
+        {tab === 'dispatch' && <DeckDispatchBar ctl={dispatch.ctl} />}
+
+        {/* Keyed by tab AND by scope so the three feeds never share a scroll
+            position — and so the virtualizer re-measures instead of restoring
+            one list's offset into another list's rows. The scope is in the key
+            for the same reason: narrowing to one project shortens every list
+            under the reader's scroll position. */}
+        <RailList
+          key={`${tab}:${filter?.teamId ?? 'all'}`}
+          rows={active.rows}
+          heightOf={railRowHeight}
+          renderRow={renderRow}
+          hasMore={active.hasMore}
+          loading={active.loading}
+          onEndReached={active.loadMore}
+          testId={`activity-rail-list-${tab}`}
+          empty={
+            <div className="px-3 py-8">
+              <EmptyIllustration
+                icon={tab === 'messages' ? MessagesSquare : tab === 'dispatch' ? Inbox : AlertCircle}
+                heading={EMPTY[tab].heading}
+                description={EMPTY[tab].description}
+              />
+            </div>
+          }
+        />
+      </div>
+
+      {/* Both modals portal to the body, so neither inherits the rail's width
+          or the Monitor overlay's stacking context. */}
       <RailTriageModal
         item={openTriage}
         onClose={() => setOpenTriage(null)}

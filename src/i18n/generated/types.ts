@@ -548,6 +548,10 @@ export type Translations = {
     grid_dock_collapse: string;
     grid_rail_loading_more: string;
     grid_rail_unread: string;
+    grid_rail_resize: string;
+    grid_rail_scoped_to: string;
+    grid_rail_scope_clear: string;
+    grid_column_scope: string;
     grid_rail_empty_reviews: string;
     grid_rail_empty_reviews_sub: string;
     grid_rail_empty_messages_sub: string;

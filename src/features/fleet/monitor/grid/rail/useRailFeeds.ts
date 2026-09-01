@@ -44,6 +44,28 @@
 // regression the pass targets — a fixed load costing more to service as history
 // accumulates.
 //
+// `filter` — SCOPING TO ONE PROJECT COLUMN.
+//
+// Clicking a column header on the board narrows all three tabs at once. Each
+// feed applies it at the point where it can be applied truthfully, and
+// `railFilter` documents what each one actually has to match on (an id, an id,
+// and — for the unified triage queue, which has no project id — a name).
+//
+// THE BADGES FOLLOW THE FILTER. This looks like it contradicts the paragraph
+// below, and does not: the rule there is that a badge must never disagree with
+// the list under its own tab. A filtered tab showing three rows under a badge
+// reading sixty would break exactly that rule. So the filter is applied to the
+// SOURCE list and both the badge and the rows derive from the result, which is
+// the same discipline stated for the projection gate: filter once, upstream of
+// everything that counts.
+//
+// ONE HONEST LIMIT, on Reviews only. That queue pages the server, and the
+// filter runs over the pages already loaded — so `hasMore` still describes the
+// unfiltered backlog, and scrolling a filtered Reviews tab pulls the next
+// unfiltered page and keeps whatever matches. It converges rather than lying;
+// there is no cross-project keyset query to ask instead, and inventing a
+// client-side one over an unbounded backlog is how a rail becomes a full scan.
+//
 // Every badge is therefore read from its SOURCE rather than from the projection
 // (`queue.items.length`, `ctl.rows.length`, the channel slice's own unread
 // count), so gating the projection cannot make a badge lie. Nothing is cached
@@ -70,9 +92,11 @@ import type {
   TriageItem,
   TriageVerdict,
 } from '@/features/agents/quick-answer/triage/triageTypes';
+import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 import { useMergedChannels } from '../../channels/mergedFeed';
 import type { FeedTeam, TaggedItem } from '../../channels/types';
-import { channelToRow, ideaToRow, triageToRow, type RailRow } from './railModel';
+import { channelRowsByProject, ideaToRow, triageToRow, type RailRow } from './railModel';
+import { ideaInScope, triageInScope, type RailProjectFilter } from './railFilter';
 
 /** Rows per page, every feed. Small enough that the first paint is cheap, big
  *  enough that a 320px column is filled past the fold. */
@@ -128,7 +152,10 @@ function useWindow(all: RailRow[]): { rows: RailRow[]; hasMore: boolean; loadMor
  * practices, policy diffs, build questions and finished goals sat undecided one
  * surface away. "Reviews" is the operator's word for all of it.
  */
-export function useReviewFeed(active = true): RailFeed & {
+export function useReviewFeed(
+  active = true,
+  filter: RailProjectFilter | null = null,
+): RailFeed & {
   itemById: RowResolver<TriageItem>;
   /** The queue's own verdict door — the same one the deck writes through, so a
    *  verdict recorded from the rail and one recorded from the deck cannot take
@@ -139,22 +166,29 @@ export function useReviewFeed(active = true): RailFeed & {
   const { t } = useTranslation();
   const queue = useUnifiedTriage(copy);
 
+  // Scoping happens HERE, above both the badge and the rows, so the two cannot
+  // report different queues. See `railFilter` for why this one is a name test.
+  const items = useMemo(
+    () => (filter ? queue.items.filter((i) => triageInScope(i.source, filter)) : queue.items),
+    [queue.items, filter],
+  );
+
   // The queue itself is NEVER gated — it is what the badge counts. Only the
   // adaptation into rows is, and only while nothing renders them.
   const all = useMemo(
     () =>
       active
-        ? queue.items.map((item) => triageToRow(item, kindCopy(t, item.kind).one))
+        ? items.map((item) => triageToRow(item, kindCopy(t, item.kind).one))
         : NO_ROWS,
-    [active, queue.items, t],
+    [active, items, t],
   );
 
   // `triageToRow` keys the row by `item.id`, so the index is that id straight
   // through. Kept as a Map rather than a `find` because the rail resolves on
   // every open and the queue runs to hundreds of items.
   const index = useMemo(
-    () => (active ? new Map(queue.items.map((i) => [i.id, i])) : NO_INDEX),
-    [active, queue.items],
+    () => (active ? new Map(items.map((i) => [i.id, i])) : NO_INDEX),
+    [active, items],
   );
   const itemById = useCallback<RowResolver<TriageItem>>((id) => index.get(id), [index]);
 
@@ -171,10 +205,11 @@ export function useReviewFeed(active = true): RailFeed & {
     loading: queue.loading,
     hasMore: queue.backlog.more,
     loadMore: queue.loadMore,
-    // From the QUEUE, not from `all`: the badge must say what is in hand whether
-    // or not this tab has been projected into rows. Identical value either way —
-    // `all` was a 1:1 map of `queue.items` — so the badge did not change meaning.
-    total: queue.items.length,
+    // From the scoped ITEMS, not from `all`: the badge must say what is in hand
+    // whether or not this tab has been projected into rows, and `all` is empty
+    // while the tab is inactive. `items` is a 1:1 source for `all`, so the two
+    // can never disagree about how many there are.
+    total: items.length,
     itemById,
     decide,
   };
@@ -182,14 +217,27 @@ export function useReviewFeed(active = true): RailFeed & {
 
 /** DISPATCH — accepted ideas nobody has sent to a runner. The controller is
  *  returned alongside because the bar and the checkboxes need it. */
-export function useDispatchFeed(active = true): RailFeed & { ctl: AcceptedDispatch } {
+export function useDispatchFeed(
+  active = true,
+  filter: RailProjectFilter | null = null,
+): RailFeed & { ctl: AcceptedDispatch } {
   const { t } = useTranslation();
+  // Handed to the hook rather than applied to `ctl.rows` out here: select-all,
+  // dispatch, delete and the selection prune all derive from `rows` inside it,
+  // so narrowing anywhere else leaves those four operating on a list the
+  // reviewer cannot see. Memoized because an unstable predicate would re-derive
+  // that list every render.
+  const visible = useMemo(
+    () => (filter ? (row: UndispatchedIdea) => ideaInScope(row, filter) : undefined),
+    [filter],
+  );
   // `useAcceptedDispatch` reads ONCE on mount and never polls, so there is no
   // ongoing fetch here to gate — the badge is already free. Only the projection
   // is gated, for the same reason as the other two.
   const ctl = useAcceptedDispatch({
     resolveErrorMessage: (err) =>
       resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message,
+    visible,
   });
   const label = t.monitor.grid_rail_tab_dispatch;
   const all = useMemo(
@@ -201,14 +249,26 @@ export function useDispatchFeed(active = true): RailFeed & { ctl: AcceptedDispat
 }
 
 /** MESSAGES — the merged channel feed, plus the unread watermark per team. */
-export function useMessageFeed(teams: FeedTeam[], active = true): RailFeed & {
+export function useMessageFeed(
+  teams: FeedTeam[],
+  active = true,
+  filter: RailProjectFilter | null = null,
+): RailFeed & {
   unread: number;
   itemById: RowResolver<TaggedItem>;
 } {
   // NOT gated — this is the refcounted channel subscription the unread badge is
   // derived from. See the `active` note in the header: dropping it was measured
   // to save no IPC at all (the cache is shared) and would freeze the badge.
-  const { merged } = useMergedChannels(teams);
+  const { merged: allMerged } = useMergedChannels(teams);
+  // Scoped by filtering the MERGED result, not by handing `useMergedChannels`
+  // a shorter team list. Narrowing the subscription would drop and re-take
+  // channel subscriptions on every filter toggle, for a saving of one array
+  // filter over a list the window already bounds at 600.
+  const merged = useMemo(
+    () => (filter ? allMerged.filter((tg) => tg.team.teamId === filter.teamId) : allMerged),
+    [allMerged, filter],
+  );
   const personas = useAgentStore((s) => s.personas);
   // Indexed once per roster change rather than an O(personas) `find` per row.
   // `merged` runs to LIVE_FEED_WINDOW (600), so the linear scan made the row
@@ -230,19 +290,27 @@ export function useMessageFeed(teams: FeedTeam[], active = true): RailFeed & {
     return m;
   }, [teams, states]);
 
-  const unread = useMemo(
-    () => states.reduce((n, st) => n + countUnread(st ?? EMPTY_CHANNEL), 0),
-    [states],
-  );
+  // Summed over the SCOPED teams: a filtered tab whose badge counts every
+  // team's unread is a badge disagreeing with the list beneath it.
+  const unread = useMemo(() => {
+    let n = 0;
+    teams.forEach((tm, i) => {
+      if (filter && tm.teamId !== filter.teamId) return;
+      n += countUnread(states[i] ?? EMPTY_CHANNEL);
+    });
+    return n;
+  }, [teams, states, filter]);
 
+  const lastSeenOf = useCallback(
+    (teamId: string) => seenByTeam.get(teamId) ?? null,
+    [seenByTeam],
+  );
+  // Grouped by project, newest project first, each group's opening row
+  // carrying its name — see `channelRowsByProject` for why the ordering is
+  // what it is and why grouping precedes paging.
   const all = useMemo(
-    () =>
-      active
-        ? merged.map((tagged) =>
-            channelToRow(tagged, personaOf, seenByTeam.get(tagged.team.teamId) ?? null),
-          )
-        : NO_ROWS,
-    [active, merged, personaOf, seenByTeam],
+    () => (active ? channelRowsByProject(merged, personaOf, lastSeenOf) : NO_ROWS),
+    [active, merged, personaOf, lastSeenOf],
   );
 
   // `channelToRow` keys rows `${teamId}:${itemId}`; the index is built off the
