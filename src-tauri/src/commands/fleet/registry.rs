@@ -376,6 +376,160 @@ pub fn registry() -> &'static FleetRegistry {
     REGISTRY.get_or_init(FleetRegistry::default)
 }
 
+// ── The one state door ─────────────────────────────────────────────────────
+//
+// Every lane that decides a session's lifecycle state (hooks, the staleness
+// ticker, the headless stream-json reader, Athena's bridge) writes it through
+// [`apply_transition`]. Before this existed each lane assigned `session.state`
+// inline, which meant (a) the "never resurrect a terminal state" rule was
+// re-implemented per lane — or omitted, and (b) a transition could land without
+// waking the waiters in [`super::wait`], which is what `wait::STATE_BACKSTOP`
+// was paid to cover.
+//
+// The door is a free function over an already-borrowed `&mut FleetSessionInner`
+// rather than a `FleetRegistry` method on purpose: the ticker mutates sessions
+// while iterating `map.values_mut()` under the registry lock, and a method would
+// have to re-acquire that same non-reentrant `Mutex`.
+
+/// Transitions the door applied, since process start.
+static TRANSITIONS_APPLIED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Transitions the door REFUSED (illegal edge), since process start.
+static TRANSITIONS_REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// `(applied, refused)` since process start. Sampled around a staleness pass so
+/// the sweeper's transition behaviour is observable in the log without a live
+/// fleet — see `super::stale::tick_once`.
+pub fn transition_counts() -> (u64, u64) {
+    use std::sync::atomic::Ordering;
+    (
+        TRANSITIONS_APPLIED.load(Ordering::Relaxed),
+        TRANSITIONS_REFUSED.load(Ordering::Relaxed),
+    )
+}
+
+/// What the door did with a transition request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransitionOutcome {
+    /// The state actually moved. The caller emits exactly one state event.
+    Changed,
+    /// Legal, but the session was already in that state — the reason was
+    /// refreshed (a re-stamped stale verdict carries fresher seconds; a second
+    /// `Notification` carries a new question) and nothing moved.
+    Restamped,
+    /// Illegal edge — nothing was written. The caller must NOT emit: announcing
+    /// a state the registry refused to store is how a tile ends up showing a
+    /// state no lane can move it out of.
+    Refused,
+}
+
+impl TransitionOutcome {
+    /// True only when the state moved.
+    pub fn changed(self) -> bool {
+        matches!(self, TransitionOutcome::Changed)
+    }
+    /// True when the door wrote something (moved or restamped) — i.e. the
+    /// caller's semantics held and it may emit.
+    pub fn accepted(self) -> bool {
+        !matches!(self, TransitionOutcome::Refused)
+    }
+}
+
+/// The transition table: is `from → to` an edge this lifecycle allows?
+///
+/// Deliberately stated as rules rather than a 64-cell matrix, because the
+/// constraints are structural, not per-pair:
+///
+/// - **Nothing leaves `Exited`.** Process death is authoritative and final.
+/// - **Nothing leaves `Hibernated`.** It is not "asleep and resumable in
+///   place": waking SPAWNS A NEW ROW (`super::commands::fleet_wake_session`
+///   adopts the lineage onto a fresh id) and the reaper's hibernation branch
+///   deliberately does not mark the row `Exited` (`super::pty::
+///   finalize_child_exit`). A lane that flips a hibernated row to `Running`
+///   does not revive it — it strands it, because [`FleetRegistry::resume_target`]
+///   only resumes rows that are still `Hibernated`/dozing.
+/// - **Nothing enters `Spawning`.** It is set at construction and at
+///   rehydration only; a live session never goes back to "still starting".
+///
+/// Every other edge among `Spawning`/`Running`/`AwaitingInput`/`Idle`/`Stale`/
+/// `Finished` — plus each of those into `Exited`/`Hibernated` — is legal, and
+/// each is performed by at least one lane today. Individual doors keep their
+/// own *stricter* preconditions (`mark_finished` only parks a parked session,
+/// `hibernate` needs a bound `claude_session_id`, …); the table is the floor
+/// nobody may go under, not the whole policy.
+pub fn transition_is_legal(from: FleetSessionState, to: FleetSessionState) -> bool {
+    use FleetSessionState::*;
+    match from {
+        Exited | Hibernated => false,
+        _ => !matches!(to, Spawning),
+    }
+}
+
+/// **The** state door. Validates `from → to` against [`transition_is_legal`],
+/// stamps state + reason + `last_activity_ms`, and wakes every waiter blocked
+/// on a state condition. Illegal edges are refused and logged at `warn` with
+/// the caller's `source` and `reason`, never silently dropped.
+///
+/// `source` is a short lane tag (`"hook:notification"`, `"stale:frozen-pty"`,
+/// `"headless"`, …) — it is what makes a refusal in the log actionable.
+pub fn apply_transition(
+    session: &mut FleetSessionInner,
+    to: FleetSessionState,
+    reason: &str,
+    source: &str,
+) -> TransitionOutcome {
+    transition_inner(session, to, reason, source, true)
+}
+
+/// [`apply_transition`] without the `last_activity_ms` stamp — for the parking
+/// verdicts (`mark_finished`, `finish_unanswered`) that deliberately do not
+/// claim the session just did something.
+pub fn apply_transition_parked(
+    session: &mut FleetSessionInner,
+    to: FleetSessionState,
+    reason: &str,
+    source: &str,
+) -> TransitionOutcome {
+    transition_inner(session, to, reason, source, false)
+}
+
+fn transition_inner(
+    session: &mut FleetSessionInner,
+    to: FleetSessionState,
+    reason: &str,
+    source: &str,
+    touch_activity: bool,
+) -> TransitionOutcome {
+    let from = session.state;
+    if !transition_is_legal(from, to) {
+        TRANSITIONS_REFUSED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        tracing::warn!(
+            session_id = %session.id,
+            from = %state_to_token(from),
+            to = %state_to_token(to),
+            source = %source,
+            reason = %reason,
+            "fleet: illegal state transition refused by the registry door"
+        );
+        return TransitionOutcome::Refused;
+    }
+    if touch_activity {
+        session.last_activity_ms = now_ms();
+    }
+    session.state_reason = Some(reason.to_string());
+    if from == to {
+        return TransitionOutcome::Restamped;
+    }
+    session.state = to;
+    TRANSITIONS_APPLIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Wake anyone blocked on a state condition HERE rather than at each caller's
+    // emit — a transition that reaches the registry can no longer skip the wake
+    // by taking a lane that emits `registry-changed` instead of `session-state`
+    // (three such lanes existed: `mark_alive` from the PTY reader and from the
+    // headless reader, and `park_recovered` from boot recovery).
+    super::wait::note_state_changed();
+    TransitionOutcome::Changed
+}
+
 impl FleetRegistry {
     /// Inserts a freshly-spawned session. Returns the same id back for
     /// caller convenience.
@@ -734,19 +888,7 @@ impl FleetRegistry {
         let Some(session) = map.get_mut(session_id) else {
             return false;
         };
-        if matches!(
-            session.state,
-            FleetSessionState::Exited | FleetSessionState::Hibernated
-        ) {
-            return false;
-        }
-        session.last_activity_ms = now_ms();
-        if session.state == state {
-            return false;
-        }
-        session.state = state;
-        session.state_reason = Some(reason.to_string());
-        true
+        apply_transition(session, state, reason, "headless").changed()
     }
 
     /// Resize the PTY for `session_id`.
@@ -798,10 +940,13 @@ impl FleetRegistry {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(session) = map.get_mut(session_id) {
             if matches!(session.state, FleetSessionState::Spawning) {
-                session.state = FleetSessionState::Idle;
-                session.last_activity_ms = now_ms();
-                session.state_reason = Some("Ready — claude is at the prompt".into());
-                return true;
+                return apply_transition(
+                    session,
+                    FleetSessionState::Idle,
+                    "Ready — claude is at the prompt",
+                    "pty:first-output",
+                )
+                .changed();
             }
         }
         false
@@ -832,9 +977,13 @@ impl FleetRegistry {
             session.state,
             FleetSessionState::AwaitingInput | FleetSessionState::Idle | FleetSessionState::Stale
         ) {
-            session.state = FleetSessionState::Running;
-            session.state_reason = Some("Tool activity — session is working".into());
-            return true;
+            return apply_transition(
+                session,
+                FleetSessionState::Running,
+                "Tool activity — session is working",
+                "hook:tool-activity",
+            )
+            .changed();
         }
         false
     }
@@ -923,6 +1072,12 @@ impl FleetRegistry {
     pub fn mark_exited(&self, session_id: &str, exit_code: Option<i32>) {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(session) = map.get_mut(session_id) {
+            // DELIBERATELY NOT through `apply_transition`: the door refuses every
+            // edge OUT of a terminal state, and a second reap (both child lanes
+            // can finalize) must still be able to stamp the fresher exit code and
+            // reason onto an already-`Exited` row. Death is the one verdict that
+            // may be re-asserted. The wake the door would have done is covered by
+            // this path's own `emit_session_state` (pty::finalize_child_exit).
             session.state = FleetSessionState::Exited;
             session.exit_code = exit_code;
             session.last_activity_ms = now_ms();
@@ -1058,10 +1213,12 @@ impl FleetRegistry {
             return false; // can't resume what we can't name
         }
         session.hibernating.store(true, Ordering::SeqCst);
-        session.state = FleetSessionState::Hibernated;
-        session.last_activity_ms = now_ms();
-        session.state_reason =
-            Some("Hibernated — process freed; resume with claude --resume".to_string());
+        apply_transition(
+            session,
+            FleetSessionState::Hibernated,
+            "Hibernated — process freed; resume with claude --resume",
+            "hibernate",
+        );
         // Terminate the child (interactive claude won't exit on stdin EOF). KEEP
         // child_pid until the reaper confirms exit (cleared via clear_child_pid in
         // the reaper's hibernation branch) so process_scan doesn't mislabel the
@@ -1194,10 +1351,16 @@ impl FleetRegistry {
         }
         let prev = state_to_token(session.state);
         session.athena_active_until_ms = 0;
-        session.state = FleetSessionState::AwaitingInput;
-        session.state_reason = Some(reason.to_string());
-        session.last_activity_ms = now_ms();
-        Some(prev)
+        // `accepted`, not `changed`: an AwaitingInput → AwaitingInput escalation
+        // carries a NEW reason the operator must see, so the caller still emits.
+        apply_transition(
+            session,
+            FleetSessionState::AwaitingInput,
+            reason,
+            "athena:escalate",
+        )
+        .accepted()
+        .then_some(prev)
     }
 
     /// Boot recovery (Mechanism 2): a session rehydrated with a mid-task state
@@ -1219,10 +1382,13 @@ impl FleetRegistry {
             return false;
         }
         session.athena_active_until_ms = 0;
-        session.state = FleetSessionState::AwaitingInput;
-        session.state_reason = Some(reason.to_string());
-        session.last_activity_ms = now_ms();
-        true
+        apply_transition(
+            session,
+            FleetSessionState::AwaitingInput,
+            reason,
+            "boot:park-recovered",
+        )
+        .accepted()
     }
 
     /// Mechanical completion (fleet protocol `FLEET:DONE`): the session
@@ -1242,9 +1408,16 @@ impl FleetRegistry {
         }
         let prev = state_to_token(session.state);
         session.athena_active_until_ms = 0;
-        session.state = FleetSessionState::Finished;
-        session.state_reason = Some(format!("Task complete: {summary}"));
-        Some(prev)
+        // `_parked`: a declared completion is not fresh activity, so the
+        // staleness clock must not be reset by it (pre-door behaviour).
+        apply_transition_parked(
+            session,
+            FleetSessionState::Finished,
+            &format!("Task complete: {summary}"),
+            "fleet-protocol:done",
+        )
+        .accepted()
+        .then_some(prev)
     }
 
     /// Terminal-finish a session parked in `AwaitingInput` that provably has
@@ -1270,9 +1443,14 @@ impl FleetRegistry {
         }
         let prev = state_to_token(session.state);
         session.athena_active_until_ms = 0;
-        session.state = FleetSessionState::Finished;
-        session.state_reason = Some(reason.to_string());
-        Some(prev)
+        apply_transition_parked(
+            session,
+            FleetSessionState::Finished,
+            reason,
+            "overnight:unanswered",
+        )
+        .accepted()
+        .then_some(prev)
     }
 
     /// Stamp (or clear, with `None`) the parsed limit-reset time. Returns true
@@ -1638,6 +1816,140 @@ mod tests {
     fn state_of(reg: &FleetRegistry, id: &str) -> FleetSessionState {
         let map = reg.sessions.lock().unwrap();
         map.get(id).unwrap().state
+    }
+
+    #[test]
+    fn the_door_refuses_illegal_edges_and_writes_nothing() {
+        use FleetSessionState::*;
+        // Nothing leaves a terminal state; nothing re-enters `Spawning`.
+        // `Hibernated → *` is the one that used to get through: hooks matched a
+        // hibernated row by cwd and flipped it `Running`, which STRANDED it —
+        // `resume_target` only wakes rows still `Hibernated`.
+        for (from, to) in [
+            (Exited, Running),
+            (Exited, Idle),
+            (Exited, Stale),
+            (Exited, Hibernated),
+            (Exited, Finished),
+            (Hibernated, Stale),
+            (Hibernated, Running),
+            (Hibernated, AwaitingInput),
+            (Hibernated, Exited),
+            (Running, Spawning),
+            (Idle, Spawning),
+            (Stale, Spawning),
+            (AwaitingInput, Spawning),
+            (Finished, Spawning),
+        ] {
+            assert!(
+                !transition_is_legal(from, to),
+                "{from:?} -> {to:?} must be illegal"
+            );
+            let mut inner = session("x", from, Some("cc"));
+            let out = apply_transition(&mut inner, to, "unit test", "test");
+            assert_eq!(out, TransitionOutcome::Refused, "{from:?} -> {to:?}");
+            assert_eq!(inner.state, from, "a refused edge must not write state");
+            assert!(
+                inner.state_reason.is_none(),
+                "a refused edge must not write a reason"
+            );
+        }
+    }
+
+    #[test]
+    fn the_door_applies_every_edge_a_lane_performs_today() {
+        use FleetSessionState::*;
+        // Enumerated from the call sites this door replaced: mark_alive
+        // (Spawning→Idle), the hook lane (→Running/Idle/AwaitingInput/Exited),
+        // the staleness sweeper (→Stale/Running), hibernate (→Hibernated),
+        // mark_finished / finish_unanswered (→Finished), park_recovered and
+        // escalate_to_awaiting (→AwaitingInput), and the reaper (→Exited).
+        for (from, to) in [
+            (Spawning, Idle),
+            (Spawning, Running),
+            (Spawning, Stale),
+            (Spawning, AwaitingInput),
+            (Spawning, Exited),
+            (Spawning, Hibernated),
+            (Running, Idle),
+            (Running, Stale),
+            (Running, AwaitingInput),
+            (Running, Finished),
+            (Running, Exited),
+            (Running, Hibernated),
+            (AwaitingInput, Running),
+            (AwaitingInput, Idle),
+            (AwaitingInput, Stale),
+            (AwaitingInput, Finished),
+            (AwaitingInput, Exited),
+            (AwaitingInput, Hibernated),
+            (Idle, Running),
+            (Idle, Stale),
+            (Idle, AwaitingInput),
+            (Idle, Finished),
+            (Idle, Exited),
+            (Idle, Hibernated),
+            (Stale, Running),
+            (Stale, Idle),
+            (Stale, AwaitingInput),
+            (Stale, Finished),
+            (Stale, Exited),
+            (Stale, Hibernated),
+            (Finished, Running),
+            (Finished, AwaitingInput),
+            (Finished, Stale),
+            (Finished, Exited),
+            (Finished, Hibernated),
+        ] {
+            assert!(
+                transition_is_legal(from, to),
+                "{from:?} -> {to:?} is performed by a lane and must stay legal"
+            );
+            let mut inner = session("x", from, Some("cc"));
+            let out = apply_transition(&mut inner, to, "moved", "test");
+            assert_eq!(out, TransitionOutcome::Changed, "{from:?} -> {to:?}");
+            assert_eq!(inner.state, to);
+            assert_eq!(inner.state_reason.as_deref(), Some("moved"));
+        }
+    }
+
+    #[test]
+    fn a_same_state_request_restamps_the_reason_without_moving() {
+        // The stale sweeper re-derives its verdict every tick ("No log growth
+        // for 7 min") and a second Notification carries a new question. Both
+        // must refresh the explanation; neither is a transition to announce.
+        let mut inner = session("x", FleetSessionState::Stale, Some("cc"));
+        inner.state_reason = Some("No log growth for 6 min".into());
+        let out = apply_transition(
+            &mut inner,
+            FleetSessionState::Stale,
+            "No log growth for 7 min",
+            "test",
+        );
+        assert_eq!(out, TransitionOutcome::Restamped);
+        assert!(!out.changed());
+        assert!(out.accepted());
+        assert_eq!(inner.state, FleetSessionState::Stale);
+        assert_eq!(
+            inner.state_reason.as_deref(),
+            Some("No log growth for 7 min")
+        );
+    }
+
+    #[test]
+    fn the_parked_door_does_not_reset_the_staleness_clock() {
+        // `mark_finished` / `finish_unanswered` park a session; parking is not
+        // fresh activity and must not look like it to the staleness ticker.
+        let mut inner = session("x", FleetSessionState::Stale, Some("cc"));
+        inner.last_activity_ms = 1_000;
+        let out = apply_transition_parked(&mut inner, FleetSessionState::Finished, "done", "test");
+        assert_eq!(out, TransitionOutcome::Changed);
+        assert_eq!(inner.last_activity_ms, 1_000);
+        // The activity-stamping door is the other half of the contract.
+        let mut inner = session("y", FleetSessionState::Stale, Some("cc"));
+        inner.last_activity_ms = 1_000;
+        apply_transition(&mut inner, FleetSessionState::Running, "back", "test");
+        assert!(inner.last_activity_ms > 1_000);
     }
 
     #[test]

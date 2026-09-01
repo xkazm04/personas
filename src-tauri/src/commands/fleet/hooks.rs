@@ -22,7 +22,7 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
-use super::registry::{now_ms, registry};
+use super::registry::registry;
 use super::types::{state_to_token, FleetSessionState};
 
 /// Returns the axum Router to be registered under `/fleet`. Hits:
@@ -308,9 +308,27 @@ fn apply_hook(
     }
 
     let prev_state = session.state;
-    session.state = new_state;
-    session.last_activity_ms = now_ms();
-    session.state_reason = Some(reason.clone());
+    // THE state door (`registry::apply_transition`) — never an inline
+    // `session.state` assignment. It validates the edge, stamps reason +
+    // activity, and wakes the state waiters in `super::wait`.
+    if !super::registry::apply_transition(
+        session,
+        new_state,
+        &reason,
+        &format!("hook:{event_kind}"),
+    )
+    .accepted()
+    {
+        // Refused: the row is terminal (`Exited` — process death is
+        // authoritative — or `Hibernated`, whose wake spawns a NEW row). A hook
+        // can still reach a hibernated row through the cwd fallback in
+        // `find_session_by_cwd`, and flipping it to `Running` used to STRAND it:
+        // `resume_target` only wakes rows that are still `Hibernated`. Emitting
+        // a state the registry refused to store would put the tile in a state no
+        // lane can move it out of, so this returns without announcing anything.
+        // The door already logged the refusal at `warn` with the lane tag.
+        return;
+    }
     let project_label = session.project_label.clone();
 
     // Release the registry lock before emitting (events go through Tauri's
@@ -344,4 +362,22 @@ fn apply_hook(
 struct HookAck {
     ok: bool,
     matched_session_id: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    /// The hook receiver must reach the registry's state door for every event.
+    /// Source-asserted for the same reason as the sweeper's twin in `stale.rs`
+    /// — see the note there.
+    #[test]
+    fn the_hook_receiver_never_assigns_state_outside_the_registry_door() {
+        // Assembled at runtime so this assertion cannot match itself.
+        let needle: String = ["session", ".state", " ="].concat();
+        let src = include_str!("hooks.rs");
+        assert!(
+            !src.contains(&needle),
+            "hooks.rs assigns session state inline — route it through \
+             `registry::apply_transition` (the one state door) instead"
+        );
+    }
 }

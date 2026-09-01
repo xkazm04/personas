@@ -487,9 +487,18 @@ fn tick_once(app: &AppHandle) {
         g.retain(|k, _| present.contains(k));
     }
 
-    // Pass C — apply state changes under the lock, via the pure transition fn.
-    let mut newly_stale: Vec<String> = Vec::new();
-    let mut revived: Vec<String> = Vec::new();
+    // Pass C — apply state changes under the lock, via the pure transition fn
+    // and THE registry state door (`registry::apply_transition`). Nothing in
+    // this pass assigns `session.state` itself: the door owns the transition
+    // table, the reason stamp and the waiter wake.
+    //
+    // `(id, reason)` — the reason the door actually stamped, so the event this
+    // pass emits carries the same explanation the tile shows. The pass used to
+    // emit a generic "No log growth" / "Transcript growing" while the registry
+    // held the specific verdict, and the two drifted.
+    let mut newly_stale: Vec<(String, String)> = Vec::new();
+    let mut revived: Vec<(String, String)> = Vec::new();
+    let (transitions_before, refusals_before) = super::registry::transition_counts();
     {
         // Lock the await-baseline map alongside the registry (consistent order:
         // silence clock before baseline before registry) so the AwaitingInput
@@ -523,12 +532,18 @@ fn tick_once(app: &AppHandle) {
                 now - session.last_activity_ms,
                 never_attached_ms,
             ) {
-                session.state = FleetSessionState::Stale;
-                session.state_reason = Some(
-                    "Claude never attached — the folder may need trust approval, or claude failed to start. Safe to kill.".into(),
-                );
+                let reason = "Claude never attached — the folder may need trust approval, or claude failed to start. Safe to kill.";
+                if super::registry::apply_transition(
+                    session,
+                    FleetSessionState::Stale,
+                    reason,
+                    "stale:never-attached",
+                )
+                .changed()
+                {
+                    newly_stale.push((session.id.clone(), reason.to_string()));
+                }
                 base.remove(&session.id);
-                newly_stale.push(session.id.clone());
                 continue;
             }
             let grew = grew_ids.contains(&session.id);
@@ -588,12 +603,18 @@ fn tick_once(app: &AppHandle) {
                             base.insert(session.id.clone(), size);
                         }
                         Some(baseline) if size > baseline => {
-                            session.state = FleetSessionState::Running;
-                            session.state_reason =
-                                Some("Transcript grew after awaiting input — still working".into());
-                            session.last_activity_ms = now;
+                            let reason = "Transcript grew after awaiting input — still working";
+                            if super::registry::apply_transition(
+                                session,
+                                FleetSessionState::Running,
+                                reason,
+                                "stale:awaiting-revive",
+                            )
+                            .changed()
+                            {
+                                revived.push((session.id.clone(), reason.to_string()));
+                            }
                             base.remove(&session.id);
-                            revived.push(session.id.clone());
                         }
                         _ => {}
                     }
@@ -637,8 +658,7 @@ fn tick_once(app: &AppHandle) {
                 now,
                 stalled_ms,
             ) {
-                session.state = FleetSessionState::Stale;
-                session.state_reason = Some(if stalled_secs >= 60 {
+                let reason = if stalled_secs >= 60 {
                     format!(
                         "No console output for {} min — claude looks frozen mid-run. Safe to kill, or wake it with a prompt.",
                         stalled_secs / 60
@@ -647,8 +667,17 @@ fn tick_once(app: &AppHandle) {
                     format!(
                         "No console output for {stalled_secs}s — claude looks frozen mid-run. Safe to kill, or wake it with a prompt."
                     )
-                });
-                newly_stale.push(session.id.clone());
+                };
+                if super::registry::apply_transition(
+                    session,
+                    FleetSessionState::Stale,
+                    &reason,
+                    "stale:frozen-pty",
+                )
+                .changed()
+                {
+                    newly_stale.push((session.id.clone(), reason));
+                }
                 silent.remove(&session.id);
                 continue;
             }
@@ -666,8 +695,7 @@ fn tick_once(app: &AppHandle) {
                 now,
                 stalled_ms,
             ) {
-                session.state = FleetSessionState::Stale;
-                session.state_reason = Some(if stalled_secs >= 60 {
+                let reason = if stalled_secs >= 60 {
                     format!(
                         "The screen has not changed for {} min and nothing was logged. Claude looks stuck mid-run; safe to kill, or wake it with a prompt.",
                         stalled_secs / 60
@@ -676,19 +704,36 @@ fn tick_once(app: &AppHandle) {
                     format!(
                         "The screen has not changed for {stalled_secs}s and nothing was logged. Claude looks stuck mid-run; safe to kill, or wake it with a prompt."
                     )
-                });
-                newly_stale.push(session.id.clone());
+                };
+                if super::registry::apply_transition(
+                    session,
+                    FleetSessionState::Stale,
+                    &reason,
+                    "stale:frozen-screen",
+                )
+                .changed()
+                {
+                    newly_stale.push((session.id.clone(), reason));
+                }
                 silent.remove(&session.id);
                 continue;
             }
 
             match staleness_transition(session.state, grew, idle_since, now, cutoff_ms) {
                 Some(FleetSessionState::Running) => {
-                    session.state = FleetSessionState::Running;
-                    session.state_reason = Some("Transcript growing — session is active".into());
+                    let reason = "Transcript growing — session is active";
+                    if super::registry::apply_transition(
+                        session,
+                        FleetSessionState::Running,
+                        reason,
+                        "stale:growth-revive",
+                    )
+                    .changed()
+                    {
+                        revived.push((session.id.clone(), reason.to_string()));
+                    }
                     // Back at work — whatever it was parked on no longer holds.
                     session.stale_kind = None;
-                    revived.push(session.id.clone());
                 }
                 // Corroboration veto: the transcript is flat, but the screen
                 // is demonstrably producing content (more than the status
@@ -700,13 +745,21 @@ fn tick_once(app: &AppHandle) {
                 // the decision straight back to the flat-log rule.
                 Some(FleetSessionState::Stale) if screen_vetoes_stale(screen_stale) => {}
                 Some(FleetSessionState::Stale) => {
-                    session.state = FleetSessionState::Stale;
-                    session.state_reason = Some(if stale_secs >= 60 {
+                    let reason = if stale_secs >= 60 {
                         format!("No log growth for {} min", stale_secs / 60)
                     } else {
                         format!("No log growth for {stale_secs}s")
-                    });
-                    newly_stale.push(session.id.clone());
+                    };
+                    if super::registry::apply_transition(
+                        session,
+                        FleetSessionState::Stale,
+                        &reason,
+                        "stale:flat-log",
+                    )
+                    .changed()
+                    {
+                        newly_stale.push((session.id.clone(), reason));
+                    }
                 }
                 _ => {}
             }
@@ -723,18 +776,28 @@ fn tick_once(app: &AppHandle) {
     // amber "stale" bucket into a typed verdict. Runs outside every lock.
     classify_pass(app, &grew_ids);
 
-    // Emit state changes outside the lock.
-    for sid in revived {
-        super::pty::emit_session_state(
-            app,
-            &sid,
-            None,
-            "running",
-            Some("Transcript growing".into()),
-        );
+    // Emit state changes outside the lock — one event per transition the door
+    // actually applied, carrying the reason it stamped.
+    for (sid, reason) in revived {
+        super::pty::emit_session_state(app, &sid, None, "running", Some(reason));
     }
-    for sid in newly_stale {
-        super::pty::emit_session_state(app, &sid, None, "stale", Some("No log growth".into()));
+    for (sid, reason) in newly_stale {
+        super::pty::emit_session_state(app, &sid, None, "stale", Some(reason));
+    }
+    // Measure: how much this pass moved, and whether any lane asked for an edge
+    // the table refuses. `debug` — a quiet pass logs one line, and the counters
+    // are process-wide so a before/after comparison needs no live fleet.
+    {
+        let (transitions_after, refusals_after) = super::registry::transition_counts();
+        let applied = transitions_after - transitions_before;
+        let refused = refusals_after - refusals_before;
+        if applied > 0 || refused > 0 {
+            tracing::debug!(
+                applied,
+                refused,
+                "fleet stale pass: state transitions through the registry door"
+            );
+        }
     }
 
     // Test/debug: log every non-terminal session's decision inputs each tick so
@@ -1628,6 +1691,26 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The sweeper must reach the registry's state door for EVERY verdict.
+    ///
+    /// Asserted against this file's own source because the condition is
+    /// "nobody wrote the field", which no runtime fixture can observe: a
+    /// bypass produces exactly the same session, minus the transition-table
+    /// check and the waiter wake. The census engine cannot express it either —
+    /// `run-census.mjs` fails any rule that matches zero files anywhere, and
+    /// "zero matches" is precisely the passing state here.
+    #[test]
+    fn the_sweeper_never_assigns_state_outside_the_registry_door() {
+        // Assembled at runtime so this assertion cannot match itself.
+        let needle: String = ["session", ".state", " ="].concat();
+        let src = include_str!("stale.rs");
+        assert!(
+            !src.contains(&needle),
+            "stale.rs assigns session state inline — route it through \
+             `registry::apply_transition` (the one state door) instead"
+        );
+    }
 
     #[test]
     fn cutoff_is_sane() {
