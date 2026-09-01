@@ -79,6 +79,10 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   groups** from an older scan; `.personas/contexts.txt` holds 773 pre-consolidation names dumped by the
   peer. Map ∩ local DB = 2 names. There is no import path - `context-map.json` is export-only - so
   `git pull` does NOT sync a peer's rescan into this machine's DB.
+- **2026-09-01: the local DB was RESCANNED on 2026-08-29 into 480 `dev_contexts`** (the 49-context note above
+  is stale). Map names such as `fleet-session-grid` / `commands-fleet` / `fleet-monitor-channels` are still
+  NOT DB names; `fleet-monitor` and `team-channels` are. Query the DB before anchoring:
+  `sqlite3 "file:C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db?mode=ro" "select name from dev_contexts where name like ...".`
 - Use the map for the QUEUE (the finer, truer partition) and the LOCAL DB's `dev_contexts` names for
   anything the app anchors to (outbox `context`). Provenance check:
   `node -e 'const m=require("./context-map.json");console.log(JSON.stringify(m.project||m.$schema||{}))'`
@@ -104,3 +108,6 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
 
 ## Skill improvement log
 - (migrate the existing entries from `$VAULT/Perfect/config.md` on the first 2.3 run, then append here)
+- 2026-09-01 (round 2): 8/8 accepted, 8/8 shipped in ONE wave on master (4 lots, rust cap 2, B after A). What dragged: the shared `.git/index` goes stale after every isolated-index commit, so `git status` shows phantom `MM`/`D` and `git diff HEAD --stat` REPORTS NEW FILES AS DELETED (they are on disk; the index simply lacks them) - resync with a guarded mixed `git reset` only when `git diff --cached --name-status` lists nothing foreign. Python `open(p,'w')` on Windows writes CRLF into LF files (en.json, 3 .rs files) - use `newline='
+'` or `sed -i 's/$//'` after. `printf` with a literal `%` truncates a vault note silently. A SendMessage addendum to a builder that already reported DOES resume it (lot D converted transcript.rs after its final report). Builder-corrected brief numbers: ai-title 32/60 (scout) was really 7/60 - re-measure counts before they reach a brief. The builder-brief template's tsc-vs-Class-C contradiction from session 1 was fixed in these briefs ("missing t.<key> errors are EXPECTED") and produced zero confusion.
+- 2026-09-01 (round 2): the registry map's `deviation` entries are the best direction seed in the vault - both slates carried one pre-approved deviation (one-state-door shipped; heterogeneous-model-panels deferred to the engine context). Read `.ai/registry-map.json` for the cursor context BEFORE scouting; it names the file:line.
