@@ -3,7 +3,7 @@ import { Send, Sparkles, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import type { AssignProposal } from './conversationModel';
 import { goalText, looksLikeGoal } from './conversationModel';
@@ -113,7 +113,10 @@ export function ConversationComposer({
       });
       setDraft('');
     } catch (e) {
-      silentCatch('conversation:decompose')(e);
+      // The route round-trip is a thing the user PRESSED. A spinner that clears
+      // with nothing in its place is indistinguishable from a route that
+      // produced no steps; the registry-resolved toast says which it was.
+      toastCatch('conversation:decompose')(e);
     } finally {
       setDecomposing(false);
     }

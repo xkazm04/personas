@@ -4,7 +4,7 @@ import { channelKey, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice
 import { useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
 import { listTeamDeliberations } from '@/api/pipeline/teamDeliberations';
 import { createTeamAssignment, startTeamAssignment } from '@/api/pipeline/assignments';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import { buildConversation, type AssignProposal, type ConversationRow } from './conversationModel';
 
@@ -86,7 +86,11 @@ export function useConversation(teamId: string | null) {
 
   const send = useCallback(
     (text: string) => {
-      if (teamId) void sendChannelDirective(teamId, text).catch(silentCatch('conversation:send'));
+      // A directive the user pressed Send on is not background work: a post
+      // that fails silently leaves the composer cleared and the channel
+      // unchanged, which reads as "sent". The toast is the only thing that
+      // distinguishes the two.
+      if (teamId) void sendChannelDirective(teamId, text).catch(toastCatch('conversation:send'));
     },
     [teamId, sendChannelDirective],
   );
@@ -129,7 +133,7 @@ export function useConversation(teamId: string | null) {
           void refreshChannel(channelKey(teamId));
         }
       } catch (e) {
-        silentCatch('conversation:confirm')(e);
+        toastCatch('conversation:confirm')(e);
         setProposals((ps) => ps.map((x) => (x.goal === p.goal ? { ...x, status: 'pending' } : x)));
       }
     },
