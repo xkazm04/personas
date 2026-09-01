@@ -41,7 +41,7 @@ export function CapabilityRowSummary({ capability }: Props) {
       <CapabilityChip
         icon={<Clock className="h-3 w-3" />}
         label={t.matrix_v3.capability_row_field_trigger}
-        value={triggerSummary(capability)}
+        value={triggerSummary(t, capability)}
         resolved={isResolved(capability, "suggested_trigger")}
         placeholder={t.matrix_v3.capability_row_field_pending}
         testId={`capability-chip-trigger-${capability.id}`}

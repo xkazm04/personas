@@ -21,7 +21,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
     );
   }
 
-  const cfg = (trig.config ?? {}) as Record<string, unknown>;
+  const cfg = trig.config ?? {};
   const rows: Array<{ key: string; value: string }> = [];
   Object.entries(cfg).forEach(([k, v]) => {
     if (v === null || v === undefined || v === "") return;
