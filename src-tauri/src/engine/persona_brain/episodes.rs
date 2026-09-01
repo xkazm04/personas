@@ -45,7 +45,7 @@ impl EpisodeRole {
 }
 
 /// Mint one episode: disk markdown at
-/// `~/.personas/personas/<persona_id>/episodes/YYYY/MM/DD/pep_<short>_<role>.md`
+/// `~/.personas/personas/<persona_id>/episodes/YYYY/MM/DD/pep_<uuid>_<role>.md`
 /// (best-effort — see module doc), then the `persona_episodes` row (excerpt
 /// capped at [`EPISODE_EXCERPT_CAP`], `content_hash` = sha256 of the FULL
 /// markdown, `chars` = ORIGINAL body chars). Returns the DB row id.
@@ -62,11 +62,11 @@ pub fn record(
     let created_at = now.to_rfc3339();
     // Disk file id — distinct from the DB row id (the repo mints its own
     // `ep_*` id at insert); `content_hash` ties the two records together.
-    let file_id = format!(
-        "pep_{}_{}",
-        crate::companion::brain::util::short_id(8),
-        role.as_str()
-    );
+    // Full-entropy uuid (id-generation golden path): episodes are the one
+    // record designed to grow without bound, and a truncated id here would
+    // collide-and-overwrite the day's file silently. Truncate at DISPLAY
+    // time only.
+    let file_id = format!("pep_{}_{}", uuid::Uuid::new_v4().simple(), role.as_str());
 
     let markdown = format!(
         "---\nid: {file_id}\npersona_id: {persona_id}\nrole: {role}\nsource: {source}\ncreated_at: {created_at}\n---\n\n{content}\n",

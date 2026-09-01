@@ -7,7 +7,12 @@ export type ResponsibilityObjective = { key: string, label: string, baseline?: n
 /**
  * 'up' | 'down' — which way the metric should move.
  */
-direction?: string, windowDays?: bigint, lastMeasuredAt?: string, 
+direction?: string, 
+/**
+ * Measurement window in days — stays far under 2^53, so the JS
+ * `number` pin is lossless (persisted-model-struct).
+ */
+windowDays?: number, lastMeasuredAt?: string, 
 /**
  * Where the measurement comes from (a KPI id, a command, prose).
  */

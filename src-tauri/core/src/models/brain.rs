@@ -34,6 +34,9 @@ pub struct PersonaEpisode {
     /// Content hash of the original body — the dedupe/provenance key.
     pub content_hash: String,
     /// Character count of the ORIGINAL body (consolidation budget input).
+    /// i64 because SQLite INTEGER is 64-bit; a char count stays far under
+    /// 2^53, so the JS `number` pin is lossless (persisted-model-struct).
+    #[ts(type = "number")]
     pub chars: i64,
     pub created_at: String,
 }
@@ -98,13 +101,20 @@ pub struct AttentionLoopSummary {
     #[ts(optional)]
     pub latest: Option<AttentionLedgerEntry>,
     /// Attention lanes dispatched today (verdict 'dispatched').
+    /// The four counts below are SQL `COUNT(*)` aggregates (rusqlite reads
+    /// i64); one day's passes stay far under 2^53, so the JS `number` pins
+    /// are lossless (persisted-model-struct).
+    #[ts(type = "number")]
     pub dispatched_today: i64,
     /// Passes refused today (rate caps, quiet hours, budget).
+    #[ts(type = "number")]
     pub refused_today: i64,
     /// Sleep-consolidation jobs enqueued today (kind 'consolidation',
     /// verdict 'enqueued').
+    #[ts(type = "number")]
     pub consolidations_today: i64,
     /// Distinct personas with a non-refused pass today.
+    #[ts(type = "number")]
     pub personas_served_today: i64,
 }
 

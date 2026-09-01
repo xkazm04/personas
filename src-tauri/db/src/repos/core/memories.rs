@@ -658,9 +658,13 @@ pub fn create_consolidated(
                 };
 
                 for episode_id in &draft.sources {
+                    // Targeted conflict clause (upsert golden path): dedupe
+                    // ONLY on the provenance pair's PK — a NOT NULL/CHECK
+                    // violation still raises instead of vanishing the row.
                     tx.execute(
-                        "INSERT OR IGNORE INTO persona_memory_sources (memory_id, episode_id)
-                     VALUES (?1, ?2)",
+                        "INSERT INTO persona_memory_sources (memory_id, episode_id)
+                     VALUES (?1, ?2)
+                     ON CONFLICT(memory_id, episode_id) DO NOTHING",
                         params![memory_id, episode_id],
                     )?;
                 }

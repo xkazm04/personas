@@ -22,6 +22,7 @@ use crate::companion::brain::identity::{apply_to, bump_updated, IdentityDiff, MA
 use crate::db::repos::core::memory_review_proposal as proposal_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::validation::contract::{self, ValidationError};
 
 /// Proposal-family discriminator this module owns (DB CHECK-enforced).
 pub const KIND_SELF_MODEL_DIFF: &str = "self_model_diff";
@@ -84,17 +85,32 @@ pub fn propose_diffs(
     diffs: Vec<IdentityDiff>,
     rationale: &str,
 ) -> Result<String, AppError> {
-    if diffs.is_empty() {
-        return Err(AppError::Validation(
-            "self-model proposal needs at least one diff".into(),
-        ));
-    }
-    if diffs.len() > MAX_DIFFS_PER_OP {
-        return Err(AppError::Validation(format!(
-            "self-model proposal carries {} diffs; one reviewable batch is at most {MAX_DIFFS_PER_OP}",
-            diffs.len()
-        )));
-    }
+    // Through the validation contract so the {field, rule} identity survives
+    // (command-input-validation golden path), not an open-coded refusal.
+    contract::check(
+        [
+            diffs.is_empty().then(|| {
+                ValidationError::new(
+                    "diffs",
+                    "required",
+                    "self-model proposal needs at least one diff",
+                )
+            }),
+            (diffs.len() > MAX_DIFFS_PER_OP).then(|| {
+                ValidationError::new(
+                    "diffs",
+                    "max_count",
+                    format!(
+                        "self-model proposal carries {} diffs; one reviewable batch is at most {MAX_DIFFS_PER_OP}",
+                        diffs.len()
+                    ),
+                )
+            }),
+        ]
+        .into_iter()
+        .flatten()
+        .collect(),
+    )?;
     let payload = serde_json::json!({
         "diffs": diffs.iter().map(diff_to_json).collect::<Vec<_>>(),
         "rationale": rationale,
@@ -136,6 +152,10 @@ fn diff_to_json(d: &IdentityDiff) -> serde_json::Value {
 /// What [`apply_approved`] did.
 #[derive(Debug, Clone)]
 pub struct IdentityApplyOutcome {
+    /// The persona whose `identity.md` was edited — derived from the
+    /// proposal ROW, never from the caller (ownership-verification golden
+    /// path: the row the server fetched is the only honest source).
+    pub persona_id: String,
     /// Human-readable previews of the diffs that applied.
     pub applied: Vec<String>,
     /// Per-diff failure reasons for the ones that did not.
@@ -150,13 +170,15 @@ pub struct IdentityApplyOutcome {
 /// `apply_to`), back up, bump `updated`, write, and mark the proposal
 /// `applied` (CAS — a concurrent double-apply loses and errors).
 ///
+/// The persona is derived from the proposal ROW the server fetched — there
+/// is deliberately no caller-supplied persona parameter to compare it
+/// against (ownership-verification golden path: a comparand that arrived on
+/// the same request as the row id can only fail for a caller who chose to
+/// fail it, and the write must route to the row's own persona regardless).
+///
 /// If NO diff validates, the proposal is left `pending_review` and an error
 /// names every failure — the human can fix or discard, and nothing burned.
-pub fn apply_approved(
-    pool: &DbPool,
-    persona_id: &str,
-    proposal_id: &str,
-) -> Result<IdentityApplyOutcome, AppError> {
+pub fn apply_approved(pool: &DbPool, proposal_id: &str) -> Result<IdentityApplyOutcome, AppError> {
     let proposal = proposal_repo::get_raw(pool, proposal_id)?
         .ok_or_else(|| AppError::NotFound(format!("proposal `{proposal_id}`")))?;
     if proposal.kind != KIND_SELF_MODEL_DIFF {
@@ -165,11 +187,12 @@ pub fn apply_approved(
             proposal.kind
         )));
     }
-    if proposal.persona_id.as_deref() != Some(persona_id) {
-        return Err(AppError::Validation(format!(
-            "proposal `{proposal_id}` does not belong to persona `{persona_id}`"
-        )));
-    }
+    let persona_id = proposal.persona_id.clone().ok_or_else(|| {
+        AppError::Validation(format!(
+            "self_model_diff proposal `{proposal_id}` carries no persona_id"
+        ))
+    })?;
+    let persona_id = persona_id.as_str();
     if proposal.status != "pending_review" {
         return Err(AppError::Validation(format!(
             "proposal `{proposal_id}` already `{}`",
@@ -199,12 +222,25 @@ pub fn apply_approved(
             Err(e) => skipped.push(format!("{} — {e}", d.preview())),
         }
     }
-    if applied.is_empty() {
-        return Err(AppError::Validation(format!(
-            "no self-model diffs applied (proposal left pending): {}",
-            skipped.join("; ")
-        )));
-    }
+    // Through the validation contract (command-input-validation golden
+    // path): the proposal's diffs failed validation against the live file,
+    // and the {field, rule} identity should survive the refusal.
+    contract::check(
+        applied
+            .is_empty()
+            .then(|| {
+                ValidationError::new(
+                    "diffs",
+                    "none_applied",
+                    format!(
+                        "no self-model diffs applied (proposal left pending): {}",
+                        skipped.join("; ")
+                    ),
+                )
+            })
+            .into_iter()
+            .collect(),
+    )?;
 
     // CAS the status BEFORE the disk write so a concurrent apply cannot write
     // twice; the loser errors here with the file untouched.
@@ -227,6 +263,7 @@ pub fn apply_approved(
     std::fs::write(&path, out)?;
 
     Ok(IdentityApplyOutcome {
+        persona_id: persona_id.to_string(),
         applied,
         skipped,
         backup,
@@ -283,7 +320,8 @@ mod tests {
         // Proposing NEVER applies.
         assert!(!read("p1").unwrap().contains("retry flaky fetches"));
 
-        let outcome = apply_approved(&pool, "p1", &proposal_id).unwrap();
+        let outcome = apply_approved(&pool, &proposal_id).unwrap();
+        assert_eq!(outcome.persona_id, "p1", "derived from the proposal row");
         assert_eq!(outcome.applied.len(), 1);
         assert!(outcome.skipped.is_empty());
         assert!(read("p1").unwrap().contains("retry flaky fetches"));
@@ -296,7 +334,7 @@ mod tests {
             .exists());
 
         // Re-apply loses the CAS: the proposal is already decided.
-        let err = apply_approved(&pool, "p1", &proposal_id).unwrap_err();
+        let err = apply_approved(&pool, &proposal_id).unwrap_err();
         assert!(err.to_string().contains("already"), "{err}");
     }
 
@@ -307,7 +345,7 @@ mod tests {
         seed_persona(&pool, "p1").unwrap();
         let proposal_id =
             propose_diffs(&pool, "p1", vec![diff("No Such / Section", "bullet")], "r").unwrap();
-        assert!(apply_approved(&pool, "p1", &proposal_id).is_err());
+        assert!(apply_approved(&pool, &proposal_id).is_err());
         let raw = proposal_repo::get_raw(&pool, &proposal_id)
             .unwrap()
             .unwrap();
@@ -318,14 +356,19 @@ mod tests {
     }
 
     #[test]
-    fn apply_refuses_the_wrong_persona_and_wrong_kind() {
+    fn apply_routes_the_write_to_the_proposals_own_persona() {
         let _home = crate::companion::brain::test_home::TestHome::new("persona_identity_scope");
         let pool = init_test_db().unwrap();
         seed_persona(&pool, "p1").unwrap();
         seed_persona(&pool, "p2").unwrap();
         let proposal_id =
             propose_diffs(&pool, "p1", vec![diff("My work / What I own", "x")], "r").unwrap();
-        assert!(apply_approved(&pool, "p2", &proposal_id).is_err());
+        // The persona is derived from the proposal ROW — no caller parameter
+        // exists to point the write at somebody else's identity file.
+        let outcome = apply_approved(&pool, &proposal_id).unwrap();
+        assert_eq!(outcome.persona_id, "p1");
+        assert!(read("p1").unwrap().contains("- x"));
+        assert!(read("p2").is_none(), "p2's identity was never touched");
     }
 
     #[test]

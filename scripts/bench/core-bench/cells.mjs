@@ -494,6 +494,24 @@ export function pickScenario(cell, scenarios) {
 // Budget
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve an env-carried positive number. UNSET and SET-TO-EMPTY both mean
+ * "use the default" — CI renders an unset variable as a set, EMPTY string,
+ * and `??` would smuggle that "" through `Number()` as 0 (for the money cap
+ * below, a cap that admits nothing). Anything else must parse to a finite
+ * positive number; a corrupt value HALTS instead of silently resolving to a
+ * number nobody typed (environment-variable-configuration golden path).
+ */
+export function resolveEnvPositiveNumber(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name}=${JSON.stringify(raw)} must be a finite positive number`);
+  }
+  return value;
+}
+
 /** Serial spend ledger: admit cells only while measured spend is under cap. */
 export class BudgetLedger {
   constructor(capUsd) {

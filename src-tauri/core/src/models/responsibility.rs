@@ -94,8 +94,11 @@ pub struct ResponsibilityObjective {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub direction: Option<String>,
+    /// Measurement window in days — stays far under 2^53, so the JS
+    /// `number` pin is lossless (persisted-model-struct).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
+    #[ts(type = "number")]
     pub window_days: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -114,15 +117,21 @@ pub struct ResponsibilityCadence {
     /// Master switch for the attention loop on this responsibility.
     #[serde(default)]
     pub attention_enabled: bool,
+    /// Minutes between attention passes — stays far under 2^53, so the JS
+    /// `number` pin is lossless (persisted-model-struct).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
+    #[ts(type = "number")]
     pub interval_minutes: Option<i64>,
     /// e.g. "22:00-07:00" — no attention runs inside this window.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub quiet_hours: Option<String>,
+    /// Daily run cap — stays far under 2^53, so the JS `number` pin is
+    /// lossless (persisted-model-struct).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
+    #[ts(type = "number")]
     pub max_runs_per_day: Option<i64>,
 }
 
@@ -145,8 +154,11 @@ pub struct ResponsibilityTenure {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub probation_ends_at: Option<String>,
+    /// Days between tenure reviews — stays far under 2^53, so the JS
+    /// `number` pin is lossless (persisted-model-struct).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
+    #[ts(type = "number")]
     pub review_cadence_days: Option<i64>,
     /// Conditions under which the responsibility should be retired.
     #[serde(default)]

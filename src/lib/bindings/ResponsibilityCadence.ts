@@ -7,8 +7,18 @@ export type ResponsibilityCadence = {
 /**
  * Master switch for the attention loop on this responsibility.
  */
-attentionEnabled: boolean, intervalMinutes?: bigint, 
+attentionEnabled: boolean, 
+/**
+ * Minutes between attention passes — stays far under 2^53, so the JS
+ * `number` pin is lossless (persisted-model-struct).
+ */
+intervalMinutes?: number, 
 /**
  * e.g. "22:00-07:00" — no attention runs inside this window.
  */
-quietHours?: string, maxRunsPerDay?: bigint, };
+quietHours?: string, 
+/**
+ * Daily run cap — stays far under 2^53, so the JS `number` pin is
+ * lossless (persisted-model-struct).
+ */
+maxRunsPerDay?: number, };

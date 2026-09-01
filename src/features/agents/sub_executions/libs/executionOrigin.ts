@@ -91,10 +91,13 @@ export function deriveExecutionOrigin(row: OriginSource): {
   if (row.input_data) {
     attention = parseAttentionMeta(row.input_data);
     try {
-      // Invariant: only the `source` string is read, and it is re-narrowed
-      // through `str()` — a non-object or non-string parse degrades to null.
-      const parsed = JSON.parse(row.input_data) as Record<string, unknown>;
-      if (typeof parsed === 'object' && parsed !== null) source = str(parsed['source']);
+      // Parsed as `unknown` and narrowed (untrusted-definition-validation):
+      // only the `source` string is read, and it is re-narrowed through
+      // `str()` — a non-object or non-string parse degrades to null.
+      const parsed: unknown = JSON.parse(row.input_data);
+      if (typeof parsed === 'object' && parsed !== null) {
+        source = str((parsed as Record<string, unknown>)['source']);
+      }
     } catch {
       source = null;
     }

@@ -11,7 +11,12 @@
  * lossless — dropping them would let the probation tick raise a duplicate
  * review for a hire that was already decided.
  */
-export type ResponsibilityTenure = { hiredAt?: string, probationEndsAt?: string, reviewCadenceDays?: bigint, 
+export type ResponsibilityTenure = { hiredAt?: string, probationEndsAt?: string, 
+/**
+ * Days between tenure reviews — stays far under 2^53, so the JS
+ * `number` pin is lossless (persisted-model-struct).
+ */
+reviewCadenceDays?: number, 
 /**
  * Conditions under which the responsibility should be retired.
  */

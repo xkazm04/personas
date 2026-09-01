@@ -35,6 +35,7 @@ import {
   validateCellPayloads,
   pickScenario,
   resolveScenarioIntent,
+  resolveEnvPositiveNumber,
   BudgetLedger,
   L1_ASSERTS,
   L2_ASSERTS,
@@ -287,7 +288,7 @@ async function runL2Cell(base, cell, inputs, scenarios, cellDir, ledger, keepPer
     const executionId = execRes?.execution?.id;
     if (!executionId) throw new Error("execute returned no execution.id");
 
-    const timeoutMs = Number(process.env.CORE_BENCH_L2_TIMEOUT_MS ?? 600_000);
+    const timeoutMs = resolveEnvPositiveNumber("CORE_BENCH_L2_TIMEOUT_MS", 600_000);
     const finalRow = await pollExecutionTerminal(base, executionId, personaId, timeoutMs);
     writeFileSync(
       path.join(cellDir, "execution.json"),
@@ -447,7 +448,7 @@ async function l2Run(args) {
   const inputs = loadInputs();
   const all = composeCells(inputs, { maxTemplates: args.maxTemplates });
   const scenarios = loadScenarios();
-  const capUsd = Number(process.env.CORE_BENCH_MAX_USD ?? 15);
+  const capUsd = resolveEnvPositiveNumber("CORE_BENCH_MAX_USD", 15);
   const ledger = new BudgetLedger(capUsd);
 
   // Seeded sample: rotate a deterministic offset through the matrix so

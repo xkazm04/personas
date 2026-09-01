@@ -14,18 +14,21 @@ export type AttentionLoopSummary = {
 latest?: AttentionLedgerEntry, 
 /**
  * Attention lanes dispatched today (verdict 'dispatched').
+ * The four counts below are SQL `COUNT(*)` aggregates (rusqlite reads
+ * i64); one day's passes stay far under 2^53, so the JS `number` pins
+ * are lossless (persisted-model-struct).
  */
-dispatchedToday: bigint, 
+dispatchedToday: number, 
 /**
  * Passes refused today (rate caps, quiet hours, budget).
  */
-refusedToday: bigint, 
+refusedToday: number, 
 /**
  * Sleep-consolidation jobs enqueued today (kind 'consolidation',
  * verdict 'enqueued').
  */
-consolidationsToday: bigint, 
+consolidationsToday: number, 
 /**
  * Distinct personas with a non-refused pass today.
  */
-personasServedToday: bigint, };
+personasServedToday: number, };

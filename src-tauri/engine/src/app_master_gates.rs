@@ -2355,9 +2355,12 @@ mod tests {
     // -- gate command sourcing ----------------------------------------------
 
     fn seed_holder_persona(pool: &DbPool) -> Result<(), AppError> {
+        // Targeted conflict clause (upsert golden path): idempotent on the
+        // PK only, so any other constraint violation still raises.
         pool.get()?.execute(
-            "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
-             VALUES ('p1', 'p1', 'sp', datetime('now'), datetime('now'))",
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'p1', 'sp', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
             [],
         )?;
         Ok(())

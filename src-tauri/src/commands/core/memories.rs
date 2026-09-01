@@ -888,14 +888,12 @@ pub fn apply_persona_memory_review_proposal(
     // write) and map its outcome onto this command's result shape so the
     // frontend's proposal surface needs no second command.
     if proposal.kind == identity_apply::KIND_SELF_MODEL_DIFF {
-        let persona_id = proposal.persona_id.clone().ok_or_else(|| {
-            AppError::Validation(format!(
-                "self_model_diff proposal `{proposal_id}` carries no persona_id"
-            ))
-        })?;
-        let outcome = identity_apply::apply_approved(&state.db, &persona_id, &proposal_id)?;
+        // The apply door derives the persona from the proposal ROW itself
+        // (ownership-verification golden path) — this command supplies only
+        // the proposal id and reads the routed persona back off the outcome.
+        let outcome = identity_apply::apply_approved(&state.db, &proposal_id)?;
         tracing::info!(
-            persona_id = %persona_id,
+            persona_id = %outcome.persona_id,
             proposal_id = %proposal_id,
             applied = outcome.applied.len(),
             skipped = outcome.skipped.len(),

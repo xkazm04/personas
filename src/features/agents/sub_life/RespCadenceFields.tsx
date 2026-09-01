@@ -24,9 +24,10 @@ export function RespCadenceFields({
 }: RespCadenceFieldsProps) {
   const { t } = useTranslation();
   const life = t.agents.life;
-  // ts-rs types the interval fields as bigint (Rust i64); the wire carries
-  // plain JSON numbers, so Number() is lossless here for any sane cadence.
-  const asNumber = (v: bigint | undefined): number | null => (v == null ? null : Number(v));
+  // The interval fields are plain JSON numbers end to end — the Rust i64s
+  // carry `#[ts(type = "number")]` pins (persisted-model-struct), so no
+  // bigint coercion exists between the wire and this form.
+  const asNumber = (v: number | undefined): number | null => (v == null ? null : v);
 
   return (
     <div className="space-y-3" data-testid="life-resp-cadence">
@@ -46,7 +47,7 @@ export function RespCadenceFields({
             <NumberStepper
               value={asNumber(cadence.intervalMinutes)}
               onChange={(v) =>
-                onCadence({ ...cadence, intervalMinutes: v == null ? undefined : BigInt(Math.max(1, Math.round(v))) })
+                onCadence({ ...cadence, intervalMinutes: v == null ? undefined : Math.max(1, Math.round(v)) })
               }
               min={1}
               allowEmpty
@@ -57,7 +58,7 @@ export function RespCadenceFields({
             <NumberStepper
               value={asNumber(cadence.maxRunsPerDay)}
               onChange={(v) =>
-                onCadence({ ...cadence, maxRunsPerDay: v == null ? undefined : BigInt(Math.max(1, Math.round(v))) })
+                onCadence({ ...cadence, maxRunsPerDay: v == null ? undefined : Math.max(1, Math.round(v)) })
               }
               min={1}
               allowEmpty

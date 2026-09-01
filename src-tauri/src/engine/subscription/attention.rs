@@ -485,16 +485,19 @@ fn admit_persona(
     // (e) monthly budget — the SAME check execute_persona_inner runs
     // (get_monthly_spend vs persona.max_budget_usd), pre-flighted so the
     // ledger refuses loudly instead of the spawn failing Validation.
+    // `0.0` spells "no limit" for max_budget_usd (the documented persona-
+    // budget convention); resolve that ONCE at the read — the director_lab
+    // `weekly_budget_usd` reader shape — instead of re-asking positivity at
+    // the compare (spend-ceilings golden path, §4 step 3).
     let persona = persona_repo::get_by_id(pool, persona_id)?;
-    if let Some(budget) = persona.max_budget_usd {
-        if budget > 0.0 {
-            let spent = executions_repo::get_monthly_spend(pool, persona_id)?;
-            if spent >= budget {
-                return Ok(Admission::Refused(AttentionRefusal::BudgetExhausted {
-                    spent_usd: spent,
-                    limit_usd: budget,
-                }));
-            }
+    let configured_ceiling = persona.max_budget_usd.filter(|b| b.is_finite() && *b > 0.0);
+    if let Some(limit) = configured_ceiling {
+        let spent = executions_repo::get_monthly_spend(pool, persona_id)?;
+        if spent >= limit {
+            return Ok(Admission::Refused(AttentionRefusal::BudgetExhausted {
+                spent_usd: spent,
+                limit_usd: limit,
+            }));
         }
     }
 

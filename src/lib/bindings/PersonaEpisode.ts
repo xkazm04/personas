@@ -26,5 +26,7 @@ filePath?: string,
 contentHash: string, 
 /**
  * Character count of the ORIGINAL body (consolidation budget input).
+ * i64 because SQLite INTEGER is 64-bit; a char count stays far under
+ * 2^53, so the JS `number` pin is lossless (persisted-model-struct).
  */
-chars: bigint, createdAt: string, };
+chars: number, createdAt: string, };

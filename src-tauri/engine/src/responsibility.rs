@@ -46,6 +46,7 @@
 use std::collections::HashMap;
 
 use personas_core::error::AppError;
+use personas_core::validation::contract::{self, ValidationError};
 use personas_db::models::{
     CreatePersonaResponsibilityInput, PersonaResponsibility, ResponsibilityCadence,
     ResponsibilityStatus, ResponsibilityTenure, UpdatePersonaResponsibilityInput,
@@ -131,13 +132,24 @@ fn class_is_valid(class: &str) -> bool {
 ///   unknown bare string is almost always a typo, and storing it would produce
 ///   a charter that LOOKS stricter than it is.
 pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
-    if input.title.trim().is_empty() {
-        return Err(AppError::Validation(
-            "A responsibility needs a title: the charter is the operator's record of what \
-             this persona holds, and an unnamed one cannot be reviewed"
-                .into(),
-        ));
-    }
+    // Through the validation contract so the {field, rule} identity survives
+    // (command-input-validation golden path), not an open-coded refusal.
+    contract::check(
+        input
+            .title
+            .trim()
+            .is_empty()
+            .then(|| {
+                ValidationError::new(
+                    "title",
+                    "required",
+                    "A responsibility needs a title: the charter is the operator's record of \
+                     what this persona holds, and an unnamed one cannot be reviewed",
+                )
+            })
+            .into_iter()
+            .collect(),
+    )?;
     if input.scope_rung > MAX_GRANTABLE_RUNG {
         return Err(AppError::Validation(format!(
             "Scope rung {} ({}) is not grantable: rung {} ({}) is the ceiling, same as the \
@@ -401,11 +413,21 @@ fn replace_active(
 /// the replace path, which is exactly what the legacy `set_mandate` overwrite
 /// did.
 pub fn store_mandate_record(pool: &DbPool, record: &MandateRecord) -> Result<(), AppError> {
-    if record.project_id.trim().is_empty() {
-        return Err(AppError::Validation(
-            "A mandate record needs a project id: an unbound mandate governs nothing".into(),
-        ));
-    }
+    contract::check(
+        record
+            .project_id
+            .trim()
+            .is_empty()
+            .then(|| {
+                ValidationError::new(
+                    "project_id",
+                    "required",
+                    "A mandate record needs a project id: an unbound mandate governs nothing",
+                )
+            })
+            .into_iter()
+            .collect(),
+    )?;
     let rows =
         repo::list_by_project_domain(pool, &record.project_id, DOMAIN_SOFTWARE_ENGINEERING, true)?;
     if let Some(row) = rows.first().filter(|r| r.persona_id == record.persona_id) {
@@ -448,11 +470,21 @@ pub fn record_hire(
     record: &MandateRecord,
     title: &str,
 ) -> Result<PersonaResponsibility, AppError> {
-    if record.project_id.trim().is_empty() {
-        return Err(AppError::Validation(
-            "A hire needs a project id: an unbound mandate governs nothing".into(),
-        ));
-    }
+    contract::check(
+        record
+            .project_id
+            .trim()
+            .is_empty()
+            .then(|| {
+                ValidationError::new(
+                    "project_id",
+                    "required",
+                    "A hire needs a project id: an unbound mandate governs nothing",
+                )
+            })
+            .into_iter()
+            .collect(),
+    )?;
     replace_active(pool, record, Some(title), "kp-hire")
 }
 

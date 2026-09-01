@@ -24,6 +24,7 @@ import {
   buildArchetypeCore,
   pickScenario,
   resolveScenarioIntent,
+  resolveEnvPositiveNumber,
   BudgetLedger,
   L1_ASSERTS,
 } from "./cells.mjs";
@@ -240,6 +241,30 @@ test("BudgetLedger admits while under cap and stops once measured spend reaches 
   assert.equal(ledger.admit(), false, "at/over cap: no further admissions");
   ledger.record(Number.NaN); // junk cost never corrupts the ledger
   assert.equal(ledger.spentUsd, 1.1);
+});
+
+test("resolveEnvPositiveNumber: unset and set-to-empty both mean the default; corrupt halts", () => {
+  const NAME = "CORE_BENCH_TEST_RESOLVER";
+  const prior = process.env[NAME];
+  try {
+    delete process.env[NAME];
+    assert.equal(resolveEnvPositiveNumber(NAME, 15), 15, "unset -> default");
+    process.env[NAME] = "";
+    assert.equal(resolveEnvPositiveNumber(NAME, 15), 15, "set-to-empty -> default, never Number('')=0");
+    process.env[NAME] = "  ";
+    assert.equal(resolveEnvPositiveNumber(NAME, 15), 15, "whitespace -> default");
+    process.env[NAME] = "30";
+    assert.equal(resolveEnvPositiveNumber(NAME, 15), 30, "a typed value wins");
+    process.env[NAME] = "unlimited";
+    assert.throws(() => resolveEnvPositiveNumber(NAME, 15), /finite positive/, "corrupt halts");
+    process.env[NAME] = "0";
+    assert.throws(() => resolveEnvPositiveNumber(NAME, 15), /finite positive/, "0 is not a cap that admits nothing by accident");
+    process.env[NAME] = "-1";
+    assert.throws(() => resolveEnvPositiveNumber(NAME, 15), /finite positive/, "negative halts");
+  } finally {
+    if (prior === undefined) delete process.env[NAME];
+    else process.env[NAME] = prior;
+  }
 });
 
 // ---------------------------------------------------------------------------
