@@ -12,6 +12,8 @@ import { ConversationSidebar } from './ConversationSidebar';
 import { ConversationComposer } from './ConversationComposer';
 import { VirtualConversation } from './VirtualConversation';
 import { QueuedPromptRow } from './QueuedPromptRow';
+import { RailSplitter } from './RailSplitter';
+import { useRailWidth } from '../grid/rail/useRailWidth';
 import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './ConversationCards';
 import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
@@ -70,6 +72,14 @@ export function ConversationBriefing({
   const [tab, setTab] = useState<RailTab>('reviews');
   const [pinned, setPinned] = useState<Set<string>>(new Set());
   const addToast = useToastStore((s) => s.addToast);
+  // Two rails, two remembered widths, two edges. The keys are their own — a
+  // shared one would make dragging either move both.
+  const sidebarRail = useRailWidth({
+    storageKey: 'conversation-sidebar-width',
+    defaultWidth: 280,
+    side: 'left',
+  });
+  const decisionRail = useRailWidth({ storageKey: 'conversation-rail-width', defaultWidth: 320 });
 
   useEffect(() => {
     if (!activeId && teams[0]) setActiveId(teams[0].teamId);
@@ -239,7 +249,11 @@ export function ConversationBriefing({
       </div>
 
       <div className="flex-1 min-h-0 flex">
-        <div className="flex-shrink-0 w-[280px] min-h-0">
+        {/* Both rails resize, and remember, exactly the way the Activity rail
+            does — same hook, same splitter, their own keys. A fixed 280 was
+            the right floor and the wrong ceiling here too: this sidebar is a
+            column of project names. */}
+        <div className="flex-shrink-0 min-h-0" style={{ width: sidebarRail.width }}>
           <ConversationSidebar
             teams={teams}
             personas={personas}
@@ -249,6 +263,14 @@ export function ConversationBriefing({
             onSelectPersona={selectPersona}
           />
         </div>
+        <RailSplitter
+          rail={sidebarRail}
+          side="left"
+          // ConversationSidebar already draws its own right border.
+          bordered={false}
+          label={t.monitor.conv_sidebar_resize}
+          testId="conversation-sidebar-resize"
+        />
 
         {activePersona ? (
           // Persona scope — its own composer (plain send) lives inside.
@@ -288,7 +310,15 @@ export function ConversationBriefing({
         )}
 
         {/* THE RAIL — decision surfaces. Not messages, so not in the timeline. */}
-        <div className="flex-shrink-0 w-[320px] min-h-0 border-l border-border bg-foreground/[0.012] flex flex-col">
+        <RailSplitter
+          rail={decisionRail}
+          label={t.monitor.conv_rail_resize}
+          testId="conversation-rail-resize"
+        />
+        <div
+          className="flex-shrink-0 min-h-0 bg-foreground/[0.012] flex flex-col"
+          style={{ width: decisionRail.width }}
+        >
           <div className="flex-shrink-0 h-9 px-2 flex items-center gap-1 border-b border-border">
             <button type="button" onClick={() => setTab('reviews')} className={tabClass(tab === 'reviews')}>
               <AlertCircle className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_reviews}

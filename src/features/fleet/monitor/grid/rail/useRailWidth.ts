@@ -35,6 +35,19 @@
 //
 // It is per-machine on purpose: the same account on a laptop and on a 34" panel
 // wants two different numbers, and a synced value would fight itself.
+//
+// 2026-09-01: IT IS NO LONGER ONE RAIL. The Conversations surface has two of
+// its own — a project sidebar on the LEFT and a decision rail on the right —
+// and they were fixed at 280/320px for the same reason the Activity rail was.
+// So the module store became one store PER STORAGE KEY, and the hook takes the
+// key, its default and which EDGE the rail sits on. Every default reproduces
+// the Activity rail exactly: `useRailWidth()` with no argument is the call it
+// already made, against the key it already wrote, with the sign it already had.
+//
+// The side matters and is the easy thing to get wrong twice: a rail on the
+// right widens when you drag LEFT, one on the left widens when you drag RIGHT,
+// and the arrow keys owe the same asymmetry — a splitter whose ArrowRight
+// narrows the thing to its right is not a smaller bug than a reversed drag.
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { createThrottledLocalStorage } from '@/lib/throttledStorage';
@@ -55,54 +68,59 @@ function clamp(px: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// The store. Module-scoped because the width is ONE value for the app, not one
-// per component that happens to render a handle.
+// The stores. Module-scoped because a rail's width is ONE value for the app,
+// not one per component that happens to render a handle — and one PER KEY,
+// because there are now three rails and they are three different numbers.
 // ---------------------------------------------------------------------------
 
 const storage = createThrottledLocalStorage();
 
-function readStored(): number {
-  const raw = storage.getItem(STORAGE_KEY);
-  if (!raw) return RAIL_DEFAULT_WIDTH;
+interface RailStore {
+  key: string;
+  fallback: number;
+  current: number;
+  listeners: Set<() => void>;
+}
+
+const stores = new Map<string, RailStore>();
+
+function readStored(key: string, fallback: number): number {
+  const raw = storage.getItem(key);
+  if (!raw) return fallback;
   const n = Number(raw);
   // A stored value that is not a number came from some other version of this
   // app or a hand-edited profile. Clamping NaN would give NaN, and a NaN width
   // renders the rail at zero with no error anywhere.
-  return Number.isFinite(n) ? clamp(n) : RAIL_DEFAULT_WIDTH;
+  return Number.isFinite(n) ? clamp(n) : fallback;
 }
 
-let current = readStored();
-const listeners = new Set<() => void>();
-
-/** `useSyncExternalStore` requires a stable identity per unchanged value — this
- *  returns a number, so equality is value equality and there is nothing to
- *  cache. */
-function getSnapshot(): number {
-  return current;
+function storeFor(key: string, fallback: number): RailStore {
+  let store = stores.get(key);
+  if (!store) {
+    store = { key, fallback, current: readStored(key, fallback), listeners: new Set() };
+    stores.set(key, store);
+  }
+  return store;
 }
 
-function subscribe(onChange: () => void): () => void {
-  listeners.add(onChange);
-  return () => {
-    listeners.delete(onChange);
-  };
-}
-
-function writeWidth(px: number): void {
+function writeWidth(store: RailStore, px: number): void {
   const next = clamp(px);
-  if (next === current) return;
-  current = next;
+  if (next === store.current) return;
+  store.current = next;
   // Throttled: a 300px drag is ~300 pointermove events, and a synchronous
   // localStorage write per frame is a main-thread stall you can feel in the
   // drag itself. The door coalesces them and flushes on pagehide.
-  storage.setItem(STORAGE_KEY, String(next));
-  for (const listener of listeners) listener();
+  storage.setItem(store.key, String(next));
+  for (const listener of store.listeners) listener();
 }
 
-/** Test hook — the module store outlives a test file otherwise. */
+/** Test hook — the module stores outlive a test file otherwise. */
 export function _resetRailWidthForTests(): void {
-  current = RAIL_DEFAULT_WIDTH;
-  for (const listener of listeners) listener();
+  for (const store of stores.values()) {
+    store.current = store.fallback;
+    for (const listener of store.listeners) listener();
+  }
+  stores.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -131,28 +149,66 @@ export interface RailWidth {
  *  land on a width you meant. Shift multiplies it. */
 const KEY_STEP = 16;
 
-export function useRailWidth(): RailWidth {
+/** Which edge the rail occupies — decides which way widens it. */
+export type RailSide = 'left' | 'right';
+
+export interface RailWidthOptions {
+  /** localStorage key. Defaults to the Activity rail's, unchanged. */
+  storageKey?: string;
+  /** Width before anyone drags. Defaults to the Activity rail's 320. */
+  defaultWidth?: number;
+  /** Defaults to 'right' — the edge the Activity rail sits on. */
+  side?: RailSide;
+}
+
+export function useRailWidth(options: RailWidthOptions = {}): RailWidth {
+  const {
+    storageKey = STORAGE_KEY,
+    defaultWidth = RAIL_DEFAULT_WIDTH,
+    side = 'right',
+  } = options;
+
+  const store = useMemo(() => storeFor(storageKey, defaultWidth), [storageKey, defaultWidth]);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      store.listeners.add(onChange);
+      return () => {
+        store.listeners.delete(onChange);
+      };
+    },
+    [store],
+  );
+  /** `useSyncExternalStore` requires a stable identity per unchanged value —
+   *  this returns a number, so equality is value equality and there is nothing
+   *  to cache. */
+  const getSnapshot = useCallback(() => store.current, [store]);
   const width = useSyncExternalStore(subscribe, getSnapshot);
+
+  // A rail on the right widens when the pointer goes LEFT; one on the left
+  // widens when it goes right. Getting this sign backwards is the classic
+  // version of this bug and it is invisible until someone actually drags.
+  const grow = side === 'right' ? -1 : 1;
+
   const [dragging, setDragging] = useState(false);
   // The gesture's origin. A ref would do; state would re-render every move.
   const [origin, setOrigin] = useState<{ x: number; width: number } | null>(null);
 
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setOrigin({ x: e.clientX, width: current });
-    setDragging(true);
-  }, []);
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setOrigin({ x: e.clientX, width: store.current });
+      setDragging(true);
+    },
+    [store],
+  );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       if (!origin) return;
-      // The rail is on the RIGHT, so dragging LEFT (a negative delta) makes it
-      // wider. Getting this sign backwards is the classic version of this bug
-      // and it is invisible until someone actually drags.
-      writeWidth(origin.width - (e.clientX - origin.x));
+      writeWidth(store, origin.width + grow * (e.clientX - origin.x));
     },
-    [origin],
+    [origin, store, grow],
   );
 
   const endDrag = useCallback((e: React.PointerEvent<HTMLElement>) => {
@@ -170,20 +226,25 @@ export function useRailWidth(): RailWidth {
     setDragging(false);
   }, []);
 
-  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const step = e.shiftKey ? KEY_STEP * 4 : KEY_STEP;
-    let next: number | null = null;
-    if (e.key === 'ArrowLeft') next = current + step;
-    else if (e.key === 'ArrowRight') next = current - step;
-    else if (e.key === 'Home') next = RAIL_DEFAULT_WIDTH;
-    if (next === null) return;
-    e.preventDefault();
-    // Escape closes the Monitor; a resize keystroke must not also reach it.
-    e.stopPropagation();
-    writeWidth(next);
-  }, []);
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? KEY_STEP * 4 : KEY_STEP;
+      let next: number | null = null;
+      // Same asymmetry as the drag: the arrow that points AWAY from the rail
+      // widens it, whichever edge it lives on.
+      if (e.key === 'ArrowLeft') next = store.current - grow * step;
+      else if (e.key === 'ArrowRight') next = store.current + grow * step;
+      else if (e.key === 'Home') next = defaultWidth;
+      if (next === null) return;
+      e.preventDefault();
+      // Escape closes the Monitor; a resize keystroke must not also reach it.
+      e.stopPropagation();
+      writeWidth(store, next);
+    },
+    [store, grow, defaultWidth],
+  );
 
-  const reset = useCallback(() => writeWidth(RAIL_DEFAULT_WIDTH), []);
+  const reset = useCallback(() => writeWidth(store, defaultWidth), [store, defaultWidth]);
 
   const handleProps = useMemo(
     () => ({
