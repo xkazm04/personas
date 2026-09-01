@@ -71,13 +71,34 @@ export function ActivityRail({
   const [openTriage, setOpenTriage] = useState<TriageItem | null>(null);
   const [openMessage, setOpenMessage] = useState<TaggedItem | null>(null);
 
-  // All three feeds are mounted unconditionally, and that is the trade: a tab
-  // badge is only worth having if it is truthful before the tab is clicked, and
-  // a reviewer should not have to open a tab labelled nothing to find out it is
-  // not nothing. Same call `DeckQueueRail` documents for its Accepted count.
-  const reviews = useReviewFeed();
-  const dispatch = useDispatchFeed();
-  const messages = useMessageFeed(feedTeams);
+  // All three feeds are still mounted unconditionally, and that is still the
+  // trade: a tab badge is only worth having if it is truthful before the tab is
+  // clicked, and a reviewer should not have to open a tab labelled nothing to
+  // find out it is not nothing. Same call `DeckQueueRail` documents for its
+  // Accepted count.
+  //
+  // What each feed now takes is whether it is the one being LOOKED AT. That
+  // gates the row projection only — never the subscription the badge counts, so
+  // the trade above is untouched and no badge can go stale. `useRailFeeds`'
+  // header carries the measurement that settled where the line falls.
+  //
+  // DELIBERATELY NOT ALSO ANDed WITH `document.hidden`, though every other loop
+  // in this pass is. Two reasons, and the second is the one that decided it:
+  //
+  //  • It would buy nothing. A hidden window has already had its polls
+  //    suspended by `PollingCoordinator`, so `queue.items` and `merged` stop
+  //    changing and these memos stop recomputing on their own. The gate would
+  //    be guarding work that is not happening.
+  //  • It would risk a visible defect to save that nothing. `visibilityState`
+  //    also reads 'hidden' for a merely OCCLUDED window on some window
+  //    managers. A wrong signal that stops a fetch degrades gracefully — the
+  //    next tick recovers it. A wrong signal that empties `rows` paints the
+  //    rail's "nothing is waiting on you" over a queue that is not empty,
+  //    which is the same lie a stale badge would be, told about the list
+  //    instead. Not a trade worth making for zero.
+  const reviews = useReviewFeed(tab === 'reviews');
+  const dispatch = useDispatchFeed(tab === 'dispatch');
+  const messages = useMessageFeed(feedTeams, tab === 'messages');
 
   const active = tab === 'reviews' ? reviews : tab === 'dispatch' ? dispatch : messages;
 

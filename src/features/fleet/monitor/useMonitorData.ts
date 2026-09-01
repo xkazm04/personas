@@ -146,6 +146,26 @@ export interface MonitorFeeds {
   /** Persona roster + health summaries, on the dashboard cadence. */
   personaHealth?: boolean;
   /**
+   * Keep the pending-review POLL running (local + cloud).
+   *
+   * The mount-time read always happens — `loading` has to resolve and the warm
+   * cache has to be filled whatever the caller renders — so turning this off
+   * costs no correctness and leaves no surface empty. What it stops is the
+   * repeating 30s `list_manual_reviews` + 15s cloud read for a host that is
+   * currently showing something else entirely.
+   *
+   * The Monitor is the caller this exists for: its four header destinations are
+   * peers, and `reviews` feeds only the Activity board (the grid cards, the
+   * drawer, the system band). On Timeline / Conversations / Map the queue is
+   * re-read twice a minute for a model with no pixels behind it.
+   *
+   * Turning it back on re-registers the ticker, and `usePolling` fires a ticker
+   * immediately on register — so a return to Activity refreshes at once rather
+   * than waiting out a cadence, and the retained state means it paints
+   * last-known in the meantime instead of re-ghosting.
+   */
+  reviews?: boolean;
+  /**
    * Cap the pending-review read at this many rows (newest first), via the
    * keyset command rather than the unbounded list.
    *
@@ -163,6 +183,7 @@ export interface MonitorFeeds {
 const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
   messages: true,
   personaHealth: true,
+  reviews: true,
 };
 
 /**
@@ -281,6 +302,7 @@ function verdictKey(id: string, intent: string): string {
 export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const wantsMessages = feeds.messages ?? ALL_FEEDS.messages;
   const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
+  const wantsReviewPoll = feeds.reviews ?? ALL_FEEDS.reviews;
   const reviewLimit = feeds.reviewLimit;
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
@@ -388,11 +410,17 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // the Monitor is open. Process activity is already live via the
   // PROCESS_ACTIVITY event bridge.
   //
+  // Every ticker below runs on the shared PollingCoordinator, which suspends
+  // whole cadence buckets on `visibilitychange` and fires the eligible ones
+  // immediately on regain — so a hidden window costs nothing here and a
+  // re-shown one is refreshed rather than left stale. The `enabled` flags are
+  // the other axis: what the MOUNTING SURFACE currently renders.
+  //
   // Named per call site so the shared PollingCoordinator's stats can say which
   // surface is paying for what.
   usePolling(reloadReviews, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,
-    enabled: true,
+    enabled: wantsReviewPoll,
     name: 'monitor:reviews',
   });
   usePolling(reloadMessages, {
@@ -407,7 +435,9 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   });
   usePolling(fetchCloudReviews, {
     interval: POLLING_CONFIG.cloudReviews.interval,
-    enabled: isCloudConnected,
+    // Cloud rows land in the same queue as the local ones, so they follow the
+    // same gate; the connection is still the outer condition.
+    enabled: isCloudConnected && wantsReviewPoll,
     maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
     name: 'monitor:cloudReviews',
   });
