@@ -120,15 +120,13 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
-    fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                rusqlite::params![id],
-            )
-            .unwrap();
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            rusqlite::params![id],
+        )?;
+        Ok(())
     }
 
     #[test]
@@ -137,7 +135,7 @@ mod tests {
         // sanctioned lock (companion::brain::test_home) rather than racing it.
         let home = crate::companion::brain::test_home::TestHome::new("persona_episodes");
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
 
         let long_body = "x".repeat(EPISODE_EXCERPT_CAP + 100);
         let id = record(

@@ -1204,15 +1204,13 @@ mod attention_tests {
 
     // -- DB: the tick paths --------------------------------------------------
 
-    fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', 1, datetime('now'), datetime('now'))",
-                params![id],
-            )
-            .unwrap();
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', 1, datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
     }
 
     fn seed_charter(
@@ -1275,17 +1273,15 @@ mod attention_tests {
 
     /// Backdate a ledger row's completion so the interval floor is clear
     /// while its `started_at` stays today (count_today still sees it).
-    fn backdate_completed(pool: &DbPool, ledger_id: &str, minutes: i64) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_attention_ledger SET completed_at = ?1 WHERE id = ?2",
-                params![
-                    (chrono::Utc::now() - chrono::Duration::minutes(minutes)).to_rfc3339(),
-                    ledger_id
-                ],
-            )
-            .unwrap();
+    fn backdate_completed(pool: &DbPool, ledger_id: &str, minutes: i64) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET completed_at = ?1 WHERE id = ?2",
+            params![
+                (chrono::Utc::now() - chrono::Duration::minutes(minutes)).to_rfc3339(),
+                ledger_id
+            ],
+        )?;
+        Ok(())
     }
 
     /// Spend today's improve slot (a completed improve-lane pass, floor
@@ -1300,25 +1296,24 @@ mod attention_tests {
         )
         .unwrap();
         attention_ledger::complete(pool, &id, "dispatched", "", None, None, None).unwrap();
-        backdate_completed(pool, &id, 60);
+        backdate_completed(pool, &id, 60).unwrap();
     }
 
     #[test]
-    fn off_means_zero_rows_and_zero_reads() {
+    fn off_means_zero_rows_and_zero_reads() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1")?;
         seed_charter(&pool, "p1", "Charter", &one_outcome());
         // The key is absent → the gate answers None before any roster read.
         assert!(plan_tick_gated(&pool).is_none());
         assert!(ledger_rows(&pool, "p1").is_empty(), "zero ledger rows");
         assert_eq!(
-            pool.get()
-                .unwrap()
+            pool.get()?
                 .query_row("SELECT COUNT(*) FROM persona_background_job", [], |r| r
-                    .get::<_, i64>(0))
-                .unwrap(),
+                    .get::<_, i64>(0))?,
             0
         );
+        Ok(())
     }
 
     #[test]
@@ -1334,7 +1329,7 @@ mod attention_tests {
     fn admitted_advance_path_ledgers_started_then_dispatched() {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         let resp = seed_charter(&pool, "p1", "Charter A", &one_outcome());
         // Improve preempts advance for the day's first slot — spend it so
         // this test exercises the advance path directly.
@@ -1398,7 +1393,7 @@ mod attention_tests {
     fn improve_preempts_advance_exactly_once_per_day() {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         let resp = seed_charter(&pool, "p1", "Charter A", &one_outcome());
 
         // Tick 1: advance HAS a candidate, but the day's first slot goes to
@@ -1417,7 +1412,7 @@ mod attention_tests {
         assert_eq!(rows[0].lane.as_deref(), Some(LANE_IMPROVE));
         assert!(rows[0].responsibility_id.is_none());
         record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
-        backdate_completed(&pool, &plan.ledger_id, 60); // clear the floor, keep today
+        backdate_completed(&pool, &plan.ledger_id, 60).unwrap(); // clear the floor, keep today
 
         // Tick 2: improve is spent for the day → advance takes over.
         let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
@@ -1430,7 +1425,7 @@ mod attention_tests {
             _ => panic!("expected advance work"),
         }
         record_dispatch_outcome(&pool, &plan2.ledger_id, Ok(serde_json::json!({})));
-        backdate_completed(&pool, &plan2.ledger_id, 60);
+        backdate_completed(&pool, &plan2.ledger_id, 60).unwrap();
 
         // Tick 3: still the same day → advance again, never a second review.
         let (counts3, dispatch3) = plan_tick_gated(&pool).expect("enabled");
@@ -1448,7 +1443,7 @@ mod attention_tests {
     fn open_row_refuses_in_flight_and_failed_outcome_closes_it() {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         seed_charter(&pool, "p1", "Charter", &one_outcome());
 
         let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
@@ -1475,52 +1470,47 @@ mod attention_tests {
     }
 
     #[test]
-    fn stale_open_row_is_ignored_not_wedging() {
+    fn stale_open_row_is_ignored_not_wedging() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1")?;
         seed_charter(&pool, "p1", "Charter", &one_outcome());
         // A crashed pass from an hour ago: open, but past the window.
         let stale =
             attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_ADVANCE))
                 .unwrap();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_attention_ledger SET started_at = ?1 WHERE id = ?2",
-                params![
-                    (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339(),
-                    stale
-                ],
-            )
-            .unwrap();
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET started_at = ?1 WHERE id = ?2",
+            params![
+                (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339(),
+                stale
+            ],
+        )?;
         let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
         assert_eq!(counts.stale_open, 1);
         assert!(dispatch.is_some(), "stale open row must not wedge the loop");
+        Ok(())
     }
 
     #[test]
-    fn maintenance_lane_enqueues_exactly_one_job_and_is_idempotent() {
+    fn maintenance_lane_enqueues_exactly_one_job_and_is_idempotent() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1")?;
         seed_charter(&pool, "p1", "Charter", &one_outcome());
         // Episodes over pressure (20k chars), fresh — maintenance outranks
         // advance in the lane order.
         let now = chrono::Utc::now();
         for i in 0..5 {
-            pool.get()
-                .unwrap()
-                .execute(
-                    "INSERT INTO persona_episodes
-                        (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
-                     VALUES (?1, 'p1', 'run', 'execution', 'body', ?1, 5000, ?2)",
-                    params![
-                        format!("ep_{i}"),
-                        (now - chrono::Duration::minutes(30 - i)).to_rfc3339()
-                    ],
-                )
-                .unwrap();
+            pool.get()?.execute(
+                "INSERT INTO persona_episodes
+                    (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
+                 VALUES (?1, 'p1', 'run', 'execution', 'body', ?1, 5000, ?2)",
+                params![
+                    format!("ep_{i}"),
+                    (now - chrono::Duration::minutes(30 - i)).to_rfc3339()
+                ],
+            )?;
         }
 
         let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
@@ -1532,16 +1522,12 @@ mod attention_tests {
 
         // Exactly one queued sleep_consolidation_run job with the camelCase
         // params contract.
-        let (job_count, params_json): (i64, String) = pool
-            .get()
-            .unwrap()
-            .query_row(
-                "SELECT COUNT(*), MAX(params_json) FROM persona_background_job
+        let (job_count, params_json): (i64, String) = pool.get()?.query_row(
+            "SELECT COUNT(*), MAX(params_json) FROM persona_background_job
                  WHERE kind = 'sleep_consolidation_run' AND persona_id = 'p1'",
-                [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .unwrap();
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )?;
         assert_eq!(job_count, 1);
         let p: serde_json::Value = serde_json::from_str(&params_json).unwrap();
         assert_eq!(p["personaId"], "p1");
@@ -1559,24 +1545,21 @@ mod attention_tests {
         let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert!(counts2.refused == 1, "floor refusal, not a second enqueue");
-        let job_count2: i64 = pool
-            .get()
-            .unwrap()
-            .query_row(
-                "SELECT COUNT(*) FROM persona_background_job
+        let job_count2: i64 = pool.get()?.query_row(
+            "SELECT COUNT(*) FROM persona_background_job
                  WHERE kind = 'sleep_consolidation_run'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
+            [],
+            |r| r.get(0),
+        )?;
         assert_eq!(job_count2, 1, "idempotent across ticks");
+        Ok(())
     }
 
     #[test]
-    fn arrivals_outrank_advance_and_daily_cap_refuses() {
+    fn arrivals_outrank_advance_and_daily_cap_refuses() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1")?;
         let charter_id = seed_charter(&pool, "p1", "Charter", &one_outcome());
         // An unanswered user message, 2h old.
         let (msg_id, _) = team_channel::create_persona_channel_message(
@@ -1593,14 +1576,11 @@ mod attention_tests {
             },
         )
         .unwrap();
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE team_channel_messages
+        pool.get()?.execute(
+            "UPDATE team_channel_messages
                  SET created_at = datetime('now', '-2 hours') WHERE id = ?1",
-                params![msg_id],
-            )
-            .unwrap();
+            params![msg_id],
+        )?;
 
         let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_ARRIVALS));
@@ -1634,14 +1614,11 @@ mod attention_tests {
         )
         .unwrap();
         // Push the completed pass past even a 1-minute floor.
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_attention_ledger
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
                  SET completed_at = ?1 WHERE completed_at IS NOT NULL",
-                params![(chrono::Utc::now() - chrono::Duration::minutes(10)).to_rfc3339()],
-            )
-            .unwrap();
+            params![(chrono::Utc::now() - chrono::Duration::minutes(10)).to_rfc3339()],
+        )?;
 
         let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
         assert!(dispatch2.is_none());
@@ -1651,5 +1628,6 @@ mod attention_tests {
         let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
         assert_eq!(reason["kind"], "daily_cap_reached");
         assert_eq!(reason["cap"], 1);
+        Ok(())
     }
 }

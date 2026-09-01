@@ -2322,14 +2322,14 @@ mod tests {
     /// origins, plus the precedence order (attention > channel > scheduled >
     /// simulation > manual) and the malformed-JSON fallback.
     #[test]
-    fn list_items_origin_covers_all_five_origins_and_precedence() {
+    fn list_items_origin_covers_all_five_origins_and_precedence() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "Origin Agent");
 
         // A real trigger row so trigger_id survives the FK.
         let trigger_id = "trg-origin-test";
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.get()?;
             conn.execute(
                 "INSERT INTO persona_triggers
                     (id, persona_id, trigger_type, enabled, created_at, updated_at)
@@ -2339,7 +2339,10 @@ mod tests {
             .unwrap();
         }
 
-        let mk = |trigger: Option<&str>, input: Option<&str>, simulation: bool| {
+        let mk = |trigger: Option<&str>,
+                  input: Option<&str>,
+                  simulation: bool|
+         -> Result<String, AppError> {
             let row = create(
                 &pool,
                 &persona_id,
@@ -2350,14 +2353,14 @@ mod tests {
             )
             .unwrap();
             if simulation {
-                let conn = pool.get().unwrap();
+                let conn = pool.get()?;
                 conn.execute(
                     "UPDATE persona_executions SET is_simulation = 1 WHERE id = ?1",
                     params![row.id],
                 )
                 .unwrap();
             }
-            row.id
+            Ok(row.id)
         };
 
         let attention = mk(
@@ -2366,27 +2369,27 @@ mod tests {
                 r#"{"source":"attention","_attention":{"ledgerId":"att_1","responsibilityId":null,"lane":"scan"},"task":"look around"}"#,
             ),
             false,
-        );
-        let channel = mk(None, Some(r#"{"source":"slack","text":"hi"}"#), false);
-        let scheduled = mk(Some(trigger_id), Some(r#"{"foo":1}"#), false);
-        let simulation = mk(None, Some(r#"{"foo":1}"#), true);
-        let manual = mk(None, Some(r#"{"foo":1}"#), false);
+        )?;
+        let channel = mk(None, Some(r#"{"source":"slack","text":"hi"}"#), false)?;
+        let scheduled = mk(Some(trigger_id), Some(r#"{"foo":1}"#), false)?;
+        let simulation = mk(None, Some(r#"{"foo":1}"#), true)?;
+        let manual = mk(None, Some(r#"{"foo":1}"#), false)?;
         // Precedence: an attention envelope outranks a set trigger_id AND the
         // simulation flag; a channel source outranks trigger_id.
         let attention_wins = mk(
             Some(trigger_id),
             Some(r#"{"source":"attention","_attention":{"lane":"improve"}}"#),
             true,
-        );
+        )?;
         let channel_wins = mk(
             Some(trigger_id),
             Some(r#"{"source":"team_deliberation"}"#),
             false,
-        );
+        )?;
         // trigger_id outranks the simulation flag.
-        let scheduled_wins = mk(Some(trigger_id), None, true);
+        let scheduled_wins = mk(Some(trigger_id), None, true)?;
         // Malformed input_data must fall through, never fail the query.
-        let malformed = mk(None, Some("not json at all"), false);
+        let malformed = mk(None, Some("not json at all"), false)?;
 
         let items = list_items_by_persona_id(&pool, &persona_id, None, None).unwrap();
         let origin_of = |id: &str| {
@@ -2409,6 +2412,7 @@ mod tests {
         assert_eq!(origin_of(&channel_wins), ("channel".into(), None));
         assert_eq!(origin_of(&scheduled_wins), ("scheduled".into(), None));
         assert_eq!(origin_of(&malformed), ("manual".into(), None));
+        Ok(())
     }
 
     /// SQLite stores `'mock'` verbatim in a column declared

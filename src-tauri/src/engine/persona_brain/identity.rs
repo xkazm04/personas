@@ -238,15 +238,13 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
-    fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                rusqlite::params![id],
-            )
-            .unwrap();
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            rusqlite::params![id],
+        )?;
+        Ok(())
     }
 
     fn diff(section: &str, new_text: &str) -> IdentityDiff {
@@ -260,7 +258,7 @@ mod tests {
     fn propose_then_apply_grows_the_identity_behind_the_gate() {
         let home = crate::companion::brain::test_home::TestHome::new("persona_identity");
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
 
         seed_if_absent("p1").unwrap();
         let seeded = read("p1").expect("seeded identity exists");
@@ -306,7 +304,7 @@ mod tests {
     fn apply_with_no_valid_diff_leaves_the_proposal_pending() {
         let _home = crate::companion::brain::test_home::TestHome::new("persona_identity_bad");
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         let proposal_id =
             propose_diffs(&pool, "p1", vec![diff("No Such / Section", "bullet")], "r").unwrap();
         assert!(apply_approved(&pool, "p1", &proposal_id).is_err());
@@ -323,8 +321,8 @@ mod tests {
     fn apply_refuses_the_wrong_persona_and_wrong_kind() {
         let _home = crate::companion::brain::test_home::TestHome::new("persona_identity_scope");
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
-        seed_persona(&pool, "p2");
+        seed_persona(&pool, "p1").unwrap();
+        seed_persona(&pool, "p2").unwrap();
         let proposal_id =
             propose_diffs(&pool, "p1", vec![diff("My work / What I own", "x")], "r").unwrap();
         assert!(apply_approved(&pool, "p2", &proposal_id).is_err());
@@ -334,7 +332,7 @@ mod tests {
     fn propose_caps_the_batch_at_one_reviewable_card() {
         let _home = crate::companion::brain::test_home::TestHome::new("persona_identity_cap");
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         let too_many: Vec<IdentityDiff> = (0..=MAX_DIFFS_PER_OP)
             .map(|i| diff("My work / What I own", &format!("bullet {i}")))
             .collect();

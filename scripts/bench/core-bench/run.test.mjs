@@ -293,6 +293,17 @@ test("gate fails on UNMEASURED cells and asserts — unmeasured is never 0", () 
   assert.equal(v.failures.length, 3, "incomplete cell + unmeasured assert + absent cell all count");
 });
 
+test("gate refuses an EMPTY cell universe — looked at nothing is not green", () => {
+  const result = {
+    mode: "l1",
+    cells: [{ id: "a.x.t", verdict: "pass", asserts: { core_section_present: "pass" } }],
+  };
+  const v = evaluateGate({ baseline: gateBaseline, result, expectedCellIds: [] });
+  assert.equal(v.ok, false, "zero expected cells must not pass");
+  assert.equal(v.failures[0].kind, "unmeasured");
+  assert.match(v.failures[0].detail, /enumeration.*broken/);
+});
+
 test("gate refuses to treat a dry-run plan as measured", () => {
   const v = evaluateGate({
     baseline: gateBaseline,

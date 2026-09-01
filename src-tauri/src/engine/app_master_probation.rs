@@ -931,17 +931,15 @@ mod tests {
     /// the identical record the legacy reader did and (b) the tick produces
     /// the same summary counts on the same fixtures.
     #[test]
-    fn probation_tick_counts_are_unchanged_across_the_mandate_migration() {
+    fn probation_tick_counts_are_unchanged_across_the_mandate_migration(
+    ) -> Result<(), crate::error::AppError> {
         let pool = crate::db::init_test_db().unwrap();
         for id in ["p-due", "p-decided"] {
-            pool.get()
-                .unwrap()
-                .execute(
-                    "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                     VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                    [id],
-                )
-                .unwrap();
+            pool.get()?.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+                [id],
+            )?;
         }
 
         // A window that closed with no decision: the tick must count it due,
@@ -989,6 +987,7 @@ mod tests {
         assert_eq!(again.mandates, 2);
         assert_eq!(again.due, 1);
         assert_eq!(again.deferred, 1);
+        Ok(())
     }
 
     fn record() -> MandateRecord {

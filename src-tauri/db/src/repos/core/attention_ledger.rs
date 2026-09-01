@@ -241,7 +241,10 @@ pub fn latest_started_per_responsibility(
                  GROUP BY responsibility_id",
             )?;
             let rows = stmt.query_map(params![persona_id, kind, lane], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                Ok((
+                    r.get::<_, String>("responsibility_id")?,
+                    r.get::<_, String>("latest")?,
+                ))
             })?;
             Ok(collect_rows(
                 rows,

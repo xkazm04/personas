@@ -362,27 +362,29 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
-    fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                rusqlite::params![id],
-            )
-            .unwrap();
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            rusqlite::params![id],
+        )?;
+        Ok(())
     }
 
-    fn seed_episode(pool: &DbPool, id: &str, persona_id: &str, chars: i64, created_at: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO persona_episodes
-                    (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
-                 VALUES (?1, ?2, 'run', 'execution', 'body', ?1, ?3, ?4)",
-                rusqlite::params![id, persona_id, chars, created_at],
-            )
-            .unwrap();
+    fn seed_episode(
+        pool: &DbPool,
+        id: &str,
+        persona_id: &str,
+        chars: i64,
+        created_at: &str,
+    ) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_episodes
+                (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
+             VALUES (?1, ?2, 'run', 'execution', 'body', ?1, ?3, ?4)",
+            rusqlite::params![id, persona_id, chars, created_at],
+        )?;
+        Ok(())
     }
 
     #[test]
@@ -402,7 +404,7 @@ mod tests {
     #[test]
     fn admit_reports_already_running_while_the_key_is_held() {
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "guard-p3");
+        seed_persona(&pool, "guard-p3").unwrap();
         let _key = CycleKey::acquire("guard-p3").unwrap();
         let v = admit(&pool, "guard-p3", true).unwrap();
         assert_eq!(
@@ -413,11 +415,11 @@ mod tests {
     }
 
     #[test]
-    fn gauge_uses_the_last_completed_watermark_and_floor() {
+    fn gauge_uses_the_last_completed_watermark_and_floor() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
-        seed_episode(&pool, "ep_old", "p1", 500, "2026-01-01T00:00:01Z");
-        seed_episode(&pool, "ep_new", "p1", 700, "2026-01-02T00:00:01Z");
+        seed_persona(&pool, "p1")?;
+        seed_episode(&pool, "ep_old", "p1", 500, "2026-01-01T00:00:01Z")?;
+        seed_episode(&pool, "ep_new", "p1", 700, "2026-01-02T00:00:01Z")?;
 
         // No completed pass: boundary = 7d back → only chars newer than that
         // count (both seeds are far in the past → 0 waiting).
@@ -450,25 +452,23 @@ mod tests {
 
         // Backdate the completion (complete() always stamps now) to prove the
         // floor reads the row's completed_at, not the wall clock.
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_attention_ledger SET completed_at = '2026-01-02T00:00:00Z'
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET completed_at = '2026-01-02T00:00:00Z'
                  WHERE id = ?1",
-                rusqlite::params![id],
-            )
-            .unwrap();
+            rusqlite::params![id],
+        )?;
         let (reading, _) = gauge(&pool, "p1").unwrap();
         assert!(
             reading.hours_since_last.unwrap() >= personas_core::cycle::MIN_INTERVAL_HOURS,
             "an old completion satisfies the floor"
         );
+        Ok(())
     }
 
     #[tokio::test]
     async fn refused_run_lands_a_typed_ledger_refusal() {
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1").unwrap();
         // Empty brain, no force: NothingToConsume.
         let msg = run(&pool, "p1", false).await.unwrap();
         assert!(msg.starts_with("skipped:"), "{msg}");

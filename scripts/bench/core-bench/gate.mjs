@@ -32,6 +32,17 @@ export const RUNS_DIR = path.join(ROOT, "docs", "tests", "core-bench", "runs");
  */
 export function evaluateGate({ baseline, result, expectedCellIds, allowBudgetCap = false }) {
   const failures = [];
+  // Fail-loud contract: an EMPTY cell universe means the enumeration (the
+  // composer's matrix walk, or an L2 run that admitted nothing) is broken —
+  // "looked at nothing" must never share an exit code with "found nothing".
+  if ((expectedCellIds ?? []).length === 0) {
+    failures.push({
+      kind: "unmeasured",
+      detail:
+        "zero cells expected — the cell enumeration/sampling is broken (or the run admitted nothing), not the run clean",
+    });
+    return { ok: false, failures };
+  }
   const mode = result?.mode;
   if (mode !== "l1" && mode !== "l2") {
     failures.push({
@@ -112,6 +123,14 @@ function main() {
     maxTemplates: result.maxTemplates ?? 2,
   }).map((c) => c.id);
   const expectedCellIds = expectedCellsFor(result, allCellIds);
+  // The scanner-is-broken door (evaluateGate refuses this too; this exit names
+  // it loudly for the CLI): an empty enumeration is never a green gate.
+  if (expectedCellIds.length === 0) {
+    console.error(
+      "gate: cell enumeration returned ZERO cells — the composer/scanner is broken, not the run clean.",
+    );
+    process.exit(1);
+  }
   const verdict = evaluateGate({ baseline, result, expectedCellIds, allowBudgetCap });
   const unmeasured = verdict.failures.filter((f) => f.kind === "unmeasured").length;
   const regressions = verdict.failures.filter((f) => f.kind === "regression").length;

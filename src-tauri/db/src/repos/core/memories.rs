@@ -3659,27 +3659,23 @@ mod tests {
 
     // -- Living-agent consolidation writer (WP4) ----------------------------
 
-    fn seed_persona_raw(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                params![id],
-            )
-            .unwrap();
+    fn seed_persona_raw(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
     }
 
-    fn seed_episode(pool: &DbPool, id: &str, persona_id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO persona_episodes
-                    (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
-                 VALUES (?1, ?2, 'run', 'execution', 'body', ?1, 4, datetime('now'))",
-                params![id, persona_id],
-            )
-            .unwrap();
+    fn seed_episode(pool: &DbPool, id: &str, persona_id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_episodes
+                (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
+             VALUES (?1, ?2, 'run', 'execution', 'body', ?1, 4, datetime('now'))",
+            params![id, persona_id],
+        )?;
+        Ok(())
     }
 
     fn draft(fact_key: &str, importance: i32, sources: &[&str]) -> ConsolidatedFactDraft {
@@ -3696,7 +3692,7 @@ mod tests {
     #[test]
     fn consolidated_draft_with_empty_sources_is_rejected() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
         let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &[])]).unwrap();
         assert_eq!(out.rejected, 1);
         assert_eq!(out.created + out.updated, 0);
@@ -3714,8 +3710,8 @@ mod tests {
     #[test]
     fn consolidated_tombstoned_fact_key_is_skipped_and_counted() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
         tombstone_fact(&pool, "p1", "k.dead", "forgotten in a test").unwrap();
         assert!(is_forgotten(&pool, "p1", "k.dead").unwrap());
         assert!(!is_forgotten(&pool, "p1", "k.alive").unwrap());
@@ -3735,8 +3731,8 @@ mod tests {
     #[test]
     fn consolidated_importance_is_clamped_and_tier_forced_working() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
         let out = create_consolidated(
             &pool,
             "p1",
@@ -3762,8 +3758,8 @@ mod tests {
     #[test]
     fn consolidated_preference_category_is_coerced() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
         let mut d = draft("k.pref", 3, &["ep1"]);
         d.category = Some("preference".into());
         let out = create_consolidated(&pool, "p1", vec![d]).unwrap();
@@ -3782,9 +3778,9 @@ mod tests {
     #[test]
     fn consolidated_provenance_rows_land_in_the_same_tx() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
-        seed_episode(&pool, "ep2", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
+        seed_episode(&pool, "ep2", "p1").unwrap();
         let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1", "ep2"])]).unwrap();
         let memory_id = out.outcomes[0].memory_id.clone().unwrap();
         let n: i64 = pool
@@ -3805,9 +3801,9 @@ mod tests {
     #[test]
     fn consolidated_same_fact_key_updates_in_place() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
-        seed_episode(&pool, "ep2", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
+        seed_episode(&pool, "ep2", "p1").unwrap();
         let first = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1"])]).unwrap();
         let mut evolved = draft("k.a", 4, &["ep2"]);
         evolved.content = "sharper current version".into();
@@ -3836,8 +3832,8 @@ mod tests {
     #[test]
     fn delete_of_fact_keyed_memory_tombstones_it() {
         let pool = init_test_db().unwrap();
-        seed_persona_raw(&pool, "p1");
-        seed_episode(&pool, "ep1", "p1");
+        seed_persona_raw(&pool, "p1").unwrap();
+        seed_episode(&pool, "ep1", "p1").unwrap();
         let out = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep1"])]).unwrap();
         let memory_id = out.outcomes[0].memory_id.clone().unwrap();
         assert!(delete(&pool, &memory_id).unwrap());
@@ -3846,7 +3842,7 @@ mod tests {
             "user delete of a fact-keyed memory is a deliberate act of forgetting"
         );
         // ... and the consolidation door now refuses the fact.
-        seed_episode(&pool, "ep3", "p1");
+        seed_episode(&pool, "ep3", "p1").unwrap();
         let again = create_consolidated(&pool, "p1", vec![draft("k.a", 3, &["ep3"])]).unwrap();
         assert_eq!(again.skipped_tombstoned, 1);
         assert_eq!(again.created, 0);

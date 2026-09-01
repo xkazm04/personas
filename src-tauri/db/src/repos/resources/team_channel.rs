@@ -454,7 +454,7 @@ pub fn oldest_unanswered_persona_message(
     timed_query!("team_channel", "team_channel::oldest_unanswered", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(
-            "SELECT m.id, m.body FROM team_channel_messages m
+            "SELECT m.id AS id, m.body AS body FROM team_channel_messages m
              WHERE m.persona_id = ?1
                AND m.author_kind = 'user'
                AND datetime(m.created_at) <= datetime('now', ?2)
@@ -477,7 +477,7 @@ pub fn oldest_unanswered_persona_message(
                 format!("-{min_age_minutes} minutes"),
                 format!("-{lookback_days} days"),
             ],
-            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            |r| Ok((r.get::<_, String>("id")?, r.get::<_, String>("body")?)),
         )
         .optional()
         .map_err(AppError::Database)
@@ -489,15 +489,13 @@ mod tests {
     use super::*;
     use crate::init_test_db;
 
-    fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                params![id],
-            )
-            .unwrap();
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
     }
 
     fn post_user(pool: &DbPool, persona_id: &str, body: &str) -> String {
@@ -518,21 +516,19 @@ mod tests {
         id
     }
 
-    fn backdate(pool: &DbPool, message_id: &str, modifier: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE team_channel_messages
-                 SET created_at = datetime('now', ?1) WHERE id = ?2",
-                params![modifier, message_id],
-            )
-            .unwrap();
+    fn backdate(pool: &DbPool, message_id: &str, modifier: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "UPDATE team_channel_messages
+             SET created_at = datetime('now', ?1) WHERE id = ?2",
+            params![modifier, message_id],
+        )?;
+        Ok(())
     }
 
     #[test]
-    fn oldest_unanswered_applies_all_four_filters() {
+    fn oldest_unanswered_applies_all_four_filters() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1");
+        seed_persona(&pool, "p1")?;
 
         // Too fresh: inside the min-age window → invisible.
         post_user(&pool, "p1", "just arrived");
@@ -543,9 +539,9 @@ mod tests {
 
         // Old enough and unanswered → found; oldest wins over a newer one.
         let older = post_user(&pool, "p1", "lost message");
-        backdate(&pool, &older, "-2 hours");
+        backdate(&pool, &older, "-2 hours")?;
         let newer = post_user(&pool, "p1", "also lost");
-        backdate(&pool, &newer, "-1 hours");
+        backdate(&pool, &newer, "-1 hours")?;
         let hit = oldest_unanswered_persona_message(&pool, "p1", 10, 7)
             .unwrap()
             .expect("older row");
@@ -572,28 +568,22 @@ mod tests {
         assert_eq!(hit.0, newer);
 
         // A queued/running execution holding the idempotency key hides it...
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO persona_executions
-                    (id, persona_id, status, idempotency_key, created_at)
-                 VALUES ('ex1', 'p1', 'running', 'channel:p1:' || ?1, datetime('now'))",
-                params![newer],
-            )
-            .unwrap();
+        pool.get()?.execute(
+            "INSERT INTO persona_executions
+                (id, persona_id, status, idempotency_key, created_at)
+             VALUES ('ex1', 'p1', 'running', 'channel:p1:' || ?1, datetime('now'))",
+            params![newer],
+        )?;
         assert_eq!(
             oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
             None
         );
         // ...and a TERMINAL one does not (recovery may re-dispatch: the
         // idempotency key dedupes to this row instead of double-running).
-        pool.get()
-            .unwrap()
-            .execute(
-                "UPDATE persona_executions SET status = 'failed' WHERE id = 'ex1'",
-                [],
-            )
-            .unwrap();
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'failed' WHERE id = 'ex1'",
+            [],
+        )?;
         assert_eq!(
             oldest_unanswered_persona_message(&pool, "p1", 10, 7)
                 .unwrap()
@@ -603,23 +593,22 @@ mod tests {
         );
 
         // The lookback bound: ancient messages stay buried.
-        backdate(&pool, &newer, "-8 days");
-        pool.get()
-            .unwrap()
-            .execute("DELETE FROM persona_executions WHERE id = 'ex1'", [])
-            .unwrap();
+        backdate(&pool, &newer, "-8 days")?;
+        pool.get()?
+            .execute("DELETE FROM persona_executions WHERE id = 'ex1'", [])?;
         assert_eq!(
             oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
             None
         );
 
         // Scoped per persona: another persona's silence is not ours.
-        seed_persona(&pool, "p2");
+        seed_persona(&pool, "p2")?;
         let other = post_user(&pool, "p2", "someone else");
-        backdate(&pool, &other, "-1 hours");
+        backdate(&pool, &other, "-1 hours")?;
         assert_eq!(
             oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
             None
         );
+        Ok(())
     }
 }

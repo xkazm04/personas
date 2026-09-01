@@ -1068,11 +1068,11 @@ mod tests {
     /// mapper, and the serde projection — so the cloud row carries the Core
     /// under the exact `core_profile` key the Supabase column expects.
     #[test]
-    fn persona_row_round_trips_core_profile() {
+    fn persona_row_round_trips_core_profile() -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
         let core = r#"{"riskTolerance":0.2,"identity":"steward"}"#;
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.get()?;
             conn.execute(
                 "INSERT INTO personas (id, name, system_prompt, core_profile, created_at, updated_at) \
                  VALUES ('p-core', 'core-bearer', 'sp', ?1, '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z')",
@@ -1105,6 +1105,7 @@ mod tests {
             Some(core),
             "wire key matches the Supabase column"
         );
+        Ok(())
     }
 
     /// user_id is never sent on the wire — Supabase fills it from auth.uid()

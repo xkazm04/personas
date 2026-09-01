@@ -2993,7 +2993,7 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
     /// measured" is the charter_health hook), and the ledger rows with their
     /// lane/verdict/reason plus a refusal tally.
     #[test]
-    fn build_payload_renders_living_agent_blocks() {
+    fn build_payload_renders_living_agent_blocks() -> Result<(), AppError> {
         use crate::db::models::{
             ResponsibilityCadence, ResponsibilityObjective, ResponsibilityTenure,
         };
@@ -3004,7 +3004,7 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
 
         // Author a Core (risk-averse dial + one principle).
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.get()?;
             conn.execute(
                 "UPDATE personas SET core_profile = ?1 WHERE id = ?2",
                 params![
@@ -3088,6 +3088,7 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
         assert!(payload.contains("Last 2 passes, 1 refused:"));
         assert!(payload.contains("[refused] attention lane=scan: rate cap reached"));
         assert!(payload.contains("[noop] attention lane=scan: nothing new"));
+        Ok(())
     }
 
     /// A persona with NO Core and NO charters gets the honest-absence lines the
@@ -3110,11 +3111,11 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
     /// An authored-but-corrupt Core neither renders as JSON nor claims absence:
     /// the block says it failed to parse and carries its own skip instruction.
     #[test]
-    fn build_payload_corrupt_core_carries_skip_instruction() {
+    fn build_payload_corrupt_core_carries_skip_instruction() -> Result<(), AppError> {
         let pool = crate::db::init_test_db().expect("init test db");
         let pid = mk_persona(&pool, "Corrupt Core Agent");
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.get()?;
             conn.execute(
                 "UPDATE personas SET core_profile = '{not json' WHERE id = ?1",
                 params![pid],
@@ -3127,5 +3128,6 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
         assert!(payload.contains("could not be parsed"));
         assert!(payload.contains("Skip the core_fidelity category"));
         assert!(!payload.contains("No Core authored."));
+        Ok(())
     }
 }

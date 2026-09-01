@@ -663,15 +663,13 @@ mod tests {
     use crate::app_master::ALL_FORBIDDEN_CLASSES;
     use personas_db::init_test_db;
 
-    fn insert_persona(pool: &DbPool, id: &str) {
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
-                rusqlite::params![id],
-            )
-            .unwrap();
+    fn insert_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            rusqlite::params![id],
+        )?;
+        Ok(())
     }
 
     fn record(persona_id: &str, project_id: &str) -> MandateRecord {
@@ -767,8 +765,8 @@ mod tests {
     #[test]
     fn store_read_and_replace_behave_like_the_legacy_single_key() {
         let pool = init_test_db().unwrap();
-        insert_persona(&pool, "p-old");
-        insert_persona(&pool, "p-new");
+        insert_persona(&pool, "p-old").unwrap();
+        insert_persona(&pool, "p-new").unwrap();
 
         assert_eq!(mandate_for_project(&pool, "proj-t").unwrap(), None);
 
@@ -817,7 +815,7 @@ mod tests {
     #[test]
     fn migration_moves_legacy_rows_verbatim_deletes_them_and_is_idempotent() {
         let pool = init_test_db().unwrap();
-        insert_persona(&pool, "p1");
+        insert_persona(&pool, "p1").unwrap();
 
         // Seed the LEGACY storage and capture what the legacy reader said.
         let rec = record("p1", "proj-legacy");
@@ -844,19 +842,16 @@ mod tests {
     }
 
     #[test]
-    fn migration_leaves_unparsable_and_orphaned_rows_in_place() {
+    fn migration_leaves_unparsable_and_orphaned_rows_in_place() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
-        insert_persona(&pool, "p1");
+        insert_persona(&pool, "p1")?;
 
         // Unparsable JSON: stays, warned, uncounted. (`set` validates
         // well-formedness, so malformed legacy bytes are planted raw.)
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT INTO app_settings (key, value) VALUES ('app_master_mandate:proj-bad', '{broken')",
-                [],
-            )
-            .unwrap();
+        pool.get()?.execute(
+            "INSERT INTO app_settings (key, value) VALUES ('app_master_mandate:proj-bad', '{broken')",
+            [],
+        )?;
         // A holder that no longer exists: FK insert fails, row stays.
         app_master::set_mandate(&pool, &record("p-gone", "proj-orphan")).unwrap();
         // A healthy one, to prove the sweep continues past the failures.
@@ -878,12 +873,13 @@ mod tests {
                 "app_master_mandate:proj-orphan"
             ]
         );
+        Ok(())
     }
 
     #[test]
     fn operator_doors_create_validate_and_merge_validate() {
         let pool = init_test_db().unwrap();
-        insert_persona(&pool, "p1");
+        insert_persona(&pool, "p1").unwrap();
 
         let created = create_from_input(
             &pool,

@@ -182,7 +182,7 @@ pub fn create_prompt_version_if_changed(
                     "SELECT structured_prompt, core_profile FROM persona_prompt_versions
              WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT 1",
                     params![persona_id],
-                    |row| Ok((row.get(0)?, row.get(1).unwrap_or(None))),
+                    |row| Ok((row.get(0)?, row.get("core_profile").unwrap_or(None))),
                 )
                 .ok();
 

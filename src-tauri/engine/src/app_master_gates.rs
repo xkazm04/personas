@@ -2354,17 +2354,19 @@ mod tests {
 
     // -- gate command sourcing ----------------------------------------------
 
+    fn seed_holder_persona(pool: &DbPool) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'p1', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        Ok(())
+    }
+
     fn seed_mandate(pool: &DbPool, project_id: &str, gates: &[&str]) {
         // The charter table FK-references personas, so the holder must exist
         // (the legacy app_settings storage never checked).
-        pool.get()
-            .unwrap()
-            .execute(
-                "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
-                 VALUES ('p1', 'p1', 'sp', datetime('now'), datetime('now'))",
-                [],
-            )
-            .unwrap();
+        seed_holder_persona(pool).unwrap();
         let record = crate::app_master::MandateRecord {
             persona_id: "p1".into(),
             project_id: project_id.into(),
