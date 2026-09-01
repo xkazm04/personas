@@ -568,5 +568,12 @@
   "grid_session_recap_started": "Démarrée",
   "grid_session_recap_last_activity": "Dernière activité",
   "grid_session_recap_state_reason": "Raison de l'état",
-  "grid_session_recap_truncated": "Lu depuis la fin de la transcription — rien de plus ancien n'a été analysé."
+  "grid_session_recap_truncated": "Lu depuis la fin de la transcription — rien de plus ancien n'a été analysé.",
+  "conv_queued_drop": "Abandonner",
+  "conv_queued_failed": "Non remis",
+  "conv_queued_retry": "Réessayer",
+  "conv_queued_sending": "Envoi…",
+  "conv_queued_waiting": "En file d’attente",
+  "conv_rail_resize": "Glisser pour redimensionner le panneau",
+  "conv_sidebar_resize": "Glisser pour redimensionner la barre des projets"
 }

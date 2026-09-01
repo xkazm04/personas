@@ -569,7 +569,14 @@
     "grid_session_recap_started": "Iniciada",
     "grid_session_recap_last_activity": "Última actividad",
     "grid_session_recap_state_reason": "Motivo del estado",
-    "grid_session_recap_truncated": "Leído desde el final de la transcripción: lo anterior no se ha analizado."
+    "grid_session_recap_truncated": "Leído desde el final de la transcripción: lo anterior no se ha analizado.",
+    "conv_queued_drop": "Descartar",
+    "conv_queued_failed": "No entregado",
+    "conv_queued_retry": "Reintentar",
+    "conv_queued_sending": "Enviando…",
+    "conv_queued_waiting": "En cola",
+    "conv_rail_resize": "Arrastra para redimensionar el panel",
+    "conv_sidebar_resize": "Arrastra para redimensionar la barra de proyectos"
   },
   "common": {
     "loading": "Cargando…",

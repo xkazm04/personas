@@ -568,5 +568,12 @@
   "grid_session_recap_started": "Dimulai",
   "grid_session_recap_last_activity": "Aktivitas terakhir",
   "grid_session_recap_state_reason": "Alasan status",
-  "grid_session_recap_truncated": "Dibaca dari akhir transkrip — yang lebih lama tidak dipindai."
+  "grid_session_recap_truncated": "Dibaca dari akhir transkrip — yang lebih lama tidak dipindai.",
+  "conv_queued_drop": "Buang",
+  "conv_queued_failed": "Tidak terkirim",
+  "conv_queued_retry": "Coba lagi",
+  "conv_queued_sending": "Mengirim…",
+  "conv_queued_waiting": "Dalam antrean",
+  "conv_rail_resize": "Seret untuk mengubah ukuran panel",
+  "conv_sidebar_resize": "Seret untuk mengubah ukuran bilah sisi proyek"
 }

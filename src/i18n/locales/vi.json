@@ -569,7 +569,14 @@
     "grid_session_recap_started": "Bắt đầu",
     "grid_session_recap_last_activity": "Hoạt động cuối",
     "grid_session_recap_state_reason": "Lý do trạng thái",
-    "grid_session_recap_truncated": "Đọc từ cuối bản ghi — phần cũ hơn không được quét."
+    "grid_session_recap_truncated": "Đọc từ cuối bản ghi — phần cũ hơn không được quét.",
+    "conv_queued_drop": "Bỏ",
+    "conv_queued_failed": "Chưa gửi được",
+    "conv_queued_retry": "Thử lại",
+    "conv_queued_sending": "Đang gửi…",
+    "conv_queued_waiting": "Đang chờ",
+    "conv_rail_resize": "Kéo để đổi kích thước bảng",
+    "conv_sidebar_resize": "Kéo để đổi kích thước thanh bên dự án"
   },
   "common": {
     "loading": "Đang tải…",

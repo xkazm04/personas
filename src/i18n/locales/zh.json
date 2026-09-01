@@ -569,7 +569,14 @@
     "grid_session_recap_started": "开始于",
     "grid_session_recap_last_activity": "最后活动",
     "grid_session_recap_state_reason": "状态原因",
-    "grid_session_recap_truncated": "从记录末尾读取——更早的内容未被扫描。"
+    "grid_session_recap_truncated": "从记录末尾读取——更早的内容未被扫描。",
+    "conv_queued_drop": "丢弃",
+    "conv_queued_failed": "未送达",
+    "conv_queued_retry": "重试",
+    "conv_queued_sending": "发送中…",
+    "conv_queued_waiting": "已排队",
+    "conv_rail_resize": "拖动以调整面板大小",
+    "conv_sidebar_resize": "拖动以调整项目侧栏大小"
   },
   "common": {
     "loading": "加载中…",

@@ -569,7 +569,14 @@
     "grid_session_recap_started": "Zahájeno",
     "grid_session_recap_last_activity": "Poslední aktivita",
     "grid_session_recap_state_reason": "Důvod stavu",
-    "grid_session_recap_truncated": "Načteno od konce přepisu — starší obsah nebyl prohledán."
+    "grid_session_recap_truncated": "Načteno od konce přepisu — starší obsah nebyl prohledán.",
+    "conv_queued_drop": "Zahodit",
+    "conv_queued_failed": "Nedoručeno",
+    "conv_queued_retry": "Zkusit znovu",
+    "conv_queued_sending": "Odesílá se…",
+    "conv_queued_waiting": "Ve frontě",
+    "conv_rail_resize": "Tažením změníte velikost panelu",
+    "conv_sidebar_resize": "Tažením změníte velikost postranního panelu projektů"
   },
   "common": {
     "loading": "Načítání…",

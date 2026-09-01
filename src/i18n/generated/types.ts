@@ -302,6 +302,13 @@ export type Translations = {
     conv_title: string;
     conv_projects: string;
     conv_pick_project: string;
+    conv_queued_waiting: string;
+    conv_queued_sending: string;
+    conv_queued_failed: string;
+    conv_queued_retry: string;
+    conv_queued_drop: string;
+    conv_sidebar_resize: string;
+    conv_rail_resize: string;
     conv_empty_title: string;
     conv_empty_body: string;
     conv_tab_reviews: string;

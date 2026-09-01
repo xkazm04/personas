@@ -569,7 +569,14 @@
     "grid_session_recap_started": "開始",
     "grid_session_recap_last_activity": "最終アクティビティ",
     "grid_session_recap_state_reason": "状態の理由",
-    "grid_session_recap_truncated": "記録の末尾から読み取り — それより古い部分は走査していません。"
+    "grid_session_recap_truncated": "記録の末尾から読み取り — それより古い部分は走査していません。",
+    "conv_queued_drop": "破棄",
+    "conv_queued_failed": "未送信",
+    "conv_queued_retry": "再試行",
+    "conv_queued_sending": "送信中…",
+    "conv_queued_waiting": "待機中",
+    "conv_rail_resize": "ドラッグしてパネルのサイズを変更",
+    "conv_sidebar_resize": "ドラッグしてプロジェクトサイドバーのサイズを変更"
   },
   "common": {
     "loading": "読み込み中…",

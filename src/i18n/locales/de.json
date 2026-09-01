@@ -569,7 +569,14 @@
     "grid_session_recap_started": "Gestartet",
     "grid_session_recap_last_activity": "Letzte Aktivität",
     "grid_session_recap_state_reason": "Grund für den Status",
-    "grid_session_recap_truncated": "Vom Ende des Transkripts gelesen — Älteres wurde nicht durchsucht."
+    "grid_session_recap_truncated": "Vom Ende des Transkripts gelesen — Älteres wurde nicht durchsucht.",
+    "conv_queued_drop": "Verwerfen",
+    "conv_queued_failed": "Nicht zugestellt",
+    "conv_queued_retry": "Erneut senden",
+    "conv_queued_sending": "Wird gesendet…",
+    "conv_queued_waiting": "In Warteschlange",
+    "conv_rail_resize": "Ziehen, um das Panel zu vergrößern",
+    "conv_sidebar_resize": "Ziehen, um die Projekt-Seitenleiste zu vergrößern"
   },
   "common": {
     "loading": "Laden…",

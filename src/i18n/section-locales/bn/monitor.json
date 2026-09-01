@@ -568,5 +568,12 @@
   "grid_session_recap_started": "শুরু হয়েছে",
   "grid_session_recap_last_activity": "শেষ কার্যকলাপ",
   "grid_session_recap_state_reason": "অবস্থার কারণ",
-  "grid_session_recap_truncated": "ট্রান্সক্রিপ্টের শেষ থেকে পড়া — তার চেয়ে পুরনো কিছু স্ক্যান হয়নি।"
+  "grid_session_recap_truncated": "ট্রান্সক্রিপ্টের শেষ থেকে পড়া — তার চেয়ে পুরনো কিছু স্ক্যান হয়নি।",
+  "conv_queued_drop": "বাতিল",
+  "conv_queued_failed": "পৌঁছায়নি",
+  "conv_queued_retry": "আবার চেষ্টা",
+  "conv_queued_sending": "পাঠানো হচ্ছে…",
+  "conv_queued_waiting": "সারিতে",
+  "conv_rail_resize": "প্যানেলের আকার বদলাতে টানুন",
+  "conv_sidebar_resize": "প্রজেক্ট সাইডবারের আকার বদলাতে টানুন"
 }

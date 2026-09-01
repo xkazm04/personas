@@ -568,5 +568,12 @@
   "grid_session_recap_started": "शुरू हुआ",
   "grid_session_recap_last_activity": "अंतिम गतिविधि",
   "grid_session_recap_state_reason": "स्थिति का कारण",
-  "grid_session_recap_truncated": "ट्रांसक्रिप्ट के अंत से पढ़ा गया — उससे पुराना स्कैन नहीं हुआ।"
+  "grid_session_recap_truncated": "ट्रांसक्रिप्ट के अंत से पढ़ा गया — उससे पुराना स्कैन नहीं हुआ।",
+  "conv_queued_drop": "हटाएँ",
+  "conv_queued_failed": "डिलीवर नहीं हुआ",
+  "conv_queued_retry": "फिर से भेजें",
+  "conv_queued_sending": "भेजा जा रहा है…",
+  "conv_queued_waiting": "कतार में",
+  "conv_rail_resize": "पैनल का आकार बदलने के लिए खींचें",
+  "conv_sidebar_resize": "प्रोजेक्ट साइडबार का आकार बदलने के लिए खींचें"
 }

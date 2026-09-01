@@ -568,5 +568,12 @@
   "grid_session_recap_started": "시작",
   "grid_session_recap_last_activity": "마지막 활동",
   "grid_session_recap_state_reason": "상태 사유",
-  "grid_session_recap_truncated": "기록의 끝에서 읽었습니다 — 그보다 오래된 내용은 검사하지 않았습니다."
+  "grid_session_recap_truncated": "기록의 끝에서 읽었습니다 — 그보다 오래된 내용은 검사하지 않았습니다.",
+  "conv_queued_drop": "삭제",
+  "conv_queued_failed": "전송되지 않음",
+  "conv_queued_retry": "다시 시도",
+  "conv_queued_sending": "전송 중…",
+  "conv_queued_waiting": "대기 중",
+  "conv_rail_resize": "드래그하여 패널 크기 조정",
+  "conv_sidebar_resize": "드래그하여 프로젝트 사이드바 크기 조정"
 }

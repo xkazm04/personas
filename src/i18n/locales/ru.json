@@ -569,7 +569,14 @@
     "grid_session_recap_started": "Начата",
     "grid_session_recap_last_activity": "Последняя активность",
     "grid_session_recap_state_reason": "Причина состояния",
-    "grid_session_recap_truncated": "Прочитано с конца записи — всё более раннее не сканировалось."
+    "grid_session_recap_truncated": "Прочитано с конца записи — всё более раннее не сканировалось.",
+    "conv_queued_drop": "Отменить",
+    "conv_queued_failed": "Не доставлено",
+    "conv_queued_retry": "Повторить",
+    "conv_queued_sending": "Отправка…",
+    "conv_queued_waiting": "В очереди",
+    "conv_rail_resize": "Перетащите, чтобы изменить размер панели",
+    "conv_sidebar_resize": "Перетащите, чтобы изменить размер боковой панели проектов"
   },
   "common": {
     "loading": "Загрузка…",

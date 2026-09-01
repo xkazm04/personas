@@ -569,7 +569,14 @@
     "grid_session_recap_started": "بدأت",
     "grid_session_recap_last_activity": "آخر نشاط",
     "grid_session_recap_state_reason": "سبب الحالة",
-    "grid_session_recap_truncated": "قُرئ من نهاية السجل — لم يُفحص ما هو أقدم."
+    "grid_session_recap_truncated": "قُرئ من نهاية السجل — لم يُفحص ما هو أقدم.",
+    "conv_queued_drop": "تجاهل",
+    "conv_queued_failed": "لم يتم التسليم",
+    "conv_queued_retry": "إعادة المحاولة",
+    "conv_queued_sending": "جارٍ الإرسال…",
+    "conv_queued_waiting": "في قائمة الانتظار",
+    "conv_rail_resize": "اسحب لتغيير حجم اللوحة",
+    "conv_sidebar_resize": "اسحب لتغيير حجم شريط المشاريع الجانبي"
   },
   "common": {
     "loading": "جارٍ التحميل…",
