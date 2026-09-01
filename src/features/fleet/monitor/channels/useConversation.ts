@@ -1,12 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice';
 import { useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
 import { listTeamDeliberations } from '@/api/pipeline/teamDeliberations';
-import { createTeamAssignment, startTeamAssignment } from '@/api/pipeline/assignments';
+import {
+  createTeamAssignment,
+  decomposeTeamAssignmentGoal,
+  startTeamAssignment,
+} from '@/api/pipeline/assignments';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
-import { buildConversation, type AssignProposal, type ConversationRow } from './conversationModel';
+import {
+  buildConversation,
+  nextPromptBatch,
+  type AssignProposal,
+  type ConversationRow,
+  type QueuedPrompt,
+} from './conversationModel';
 
 /* ----------------------------------------------------------------------------
  * ONE TEAM'S CONVERSATION — data for both variants.
@@ -33,6 +43,12 @@ export function useConversation(teamId: string | null) {
 
   const [deliberations, setDeliberations] = useState<TeamDeliberation[]>([]);
   const [proposals, setProposals] = useState<AssignProposal[]>([]);
+  // The composer's outbox. Prompts land here the instant Enter is pressed and
+  // drain one post at a time, so the composer never has to be disabled.
+  const [queue, setQueue] = useState<QueuedPrompt[]>([]);
+  // The row the page-flip should pose against — the newest thing the operator
+  // themselves put in the conversation.
+  const [pinKey, setPinKey] = useState<string | null>(null);
 
   // C2: subscribe to this team's two cache entries only — a whole-map selector
   // made every OTHER team's poll re-render the open conversation. The state
@@ -77,25 +93,111 @@ export function useConversation(teamId: string | null) {
     for (const p of proposals) {
       base.push({ kind: 'proposal', key: `prop:${p.goal}`, at: new Date().toISOString(), proposal: p });
     }
+    // Queued prompts are the newest thing in the conversation by definition —
+    // they have not been sent yet — so they sit at the very bottom, after the
+    // proposals, in the order they were typed.
+    for (const p of queue) {
+      base.push({ kind: 'queued', key: `queued:${p.id}`, at: p.at, prompt: p });
+    }
     return base;
-  }, [talk.items, turns.items, proposals]);
+  }, [talk.items, turns.items, proposals, queue]);
 
   const loadOlder = useCallback(() => {
     if (teamId) void loadOlderChannel(channelKey(teamId));
   }, [teamId, loadOlderChannel]);
 
-  const send = useCallback(
-    (text: string) => {
-      // A directive the user pressed Send on is not background work: a post
-      // that fails silently leaves the composer cleared and the channel
-      // unchanged, which reads as "sent". The toast is the only thing that
-      // distinguishes the two.
-      if (teamId) void sendChannelDirective(teamId, text).catch(toastCatch('conversation:send'));
-    },
-    [teamId, sendChannelDirective],
-  );
-
   const addProposal = useCallback((p: AssignProposal) => setProposals((ps) => [...ps, p]), []);
+
+  /* ── THE OUTBOX ──────────────────────────────────────────────────────────
+   * Enqueue always accepts; a drain effect posts one batch at a time.
+   *
+   * Implemented here rather than layered on `useAthenaChatQueue`
+   * (`plugins/companion/chat/athenaChatQueue.ts`), which is the only other
+   * non-blocking composer in the app: that hook reads and writes
+   * `useCompanionStore` directly — the queue lives in Athena's own store, keyed
+   * by her conversation ids — so reusing it would mean a channel importing the
+   * companion's state, which is the feature-to-feature edge the catalog exists
+   * to prevent. What carries over is the SHAPE (accept always, drain on the
+   * in-flight edge, FIFO), not the code.
+   * ------------------------------------------------------------------------ */
+
+  /** Accept a prompt. Returns the row key so the caller can pose against it. */
+  const enqueue = useCallback((text: string, goal: boolean): string | null => {
+    const body = text.trim();
+    if (!body) return null;
+    const id = `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued', at: new Date().toISOString() }]);
+    const key = `queued:${id}`;
+    setPinKey(key);
+    return key;
+  }, []);
+
+  /** A failed row is the operator's to retry or to drop; nothing retries itself
+   *  behind them, because a directive posted twice is not a recoverable error. */
+  const retryPrompt = useCallback(
+    (id: string) =>
+      setQueue((q) => q.map((p) => (p.id === id ? { ...p, phase: 'queued' as const } : p))),
+    [],
+  );
+  const dropPrompt = useCallback((id: string) => setQueue((q) => q.filter((p) => p.id !== id)), []);
+
+  // Switching projects abandons the outbox: a directive is addressed to ONE
+  // team, and draining it into whichever channel is open next would post it to
+  // the wrong one.
+  useEffect(() => {
+    setQueue([]);
+    setPinKey(null);
+  }, [teamId]);
+
+  // One batch in flight at a time. The ref is not redundant with the `sending`
+  // phase: StrictMode re-invokes this effect before the phase write has been
+  // committed, and a directive posted twice is not something a refetch undoes.
+  const draining = useRef<string | null>(null);
+  useEffect(() => {
+    if (!teamId) return;
+    const batch = nextPromptBatch(queue);
+    if (!batch) return;
+    const token = batch.ids.join(',');
+    if (draining.current === token) return;
+    draining.current = token;
+
+    const ids = new Set(batch.ids);
+    setQueue((q) => q.map((p) => (ids.has(p.id) ? { ...p, phase: 'sending' as const } : p)));
+
+    const settle = (ok: boolean) => {
+      draining.current = null;
+      setQueue((q) =>
+        ok
+          ? q.filter((p) => !ids.has(p.id))
+          : q.map((p) => (ids.has(p.id) ? { ...p, phase: 'failed' as const } : p)),
+      );
+    };
+
+    const run = batch.goal
+      ? decomposeTeamAssignmentGoal(teamId, batch.body).then((steps) => {
+          addProposal({
+            goal: batch.body,
+            steps: steps.map((s) => ({
+              title: s.title,
+              description: s.description,
+              suggestedPersonaId: s.suggestedPersonaId ?? null,
+            })),
+            status: 'pending',
+          });
+        })
+      : sendChannelDirective(teamId, batch.body);
+
+    run.then(
+      () => settle(true),
+      (e: unknown) => {
+        settle(false);
+        // The row carries the failure; the toast carries the reason. Both,
+        // because a marked row with no explanation is only half an answer.
+        toastCatch(batch.goal ? 'conversation:decompose' : 'conversation:send')(e);
+      },
+    );
+  }, [queue, teamId, sendChannelDirective, addProposal]);
+
   const dropProposal = useCallback(
     (goal: string) => setProposals((ps) => ps.filter((p) => p.goal !== goal)),
     [],
@@ -155,15 +257,19 @@ export function useConversation(teamId: string | null) {
       posting: talk.posting,
       hasMore: !talk.exhausted,
       loadOlder,
-      send,
+      enqueue,
+      retryPrompt,
+      dropPrompt,
+      pinKey,
       markSeen,
       addProposal,
       dropProposal,
       confirmProposal,
     }),
     [
-      rows, delibIndex, talk.loaded, talk.posting, talk.exhausted,
-      loadOlder, send, markSeen, addProposal, dropProposal, confirmProposal,
+      rows, delibIndex, talk.loaded, talk.posting, talk.exhausted, pinKey,
+      loadOlder, enqueue, retryPrompt, dropPrompt, markSeen, addProposal,
+      dropProposal, confirmProposal,
     ],
   );
 }

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Sparkles, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
-import type { AssignProposal } from './conversationModel';
 import { goalText, looksLikeGoal } from './conversationModel';
 
 /* ----------------------------------------------------------------------------
@@ -24,24 +22,29 @@ import { goalText, looksLikeGoal } from './conversationModel';
  * Kept from CollabLiveCorrespondence (plan §7.3): per-team persisted draft,
  * @-mention autocomplete (Tab to complete), Enter to send, and the @athena
  * round-trip that makes the companion post back INTO the channel.
+ *
+ * IT DOES NOT DISABLE (plan Lane A). Submitting while a directive or a route is
+ * in flight ENQUEUES — the prompt becomes a visible queued row and drains in
+ * order — because a greyed-out button asks the operator to hold a sentence in
+ * their head until a machine is ready for it. The composer's only job is to
+ * take what was typed; deciding when it can be posted belongs to the outbox in
+ * `useConversation`, which is also where the failure lands.
  * -------------------------------------------------------------------------- */
 
 const DRAFT_PREFIX = 'personas.channel.draft.';
 
 export function ConversationComposer({
-  teamId, teamName, members, posting, onSend, onProposal,
+  teamId, teamName, members, onSubmit,
 }: {
   teamId: string;
   teamName: string;
   members: ChannelMember[];
-  posting: boolean;
-  onSend: (text: string) => void;
-  onProposal: (p: AssignProposal) => void;
+  /** Accepts always. `goal` picks the outbox lane: route (decompose) or post. */
+  onSubmit: (text: string, goal: boolean) => void;
 }) {
   const { t, tx } = useTranslation();
   const [draft, setDraft] = useState('');
   const [mentionAt, setMentionAt] = useState<number | null>(null);
-  const [decomposing, setDecomposing] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
 
   // Draft persists per team — switching projects must not lose what you typed.
@@ -96,45 +99,20 @@ export function ConversationComposer({
 
   const isGoal = looksLikeGoal(draft);
 
-  const propose = async () => {
-    const goal = goalText(draft);
-    if (!goal || decomposing) return;
-    setDecomposing(true);
-    try {
-      const steps = await decomposeTeamAssignmentGoal(teamId, goal);
-      onProposal({
-        goal,
-        steps: steps.map((s) => ({
-          title: s.title,
-          description: s.description,
-          suggestedPersonaId: s.suggestedPersonaId ?? null,
-        })),
-        status: 'pending',
-      });
-      setDraft('');
-    } catch (e) {
-      // The route round-trip is a thing the user PRESSED. A spinner that clears
-      // with nothing in its place is indistinguishable from a route that
-      // produced no steps; the registry-resolved toast says which it was.
-      toastCatch('conversation:decompose')(e);
-    } finally {
-      setDecomposing(false);
-    }
-  };
-
   const send = () => {
     const text = draft.trim();
-    if (!text || posting) return;
-    if (isGoal) {
-      void propose();
-      return;
-    }
-    onSend(text);
+    if (!text) return;
+    // Nothing is gated on an in-flight post: the outbox holds the order.
+    onSubmit(isGoal ? goalText(text) : text, isGoal);
     setDraft('');
-    if (/@athena\b/i.test(text)) {
+    if (!isGoal && /@athena\b/i.test(text)) {
       // Athena replies INTO the channel rather than into her own panel.
       useCompanionStore.getState().setPendingPrompt({
-        text: `You were tagged in the ${teamName} team channel (team_id: ${teamId}). The user wrote:\n\n"${text}"\n\nRespond by posting a short reply INTO that team's channel via your post_team_message capability.`,
+        text: `You were tagged in the ${teamName} team channel (team_id: ${teamId}). The user wrote:
+
+"${text}"
+
+Respond by posting a short reply INTO that team's channel via your post_team_message capability.`,
         autoSend: true,
       });
     }
@@ -216,15 +194,15 @@ export function ConversationComposer({
         <button
           type="button"
           onClick={send}
-          disabled={!draft.trim() || posting || decomposing}
+          disabled={!draft.trim()}
           className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-40 ${
             isGoal
               ? 'border-status-info/30 bg-status-info/10 text-status-info hover:bg-status-info/20'
               : 'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20'
           }`}
         >
-          {isGoal ? <Wand2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          {decomposing ? t.monitor.conv_composer_routing : isGoal ? t.monitor.conv_composer_route : t.monitor.conv_composer_send}
+          {isGoal ? <Wand2 className="w-4 h-4" aria-hidden /> : <Send className="w-4 h-4" aria-hidden />}
+          {isGoal ? t.monitor.conv_composer_route : t.monitor.conv_composer_send}
         </button>
       </div>
     </div>

@@ -5,6 +5,8 @@ import {
   dayLabel,
   goalText,
   looksLikeGoal,
+  nextPromptBatch,
+  type QueuedPrompt,
 } from '../conversationModel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -200,6 +202,62 @@ describe('clusterStatus', () => {
 
   it('falls back to created when nothing is labelled', () => {
     expect(clusterStatus([step('s1', '2026-08-24T10:00:00Z', 'a', '')])).toBe('created');
+  });
+});
+
+describe('nextPromptBatch', () => {
+  const q = (
+    id: string,
+    patch: Partial<QueuedPrompt> = {},
+  ): QueuedPrompt => ({
+    id,
+    text: id,
+    goal: false,
+    phase: 'queued',
+    at: '2026-08-24T10:00:00Z',
+    ...patch,
+  });
+
+  it('has nothing to do on an empty outbox', () => {
+    expect(nextPromptBatch([])).toBeNull();
+  });
+
+  it('refuses to start a second post while one is in flight', () => {
+    expect(nextPromptBatch([q('a', { phase: 'sending' }), q('b')])).toBeNull();
+  });
+
+  it('folds a run of consecutive plain prompts into ONE body', () => {
+    const batch = nextPromptBatch([q('a', { text: 'one' }), q('b', { text: 'two' })]);
+    expect(batch).toEqual({ ids: ['a', 'b'], body: 'one\n\ntwo', goal: false });
+  });
+
+  it('never folds a goal — routing decomposes one goal, not two concatenated', () => {
+    expect(nextPromptBatch([q('a', { goal: true }), q('b', { goal: true })])).toEqual({
+      ids: ['a'],
+      body: 'a',
+      goal: true,
+    });
+  });
+
+  it('stops a plain run at the first goal', () => {
+    expect(nextPromptBatch([q('a'), q('b'), q('c', { goal: true })])).toMatchObject({
+      ids: ['a', 'b'],
+      goal: false,
+    });
+  });
+
+  it('skips a failed row and keeps draining behind it', () => {
+    expect(nextPromptBatch([q('a', { phase: 'failed' }), q('b')])).toMatchObject({ ids: ['b'] });
+  });
+
+  it('does not fold across a failed row — those two were never one body', () => {
+    expect(
+      nextPromptBatch([q('a'), q('b', { phase: 'failed' }), q('c')]),
+    ).toMatchObject({ ids: ['a'] });
+  });
+
+  it('has nothing to do when every row has already failed', () => {
+    expect(nextPromptBatch([q('a', { phase: 'failed' })])).toBeNull();
   });
 });
 

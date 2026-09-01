@@ -11,6 +11,7 @@ import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput
 import { ConversationSidebar } from './ConversationSidebar';
 import { ConversationComposer } from './ConversationComposer';
 import { VirtualConversation } from './VirtualConversation';
+import { QueuedPromptRow } from './QueuedPromptRow';
 import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './ConversationCards';
 import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
@@ -166,7 +167,7 @@ export function ConversationBriefing({
   // every visible row; now the memo'd cards bail unless their own row changed.
   // (`dayWords` was also referenced from here before it was declared — a
   // missing dep that happened to work by closure timing.)
-  const { delibIndex, confirmProposal, dropProposal } = conv;
+  const { delibIndex, confirmProposal, dropProposal, retryPrompt, dropPrompt } = conv;
   const renderRow = useCallback(
     (row: ConversationRow) => {
       switch (row.kind) {
@@ -210,9 +211,14 @@ export function ConversationBriefing({
               onDismiss={() => dropProposal(row.proposal.goal)}
             />
           );
+        case 'queued':
+          return <QueuedPromptRow prompt={row.prompt} onRetry={retryPrompt} onDrop={dropPrompt} />;
       }
     },
-    [expanded, toggle, delibIndex, focusDeliberation, confirmProposal, dropProposal, dayWords],
+    [
+      expanded, toggle, delibIndex, focusDeliberation, confirmProposal, dropProposal,
+      retryPrompt, dropPrompt, dayWords,
+    ],
   );
 
   const tabClass = (on: boolean) =>
@@ -266,6 +272,7 @@ export function ConversationBriefing({
               renderRow={renderRow}
               hasMore={conv.hasMore}
               onTopReached={conv.loadOlder}
+              pinKey={conv.pinKey}
             />
           )}
 
@@ -274,9 +281,7 @@ export function ConversationBriefing({
               teamId={team.teamId}
               teamName={team.teamName.replace(/^SDLC[ —-]*/i, '')}
               members={team.members}
-              posting={conv.posting}
-              onSend={conv.send}
-              onProposal={conv.addProposal}
+              onSubmit={conv.enqueue}
             />
           )}
         </div>
