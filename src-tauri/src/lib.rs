@@ -2120,6 +2120,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::transcript_read::fleet_session_metadata,
             commands::fleet::transcript_read::fleet_token_summary,
+            commands::fleet::transcript_read::fleet_session_recap,
             commands::fleet::monitor_stats::fleet_monitor_stats,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,

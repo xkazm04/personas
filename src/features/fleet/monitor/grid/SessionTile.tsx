@@ -20,19 +20,25 @@
 // the tile can finally do the thing it always looked like it did.
 
 import { memo } from 'react';
+import { ScanEye } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { SESSION_BORDER, sessionLabel, sessionStateMeta } from './fleetSessionModel';
 
 export const SessionTile = memo(function SessionTile({
-  session, width, height, onOpen,
+  session, width, height, onOpen, onRecap,
 }: {
   session: FleetSession;
   width: number;
   height: number;
   /** Open this session's terminal. Absent = the tile stays read-only. */
   onOpen?: (session: FleetSession) => void;
+  /**
+   * Open the session's RECAP — the cheap read that mounts no xterm. Absent =
+   * no recap affordance (the read-only tile has no controls at all).
+   */
+  onRecap?: (session: FleetSession) => void;
 }) {
   const { t } = useTranslation();
   const meta = sessionStateMeta(session.state);
@@ -68,20 +74,47 @@ export const SessionTile = memo(function SessionTile({
   // tooltip on a control is unreachable by keyboard and absent on touch, which
   // is exactly the condition the tooltip golden path gates. The read-only span
   // above keeps its `title`: it is not a control, and there is nothing to reach.
+  //
+  // TWO affordances now, and they are priced very differently. The TILE opens
+  // the live terminal, which attaches a PTY subscription and mounts an xterm.
+  // The trailing ICON opens the RECAP, which reads the transcript tail and
+  // mounts nothing — the answer to "what is this one doing" at a price an
+  // operator can pay twenty times in a row. The icon is a sibling of the tile
+  // button, never a child: a control inside a control is invalid, and the outer
+  // one would swallow its clicks.
+  //
+  // Icon-only, and no new text on the tile face — the tile is 152px wide and
+  // every pixel of it is already spoken for by the session's own label. It sits
+  // at reduced opacity and rises on hover or keyboard focus, but it is never
+  // hidden: an affordance revealed only by hover does not exist on touch.
   return (
-    <Tooltip content={title}>
-      <button
-        type="button"
-        onClick={() => onOpen(session)}
-        aria-label={title}
-        data-state={session.state}
-        data-testid="fleet-grid-session"
-        className={`${cls} focus-ring transition-colors hover:brightness-125`}
-        style={{ width, height }}
-      >
-        {body}
-      </button>
-    </Tooltip>
+    <span className="relative flex flex-shrink-0" style={{ width, height }}>
+      <Tooltip content={title}>
+        <button
+          type="button"
+          onClick={() => onOpen(session)}
+          aria-label={title}
+          data-state={session.state}
+          data-testid="fleet-grid-session"
+          className={`${cls} focus-ring h-full w-full transition-colors hover:brightness-125 ${onRecap ? 'pr-6' : ''}`}
+        >
+          {body}
+        </button>
+      </Tooltip>
+      {onRecap && (
+        <Tooltip content={t.monitor.grid_session_recap_open}>
+          <button
+            type="button"
+            onClick={() => onRecap(session)}
+            aria-label={t.monitor.grid_session_recap_open}
+            data-testid="fleet-grid-session-recap"
+            className="focus-ring absolute inset-y-0 right-0 my-auto mr-1 flex h-4 w-4 items-center justify-center rounded-full text-foreground opacity-40 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+          >
+            <ScanEye className="h-3 w-3" aria-hidden />
+          </button>
+        </Tooltip>
+      )}
+    </span>
   );
 });
 

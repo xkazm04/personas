@@ -127,6 +127,12 @@ struct RollupAcc {
     last_context_tokens: i64,
     parse_errors: i32,
     total_lines: i32,
+    /// `message.id` of the assistant record folded last — the de-duplication
+    /// key. See [`RollupAcc::fold_line`]'s assistant arm for why one slot is
+    /// enough (and why a `HashSet` would be the wrong shape here: this
+    /// accumulator lives for the whole life of a session in the incremental
+    /// `ingest_delta` path, so its memory must not grow with turn count).
+    last_message_id: Option<String>,
 }
 
 impl RollupAcc {
@@ -164,7 +170,40 @@ impl RollupAcc {
 
         match entry_type {
             "assistant" => {
-                self.assistant_messages += 1;
+                // ── ONE TURN, MANY RECORDS ────────────────────────────────
+                // Claude Code writes one JSONL record PER CONTENT BLOCK of an
+                // assistant turn: a turn of [thinking, tool_use] lands as two
+                // records, and every one of them repeats the same `message.id`
+                // AND a byte-identical `message.usage`. Summing usage per
+                // record therefore counts a turn once per block it happened to
+                // contain, which is not a rounding error: measured over the 60
+                // newest transcripts on this machine, 57 of them carry
+                // duplicated ids and the inflation runs from 8% to 62% of the
+                // token sum. Against the one ground truth a transcript carries
+                // — its own trailing `cost-state.modelUsage` — the naive sum
+                // read 2.62x the real output-token count and the de-duplicated
+                // sum reads 1.00x.
+                //
+                // Duplicate records are always CONTIGUOUS (0 non-contiguous
+                // reappearances across 7,656 turns in those 60 files), so one
+                // remembered id is enough and this stays O(1) — which the
+                // incremental `ingest_delta` path requires, since one
+                // accumulator lives for the whole session.
+                //
+                // The CONTENT is still folded on every record. Each record
+                // carries only its OWN block, and no `tool_use` id was ever
+                // seen twice, so tool counts / files touched / background
+                // shells must NOT be de-duplicated — only the per-turn facts
+                // (the turn count and its usage) may be.
+                let message_id = message
+                    .and_then(|m| m.get("id"))
+                    .and_then(|x| x.as_str())
+                    .map(str::to_string);
+                let same_turn = message_id.is_some() && message_id == self.last_message_id;
+                if !same_turn {
+                    self.last_message_id = message_id;
+                    self.assistant_messages += 1;
+                }
 
                 if let Some(m) = message
                     .and_then(|m| m.get("model"))
@@ -181,12 +220,17 @@ impl RollupAcc {
                     .or_else(|| v.get("usage"));
                 if let Some(u) = usage {
                     let get = |k: &str| u.get(k).and_then(|x| x.as_i64()).unwrap_or(0);
-                    self.tokens.input += get("input_tokens");
-                    self.tokens.output += get("output_tokens");
-                    self.tokens.cache_creation += get("cache_creation_input_tokens");
-                    self.tokens.cache_read += get("cache_read_input_tokens");
+                    if !same_turn {
+                        self.tokens.input += get("input_tokens");
+                        self.tokens.output += get("output_tokens");
+                        self.tokens.cache_creation += get("cache_creation_input_tokens");
+                        self.tokens.cache_read += get("cache_read_input_tokens");
+                    }
                     // Latest turn wins (chronological file order) → current
-                    // context size ≈ this turn's input + cache-read.
+                    // context size ≈ this turn's input + cache-read. This one
+                    // was ALREADY correct under duplication — it assigns rather
+                    // than accumulates, and the duplicates carry identical
+                    // values — so the fix does not move it.
                     self.last_context_tokens = get("input_tokens") + get("cache_read_input_tokens");
                 }
 
@@ -326,12 +370,22 @@ pub const TAIL_BYTES: u64 = 4 * 1024;
 /// (partial) line is dropped and the bytes are decoded lossily.
 pub fn tail_lines(claude_session_id: &str) -> Option<Vec<String>> {
     let path = find_transcript(claude_session_id)?;
-    let mut f = std::fs::File::open(&path).ok()?;
+    Some(tail_lines_of(&path, TAIL_BYTES)?.0)
+}
+
+/// Read the last `max_bytes` of `path` as complete JSONL records.
+///
+/// Returns the records and whether the read was TRUNCATED (i.e. the file was
+/// larger than the window, so anything older than it was not seen). That flag
+/// is not decoration: a caller that reports "no summary found" must be able to
+/// tell "there is none" from "I did not look that far back".
+fn tail_lines_of(path: &Path, max_bytes: u64) -> Option<(Vec<String>, bool)> {
+    let mut f = std::fs::File::open(path).ok()?;
     let size = f.metadata().ok()?.len();
-    let from = size.saturating_sub(TAIL_BYTES);
+    let from = size.saturating_sub(max_bytes);
     f.seek(SeekFrom::Start(from)).ok()?;
     let mut buf = Vec::new();
-    f.take(TAIL_BYTES).read_to_end(&mut buf).ok()?;
+    f.take(max_bytes).read_to_end(&mut buf).ok()?;
     let text = String::from_utf8_lossy(&buf);
     let mut lines: Vec<String> = text
         .lines()
@@ -343,7 +397,7 @@ pub fn tail_lines(claude_session_id: &str) -> Option<Vec<String>> {
     if from > 0 && !lines.is_empty() {
         lines.remove(0);
     }
-    Some(lines)
+    Some((lines, from > 0))
 }
 
 /// File size (bytes) of a session's transcript, or `None` if no transcript
@@ -675,6 +729,212 @@ pub async fn fleet_token_summary(
     .map_err(|e| format!("token summary task failed: {e}"))?
 }
 
+// ── Session recap — "what is this one doing", without an xterm ─────────────
+//
+// A session tile's only affordance was "open the full terminal", which mounts
+// an xterm and takes a live PTY subscription. At 20+ live fleets that is the
+// wrong price for a question the transcript can already answer, and the answer
+// is ALREADY ON DISK: Claude Code writes its own session recap.
+//
+// Measured over the 60 newest transcripts in `~/.claude/projects` on this
+// machine:
+//   {"type":"system","subtype":"away_summary","content":"Goal was … Next: …"}  43/60
+//   {"type":"ai-title","aiTitle":"…"}                                          32/60
+//   {"type":"last-prompt","lastPrompt":"…"}                                    59/60
+//   {"type":"summary", …}                                                       0/60
+// The last line is the load-bearing one: `summary` is STALE on this Claude Code
+// version. Nothing here parses it.
+
+/// How much of the transcript tail a recap reads.
+///
+/// Chosen from measured distance-from-EOF over those same 60 files: the last
+/// `ai-title` sits a median 15 KB from the end (p90 31 KB), the last
+/// `last-prompt` 9 KB (p90 29 KB), and the last `away_summary` 2 KB. 256 KB
+/// clears all three with room to spare while still being a bounded read against
+/// a median 1.6 MB (max 6.3 MB) transcript — which is the whole point of a
+/// recap that is cheaper than a terminal.
+///
+/// The p90 for `away_summary` is 484 KB, and that is deliberately NOT covered:
+/// an away-summary buried half a megabyte back belongs to a session that
+/// resumed and kept working afterwards, where the trailing assistant text is
+/// the truer answer to "what is this one doing" anyway.
+///
+/// This is separate from [`TAIL_BYTES`] (4 KB) on purpose. That window belongs
+/// to the parked-state classifier, which runs for EVERY session on a 30s
+/// ticker; widening it 64× to serve an on-demand click would be paid by every
+/// session forever.
+pub const RECAP_TAIL_BYTES: u64 = 256 * 1024;
+
+/// Longest recap field carried to the UI. The panel is a modal, not a reader.
+const RECAP_TEXT_MAX: usize = 600;
+
+/// Claude Code appends this hint to its own away summaries. It is chrome for
+/// the CLI's UI, addressed to a reader who is looking at the CLI — it is not
+/// part of the summary, and it appeared on ~52% of the away summaries measured.
+const AWAY_SUMMARY_HINT: &str = "(disable recaps in /config)";
+
+/// What a session was doing, read from its transcript instead of its terminal.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FleetSessionRecap {
+    pub claude_session_id: String,
+    /// Claude Code's OWN recap of the session (`system` / `away_summary`) —
+    /// the best answer when present, because the model wrote it about itself.
+    pub away_summary: Option<String>,
+    /// The model-generated session title (`ai-title`).
+    pub ai_title: Option<String>,
+    /// The operator's most recent prompt (`last-prompt`) — a dedicated record,
+    /// so no message walking is needed to find it.
+    pub last_prompt: Option<String>,
+    /// Trailing assistant prose. The fallback when there is no away summary.
+    pub last_assistant_text: Option<String>,
+    /// Name of a `tool_use` that no `tool_result` has closed — i.e. what the
+    /// session is in the middle of right now — and the timestamp it started.
+    pub pending_tool: Option<String>,
+    pub pending_tool_since: Option<String>,
+    /// Latest timestamp seen in the window.
+    pub last_timestamp: Option<String>,
+    /// The window did not reach the start of the file. See [`tail_lines_of`].
+    pub truncated: bool,
+}
+
+/// Clip to [`RECAP_TEXT_MAX`] on a char boundary, and drop empties.
+fn recap_text(s: &str) -> Option<String> {
+    let s = s.trim();
+    if s.is_empty() {
+        return None;
+    }
+    if s.chars().count() <= RECAP_TEXT_MAX {
+        return Some(s.to_string());
+    }
+    let mut out: String = s.chars().take(RECAP_TEXT_MAX).collect();
+    out.push('…');
+    Some(out)
+}
+
+/// Pure recap fold over already-read JSONL lines. Separated from the IO so it
+/// can be unit-tested with synthetic transcripts, exactly like
+/// [`summarize_lines`].
+pub fn recap_from_lines(
+    claude_session_id: &str,
+    lines: &[String],
+    truncated: bool,
+) -> FleetSessionRecap {
+    let mut r = FleetSessionRecap {
+        claude_session_id: claude_session_id.to_string(),
+        truncated,
+        ..Default::default()
+    };
+    // The open tool call, if any. A `tool_result` (or a real user turn) closes
+    // it — the same pairing `classify::classify_parked` does, kept local
+    // because this fold also has to carry the timestamp out.
+    let mut open_tool: Option<(String, Option<String>)> = None;
+
+    for raw in lines {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(raw.trim()) else {
+            continue;
+        };
+        let ts = v
+            .get("timestamp")
+            .and_then(|x| x.as_str())
+            .map(str::to_string);
+        if let Some(ts) = ts.clone() {
+            if r.last_timestamp.as_deref().is_none_or(|l| ts.as_str() > l) {
+                r.last_timestamp = Some(ts);
+            }
+        }
+
+        match v.get("type").and_then(|x| x.as_str()).unwrap_or("") {
+            "system" if v.get("subtype").and_then(|x| x.as_str()) == Some("away_summary") => {
+                if let Some(c) = v.get("content").and_then(|x| x.as_str()) {
+                    r.away_summary = recap_text(c.replace(AWAY_SUMMARY_HINT, "").trim());
+                }
+            }
+            "ai-title" => {
+                if let Some(s) = v.get("aiTitle").and_then(|x| x.as_str()) {
+                    r.ai_title = recap_text(s);
+                }
+            }
+            "last-prompt" => {
+                if let Some(s) = v.get("lastPrompt").and_then(|x| x.as_str()) {
+                    r.last_prompt = recap_text(s);
+                }
+            }
+            "assistant" => {
+                let blocks = v
+                    .get("message")
+                    .and_then(|m| m.get("content"))
+                    .and_then(|c| c.as_array());
+                let Some(blocks) = blocks else { continue };
+                for b in blocks {
+                    match b.get("type").and_then(|x| x.as_str()) {
+                        Some("text") => {
+                            if let Some(t) = b.get("text").and_then(|x| x.as_str()) {
+                                if let Some(t) = recap_text(t) {
+                                    r.last_assistant_text = Some(t);
+                                }
+                            }
+                        }
+                        Some("tool_use") => {
+                            if let Some(n) = b.get("name").and_then(|x| x.as_str()) {
+                                open_tool = Some((n.to_string(), ts.clone()));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            "user" => {
+                // A tool_result closes the outstanding call; so does any real
+                // user turn, which means the session moved past it.
+                open_tool = None;
+            }
+            _ => {}
+        }
+    }
+
+    if let Some((name, since)) = open_tool {
+        r.pending_tool = Some(name);
+        r.pending_tool_since = since;
+    }
+    r
+}
+
+/// Read a session's recap from the tail of its transcript.
+///
+/// `Ok(None)` means there is no transcript for this id yet — a session that has
+/// not started writing one, or one whose id was never bound. That is a normal
+/// state, not an error, and the UI says so rather than showing a blank panel.
+#[tauri::command]
+pub async fn fleet_session_recap(
+    claude_session_id: String,
+) -> Result<Option<FleetSessionRecap>, String> {
+    // The handle is BOUND rather than awaited inline, and a panic is separated
+    // from a cancellation below. The other commands in this module flatten
+    // `JoinError` with a `map_err`, which makes "the blocking read panicked"
+    // and "the runtime shut the task down" the same string — the condition
+    // `panic-isolation.md` is about. This one does not.
+    let task = tokio::task::spawn_blocking(move || {
+        let Some(path) = find_transcript(&claude_session_id) else {
+            return Ok(None);
+        };
+        let Some((lines, truncated)) = tail_lines_of(&path, RECAP_TAIL_BYTES) else {
+            return Ok(None);
+        };
+        Ok(Some(recap_from_lines(
+            &claude_session_id,
+            &lines,
+            truncated,
+        )))
+    });
+    match task.await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err("recap read panicked while parsing the transcript".into()),
+        Err(e) => Err(format!("recap task failed: {e}")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -781,6 +1041,131 @@ mod tests {
         assert_eq!(agg.session_count, 0);
         assert_eq!(agg.tokens.input, 0);
         assert_eq!(agg.bloated_count, 0);
+    }
+
+    // ── Fixtures ──────────────────────────────────────────────────────────
+    //
+    // CAPTURED, NOT INVENTED. These three files hold real records lifted
+    // verbatim out of transcripts under `~/.claude/projects`; only free text
+    // (prompt bodies, assistant prose, shell commands, paths, branch names) was
+    // replaced with `REDACTED`. Every structural field — key names, nesting,
+    // `message.id`, and the whole `usage` object with its real numbers — is
+    // byte-for-byte what Claude Code wrote.
+    //
+    // That distinction is the point (`model-output-streaming.md`): a fixture
+    // typed out by the same author as the parser can only assert what the
+    // parser already assumes. The duplicate-`message.id` shape these tests turn
+    // on is exactly the kind of thing an invented fixture would have missed —
+    // it did, for as long as this module has existed.
+    //
+    // The one hand-set value is the away-summary's `content`, whose real text
+    // is the operator's; its trailing `(disable recaps in /config)` is kept
+    // because that is a CLI constant (observed on 208 of 400 real away
+    // summaries), not prose, and the parser strips it.
+    const FIXTURE_TURN_SPLIT: &str = include_str!("testdata/turn_split_across_records.jsonl");
+    const FIXTURE_RECAP: &str = include_str!("testdata/recap_records.jsonl");
+    const FIXTURE_TOOL_PAIR: &str = include_str!("testdata/tool_open_then_closed.jsonl");
+
+    fn fixture(raw: &str) -> Vec<String> {
+        raw.lines()
+            .filter(|l| !l.trim().is_empty())
+            .map(str::to_string)
+            .collect()
+    }
+
+    #[test]
+    fn one_turn_split_across_records_is_counted_once() {
+        // Two REAL consecutive records of ONE assistant turn: block [text] and
+        // block [tool_use: Bash], sharing `message.id` and carrying a
+        // byte-identical `usage`. Summing per record double-counts every field.
+        let raw = fixture(FIXTURE_TURN_SPLIT);
+        assert_eq!(raw.len(), 2, "fixture is the two records of one turn");
+        let s = summarize_lines("dedup", "/x.jsonl", &raw);
+
+        // ONE turn, not two records.
+        assert_eq!(s.assistant_messages, 1);
+        // Usage counted once. Naively summed these would each be doubled —
+        // which is the defect, measured at a median 2.22x against the
+        // transcripts' own trailing `cost-state` ground truth.
+        assert_eq!(s.tokens.input, 2);
+        assert_eq!(s.tokens.output, 361);
+        assert_eq!(s.tokens.cache_creation, 45_235);
+        assert_eq!(s.tokens.cache_read, 28_517);
+        // …but CONTENT is folded from EVERY record: each carries its own block,
+        // and no `tool_use` is ever repeated, so nothing here may be deduped.
+        assert_eq!(s.tools.len(), 1);
+        assert_eq!(s.tools[0].name, "Bash");
+        assert_eq!(s.tools[0].count, 1, "the turn's one tool call survives");
+        // Assign-not-accumulate, so this was already right and must not move.
+        assert_eq!(s.last_context_tokens, 2 + 28_517);
+    }
+
+    #[test]
+    fn records_without_a_message_id_are_never_merged() {
+        // Older / drifted transcripts carry no `message.id`. Absent an id there
+        // is no evidence two records are one turn, so each stands alone — the
+        // pre-fix behaviour, preserved. Built by STRIPPING the id out of the
+        // captured pair rather than by typing a new record.
+        let raw: Vec<String> = fixture(FIXTURE_TURN_SPLIT)
+            .iter()
+            .map(|l| {
+                let mut v: serde_json::Value = serde_json::from_str(l).unwrap();
+                v["message"].as_object_mut().unwrap().remove("id");
+                v.to_string()
+            })
+            .collect();
+        let s = summarize_lines("noid", "/x.jsonl", &raw);
+        assert_eq!(s.assistant_messages, 2);
+        assert_eq!(s.tokens.input, 4, "no id, no merge — both counted");
+        assert_eq!(s.tokens.output, 722);
+    }
+
+    #[test]
+    fn recap_prefers_claude_s_own_away_summary() {
+        // Captured `last-prompt`, `ai-title`, an assistant text turn, and the
+        // `system`/`away_summary` record — the four shapes the recap reads.
+        let r = recap_from_lines("s1", &fixture(FIXTURE_RECAP), false);
+        // The CLI's own trailing hint is chrome, not summary.
+        assert_eq!(r.away_summary.as_deref(), Some("REDACTED. Next: REDACTED."));
+        assert_eq!(r.ai_title.as_deref(), Some("REDACTED"));
+        assert_eq!(r.last_prompt.as_deref(), Some("REDACTED"));
+        assert_eq!(r.last_assistant_text.as_deref(), Some("REDACTED"));
+        assert_eq!(
+            r.last_timestamp.as_deref(),
+            Some("2026-08-30T20:19:46.699Z")
+        );
+        assert!(r.pending_tool.is_none(), "no tool left open in this window");
+        assert!(!r.truncated);
+    }
+
+    #[test]
+    fn recap_reports_an_unclosed_tool_and_forgets_a_closed_one() {
+        // The captured pair: a real `tool_use` and the real `tool_result` that
+        // closes it. Whole pair → nothing pending.
+        let pair = fixture(FIXTURE_TOOL_PAIR);
+        assert_eq!(pair.len(), 2);
+        assert!(recap_from_lines("s", &pair, false).pending_tool.is_none());
+
+        // First record ALONE → the call is still open, and its age is the fact
+        // the operator actually needs.
+        let r = recap_from_lines("s", &pair[..1], false);
+        assert_eq!(r.pending_tool.as_deref(), Some("Bash"));
+        assert_eq!(
+            r.pending_tool_since.as_deref(),
+            Some("2026-08-30T19:34:26.982Z")
+        );
+    }
+
+    #[test]
+    fn recap_of_an_empty_or_unreadable_window_is_empty_not_an_error() {
+        // A session whose transcript exists but holds nothing this fold
+        // recognises must still produce a recap — the UI degrades visibly on
+        // the empty fields rather than on an error.
+        let r = recap_from_lines("s", &[], true);
+        assert_eq!(r.claude_session_id, "s");
+        assert!(r.away_summary.is_none());
+        assert!(r.last_assistant_text.is_none());
+        assert!(r.truncated, "a truncated window says so");
     }
 
     #[test]
