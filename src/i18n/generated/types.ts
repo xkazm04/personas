@@ -8934,11 +8934,6 @@ export type Translations = {
     capabilities_section_subtitle: string;
     capabilities_add_button: string;
     capabilities_empty: string;
-    capability_row_enabled: string;
-    capability_row_field_flow: string;
-    capability_row_field_input_schema: string;
-    capability_row_field_tool_hints: string;
-    capability_row_field_error_handling: string;
     shared_resources_channels_default_label: string;
     clarifying_scope_mission: string;
     clarifying_scope_capability: string;
