@@ -80,6 +80,33 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 
 Priority of signals: **process exit > hooks > JSONL mtime > inactivity ticker**. An Exited session never gets re-animated; a Stale session bounces back to Idle on any transcript append.
 
+**One door (since 2026-09-01).** Every state change goes through
+`registry::apply_transition(session, to, reason, source)`, which returns
+`Changed` / `Restamped` / `Refused` and enforces the table: nothing leaves
+`Exited` or `Hibernated`, nothing enters `Spawning`, everything else among the
+live states is legal. The stale ticker, the hook receiver and the transcript
+watcher all call it; refusals are logged at `warn` with the lane tag and the
+caller's reason, and a source-reading test in `stale.rs` / `hooks.rs` fails on
+any new inline `session.state =` write. The only deliberate direct write is
+`mark_exited` (a second reap must stamp the fresher exit code). One visible
+consequence: a hook that matches a hibernated row by cwd can no longer flip it
+to `Running` - that used to strand the row, because only a still-`Hibernated`
+row can be resumed. Waiters (`wait.rs`) are woken from inside the door and from
+session removal, so the 500 ms backstop re-poll no longer covers a known gap.
+
+Two failure modes stopped reporting success in the same wave: a refused
+`continue` keystroke in the usage-limit retry lane refunds the attempt (it no
+longer counts toward the 24) and stamps the reason on the tile, and
+`fleet_kill_session` / `fleet_hibernate_session` return an error when the child
+is still alive instead of `Ok`. The transcript ingest rollup (one per Claude
+session id, fed by the machine-wide watcher) is now reaped - evicted with the
+session, TTL 30 min, 256-entry cap - and a first read of a large transcript is
+bounded to 1 MB per pass. A headless spawn that already carries `--name` or
+`--resume` no longer pays a Haiku call for a title, and a session whose
+transcript carries Claude Code's own `ai-title` adopts it while its title is
+still generic (measured: 6% of transcripts all-time, 15% of recent ones carry
+one, so this is a backfill; the headless guard is the larger saving).
+
 ## The autonomy machine — code reference (as of 2026-07-24)
 
 Everything that lets a 16–30 terminal fleet run decision flows end-to-end with zero operator involvement, in the order a parked session meets it:

@@ -102,6 +102,21 @@ echo, Reports as clamped markdown previews with an attachment chip opening
 the full Report viewer, events/memories as subtle system lines, human
 reviews as inline quick-decide cards with an open-in-Reviews forward).
 
+The team composer never disables itself. Pressing Enter while a directive
+or a goal-route is still in flight puts the next prompt in a visible **queued
+row** at the bottom of the conversation; the outbox drains one post at a
+time, consecutive plain prompts fold into one directive body (their rows
+stay separate), and a goal is never folded. A post that fails marks its own
+row **Not delivered** with Retry / Discard, and the toast says why; the rows
+behind it keep going. Switching projects abandons the outbox, because a
+directive is addressed to one team. On send, your own row is posed at the top
+of the viewport with a reserve below it that shrinks as replies land, so the
+pose is a legitimate bottom and follow-to-bottom stays armed. Both side
+rails - the projects sidebar (left) and the Reviews/Deliberation rail (right)
+- resize by drag or arrow keys and remember their width, exactly like the
+Activity rail. A deliberation whose engine-written JSON is malformed no
+longer blanks the rail; its status caption is translated.
+
 ### Map
 
 The live constellation for one team — who is doing what to whom; a node
