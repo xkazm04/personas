@@ -552,7 +552,20 @@
     "grid_rail_channel_reply_placeholder": "Im Kanal antworten…",
     "grid_rail_channel_reply_send": "Antwort senden",
     "grid_fleet_kill": "Sitzung beenden",
-    "grid_fleet_exited": "Diese Sitzung ist beendet — ihr Terminal existiert nicht mehr."
+    "grid_fleet_exited": "Diese Sitzung ist beendet — ihr Terminal existiert nicht mehr.",
+    "grid_session_recap_open": "Sitzungs-Rückblick",
+    "grid_session_recap_summary": "Claudes Rückblick",
+    "grid_session_recap_last_said": "Zuletzt gesagt",
+    "grid_session_recap_empty": "Noch kein Rückblick — diese Sitzung hat keinen geschrieben.",
+    "grid_session_recap_unbound": "Noch kein Transkript — diese Sitzung hat noch nicht begonnen zu schreiben.",
+    "grid_session_recap_ai_title": "Sitzungstitel",
+    "grid_session_recap_last_prompt": "Letzte Eingabe",
+    "grid_session_recap_live_title": "Live-Titel",
+    "grid_session_recap_pending_tool": "Läuft gerade",
+    "grid_session_recap_started": "Gestartet",
+    "grid_session_recap_last_activity": "Letzte Aktivität",
+    "grid_session_recap_state_reason": "Grund für den Status",
+    "grid_session_recap_truncated": "Vom Ende des Transkripts gelesen — Älteres wurde nicht durchsucht."
   },
   "common": {
     "loading": "Laden…",

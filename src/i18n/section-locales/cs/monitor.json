@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "Odpovědět do kanálu…",
   "grid_rail_channel_reply_send": "Odeslat odpověď",
   "grid_fleet_kill": "Ukončit relaci",
-  "grid_fleet_exited": "Tato relace skončila — její terminál už neexistuje."
+  "grid_fleet_exited": "Tato relace skončila — její terminál už neexistuje.",
+  "grid_session_recap_open": "Shrnutí relace",
+  "grid_session_recap_summary": "Shrnutí od Claude",
+  "grid_session_recap_last_said": "Poslední sdělení",
+  "grid_session_recap_empty": "Zatím žádné shrnutí — tato relace ho nenapsala.",
+  "grid_session_recap_unbound": "Zatím žádný přepis — tato relace ho ještě nezačala psát.",
+  "grid_session_recap_ai_title": "Název relace",
+  "grid_session_recap_last_prompt": "Poslední zadání",
+  "grid_session_recap_live_title": "Živý název",
+  "grid_session_recap_pending_tool": "Probíhá",
+  "grid_session_recap_started": "Zahájeno",
+  "grid_session_recap_last_activity": "Poslední aktivita",
+  "grid_session_recap_state_reason": "Důvod stavu",
+  "grid_session_recap_truncated": "Načteno od konce přepisu — starší obsah nebyl prohledán."
 }

@@ -2,6 +2,15 @@
 
 ## Active
 
+- **[2026-09-01 10:17]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src/api/fleet/fleet.ts`
+- **Status:** started
+
+### perfect-wave-monitor — /perfect wave 1: board virtualization + session recap (lot A), Monitor poll visibility gate (lot B)
+- **[2026-09-01 10:10]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src/api/fleet/fleet.ts`
+- **Status:** started
+
 - **[2026-08-31 21:06]**
 - **Paths:** `src/features/fleet/monitor/**` · `src/features/plugins/companion/**`
 - **Status:** started
@@ -538,6 +547,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### perfect-lotA-grid — /perfect Lot A: virtualize Activity board + session recap without xterm
 
 ### monitor-full-power — Monitor full-power: rail row redesign + triage/channel modals, fleet terminal modal, persona/fleet node states, Athena orb bubble
 

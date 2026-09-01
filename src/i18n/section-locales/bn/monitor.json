@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "চ্যানেলে উত্তর দিন…",
   "grid_rail_channel_reply_send": "উত্তর পাঠান",
   "grid_fleet_kill": "সেশন বন্ধ করুন",
-  "grid_fleet_exited": "এই সেশনটি শেষ হয়েছে — এর টার্মিনাল আর নেই।"
+  "grid_fleet_exited": "এই সেশনটি শেষ হয়েছে — এর টার্মিনাল আর নেই।",
+  "grid_session_recap_open": "সেশন সারসংক্ষেপ",
+  "grid_session_recap_summary": "Claude-এর সারসংক্ষেপ",
+  "grid_session_recap_last_said": "শেষ বক্তব্য",
+  "grid_session_recap_empty": "এখনও কোনও সারসংক্ষেপ নেই — এই সেশন কিছু লেখেনি।",
+  "grid_session_recap_unbound": "এখনও কোনও ট্রান্সক্রিপ্ট নেই — এই সেশন লেখা শুরু করেনি।",
+  "grid_session_recap_ai_title": "সেশনের শিরোনাম",
+  "grid_session_recap_last_prompt": "শেষ প্রম্পট",
+  "grid_session_recap_live_title": "লাইভ শিরোনাম",
+  "grid_session_recap_pending_tool": "চলমান",
+  "grid_session_recap_started": "শুরু হয়েছে",
+  "grid_session_recap_last_activity": "শেষ কার্যকলাপ",
+  "grid_session_recap_state_reason": "অবস্থার কারণ",
+  "grid_session_recap_truncated": "ট্রান্সক্রিপ্টের শেষ থেকে পড়া — তার চেয়ে পুরনো কিছু স্ক্যান হয়নি।"
 }

@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "رُدّ على القناة…",
   "grid_rail_channel_reply_send": "إرسال الرد",
   "grid_fleet_kill": "إنهاء الجلسة",
-  "grid_fleet_exited": "انتهت هذه الجلسة — لم تعد الطرفية موجودة."
+  "grid_fleet_exited": "انتهت هذه الجلسة — لم تعد الطرفية موجودة.",
+  "grid_session_recap_open": "ملخص الجلسة",
+  "grid_session_recap_summary": "ملخص Claude",
+  "grid_session_recap_last_said": "آخر ما قيل",
+  "grid_session_recap_empty": "لا يوجد ملخص بعد — لم تكتب هذه الجلسة واحدًا.",
+  "grid_session_recap_unbound": "لا يوجد سجل بعد — لم تبدأ هذه الجلسة الكتابة.",
+  "grid_session_recap_ai_title": "عنوان الجلسة",
+  "grid_session_recap_last_prompt": "آخر طلب",
+  "grid_session_recap_live_title": "العنوان المباشر",
+  "grid_session_recap_pending_tool": "قيد التنفيذ",
+  "grid_session_recap_started": "بدأت",
+  "grid_session_recap_last_activity": "آخر نشاط",
+  "grid_session_recap_state_reason": "سبب الحالة",
+  "grid_session_recap_truncated": "قُرئ من نهاية السجل — لم يُفحص ما هو أقدم."
 }

@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "Ответить в канал…",
   "grid_rail_channel_reply_send": "Отправить ответ",
   "grid_fleet_kill": "Завершить сессию",
-  "grid_fleet_exited": "Сессия завершена — её терминала больше нет."
+  "grid_fleet_exited": "Сессия завершена — её терминала больше нет.",
+  "grid_session_recap_open": "Сводка сессии",
+  "grid_session_recap_summary": "Сводка от Claude",
+  "grid_session_recap_last_said": "Последняя реплика",
+  "grid_session_recap_empty": "Сводки пока нет — сессия её не записала.",
+  "grid_session_recap_unbound": "Записи пока нет — сессия ещё не начала её вести.",
+  "grid_session_recap_ai_title": "Название сессии",
+  "grid_session_recap_last_prompt": "Последний запрос",
+  "grid_session_recap_live_title": "Живой заголовок",
+  "grid_session_recap_pending_tool": "В работе",
+  "grid_session_recap_started": "Начата",
+  "grid_session_recap_last_activity": "Последняя активность",
+  "grid_session_recap_state_reason": "Причина состояния",
+  "grid_session_recap_truncated": "Прочитано с конца записи — всё более раннее не сканировалось."
 }

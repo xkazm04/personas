@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "Répondre au canal…",
   "grid_rail_channel_reply_send": "Envoyer la réponse",
   "grid_fleet_kill": "Arrêter la session",
-  "grid_fleet_exited": "Cette session est terminée — son terminal n’existe plus."
+  "grid_fleet_exited": "Cette session est terminée — son terminal n’existe plus.",
+  "grid_session_recap_open": "Récapitulatif de session",
+  "grid_session_recap_summary": "Récapitulatif de Claude",
+  "grid_session_recap_last_said": "Dernier message",
+  "grid_session_recap_empty": "Pas encore de récapitulatif — cette session n'en a pas écrit.",
+  "grid_session_recap_unbound": "Pas encore de transcription — cette session n'a pas commencé à en écrire.",
+  "grid_session_recap_ai_title": "Titre de la session",
+  "grid_session_recap_last_prompt": "Dernière demande",
+  "grid_session_recap_live_title": "Titre en direct",
+  "grid_session_recap_pending_tool": "En cours",
+  "grid_session_recap_started": "Démarrée",
+  "grid_session_recap_last_activity": "Dernière activité",
+  "grid_session_recap_state_reason": "Raison de l'état",
+  "grid_session_recap_truncated": "Lu depuis la fin de la transcription — rien de plus ancien n'a été analysé."
 }

@@ -552,7 +552,20 @@
     "grid_rail_channel_reply_placeholder": "Reply to the channel…",
     "grid_rail_channel_reply_send": "Send reply",
     "grid_fleet_kill": "Kill session",
-    "grid_fleet_exited": "This session has exited — its terminal is gone."
+    "grid_fleet_exited": "This session has exited — its terminal is gone.",
+    "grid_session_recap_open": "Session recap",
+    "grid_session_recap_summary": "Claude's recap",
+    "grid_session_recap_last_said": "Last said",
+    "grid_session_recap_empty": "No recap yet — this session hasn't written one.",
+    "grid_session_recap_unbound": "No transcript yet — this session hasn't started writing one.",
+    "grid_session_recap_ai_title": "Session title",
+    "grid_session_recap_last_prompt": "Last prompt",
+    "grid_session_recap_live_title": "Live title",
+    "grid_session_recap_pending_tool": "In flight",
+    "grid_session_recap_started": "Started",
+    "grid_session_recap_last_activity": "Last activity",
+    "grid_session_recap_state_reason": "State reason",
+    "grid_session_recap_truncated": "Read from the end of the transcript — anything older was not scanned."
   },
   "common": {
     "unknown_error": "Unknown error",

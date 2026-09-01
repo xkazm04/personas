@@ -422,6 +422,7 @@ export type { FleetRunSummary } from "./FleetRunSummary";
 export type { FleetRunTotals } from "./FleetRunTotals";
 export type { FleetSession } from "./FleetSession";
 export type { FleetSessionMode } from "./FleetSessionMode";
+export type { FleetSessionRecap } from "./FleetSessionRecap";
 export type { FleetSessionState } from "./FleetSessionState";
 export type { FleetTokenAggregate } from "./FleetTokenAggregate";
 export type { FleetTokenTotals } from "./FleetTokenTotals";

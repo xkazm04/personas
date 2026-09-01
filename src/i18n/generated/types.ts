@@ -559,6 +559,19 @@ export type Translations = {
     grid_rail_channel_reply_send: string;
     grid_fleet_kill: string;
     grid_fleet_exited: string;
+    grid_session_recap_open: string;
+    grid_session_recap_summary: string;
+    grid_session_recap_last_said: string;
+    grid_session_recap_empty: string;
+    grid_session_recap_unbound: string;
+    grid_session_recap_ai_title: string;
+    grid_session_recap_last_prompt: string;
+    grid_session_recap_live_title: string;
+    grid_session_recap_pending_tool: string;
+    grid_session_recap_started: string;
+    grid_session_recap_last_activity: string;
+    grid_session_recap_state_reason: string;
+    grid_session_recap_truncated: string;
   };
   common: {
     unknown_error: string;

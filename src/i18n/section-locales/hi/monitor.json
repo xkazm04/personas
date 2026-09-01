@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "चैनल पर उत्तर दें…",
   "grid_rail_channel_reply_send": "उत्तर भेजें",
   "grid_fleet_kill": "सत्र समाप्त करें",
-  "grid_fleet_exited": "यह सत्र समाप्त हो चुका है — इसका टर्मिनल अब नहीं है।"
+  "grid_fleet_exited": "यह सत्र समाप्त हो चुका है — इसका टर्मिनल अब नहीं है।",
+  "grid_session_recap_open": "सत्र सारांश",
+  "grid_session_recap_summary": "Claude का सारांश",
+  "grid_session_recap_last_said": "अंतिम कथन",
+  "grid_session_recap_empty": "अभी कोई सारांश नहीं — इस सत्र ने लिखा नहीं है।",
+  "grid_session_recap_unbound": "अभी कोई ट्रांसक्रिप्ट नहीं — इस सत्र ने लिखना शुरू नहीं किया।",
+  "grid_session_recap_ai_title": "सत्र शीर्षक",
+  "grid_session_recap_last_prompt": "अंतिम प्रॉम्प्ट",
+  "grid_session_recap_live_title": "लाइव शीर्षक",
+  "grid_session_recap_pending_tool": "चल रहा है",
+  "grid_session_recap_started": "शुरू हुआ",
+  "grid_session_recap_last_activity": "अंतिम गतिविधि",
+  "grid_session_recap_state_reason": "स्थिति का कारण",
+  "grid_session_recap_truncated": "ट्रांसक्रिप्ट के अंत से पढ़ा गया — उससे पुराना स्कैन नहीं हुआ।"
 }

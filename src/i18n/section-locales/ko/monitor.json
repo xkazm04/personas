@@ -551,5 +551,18 @@
   "grid_rail_channel_reply_placeholder": "채널에 답장…",
   "grid_rail_channel_reply_send": "답장 보내기",
   "grid_fleet_kill": "세션 종료",
-  "grid_fleet_exited": "이 세션은 종료되었습니다 — 터미널이 더 이상 없습니다."
+  "grid_fleet_exited": "이 세션은 종료되었습니다 — 터미널이 더 이상 없습니다.",
+  "grid_session_recap_open": "세션 요약",
+  "grid_session_recap_summary": "Claude의 요약",
+  "grid_session_recap_last_said": "마지막 발언",
+  "grid_session_recap_empty": "아직 요약이 없습니다 — 이 세션이 작성하지 않았습니다.",
+  "grid_session_recap_unbound": "아직 기록이 없습니다 — 이 세션이 아직 쓰기 시작하지 않았습니다.",
+  "grid_session_recap_ai_title": "세션 제목",
+  "grid_session_recap_last_prompt": "마지막 프롬프트",
+  "grid_session_recap_live_title": "실시간 제목",
+  "grid_session_recap_pending_tool": "진행 중",
+  "grid_session_recap_started": "시작",
+  "grid_session_recap_last_activity": "마지막 활동",
+  "grid_session_recap_state_reason": "상태 사유",
+  "grid_session_recap_truncated": "기록의 끝에서 읽었습니다 — 그보다 오래된 내용은 검사하지 않았습니다."
 }

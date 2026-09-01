@@ -552,7 +552,20 @@
     "grid_rail_channel_reply_placeholder": "チャンネルに返信…",
     "grid_rail_channel_reply_send": "返信を送信",
     "grid_fleet_kill": "セッションを終了",
-    "grid_fleet_exited": "このセッションは終了しました — ターミナルはもうありません。"
+    "grid_fleet_exited": "このセッションは終了しました — ターミナルはもうありません。",
+    "grid_session_recap_open": "セッションの要約",
+    "grid_session_recap_summary": "Claude の要約",
+    "grid_session_recap_last_said": "最後の発言",
+    "grid_session_recap_empty": "まだ要約はありません — このセッションは書いていません。",
+    "grid_session_recap_unbound": "まだ記録がありません — このセッションはまだ書き始めていません。",
+    "grid_session_recap_ai_title": "セッション名",
+    "grid_session_recap_last_prompt": "最後のプロンプト",
+    "grid_session_recap_live_title": "ライブタイトル",
+    "grid_session_recap_pending_tool": "実行中",
+    "grid_session_recap_started": "開始",
+    "grid_session_recap_last_activity": "最終アクティビティ",
+    "grid_session_recap_state_reason": "状態の理由",
+    "grid_session_recap_truncated": "記録の末尾から読み取り — それより古い部分は走査していません。"
   },
   "common": {
     "loading": "読み込み中…",

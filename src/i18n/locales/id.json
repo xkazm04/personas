@@ -552,7 +552,20 @@
     "grid_rail_channel_reply_placeholder": "Balas ke kanal…",
     "grid_rail_channel_reply_send": "Kirim balasan",
     "grid_fleet_kill": "Hentikan sesi",
-    "grid_fleet_exited": "Sesi ini sudah berakhir — terminalnya tidak ada lagi."
+    "grid_fleet_exited": "Sesi ini sudah berakhir — terminalnya tidak ada lagi.",
+    "grid_session_recap_open": "Ringkasan sesi",
+    "grid_session_recap_summary": "Ringkasan Claude",
+    "grid_session_recap_last_said": "Terakhir dikatakan",
+    "grid_session_recap_empty": "Belum ada ringkasan — sesi ini belum menulisnya.",
+    "grid_session_recap_unbound": "Belum ada transkrip — sesi ini belum mulai menulis.",
+    "grid_session_recap_ai_title": "Judul sesi",
+    "grid_session_recap_last_prompt": "Prompt terakhir",
+    "grid_session_recap_live_title": "Judul langsung",
+    "grid_session_recap_pending_tool": "Sedang berjalan",
+    "grid_session_recap_started": "Dimulai",
+    "grid_session_recap_last_activity": "Aktivitas terakhir",
+    "grid_session_recap_state_reason": "Alasan status",
+    "grid_session_recap_truncated": "Dibaca dari akhir transkrip — yang lebih lama tidak dipindai."
   },
   "common": {
     "loading": "Memuat…",

@@ -552,7 +552,20 @@
     "grid_rail_channel_reply_placeholder": "回复频道…",
     "grid_rail_channel_reply_send": "发送回复",
     "grid_fleet_kill": "终止会话",
-    "grid_fleet_exited": "该会话已结束——终端已不存在。"
+    "grid_fleet_exited": "该会话已结束——终端已不存在。",
+    "grid_session_recap_open": "会话回顾",
+    "grid_session_recap_summary": "Claude 的回顾",
+    "grid_session_recap_last_said": "最后发言",
+    "grid_session_recap_empty": "暂无回顾——该会话尚未写入。",
+    "grid_session_recap_unbound": "暂无记录——该会话尚未开始写入。",
+    "grid_session_recap_ai_title": "会话标题",
+    "grid_session_recap_last_prompt": "最后提示",
+    "grid_session_recap_live_title": "实时标题",
+    "grid_session_recap_pending_tool": "进行中",
+    "grid_session_recap_started": "开始于",
+    "grid_session_recap_last_activity": "最后活动",
+    "grid_session_recap_state_reason": "状态原因",
+    "grid_session_recap_truncated": "从记录末尾读取——更早的内容未被扫描。"
   },
   "common": {
     "loading": "加载中…",
