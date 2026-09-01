@@ -585,13 +585,6 @@ fn maintain_locked(store: &mut IngestStore, now: Instant) {
 ///
 /// Lock order note: this takes ONLY the ingest lock and never reaches into the
 /// registry, so it is safe to call while holding the registry's session map.
-// TODO(lotC-insert): the production caller is ONE line inside
-// `registry.rs::forget_dead`, which a sibling lot owns and is editing right
-// now — the Director applies it at quiescence, and this attribute comes off
-// with it. Until then the only callers are the tests below, so `dead_code`
-// would fire in a non-test build. The TTL/cap sweep in `maintain_locked` is
-// the standalone half and needs no insert: eviction works without this.
-#[allow(dead_code)]
 pub fn evict_ingest(claude_session_id: &str) -> bool {
     let mut store = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
     store.entries.remove(claude_session_id).is_some()
@@ -685,18 +678,6 @@ pub fn ai_title_for(claude_session_id: &str) -> Option<String> {
         .and_then(|st| st.acc.ai_title.clone())
 }
 
-// TODO(lotC-insert): local copy of `registry::is_generic_claude_title`, which
-// is private in a file a sibling lot owns. The Director makes it `pub(super)`
-// and deletes this copy at quiescence - the two must not drift in the meantime.
-/// True when a title is just Claude Code's bare generic name.
-fn is_generic_session_title(title: &str) -> bool {
-    let core = title
-        .trim()
-        .trim_start_matches(|c: char| !c.is_alphanumeric())
-        .trim();
-    core.eq_ignore_ascii_case("claude") || core.eq_ignore_ascii_case("claude code")
-}
-
 /// Whether a session's `ai-title` read off disk should replace its current
 /// registry title.
 ///
@@ -710,12 +691,12 @@ fn is_generic_session_title(title: &str) -> bool {
 /// backfill for the sessions that never got one.
 pub fn should_adopt_disk_title(current_title: Option<&str>, disk_title: &str) -> bool {
     let disk = disk_title.trim();
-    if disk.is_empty() || is_generic_session_title(disk) {
+    if disk.is_empty() || super::registry::is_generic_claude_title(disk) {
         return false;
     }
     match current_title.map(str::trim) {
         None | Some("") => true,
-        Some(cur) => is_generic_session_title(cur),
+        Some(cur) => super::registry::is_generic_claude_title(cur),
     }
 }
 

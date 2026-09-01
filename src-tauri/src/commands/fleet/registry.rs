@@ -1613,7 +1613,14 @@ impl FleetRegistry {
     /// Removes a session entirely. Used by the UI to dismiss exited rows.
     pub fn remove(&self, session_id: &str) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        map.remove(session_id).is_some()
+        let removed = map.remove(session_id).is_some();
+        // A session vanishing is a state change to anything waiting on it:
+        // `wait_for_running` treats "gone" as a hit, so wake the waiters here
+        // rather than leaving them to the backstop re-poll.
+        if removed {
+            super::wait::note_state_changed();
+        }
+        removed
     }
 
     /// Remove a session ONLY if it has no live PTY in this process — no tracked
@@ -1636,7 +1643,18 @@ impl FleetRegistry {
         if live {
             return false;
         }
-        map.remove(session_id).is_some()
+        // The transcript rollup is keyed by the claude session id and has no
+        // other reaper for a session that is truly gone; evict it here so the
+        // ingest map's lifetime follows the registry's (creation names its
+        // reaper). Lock order is safe: evict_ingest takes only the ingest lock.
+        if let Some(cid) = session.claude_session_id.clone() {
+            super::transcript_read::evict_ingest(&cid);
+        }
+        let removed = map.remove(session_id).is_some();
+        if removed {
+            super::wait::note_state_changed();
+        }
+        removed
     }
 }
 
@@ -1706,7 +1724,7 @@ fn last_meaningful_line(lines: &[String]) -> Option<String> {
 /// and surrounding whitespace. A title carrying MORE than the bare word (a real
 /// task summary like "claude — fixing auth") returns false and is kept. Used by
 /// `set_title` to stop the generic value clobbering the LLM-assigned name.
-fn is_generic_claude_title(title: &str) -> bool {
+pub(super) fn is_generic_claude_title(title: &str) -> bool {
     let core = title
         .trim()
         .trim_start_matches(|c: char| !c.is_alphanumeric())

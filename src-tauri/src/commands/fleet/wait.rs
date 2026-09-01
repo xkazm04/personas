@@ -41,23 +41,19 @@ const RAW_TAIL_CAP: usize = 2048;
 /// wake; this is what a wait falls back on when a transition lands without one.
 ///
 /// **Measured residual (2026-09-01), after the registry state door landed.**
-/// [`note_state_changed`] now fires from inside `registry::apply_transition`
-/// itself, not only from `pty::emit_session_state` — so a transition can no
-/// longer skip the wake by taking a lane that emits `registry-changed` instead
-/// of `session-state`, which three of them did (`mark_alive` from the PTY
-/// reader and from the headless reader, `park_recovered` from boot recovery).
-/// What is left, and the only reason this constant still exists:
+/// [`note_state_changed`] fires from inside `registry::apply_transition`, and
+/// every lane in the fleet module now transitions through it — the stale
+/// sweeper, the hook receiver and the transcript watcher included (the last
+/// two inline writes, in `transcript.rs`, were converted in the same wave).
+/// `registry::mark_exited` still writes `Exited` directly on purpose (the door
+/// refuses every edge out of a terminal state, and a second reap must stamp the
+/// fresher exit code); its own caller emits, so it is covered. The one wake the
+/// door could never provide — a session being REMOVED, which `wait_for_running`
+/// treats as a hit — now fires from `FleetRegistry::remove` and `forget_dead`.
 ///
-/// - `transcript.rs:207` and `transcript.rs:249` still assign `session.state`
-///   inline under the registry lock instead of going through the door, so an
-///   `Idle` verdict from the transcript watcher wakes nothing. That is the last
-///   bypass in the fleet module; when it is converted, this backstop can go.
-/// - `registry::mark_exited` writes `Exited` directly on purpose (the door
-///   refuses every edge out of a terminal state, and a second reap must still
-///   stamp the fresher exit code) — its own caller emits, so it is covered.
-///
-/// Until the transcript lane is converted, a wait must not be able to hang for
-/// its full timeout on a session that already moved.
+/// No known bypass remains. The constant is kept as a bounded-cost defence (one
+/// re-poll per 500 ms per waiter) rather than deleted on the strength of a code
+/// read alone: retire it once a soak shows no waiter ever needed the re-poll.
 const STATE_BACKSTOP: Duration = Duration::from_millis(500);
 
 /// A condition a wait blocks on.
