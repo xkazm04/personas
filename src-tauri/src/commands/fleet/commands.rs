@@ -131,16 +131,36 @@ pub async fn fleet_resize_session(session_id: String, cols: u16, rows: u16) -> R
 }
 
 /// Kill the underlying child process for `session_id`. Idempotent —
-/// already-exited sessions silently succeed. The reaper task picks up
-/// the exit and emits `fleet-session-exited`.
+/// already-exited sessions (and rows that never owned a process) silently
+/// succeed. The reaper task picks up the exit and emits `fleet-session-exited`.
+///
+/// **Errs when the kill itself was refused.** This used to return `Ok` whether
+/// the child died or not (`let _ = k.kill()` inside `close_pty_handles`), which
+/// is precisely the one thing the operator pressed Close to find out. All four
+/// frontend callers already wrap this in `toastCatch`, so the rejection
+/// surfaces as a toast rather than a silent no-op tile.
 #[tauri::command]
 pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<(), String> {
     // Hard kill via the session's kill handle, then drop the PTY handles. A soft
     // "drop the writer" EOF does NOT stop interactive `claude` (it ignores stdin
     // EOF and lingers as a zombie shell), so route through close_pty_handles,
     // which calls killer.kill() first. The reaper picks up the exit and emits.
-    if !registry().close_pty_handles(&session_id) {
+    let outcome = registry().close_pty_handles_reporting(&session_id);
+    if matches!(outcome, super::registry::KillOutcome::NoSession) {
         return Err(format!("session not found: {session_id}"));
+    }
+    if let Some(err) = outcome.failure() {
+        // The PTY handles ARE dropped and the row did change — emit before
+        // reporting, so the grid still refreshes under the error toast.
+        super::debug_log::lifecycle(
+            &session_id,
+            "kill failed",
+            &format!("kill requested, child still alive: {err}"),
+        );
+        pty::emit_registry_changed(&app, "updated", &session_id);
+        return Err(format!(
+            "kill requested, child still alive: {err} (session {session_id})"
+        ));
     }
     super::debug_log::lifecycle(&session_id, "killed", "operator killed the session");
     pty::emit_registry_changed(&app, "updated", &session_id);
@@ -168,17 +188,28 @@ pub async fn fleet_rename_session(
 /// Returns `false` if the session can't be hibernated (already exited /
 /// hibernated, or never bound a `claude_session_id`). The reaper records the
 /// resulting child exit as a sleep, not a death.
+///
+/// **Errs when the row was hibernated but the kill was refused** — the whole
+/// point of Sleep is freeing the process, and a `Hibernated` tile over a
+/// still-running `claude` is a lie the operator has to be told about. The row
+/// keeps its `Hibernated` state (it IS resumable; `claude_session_id` + `cwd`
+/// are retained) and `child_pid` retention is untouched.
 #[tauri::command]
 pub async fn fleet_hibernate_session(app: AppHandle, session_id: String) -> Result<bool, String> {
     // `require_resting = false`: the user explicitly chose to sleep this
     // session, whatever state it's in (Running / AwaitingInput included).
-    let ok = registry().hibernate(&session_id, false);
-    if ok {
-        super::debug_log::sleep_event(&session_id, "hibernated", "manual · operator clicked Sleep");
-        // "updated" → the frontend re-fetches the snapshot and sees Hibernated.
-        pty::emit_registry_changed(&app, "updated", &session_id);
+    let Some(outcome) = registry().hibernate_reporting(&session_id, false) else {
+        return Ok(false);
+    };
+    super::debug_log::sleep_event(&session_id, "hibernated", "manual · operator clicked Sleep");
+    // "updated" → the frontend re-fetches the snapshot and sees Hibernated.
+    pty::emit_registry_changed(&app, "updated", &session_id);
+    if let Some(err) = outcome.failure() {
+        return Err(format!(
+            "hibernated, but the child is still alive: {err} (session {session_id})"
+        ));
     }
-    Ok(ok)
+    Ok(true)
 }
 
 /// Wake a hibernated session: spawn a fresh PTY running

@@ -376,6 +376,52 @@ pub fn registry() -> &'static FleetRegistry {
     REGISTRY.get_or_init(FleetRegistry::default)
 }
 
+/// What happened when a session's child process was asked to die.
+///
+/// The three kill sites here used to be `let _ = k.kill()`, so
+/// `fleet_kill_session` and `fleet_hibernate_session` returned `Ok` whether the
+/// child died or refused — the one thing the operator pressed the button to
+/// find out. A kill that fails is not a rare theoretical: on Windows a handle
+/// to an already-reparented child, an elevated child, or a pending
+/// `TerminateProcess` all surface here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KillOutcome {
+    /// No session with that id.
+    NoSession,
+    /// The session had no kill handle — already reaped, hibernated, or an
+    /// external (hook-only) row that never owned a process. Not a failure.
+    NoChild,
+    /// The OS accepted the kill. The reaper confirms the actual exit.
+    Killed,
+    /// The kill FAILED — the child is very likely still running.
+    Failed(String),
+}
+
+impl KillOutcome {
+    /// The error text when the child was asked to die and did not.
+    pub fn failure(&self) -> Option<&str> {
+        match self {
+            KillOutcome::Failed(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+/// Terminate one session's child, reporting what actually happened. A poisoned
+/// killer mutex is recovered (`into_inner`) rather than silently skipped — the
+/// previous `if let Ok(mut k) = k.lock()` turned a poisoned lock into "no kill,
+/// no error", which is the same lie by a different route.
+fn kill_child_of(session: &FleetSessionInner) -> KillOutcome {
+    let Some(k) = &session.killer else {
+        return KillOutcome::NoChild;
+    };
+    let mut k = k.lock().unwrap_or_else(|e| e.into_inner());
+    match k.kill() {
+        Ok(()) => KillOutcome::Killed,
+        Err(e) => KillOutcome::Failed(e.to_string()),
+    }
+}
+
 // ── The one state door ─────────────────────────────────────────────────────
 //
 // Every lane that decides a session's lifecycle state (hooks, the staleness
@@ -1148,16 +1194,30 @@ impl FleetRegistry {
     /// task picks up the eventual exit and marks the session `Exited`.
     /// Returns `false` if the session id is unknown.
     pub fn close_pty_handles(&self, session_id: &str) -> bool {
+        !matches!(
+            self.close_pty_handles_reporting(session_id),
+            KillOutcome::NoSession
+        )
+    }
+
+    /// [`Self::close_pty_handles`], reporting whether the child actually died.
+    /// The PTY handles are dropped either way — a refused kill must not also
+    /// leave the writer/master dangling — but the caller learns the truth and
+    /// can say so instead of returning `Ok` over a live process.
+    pub fn close_pty_handles_reporting(&self, session_id: &str) -> KillOutcome {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get(session_id) else {
-            return false;
+            return KillOutcome::NoSession;
         };
         // Terminate the child first — interactive `claude` ignores stdin EOF, so
         // dropping the PTY handles alone leaves a zombie. The reaper then fires.
-        if let Some(k) = &session.killer {
-            if let Ok(mut k) = k.lock() {
-                let _ = k.kill();
-            }
+        let outcome = kill_child_of(session);
+        if let Some(e) = outcome.failure() {
+            tracing::warn!(
+                session_id = %session_id,
+                error = %e,
+                "fleet: kill refused — the child is probably still running"
+            );
         }
         if let Ok(mut w) = session.writer.lock() {
             *w = None;
@@ -1165,7 +1225,7 @@ impl FleetRegistry {
         if let Ok(mut m) = session.master.lock() {
             *m = None;
         }
-        true
+        outcome
     }
 
     /// Hibernate: mark the session `Hibernated`, flag it so the reaper records
@@ -1188,16 +1248,28 @@ impl FleetRegistry {
     /// (already exited / hibernated, never bound a `claude_session_id`, or
     /// `require_resting` and it has re-engaged since the snapshot).
     pub fn hibernate(&self, session_id: &str, require_resting: bool) -> bool {
+        self.hibernate_reporting(session_id, require_resting)
+            .is_some()
+    }
+
+    /// [`Self::hibernate`], reporting the kill outcome. `None` = ineligible
+    /// (nothing was written); `Some(KillOutcome::Failed(..))` = the row IS
+    /// `Hibernated` but the process refused to die, so it is still burning a
+    /// core while the tile says it was freed — the caller must surface that
+    /// rather than returning success.
+    pub fn hibernate_reporting(
+        &self,
+        session_id: &str,
+        require_resting: bool,
+    ) -> Option<KillOutcome> {
         use std::sync::atomic::Ordering;
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else {
-            return false;
-        };
+        let session = map.get_mut(session_id)?;
         if matches!(
             session.state,
             FleetSessionState::Exited | FleetSessionState::Hibernated
         ) {
-            return false;
+            return None;
         }
         if require_resting
             && !matches!(
@@ -1207,11 +1279,10 @@ impl FleetRegistry {
         {
             // Re-engaged (Running) or now waiting on the user (AwaitingInput)
             // since the ticker snapshotted it — never sleep a live turn.
-            return false;
+            return None;
         }
-        if session.claude_session_id.is_none() {
-            return false; // can't resume what we can't name
-        }
+        // Can't resume what we can't name.
+        session.claude_session_id.as_ref()?;
         session.hibernating.store(true, Ordering::SeqCst);
         apply_transition(
             session,
@@ -1223,10 +1294,13 @@ impl FleetRegistry {
         // child_pid until the reaper confirms exit (cleared via clear_child_pid in
         // the reaper's hibernation branch) so process_scan doesn't mislabel the
         // still-live process as an untracked orphan during the kill→exit window.
-        if let Some(k) = &session.killer {
-            if let Ok(mut k) = k.lock() {
-                let _ = k.kill();
-            }
+        let outcome = kill_child_of(session);
+        if let Some(e) = outcome.failure() {
+            tracing::warn!(
+                session_id = %session_id,
+                error = %e,
+                "fleet: hibernate kill refused — the row says Hibernated but the child is still running"
+            );
         }
         if let Ok(mut w) = session.writer.lock() {
             *w = None;
@@ -1234,7 +1308,7 @@ impl FleetRegistry {
         if let Ok(mut m) = session.master.lock() {
             *m = None;
         }
-        true
+        Some(outcome)
     }
 
     /// Light sleep — free the process of a session parked in `Stale` /
@@ -1269,10 +1343,16 @@ impl FleetRegistry {
         session.dozing = true;
         // NOT `hibernating` — the reaper's dozing branch keeps the state.
         session.hibernating.store(false, Ordering::SeqCst);
-        if let Some(k) = &session.killer {
-            if let Ok(mut k) = k.lock() {
-                let _ = k.kill();
-            }
+        // The ticker owns this lane (no operator waiting on a return value), so a
+        // refused kill is logged rather than surfaced — but it is no longer
+        // discarded: a doze that fails to free the process is exactly the
+        // "resource floor that isn't" the pass exists to enforce.
+        if let Some(e) = kill_child_of(session).failure() {
+            tracing::warn!(
+                session_id = %session_id,
+                error = %e,
+                "fleet: doze kill refused — the process was not freed"
+            );
         }
         if let Ok(mut w) = session.writer.lock() {
             *w = None;
@@ -1451,6 +1531,20 @@ impl FleetRegistry {
         )
         .accepted()
         .then_some(prev)
+    }
+
+    /// Replace a session's `state_reason` WITHOUT touching its state — for a
+    /// lane that has something to say about a session it is not moving (the
+    /// limit-retry pass reporting a keystroke the PTY refused). Returns `false`
+    /// for an unknown id. Every actual state change goes through
+    /// [`apply_transition`]; this is deliberately not a way around it.
+    pub fn set_state_reason(&self, session_id: &str, reason: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.state_reason = Some(reason.to_string());
+        true
     }
 
     /// Stamp (or clear, with `None`) the parsed limit-reset time. Returns true
@@ -1816,6 +1910,65 @@ mod tests {
     fn state_of(reg: &FleetRegistry, id: &str) -> FleetSessionState {
         let map = reg.sessions.lock().unwrap();
         map.get(id).unwrap().state
+    }
+
+    #[test]
+    fn a_kill_on_a_session_without_a_child_is_reported_as_such_not_as_success() {
+        // The three shapes a caller must be able to tell apart. `NoChild` is the
+        // fixture's shape (killer: None) — an already-reaped or external row —
+        // and is NOT a failure; `NoSession` is the id error `fleet_kill_session`
+        // turns into an Err; `Failed` is the one that used to be swallowed by
+        // `let _ = k.kill()` and returned as Ok.
+        let reg = FleetRegistry::default();
+        reg.insert(session("live", FleetSessionState::Running, Some("cc")));
+
+        assert_eq!(
+            reg.close_pty_handles_reporting("live"),
+            KillOutcome::NoChild
+        );
+        assert_eq!(
+            reg.close_pty_handles_reporting("nope"),
+            KillOutcome::NoSession
+        );
+        // The frozen bool wrapper keeps its old contract exactly.
+        assert!(reg.close_pty_handles("live"));
+        assert!(!reg.close_pty_handles("nope"));
+
+        assert_eq!(
+            KillOutcome::Failed("denied".into()).failure(),
+            Some("denied")
+        );
+        assert_eq!(KillOutcome::NoChild.failure(), None);
+        assert_eq!(KillOutcome::Killed.failure(), None);
+    }
+
+    #[test]
+    fn hibernate_reports_ineligibility_and_the_kill_outcome_separately() {
+        let reg = FleetRegistry::default();
+        reg.insert(session("idle", FleetSessionState::Idle, Some("cc")));
+        reg.insert(session("unbound", FleetSessionState::Idle, None));
+
+        // Ineligible (no claude_session_id to resume from) → nothing written.
+        assert_eq!(reg.hibernate_reporting("unbound", false), None);
+        assert_eq!(state_of(&reg, "unbound"), FleetSessionState::Idle);
+        // Unknown id → also None, no panic.
+        assert_eq!(reg.hibernate_reporting("nope", false), None);
+        // Eligible → hibernated, and the kill outcome comes back (NoChild for a
+        // fixture row that never owned a process).
+        assert_eq!(
+            reg.hibernate_reporting("idle", false),
+            Some(KillOutcome::NoChild)
+        );
+        assert_eq!(state_of(&reg, "idle"), FleetSessionState::Hibernated);
+    }
+
+    #[test]
+    fn set_state_reason_speaks_without_moving_the_session() {
+        let reg = FleetRegistry::default();
+        reg.insert(session("s", FleetSessionState::Stale, Some("cc")));
+        assert!(reg.set_state_reason("s", "the retry keystroke never landed"));
+        assert_eq!(state_of(&reg, "s"), FleetSessionState::Stale);
+        assert!(!reg.set_state_reason("nope", "x"));
     }
 
     #[test]

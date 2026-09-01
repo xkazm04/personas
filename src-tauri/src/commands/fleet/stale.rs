@@ -990,6 +990,29 @@ struct LimitRetry {
     fired_after_reset: bool,
 }
 
+/// Give back the attempt charged to a retry whose keystroke never landed.
+///
+/// `limit_retry_pass` charges the attempt BEFORE typing, because the typing is
+/// fire-and-forget. When the write is refused (a dead PTY, a session that left
+/// the registry between the snapshot and the write) the attempt did not happen,
+/// and counting it burns the [`LIMIT_RETRY_MAX`] budget on keystrokes nobody
+/// ever sent — the ledger then reads "retried 24 times" for a session that was
+/// never typed into once.
+///
+/// The cadence stamp (`last_ms`) is deliberately KEPT: a PTY that refuses
+/// writes must not be re-attempted every single tick. A scheduled post-reset
+/// attempt also gets its one shot back (`fired_after_reset`), since the point of
+/// that flag is "the ETA was spent", and it was not.
+fn refund_limit_retry(session_id: &str, was_scheduled: bool) {
+    let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(entry) = m.get_mut(session_id) {
+        entry.count = entry.count.saturating_sub(1);
+        if was_scheduled {
+            entry.fired_after_reset = false;
+        }
+    }
+}
+
 fn limit_retry_map() -> &'static Mutex<HashMap<String, LimitRetry>> {
     static MAP: OnceLock<Mutex<HashMap<String, LimitRetry>>> = OnceLock::new();
     MAP.get_or_init(|| Mutex::new(HashMap::new()))
@@ -1412,15 +1435,54 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
                 {
                     Ok(new_id) => {
                         tokio::time::sleep(std::time::Duration::from_secs(25)).await;
-                        let _ = registry().write_text_line(&new_id, "continue");
+                        if let Err(e) = registry().write_text_line(&new_id, "continue") {
+                            // 25 s after the wake, the fresh PTY refused the
+                            // keystroke. The attempt did not happen — refund it
+                            // (against the OLD id, which still keys the entry
+                            // until the wake's lineage swap ages it out) and say
+                            // so on the session the operator is looking at.
+                            tracing::warn!(
+                                session_id = %new_id,
+                                woke_from = %old,
+                                error = %e,
+                                "limit retry: the `continue` keystroke was refused after a wake"
+                            );
+                            refund_limit_retry(&old, scheduled);
+                            registry().set_state_reason(
+                                &new_id,
+                                "Limit retry woke this session but the `continue` keystroke was refused — the terminal is not accepting input.",
+                            );
+                            super::debug_log::athena(
+                                &old,
+                                "limit retry",
+                                "woke the session but the `continue` keystroke was refused — attempt refunded",
+                            );
+                        }
                     }
                     Err(e) => {
                         tracing::warn!(session_id = %old, error = %e, "limit retry: wake failed");
                     }
                 }
             });
-        } else {
-            let _ = registry().write_text_line(&sid, "continue");
+        } else if let Err(e) = registry().write_text_line(&sid, "continue") {
+            // The PTY refused the write: nothing was typed, so nothing was
+            // attempted. Refund the charge, report it on the tile, and let the
+            // cadence hold the next try.
+            tracing::warn!(
+                session_id = %sid,
+                error = %e,
+                "limit retry: the `continue` keystroke was refused"
+            );
+            refund_limit_retry(&sid, scheduled);
+            registry().set_state_reason(
+                &sid,
+                "Limit retry could not type `continue` — the terminal is not accepting input.",
+            );
+            super::debug_log::athena(
+                &sid,
+                "limit retry",
+                "the `continue` keystroke was refused — attempt refunded",
+            );
         }
     }
 }
@@ -1710,6 +1772,67 @@ mod tests {
             "stale.rs assigns session state inline — route it through \
              `registry::apply_transition` (the one state door) instead"
         );
+    }
+
+    #[test]
+    fn a_refused_keystroke_does_not_burn_a_retry_attempt() {
+        // Fixture-driven: the bookkeeping, not the PTY. `limit_retry_pass`
+        // charges the attempt before typing (the typing is fire-and-forget), so
+        // the refund is the only thing standing between "the write was refused"
+        // and a ledger that claims 24 retries nobody ever sent.
+        let sid = "unit-limit-refund";
+        let put = |e: LimitRetry| {
+            limit_retry_map()
+                .lock()
+                .unwrap_or_else(|x| x.into_inner())
+                .insert(sid.to_string(), e);
+        };
+        let get = || {
+            limit_retry_map()
+                .lock()
+                .unwrap_or_else(|x| x.into_inner())
+                .get(sid)
+                .copied()
+                .expect("entry present")
+        };
+
+        // A blind-cadence attempt: the count is given back, the cadence is not
+        // (a PTY that refuses writes must not be hammered every tick).
+        put(LimitRetry {
+            last_ms: NOW,
+            count: 4,
+            reset_at_ms: 0,
+            fired_after_reset: false,
+        });
+        refund_limit_retry(sid, false);
+        assert_eq!(get().count, 3);
+        assert_eq!(
+            get().last_ms,
+            NOW,
+            "the cadence stamp must survive a refund"
+        );
+
+        // The ONE scheduled post-reset attempt also comes back — the ETA was
+        // not actually spent.
+        put(LimitRetry {
+            last_ms: NOW,
+            count: 1,
+            reset_at_ms: NOW,
+            fired_after_reset: true,
+        });
+        refund_limit_retry(sid, true);
+        assert_eq!(get().count, 0);
+        assert!(!get().fired_after_reset);
+
+        // Never underflows, and an unknown id is a no-op rather than a panic.
+        refund_limit_retry(sid, false);
+        assert_eq!(get().count, 0);
+        refund_limit_retry("unit-limit-refund-absent", true);
+
+        limit_retry_map()
+            .lock()
+            .unwrap_or_else(|x| x.into_inner())
+            .remove(sid);
     }
 
     #[test]
