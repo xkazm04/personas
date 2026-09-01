@@ -72,22 +72,15 @@ import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
 import { FleetTerminalModal } from './FleetTerminalModal';
+import { SessionRecapModal } from './SessionRecapModal';
 import { useFleetSessions } from './useFleetSessions';
+import { ColumnBody } from './ColumnBody';
+import { UngroupedTray } from './UngroupedTray';
+import {
+  TILE_W, TILE_H, SESSION_TILE_H, columnRows, type ColumnRow,
+} from './gridGeometry';
 
-/**
- * Tile geometry. The width is 4× the 38px square this board used to paint, at
- * exactly the same height — the change that put persona names on the board
- * instead of two-letter initials. Both are constants rather than classes
- * because the column width is derived from the tile width, so the two cannot
- * drift.
- */
-const TILE_W = 152;
-const TILE_H = 38;
-/** Sessions are visibly subordinate to the personas above them — same column
- *  width, less height. Not the same kind of citizen. */
-const SESSION_TILE_H = 30;
-
-/** Stable empty list so a session-less column never hands SessionStrip a new array. */
+/** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
 
 interface Props {
@@ -127,31 +120,22 @@ function StateTally({ totals, labels }: { totals: Record<SquareState, number>; l
 }
 
 /**
- * The divider + session tiles under one column's roster. Renders NOTHING when
- * the column has no live sessions — an empty divider would read as "this team
- * has a session lane and it is empty", which is a different claim.
+ * The divider between a column's roster and its live sessions. It is a ROW of
+ * the column now rather than a wrapper around the sessions — see
+ * `gridGeometry.columnRows` for why. It is emitted only when the column HAS
+ * sessions: an empty divider would read as "this team has a session lane and it
+ * is empty", which is a different claim.
  */
-function SessionStrip({
-  sessions, label, onOpen,
-}: {
-  sessions: FleetSession[];
-  label: string;
-  onOpen: (session: FleetSession) => void;
-}) {
-  if (sessions.length === 0) return null;
+function SessionDivider({ label }: { label: string }) {
   return (
-    <>
-      <span className="mt-1 flex items-center gap-1.5 typo-caption text-foreground opacity-50" data-testid="fleet-grid-session-strip">
-        <span aria-hidden className="h-px flex-1 bg-border" />
-        {label}
-        <span aria-hidden className="h-px flex-1 bg-border" />
-      </span>
-      <div className="flex flex-col gap-1">
-        {sessions.map((s) => (
-          <SessionTile key={s.id} session={s} width={TILE_W} height={SESSION_TILE_H} onOpen={onOpen} />
-        ))}
-      </div>
-    </>
+    <span
+      className="flex h-full items-end gap-1.5 pb-1 typo-caption text-foreground opacity-50"
+      data-testid="fleet-grid-session-strip"
+    >
+      <span aria-hidden className="h-px flex-1 bg-border" />
+      {label}
+      <span aria-hidden className="h-px flex-1 bg-border" />
+    </span>
   );
 }
 
@@ -165,6 +149,11 @@ function FleetGridViewImpl({
   // terminal itself is keyed on `session.id`, which does not change.
   const [openSession, setOpenSession] = useState<FleetSession | null>(null);
   const closeSession = useCallback(() => setOpenSession(null), []);
+  // The recap is the CHEAP read of a session — it mounts no xterm, so it can be
+  // opened on any tile of a 200-session board without costing a subscription.
+  // Held as the session for the same reason the terminal is (see above).
+  const [recapSession, setRecapSession] = useState<FleetSession | null>(null);
+  const closeRecap = useCallback(() => setRecapSession(null), []);
   const grouped = useMemo(() => groupFleet(cards, personas, teams), [cards, personas, teams]);
   const totals = useMemo(() => tallyStates(cards), [cards]);
 
@@ -192,15 +181,52 @@ function FleetGridViewImpl({
   const empty =
     grouped.teams.length === 0 && grouped.ungrouped.length === 0 && traySessions.length === 0;
 
-  const renderTile = (c: PersonaCardModel) => (
-    <PersonaTile
-      key={c.personaId}
-      card={c}
-      selected={c.personaId === selectedPersonaId}
-      onSelect={onSelect}
-      width={TILE_W}
-      height={TILE_H}
-    />
+  // Each column's rows, with every height already decided (gridGeometry). Built
+  // here rather than inside the column so a state event that changes ONE team's
+  // sessions does not rebuild the row list of every other team.
+  const columns = useMemo(
+    () => grouped.teams.map((g) => ({
+      ...g,
+      rows: columnRows(g.cards, sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS),
+    })),
+    [grouped.teams, sessionGroups.byTeam],
+  );
+
+  const renderTile = useCallback(
+    (c: PersonaCardModel) => (
+      <PersonaTile
+        key={c.personaId}
+        card={c}
+        selected={c.personaId === selectedPersonaId}
+        onSelect={onSelect}
+        width={TILE_W}
+        height={TILE_H}
+      />
+    ),
+    [selectedPersonaId, onSelect],
+  );
+
+  const renderSessionTile = useCallback(
+    (s: FleetSession) => (
+      <SessionTile
+        key={s.id}
+        session={s}
+        width={TILE_W}
+        height={SESSION_TILE_H}
+        onOpen={setOpenSession}
+        onRecap={setRecapSession}
+      />
+    ),
+    [],
+  );
+
+  const renderColumnRow = useCallback(
+    (row: ColumnRow) => {
+      if (row.kind === 'persona') return renderTile(row.card);
+      if (row.kind === 'session') return renderSessionTile(row.session);
+      return <SessionDivider label={t.monitor.grid_sessions} />;
+    },
+    [renderTile, renderSessionTile, t.monitor.grid_sessions],
   );
 
   return (
@@ -225,13 +251,19 @@ function FleetGridViewImpl({
             </div>
           ) : (
             <>
-              {/* The board — one column per team, scrolling horizontally. */}
-              <div className="min-h-0 flex-1 overflow-auto p-3" aria-label={t.monitor.grid_board_aria}>
+              {/* The board — one column per team, scrolling horizontally. The
+                  VERTICAL scroll is now per column rather than shared (see
+                  ColumnBody's header for the geometry decision), so this
+                  container scrolls on one axis only. */}
+              <div
+                className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-3"
+                aria-label={t.monitor.grid_board_aria}
+              >
                 <div className="flex h-full gap-3">
-                  {grouped.teams.map((g) => (
+                  {columns.map((g) => (
                     <section
                       key={g.teamId}
-                      className="flex flex-shrink-0 flex-col gap-1.5"
+                      className="flex h-full min-h-0 flex-shrink-0 flex-col gap-1.5"
                       style={{ width: TILE_W }}
                       data-testid="fleet-grid-column"
                     >
@@ -240,8 +272,10 @@ function FleetGridViewImpl({
                           minimal" because 38px had room for nothing else. The
                           constraint that motivated that is gone: the column is
                           a tile wide, so the team gets its real name and its
-                          headcount. */}
-                      <div className="sticky top-0 z-10 flex flex-col gap-1 bg-gradient-to-b from-background via-background to-transparent pb-2 pt-0.5">
+                          headcount. It now sits ABOVE the column's own scroller
+                          rather than `sticky` against a shared one — the same
+                          property, held structurally. */}
+                      <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
                         <div className="flex items-baseline gap-1.5">
                           {/* The shared Tooltip, not `title=` — the name is the
                               one thing on this column that can truncate, so its
@@ -262,39 +296,26 @@ function FleetGridViewImpl({
                           style={{ backgroundColor: colorWithAlpha(g.teamColor, 0.55) }}
                         />
                       </div>
-                      {/* Roster — one-wide stack of tiles. */}
-                      <div className="flex flex-col gap-1 pb-2">
-                        {g.cards.map(renderTile)}
-                        <SessionStrip
-                          sessions={sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS}
-                          label={t.monitor.grid_sessions}
-                          onOpen={setOpenSession}
-                        />
-                      </div>
+                      {/* Roster + sessions — one windowed stack of rows. */}
+                      <ColumnBody rows={g.rows} renderRow={renderColumnRow} />
                     </section>
                   ))}
                 </div>
               </div>
 
-              {/* Ungrouped tray — wrapped rows. */}
+              {/* Ungrouped tray — wrapped rows, windowed above 30 tiles. */}
               {(grouped.ungrouped.length > 0 || traySessions.length > 0) && (
                 <div className="flex max-h-[32%] flex-shrink-0 flex-col gap-2 border-t border-border px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     <Users className="h-3 w-3 text-foreground opacity-40" />
                     <span className="typo-label text-foreground opacity-50">{t.monitor.grid_ungrouped}</span>
                   </div>
-                  <div className="flex flex-wrap content-start items-center gap-1.5 overflow-auto pb-1">
-                    {grouped.ungrouped.map(renderTile)}
-                    {traySessions.map((s) => (
-                      <SessionTile
-                        key={s.id}
-                        session={s}
-                        width={TILE_W}
-                        height={SESSION_TILE_H}
-                        onOpen={setOpenSession}
-                      />
-                    ))}
-                  </div>
+                  <UngroupedTray
+                    cards={grouped.ungrouped}
+                    sessions={traySessions}
+                    renderPersona={renderTile}
+                    renderSession={renderSessionTile}
+                  />
                 </div>
               )}
             </>
@@ -305,6 +326,7 @@ function FleetGridViewImpl({
       </div>
 
       <FleetTerminalModal session={openSession} onClose={closeSession} />
+      <SessionRecapModal session={recapSession} onClose={closeRecap} />
     </div>
   );
 }
