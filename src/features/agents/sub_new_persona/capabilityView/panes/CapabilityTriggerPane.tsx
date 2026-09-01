@@ -1,6 +1,7 @@
 import { Clock } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { CapabilityState } from "@/lib/types/buildTypes";
+import { prettyTriggerType } from "@/features/shared/glyph/triggers";
 
 interface Props {
   capability: CapabilityState;
@@ -39,7 +40,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 typo-caption font-medium text-primary">
           <Clock className="h-3 w-3" />
-          {trig.trigger_type}
+          {prettyTriggerType(t, trig.trigger_type)}
         </span>
         {trig.description ? (
           <span className="typo-body-sm text-foreground truncate">
