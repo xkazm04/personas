@@ -39,14 +39,23 @@ export function CapabilityPoliciesPane({ capability }: Props) {
       data-testid={`capability-policies-pane-${capability.id}`}
     >
       <section className="flex flex-col gap-2">
-        <label className="typo-label text-foreground">
+        <label
+          id={`capability-review-label-${capability.id}`}
+          htmlFor={`capability-review-context-${capability.id}`}
+          className="typo-label text-foreground"
+        >
           {t.matrix_v3.capability_row_field_review}
         </label>
-        <div className="inline-flex rounded-full bg-secondary/30 p-0.5">
+        <div
+          role="group"
+          aria-labelledby={`capability-review-label-${capability.id}`}
+          className="inline-flex rounded-full bg-secondary/30 p-0.5"
+        >
           {REVIEW_MODES.map((m) => (
             <button
               type="button"
               key={m}
+              aria-pressed={review.mode === m}
               onClick={() => onReview({ ...review, mode: m })}
               className={`rounded-full px-3 py-1 typo-body-sm transition ${
                 review.mode === m
@@ -59,6 +68,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
           ))}
         </div>
         <input
+          id={`capability-review-context-${capability.id}`}
           type="text"
           value={review.context}
           onChange={(e) => onReview({ ...review, context: e.target.value })}
@@ -68,7 +78,10 @@ export function CapabilityPoliciesPane({ capability }: Props) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <label className="typo-label text-foreground">
+        <label
+          htmlFor={`capability-memory-context-${capability.id}`}
+          className="typo-label text-foreground"
+        >
           {t.matrix_v3.capability_row_field_memory}
         </label>
         <div className="flex items-center gap-2">
@@ -86,6 +99,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
           </span>
         </div>
         <input
+          id={`capability-memory-context-${capability.id}`}
           type="text"
           value={memory.context}
           onChange={(e) => onMemory({ ...memory, context: e.target.value })}

@@ -31,7 +31,10 @@ export function CapabilityConnectorsPane({ capability }: Props) {
       className="flex flex-col gap-2"
       data-testid={`capability-connectors-pane-${capability.id}`}
     >
-      <label className="typo-label text-foreground">
+      <label
+        htmlFor={`capability-connector-input-${capability.id}`}
+        className="typo-label text-foreground"
+      >
         {t.matrix_v3.capability_row_field_connectors}
       </label>
       <div className="flex flex-wrap gap-2">
@@ -57,6 +60,7 @@ export function CapabilityConnectorsPane({ capability }: Props) {
           </span>
         ))}
         <input
+          id={`capability-connector-input-${capability.id}`}
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
