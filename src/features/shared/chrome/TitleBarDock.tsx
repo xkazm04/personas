@@ -1,33 +1,31 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CalendarClock, ClipboardCheck, Rocket, Search, SquareTerminal } from 'lucide-react';
+import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { ActivityPulseIcon } from '@/features/shared/components/icons/ActivityPulseIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
-import { useQuickDispatchStore } from '@/stores/quickDispatchStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
 
 const ICON_SIZE = 21;
 
 /**
- * @catalog Title-bar quick-action dock — key strip (search / schedules / review / dispatch / monitor / notifications) with inline counts and keyboard-nav key hints.
+ * @catalog Title-bar quick-action dock — key strip (search / schedules / review / monitor / notifications) with inline counts and keyboard-nav key hints.
  *
  * The title bar's quick-action tray. Counts are first-class data, not
  * stickers: every signal renders INLINE beside its glyph inside a 36px
  * key (icon + number side by side), so a number never overlaps an icon and
  * every count shares one size/weight/position. Urgency is carried by semantic
  * colour alone: info (scheduled), warning (needs you), primary (news). The
- * whole tray sits in one containment ring so the five actions read as a
+ * whole tray sits in one containment ring so the actions read as a
  * single instrument.
  *
  * Keyboard: while `;` keyboard-nav mode is active (see `KeyboardNavMode`),
- * each capsule shows its key on a hint chip below the bar and S / T / R / D /
- * M / N toggle the matching surface; C opens the Quick Dispatch overlay
- * (also reachable via the console capsule right of the bell). Surface keys keep the mode armed — it
+ * each capsule shows its key on a hint chip below the bar and S / T / R / M /
+ * N toggle the matching surface. Surface keys keep the mode armed — it
  * stays on until `;` / Esc / the footer switch. The keys do nothing outside
  * nav mode.
  */
@@ -36,8 +34,6 @@ export default function TitleBarDock() {
   const tray = useTitleBarTray();
   const prefersReducedMotion = useReducedMotion();
   const keyboardNavActive = useSystemStore((s) => s.keyboardNavActive);
-  const toggleQuickDispatch = useQuickDispatchStore((s) => s.toggleQuickDispatch);
-  const quickDispatchOpen = useQuickDispatchStore((s) => s.open);
 
   useAppKeyboard(
     (e) => {
@@ -51,10 +47,6 @@ export default function TitleBarDock() {
           // Stay armed after opening search: the mode now persists until the
           // user switches it off (`;` / Esc / footer switch), not per-shortcut.
           return true;
-        case 'c':
-          e.preventDefault();
-          toggleQuickDispatch();
-          return true;
         case 't':
           e.preventDefault();
           tray.toggleSchedules();
@@ -62,10 +54,6 @@ export default function TitleBarDock() {
         case 'r':
           e.preventDefault();
           tray.toggleReview();
-          return true;
-        case 'd':
-          e.preventDefault();
-          tray.toggleDispatch();
           return true;
         case 'm':
           e.preventDefault();
@@ -123,24 +111,6 @@ export default function TitleBarDock() {
       <ClipboardCheck width={icon} height={icon} strokeWidth={1.6} />
     </DockAction>
   );
-  // Approved but never sent. Distinct from the review capsule on its left:
-  // that one counts decisions still owed, this one counts decisions already
-  // made that nothing acted on.
-  const dispatch = (
-    <DockAction
-      {...common}
-      onClick={tray.toggleDispatch}
-      active={tray.dispatchOpen}
-      count={tray.undispatchedCount}
-      countClass="text-status-warning"
-      label={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
-      title={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
-      testId="titlebar-dispatch"
-      hintKey="D"
-    >
-      <Rocket size={icon} strokeWidth={1.6} />
-    </DockAction>
-  );
   const monitor = (
     <DockAction
       {...common}
@@ -183,24 +153,14 @@ export default function TitleBarDock() {
       <Bell size={icon} strokeWidth={1.6} />
     </DockAction>
   );
-  // Quick Dispatch — the mouse door onto the console deck; the same surface
-  // nav-mode C summons.
-  const console = (
-    <DockAction {...common} onClick={toggleQuickDispatch} active={quickDispatchOpen} label={t.plugins.fleet_quick_dispatch.title} title={t.plugins.fleet_quick_dispatch.title} testId="titlebar-quick-dispatch" hintKey="C">
-      <SquareTerminal size={icon} strokeWidth={1.6} />
-    </DockAction>
-  );
-
   return (
     <>
       <div className="titlebar-nodrag mr-2 flex h-10 items-center gap-0.5 rounded-2xl border border-primary/15 bg-gradient-to-b from-secondary/60 to-secondary/25 px-1 shadow-elevation-1">
         {search}
         <DockDivider />
-        {schedules}{review}{dispatch}
+        {schedules}{review}
         <DockDivider />
         {monitor}{notifications}
-        <DockDivider />
-        {console}
       </div>
       <TrayOverlays />
     </>

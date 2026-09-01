@@ -12,16 +12,19 @@
 // the headless fallback and the ARIA combobox contract cannot drift between the
 // two hosts. What is re-authored here is the SHELL, for two reasons:
 //
-//   • The overlay floats on a scrim, so it wears `glass-md` + `shadow-elevation-4`
-//     and rounds on all four corners. Docked inside the Activity card, that same
+//   • The overlay floated on a scrim, so it wore `glass-md` + `shadow-elevation-4`
+//     and rounded on all four corners. Docked inside the Activity card, that same
 //     treatment reads as a modal that forgot to open — a pane inside a pane. The
 //     dock wears the Conversations composer's chrome instead: a single top
 //     hairline, the surface's own tint, no shadow, no radius.
-//   • COLLAPSED IS THE RESTING STATE. The overlay is summoned, so it is always
+//   • COLLAPSED IS THE RESTING STATE. The overlay was summoned, so it was always
 //     open; the dock is permanent, so it must cost the board almost nothing when
-//     nobody is dispatching. Collapsed it is one 36px row. That is also why the
-//     dock does not autofocus on mount the way the overlay does — a console that
-//     steals the caret from a board you opened to LOOK at is a bug.
+//     nobody is dispatching. Collapsed it is one 36px row.
+//
+// The overlay itself was retired on 2026-09-01 — this dock replaced it, and two
+// composers for one grammar is one composer too many. Its leaf pieces
+// (`QuickDispatchParts`, `QuickDispatchSuggestions`) and its brain outlive it
+// here, which is why the migration cost nothing.
 //
 // The anti-shake contract the console won its /prototype round on is preserved
 // verbatim: the volatile panel (suggestions / recent) renders absolutely at
@@ -48,10 +51,11 @@ const DOCK_LISTBOX_ID = 'activity-dock-typeahead-listbox';
 
 export function QuickDispatchDock() {
   const { t } = useTranslation();
-  // Its own listbox id: the summoned overlay can be open OVER this dock, and
-  // two composers advertising the same `aria-controls` target is one composer
-  // pointing at the other's suggestions.
-  const c = useQuickDispatchController({ inline: true, listboxId: DOCK_LISTBOX_ID });
+  // Its own listbox id rather than the module default: two composers
+  // advertising the same `aria-controls` target would be one pointing at the
+  // other's suggestions. The overlay that made that concrete is gone; the
+  // property is kept because the next second host will not announce itself.
+  const c = useQuickDispatchController({ listboxId: DOCK_LISTBOX_ID });
   const [expanded, setExpanded] = useState(false);
 
   const { focusInput } = c;

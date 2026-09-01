@@ -58,6 +58,15 @@ type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map';
  */
 let lastView: MonitorView = 'activity';
 
+/** The store's deep-link vocabulary → this router's destinations. One function
+ *  rather than the same ternary at the initializer and the effect, which is how
+ *  a third value gets added to one of them and not the other. */
+function viewForSignal(signal: 'fleet' | 'channels' | 'conversations'): MonitorView {
+  if (signal === 'channels') return 'timeline';
+  if (signal === 'conversations') return 'conversations';
+  return 'activity';
+}
+
 interface Selection {
   personaId: string;
   section: DrawerSection;
@@ -66,21 +75,24 @@ interface Selection {
 export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const { t } = useTranslation();
 
-  // A live pop-up can deep-link straight into the Timeline via the transient
-  // `monitorInitialView` signal. The store's vocabulary predates the router and
-  // is left untouched: 'channels' means "the merged Timeline", 'fleet' means
-  // "the fleet board", which is Activity now.
+  // A live pop-up can deep-link straight into a Monitor destination via the
+  // transient `monitorInitialView` signal. Two of the three names predate the
+  // router and are left alone: 'channels' means "the merged Timeline", 'fleet'
+  // means "the fleet board", which is Activity now. 'conversations' is the one
+  // added deliberately — a channel message arriving as a pop-up belongs in the
+  // room where you can answer it, not in the read-only merged stream, so that
+  // is where the corner cards now land.
   const monitorInitialView = useSystemStore((s) => s.monitorInitialView);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
   const [view, setView] = useState<MonitorView>(() =>
-    monitorInitialView ? (monitorInitialView === 'channels' ? 'timeline' : 'activity') : lastView,
+    monitorInitialView ? viewForSignal(monitorInitialView) : lastView,
   );
   useEffect(() => {
     lastView = view;
   }, [view]);
   useEffect(() => {
     if (!monitorInitialView) return;
-    setView(monitorInitialView === 'channels' ? 'timeline' : 'activity');
+    setView(viewForSignal(monitorInitialView));
     setMonitorInitialView(null);
   }, [monitorInitialView, setMonitorInitialView]);
 

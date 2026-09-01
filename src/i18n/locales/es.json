@@ -173,7 +173,7 @@
     "live_clear_all": "Borrar todo",
     "live_dismiss": "Descartar",
     "live_more": "+{count} más",
-    "live_open_timeline": "Abrir en Línea de tiempo",
+    "live_open_conversation": "Abrir la conversación",
     "live_toggle": "Pop-ups en vivo",
     "live_toggle_hint": "Mostrar mensajes entrantes de canal como pop-ups en la esquina",
     "activity_mode": "Actividad",

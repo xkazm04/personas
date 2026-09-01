@@ -71,8 +71,7 @@ export const MAX_PARALLEL = 8;
  *
  * In both branches the partial outcome is reported ALONGSIDE the successful
  * one and never folded into it — `skipped` beside `dispatched`, `requested`
- * beside `removed`. A half-worked act must not read as one that worked (the
- * same rule `DispatchPanel` upholds).
+ * beside `removed`. A half-worked act must not read as one that worked.
  */
 export type AcceptedReport =
   | {

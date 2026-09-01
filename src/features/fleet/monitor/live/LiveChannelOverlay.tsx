@@ -151,11 +151,14 @@ export function LiveChannelOverlay() {
       return next;
     });
   }, []);
-  const onOpenTimeline = useCallback((teamId?: string) => {
-    // Redirect into the Channels → Timeline view, scoped to the pop-up's team
-    // when the card carries one.
+  const onOpenConversation = useCallback((teamId?: string) => {
+    // Into CONVERSATIONS, scoped to the pop-up's team when the card carries
+    // one. It used to land in the merged Timeline, which is the wrong room for
+    // this gesture: the Timeline is a read of everything at once, and a reader
+    // who just clicked ONE message wants that message's thread and a composer
+    // under it. The Timeline is still one tab away for the wider read.
     const s = useSystemStore.getState();
-    s.setMonitorInitialView('channels');
+    s.setMonitorInitialView('conversations');
     s.setMonitorChannelPreset(teamId ? { teamId, personaId: null } : null);
     s.setHeaderOverlay('monitor');
   }, []);
@@ -190,7 +193,7 @@ export function LiveChannelOverlay() {
   }, [incoming]);
 
   const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
-  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenTimeline, reducedMotion };
+  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenConversation, reducedMotion };
 
   if (!enabled) return null;
 

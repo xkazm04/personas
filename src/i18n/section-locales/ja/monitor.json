@@ -172,7 +172,7 @@
   "live_clear_all": "すべてクリア",
   "live_dismiss": "閉じる",
   "live_more": "他 {count} 件",
-  "live_open_timeline": "タイムラインで開く",
+  "live_open_conversation": "会話を開く",
   "live_toggle": "ライブポップアップ",
   "live_toggle_hint": "受信チャンネルメッセージをコーナーポップアップとして表示",
   "activity_mode": "アクティビティ",

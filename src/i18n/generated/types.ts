@@ -210,7 +210,7 @@ export type Translations = {
     columns_active_goals: string;
     columns_no_team: string;
     columns_all_clear: string;
-    live_open_timeline: string;
+    live_open_conversation: string;
     live_dismiss: string;
     live_clear_all: string;
     live_more: string;

@@ -172,7 +172,7 @@
   "live_clear_all": "Tout effacer",
   "live_dismiss": "Ignorer",
   "live_more": "+{count} de plus",
-  "live_open_timeline": "Ouvrir dans la Timeline",
+  "live_open_conversation": "Ouvrir la conversation",
   "live_toggle": "Pop-ups en direct",
   "live_toggle_hint": "Afficher les messages de canal entrants sous forme de pop-ups dans les coins",
   "activity_mode": "Activité",

@@ -173,7 +173,7 @@
     "live_clear_all": "مسح الكل",
     "live_dismiss": "إغلاق",
     "live_more": "+{count} أكثر",
-    "live_open_timeline": "فتح في الجدول الزمني",
+    "live_open_conversation": "فتح المحادثة",
     "live_toggle": "نوافذ منبثقة مباشرة",
     "live_toggle_hint": "عرض رسائل القناة الواردة كنوافذ منبثقة في الزاوية",
     "activity_mode": "النشاط",

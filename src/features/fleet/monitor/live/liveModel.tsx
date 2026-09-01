@@ -126,7 +126,7 @@ export interface LiveVariantProps {
   /** Acknowledge everything currently shown. */
   onDismissAll: () => void;
   /** Redirect into the Channels → Timeline view (optionally team-scoped). */
-  onOpenTimeline: (teamId?: string) => void;
+  onOpenConversation: (teamId?: string) => void;
   reducedMotion: boolean;
 }
 

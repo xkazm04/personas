@@ -81,9 +81,7 @@ export type HeaderOverlay =
   | 'monitor'
   | 'notifications'
   | 'quick-answer'
-  | 'schedules'
-  /** The dispatch panel — what I approved, whether it was sent, how stale it is. */
-  | 'dispatch';
+  | 'schedules';
 
 export interface UiSlice {
   // State
@@ -206,7 +204,7 @@ export interface UiSlice {
    * set by a live pop-up's "open in Timeline" click. Cleared once consumed.
    * Never persisted.
    */
-  monitorInitialView: 'fleet' | 'channels' | null;
+  monitorInitialView: 'fleet' | 'channels' | 'conversations' | null;
 
   /**
    * Transient lens preset accompanying `monitorInitialView: 'channels'` — the
@@ -246,7 +244,7 @@ export interface UiSlice {
   toggleMonitorGroupCollapsed: (groupId: string) => void;
   setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
-  setMonitorInitialView: (view: 'fleet' | 'channels' | null) => void;
+  setMonitorInitialView: (view: 'fleet' | 'channels' | 'conversations' | null) => void;
   setMonitorChannelPreset: (preset: { teamId: string | null; personaId: string | null } | null) => void;
   setMonitorFocusNode: (key: string | null) => void;
   toggleHomeSection: (sectionId: string) => void;

@@ -172,7 +172,7 @@
   "live_clear_all": "Alle löschen",
   "live_dismiss": "Schließen",
   "live_more": "+{count} weitere",
-  "live_open_timeline": "In Zeitachse öffnen",
+  "live_open_conversation": "Unterhaltung öffnen",
   "live_toggle": "Live-Einblendungen",
   "live_toggle_hint": "Eingehende Channel-Nachrichten als Eck-Einblendungen anzeigen",
   "activity_mode": "Aktivität",
