@@ -267,38 +267,63 @@ pub fn list_non_terminal(
     })
 }
 
-/// Minimum age (hours since last update) before a non-terminal build session on
-/// a non-draft persona is considered abandoned and swept to a terminal phase.
+/// Minimum age (hours since last update) before a non-terminal build session is
+/// considered abandoned and swept to a terminal phase.
 ///
 /// Conservative on purpose: an interactive build parked at `awaiting_input`
 /// legitimately waits on the user, and a one-shot build's resolution turns can
 /// span many minutes. 24h is far past any legal in-flight window, so a session
-/// still non-terminal after it — on a persona that has already been promoted to
-/// `active` (or later `archived`) — is genuinely stuck data, not live work.
+/// still non-terminal after it is genuinely stuck data, not live work. **The
+/// floor is the whole protection and it is deliberately NOT lowered** — see
+/// `expire_stale_non_terminal` for why it now also covers draft personas.
 pub const STALE_SESSION_MIN_AGE_HOURS: i64 = 24;
 
-/// Reconcile stuck build sessions: transition any build session that is still in
-/// a NON-terminal phase to `cancelled` when BOTH hold:
-///   * its owning persona's lifecycle is NOT `draft` (i.e. `active`/`archived`,
-///     or a legacy NULL which `COALESCE` treats as `active`) — the persona has
-///     already been promoted/adopted, so its build session is orphaned data; and
-///   * the session has had no activity for at least `min_age_hours`.
+/// Reconcile stuck build sessions: transition any build session still in a
+/// NON-terminal phase to `cancelled` once it has had no activity for at least
+/// `min_age_hours`.
 ///
-/// Real, promoted personas (e.g. GitHub Issue Sentinel, Tech News Brief) were
-/// observed carrying build sessions parked forever at `draft_ready`/`testing`;
-/// those ghosts resurface anywhere sessions are listed. This closes them at the
-/// source.
+/// # Why this no longer excludes draft personas
+///
+/// The original sweep (986aa32e4, "GC stuck non-terminal build sessions on
+/// promoted personas") additionally required
+/// `COALESCE(lifecycle,'active') != 'draft'`. Its recorded rationale was pure
+/// conservatism — "a draft's in-flight build IS live work" — not a dependency
+/// on any other cleanup path. Two facts make it wrong rather than merely
+/// cautious:
+///
+///   * *Every* from-scratch build runs on a persona that is still `draft`, so
+///     the exclusion skipped exactly the population the sweep exists for. Since
+///     nothing resumes an in-memory build session after a restart, a crashed
+///     draft build stayed non-terminal forever and `get_active_for_persona`
+///     kept handing it back, so the persona looked permanently mid-build.
+///   * Draft personas are NOT reliably deleted (with their sessions) by another
+///     path: `personas::sweep_stale_drafts` is gated on the
+///     `draft_retention_days` setting whose default is `0`
+///     (`settings_keys::DRAFT_RETENTION_DAYS_DEFAULT`), i.e. off, and even when
+///     enabled it refuses any draft that has executions.
+///
+/// The live-work protection therefore rests entirely on the age floor, which is
+/// KEPT at `STALE_SESSION_MIN_AGE_HOURS` (24h) unchanged: an interactive build
+/// awaiting a human answer is still safe for a full day of inactivity, which is
+/// far beyond any legal in-flight window. Only the lifecycle predicate is
+/// dropped.
 ///
 /// `cancelled` is used deliberately: `BuildPhase::validate_transition` allows
 /// EVERY non-terminal phase to move to `Cancelled` (the "any phase can
 /// transition to Failed or Cancelled" rule), so this bulk sweep follows a legal
 /// transition path for every row it touches — no bypass required. Reusing
 /// `cancelled` (rather than a new `expired` phase) keeps the terminal set and
-/// all existing `phase NOT IN (...terminal...)` filters unchanged.
+/// all existing `phase NOT IN (...terminal...)` filters unchanged, which is
+/// also what makes `get_active_for_persona` stop returning a swept session.
 ///
-/// NEVER touches: sessions of personas still `lifecycle = 'draft'` (a draft's
-/// in-flight build IS live work), and sessions updated within `min_age_hours`.
-/// Idempotent: once a row is `cancelled` it is terminal and no longer matches.
+/// The reason is written to `error_message` (only when the row has none, so a
+/// real failure reason is never overwritten) and names the sweeper, because the
+/// frontend surfaces that column verbatim as the session error
+/// (`matrixBuildSlice.ts` -> `error: session.errorMessage`).
+///
+/// NEVER touches: sessions updated within `min_age_hours`, and rows already in
+/// a terminal phase. Idempotent: once a row is `cancelled` it is terminal and
+/// no longer matches.
 ///
 /// Returns the number of sessions swept.
 pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<usize, AppError> {
@@ -311,20 +336,17 @@ pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<us
             // julianday() parses the RFC3339 timestamps this codebase stores
             // (same pattern as automation_runs::reap_stale_runs). The elapsed
             // hours = (julianday(now) - julianday(updated_at)) * 24.
+            let reason = format!(
+                "Auto-cancelled by the stuck build-session sweeper: no activity for over {min_age_hours}h. Start a new build to continue."
+            );
             let changed = conn.execute(
                 "UPDATE build_sessions
                  SET phase = 'cancelled',
-                     error_message = COALESCE(
-                         error_message,
-                         'Auto-cancelled: build session left in a non-terminal phase on an active/archived persona with no activity for over 24h'
-                     ),
+                     error_message = COALESCE(error_message, ?3),
                      updated_at = ?1
                  WHERE phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
-                   AND (julianday(?1) - julianday(updated_at)) * 24.0 >= ?2
-                   AND persona_id IN (
-                       SELECT id FROM personas WHERE COALESCE(lifecycle, 'active') != 'draft'
-                   )",
-                params![now, min_age_hours],
+                   AND (julianday(?1) - julianday(updated_at)) * 24.0 >= ?2",
+                params![now, min_age_hours, reason],
             )?;
             Ok(changed)
         }
@@ -445,18 +467,67 @@ mod tests {
     }
 
     #[test]
-    fn never_sweeps_draft_lifecycle_persona() {
+    fn sweeps_crashed_build_on_draft_persona() {
         let pool = init_test_db().unwrap();
-        // Draft persona: its in-flight build is live work — must be left alone
-        // even when old.
+        // Every from-scratch build runs on a `draft` persona. Nothing resumes an
+        // in-memory build session after a restart, so a crashed draft build is
+        // stuck data once it is past the age floor — the case the sweep used to
+        // be the only one to skip.
         let persona_id = make_persona(&pool, "Still Drafting", Some("draft"));
         let sid = insert_session(&pool, &persona_id, BuildPhase::DraftReady, &hours_ago(72));
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
-        assert_eq!(swept, 0, "draft-lifecycle personas must never be swept");
+        assert_eq!(
+            swept, 1,
+            "a crashed draft build must be swept after the floor"
+        );
+
+        let after = get_by_id(&pool, &sid).unwrap().unwrap();
+        assert_eq!(after.phase, BuildPhase::Cancelled);
+        let reason = after.error_message.expect("swept row carries a reason");
+        assert!(
+            reason.contains("sweeper"),
+            "the reason must name the sweeper, got: {reason}"
+        );
+    }
+
+    #[test]
+    fn never_sweeps_recent_draft_persona_session() {
+        let pool = init_test_db().unwrap();
+        // The age floor is the ONLY live-work protection now, so it has to hold
+        // for a draft persona's genuinely in-flight build.
+        let persona_id = make_persona(&pool, "Actively Drafting", Some("draft"));
+        let sid = insert_session(&pool, &persona_id, BuildPhase::AwaitingInput, &hours_ago(2));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 0, "a live draft build inside the floor is untouched");
         assert_eq!(
             get_by_id(&pool, &sid).unwrap().unwrap().phase,
-            BuildPhase::DraftReady
+            BuildPhase::AwaitingInput
+        );
+    }
+
+    #[test]
+    fn swept_session_is_no_longer_active_for_persona() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Haunted Draft", Some("draft"));
+        let sid = insert_session(&pool, &persona_id, BuildPhase::Resolving, &hours_ago(48));
+
+        assert_eq!(
+            get_active_for_persona(&pool, &persona_id)
+                .unwrap()
+                .map(|s| s.id),
+            Some(sid),
+            "precondition: the crashed session haunts the persona"
+        );
+
+        expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+
+        assert!(
+            get_active_for_persona(&pool, &persona_id)
+                .unwrap()
+                .is_none(),
+            "a swept session must not come back as the persona's active build"
         );
     }
 
