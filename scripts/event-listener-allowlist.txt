@@ -1,0 +1,89 @@
+# Baseline: registry events that Rust NAMES outside `src-tauri/core/src/events.rs`
+# -- i.e. hands to an emitter -- and that no non-test TypeScript references by
+# `EventName.X` or by wire literal. Every one of these is a payload the backend
+# builds, serialises and pushes across the IPC boundary into nothing.
+#
+# `scripts/check-event-registry.mjs` (pass 3, run by `npm run check:contracts`)
+# fails on any void emit NOT listed here, and ALSO fails when a listed name
+# gains a listener or stops being emitted (census convention,
+# scripts/census/rules.json) -- a silent drop is what a broken matcher looks
+# like, so clearing one costs a deleted line here.
+#
+# MEASURED at the commit that added this file: 158 registry events, 1,152 .rs
+# files and 5,059 .ts/.tsx files walked, 145 events named by Rust outside the
+# registry, **35 of them void**. Passes 1 and 2 of the same script were green
+# for all 35 the whole time: both registries declare the name, so a name diff
+# has nothing to report, and `let _ = app.emit(...)` discards the only runtime
+# signal that would have said otherwise.
+#
+# Five of the 35 have a direct `let _ = app.emit(...)` and a user-visible
+# consequence; they are baselined here so this gate lands green on measured
+# reality, and the very next commit wires them and deletes their five lines.
+# The remaining 30 split into three shapes, named per line below:
+#
+#   * JOB-STREAM PAIR -- a `*_STATUS`/`*_OUTPUT` pair handed to
+#     `BackgroundJobManager::new(...)`. The owning panel awaits the command's
+#     return value or polls a snapshot command instead of subscribing, so the
+#     progress stream is built and thrown away on every run. Wiring these is a
+#     loading-UX change per panel, not a listener; each is its own decision.
+#   * NO SURFACE -- the event describes a real condition with no place in the UI
+#     to put it. Wiring one means designing a surface, which this gate must not
+#     force somebody to invent.
+#   * SUPERSEDED -- another transport already carries the same fact.
+#
+# One bare event CONST name per line. `#` starts a comment.
+
+# ---------------------------------------------------------------------------
+# Job-stream pairs: emitted by BackgroundJobManager, consumed by nobody.
+# ---------------------------------------------------------------------------
+AUTO_CRED_BROWSER_STATUS  # JOB-STREAM PAIR (credentials/auto_cred_browser.rs:26); AutoCredPanel drives the browser step from command results, never the stream
+DIVERGENCE_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/workspace_divergence.rs:79); no divergence-scan progress surface exists
+DIVERGENCE_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/workspace_divergence.rs:78); no divergence-scan progress surface exists
+KPI_COMPOSE_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:67); the KPI composer awaits the command result
+KPI_COMPOSE_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:66); the KPI composer awaits the command result
+KPI_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:45); no KPI-scan progress surface exists
+KPI_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:44); no KPI-scan progress surface exists
+MEDIA_EXPORT_OUTPUT  # JOB-STREAM PAIR (artist/ffmpeg.rs:82); the export panel listens to MEDIA_EXPORT_STATUS and MEDIA_EXPORT_PROGRESS only -- ffmpeg's stderr lines have no viewer
+NL_QUERY_OUTPUT  # JOB-STREAM PAIR (credentials/nl_query.rs:35); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
+NL_QUERY_STATUS  # JOB-STREAM PAIR (credentials/nl_query.rs:34); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
+SCHEMA_PROPOSAL_OUTPUT  # JOB-STREAM PAIR (credentials/schema_proposal.rs:38); src/hooks/database/useSchemaProposal.ts awaits the command, no stream subscriber
+SCHEMA_PROPOSAL_STATUS  # JOB-STREAM PAIR (credentials/schema_proposal.rs:37); src/hooks/database/useSchemaProposal.ts awaits the command, no stream subscriber
+TEMPLATE_ADOPT_OUTPUT  # JOB-STREAM PAIR (design/template_adopt.rs:78); only reference is the CLI stream e2e fixture, which is a test
+TEMPLATE_ADOPT_STATUS  # JOB-STREAM PAIR (design/template_adopt.rs:77); only reference is the CLI stream e2e fixture, which is a test
+TEMPLATE_GENERATE_STATUS  # JOB-STREAM PAIR (design/template_adopt.rs:1327); the gallery listens to TEMPLATE_GENERATE_OUTPUT but never to the status half
+TWIN_STUDIO_OUTPUT  # JOB-STREAM PAIR (infrastructure/twin.rs:1334); the studio panel is driven by TWIN_STUDIO_PROGRESS / TWIN_STUDIO_COMPLETE
+TWIN_STUDIO_STATUS  # JOB-STREAM PAIR (infrastructure/twin.rs:1333); the studio panel is driven by TWIN_STUDIO_PROGRESS / TWIN_STUDIO_COMPLETE
+USE_CASE_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/use_case_scan.rs:42); no use-case-scan progress surface exists
+USE_CASE_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/use_case_scan.rs:41); no use-case-scan progress surface exists
+VERIFY_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/workspace_verify.rs:80); no verify-scan progress surface exists
+VERIFY_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/workspace_verify.rs:79); no verify-scan progress surface exists
+
+# ---------------------------------------------------------------------------
+# Completion pings whose only consumer is the OS notification the Rust side
+# already sends on the very next line.
+# ---------------------------------------------------------------------------
+IDEA_SCAN_COMPLETE  # SUPERSEDED (infrastructure/idea_scanner.rs:657); `crate::notifications::send` fires two lines later and is what the user actually sees
+KPI_SCAN_COMPLETE  # SUPERSEDED (infrastructure/kpi_scan.rs:604); completion is read back from the KPI tables on next open
+USE_CASE_SCAN_COMPLETE  # SUPERSEDED (infrastructure/use_case_scan.rs:301); completion is read back from the use-case tables on next open
+
+# ---------------------------------------------------------------------------
+# Real conditions with no surface to put them on. Each is a design decision,
+# not a missing listener -- wiring one means inventing a panel.
+# ---------------------------------------------------------------------------
+DESIGN_REVIEW_OUTPUT  # NO SURFACE (design/reviews.rs:2487); per-test-case streaming lines; the design-review panel renders the persisted run, not the stream
+EXECUTION_REVIEW_REQUEST  # NO SURFACE (cloud/runner.rs:137); cloud-poll review requests; the manual-review list reads the DB rows the same poll writes
+EXECUTIONS_SILENT_DETECTED  # NO SURFACE (engine/background/executions.rs:90); heartbeat-sweep result; Monitor infers staleness from the execution rows themselves. Strong wiring candidate once Monitor has a place for a sweep banner.
+PIPELINE_APPROVAL_NEEDED  # NO SURFACE (engine/pipeline_executor.rs:930); the pipeline UI polls the process registry for armed approvals instead
+PIPELINE_CYCLE_WARNING  # NO SURFACE (commands/teams/teams.rs:277); the refusal is also returned as an error from the same command, which IS surfaced
+SUBSCRIPTION_CRASHED  # NO SURFACE (engine/subscription/runner.rs:171); a panicking subscription tick has no health surface yet. Strong wiring candidate.
+
+# ---------------------------------------------------------------------------
+# TRIAGE IN FLIGHT -- the five direct `let _ = app.emit(...)` sites with a
+# user-visible consequence. Baselined only so this gate lands green on measured
+# reality; the next commit wires each one and deletes its line here.
+# ---------------------------------------------------------------------------
+ASSERTION_RESULTS  # TRIAGE (engine/execution.rs:2256); the emit site's own comment names "notification center" as a consumer that was never written
+AUTO_FIX_COMPLETED  # TRIAGE (engine/healing_retry.rs:1391); a self-heal confirmed by a successful retry and no UI is told
+CLIPBOARD_ERROR_DETECTED  # TRIAGE (engine/subscription/desktop.rs:253); the KB match reaches the OS notification but never the in-app bell
+CONTEXT_RULE_MATCH  # TRIAGE (engine/src/context_rules.rs:365); ContextAction::EmitEvent is a rule action the user configured, and it does nothing
+REVIEW_MESSAGE_ADDED  # TRIAGE (commands/design/reviews.rs:2024); the review thread does not live-update

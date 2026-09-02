@@ -39,7 +39,7 @@
     "check:i18n:strict": "node scripts/i18n/check-coverage.mjs --strict",
     "check:i18n-dead": "node scripts/i18n/find-unused-i18n-keys.mjs",
     "check:error-registry": "node scripts/i18n/check-error-registry-parity.mjs",
-    "check:contracts": "node scripts/check-command-contract.mjs && node scripts/check-event-registry.mjs",
+    "check:contracts": "node scripts/check-command-contract.mjs && node scripts/check-event-registry.mjs && node scripts/__tests__/check-event-pairing.test.mjs",
     "check:tiers": "node scripts/check-tiers.mjs",
     "check:tauri-configs": "node scripts/check-tauri-configs.mjs",
     "check:csp-hosts": "node scripts/check-csp-hosts.mjs",
@@ -111,7 +111,8 @@
     "check:command-registration": "node scripts/check-command-registration.mjs",
     "check:bindings": "node scripts/generate-bindings-index.mjs --check && node scripts/check-binding-orphans.mjs",
     "check:glyphs": "node scripts/check-vendored-glyphs.mjs",
-    "test:bindings": "node scripts/__tests__/check-binding-orphans.test.mjs"
+    "test:bindings": "node scripts/__tests__/check-binding-orphans.test.mjs",
+    "test:event-pairing": "node scripts/__tests__/check-event-pairing.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
