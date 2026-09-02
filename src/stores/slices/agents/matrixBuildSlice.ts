@@ -761,9 +761,21 @@ export const createMatrixBuildSlice: StateCreator<
   },
 
   handleBuildSessionStatus: (event) => {
-    const progress = event.total_count > 0
+    // Progress has ONE producer: the runner's `percent` on the `progress`
+    // event (see `runner::progress_percent`). This handler used to be a second
+    // one -- `resolved/total*100` against a `total_count` the backend hardcoded
+    // to 9 -- so whichever event arrived last won, and the two disagreed by
+    // construction. Worse, its `: 0` branch RESET a live bar to zero every time
+    // a status arrived with no knowable total (which is now every status: the
+    // runner sends `TOTAL_COUNT_UNKNOWN`).
+    //
+    // The derivation is kept only for a total the backend actually vouches for
+    // (`total_count > 0`), which nothing on the current wire sends; a zero total
+    // means "unknown" and must leave the last true reading alone rather than
+    // blank it.
+    const derived = event.total_count > 0
       ? (event.resolved_count / event.total_count) * 100
-      : 0;
+      : null;
     // Validate the phase string against the known union. Backend drift
     // falls back to 'failed' with a log instead of silently corrupting
     // session state.
@@ -779,7 +791,7 @@ export const createMatrixBuildSlice: StateCreator<
     set((state) => updateSessionInState(state, event.session_id, (sess) => ({
       ...sess,
       phase,
-      progress,
+      ...(derived != null ? { progress: derived } : {}),
     })));
     // Emit AFTER commit so listeners can read settled state and any reentrant
     // set() they trigger doesn't interleave with this updater closure.

@@ -414,7 +414,7 @@ pub(super) async fn run_session(
         &session_id,
         BuildPhase::Analyzing,
         0,
-        0,
+        TOTAL_COUNT_UNKNOWN,
     ));
 
     // Build initial prompt with optional workflow context
@@ -1440,7 +1440,8 @@ pub(super) async fn run_session(
                             session_id: session_id.clone(),
                             dimension: Some(cell_key.clone()),
                             message: format!("Resolved: {}", cell_key),
-                            percent: Some((resolved_cells.len() as f32 / 9.0) * 100.0),
+                            // Indeterminate mid-build -- see `progress_percent`.
+                            percent: progress_percent(BuildPhase::Resolving),
                             activity: Some(format!(
                                 "Resolved {} — moving to next dimension",
                                 cell_key
@@ -1625,7 +1626,7 @@ pub(super) async fn run_session(
                 &session_id,
                 BuildPhase::AwaitingInput,
                 resolved_count,
-                9,
+                TOTAL_COUNT_UNKNOWN,
             ));
             notifications::send(
                 &app_handle,
@@ -1656,7 +1657,7 @@ pub(super) async fn run_session(
                         &session_id,
                         BuildPhase::Resolving,
                         resolved_count,
-                        9,
+                        TOTAL_COUNT_UNKNOWN,
                     ));
 
                     // Flip any pending gate to Open. The UI only permits one
@@ -1835,7 +1836,7 @@ pub(super) async fn run_session(
                 session_id: session_id.clone(),
                 dimension: None,
                 message: "Draft ready for review".to_string(),
-                percent: Some(100.0),
+                percent: progress_percent(BuildPhase::DraftReady),
                 activity: Some("Draft ready for review".to_string()),
             };
             dual_emit_or_cancel!(draft_activity);
@@ -1846,7 +1847,7 @@ pub(super) async fn run_session(
                 &session_id,
                 BuildPhase::DraftReady,
                 resolved_count,
-                9,
+                TOTAL_COUNT_UNKNOWN,
             ));
             // OS notification + Glyph banner only for interactive mode —
             // OneShot fires its own terminal notification post-promote so we
@@ -1913,7 +1914,7 @@ pub(super) async fn run_session(
                             &session_id,
                             BuildPhase::Testing,
                             resolved_count,
-                            9,
+                            TOTAL_COUNT_UNKNOWN,
                         ));
                         conversation.push((
                             "user",
@@ -1938,7 +1939,7 @@ pub(super) async fn run_session(
                             &session_id,
                             BuildPhase::Resolving,
                             resolved_count,
-                            9,
+                            TOTAL_COUNT_UNKNOWN,
                         ));
                         conversation.push((
                             "user",
@@ -2007,10 +2008,83 @@ pub(super) async fn run_session(
         &session_id,
         final_phase,
         resolved_count,
-        9,
+        TOTAL_COUNT_UNKNOWN,
     ));
     cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
 }
+
+// =============================================================================
+// Build progress -- the ONE producer
+// =============================================================================
+
+/// The single producer of the build progress percentage. Every `percent` this
+/// module puts on the wire comes from here, and `emit_session_status` sends
+/// `total_count = TOTAL_COUNT_UNKNOWN` so the frontend cannot compute a second,
+/// competing one.
+///
+/// # Why there is no denominator
+///
+/// Until 2026-09-02 the percent was `(resolved_cells.len() / 9.0) * 100`, and
+/// `total_count` was a hardcoded `9` at every `SessionStatus` emit -- a fossil
+/// of the retired 3x3 matrix. Both numbers are unbacked, for two independent
+/// reasons measured against the code that mints the keys:
+///
+///   * **The numerator does not count what the name suggests.** `resolved_cells`
+///     is keyed by *legacy dimension* keys, and the v3 -> legacy mappers
+///     (`parser::map_capability_field_to_legacy_dimension` /
+///     `map_persona_field_to_legacy_dimension`) are many-to-one: every
+///     capability that resolves `suggested_trigger` writes the same `triggers`
+///     key, so the HashMap collapses them. The count therefore does NOT grow
+///     with capability count -- a 2-capability and a 5-capability build land on
+///     the same key set -- while the whole key space is a fixed 10 entries
+///     (`behavior_core`, `use-cases`, `triggers`, `connectors`, `messages`,
+///     `human-review`, `memory`, `events`, `error-handling`, `sample-output`),
+///     so a build that resolves all of them overshoots 9 at 111%.
+///   * **The denominator is not knowable up front.** Which of those dimensions a
+///     given build ever touches depends on what the model enumerates, and the
+///     loop enters `DraftReady` on `got_agent_ir || resolved_count >= 8` -- not
+///     on any fixed cell count. A build can legitimately finish having resolved
+///     four dimensions or ten. There is no N to divide by, at any point in the
+///     run.
+///
+/// So the honest contract, per the same rule the deployment surface follows --
+/// never claim a state that was not confirmed -- is: **a fraction is emitted
+/// only where it is determinate.** Mid-build that is `None`, and the UI renders
+/// an indeterminate bar (`matrixBuildSlice` leaves `progress` untouched on a
+/// `None`, and `PersonaCreationCoach` hides the number while it is 0). The bar
+/// reaches 100% exactly when the build reaches `DraftReady` -- the point the
+/// design pass is actually complete -- and stays there through the terminal
+/// success phases.
+///
+/// `Failed` / `Cancelled` deliberately return `None`: a build that died at 40%
+/// did not reach 100, and blanking it to 0 would erase the last true reading.
+pub(super) fn progress_percent(phase: BuildPhase) -> Option<f32> {
+    match phase {
+        // The design pass is complete: every remaining phase is review, test or
+        // promotion of a draft that already exists.
+        BuildPhase::DraftReady
+        | BuildPhase::Testing
+        | BuildPhase::TestComplete
+        | BuildPhase::Completed
+        | BuildPhase::Promoted => Some(100.0),
+        // Indeterminate: see the docblock. Never a fabricated fraction.
+        BuildPhase::Initializing
+        | BuildPhase::Analyzing
+        | BuildPhase::AwaitingInput
+        | BuildPhase::Resolving
+        | BuildPhase::Failed
+        | BuildPhase::Cancelled => None,
+    }
+}
+
+/// Sentinel for `SessionStatus.total_count` meaning "this build has no knowable
+/// total" -- which, per `progress_percent`, is always. It is the value the
+/// `Analyzing` emit has always sent, and `matrixBuildSlice.handleBuildSessionStatus`
+/// already treats a zero total as "do not derive a percentage", so keeping the
+/// wire shape (`usize`, not `Option<usize>`) costs nothing and needs no bindings
+/// regeneration. `resolved_count` is still sent and is still true: it is the
+/// number of distinct legacy dimensions resolved so far.
+pub(super) const TOTAL_COUNT_UNKNOWN: usize = 0;
 
 // =============================================================================
 // Tests -- the hang bounds (cli-hang-timeout)
@@ -2167,5 +2241,127 @@ mod hang_tests {
         );
 
         driver.kill().await;
+    }
+}
+
+// =============================================================================
+// Tests -- the progress percentage (build-progress-truth)
+// =============================================================================
+
+#[cfg(test)]
+mod progress_tests {
+    use super::*;
+    use crate::engine::build_session::gates::GATED_CAPABILITY_FIELDS;
+    use crate::engine::build_session::parser::{
+        map_capability_field_to_legacy_dimension, map_persona_field_to_legacy_dimension,
+    };
+
+    /// Mint the `resolved_cells` key set a build with `n` capabilities produces,
+    /// the same way the runner does: every capability resolution is mapped
+    /// through `map_capability_field_to_legacy_dimension` and inserted into the
+    /// map, so same-field resolutions from different capabilities collapse onto
+    /// one key. Plus the two synthetic keys every build gets (`behavior_core`
+    /// from the core event, `use-cases` from capability_enumeration) and the
+    /// persona-wide fields.
+    fn resolved_cells_for_capabilities(n: usize) -> serde_json::Map<String, serde_json::Value> {
+        let mut cells = serde_json::Map::new();
+        cells.insert("behavior_core".into(), serde_json::json!({}));
+        cells.insert("use-cases".into(), serde_json::json!({}));
+        for cap in 0..n {
+            for field in GATED_CAPABILITY_FIELDS {
+                if let Some(key) = map_capability_field_to_legacy_dimension(field) {
+                    cells.insert(
+                        key.to_string(),
+                        serde_json::json!({ "from_capability": format!("cap-{cap}") }),
+                    );
+                }
+            }
+        }
+        for field in ["connectors", "error_handling"] {
+            if let Some(key) = map_persona_field_to_legacy_dimension(field) {
+                cells.insert(key.to_string(), serde_json::json!({}));
+            }
+        }
+        cells
+    }
+
+    #[test]
+    fn resolved_cell_count_does_not_scale_with_capability_count() {
+        // The premise the old denominator rested on. Capability resolutions are
+        // mapped MANY-to-one onto legacy dimension keys, so a 5-capability build
+        // resolves exactly the same key set as a 2-capability one.
+        let two = resolved_cells_for_capabilities(2);
+        let five = resolved_cells_for_capabilities(5);
+        assert_eq!(
+            two.keys().collect::<Vec<_>>(),
+            five.keys().collect::<Vec<_>>(),
+            "capability count must not change the resolved-cell key space"
+        );
+    }
+
+    #[test]
+    fn the_retired_nine_denominator_stalled_the_bar_at_draft_ready() {
+        // Records what the fossil actually did, so the fix cannot be silently
+        // reverted: `(len / 9) * 100` never reached 100 for either build, at the
+        // exact moment the build was finished.
+        for caps in [2usize, 5usize] {
+            let cells = resolved_cells_for_capabilities(caps);
+            let legacy_percent = (cells.len() as f32 / 9.0) * 100.0;
+            assert!(
+                legacy_percent < 100.0,
+                "{caps}-capability build: the retired formula emitted {legacy_percent}% at DraftReady"
+            );
+        }
+    }
+
+    #[test]
+    fn percent_is_indeterminate_mid_build_for_any_capability_count() {
+        for caps in [2usize, 5usize] {
+            let cells = resolved_cells_for_capabilities(caps);
+            assert!(!cells.is_empty(), "fixture must resolve something");
+            // The emitted value at the per-cell activity event and at every
+            // in-flight phase, for a 2-cap and a 5-cap build alike.
+            for phase in [
+                BuildPhase::Initializing,
+                BuildPhase::Analyzing,
+                BuildPhase::Resolving,
+                BuildPhase::AwaitingInput,
+            ] {
+                assert_eq!(
+                    progress_percent(phase),
+                    None,
+                    "{caps}-capability build must not fabricate a fraction in {phase:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_bar_reaches_one_hundred_exactly_at_draft_ready() {
+        assert_eq!(progress_percent(BuildPhase::Resolving), None);
+        assert_eq!(progress_percent(BuildPhase::DraftReady), Some(100.0));
+        // ... and stays there for everything downstream of the design pass.
+        for phase in [
+            BuildPhase::Testing,
+            BuildPhase::TestComplete,
+            BuildPhase::Completed,
+            BuildPhase::Promoted,
+        ] {
+            assert_eq!(progress_percent(phase), Some(100.0), "{phase:?}");
+        }
+    }
+
+    #[test]
+    fn a_failed_build_does_not_claim_completion_or_erase_the_last_reading() {
+        assert_eq!(progress_percent(BuildPhase::Failed), None);
+        assert_eq!(progress_percent(BuildPhase::Cancelled), None);
+    }
+
+    #[test]
+    fn total_count_sentinel_is_the_frontends_unknown() {
+        // `matrixBuildSlice.handleBuildSessionStatus` derives nothing from a
+        // zero total; this is the coupling that makes the runner the ONE
+        // producer.
+        assert_eq!(TOTAL_COUNT_UNKNOWN, 0);
     }
 }
