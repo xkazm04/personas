@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
@@ -31,12 +32,13 @@ import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollectio
 
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
-type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
+/** The filter vocabulary, one entry per bucket `ExecutionCounts` reports.
+ *  `cancelled` and `incomplete` were missing here AND from the counts: a
+ *  cancelled run sat inside the "All" total and under no filter, so the user
+ *  could see it counted and never reach it. */
+type FilterStatus = 'all' | 'running' | 'completed' | 'failed' | 'cancelled' | 'incomplete';
 
-const FILTER_LABELS: Record<FilterStatus, string> = {
-  all: 'All', running: 'Running', completed: 'Completed', failed: 'Failed',
-};
-// Note: FILTER_LABELS values are used at module scope; runtime t() calls below.
+const FILTER_ORDER: FilterStatus[] = ['all', 'running', 'completed', 'failed', 'cancelled', 'incomplete'];
 
 // Ordered columns for the desktop grid. Widths are defaults — users can
 // drag-resize them; overrides persist via useColumnWidths('overview-activity').
@@ -58,12 +60,6 @@ const EXEC_ROW_HEIGHT = 56;
  */
 const CASCADE_ROWS = 14;
 
-const STATUS_FILTER_OPTIONS = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'running', label: 'Running' },
-];
 
 interface GlobalExecutionListProps {
   /** Extra action buttons to render in the header (left of Metrics/Refresh) */
@@ -99,6 +95,21 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   }, [personas]);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
+  // Status labels come from the shared execution token map (the same one
+  // `getStatusEntry` uses for the row badges), so the filter chips, the column
+  // dropdown and the rows can never disagree — and none of them hardcode
+  // English.
+  const filterLabel = useCallback(
+    (id: FilterStatus) => (id === 'all' ? t.common.all : tokenLabel(t, 'execution', id)),
+    [t],
+  );
+  const statusFilterOptions = useMemo(
+    () => FILTER_ORDER.map((id) => ({
+      value: id,
+      label: id === 'all' ? t.overview.activity.all_statuses : filterLabel(id),
+    })),
+    [filterLabel, t],
+  );
   const [modelFilter, setModelFilter] = useState<string>('all');
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
@@ -129,6 +140,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     running: globalExecutionCounts.running,
     completed: globalExecutionCounts.completed,
     failed: globalExecutionCounts.failed,
+    cancelled: globalExecutionCounts.cancelled,
+    incomplete: globalExecutionCounts.incomplete,
   };
 
   const statusPredicate = useCallback((e: GlobalExecution) =>
@@ -293,9 +306,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       </div>
       <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
         <ColumnDropdownFilter
-          label="Status"
+          label={t.overview.activity.col_status}
           value={filter}
-          options={STATUS_FILTER_OPTIONS}
+          options={statusFilterOptions}
           onChange={(v) => setFilter(v as FilterStatus)}
         />
         <ColumnResizeHandle
@@ -385,8 +398,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       ) : (
         <>
           <FilterBar<FilterStatus>
-            options={(['all', 'running', 'completed', 'failed'] as FilterStatus[]).map((id) => ({
-              id, label: FILTER_LABELS[id], badge: statusCounts[id],
+            options={FILTER_ORDER.map((id) => ({
+              id, label: filterLabel(id), badge: statusCounts[id],
             }))}
             value={filter}
             onChange={setFilter}

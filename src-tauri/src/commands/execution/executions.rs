@@ -18,6 +18,7 @@ use crate::validation::open_log_file_safely;
 // the sink fix in engine/src/logger.rs and still contain plaintext credentials;
 // `[STDOUT]` lines are precisely where they landed.
 use crate::AppState;
+use personas_core::types::ExecutionState;
 use personas_core::utils::sanitization::sanitize_secrets;
 use personas_macros::requires;
 
@@ -62,6 +63,30 @@ pub fn list_executions_summary(
 /// management HTTP API, which wants unfiltered history.
 const ACTIVITY_LIST_WINDOW_DAYS: i64 = 30;
 
+/// Parse the caller's `status` filter through the canonical state machine.
+///
+/// The filter used to be pasted straight into `WHERE e.status = ?`, so a typo
+/// ('cancelled' vs 'canceled', 'Running') returned an empty list that is
+/// indistinguishable from "nothing matched". Unknown is not a value: it is a
+/// `Validation` error naming the vocabulary. The stored token is used (not the
+/// enum's Debug form) so the comparison still matches the DB column.
+fn parse_status_filter(status: Option<&str>) -> Result<Option<&'static str>, AppError> {
+    let Some(raw) = status else {
+        return Ok(None);
+    };
+    let state: ExecutionState = raw.parse().map_err(|_| {
+        AppError::Validation(format!(
+            "Unknown execution status filter '{raw}' — expected one of: {}",
+            ExecutionState::ALL_VARIANTS
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ))
+    })?;
+    Ok(Some(state.as_str()))
+}
+
 #[tauri::command]
 pub fn list_all_executions(
     state: State<'_, Arc<AppState>>,
@@ -70,12 +95,13 @@ pub fn list_all_executions(
     persona_id: Option<String>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     require_auth_sync(&state)?;
+    let status = parse_status_filter(status.as_deref())?;
     let cutoff =
         (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS)).to_rfc3339();
     repo::get_all_global(
         &state.db,
         limit,
-        status.as_deref(),
+        status,
         persona_id.as_deref(),
         Some(&cutoff),
     )
@@ -1120,5 +1146,39 @@ mod tests {
         assert!(verify_execution_owner(&exec, "p-alice-2").is_err());
         assert!(verify_execution_owner(&exec, "p-ali").is_err());
         assert!(verify_execution_owner(&exec, "").is_err());
+    }
+
+    /// Every status the state machine knows is accepted and canonicalised to
+    /// the token the DB column actually stores.
+    #[test]
+    fn status_filter_accepts_every_known_state() {
+        for state in ExecutionState::ALL_VARIANTS {
+            let parsed = parse_status_filter(Some(state.as_str()))
+                .unwrap_or_else(|e| panic!("{} must be accepted: {e}", state.as_str()));
+            assert_eq!(parsed, Some(state.as_str()));
+        }
+        // The legacy alias resolves to its canonical token rather than being
+        // rejected.
+        assert_eq!(
+            parse_status_filter(Some("pending")).unwrap(),
+            Some("queued")
+        );
+        // No filter stays no filter.
+        assert_eq!(parse_status_filter(None).unwrap(), None);
+    }
+
+    /// A typo'd filter used to be pasted into the WHERE clause and return an
+    /// empty list — silently indistinguishable from "nothing matched".
+    #[test]
+    fn status_filter_rejects_unknown_with_validation() {
+        for bad in ["canceled", "Running", "done", ""] {
+            let err = parse_status_filter(Some(bad))
+                .expect_err("an unknown status filter must not reach the query");
+            assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+            assert!(
+                err.to_string().contains("cancelled"),
+                "the error must name the vocabulary: {err}"
+            );
+        }
     }
 }

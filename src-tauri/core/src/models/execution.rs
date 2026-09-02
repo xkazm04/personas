@@ -154,6 +154,10 @@ pub struct GlobalExecutionRow {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecutionCounts {
+    /// Sum of every bucket below — an invariant asserted by
+    /// `count_all_global`'s tests. A row whose stored status parses into no
+    /// `ExecutionState` is logged and excluded from BOTH the total and the
+    /// buckets, so the two can never disagree.
     #[ts(type = "number")]
     pub total: i64,
     /// Includes both `running` and `pending` — the UI bucket is "Running".
@@ -163,6 +167,19 @@ pub struct ExecutionCounts {
     pub completed: i64,
     #[ts(type = "number")]
     pub failed: i64,
+    /// Runs the user (or a shutdown) stopped. `cancel_execution` writes exactly
+    /// this status, and until 2026-09-02 it belonged to no bucket at all: it
+    /// inflated `total` and appeared under no filter, so "N of M" never
+    /// reconciled.
+    #[serde(default)]
+    #[ts(type = "number")]
+    pub cancelled: i64,
+    /// Runs that finished without satisfying their contract (e.g. a critical
+    /// output assertion downgraded a `completed` run). Same story as
+    /// `cancelled` — counted in the total, reachable through no filter.
+    #[serde(default)]
+    #[ts(type = "number")]
+    pub incomplete: i64,
 }
 
 impl PersonaExecution {

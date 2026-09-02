@@ -1,8 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::models::{
-    AssertionFailureAction, AssertionResult, AssertionType, ExecutionAssertionSummary,
-    OutputAssertion,
+    AssertionFailureAction, AssertionResult, AssertionSeverity, AssertionType,
+    ExecutionAssertionSummary, OutputAssertion,
 };
 use crate::DbPool;
 use crate::PoolExt;
@@ -20,11 +20,11 @@ fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
         persona_id: row.get("persona_id")?,
         name: row.get("name")?,
         description: row.get("description")?,
-        assertion_type: parse_assertion_type(&assertion_type_str),
+        assertion_type: parse_assertion_type(&assertion_type_str)?,
         config: row.get("config")?,
         severity: row.get("severity")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
-        on_failure: parse_failure_action(&on_failure_str),
+        on_failure: parse_failure_action(&on_failure_str)?,
         pass_count: row.get("pass_count")?,
         fail_count: row.get("fail_count")?,
         last_evaluated_at: row.get("last_evaluated_at")?,
@@ -33,50 +33,72 @@ fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
     })
 }
 
+/// Turn an unrecognised stored token into a read error rather than a value.
+///
+/// Deliberately NOT the lenient treatment the token counters get in
+/// `executions.rs`: a token count nobody can parse is honestly 0, but an
+/// assertion type nobody can parse is not honestly `Contains`. Coercing it
+/// runs a DIFFERENT check under the user's name and reports it as passing.
+/// The write door (`create` / `update` below) is the only producer of these
+/// columns and now refuses anything outside the vocabulary, so a row that
+/// trips this is corruption and should be loud.
+fn unknown_token(column: &'static str, value: &str, allowed: &[&str]) -> rusqlite::Error {
+    tracing::error!(
+        column,
+        value,
+        "output_assertions: unknown stored token — refusing to coerce"
+    );
+    rusqlite::Error::FromSqlConversionFailure(
+        0,
+        rusqlite::types::Type::Text,
+        Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "output_assertions.{column}: unknown token '{value}' (expected one of {})",
+                allowed.join(", ")
+            ),
+        )),
+    )
+}
+
 row_mapper!(row_to_result -> AssertionResult {
     id, assertion_id, execution_id, persona_id,
     passed [bool],
     explanation, matched_value, evaluation_ms, created_at,
 });
 
-fn parse_assertion_type(s: &str) -> AssertionType {
-    match s {
-        "regex" => AssertionType::Regex,
-        "json_path" => AssertionType::JsonPath,
-        "contains" => AssertionType::Contains,
-        "not_contains" => AssertionType::NotContains,
-        "json_schema" => AssertionType::JsonSchema,
-        "length" => AssertionType::Length,
-        _ => AssertionType::Contains, // fallback
-    }
+fn parse_assertion_type(s: &str) -> rusqlite::Result<AssertionType> {
+    AssertionType::parse_token(s)
+        .ok_or_else(|| unknown_token("assertion_type", s, AssertionType::TOKENS))
 }
 
-fn parse_failure_action(s: &str) -> AssertionFailureAction {
-    match s {
-        "review" => AssertionFailureAction::Review,
-        "heal" => AssertionFailureAction::Heal,
-        _ => AssertionFailureAction::Log,
-    }
+fn parse_failure_action(s: &str) -> rusqlite::Result<AssertionFailureAction> {
+    AssertionFailureAction::parse_token(s)
+        .ok_or_else(|| unknown_token("on_failure", s, AssertionFailureAction::TOKENS))
 }
 
 // -- Assertion CRUD -------------------------------------------
 
+/// Insert an assertion. Every closed-vocabulary column arrives as its typed
+/// enum, so this function cannot persist a token the reader would then have to
+/// guess at — the parsing happens once, at the command door.
 #[allow(clippy::too_many_arguments)]
 pub fn create(
     pool: &DbPool,
     persona_id: &str,
     name: &str,
     description: Option<&str>,
-    assertion_type: &str,
+    assertion_type: AssertionType,
     config: &str,
-    severity: Option<&str>,
-    on_failure: Option<&str>,
+    severity: AssertionSeverity,
+    on_failure: AssertionFailureAction,
 ) -> Result<OutputAssertion, AppError> {
     timed_query!("output_assertions", "output_assertions::create", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let severity = severity.unwrap_or("warning");
-        let on_failure = on_failure.unwrap_or("log");
+        let assertion_type = assertion_type.as_token();
+        let severity = severity.as_token();
+        let on_failure = on_failure.as_token();
 
         let conn = pool.conn("assertions::create")?;
         conn.execute(
@@ -135,13 +157,15 @@ pub fn update(
     name: Option<&str>,
     description: Option<&str>,
     config: Option<&str>,
-    severity: Option<&str>,
-    on_failure: Option<&str>,
+    severity: Option<AssertionSeverity>,
+    on_failure: Option<AssertionFailureAction>,
     enabled: Option<bool>,
 ) -> Result<OutputAssertion, AppError> {
     timed_query!("output_assertions", "output_assertions::update", {
         let now = chrono::Utc::now().to_rfc3339();
         let enabled_int = enabled.map(|e| if e { 1i32 } else { 0i32 });
+        let severity = severity.map(AssertionSeverity::as_token);
+        let on_failure = on_failure.map(AssertionFailureAction::as_token);
 
         let conn = pool.conn("assertions::update")?;
         conn.execute(
@@ -285,4 +309,137 @@ pub fn increment_counter(pool: &DbPool, assertion_id: &str, passed: bool) -> Res
             Ok(())
         }
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::CreatePersonaInput;
+
+    fn make_persona(pool: &DbPool) -> String {
+        crate::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: "Assertion Agent".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// The valid path: a typed vocabulary goes in and the SAME value comes
+    /// back. Before this change the door took `&str` and the reader guessed.
+    #[test]
+    fn create_round_trips_the_typed_vocabulary() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+
+        let created = create(
+            &pool,
+            &persona_id,
+            "No secrets",
+            Some("must not leak keys"),
+            AssertionType::NotContains,
+            r#"{"phrases":["sk-"]}"#,
+            AssertionSeverity::Critical,
+            AssertionFailureAction::Heal,
+        )
+        .expect("a well-formed assertion must be creatable");
+
+        assert_eq!(created.assertion_type, AssertionType::NotContains);
+        assert_eq!(created.on_failure, AssertionFailureAction::Heal);
+        assert_eq!(created.severity, "critical");
+
+        // And through the list mapper, not just the get-by-id one.
+        let listed = list_by_persona(&pool, &persona_id).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].assertion_type, AssertionType::NotContains);
+        assert_eq!(listed[0].on_failure, AssertionFailureAction::Heal);
+    }
+
+    /// The invalid path, and the whole point of the change: a stored token
+    /// outside the vocabulary is an ERROR, not a silent `Contains`. The old
+    /// mapper's `_ => AssertionType::Contains` turned this row into a
+    /// different check that reported itself as passing.
+    #[test]
+    fn unknown_stored_assertion_type_is_an_error_not_a_coercion() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Legit",
+            None,
+            AssertionType::Regex,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Log,
+        )
+        .unwrap();
+
+        // Simulate a row written before the door was closed (or by hand).
+        pool.conn("assertions::test")
+            .unwrap()
+            .execute(
+                "UPDATE output_assertions SET assertion_type = 'contian' WHERE id = ?1",
+                params![created.id],
+            )
+            .unwrap();
+
+        let err = get_by_id(&pool, &created.id)
+            .expect_err("an unknown stored assertion_type must not be coerced into a real check");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("contian") || msg.contains("assertion_type"),
+            "the error must name the offending column/token: {msg}"
+        );
+    }
+
+    /// Same contract for the failure action — its old fallback was `Log`, so a
+    /// mistyped `heel` quietly disarmed the healing workflow.
+    #[test]
+    fn unknown_stored_failure_action_is_an_error_not_a_coercion() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Legit",
+            None,
+            AssertionType::Contains,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Heal,
+        )
+        .unwrap();
+
+        pool.conn("assertions::test")
+            .unwrap()
+            .execute(
+                "UPDATE output_assertions SET on_failure = 'heel' WHERE id = ?1",
+                params![created.id],
+            )
+            .unwrap();
+
+        assert!(
+            get_by_id(&pool, &created.id).is_err(),
+            "an unknown stored on_failure must not be coerced into Log"
+        );
+    }
 }

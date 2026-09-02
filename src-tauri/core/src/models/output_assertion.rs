@@ -67,6 +67,106 @@ pub enum AssertionFailureAction {
     Heal,
 }
 
+/// Severity attached to an assertion. Stored as the lowercase token in the
+/// `severity TEXT` column and carried on the wire as a plain `String` (see
+/// `OutputAssertion::severity`), so this enum is deliberately NOT
+/// `#[ts(export)]` — it is the closed vocabulary the write door validates
+/// against, not a new wire type.
+///
+/// `engine::output_assertions` branches on `"critical"` to downgrade an
+/// execution's status; before this vocabulary existed a caller could store
+/// `"Critical"`, `"crit"` or `"urgent"` and that branch silently never fired.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum AssertionSeverity {
+    Info,
+    #[default]
+    Warning,
+    Critical,
+}
+
+impl AssertionType {
+    /// The token persisted in `output_assertions.assertion_type`. Matches the
+    /// serde `snake_case` rename, so the DB and the wire agree by construction.
+    pub fn as_token(self) -> &'static str {
+        match self {
+            AssertionType::Regex => "regex",
+            AssertionType::JsonPath => "json_path",
+            AssertionType::Contains => "contains",
+            AssertionType::NotContains => "not_contains",
+            AssertionType::JsonSchema => "json_schema",
+            AssertionType::Length => "length",
+        }
+    }
+
+    /// Parse a stored/incoming token. `None` means *unknown*, which is not a
+    /// value: the write door rejects it and the row mapper errors on it. It
+    /// must never be coerced into a real variant — a mistyped assertion that
+    /// silently runs a different check is worse than no assertion at all.
+    pub fn parse_token(s: &str) -> Option<Self> {
+        match s {
+            "regex" => Some(AssertionType::Regex),
+            "json_path" => Some(AssertionType::JsonPath),
+            "contains" => Some(AssertionType::Contains),
+            "not_contains" => Some(AssertionType::NotContains),
+            "json_schema" => Some(AssertionType::JsonSchema),
+            "length" => Some(AssertionType::Length),
+            _ => None,
+        }
+    }
+
+    /// Every token this vocabulary accepts, for error messages and tests.
+    pub const TOKENS: &'static [&'static str] = &[
+        "regex",
+        "json_path",
+        "contains",
+        "not_contains",
+        "json_schema",
+        "length",
+    ];
+}
+
+impl AssertionFailureAction {
+    pub fn as_token(self) -> &'static str {
+        match self {
+            AssertionFailureAction::Log => "log",
+            AssertionFailureAction::Review => "review",
+            AssertionFailureAction::Heal => "heal",
+        }
+    }
+
+    pub fn parse_token(s: &str) -> Option<Self> {
+        match s {
+            "log" => Some(AssertionFailureAction::Log),
+            "review" => Some(AssertionFailureAction::Review),
+            "heal" => Some(AssertionFailureAction::Heal),
+            _ => None,
+        }
+    }
+
+    pub const TOKENS: &'static [&'static str] = &["log", "review", "heal"];
+}
+
+impl AssertionSeverity {
+    pub fn as_token(self) -> &'static str {
+        match self {
+            AssertionSeverity::Info => "info",
+            AssertionSeverity::Warning => "warning",
+            AssertionSeverity::Critical => "critical",
+        }
+    }
+
+    pub fn parse_token(s: &str) -> Option<Self> {
+        match s {
+            "info" => Some(AssertionSeverity::Info),
+            "warning" => Some(AssertionSeverity::Warning),
+            "critical" => Some(AssertionSeverity::Critical),
+            _ => None,
+        }
+    }
+
+    pub const TOKENS: &'static [&'static str] = &["info", "warning", "critical"];
+}
+
 // ============================================================================
 // Assertion Results (per-execution evaluation)
 // ============================================================================
@@ -114,4 +214,62 @@ pub struct ExecutionAssertionSummary {
     #[serde(default)]
     pub first_critical_failure: Option<String>,
     pub results: Vec<AssertionResult>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn assertion_tokens_round_trip() {
+        for token in AssertionType::TOKENS {
+            let parsed = AssertionType::parse_token(token).expect("listed token must parse");
+            assert_eq!(parsed.as_token(), *token);
+        }
+        for token in AssertionFailureAction::TOKENS {
+            let parsed =
+                AssertionFailureAction::parse_token(token).expect("listed token must parse");
+            assert_eq!(parsed.as_token(), *token);
+        }
+        for token in AssertionSeverity::TOKENS {
+            let parsed = AssertionSeverity::parse_token(token).expect("listed token must parse");
+            assert_eq!(parsed.as_token(), *token);
+        }
+    }
+
+    #[test]
+    fn unknown_tokens_are_not_coerced() {
+        // The old readers mapped these onto `Contains` / `Log` / a live
+        // severity. Unknown is not a value.
+        assert!(AssertionType::parse_token("Contains").is_none());
+        assert!(AssertionType::parse_token("contain").is_none());
+        assert!(AssertionType::parse_token("").is_none());
+        assert!(AssertionFailureAction::parse_token("LOG").is_none());
+        assert!(AssertionSeverity::parse_token("urgent").is_none());
+    }
+
+    #[test]
+    fn tokens_match_serde_representation() {
+        // The DB token and the wire token are the same string, so a value
+        // written by the door reads back identically through serde.
+        for ty in [
+            AssertionType::Regex,
+            AssertionType::JsonPath,
+            AssertionType::Contains,
+            AssertionType::NotContains,
+            AssertionType::JsonSchema,
+            AssertionType::Length,
+        ] {
+            let json = serde_json::to_string(&ty).unwrap();
+            assert_eq!(json, format!("\"{}\"", ty.as_token()));
+        }
+        for action in [
+            AssertionFailureAction::Log,
+            AssertionFailureAction::Review,
+            AssertionFailureAction::Heal,
+        ] {
+            let json = serde_json::to_string(&action).unwrap();
+            assert_eq!(json, format!("\"{}\"", action.as_token()));
+        }
+    }
 }

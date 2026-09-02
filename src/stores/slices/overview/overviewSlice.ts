@@ -45,8 +45,10 @@ export interface OverviewSlice {
   globalExecutionsWarning: string | null;
   globalExecutionsLimit: number;
   /** Precise server-side counts for the Activity filter badges (total /
-   *  running / completed / failed). Updated independently from the paged
-   *  row list so the badges stay accurate regardless of what's loaded.
+   *  running / completed / failed / cancelled / incomplete). Updated
+   *  independently from the paged row list so the badges stay accurate
+   *  regardless of what's loaded. Every bucket sums to `total` — a cancelled
+   *  or incomplete run used to be inside `total` and inside no bucket.
    *  This is the authoritative total — read `globalExecutionCounts.total`
    *  for any "N of M" display, not `globalExecutionsHasMore`. */
   globalExecutionCounts: ExecutionCounts;
@@ -165,7 +167,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
-  globalExecutionCounts: { total: 0, running: 0, completed: 0, failed: 0 },
+  globalExecutionCounts: { total: 0, running: 0, completed: 0, failed: 0, cancelled: 0, incomplete: 0 },
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,

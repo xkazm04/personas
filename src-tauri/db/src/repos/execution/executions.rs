@@ -451,8 +451,26 @@ pub fn count_all_global(
 
             for row in iter {
                 let (status, n) = row.map_err(AppError::Database)?;
+                // Parse through the canonical state machine rather than
+                // matching strings: `ExecutionState::from_str` already carries
+                // the `pending` -> `Queued` legacy alias, and the match below
+                // is exhaustive, so a variant added to `ExecutionState` fails
+                // to compile here instead of silently landing in no bucket.
+                // That is exactly how `cancelled` and `incomplete` used to be
+                // added to `total` and to nothing else.
+                let Ok(state) = status.parse::<ExecutionState>() else {
+                    // Not a value. Excluded from the buckets AND from the
+                    // total, so `total == sum(buckets)` always holds; a row
+                    // that trips this is corruption, and it is loud.
+                    tracing::error!(
+                        raw_status = %status,
+                        rows = n,
+                        "count_all_global: unknown execution status in DB — excluded from counts"
+                    );
+                    continue;
+                };
                 counts.total += n;
-                match status.as_str() {
+                match state {
                     // `queued` is the canonical pre-start status every other
                     // query in this repo treats as in-flight (`get_running`,
                     // `has_running_executions`, `get_running_count_for_persona`
@@ -461,10 +479,11 @@ pub fn count_all_global(
                     // `ExecutionState`'s alias table). Omitting `queued` here
                     // made the Activity "Running" badge silently under-count
                     // every execution that had not started yet.
-                    "running" | "queued" | "pending" => counts.running += n,
-                    "completed" => counts.completed += n,
-                    "failed" => counts.failed += n,
-                    _ => {}
+                    ExecutionState::Running | ExecutionState::Queued => counts.running += n,
+                    ExecutionState::Completed => counts.completed += n,
+                    ExecutionState::Failed => counts.failed += n,
+                    ExecutionState::Cancelled => counts.cancelled += n,
+                    ExecutionState::Incomplete => counts.incomplete += n,
                 }
             }
             Ok(counts)
@@ -2356,6 +2375,95 @@ mod tests {
     use crate::init_test_db;
     use crate::models::{CreatePersonaInput, Json};
     use crate::repos::core::personas;
+
+    /// Every `ExecutionState` must land in exactly one bucket, and the buckets
+    /// must sum to `total`. Before this, `count_all_global` bucketed only
+    /// running/queued/pending, completed and failed — `cancelled` and
+    /// `incomplete` fell into `_ => {}`, so they inflated `total` and belonged
+    /// to no filter. The Activity bar's "N of M" could never reconcile.
+    #[test]
+    fn every_execution_state_lands_in_a_bucket_and_buckets_sum_to_total() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Counts Agent");
+
+        // One row per state, written through the real create path and then
+        // moved to the state under test.
+        for state in ExecutionState::ALL_VARIANTS {
+            let exec = create(&pool, &persona_id, None, None, None, None).unwrap();
+            pool.conn("executions::test")
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = ?1 WHERE id = ?2",
+                    params![state.as_str(), exec.id],
+                )
+                .unwrap();
+        }
+
+        let counts = count_all_global(&pool, Some(&persona_id)).unwrap();
+        let n = ExecutionState::ALL_VARIANTS.len() as i64;
+        assert_eq!(counts.total, n, "every row must be counted exactly once");
+        assert_eq!(
+            counts.running
+                + counts.completed
+                + counts.failed
+                + counts.cancelled
+                + counts.incomplete,
+            counts.total,
+            "the buckets must sum to the total: {counts:?}"
+        );
+        // Queued + Running share the "Running" UI bucket; the rest are 1:1.
+        assert_eq!(counts.running, 2, "queued and running share one bucket");
+        assert_eq!(counts.completed, 1);
+        assert_eq!(counts.failed, 1);
+        assert_eq!(counts.cancelled, 1, "a cancelled run must be reachable");
+        assert_eq!(counts.incomplete, 1, "an incomplete run must be reachable");
+    }
+
+    /// Written as "an unparseable status is excluded from the total", and it
+    /// FAILED on its first run with
+    /// `CHECK constraint failed: status IN ('queued','running','completed','failed','incomplete','cancelled')`
+    /// — the storage layer already refuses a status outside the vocabulary, and
+    /// refuses the legacy `pending` alias too. So `count_all_global`'s
+    /// unparseable branch is defence in depth for rows written before that
+    /// CHECK existed, and cannot be reached from a migrated schema.
+    ///
+    /// What IS gateable, and is the more valuable assertion: the DB's CHECK
+    /// vocabulary and `ExecutionState` must be the same set. A variant added to
+    /// the enum without a migration (or a token dropped from the CHECK) fails
+    /// here instead of at the first write in production.
+    #[test]
+    fn the_status_check_constraint_and_the_state_machine_agree() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Check Constraint Agent");
+        let conn = pool.conn("executions::test").unwrap();
+
+        let ddl: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'persona_executions'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        for state in ExecutionState::ALL_VARIANTS {
+            assert!(
+                ddl.contains(&format!("'{}'", state.as_str())),
+                "ExecutionState::{state:?} is missing from the status CHECK constraint"
+            );
+        }
+
+        // And the constraint is live, not decorative.
+        let exec = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let err = conn
+            .execute(
+                "UPDATE persona_executions SET status = 'wat' WHERE id = ?1",
+                params![exec.id],
+            )
+            .expect_err("a status outside the vocabulary must not be storable");
+        assert!(
+            err.to_string().contains("CHECK"),
+            "expected a CHECK violation, got {err}"
+        );
+    }
 
     fn make_persona(pool: &DbPool, name: &str) -> String {
         personas::create(
