@@ -218,6 +218,16 @@ pub async fn transcribe(
 /// Join the engine's stdout lines into one trimmed transcript. whisper-cli
 /// with `-nt` prints the text (sometimes wrapped across lines); we collapse
 /// runs of whitespace and drop blank lines.
+///
+/// The engine's *no-speech verdict arrives in the text channel*: on silent or
+/// near-silent input whisper-cli prints a bracketed non-speech marker such as
+/// `[BLANK_AUDIO]` (also `[SILENCE]`, `[MUSIC]`, `(silence)`) with exit 0.
+/// Measured 2026-09-02 with base.en on a 0.5 s and a 2.0 s near-silent
+/// capture — both came back as ` [BLANK_AUDIO]`, so the empty-transcript
+/// guard in `transcribe` never fired for the case it was written for and the
+/// literal token was inserted as dictated text. Markers are dropped here so
+/// that a silent capture reduces to the empty string and reaches the typed
+/// "didn't catch that" path.
 fn clean_transcript(stdout: &str) -> String {
     stdout
         .lines()
@@ -226,8 +236,35 @@ fn clean_transcript(stdout: &str) -> String {
         .collect::<Vec<_>>()
         .join(" ")
         .split_whitespace()
+        .filter(|w| !is_non_speech_marker(w))
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// whisper-cli's non-speech markers: a whole token wrapped in `[...]` or
+/// `(...)` whose inside is either an ALL_CAPS event tag (`BLANK_AUDIO`,
+/// `MUSIC`) — the engine's own marker vocabulary — or one of the lowercase
+/// event words the model emits (`(silence)`). A bracketed word in ordinary
+/// case (`(a)`, `[sic]`) is left alone.
+fn is_non_speech_marker(token: &str) -> bool {
+    let t = token.trim_end_matches(['.', ',']);
+    let inner = match (t.chars().next(), t.chars().last()) {
+        (Some('['), Some(']')) | (Some('('), Some(')')) if t.len() > 2 => &t[1..t.len() - 1],
+        _ => return false,
+    };
+    let is_caps_tag = inner.len() >= 3
+        && inner
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c == '_' || c == ' ');
+    const LOWER_EVENTS: [&str; 6] = [
+        "silence",
+        "blank_audio",
+        "music",
+        "noise",
+        "inaudible",
+        "applause",
+    ];
+    is_caps_tag || LOWER_EVENTS.contains(&inner.to_ascii_lowercase().as_str())
 }
 
 #[cfg(test)]
@@ -260,6 +297,19 @@ mod tests {
     fn clean_transcript_collapses_whitespace_and_blanks() {
         let raw = "\n  Hello   there \n\n  world.  \n";
         assert_eq!(clean_transcript(raw), "Hello there world.");
+    }
+
+    #[test]
+    fn clean_transcript_drops_non_speech_markers_so_silence_is_empty() {
+        // Verbatim whisper-cli stdout for a near-silent hold (base.en, -nt -np).
+        assert_eq!(clean_transcript(" [BLANK_AUDIO]\n"), "");
+        assert_eq!(clean_transcript("[BLANK_AUDIO] [BLANK_AUDIO]"), "");
+        assert_eq!(clean_transcript("(silence)"), "");
+        // A marker beside real speech leaves the speech alone.
+        assert_eq!(clean_transcript("[BLANK_AUDIO] one"), "one");
+        // Brackets attached to words are text, not markers.
+        assert_eq!(clean_transcript("call [him] later"), "call [him] later");
+        assert_eq!(clean_transcript("(a) first"), "(a) first");
     }
 
     #[test]
