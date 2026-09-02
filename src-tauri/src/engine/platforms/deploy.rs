@@ -35,6 +35,18 @@ pub struct DeployAutomationResult {
     pub platform_url: Option<String>,
     pub webhook_url: Option<String>,
     pub deployment_message: String,
+    // NOTE: kept as a `//` comment, not a doc comment. ts-rs copies a `///` on
+    // this field straight into `src/lib/bindings/DeployAutomationResult.ts`, so
+    // editing the doc alone dirties a generated file for no type change.
+    //
+    // The contract is wider than the line below says: TWO shapes use this field.
+    // (1) The workflow was created on the platform but activation failed (n8n).
+    // (2) The platform side was never touched at all and the user has manual
+    //     work left to do (GitHub Actions -- see `github_manual_setup_warning`).
+    // `AutomationReviewStep.tsx` branches on it being non-null, rendering the
+    // amber headline + caveat box instead of the green "deployed" one -- which
+    // is the only lever this backend has to stop the UI asserting a remote state
+    // nothing confirmed.
     /// Non-fatal warning when the workflow was created but activation failed on the platform.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub activation_warning: Option<String>,
@@ -316,7 +328,16 @@ async fn deploy_github(
         ],
     )?;
 
-    let webhook_url = format!("http://localhost:9420/webhook/{trigger_id}");
+    // The local webhook bridge address for this trigger. It is NOT handed to
+    // GitHub and is NOT stored as the automation's `webhook_url`: the bridge
+    // binds `127.0.0.1` (`engine::webhook::start_webhook_server`), so nothing
+    // outside this machine -- GitHub's dispatcher least of all -- can reach it.
+    // The port is read rather than hardcoded, because `PERSONAS_WEBHOOK_PORT`
+    // moves it whenever a second instance runs on the same device.
+    let local_bridge_url = format!(
+        "http://127.0.0.1:{}/webhook/{trigger_id}",
+        crate::engine::webhook::webhook_port()
+    );
 
     // Store dispatch metadata for runtime use
     let credential_mapping = serde_json::json!({
@@ -336,7 +357,11 @@ async fn deploy_github(
         AutomationPlatform::GithubActions,
         None,
         Some(&platform_url),
-        Some(&webhook_url),
+        // No `webhook_url`: GitHub is never given a callback target by this
+        // path, and `automation_runner::invoke_github_dispatch` reads only
+        // `credential_mapping`, so storing the unreachable localhost URL here
+        // only ever misled a reader.
+        None,
         Some(&input.credential_id),
         Some(&credential_mapping.to_string()),
         design.input_schema.as_deref(),
@@ -349,12 +374,68 @@ async fn deploy_github(
     Ok(DeployAutomationResult {
         automation,
         platform_url: Some(platform_url),
-        webhook_url: Some(webhook_url),
-        deployment_message: format!(
-            "GitHub Actions integration configured for {repo_full}. Dispatch event type: '{event_type}'. Local webhook endpoint ready at port 9420.",
+        webhook_url: None,
+        deployment_message: github_deployment_message(
+            repo_full,
+            &event_type,
+            &design.name,
+            &local_bridge_url,
         ),
-        activation_warning: None,
+        activation_warning: Some(github_manual_setup_warning(repo_full)),
     })
+}
+
+/// What the GitHub Actions path actually accomplished, and what the user still
+/// has to do. Pure so it can be asserted on without a network or a token.
+///
+/// # Why this reads like the Custom path
+///
+/// Until 2026-09-02 this said *"GitHub Actions integration configured for
+/// {repo}. Dispatch event type: '{t}'. Local webhook endpoint ready at port
+/// 9420."* Every clause of that was either unearned or wrong:
+///
+///   * **"integration configured"** on the repo side: nothing was created,
+///     pushed or verified in the repository. The deploy checks token scopes,
+///     writes one local `persona_triggers` row and one local `automations` row.
+///     A repo with no workflow listening for the dispatch is indistinguishable
+///     from one that works, and the user was told it was done.
+///   * **"Local webhook endpoint ready"**: nothing ever checked that the bridge
+///     was listening. The claim was asserted, never confirmed.
+///   * The `webhook_url` handed back was `http://localhost:9420/webhook/{id}`,
+///     presented beside GitHub as if it were the callback GitHub would call.
+///     The bridge binds `127.0.0.1`; GitHub cannot reach it, and this app has
+///     no public-ingress or tunnel concept (grepped: none).
+///
+/// What IS real, and is what the message now claims: the outbound half. The
+/// automation is active and `automation_runner::invoke_github_dispatch` will
+/// POST a `repository_dispatch` of `event_type` to the repo using the stored
+/// credential. That half needs a workflow in the repo that listens for it,
+/// which only the user can add -- exactly the shape the Custom path already
+/// states plainly ("saved as draft, complete the setup manually").
+///
+/// **Creating and verifying a real workflow file on GitHub is a separate,
+/// larger direction and is deliberately NOT built here.** It needs a contents
+/// write to a branch, a commit, and a read-back that confirms the workflow
+/// parsed and registered -- a different failure surface (branch protection,
+/// existing file conflicts, default-branch detection) than a message fix.
+fn github_deployment_message(
+    repo_full: &str,
+    event_type: &str,
+    name: &str,
+    local_bridge_url: &str,
+) -> String {
+    format!(
+        "'{name}' is configured locally to send a GitHub 'repository_dispatch' of type '{event_type}' to {repo_full}. Nothing was created in the repository. To make it do something, add a workflow to {repo_full} with 'on: repository_dispatch: types: [{event_type}]'. A local-only callback endpoint was also registered at {local_bridge_url} - it is bound to this machine and is NOT reachable from GitHub."
+    )
+}
+
+/// The caveat shown beside the deploy result. Its presence is what flips the
+/// review step from the green "deployed" headline to the amber one, so the UI
+/// stops asserting a remote state that was never confirmed.
+fn github_manual_setup_warning(repo_full: &str) -> String {
+    format!(
+        "No workflow file was created or verified in {repo_full}. Until you add one that listens for this dispatch, the automation will send events that nothing receives."
+    )
 }
 
 fn parse_owner_repo(full: &str) -> Result<(&str, &str), AppError> {
@@ -603,4 +684,163 @@ fn slug(name: &str) -> String {
         .collect::<String>()
         .trim_matches('-')
         .to_string()
+}
+
+// =============================================================================
+// Tests -- the deploy dispatcher (honest-deployment-contract)
+// =============================================================================
+//
+// First tests in `engine/platforms/` (1,343 lines, zero coverage before
+// 2026-09-02). Scope is deliberately what is reachable WITHOUT a network: the
+// three platform clients each own a concrete `reqwest::Client` with no
+// injection point and there is no HTTP-mock dev-dependency in the workspace, so
+// asserting on a live n8n/GitHub call would need a client refactor well beyond
+// this change. The gap is recorded in the module docs rather than papered over
+// with a test that proves nothing.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personas_db::init_test_db;
+
+    const REPO: &str = "acme/reports";
+    const EVENT: &str = "personas-daily-digest";
+
+    fn github_message() -> String {
+        github_deployment_message(
+            REPO,
+            EVENT,
+            "Daily Digest",
+            "http://127.0.0.1:9420/webhook/abc-123",
+        )
+    }
+
+    #[test]
+    fn the_github_message_never_claims_a_remote_deployment() {
+        let msg = github_message().to_lowercase();
+        for claim in [
+            "deployed",
+            "integration configured for",
+            "endpoint ready",
+            "workflow created",
+            "active on github",
+        ] {
+            assert!(
+                !msg.contains(claim),
+                "the GitHub message must not claim '{claim}': {msg}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_github_message_states_what_the_user_must_do_and_where() {
+        let msg = github_message();
+        assert!(msg.contains(REPO), "names the repository: {msg}");
+        assert!(msg.contains(EVENT), "names the dispatch event type: {msg}");
+        assert!(
+            msg.contains("Nothing was created in the repository"),
+            "states that the repo side was not touched: {msg}"
+        );
+        assert!(
+            msg.contains("on: repository_dispatch: types: ["),
+            "states the concrete workflow trigger to add: {msg}"
+        );
+    }
+
+    #[test]
+    fn the_localhost_url_is_never_presented_as_githubs_target() {
+        let msg = github_message();
+        assert!(
+            msg.contains("NOT reachable from GitHub"),
+            "the local bridge address must carry its reachability caveat: {msg}"
+        );
+        // And it is labelled local-only rather than sitting bare beside GitHub.
+        assert!(msg.contains("local-only callback endpoint"), "{msg}");
+    }
+
+    #[test]
+    fn the_manual_setup_warning_is_present_so_the_ui_stops_showing_a_green_tick() {
+        // `AutomationReviewStep.tsx` branches on `activationWarning` being
+        // non-null; this is the whole mechanism.
+        let warning = github_manual_setup_warning(REPO);
+        assert!(warning.contains(REPO));
+        assert!(
+            warning.contains("No workflow file was created or verified"),
+            "{warning}"
+        );
+    }
+
+    #[tokio::test]
+    async fn github_without_a_repository_is_rejected_before_anything_is_written() {
+        let pool = init_test_db().unwrap();
+        let input = DeployAutomationInput {
+            persona_id: "p-1".into(),
+            credential_id: "c-1".into(),
+            design_result: serde_json::json!({
+                "name": "Daily Digest",
+                "platform": "github_actions",
+            }),
+            github_repo: None,
+            use_case_id: None,
+        };
+        let err = deploy_automation(&pool, input).await.unwrap_err();
+        assert!(
+            matches!(err, AppError::Validation(ref m) if m.contains("GitHub repository is required")),
+            "expected a Validation error naming the missing repo, got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_n8n_error_path_is_preserved_when_its_credential_is_missing() {
+        // The n8n leg resolves its credential BEFORE any HTTP call and before
+        // any DB write, so a missing credential must fail cleanly and leave no
+        // automation row behind. This is the n8n failure the dispatcher can be
+        // held to without a mockable client.
+        let pool = init_test_db().unwrap();
+        let input = DeployAutomationInput {
+            persona_id: "p-1".into(),
+            credential_id: "does-not-exist".into(),
+            design_result: serde_json::json!({
+                "name": "Nightly Sync",
+                "platform": "n8n",
+            }),
+            github_repo: None,
+            use_case_id: None,
+        };
+        assert!(
+            deploy_automation(&pool, input).await.is_err(),
+            "a missing n8n credential must surface as an error, not a success"
+        );
+    }
+
+    #[test]
+    fn a_malformed_design_result_is_a_validation_error_not_a_panic() {
+        let err = serde_json::from_value::<DesignResult>(serde_json::json!({
+            "platform": "n8n"
+        }))
+        .unwrap_err();
+        assert!(err.to_string().contains("name"), "{err}");
+    }
+
+    #[test]
+    fn owner_repo_parsing_rejects_what_would_reach_a_different_endpoint() {
+        assert_eq!(
+            parse_owner_repo("acme/reports").unwrap(),
+            ("acme", "reports")
+        );
+        for bad in ["acme", "/reports", "acme/", ""] {
+            assert!(
+                parse_owner_repo(bad).is_err(),
+                "'{bad}' must not parse as owner/repo"
+            );
+        }
+    }
+
+    #[test]
+    fn timeouts_are_clamped_before_they_reach_the_database() {
+        assert_eq!(timeout_secs_to_ms(30), 30_000);
+        assert_eq!(timeout_secs_to_ms(0), 1_000);
+        assert_eq!(timeout_secs_to_ms(-5), 1_000);
+        assert_eq!(timeout_secs_to_ms(999_999), 3_600_000);
+    }
 }
