@@ -99,6 +99,14 @@ vi.mock('@/features/agents/quick-answer/QuickAnswerPopover', () => ({
   QuickAnswerPopover: () => null,
 }));
 
+// The tray also mounts the circuit-breaker indicator (its only mount in the
+// app). It is covered by its own test — `circuitBreakerMount.test.tsx` — and
+// reads far more of the translation catalog than this file's dock-shaped `t`
+// stub carries.
+vi.mock('@/features/agents/sub_executions/components/CircuitBreakerIndicator', () => ({
+  CircuitBreakerIndicator: () => null,
+}));
+
 vi.mock('@/hooks/utility/interaction/useMotion', () => ({ useReducedMotion: () => true }));
 
 vi.mock('@/lib/keyboard/AppKeyboardProvider', () => ({ useAppKeyboard: () => {} }));
