@@ -21,36 +21,69 @@ own file; `mod.rs` is the slim public API + glue layer.
 ```
 engine/build_session/
 ├── mod.rs            Public API + BuildSessionManager + SessionHandle.
-│                     Re-exports `run_tool_tests`. 306 lines.
+│                     Re-exports `run_tool_tests`. Also resolves the
+│                     orchestration variant from the `orchestration` argument
+│                     or `PERSONAS_BUILD_ORCHESTRATION`. 412 lines.
 ├── gates.rs          Per-capability gate state machine + intent heuristics +
-│                     synthesised clarifying questions. 342 lines.
-├── session_prompt.rs build_session_prompt — the v3-framework system prompt
-│                     the LLM is given. Includes language preamble + Rule 5
-│                     per-locale name examples. 387 lines. (Named to
-│                     disambiguate from the runtime-execution `engine::prompt`.)
+│                     synthesised clarifying questions. 1,870 lines.
+├── session_prompt.rs `build_session_prompt` — the v3-framework system prompt
+│                     the LLM is given. Includes the language preamble, the
+│                     Rule 5 per-locale name examples, and `MODEL_TIER_RULE`
+│                     (rule 28's tier guide), which the fan-out shares.
+│                     830 lines. (Named to disambiguate from the
+│                     runtime-execution `engine::prompt`.)
 ├── templates.rs      Keyword similarity matching against scripts/templates/
-│                     for the "Reference Templates" prompt section. 161 lines.
+│                     for the "Reference Templates" prompt section, with a
+│                     CWD-independent catalog resolver. 398 lines.
 ├── runner.rs         `run_session` async loop — the spine that spawns the
 │                     CLI, drains stream-json, applies gates, mirrors events,
-│                     persists checkpoints. 835 lines.
+│                     persists checkpoints. Branches to `fanout` when the
+│                     session's orchestration is `multiagent`. 2,367 lines.
 ├── parser.rs         stream-json → typed `BuildEvent` parser + legacy mirror
-│                     helpers + clarifying_question event constructor. 686
-│                     lines.
+│                     helpers + clarifying_question event constructor.
+│                     1,232 lines.
 ├── tool_tests.rs     LLM-driven pre-promote test runner (`run_tool_tests`,
 │                     `classify_test_entry` + `ToolTestTally` — the promote
 │                     decision table — `extract_test_plan`,
-│                     `generate_test_summary`).
+│                     `generate_test_summary`). 1,631 lines.
 ├── oneshot.rs        Autonomous `DraftReady → Promoted` orchestrator, and
 │                     `evaluate_promote_gate`: the single predicate that
-│                     arms a persona.
+│                     arms a persona. 1,344 lines.
+├── fix_pass.rs       Single-turn LLM fix pass: on a failed autonomous test
+│                     phase, asks a fresh CLI for a corrected agent_ir. 689
+│                     lines.
+├── reference.rs      Reference attachment for clarifying questions: fetches a
+│                     user-supplied file or URL and injects it into the answer
+│                     the LLM sees on its next turn. 463 lines.
+├── kp_surface.rs     DB glue around `personas_engine::kp_tool_surface` — the
+│                     kp-hire tool-surface policy applied to a built persona.
+│                     177 lines.
+├── fanout.rs         DARK: per-capability parallel resolution. Wired, but
+│                     reachable only via `PERSONAS_BUILD_ORCHESTRATION=`
+│                     `multiagent`; every production caller passes `None`, and
+│                     it has never been runtime-verified. 1,611 lines.
+├── orchestrator.rs   DARK: the bounded-parallel lane scheduler `fanout.rs`
+│                     runs on. Its only caller is `fanout.rs`. 183
+│                     lines.
 ├── events.rs         Tauri-channel + DB-update glue: `dual_emit`,
 │                     `emit_session_status`, `emit_error`, `cleanup_session`,
-│                     `update_phase{,_with_error}`. 111 lines.
+│                     `update_phase{,_with_error}`. 564 lines.
 └── README.md         You are here.
 ```
 
-Total: ~3,586 lines (vs. 3,419 in the original monolith — the small overhead
-is from per-file headers, imports, and the README itself).
+Total: **13,771 lines** across 14 files.
+
+> **Line counts and the file list re-measured with `wc -l` on 2026-09-02, and
+> five of the six previous figures were wrong by more than 2×.** The block above
+> used to claim `mod.rs` 306 / `gates.rs` 342 / `session_prompt.rs` 387 /
+> `templates.rs` 161 / `runner.rs` 835 / `parser.rs` 686 / `events.rs` 111 and a
+> total of "~3,586 lines (vs. 3,419 in the original monolith)" — the figures
+> measured at the 2025 split, never updated since, against a module that has
+> since roughly quadrupled. It also omitted **five whole files**: `fanout.rs`,
+> `fix_pass.rs`, `orchestrator.rs`, `reference.rs` and `kp_surface.rs`. A map
+> that silently omits the two largest additions is worse than no map, because a
+> reader takes its absence as evidence. Re-measure these when you split a file;
+> they are a snapshot, not a contract.
 
 ## File responsibilities
 
@@ -94,11 +127,11 @@ module:
 The intent heuristics (`intent_implies_*`) decide when a gate can auto-open
 because the user's intent is unambiguous. **Keep the keyword lists
 synchronised with the corresponding "skip when intent literally says X" rule
-in `prompt.rs::Rule 16`.** If you add a phrase to the prompt rule, add it to
+in `session_prompt.rs`'s Rule 16.** If you add a phrase to the prompt rule, add it to
 the heuristic too — otherwise the LLM will skip the question while the gate
 stays closed and `find_first_unopen_gate` will keep nagging.
 
-### `prompt.rs`
+### `session_prompt.rs`
 
 The single function `build_session_prompt` produces the entire system prompt
 the LLM receives at session start. It composes:
@@ -131,10 +164,10 @@ exposes one `pub(super)` symbol: `build_template_context`.
   outside world except `BuildSessionManager` and `run_tool_tests`, which
   are re-exported from `mod.rs`.
 - **i18n:** persona-facing prompt text is currently hand-mapped per locale
-  inside `prompt.rs::build_session_prompt`. The planned next step is a
+  inside `session_prompt.rs::build_session_prompt`. The planned next step is a
   `prompt/i18n/<lang>.rs` per-locale stub that owns its own `name_examples`
   and `rule5` text — at that point this README's "i18n" section moves there.
-- **Pairing rules with heuristics:** Rule 16 in `prompt.rs` and the
+- **Pairing rules with heuristics:** Rule 16 in `session_prompt.rs` and the
   `intent_implies_*` keyword lists in `gates.rs` are a pair. Tighten one
   without the other and you'll see either the LLM or the Rust gate diverge
   from the contract.

@@ -29,6 +29,52 @@
 //!   `rule5` text. Until then, add new locales by extending the `match lang`
 //!   arms below.
 
+/// Rule 28's model-tier guide — the SINGLE owner of the model-tier vocabulary
+/// used anywhere in the build pipeline.
+///
+/// Extracted from the rule-28 body of [`build_session_prompt`] on 2026-09-02 so
+/// the multi-agent fan-out (`super::fanout::build_capability_prompt`) can quote
+/// it verbatim instead of paraphrasing it. It used to paraphrase: the fan-out's
+/// own eight-line restatement dropped BOTH hard constraints — the "NEVER pick
+/// Haiku when …" clause and the four named anti-patterns — so a persona built
+/// through the fan-out door was picking `model_override` from a materially
+/// weaker rule than one built sequentially. Two authorities for one vocabulary.
+///
+/// Interpolated into the sequential prompt at its original position (numbered
+/// "28.") — extracting it changed no rule text and no rule order. The braces in
+/// the JSON examples are LITERAL here: this is a plain `&str`, not a `format!`
+/// template, so they are single, not doubled.
+pub(super) const MODEL_TIER_RULE: &str = r###"**Recommend a runtime model PER capability.** Each capability resolution MUST emit `model_override` and `model_rationale`. The runtime uses `model_override` to seed which Claude model executes that capability; `model_rationale` is a one-sentence explanation surfaced in the UI so the user understands the choice.
+
+    **Default: Sonnet** (`claude-sonnet-4-6`). Pick a different model only when there is a clear reason. Defaulting to Sonnet across a multi-capability persona is the right answer most of the time; tier the picks deliberately, not aspirationally.
+
+    **Tier guide:**
+    - **Haiku** (`claude-haiku-4-5-20251001`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
+    - **Sonnet** (`claude-sonnet-4-6`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
+    - **Opus** (`claude-opus-4-8`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
+
+    **Per-capability, not per-persona.** A persona with two capabilities — `uc_classify_email` (label as urgent/followup/fyi) and `uc_draft_reply` (compose a personalized response) — should pick **Haiku** for `uc_classify_email` and **Sonnet** for `uc_draft_reply`. Mixed-tier personas are normal and good.
+
+    **Format on `model_override`:** emit a bare model-name string OR a partial `ModelProfile` object. Bare string is simpler and preferred. Examples:
+    ```
+    "model_override": "claude-sonnet-4-6"
+    "model_override": "claude-haiku-4-5-20251001"
+    "model_override": "claude-opus-4-8"
+    "model_override": {"model": "claude-haiku-4-5-20251001", "effort": "low"}
+    ```
+
+    **Format on `model_rationale`:** a single sentence (≤ 160 chars) explaining the pick in user terms — what the capability does and why the chosen tier fits. Examples:
+    - `"Haiku — single-tool inbox fetch + templated digest, no creative writing."`
+    - `"Sonnet — drafts a personalized reply that reads naturally to the recipient; templated outputs would feel robotic."`
+    - `"Opus — multi-step competitive research with cross-source synthesis; missing a connection between sources is the failure mode."`
+    - `"Sonnet (default) — typical monitor-and-summarize capability with no atypical requirements."`
+
+    **Anti-patterns to avoid:**
+    - Picking Opus because the user said "important" — importance ≠ reasoning depth.
+    - Picking Haiku because the user said "fast" — Sonnet is already fast for most workloads.
+    - Picking the same model for every capability when capabilities have visibly different complexity profiles.
+    - Emitting an empty rationale or restating the model name without explaining why."###;
+
 pub(super) fn build_session_prompt(
     intent: &str,
     credentials: &[String],
@@ -172,6 +218,10 @@ pub(super) fn build_session_prompt(
     } else {
         "agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE. Examples: \"Email Triage Manager\", \"Sprint Report Bot\", \"Invoice Tracker\". NEVER use the user's exact words.".to_string()
     };
+
+    // Rule 28's tier guide is the OWNER of the model-tier vocabulary; the
+    // fan-out builder reads the same constant (see MODEL_TIER_RULE's docblock).
+    let model_tier_rule = MODEL_TIER_RULE;
 
     let result = format!(
         r###"You are a senior AI agent architect. The user wants:
@@ -648,36 +698,7 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     Same pattern applies to: R20 ("watched folder + Leonardo image generation" — image-gen is the publishing half, file-watch is the trigger half), "monitor + escalate to Slack", "scan + open GitHub issue", etc. The triggers are the listener event subscriptions; rule 21 (auto_triage) does NOT apply because the user named "approve before X" explicitly — that's `mode: "always"`, not `auto_triage`.
 
-28. **Recommend a runtime model PER capability.** Each capability resolution MUST emit `model_override` and `model_rationale`. The runtime uses `model_override` to seed which Claude model executes that capability; `model_rationale` is a one-sentence explanation surfaced in the UI so the user understands the choice.
-
-    **Default: Sonnet** (`claude-sonnet-4-6`). Pick a different model only when there is a clear reason. Defaulting to Sonnet across a multi-capability persona is the right answer most of the time; tier the picks deliberately, not aspirationally.
-
-    **Tier guide:**
-    - **Haiku** (`claude-haiku-4-5-20251001`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
-    - **Sonnet** (`claude-sonnet-4-6`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
-    - **Opus** (`claude-opus-4-8`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
-
-    **Per-capability, not per-persona.** A persona with two capabilities — `uc_classify_email` (label as urgent/followup/fyi) and `uc_draft_reply` (compose a personalized response) — should pick **Haiku** for `uc_classify_email` and **Sonnet** for `uc_draft_reply`. Mixed-tier personas are normal and good.
-
-    **Format on `model_override`:** emit a bare model-name string OR a partial `ModelProfile` object. Bare string is simpler and preferred. Examples:
-    ```
-    "model_override": "claude-sonnet-4-6"
-    "model_override": "claude-haiku-4-5-20251001"
-    "model_override": "claude-opus-4-8"
-    "model_override": {{"model": "claude-haiku-4-5-20251001", "effort": "low"}}
-    ```
-
-    **Format on `model_rationale`:** a single sentence (≤ 160 chars) explaining the pick in user terms — what the capability does and why the chosen tier fits. Examples:
-    - `"Haiku — single-tool inbox fetch + templated digest, no creative writing."`
-    - `"Sonnet — drafts a personalized reply that reads naturally to the recipient; templated outputs would feel robotic."`
-    - `"Opus — multi-step competitive research with cross-source synthesis; missing a connection between sources is the failure mode."`
-    - `"Sonnet (default) — typical monitor-and-summarize capability with no atypical requirements."`
-
-    **Anti-patterns to avoid:**
-    - Picking Opus because the user said "important" — importance ≠ reasoning depth.
-    - Picking Haiku because the user said "fast" — Sonnet is already fast for most workloads.
-    - Picking the same model for every capability when capabilities have visibly different complexity profiles.
-    - Emitting an empty rationale or restating the model name without explaining why.
+28. {model_tier_rule}
 
 {template_context}
 
@@ -764,6 +785,20 @@ mod tests {
 
     fn prompt_with_context(context: Option<&str>) -> String {
         build_session_prompt("Triage my email", &[], &[], "", None, false, context)
+    }
+
+    /// The tier guide moved out into MODEL_TIER_RULE so the fan-out could share
+    /// it; the sequential prompt must still carry it, numbered 28, verbatim.
+    #[test]
+    fn sequential_prompt_still_carries_rule_28_verbatim() {
+        let p = prompt_with_context(None);
+        assert!(p.contains("28. **Recommend a runtime model PER capability.**"));
+        assert!(p.contains(MODEL_TIER_RULE));
+        // The examples' braces must be literal, not format-escaped leftovers.
+        // (The prompt elsewhere contains a deliberate `{{param.<key>}}`
+        // placeholder, so this asserts on the rule text, not the whole prompt.)
+        assert!(p.contains(r#""model_override": "claude-haiku-4-5-20251001""#));
+        assert!(!MODEL_TIER_RULE.contains("{{"));
     }
 
     #[test]

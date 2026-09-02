@@ -11,10 +11,26 @@
 //!     `team_assignment_orchestrator`'s panic discipline),
 //!   * results come back in input order, each tagged with its lane id.
 //!
-//! Phase 2 ships this with its tests so the primitive is proven before any
-//! build behavior flips; nothing in the runner fans out yet.
-
-#![allow(dead_code)] // wired into the build runner in Phase 3 (parallel tool tests)
+//! ## STATUS - reachable only through the fan-out's env door (2026-09-02)
+//!
+//! **Corrected 2026-09-02.** The line that stood here said "nothing in the
+//! runner fans out yet", and the file-level allow beneath it promised the
+//! wiring "in Phase 3". Both were stale: [`run_lanes`] is called from
+//! `super::fanout::run_multiagent`, which `runner.rs:562` calls whenever the
+//! session's `orchestration` is `"multiagent"`. What is true is narrower and
+//! worth stating exactly:
+//!
+//! * **One caller, behind one door.** `fanout.rs` is the only caller, and it
+//!   is itself reachable only via `PERSONAS_BUILD_ORCHESTRATION=multiagent`
+//!   (`mod.rs:178`) - every production call site passes `None`. The
+//!   per-tool-test dispatch the old comment promised was never built;
+//!   `tool_tests.rs` does not use this scheduler.
+//! * **Not runtime-verified through that door.** The unit tests below prove
+//!   the primitive (budget, panic isolation, ordering). Nothing proves the
+//!   fan-out path that consumes it - see `fanout.rs`'s own status block.
+//! * **The blanket `#![allow(dead_code)]` is gone.** It hid the whole module
+//!   from the one signal that would have said which parts had no caller.
+//!   What is genuinely unused is now annotated per item, with the reason.
 
 use crate::utils::extract_panic_message;
 use std::future::Future;
@@ -34,6 +50,13 @@ pub struct LaneOutcome<T> {
 }
 
 impl<T> LaneOutcome<T> {
+    /// DEAD in the lib build, deliberately kept: the single item the blanket
+    /// `#![allow(dead_code)]` was actually hiding. No production caller reads a
+    /// lane outcome through it - `fanout.rs` matches on `.result` directly - so
+    /// it survives only as the readable form a future lane-summary would use,
+    /// and as an exercised accessor in this module's own tests. Delete it
+    /// rather than grow a second blanket allow if it is still uncalled.
+    #[allow(dead_code)]
     pub fn is_ok(&self) -> bool {
         self.result.is_ok()
     }
@@ -141,6 +164,10 @@ mod tests {
         tasks.push(lane("boom", async { panic!("kaboom") }));
         tasks.push(lane("ok-1", async { 2 }));
         let out = run_lanes(3, tasks).await;
+        // Exercises the LaneOutcome::is_ok accessor, whose only other caller
+        // would be a fan-out lane summary that does not exist yet - without
+        // this it is the one genuinely dead item in the module.
+        assert!(out[0].is_ok());
         assert!(out[0].result.is_ok());
         assert!(out[1].result.is_err());
         assert!(out[1].result.as_ref().unwrap_err().contains("kaboom"));

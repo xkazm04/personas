@@ -10,21 +10,39 @@
 //! merges them back into `resolved_cells` and then runs the serial agent_ir
 //! assembly (one lead turn) as before.
 //!
-//! ## STATUS — first draft, NOT yet wired, NOT runtime-verified
-//! This module is the fan-out MECHANIC. The remaining Phase 3 step is to wire it
-//! into `run_session` behind the `multiagent` flag:
-//!   1. run the serial head (turn 0) until `behavior_core` + `capability_enumeration`
-//!      land; extract the behavior_core JSON + the capability list from the parsed
-//!      events (or `resolved_cells`), and build the connector-context blob;
-//!   2. call [`fan_out_resolution`]; dual-emit each returned event; fold the
-//!      resolutions into `resolved_cells`;
-//!   3. run one lead turn to assemble `agent_ir` from the merged capabilities,
-//!      then continue to DraftReady → oneshot test/promote as today.
-//!      The prompt grounding + the merge/assembly correctness need live iteration
-//!      against the `lite-web-summary` baseline (a `cargo check` can't prove them),
-//!      which is why the wiring is deferred to a verifiable session. Gated on
-//!      `multiagent`; the sequential path is untouched.
-#![allow(dead_code)]
+//! ## STATUS — wired, reachable only behind an env door, NOT runtime-verified
+//!
+//! **Corrected 2026-09-02.** This header said "first draft, NOT yet wired" and
+//! listed the wiring as remaining work. It has been wired for some time:
+//! `runner.rs:562` calls [`run_multiagent`] whenever the session's
+//! `orchestration` is `"multiagent"`, and everything the old three-step plan
+//! described (serial head → batched clarify → fan-out → Rust-assembled
+//! `agent_ir`) is implemented below.
+//!
+//! What is true today:
+//!
+//! * **Reachable only through one door.** All three production callers pass
+//!   `orchestration: None` on purpose — `commands/design/build_sessions.rs:144`
+//!   ("UI builds default to sequential"), `:198` (env-driven for headless
+//!   builds) and `commands/companion/approvals/approval_exec_core.rs:828`
+//!   ("companion-driven builds run sequential"). The only way to select it is
+//!   the `PERSONAS_BUILD_ORCHESTRATION=multiagent` environment variable read at
+//!   `mod.rs:178`. No UI affordance sets it.
+//! * **The sequential path is untouched by anything in this file.** With the
+//!   variable unset, `runner.rs` never enters the branch above.
+//! * **Still NOT runtime-verified.** The prompt grounding and the
+//!   merge/assembly correctness have never been iterated against a live
+//!   baseline (the `lite-web-summary` run the original plan named); a
+//!   `cargo check` cannot prove either. Treat a `multiagent` run as
+//!   experimental, and do not read "wired" as "validated".
+//!
+//! Consequence worth stating plainly: this module is **dark code that compiles**
+//! — the class of code that rots without any gate noticing, because no test and
+//! no user exercises it. That is why the model-tier rule it used to restate by
+//! hand now comes from [`super::session_prompt::MODEL_TIER_RULE`]: a second
+//! authority for the same vocabulary is exactly the kind of drift dark code
+//! accumulates silently, and it had already dropped both of the owner's hard
+//! constraints.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -100,13 +118,7 @@ pub fn build_capability_prompt(
          persona_resolution / agent_ir; do NOT ask clarifying questions — pick sensible \
          defaults.\n\n\
          ## Model recommendation (model_override / model_rationale)\n\
-         You MUST emit `model_override` and `model_rationale` for this capability. \
-         Default to `claude-sonnet-4-6`. Pick `claude-haiku-4-5-20251001` for narrow, \
-         mostly-deterministic work (single-tool fetch + templated digest, simple \
-         classification, trivial transforms). Pick `claude-opus-4-8` only for long \
-         agentic loops with branching/self-correction, non-trivial code writing, or deep \
-         multi-source research synthesis. `model_rationale` is one sentence (\u{2264} 160 \
-         chars) explaining the pick in user terms.\n\n\
+         {model_tier_rule}\n\n\
          Output raw JSON only, one event per line, each of the form:\n\
          {{\"capability_resolution\": {{\"id\": \"{id}\", \"field\": \"<field-name>\", \
          \"value\": <field-value>, \"status\": \"resolved\"}}}}\n",
@@ -116,6 +128,9 @@ pub fn build_capability_prompt(
         clarifications = clarifications,
         conn = connector_context,
         id = cap_id,
+        // ONE authority for the model-tier vocabulary - the fan-out used to
+        // restate it here and dropped both of the owner's hard constraints.
+        model_tier_rule = super::session_prompt::MODEL_TIER_RULE,
     )
 }
 
@@ -1432,6 +1447,39 @@ pub async fn run_multiagent(
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// The fan-out builder and the sequential prompt must pick `model_override`
+    /// from ONE text. Before 2026-09-02 the fan-out restated the rule in eight
+    /// lines of its own and dropped both of the owner's hard constraints - the
+    /// "NEVER pick Haiku when ..." clause and the four named anti-patterns - so
+    /// a persona built through the multiagent door was choosing its runtime
+    /// model from a materially weaker rule.
+    #[test]
+    fn capability_prompt_carries_the_owners_model_tier_constraints() {
+        let core = json!({ "mission": "Summarize the web" });
+        let cap = json!({ "id": "uc_summarize_url", "title": "Summarize a URL" });
+        let p = build_capability_prompt(&core, &cap, "WebFetch", "", "");
+
+        // The hard constraint the paraphrase dropped.
+        assert!(
+            p.contains(
+                "NEVER pick Haiku when the capability needs to chain 3+ tools, draft \
+                 natural-sounding prose for an external audience, or reason about \
+                 ambiguous user intent"
+            ),
+            "fan-out prompt lost the owner's Haiku constraint"
+        );
+        // The anti-patterns the paraphrase dropped.
+        assert!(
+            p.contains("Picking Opus because the user said \"important\""),
+            "fan-out prompt lost the owner's anti-pattern list"
+        );
+        // And the whole rule, verbatim - not a copy that can drift from it.
+        assert!(
+            p.contains(super::super::session_prompt::MODEL_TIER_RULE),
+            "fan-out prompt no longer embeds MODEL_TIER_RULE verbatim"
+        );
+    }
 
     #[test]
     fn prompt_is_scoped_to_one_capability() {
