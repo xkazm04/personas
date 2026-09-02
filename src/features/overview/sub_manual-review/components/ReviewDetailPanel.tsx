@@ -16,6 +16,8 @@ import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ReviewMessage } from '@/lib/bindings/ReviewMessage';
+import type { ReviewMessageAddedPayload } from '@/lib/eventRegistry';
+import { useReviewMessageAddedListener } from '@/hooks/realtime/useReviewMessageAddedListener';
 
 interface ConversationThreadProps {
   review: ManualReviewItem;
@@ -47,6 +49,36 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
     }).catch(toastCatch("ReviewDetailPanel:listReviewMessages", "Failed to load review messages"));
     return () => { cancelled = true; };
   }, [review.id, isCloud]);
+
+  // Live thread. `add_review_message` emits `review-message-added` on every
+  // write and, until this listener existed, nothing in the app was subscribed:
+  // the thread only changed when `handleSend` below appended its own optimistic
+  // row, so a message written by anything else — a persona reply, a second
+  // window — stayed invisible until the panel was reopened. Dedupe by id
+  // because the optimistic append and this event describe the same row.
+  useReviewMessageAddedListener(
+    useCallback(
+      (msg: ReviewMessageAddedPayload) => {
+        if (isCloud || msg.review_id !== review.id) return;
+        setMessages((prev) =>
+          prev.some((m) => m.id === msg.id)
+            ? prev
+            : [
+                ...prev,
+                {
+                  id: msg.id,
+                  review_id: msg.review_id,
+                  role: msg.role,
+                  content: msg.content,
+                  metadata: msg.metadata ?? null,
+                  created_at: msg.created_at,
+                },
+              ],
+        );
+      },
+      [isCloud, review.id],
+    ),
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -303,9 +303,6 @@ event_names! {
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
 
-    // CLI version warning (Claude Code CLI below minimum required version)
-    CLI_VERSION_WARNING        => "cli-version-warning",
-
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",
 

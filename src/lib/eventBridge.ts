@@ -22,7 +22,7 @@ import { useImproveActivityStore } from "@/stores/improveActivityStore";
 import { useDevToolsLiveStore } from "@/stores/devToolsLiveStore";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
-import { getActiveTranslations } from "@/i18n/useTranslation";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 
 const logger = createLogger("event-bridge");
@@ -1056,6 +1056,116 @@ const registry: EventRegistration[] = [
           useToastStore.getState().addToast(title, payload.success ? 'success' : 'error');
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Void emitters, wired. Each of the four below was a live Rust
+  // `let _ = app.emit(...)` with no TypeScript reference anywhere: the payload
+  // was built, serialised and pushed across the IPC boundary into nothing, and
+  // because the emit result is discarded, neither side ever reported it.
+  // `scripts/check-event-registry.mjs` pass 3 is what made them visible.
+  // -------------------------------------------------------------------------
+
+  // -- Auto-fix confirmed (engine/healing_retry.rs) --------------------------
+  // Emitted only on the success branch: a self-healing retry ran and the issue
+  // was closed. The user never asked for it and never saw it happen, which is
+  // exactly why it belongs in the bell rather than a toast — it is a thing the
+  // app did on its own that the user should be able to find afterwards.
+  {
+    event: EventName.AUTO_FIX_COMPLETED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.AUTO_FIX_COMPLETED, (payload) => {
+        const t = getActiveTranslations();
+        useNotificationCenterStore.getState().addProcessNotification({
+          processType: "execution",
+          personaId: payload.personaId,
+          status: "success",
+          title: t.monitor.auto_fix_confirmed_title,
+          summary: t.monitor.auto_fix_confirmed_summary,
+          redirectSection: "overview",
+          redirectTab: "executions",
+          ...(payload.executionId ? { executionId: payload.executionId } : {}),
+        });
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- Output assertion failures (engine/execution.rs) -----------------------
+  // The emit site's own comment names "Execution Detail assertion tab,
+  // notification center" as the consumers. Neither existed. There is no
+  // assertion tab to route to — `getAssertionResultsForExecution` has no caller
+  // in the app at all — so this takes the half that already exists: the bell,
+  // deep-linked to the run, which opens the ExecutionDetailModal.
+  //
+  // Failures only. A run whose assertions all pass is the expected case and
+  // does not deserve an interruption.
+  {
+    event: EventName.ASSERTION_RESULTS,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.ASSERTION_RESULTS, (payload) => {
+        if (payload.failed <= 0) return;
+        const t = getActiveTranslations();
+        useNotificationCenterStore.getState().addProcessNotification({
+          processType: "execution",
+          status: "failed",
+          title: t.monitor.assertion_failures_title,
+          summary: interpolate(t.monitor.assertion_failures_summary, {
+            failed: payload.failed,
+            total: payload.total,
+          }),
+          redirectSection: "overview",
+          redirectTab: "executions",
+          executionId: payload.executionId,
+        });
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- Clipboard error → knowledge-base match (engine/subscription/desktop.rs)
+  // The Rust side already fires an OS notification on the line above the emit.
+  // This is the in-app half: the user who is looking at the app, rather than at
+  // the OS notification centre, was the one person the feature never reached.
+  // A toast, not a bell entry — the match is only useful while the error the
+  // user just copied is still what they are working on.
+  {
+    event: EventName.CLIPBOARD_ERROR_DETECTED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.CLIPBOARD_ERROR_DETECTED, (payload) => {
+        const top = payload.matches?.[0];
+        if (!top) return;
+        const t = getActiveTranslations();
+        useToastStore
+          .getState()
+          .addToast(
+            interpolate(t.monitor.clipboard_fix_found_summary, {
+              errorType: payload.detection.errorType,
+              kbName: top.kbName,
+            }),
+            "success",
+            8000,
+          );
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- Context rule matched (engine/src/context_rules.rs) --------------------
+  // `ContextAction::EmitEvent` is one of the actions a user picks when writing
+  // an ambient context rule, and it did nothing at all. The rule's own surface
+  // is Settings › Ambient Context, which lists recent matches from
+  // `get_context_rule_matches` on a 5s poll — so the honest wiring is to make
+  // that list settle immediately instead of up to a poll interval late. No new
+  // surface, no notification: the user configured "emit an event", not "tell me".
+  {
+    event: EventName.CONTEXT_RULE_MATCH,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.CONTEXT_RULE_MATCH, () => {
+        void useSystemStore.getState().fetchContextRuleMatches();
+      });
       return [unlisten];
     },
   },

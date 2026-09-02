@@ -291,9 +291,6 @@ export const EventName = {
   // Engine fallback (unrecognized engine setting)
   ENGINE_FALLBACK: 'engine-fallback',
 
-  // CLI version warning (provider CLI below minimum required version)
-  CLI_VERSION_WARNING: 'cli-version-warning',
-
   // Persona health (push-based summary refresh signal from backend)
   PERSONA_HEALTH_CHANGED: 'persona-health-changed',
 
@@ -731,15 +728,6 @@ export interface PipelineApprovalNeededPayload {
   predecessor_output: unknown;
 }
 
-/** CLI version warning payloads are emitted by backend provider probes. */
-export interface CliVersionWarningPayload {
-  provider?: string;
-  detected?: string;
-  required?: string;
-  message?: string;
-  [key: string]: unknown;
-}
-
 /** TitleBar notification from persona message delivery (notifications.rs TitlebarNotificationPayload). */
 export interface TitlebarNotificationPayload {
   personaId: string;
@@ -1154,7 +1142,6 @@ export interface EventPayloadMap {
     requested: string;
     actual: string;
   };
-  [EventName.CLI_VERSION_WARNING]: CliVersionWarningPayload;
 
   // Persona health
   [EventName.PERSONA_HEALTH_CHANGED]: {

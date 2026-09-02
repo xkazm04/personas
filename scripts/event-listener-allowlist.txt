@@ -16,9 +16,15 @@
 # has nothing to report, and `let _ = app.emit(...)` discards the only runtime
 # signal that would have said otherwise.
 #
-# Five of the 35 have a direct `let _ = app.emit(...)` and a user-visible
-# consequence; they are baselined here so this gate lands green on measured
-# reality, and the very next commit wires them and deletes their five lines.
+# Five of the 35 had a direct `let _ = app.emit(...)` and a user-visible
+# consequence. They were baselined for exactly one commit so the gate landed
+# green on measured reality, then WIRED and deleted from this file:
+# AUTO_FIX_COMPLETED, ASSERTION_RESULTS and CLIPBOARD_ERROR_DETECTED now reach
+# the notification centre / a toast via src/lib/eventBridge.ts;
+# CONTEXT_RULE_MATCH settles the ambient-context match list; REVIEW_MESSAGE_ADDED
+# makes the manual-review thread live. A sixth name, CLI_VERSION_WARNING, had no
+# emitter and no listener and was deleted from both registries instead.
+#
 # The remaining 30 split into three shapes, named per line below:
 #
 #   * JOB-STREAM PAIR -- a `*_STATUS`/`*_OUTPUT` pair handed to
@@ -77,13 +83,3 @@ PIPELINE_APPROVAL_NEEDED  # NO SURFACE (engine/pipeline_executor.rs:930); the pi
 PIPELINE_CYCLE_WARNING  # NO SURFACE (commands/teams/teams.rs:277); the refusal is also returned as an error from the same command, which IS surfaced
 SUBSCRIPTION_CRASHED  # NO SURFACE (engine/subscription/runner.rs:171); a panicking subscription tick has no health surface yet. Strong wiring candidate.
 
-# ---------------------------------------------------------------------------
-# TRIAGE IN FLIGHT -- the five direct `let _ = app.emit(...)` sites with a
-# user-visible consequence. Baselined only so this gate lands green on measured
-# reality; the next commit wires each one and deletes its line here.
-# ---------------------------------------------------------------------------
-ASSERTION_RESULTS  # TRIAGE (engine/execution.rs:2256); the emit site's own comment names "notification center" as a consumer that was never written
-AUTO_FIX_COMPLETED  # TRIAGE (engine/healing_retry.rs:1391); a self-heal confirmed by a successful retry and no UI is told
-CLIPBOARD_ERROR_DETECTED  # TRIAGE (engine/subscription/desktop.rs:253); the KB match reaches the OS notification but never the in-app bell
-CONTEXT_RULE_MATCH  # TRIAGE (engine/src/context_rules.rs:365); ContextAction::EmitEvent is a rule action the user configured, and it does nothing
-REVIEW_MESSAGE_ADDED  # TRIAGE (commands/design/reviews.rs:2024); the review thread does not live-update
