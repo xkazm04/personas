@@ -158,9 +158,17 @@ interface ManagedTerminal {
    * remove the holder — on the terminal the OTHER pane was still showing.
    *
    * The last attacher wins the token, and a detach from anyone else is a no-op.
-   * Today's surfaces are mutually exclusive (FleetGridPage renders the overlay
-   * or a single pane, never both), so this fires on no current path — it is the
-   * invariant the multiplexer needs before a surface makes it reachable.
+   *
+   * This used to end "fires on no current path — the invariant the multiplexer
+   * needs before a surface makes it reachable". THAT IS NO LONGER TRUE, and had
+   * stopped being true before the sentence was written: `passportFleet.tsx` and
+   * `FleetPreviewPanel.tsx` each mount a pane for a session id they choose,
+   * outside the fleet overlay entirely, so two surfaces can hold the same
+   * session at once with nothing structural stopping them.
+   * `FleetTerminalPane.tsx:66-76` already documents the displacement notice
+   * that exists precisely because the path is live, and
+   * `__tests__/FleetTerminalPaneDisplaced.test.tsx` pins it. Treat this as a
+   * reachable path, not a latent invariant.
    */
   owner: HTMLElement | null;
   resizeObs: ResizeObserver;
@@ -831,14 +839,6 @@ function getOrCreate(sessionId: string): ManagedTerminal {
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
   unpark(sessionId);
   const m = getOrCreate(sessionId);
-  // The listener is the OTHER door to live output, and its failure used to be
-  // invisible because `hydrate` below succeeds independently of it. Chain the
-  // outcome instead of dropping it: say so in the terminal, and keep retrying.
-  // eslint-disable-next-line custom/async-catch-requires-helper -- ensureSharedOutputListener already ran silentCatch('fleetTerminal:listen') on this error before re-throwing; this handler exists to TELL THE OPERATOR and re-arm, not to report a second time.
-  ensureSharedOutputListener().catch(() => {
-    paintListenerNotice(m);
-    scheduleListenerRetry();
-  });
   // Read BEFORE the DOM move below, which would make every attach look mounted.
   const alreadyMounted =
     m.attached && m.holder.parentElement === container && (m.hydratedOk || m.hydrating);
@@ -873,22 +873,85 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
   // to reset the emulator and replace 5000 lines of local scrollback with the
   // much shorter backend ring tail. Idempotence of attach was accidental; it is
   // now the contract.
-  if (!alreadyMounted) hydrate(m);
+  //
+  // The gate closes SYNCHRONOUSLY (beginHydration) and the subscribe is issued
+  // only once the shared output listener is registered. Both halves matter:
+  //
+  //   - Rust flips `subscribed = true` atomically under the ring lock and
+  //     returns the snapshot in the same call (`registry.rs::subscribe_output`),
+  //     so the instant the subscribe resolves the backend is emitting. Firing
+  //     `listen()` unawaited alongside it left a window in which chunks were
+  //     emitted with no JS listener registered — dropped with no trace, on the
+  //     app's FIRST attach and after every listener failure. Awaiting closes it.
+  //   - Closing the gate first means any chunk that does arrive between now and
+  //     the snapshot is QUEUED rather than written ahead of it, which is the
+  //     ordering `pendingLive` has always guaranteed once hydration started.
+  //
+  // Cost: the very first attach of an app session pays one extra IPC round trip
+  // (the `listen` registration) before its first paint. Every later attach pays
+  // a microtask — `ensureSharedOutputListener` returns an already-resolved
+  // promise once the listener is up. That is the right price for never silently
+  // losing the output the operator opened the pane to read.
+  const gen = alreadyMounted ? null : beginHydration(m);
+  // The listener is the OTHER door to live output, and its failure used to be
+  // invisible because hydration succeeds independently of it. Chain the outcome
+  // instead of dropping it: say so in the terminal, and keep retrying. Hydration
+  // still runs on the failure path — a pane with no live listener must at least
+  // paint its snapshot — and the notice is painted AFTER it is queued, so
+  // `paintListenerNotice` lands it behind the snapshot instead of under the
+  // `term.reset()` that would erase it.
+  // The rejection handler deliberately reports nothing: ensureSharedOutputListener
+  // already ran silentCatch('fleetTerminal:listen') on this exact error before
+  // re-throwing it, and this arm exists to TELL THE OPERATOR and re-arm the
+  // retry, not to log the same outage twice. Both arms are supplied to `then`
+  // rather than `.then().catch()` so a throw from the SUCCESS arm cannot be
+  // mistaken for a listener failure and paint a stall notice that isn't true.
+  ensureSharedOutputListener().then(
+    () => {
+      if (gen !== null) completeHydration(m, gen);
+    },
+    () => {
+      if (gen !== null) completeHydration(m, gen);
+      paintListenerNotice(m);
+      scheduleListenerRetry();
+    },
+  );
 }
 
 /**
- * Subscribe the session's terminal to live output and replay the backend ring
- * snapshot. Resetting + writing the full snapshot (rather than appending a
- * delta) keeps this simple and dup-free: a re-attach can't double-render
- * because the terminal is cleared first. While the subscribe is in flight,
- * `hydrating` holds live chunks in `pendingLive`; they're flushed right after
- * the snapshot so ordering is exact. A `hydrationGen` bump cancels a stale
- * resolution if the pane detached/re-attached meanwhile.
+ * Hydration, first half — bump the generation and CLOSE THE GATE on live
+ * output, synchronously, at the moment of attach.
+ *
+ * Subscribing the session's terminal to live output and replaying the backend
+ * ring snapshot is a two-step handshake: resetting + writing the full snapshot
+ * (rather than appending a delta) keeps it simple and dup-free, because a
+ * re-attach can't double-render into a terminal that was cleared first. While
+ * the subscribe is in flight, `hydrating` holds live chunks in `pendingLive`;
+ * they're flushed right after the snapshot so ordering is exact. A
+ * `hydrationGen` bump cancels a stale resolution if the pane detached or
+ * re-attached meanwhile.
+ *
+ * The gate closes here rather than in `completeHydration` because the subscribe
+ * now waits for the shared output listener (see `attachTerminal`): a chunk that
+ * lands in that window must be QUEUED, not written ahead of the snapshot.
  */
-function hydrate(m: ManagedTerminal): void {
+function beginHydration(m: ManagedTerminal): number {
   const gen = ++m.hydrationGen;
   m.hydrating = true;
   m.pendingLive = [];
+  return gen;
+}
+
+/**
+ * Second half of `hydrate` — issue the subscribe and splice its snapshot in
+ * front of whatever `beginHydration` queued while the shared output listener
+ * was being registered. Split from `beginHydration` so the gate can close on
+ * the synchronous attach while the subscribe waits for the listener; a detach
+ * or a newer attach in between moves `hydrationGen` and this becomes a no-op,
+ * exactly as a stale snapshot resolution already did.
+ */
+function completeHydration(m: ManagedTerminal, gen: number): void {
+  if (gen !== m.hydrationGen || !m.attached) return;
   subscribeTerminal(m.sessionId)
     .then((snapshot) => {
       // Superseded by a newer attach/detach — drop this snapshot.

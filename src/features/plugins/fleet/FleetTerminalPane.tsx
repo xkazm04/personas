@@ -76,15 +76,31 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
    */
   const [displaced, setDisplaced] = useState(false);
 
+  /**
+   * Liveness, readable from the attach effect WITHOUT being one of its deps.
+   *
+   * `live` is a runtime-varying prop — `passportFleet.tsx` and
+   * `FleetPreviewPanel.tsx` both compute it as `session?.state !== 'hibernated'`
+   * — and listing it in the attach effect's deps meant a hibernation flip ran a
+   * full detach + re-attach, whose `hydrate` calls the lossy `term.reset()`
+   * (see `hydratedOk` in the manager). The operator opened the pane to read what
+   * happened, and the state change that made them open it wiped the scrollback.
+   * Liveness has its own effect below and needs no remount; the attach effect
+   * only reads it once, to decide whether to steal focus on mount.
+   */
+  const liveRef = useRef(live);
+  liveRef.current = live;
+
   // Attach the managed terminal on mount / session change; detach (NOT
   // dispose) on unmount so the buffer and PTY subscription persist.
+  // Deliberately NOT keyed on `live` — see `liveRef` above.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     setDisplaced(false);
     const offHolderLost = onTerminalHolderLost(container, () => setDisplaced(true));
     attachTerminal(sessionId, container);
-    if (autoFocus && live) focusTerminal(sessionId);
+    if (autoFocus && liveRef.current) focusTerminal(sessionId);
     // Detach with our own container as the owner token: if another pane has
     // since attached the same session, the holder is THEIRS and our unmount
     // must not unsubscribe, drop the renderer and unparent what they display.
@@ -92,7 +108,7 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
       offHolderLost();
       detachTerminal(sessionId, container);
     };
-  }, [sessionId, autoFocus, live]);
+  }, [sessionId, autoFocus]);
 
   // Take the terminal back. Symmetric by construction: whoever asks last owns
   // the holder, and the pane that loses it is told in exactly the same way.

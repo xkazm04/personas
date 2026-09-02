@@ -221,6 +221,9 @@ describe('hydration handshake', () => {
     );
 
     const host = attach('h-order');
+    // The subscribe is issued only once the shared output listener has
+    // registered (see attachTerminal) — settle so it is genuinely in flight.
+    await settle();
     const m = registryMap().get('h-order')!;
 
     // Held, not written — interleaving these with the snapshot is what
@@ -246,6 +249,7 @@ describe('hydration handshake', () => {
     );
 
     const host = attach('h-void');
+    await settle();
     const m = registryMap().get('h-void')!;
     emit('h-void', 'LIVE-A');
 
@@ -269,8 +273,10 @@ describe('hydration handshake', () => {
       .mockImplementationOnce(() => new Promise<string>((r) => (resolveSecond = r)));
 
     const host1 = attach('h-gen');
+    await settle();
     detachTerminal('h-gen');
     const host2 = attach('h-gen');
+    await settle();
     const m = registryMap().get('h-gen')!;
 
     // Rapid switching: the FIRST subscribe lands late. hydrationGen has moved
