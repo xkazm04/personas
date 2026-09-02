@@ -797,7 +797,13 @@ mod tests {
         // The examples' braces must be literal, not format-escaped leftovers.
         // (The prompt elsewhere contains a deliberate `{{param.<key>}}`
         // placeholder, so this asserts on the rule text, not the whole prompt.)
-        assert!(p.contains(r#""model_override": "claude-haiku-4-5-20251001""#));
+        // The id comes from the one door that owns it (`core/src/model_ids.rs`)
+        // rather than being spelled here: a retirement must be a one-file diff,
+        // and a test that pins a dated id rots exactly like a call site does.
+        assert!(p.contains(&format!(
+            r#""model_override": "{}""#,
+            personas_core::model_ids::HAIKU_CURRENT
+        )));
         assert!(!MODEL_TIER_RULE.contains("{{"));
     }
 

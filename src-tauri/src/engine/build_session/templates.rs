@@ -28,11 +28,13 @@
 //! (`tauri.conf.json` bundles only `resources/skills`, and the third resolver
 //! candidate is a compile-time path from the machine that built the binary).
 //!
-//! The embedding is an aggregate of the whole template objects rather than a
-//! projection of the four fields this module reads, because `[build-dependencies]`
-//! carries no JSON parser; the reasoning and its ~2.3 MB cost are written up on
-//! `build.rs::embed_template_index`. Extraction is shared: [`entry_from_value`]
-//! is the one place the four fields are read, from either source.
+//! The embedded blob carries ONLY the four fields this module indexes, in the
+//! same shapes they have on disk (`category` stays a one-element array), so
+//! [`entry_from_value`] is the one place the projection lives and reads either
+//! source with the same code. (It first embedded whole template files — no JSON
+//! parser was available to `build.rs` — which cost ~2.3 MB of `rodata` to carry
+//! ~40 KB of index; `serde_json` is now a build-dependency. See
+//! `build.rs::embed_template_index`.)
 //!
 //! With the embedded fallback in place the "no catalog" branch should be
 //! unreachable — `build.rs` panics rather than emit an empty index — so the
@@ -121,19 +123,21 @@ fn entry_from_value(val: &serde_json::Value) -> TemplateEntry {
     }
 }
 
-/// The catalog aggregated into the binary at compile time by
-/// `src-tauri/build.rs` — a JSON array of the whole template objects.
+/// The catalog projected into the binary at compile time by
+/// `src-tauri/build.rs` — a JSON array of `{name, description, category,
+/// service_flow}` objects, shaped exactly like the on-disk files' own fields.
 const EMBEDDED_TEMPLATE_INDEX: &str =
     include_str!(concat!(env!("OUT_DIR"), "/template_index.json"));
 
 /// Parse the embedded aggregate. Returns empty only if the blob is malformed,
 /// which `build.rs` prevents by construction (it panics on a missing or empty
-/// catalog and skips any file that is not a JSON object).
+/// catalog, skips any file that is not valid JSON, and serializes the result
+/// with `serde_json` rather than assembling text).
 fn embedded_template_index() -> Vec<TemplateEntry> {
     match serde_json::from_str::<Vec<serde_json::Value>>(EMBEDDED_TEMPLATE_INDEX) {
         Ok(vals) => vals.iter().map(entry_from_value).collect(),
         Err(e) => {
-            tracing::warn!("Embedded template index failed to parse: {e}");
+            tracing::warn!(error = %e, "embedded template index failed to parse");
             vec![]
         }
     }
@@ -182,15 +186,15 @@ fn load_template_index() -> Vec<TemplateEntry> {
             let entries = read_template_index(&dir);
             if !entries.is_empty() {
                 tracing::info!(
-                    "Template index loaded: {} entries from {} (cached)",
-                    entries.len(),
-                    dir.display()
+                    entries = entries.len(),
+                    source = %dir.display(),
+                    "template index loaded (cached)"
                 );
                 return entries;
             }
             tracing::warn!(
-                "Template catalog at {} yielded no entries — falling back to the embedded index",
-                dir.display()
+                source = %dir.display(),
+                "template catalog yielded no entries; falling back to the embedded index"
             );
         }
         let entries = embedded_template_index();
@@ -202,8 +206,9 @@ fn load_template_index() -> Vec<TemplateEntry> {
             );
         } else {
             tracing::info!(
-                "Template index loaded: {} entries from the embedded catalog (cached)",
-                entries.len()
+                entries = entries.len(),
+                source = "embedded",
+                "template index loaded (cached)"
             );
         }
         entries

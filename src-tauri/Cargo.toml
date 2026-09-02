@@ -128,6 +128,10 @@ crate-type = ["cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 dotenvy = "0.15"
+# Used by `embed_template_index` to project the persona-template catalog down
+# to the four fields the build prompt indexes. Same "1" spec as [dependencies];
+# on a native build this is the identical artifact, so it costs no extra compile.
+serde_json = "1"
 
 [features]
 default = []

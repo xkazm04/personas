@@ -72,16 +72,19 @@ fn main() {
 /// carries no `scripts/` directory at all. The catalog therefore has to travel
 /// inside the binary, and this is the only place that can put it there.
 ///
-/// **Why it concatenates whole files instead of extracting four fields.**
-/// Extracting `name` / `description` / `category` / `service_flow` here would
-/// need a JSON parser, and `[build-dependencies]` has none (adding one is a
-/// `Cargo.toml` change, outside this change's write set). Concatenating the
-/// raw objects into one array needs no parser — each template file is already
-/// a JSON object — and the consumer, which does have `serde_json`, extracts
-/// the four fields exactly as it does from disk. The cost is ~2.3 MB of
-/// `rodata` instead of the ~40 KB a projected index would take; a one-line
-/// `serde_json` build-dependency would close that gap and is the obvious
-/// follow-up if the size ever matters.
+/// **What it emits.** A JSON array of the FOUR fields the consumer indexes —
+/// `name`, `description`, `category`, `service_flow` — in exactly the shape
+/// they have in a template file (`category` stays a one-element array), so the
+/// consumer's single `entry_from_value` projection reads an embedded entry and
+/// an on-disk file with the same code. Everything else in a template (the
+/// persona payload, adoption questions, i18n overlays) is dropped: the build
+/// prompt never reads it.
+///
+/// The first version of this embedded whole files concatenated as text, because
+/// `[build-dependencies]` had no JSON parser. It cost ~2.3 MB of `rodata` to
+/// carry ~40 KB of index. `serde_json` is now a build-dependency — on a native
+/// build it is the same artifact `[dependencies]` already compiles, so the
+/// projection is close to free.
 ///
 /// Selection rules mirror `load_template_index` exactly: category directories
 /// and files whose name starts with `_` are internal bundles
@@ -115,7 +118,7 @@ fn embed_template_index() {
         .collect();
     category_dirs.sort();
 
-    let mut objects: Vec<String> = Vec::new();
+    let mut entries: Vec<serde_json::Value> = Vec::new();
     for dir in &category_dirs {
         println!("cargo:rerun-if-changed={}", dir.display());
         let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(dir)
@@ -141,29 +144,36 @@ fn embed_template_index() {
                     continue;
                 }
             };
-            let trimmed = raw.trim();
-            // Cheap well-formedness guard — enough to keep the aggregate itself
-            // parseable. A file that is valid JSON but not an object would
-            // still be handled by the consumer (it reads fields defensively).
-            if !trimmed.starts_with('{') || !trimmed.ends_with('}') {
-                println!(
-                    "cargo:warning=template {} is not a JSON object — skipped",
-                    f.display()
-                );
-                continue;
+            let val: serde_json::Value = match serde_json::from_str(&raw) {
+                Ok(v) => v,
+                Err(e) => {
+                    println!(
+                        "cargo:warning=template {} is not valid JSON: {e}",
+                        f.display()
+                    );
+                    continue;
+                }
+            };
+            // Project to the four indexed fields, preserving their on-disk
+            // shapes so ONE consumer-side projection serves both sources.
+            let mut projected = serde_json::Map::new();
+            for key in ["name", "description", "category", "service_flow"] {
+                if let Some(v) = val.get(key) {
+                    projected.insert(key.to_string(), v.clone());
+                }
             }
-            objects.push(trimmed.to_string());
+            entries.push(serde_json::Value::Object(projected));
         }
     }
 
     assert!(
-        !objects.is_empty(),
+        !entries.is_empty(),
         "scripts/templates exists but yielded zero templates — the walk is \
          broken, not the catalog"
     );
 
     let out = std::path::Path::new(&std::env::var("OUT_DIR").expect("OUT_DIR is set"))
         .join("template_index.json");
-    std::fs::write(&out, format!("[{}]", objects.join(",")))
-        .unwrap_or_else(|e| panic!("writing {}: {e}", out.display()));
+    let blob = serde_json::to_string(&entries).expect("projected index serializes");
+    std::fs::write(&out, blob).unwrap_or_else(|e| panic!("writing {}: {e}", out.display()));
 }
