@@ -1,4 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { formatCost } from '@/lib/utils/formatters';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
@@ -25,12 +26,20 @@ export function fmtTokens(n: number, opts?: { withMillions?: boolean }): string 
   return String(n);
 }
 
+/**
+ * USD cost for the comparison / bulk-rerun surfaces.
+ *
+ * A thin delegate to the app's `formatCost`, kept only for the shorter default
+ * (4 decimals) these surfaces want. It used to be a private reimplementation
+ * that hardcoded `$` — so every one of these numbers stayed `$0.0042` in a
+ * fr-FR session while the rest of the app read `0,0042 $` — and returned
+ * `'<$0.001'` for an EXACT zero, which claims a small nonzero cost for a run
+ * that cost nothing (a local model, where `estimateCost` returns 0). Zero is
+ * exactly representable; `<` means "too small to show at this precision".
+ * `formatCost` has known both of those since `formatters.ts:198`.
+ */
 export function fmtCost(v: number, opts?: { precision?: 4 | 'auto' }): string {
-  if (v < 0.001) return '<$0.001';
-  if (opts?.precision === 'auto') {
-    return v < 0.01 ? `$${v.toFixed(3)}` : `$${v.toFixed(2)}`;
-  }
-  return `$${v.toFixed(4)}`;
+  return formatCost(v, { precision: opts?.precision ?? 4 });
 }
 
 export function deltaColor(pct: number, lowerIsBetter = true): string {

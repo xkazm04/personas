@@ -88,7 +88,9 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <MetricDeltaCard label={e.input_tokens} leftVal={left.input_tokens} rightVal={right.input_tokens} format={fmtTokens} />
         <MetricDeltaCard label={e.output_tokens} leftVal={left.output_tokens} rightVal={right.output_tokens} format={fmtTokens} />
         <MetricDeltaCard label={e.cost} leftVal={left.cost_usd} rightVal={right.cost_usd} format={fmtCost} />
-        <MetricDeltaCard label={e.duration} leftVal={left.duration_ms ?? 0} rightVal={right.duration_ms ?? 0} format={(v) => formatDuration(v)} />
+        {/* NOT `?? 0` — see MetricDeltaCard. An unmeasured duration is an
+            absence and renders as an em dash with no delta. */}
+        <MetricDeltaCard label={e.duration} leftVal={left.duration_ms} rightVal={right.duration_ms} format={(v) => formatDuration(v)} />
       </div>
 
       {/* Tool call timeline comparison */}

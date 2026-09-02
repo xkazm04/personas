@@ -98,7 +98,23 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const [extraRows, setExtraRows] = useState<ExecutionListItem[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [reachedEnd, setReachedEnd] = useState(false);
-  useEffect(() => { setExtraRows([]); setReachedEnd(false); }, [personaId]);
+  // Rows the SERVER has returned for this persona in the extra pages — the
+  // count BEFORE de-duplication, because the offset is a server-side skip and
+  // a row we happen to already hold still occupied a slot in that window.
+  const [extraServerRows, setExtraServerRows] = useState(0);
+  useEffect(() => { setExtraRows([]); setReachedEnd(false); setExtraServerRows(0); }, [personaId]);
+
+  // The store's first page, as the SERVER returned it. NOT
+  // `rawExecutions.length`: `upsertFinishedExecution` prepends a locally
+  // finished run into that array, and the cache (unlike `extraRows`) survives
+  // a persona switch — so a session that finishes three runs and comes back
+  // would ask the server to skip three rows it never handed over, and three
+  // older runs would vanish from the history until the next refetch. Falls
+  // back to the visible length when the count is unknown (a page written by
+  // personaSlice's prefetch, which is server-fresh by construction).
+  const serverFirstPageCount = useAgentStore(
+    (state) => state.executionsServerCount[personaId],
+  );
 
   // De-duplicated union of the store's first page + any loaded extra pages.
   // Backend paging is offset-based over the raw (unfiltered) ordering, so this
@@ -158,12 +174,14 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
     setScrollEl(node);
   }, [parentRef]);
 
-  const hasMore = !reachedEnd && rawRows.length >= PAGE_SIZE;
+  const serverOffset = (serverFirstPageCount ?? rawExecutions.length) + extraServerRows;
+  const hasMore = !reachedEnd && serverOffset >= PAGE_SIZE;
   const handleLoadMore = useCallback(async () => {
     if (!personaId || loadingMore) return;
     setLoadingMore(true);
     try {
-      const page = await listExecutionsSummary(personaId, PAGE_SIZE, rawRows.length);
+      const page = await listExecutionsSummary(personaId, PAGE_SIZE, serverOffset);
+      setExtraServerRows((prev) => prev + page.length);
       if (page.length < PAGE_SIZE) setReachedEnd(true);
       if (page.length > 0) setExtraRows((prev) => [...prev, ...page]);
     } catch (err) {
@@ -171,7 +189,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
     } finally {
       setLoadingMore(false);
     }
-  }, [personaId, loadingMore, rawRows.length, e.load_failed_body]);
+  }, [personaId, loadingMore, serverOffset, e.load_failed_body]);
 
   const [sampleInput, setSampleInput] = useState('{}');
   useEffect(() => {
@@ -318,9 +336,24 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
 
   const handleClearBulkSelection = useCallback(() => setBulkSelected(new Set()), []);
 
+  // ONE derivation of the selection, shared by the label and the handler
+  // (bulk-selection-actions.md §7 D3). `executions` is the client-filtered set
+  // — with `showSimulations` off, a failed simulation picked by "select all
+  // failed" stays in `bulkSelected` but leaves `executions`, so the toolbar
+  // used to say N while the rerun did M < N and told nobody.
+  const bulkSelectedRows = useMemo(
+    () => executions.filter((row) => bulkSelected.has(row.id)),
+    [executions, bulkSelected],
+  );
+
   const handleStartBulkRerun = useCallback(async () => {
     if (!personaId) return;
-    const rows = executions.filter((row) => bulkSelected.has(row.id));
+    // Re-entry guard. The Start button is disabled while a cohort runs, but a
+    // handler is the only place that can be sure: a second `start()` mints a
+    // new latest-wins token (useBulkRerun.ts) and ABANDONS the running cohort
+    // while its executePersona calls keep running — and keep billing.
+    if (bulkRerun.phase === 'running') return;
+    const rows = bulkSelectedRows;
     if (rows.length === 0) return;
     setShowBulkReport(false);
     try {
@@ -335,7 +368,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       logger.warn('Bulk rerun failed', { err });
       useToastStore.getState().addToast(e.bulk_rerun_failed_toast, 'error');
     }
-  }, [bulkRerun, bulkSelected, executions, personaId, e.bulk_rerun_failed_toast]);
+  }, [bulkRerun, bulkSelectedRows, personaId, e.bulk_rerun_failed_toast]);
 
   const handleBulkCompareItem = useCallback(async (originalId: string, newExecutionId: string) => {
     if (!personaId) return;
@@ -422,13 +455,14 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
           bulkMode={bulkMode}
           onEnter={enterBulkMode}
           onExit={exitBulkMode}
-          selectedIds={bulkSelected}
+          selectedCount={bulkSelectedRows.length}
           rows={executions}
           annotations={annotations}
           onSelectAllFailed={handleSelectAllFailed}
           onSelectSinceTimestamp={handleSelectSinceTimestamp}
           onClear={handleClearBulkSelection}
           onStart={() => { void handleStartBulkRerun(); }}
+          isRunning={bulkRerun.phase === 'running'}
           hasExecutions={executions.length > 0}
           hasEnoughToBulk={executions.length >= 2}
         />

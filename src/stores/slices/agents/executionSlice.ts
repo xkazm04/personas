@@ -138,6 +138,19 @@ export interface ExecutionSlice {
   executionsPersonaId: string | null;
   executionsCache: Record<string, ExecutionListItem[]>;
   executionsCacheAt: Record<string, number>;
+  /**
+   * How many rows the SERVER returned for this persona's first page — the
+   * offset the next page must start at.
+   *
+   * Deliberately NOT `executionsCache[personaId].length`. The cached list is
+   * also written by `upsertFinishedExecution`, which PREPENDS a locally
+   * finished run, and that array survives a persona switch while the list
+   * page's own `extraRows` does not. Paging off the inflated union therefore
+   * asks the server to skip rows it has never handed over, and those runs
+   * disappear from the history until the cache is refetched. This counter is
+   * written by `fetchExecutions` only, so it always names server truth.
+   */
+  executionsServerCount: Record<string, number>;
   activeExecutionId: string | null;
   executionPersonaId: string | null;
   activeUseCaseId: string | null;
@@ -356,6 +369,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     executionsPersonaId: null,
     executionsCache: {},
     executionsCacheAt: {},
+    executionsServerCount: {},
     activeExecutionId: recoveredState?.activeExecutionId ?? null,
     executionPersonaId: recoveredState?.executionPersonaId ?? null,
     activeUseCaseId: null,
@@ -730,6 +744,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         set((state) => {
           const nextCache = { ...state.executionsCache, [personaId]: executions };
           const nextAt = { ...state.executionsCacheAt, [personaId]: Date.now() };
+          // Server truth for the list page's next-page offset — the count of
+          // rows the SERVER handed over, before any local prepend touches the
+          // cached array. See `executionsServerCount`.
+          const nextServerCount = { ...state.executionsServerCount, [personaId]: executions.length };
           // Bound the per-persona cache: across a long session of persona-
           // switching this would otherwise retain every persona's full execution
           // list. Keep the N most-recently-fetched, evict the rest by timestamp.
@@ -740,6 +758,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
               if (stale === personaId) continue;
               delete nextCache[stale];
               delete nextAt[stale];
+              delete nextServerCount[stale];
             }
           }
           // Always refresh the cache; only the newest fetch writes the VISIBLE
@@ -750,8 +769,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
                 executionsPersonaId: personaId,
                 executionsCache: nextCache,
                 executionsCacheAt: nextAt,
+                executionsServerCount: nextServerCount,
               }
-            : { executionsCache: nextCache, executionsCacheAt: nextAt };
+            : { executionsCache: nextCache, executionsCacheAt: nextAt, executionsServerCount: nextServerCount };
         });
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });

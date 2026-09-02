@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CheckSquare, Layers, RotateCw, X, Calendar } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
@@ -9,13 +10,23 @@ interface BulkRerunToolbarProps {
   bulkMode: boolean;
   onEnter: () => void;
   onExit: () => void;
-  selectedIds: Set<string>;
+  /**
+   * How many selected rows the action will ACTUALLY rerun — i.e.
+   * `rows.filter(r => selected.has(r.id)).length`, derived by the container
+   * from the same set the handler acts on. Never `selected.size`: the two
+   * differ whenever a display filter hides a selected row, and the button
+   * would then promise N while the rerun did M < N
+   * (bulk-selection-actions.md §7 D3).
+   */
+  selectedCount: number;
   rows: ExecutionListItem[];
   annotations: ExecutionAnnotation[];
   onSelectAllFailed: () => void;
   onSelectSinceTimestamp: (isoTimestamp: string) => void;
   onClear: () => void;
   onStart: () => void;
+  /** True while a cohort is in flight — Start shows a spinner and refuses. */
+  isRunning: boolean;
   hasExecutions: boolean;
   hasEnoughToBulk: boolean;
 }
@@ -24,13 +35,14 @@ export function BulkRerunToolbar({
   bulkMode,
   onEnter,
   onExit,
-  selectedIds,
+  selectedCount,
   rows,
   annotations,
   onSelectAllFailed,
   onSelectSinceTimestamp,
   onClear,
   onStart,
+  isRunning,
   hasExecutions,
   hasEnoughToBulk,
 }: BulkRerunToolbarProps) {
@@ -67,8 +79,6 @@ export function BulkRerunToolbar({
       </button>
     );
   }
-
-  const selectedCount = selectedIds.size;
 
   return (
     <>
@@ -115,15 +125,23 @@ export function BulkRerunToolbar({
           </button>
         )}
 
-        <button
-          type="button"
+        {/* The cohort's phase is owned by `useBulkRerun`, so this is the
+            externally-owned-flag case: `Button loading={...}`, which renders a
+            REAL spinner and disables itself. It used to be `disabled={selectedCount
+            === 0}` alone, so a second click during a run started a second cohort,
+            abandoned the first, and left its executePersona calls running — and
+            billing. The rows were already guarded; the button was not. */}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="ml-auto bg-primary/15 text-primary/90 border-primary/25 hover:bg-primary/25"
           onClick={onStart}
+          loading={isRunning}
           disabled={selectedCount === 0}
-          className="ml-auto flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/90 border border-primary/25 hover:bg-primary/25 transition-colors disabled:opacity-40"
+          icon={<RotateCw className="w-3 h-3" />}
         >
-          <RotateCw className="w-3 h-3" />
           {tx(e.bulk_rerun_start, { n: selectedCount })}
-        </button>
+        </Button>
 
         {showSincePicker && (
           <div className="w-full mt-1 flex flex-wrap items-center gap-2 pt-2 border-t border-primary/10">
