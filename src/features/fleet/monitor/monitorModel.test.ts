@@ -7,12 +7,13 @@ import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import {
   buildMonitorModel,
   pillarStateKey,
-  pillarVisual,
-  captionDescriptor,
   primaryDrawerSection,
   healthTone,
   healthSegments,
-  summarizeFleet,
+  processStatusMeta,
+  processStatusLabel,
+  PROCESS_STATUS_META,
+  UNKNOWN_PROCESS_STATUS_META,
   type PersonaCardModel,
 } from './monitorModel';
 
@@ -198,24 +199,6 @@ describe('pillarStateKey priority', () => {
   it('input_required outranks a concurrent failed history', () => {
     expect(pillarStateKey(baseCard({ execState: 'failed', inputRequired: 1 }))).toBe('failed');
   });
-
-  it('pillarVisual exposes the resolved key and pulses live states', () => {
-    expect(pillarVisual(baseCard({ running: 1, execState: 'running' })).pulse).toBe(true);
-    expect(pillarVisual(baseCard({ inputRequired: 1 })).pulse).toBe(true);
-    expect(pillarVisual(baseCard({ draftReady: 1 })).pulse).toBe(false);
-    expect(pillarVisual(baseCard()).key).toBe('idle');
-  });
-});
-
-describe('captionDescriptor', () => {
-  it('points active states at the activity drawer with the right count', () => {
-    expect(captionDescriptor(baseCard({ running: 2, execState: 'running' }))).toEqual({ key: 'running', count: 2, target: 'activity' });
-    expect(captionDescriptor(baseCard({ queued: 3 }))).toEqual({ key: 'queued', count: 3, target: 'activity' });
-  });
-  it('leaves passive states without a target', () => {
-    expect(captionDescriptor(baseCard({ attentionCount: 1 })).target).toBeNull();
-    expect(captionDescriptor(baseCard()).target).toBeNull();
-  });
 });
 
 describe('primaryDrawerSection', () => {
@@ -250,22 +233,51 @@ describe('healthTone / healthSegments', () => {
   });
 });
 
-describe('summarizeFleet', () => {
-  it('aggregates counts and live cost across cards', () => {
-    const cards = [
-      baseCard({ personaId: 'a', running: 2, liveCostUsd: 0.02, liveToolCalls: 4, execState: 'running' }),
-      baseCard({ personaId: 'b', queued: 1, execState: 'attention', attentionCount: 1 }),
-      baseCard({ personaId: 'c', execState: 'failed' }),
-      baseCard({ personaId: 'd', execState: 'idle' }),
-    ];
-    const s = summarizeFleet(cards);
-    expect(s.personas).toBe(4);
-    expect(s.running).toBe(2);
-    expect(s.queued).toBe(1);
-    expect(s.attention).toBe(1);
-    expect(s.failed).toBe(1);
-    expect(s.idle).toBe(1);
-    expect(s.liveToolCalls).toBe(4);
-    expect(s.liveCostUsd).toBeCloseTo(0.02, 6);
+// --- process status vocabulary ----------------------------------------------
+
+describe('processStatusMeta / processStatusLabel', () => {
+  it('resolves every status the store can hold', () => {
+    for (const [status, meta] of Object.entries(PROCESS_STATUS_META)) {
+      expect(processStatusMeta(status)).toBe(meta);
+    }
+  });
+
+  it('renders an unknown token as neutral, NON-pulsing meta — never as live work', () => {
+    // A status this build has never heard of will never receive the transition
+    // that clears it, so a pulsing "running" dot would be permanent.
+    const meta = processStatusMeta('sublimating');
+    expect(meta).toEqual(UNKNOWN_PROCESS_STATUS_META);
+    expect(meta.pulse).toBe(false);
+    expect(meta).not.toBe(PROCESS_STATUS_META.running);
+  });
+
+  it('does not resolve inherited Object.prototype keys to a status', () => {
+    expect(processStatusMeta('constructor').pulse).toBe(false);
+    expect(processStatusMeta('toString')).toEqual(UNKNOWN_PROCESS_STATUS_META);
+  });
+
+  it('agrees with processStatusLabel on what unknown means (raw token, no guess)', () => {
+    const t = { monitor: { status_running: 'Running' } } as unknown as Parameters<typeof processStatusLabel>[0];
+    expect(processStatusLabel(t, 'sublimating')).toBe('sublimating');
+    expect(processStatusMeta('sublimating').pulse).toBe(false);
+  });
+});
+
+// --- attribution: the name-collision branch ---------------------------------
+
+describe('buildMonitorModel — label attribution is refused on a name collision', () => {
+  it('routes to systemProcesses when two personas share the label', () => {
+    const twins = [mkPersona('a', 'Echo'), mkPersona('b', 'Echo')];
+    const m = buildMonitorModel(twins, [], [], { k: mkProc({ label: 'Echo' }) }, {});
+    expect(m.systemProcesses).toHaveLength(1);
+    expect(find(m, 'a').running).toBe(0);
+    expect(find(m, 'b').running).toBe(0);
+  });
+
+  it('still attributes by id when the colliding name also carries a personaId', () => {
+    const twins = [mkPersona('a', 'Echo'), mkPersona('b', 'Echo')];
+    const m = buildMonitorModel(twins, [], [], { k: mkProc({ label: 'Echo', personaId: 'b' }) }, {});
+    expect(m.systemProcesses).toHaveLength(0);
+    expect(find(m, 'b').running).toBe(1);
   });
 });

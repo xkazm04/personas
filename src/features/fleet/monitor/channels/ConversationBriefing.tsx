@@ -57,8 +57,9 @@ export function ConversationBriefing({
    *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
   bridges?: Record<string, TeamSlackBridge>;
   /** The layout switcher, rendered in THIS view's own header rather than above
-   *  all of them — one header strip instead of two. Owned and built by
-   *  `MonitorChannelGrid`; each view only places it. */
+   *  all of them — one header strip instead of two. Built by the header
+   *  router in `PersonaMonitor` since `MonitorChannelGrid` was retired; each
+   *  view only places it. */
   layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();

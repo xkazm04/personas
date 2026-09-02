@@ -1,4 +1,5 @@
 import type { StateCreator } from "zustand";
+import type { SidebarSection } from "@/lib/types/types";
 
 /**
  * Every status an {@link ActiveProcess} can hold. Acts as the single source
@@ -18,8 +19,13 @@ export const ACTIVE_PROCESS_STATUSES = [
 export type ActiveProcessStatus = (typeof ACTIVE_PROCESS_STATUSES)[number];
 
 export interface ProcessNavigateTo {
-  /** Sidebar section to navigate to */
-  section: string;
+  /**
+   * Sidebar section to navigate to. The CLOSED union, not `string`: every
+   * producer already emits a real section, and typing it wide let the one
+   * consumer (`navigateToProcess`) cast blindly and route an unknown value
+   * into whichever tab setter its `else` branch happened to hold.
+   */
+  section: SidebarSection;
   /** Optional sub-tab within the section */
   tab?: string;
   /** Optional persona ID to select */

@@ -117,8 +117,8 @@ export interface StreamProps {
   initialCallsign?: string;
   /** The Activity/Timeline/Conversations/Map switcher, rendered in THIS view's
    *  own header rather than above all of them — so the header row is one strip
-   *  instead of two. Owned and built by `MonitorChannelGrid`; each view only
-   *  places it. */
+   *  instead of two. Built by the header router in `PersonaMonitor` since
+   *  `MonitorChannelGrid` was retired; each view only places it. */
   layoutControl?: ReactNode;
 }
 
