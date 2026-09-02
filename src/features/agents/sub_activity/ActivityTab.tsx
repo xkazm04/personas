@@ -219,7 +219,7 @@ export function ActivityTab() {
         /* The runs region. `ExecutionList` renders its own permanent chrome and
            a geometry-matched ghost underneath it while the store's first page
            is in flight (docs/design/overview-loading.md) — never a spinner. */
-        <ExecutionList />
+        <ExecutionList showActiveChains={false} />
       ) : (
         <ActivityList
           items={filtered}

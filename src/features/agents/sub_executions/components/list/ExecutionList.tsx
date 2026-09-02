@@ -48,7 +48,18 @@ const EXECUTION_TABLE_SKELETON_COLUMNS: TableSkeletonColumn[] = [
   { span: 'col-span-2', width: 'w-14' },                 // cost
 ];
 
-export function ExecutionList() {
+export interface ExecutionListProps {
+  /**
+   * Mount the "N chains in flight" badge above the table. Default true — the
+   * list stands alone that way. The persona Activity tab passes `false`
+   * because its own permanent header mounts the badge, where it is visible
+   * from every tab rather than only from the runs one; two copies would poll
+   * `list_active_chains` twice and stack two identical cards.
+   */
+  showActiveChains?: boolean;
+}
+
+export function ExecutionList({ showActiveChains = true }: ExecutionListProps = {}) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
@@ -439,7 +450,7 @@ export function ExecutionList() {
 
       {/* Live "N chains in flight" operator badge — renders nothing when no
           chain work is running (global, app-wide, not persona-scoped). */}
-      <ActiveChainsBadge />
+      {showActiveChains && <ActiveChainsBadge />}
 
       {(bulkRerun.phase === 'running' || (bulkRerun.phase === 'completed' && !showBulkReport)) && (
         <BulkRerunStrip
