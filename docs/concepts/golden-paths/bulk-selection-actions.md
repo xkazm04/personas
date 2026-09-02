@@ -681,6 +681,12 @@ stays in `bulkSelected`, leaves `executions`, keeps inflating the count, and is 
 `DispatchPanel` additionally computes `fleetEligible = selectedIds.size - blocked.length` (`:112`)
 — arithmetic over the *unpruned* selection.
 
+> **2026-09-02 — re-homed.** "`ExecutionList` is the live one" was false when this was written:
+> the component had zero JSX consumers. It is now the runs region of the persona **Activity tab**
+> (`sub_activity/ActivityTab.tsx`, `filter === 'execution'`), so every line above points at a
+> mounted surface again. The narrowing itself is fixed in the same wave — the toolbar's count is
+> now derived from the same `executions.filter(...)` intersection the handler acts on.
+
 `fleetBlockedRows(rows, selectedIds)` and `selectablePendingIds` are also three client mirrors of
 server refusal rules; handed to [`client-rule-mirroring`](./client-rule-mirroring.md).
 

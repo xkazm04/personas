@@ -15,6 +15,14 @@ interface ActivityFiltersProps {
   availableStatuses: string[];
   availableTags: string[];
   useCaseOptions: { id: string; title: string }[];
+  /**
+   * Hide the secondary (status / capability / tag / starred) controls.
+   * The runs region is served by `ExecutionList`, which carries its own
+   * filter strip — showing two filter bars that narrow different sets is
+   * worse than showing one. The type-tab strip always stays so the user can
+   * switch back out of the runs tab.
+   */
+  hideSecondaryFilters?: boolean;
   onFilterChange: (f: ActivityType) => void;
   onStatusFilterChange: (s: string) => void;
   onUseCaseFilterChange: (s: string) => void;
@@ -25,6 +33,7 @@ interface ActivityFiltersProps {
 export function ActivityFilters({
   filter, statusFilter, useCaseFilter, tagFilter, starredOnly,
   counts, availableStatuses, availableTags, useCaseOptions,
+  hideSecondaryFilters = false,
   onFilterChange, onStatusFilterChange, onUseCaseFilterChange,
   onTagFilterChange, onStarredOnlyChange,
 }: ActivityFiltersProps) {
@@ -60,6 +69,7 @@ export function ActivityFilters({
           );
         })}
       </div>
+      {!hideSecondaryFilters && (
       <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
@@ -115,6 +125,7 @@ export function ActivityFilters({
           </select>
         )}
       </div>
+      )}
     </div>
   );
 }

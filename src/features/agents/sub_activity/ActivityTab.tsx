@@ -15,6 +15,8 @@ import { ActivityHeader } from './ActivityHeader';
 import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
+import { ExecutionList } from '../sub_executions/components/list/ExecutionList';
+import { useExecutionList } from '../sub_executions/libs/useExecutionList';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
 import { silentCatch } from '@/lib/silentCatch';
@@ -40,12 +42,25 @@ export function ActivityTab() {
   const useCases = useSelectedUseCases();
   const { byExecution: annotationsByExecution, knownTags } = useExecutionAnnotations(personaId);
 
+  // The runs tab is served by `ExecutionList` — the revived surface that owns
+  // bulk-rerun, two-run comparison, the chains badge and paging through the
+  // store cache. While it is mounted the tab must NOT also fetch executions:
+  // that parallel `list_executions` call was the thing that bypassed the
+  // store's TTL/dedup/latest-wins cache in the first place. The other four
+  // feeds are unaffected.
+  const runsRegionOwnsExecutions = filter === 'execution';
+  // Store-backed (cached, deduped) run list — the count on the "Executions"
+  // tab while the aggregate feed is deliberately not fetching them.
+  const { executions: storeExecutions } = useExecutionList(personaId ?? '');
+
   const loadData = useCallback(async () => {
     if (!personaId) return;
     setIsLoading(true);
     try {
       const [executions, events, memories, reviews, messages] = await Promise.all([
-        listExecutions(personaId, 50).catch((err) => { silentCatch('ActivityTab:listExecutions')(err); return [] as PersonaExecution[]; }),
+        runsRegionOwnsExecutions
+          ? Promise.resolve([] as PersonaExecution[])
+          : listExecutions(personaId, 50).catch((err) => { silentCatch('ActivityTab:listExecutions')(err); return [] as PersonaExecution[]; }),
         listEvents(100).catch((err) => { silentCatch('ActivityTab:listEvents')(err); return [] as PersonaEvent[]; }),
         listMemories(personaId, undefined, undefined, 50).catch((err) => { silentCatch('ActivityTab:listMemories')(err); return [] as PersonaMemory[]; }),
         listManualReviews(personaId).catch((err) => { silentCatch('ActivityTab:listManualReviews')(err); return [] as PersonaManualReview[]; }),
@@ -110,7 +125,7 @@ export function ActivityTab() {
     } finally {
       setIsLoading(false);
     }
-  }, [personaId, t, tx]);
+  }, [personaId, t, tx, runsRegionOwnsExecutions]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -152,8 +167,14 @@ export function ActivityTab() {
   const counts = useMemo(() => {
     const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0, message: 0 };
     for (const item of items) c[item.type]++;
+    if (runsRegionOwnsExecutions) {
+      // The aggregate feed skipped executions on purpose — take the count from
+      // the store's cached list so the tab label stays honest.
+      c.execution = storeExecutions.length;
+      c.all = items.length + storeExecutions.length;
+    }
     return c;
-  }, [items]);
+  }, [items, runsRegionOwnsExecutions, storeExecutions.length]);
 
   const { handleRowClick, modals } = useActivityModals({
     personaName: selectedPersona?.name ?? '',
@@ -173,7 +194,7 @@ export function ActivityTab() {
     <div className="space-y-4">
       <ActivityHeader
         personaId={selectedPersona.id}
-        itemCount={items.length}
+        itemCount={counts.all}
         isLoading={isLoading}
         onRefresh={loadData}
       />
@@ -187,19 +208,27 @@ export function ActivityTab() {
         availableStatuses={availableStatuses}
         availableTags={knownTags}
         useCaseOptions={useCaseOptions}
+        hideSecondaryFilters={runsRegionOwnsExecutions}
         onFilterChange={setFilter}
         onStatusFilterChange={setStatusFilter}
         onUseCaseFilterChange={setUseCaseFilter}
         onTagFilterChange={setTagFilter}
         onStarredOnlyChange={setStarredOnly}
       />
-      <ActivityList
-        items={filtered}
-        isLoading={isLoading}
-        useCaseOptions={useCaseOptions}
-        annotationsByExecution={annotationsByExecution}
-        onRowClick={handleRowClick}
-      />
+      {runsRegionOwnsExecutions ? (
+        /* The runs region. `ExecutionList` renders its own permanent chrome and
+           a geometry-matched ghost underneath it while the store's first page
+           is in flight (docs/design/overview-loading.md) — never a spinner. */
+        <ExecutionList />
+      ) : (
+        <ActivityList
+          items={filtered}
+          isLoading={isLoading}
+          useCaseOptions={useCaseOptions}
+          annotationsByExecution={annotationsByExecution}
+          onRowClick={handleRowClick}
+        />
+      )}
       {modals}
     </div>
   );
