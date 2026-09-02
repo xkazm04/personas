@@ -2528,24 +2528,8 @@ pub async fn run_execution(
                                 ref content_preview,
                             } = line_type
                             {
-                                if let Some(last) = tool_steps.last_mut() {
-                                    if last.ended_at_ms.is_none() {
-                                        let now = start_time.elapsed().as_millis() as u64;
-                                        // Char-safe truncation: `&s[..500]` panics
-                                        // when byte 500 lands inside a multi-byte UTF-8
-                                        // char (≤, $, em-dash, currency symbols — common
-                                        // in real tool output). That panic failed a
-                                        // persona execution and stalled an autonomous
-                                        // team cascade (eval framework run-2 finding).
-                                        last.output_preview = if content_preview.len() > 500 {
-                                            format!("{}...", content_preview.chars().take(500).collect::<String>())
-                                        } else {
-                                            content_preview.clone()
-                                        };
-                                        last.ended_at_ms = Some(now);
-                                        last.duration_ms = Some(now.saturating_sub(last.started_at_ms));
-                                    }
-                                }
+                                let now = start_time.elapsed().as_millis() as u64;
+                                close_newest_open_tool_step(&mut tool_steps, now, content_preview);
 
                                 // End the most recent open ToolCall trace span
                                 let tool_span_to_close = {
@@ -2813,6 +2797,27 @@ pub async fn run_execution(
         for (tool_name, count) in &tool_counts {
             let _ = usage_repo::record(&pool, &execution_id, &persona.id, tool_name, *count as i32);
         }
+    }
+
+    // Close whatever the stream never closed. A step still open at persist
+    // time is an unclosed step FOREVER — nothing else ever revisits the row —
+    // and every read-side consumer (replay scrub, pipeline, cost accumulation)
+    // treats `ended_at_ms == None` as "still running", which on a finished run
+    // is a claim the record cannot support. The run's own end is the honest
+    // upper bound for how long the call could have taken.
+    //
+    // Deliberately NOT marked as finalized: a `finalized: bool` on
+    // `ToolCallStep` would regenerate its ts-rs binding, which is outside this
+    // change's write set. The stamp is therefore indistinguishable from a
+    // normally-closed step, which is why the writer fix above matters more
+    // than this net does.
+    let finalized_steps = finalize_open_tool_steps(&mut tool_steps, duration_ms);
+    if finalized_steps > 0 {
+        tracing::debug!(
+            execution_id = %execution_id,
+            finalized_steps,
+            "stamped tool steps that the stream never closed with the run end"
+        );
     }
 
     // Wrap tool steps for typed DB storage
@@ -3244,9 +3249,186 @@ pub async fn run_execution(
     }
 }
 
+/// Close the newest still-OPEN tool step, mirroring the trace-span closer.
+///
+/// Returns whether a step was closed.
+///
+/// The CLI dispatches tools in parallel — Claude Code routinely fires Bash and
+/// Read in one turn — so results do not arrive in the order the calls were
+/// made. This used to peek at `tool_steps.last_mut()` and no-op when that step
+/// was already closed, which left the OLDER open step open forever: with A and
+/// B in flight, B's result closed B, and A's result found B closed and did
+/// nothing at all. Measured over two DB snapshots (2026-06): **240 of 2,998
+/// persisted steps unclosed (8.0%) across 80 of 252 executions (31.7%), 239 of
+/// them mid-list**, with Bash (157) and Read (61) making up 91% of them. The
+/// `tool_call` trace spans, closed a few lines below the call site by a
+/// backwards search for the newest OPEN span, were **0 of 48,732** unclosed —
+/// same stream, same events, the other predicate.
+///
+/// NON-GOAL, and the real fix upstream: `StreamLineType::ToolResult` carries no
+/// `tool_use_id` (`personas_core::types`), and neither does `AssistantToolUse`,
+/// even though the parser has the id in hand when it builds them. With the id a
+/// result could close the step it actually belongs to. Newest-open is the same
+/// heuristic the spans already use, and is exact whenever tools complete in
+/// LIFO order or only one call is in flight.
+fn close_newest_open_tool_step(
+    tool_steps: &mut [ToolCallStep],
+    now_ms: u64,
+    content_preview: &str,
+) -> bool {
+    let Some(step) = tool_steps
+        .iter_mut()
+        .rev()
+        .find(|s| s.ended_at_ms.is_none())
+    else {
+        return false;
+    };
+    // Char-safe truncation: `&s[..500]` panics when byte 500 lands inside a
+    // multi-byte UTF-8 char (≤, $, em-dash, currency symbols — common in real
+    // tool output). That panic failed a persona execution and stalled an
+    // autonomous team cascade (eval framework run-2 finding).
+    step.output_preview = if content_preview.len() > 500 {
+        format!(
+            "{}...",
+            content_preview.chars().take(500).collect::<String>()
+        )
+    } else {
+        content_preview.to_string()
+    };
+    step.ended_at_ms = Some(now_ms);
+    step.duration_ms = Some(now_ms.saturating_sub(step.started_at_ms));
+    true
+}
+
+/// Stamp every tool step still open at persist time with the run's end,
+/// returning how many were stamped.
+///
+/// The writer above removes the mid-list cases; this is the net for the tail —
+/// a stream that died, timed out or was cancelled between a tool call and its
+/// result. A step left with `ended_at_ms == None` in the row is read as "still
+/// running" by every consumer of the record, on an execution that has finished.
+///
+/// `end_ms` is clamped up to each step's own start so a step can never report a
+/// negative duration when the run's recorded duration and the stream clock
+/// disagree.
+fn finalize_open_tool_steps(tool_steps: &mut [ToolCallStep], end_ms: u64) -> usize {
+    let mut stamped = 0;
+    for step in tool_steps.iter_mut().filter(|s| s.ended_at_ms.is_none()) {
+        let end = end_ms.max(step.started_at_ms);
+        step.ended_at_ms = Some(end);
+        step.duration_ms = Some(end.saturating_sub(step.started_at_ms));
+        stamped += 1;
+    }
+    stamped
+}
+
 #[cfg(test)]
 mod tests {
-    use super::DEFAULT_EXECUTION_TIMEOUT_MS;
+    use super::{
+        close_newest_open_tool_step, finalize_open_tool_steps, ToolCallStep,
+        DEFAULT_EXECUTION_TIMEOUT_MS,
+    };
+
+    fn step(step_index: u32, tool_name: &str, started_at_ms: u64) -> ToolCallStep {
+        ToolCallStep {
+            step_index,
+            tool_name: tool_name.to_string(),
+            input_preview: String::new(),
+            output_preview: String::new(),
+            started_at_ms,
+            ended_at_ms: None,
+            duration_ms: None,
+        }
+    }
+
+    /// Two tools dispatched before either result lands — the shape Claude Code
+    /// produces for a Bash + Read turn. The old `last_mut()` peek closed B and
+    /// then no-opped on A, leaving A open forever.
+    #[test]
+    fn two_parallel_tool_calls_both_close() {
+        let mut steps = vec![step(0, "Bash", 100), step(1, "Read", 120)];
+
+        assert!(close_newest_open_tool_step(&mut steps, 300, "read output"));
+        assert!(close_newest_open_tool_step(&mut steps, 500, "bash output"));
+
+        assert_eq!(steps[1].ended_at_ms, Some(300), "newest open closes first");
+        assert_eq!(steps[1].duration_ms, Some(180));
+        assert_eq!(steps[1].output_preview, "read output");
+        assert_eq!(
+            steps[0].ended_at_ms,
+            Some(500),
+            "the older open step must not be skipped because a newer one is closed"
+        );
+        assert_eq!(steps[0].duration_ms, Some(400));
+        assert_eq!(steps[0].output_preview, "bash output");
+    }
+
+    #[test]
+    fn a_result_with_no_open_step_closes_nothing() {
+        let mut steps = vec![step(0, "Bash", 100)];
+        assert!(close_newest_open_tool_step(&mut steps, 200, "first"));
+        assert!(!close_newest_open_tool_step(&mut steps, 400, "stray"));
+        assert_eq!(
+            steps[0].ended_at_ms,
+            Some(200),
+            "an already-closed step is never reopened"
+        );
+        assert_eq!(steps[0].output_preview, "first");
+    }
+
+    /// `&s[..500]` panics when byte 500 lands inside a multi-byte char.
+    #[test]
+    fn oversized_multibyte_output_truncates_without_panicking() {
+        let mut steps = vec![step(0, "Bash", 0)];
+        let preview = "≤".repeat(400); // 1200 bytes, 400 chars
+        assert!(close_newest_open_tool_step(&mut steps, 10, &preview));
+        assert_eq!(
+            steps[0].output_preview.chars().count(),
+            403,
+            "400 chars fit under the 500-CHAR take; the byte length is what tripped the cap"
+        );
+    }
+
+    #[test]
+    fn finalizer_stamps_only_the_steps_the_stream_left_open() {
+        let mut steps = vec![
+            step(0, "Bash", 100),
+            step(1, "Read", 200),
+            step(2, "Edit", 900),
+        ];
+        steps[1].ended_at_ms = Some(400);
+        steps[1].duration_ms = Some(200);
+
+        assert_eq!(finalize_open_tool_steps(&mut steps, 1_000), 2);
+
+        assert_eq!(steps[0].ended_at_ms, Some(1_000));
+        assert_eq!(steps[0].duration_ms, Some(900));
+        assert_eq!(
+            steps[1].ended_at_ms,
+            Some(400),
+            "a closed step keeps its own end"
+        );
+        assert_eq!(steps[1].duration_ms, Some(200));
+        assert_eq!(steps[2].ended_at_ms, Some(1_000));
+        assert_eq!(steps[2].duration_ms, Some(100));
+
+        assert_eq!(
+            finalize_open_tool_steps(&mut steps, 2_000),
+            0,
+            "finalizing twice must be a no-op — nothing is left open"
+        );
+    }
+
+    /// A step that started after the recorded run end (clock skew between the
+    /// stream's monotonic elapsed time and the persisted duration) must not
+    /// produce a step that ends before it began.
+    #[test]
+    fn finalizer_never_writes_a_negative_duration() {
+        let mut steps = vec![step(0, "Bash", 5_000)];
+        assert_eq!(finalize_open_tool_steps(&mut steps, 1_000), 1);
+        assert_eq!(steps[0].ended_at_ms, Some(5_000));
+        assert_eq!(steps[0].duration_ms, Some(0));
+    }
 
     /// Defensive guard: the fallback must stay above the Claude Code CLI
     /// 2.1.113 subagent-stall cutoff (10 minutes). See handoff T6 in

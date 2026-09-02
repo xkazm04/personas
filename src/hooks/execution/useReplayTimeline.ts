@@ -34,6 +34,8 @@ export interface ReplayState {
   allLines: TimelineLogLine[];
   /** Tool steps completed by current position. */
   completedSteps: ToolCallStep[];
+  /** Every step with the window the replay treats it as occupying. */
+  stepSpans: ToolStepSpan[];
   /** Currently active tool step (started but not ended). */
   activeStep: ToolCallStep | null;
   /** Tool steps not yet started. */
@@ -67,9 +69,59 @@ export interface ReplayActions {
   setForkPoint: (stepIndex: number | null) => void;
 }
 
-function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
+/**
+ * Normalize the `tool_steps` column into an array.
+ *
+ * The column is typed `Vec<ToolCallStep>` in Rust but arrives through a JSON
+ * blob, so a legacy or hand-edited row can be anything at all; everything
+ * downstream indexes it, so the narrowing happens once, here.
+ *
+ * Exported because `trace/stageColors.ts` carries a byte-identical private
+ * copy of it — the two must not drift, and this is the one with tests.
+ */
+export function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
   if (!raw) return [];
   return Array.isArray(raw) ? raw : [];
+}
+
+/** A tool step plus the window the replay actually treats it as occupying. */
+export interface ToolStepSpan {
+  step: ToolCallStep;
+  start_ms: number;
+  /** `ended_at_ms` when the record has one; otherwise an inferred bound. */
+  end_ms: number;
+  /** True when `ended_at_ms` was absent and `end_ms` is inferred. */
+  inferred_end: boolean;
+}
+
+/**
+ * Give every step a bounded window, including the ones the record never closed.
+ *
+ * A step with `ended_at_ms == null` used to satisfy `activeStep`'s predicate
+ * for EVERY later scrub position, so one unclosed step mid-list masked every
+ * step after it, kept itself out of `completedSteps` forever, and left
+ * `accumulatedCost` short of `totalCost` at the End marker. On the two DB
+ * snapshots behind the writer-side fix that was 240 of 2,998 persisted steps
+ * (8.0%), across 80 of 252 executions (31.7%) — and 239 of the 240 were
+ * mid-list, i.e. exactly the masking case.
+ *
+ * The runner now closes steps as they finish and stamps any straggler at
+ * persist time, so new rows arrive closed. This is what makes the ~80 historical
+ * executions readable: an unclosed step is treated as running only until the
+ * NEXT step starts — the last moment the record can support — and, for the
+ * final step, until the end of the run.
+ */
+export function buildToolStepSpans(steps: ToolCallStep[], totalMs: number): ToolStepSpan[] {
+  return steps.map((step, i) => {
+    const start_ms = Number(step.started_at_ms);
+    if (step.ended_at_ms != null) {
+      return { step, start_ms, end_ms: Number(step.ended_at_ms), inferred_end: false };
+    }
+    const nextStart = steps[i + 1] != null ? Number(steps[i + 1]!.started_at_ms) : null;
+    // Never before its own start: a malformed row must not invert the window.
+    const bound = Math.max(nextStart ?? totalMs, start_ms);
+    return { step, start_ms, end_ms: bound, inferred_end: true };
+  });
 }
 
 function buildTimelineLines(logContent: string | null, totalMs: number): TimelineLogLine[] {
@@ -85,7 +137,7 @@ function buildTimelineLines(logContent: string | null, totalMs: number): Timelin
 }
 
 /** Upper-bound binary search: count of lines with timestamp_ms <= cutoffMs (lines are sorted). */
-function countVisibleLines(lines: TimelineLogLine[], cutoffMs: number): number {
+export function countVisibleLines(lines: TimelineLogLine[], cutoffMs: number): number {
   let lo = 0;
   let hi = lines.length;
   while (lo < hi) {
@@ -136,20 +188,25 @@ export function useReplayTimeline(
     [allLines, visibleCount],
   );
 
-  // Derive tool step states at current position
+  // Derive tool step states at current position. Everything below reads the
+  // spans rather than `ended_at_ms` directly, so an unclosed historical step
+  // is bounded instead of swallowing the rest of the timeline.
+  const stepSpans = useMemo(() => buildToolStepSpans(toolSteps, totalMs), [toolSteps, totalMs]);
+
   const completedSteps = useMemo(
-    () => toolSteps.filter((s) => s.ended_at_ms != null && s.ended_at_ms <= currentMs),
-    [toolSteps, currentMs],
+    () => stepSpans.filter((s) => s.end_ms <= currentMs).map((s) => s.step),
+    [stepSpans, currentMs],
   );
 
-  const activeStep = useMemo(
-    () => toolSteps.find((s) => s.started_at_ms <= currentMs && (s.ended_at_ms == null || s.ended_at_ms > currentMs)) ?? null,
-    [toolSteps, currentMs],
+  const activeSpan = useMemo(
+    () => stepSpans.find((s) => s.start_ms <= currentMs && s.end_ms > currentMs) ?? null,
+    [stepSpans, currentMs],
   );
+  const activeStep = activeSpan?.step ?? null;
 
   const pendingSteps = useMemo(
-    () => toolSteps.filter((s) => s.started_at_ms > currentMs),
-    [toolSteps, currentMs],
+    () => stepSpans.filter((s) => s.start_ms > currentMs).map((s) => s.step),
+    [stepSpans, currentMs],
   );
 
   // Proportional cost accumulation
@@ -158,11 +215,11 @@ export function useReplayTimeline(
     // Weight cost by tool step completion
     if (toolSteps.length === 0) return (currentMs / totalMs) * totalCost;
     const completedFraction = completedSteps.length / toolSteps.length;
-    const activeFraction = activeStep
-      ? ((currentMs - Number(activeStep.started_at_ms)) / Math.max(Number(activeStep.ended_at_ms ?? totalMs) - Number(activeStep.started_at_ms), 1)) / toolSteps.length
+    const activeFraction = activeSpan
+      ? ((currentMs - activeSpan.start_ms) / Math.max(activeSpan.end_ms - activeSpan.start_ms, 1)) / toolSteps.length
       : 0;
     return (completedFraction + activeFraction) * totalCost;
-  }, [totalMs, totalCost, toolSteps, completedSteps, activeStep, currentMs]);
+  }, [totalMs, totalCost, toolSteps, completedSteps, activeSpan, currentMs]);
 
   // Playback animation loop. Time is accumulated per rAF for accuracy, but
   // state flushes are throttled (PLAYBACK_FLUSH_MS) so the replay view does
@@ -198,12 +255,12 @@ export function useReplayTimeline(
   // Tool step boundaries for stepping
   const boundaries = useMemo(() => {
     const pts = new Set<number>([0, totalMs]);
-    for (const s of toolSteps) {
-      pts.add(Number(s.started_at_ms));
-      if (s.ended_at_ms != null) pts.add(Number(s.ended_at_ms));
+    for (const s of stepSpans) {
+      pts.add(s.start_ms);
+      pts.add(s.end_ms);
     }
     return Array.from(pts).sort((a, b) => a - b);
-  }, [toolSteps, totalMs]);
+  }, [stepSpans, totalMs]);
 
   const scrubTo = useCallback((ms: number) => {
     setCurrentMs(Math.max(0, Math.min(ms, totalMs)));
@@ -234,6 +291,7 @@ export function useReplayTimeline(
     visibleLines,
     allLines,
     completedSteps,
+    stepSpans,
     activeStep,
     pendingSteps,
     accumulatedCost,
