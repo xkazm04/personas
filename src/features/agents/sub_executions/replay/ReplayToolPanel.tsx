@@ -56,7 +56,7 @@ export function ReplayToolPanel({
                 <span className={`typo-code tabular-nums ${
                   isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-foreground'
                 }`}>
-                  {step.step_index + 1}
+                  {step.step_index}
                 </span>
 
                 {/* Status indicator */}
@@ -94,7 +94,7 @@ export function ReplayToolPanel({
                   type="button"
                   onClick={() => onFork(isFork ? null : step.step_index)}
                   className="absolute inset-0 rounded-card"
-                  title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index + 1 })}
+                  title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index })}
                 />
               )}
             </div>

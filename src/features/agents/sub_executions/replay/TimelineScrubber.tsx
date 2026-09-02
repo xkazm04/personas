@@ -123,7 +123,7 @@ export function TimelineScrubber({
           return (
             <Tooltip
               key={s.step_index}
-              content={tx(t.agents.executions.step_tooltip, { step: s.step_index + 1, name: s.tool_name })}
+              content={tx(t.agents.executions.step_tooltip, { step: s.step_index, name: s.tool_name })}
               placement="bottom"
             >
               <div

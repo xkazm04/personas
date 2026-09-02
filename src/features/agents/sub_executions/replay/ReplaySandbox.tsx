@@ -112,7 +112,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
 
     const forkInput = JSON.stringify({
       ...parsedInput,
-      __fork_context: `Continuing from step ${state.forkPoint! + 1}. Previous tool results:\n${context}`,
+      __fork_context: `Continuing from step ${state.forkPoint!}. Previous tool results:\n${context}`,
       __fork_source_execution: execution.id,
       __fork_step_index: state.forkPoint,
     }, null, 2);

@@ -126,7 +126,7 @@ export function ReplayTransportControls({
               onClick={onFork}
               className="bg-amber-500/15 text-amber-400 border-amber-500/25 hover:bg-amber-500/25"
             >
-              {tx(e.fork_after_step, { step: forkPoint + 1 })}
+              {tx(e.fork_after_step, { step: forkPoint })}
             </Button>
           </div>
         )}

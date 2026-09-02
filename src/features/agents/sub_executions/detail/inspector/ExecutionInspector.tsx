@@ -69,7 +69,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                   isActive ? 'bg-primary/10 border-l-2 border-l-primary' : 'hover:bg-secondary/40 border-l-2 border-l-transparent'
                 }`}
               >
-                <span className="typo-code text-foreground w-4 text-right flex-shrink-0">{step.step_index + 1}</span>
+                <span className="typo-code text-foreground w-4 text-right flex-shrink-0">{step.step_index}</span>
                 <span className="typo-code font-medium text-foreground/90 truncate flex-1">{step.tool_name}</span>
                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-code border flex-shrink-0 ${durationColor(durMs)}`}>
                   <Clock className="w-2.5 h-2.5" />
