@@ -12,7 +12,6 @@ techniques:
 evidence:
   - src/features/agents/sub_executions/replay/ReplaySandbox.tsx            # the replay surface: scrubber + transport over a settled execution's tool steps and log; keyboard grammar deferring to the slider; ended-not-closed
   - src/hooks/execution/useReplayTimeline.ts                               # the mapping: playhead in ms-from-start, viewer-time × speed accumulation with throttled flush, positional release by binary search, boundary stepping, proportional cost accrual
-  - src/hooks/realtime/useTimelineReplay.ts                                # second transport (persona-event range replay): seek stops the loop mid-seek, re-indexes by binary search, clears stale presentation, resumes only if it was playing — currently orphaned (zero importers)
   - src/features/agents/sub_executions/replay/ReplayCostPanel.tsx          # accrual disclosed at the datum: "~" prefix on the accruing cost, unprefixed settled total, with the convention stated in-source
   - src/features/agents/sub_executions/replay/CostAccrualOverlay.tsx       # the honest comment: curve SHAPE is always a proportional reconstruction regardless of the trace's per-trace isSynthetic badge — two different facts, only one labeled
   - src/features/agents/sub_executions/replay/TimelineScrubber.tsx         # rAF-coalesced pointer scrub, real slider semantics (role/aria-valuetext), recorded tool-step markers on the track

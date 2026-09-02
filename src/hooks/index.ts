@@ -43,7 +43,6 @@ export * from "./execution/useFileChanges";
 export { useStructuredStream, type StreamHandlers } from "./execution/useStructuredStream";
 
 // Realtime hooks
-export * from "./realtime/useRealtimeEvents";
 export * from "./realtime/useReportCreatedListener";
 
 // Database hooks
