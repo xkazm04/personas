@@ -22,6 +22,28 @@ const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent 
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
+/** Hard ceiling on the live buffer. */
+const BUFFER_CAP = 200;
+
+/**
+ * Merge the mount-time backfill snapshot UNDER the rows the bus already
+ * delivered, instead of replacing them. Everything in `live` arrived after the
+ * request left, so it is strictly newer than the snapshot and its copy of any
+ * repeated id is at least as fresh. Exported for test.
+ */
+export function mergeBackfillIntoLiveBuffer(
+  live: PersonaEvent[],
+  backfill: PersonaEvent[],
+  cap = BUFFER_CAP,
+): PersonaEvent[] {
+  if (live.length === 0) {
+    return backfill.length > cap ? backfill.slice(0, cap) : backfill;
+  }
+  const liveIds = new Set(live.map((e) => e.id));
+  const merged = [...live, ...backfill.filter((e) => !liveIds.has(e.id))];
+  return merged.length > cap ? merged.slice(0, cap) : merged;
+}
+
 export function LiveStreamTab() {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
@@ -110,14 +132,22 @@ export function LiveStreamTab() {
   // buffer with the fresh top-100, discarding up-to-200 already-buffered live
   // events. useEventBusListener below carries all subsequent updates, so the
   // backfill genuinely only needs to run once.
+  //
+  // Removing the `personas` dep closed every re-run of that hole but left the
+  // FIRST one: the listener is attached before this request lands, so any event
+  // the bus pushes while it is in flight was still discarded by the wholesale
+  // assign. The snapshot is now MERGED under the live rows — they are strictly
+  // newer than it, and their status is at least as fresh for any id it repeats.
   useEffect(() => {
     let stale = false;
-    listEvents(100).then((recentEvents) => {
-      if (!stale) {
-        eventIdIndex.current = new Set(recentEvents.map((e) => e.id));
-        setEvents(recentEvents);
-        setIsLoading(false);
-      }
+    listEvents(100).then((backfill) => {
+      if (stale) return;
+      setEvents((live) => {
+        const capped = mergeBackfillIntoLiveBuffer(live, backfill);
+        eventIdIndex.current = new Set(capped.map((e) => e.id));
+        return capped;
+      });
+      setIsLoading(false);
     }).catch((err) => {
       silentCatch("features/triggers/sub_live_stream/LiveStreamTab:listEvents")(err);
       if (!stale) setIsLoading(false);

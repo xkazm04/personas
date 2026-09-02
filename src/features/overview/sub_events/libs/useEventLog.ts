@@ -88,8 +88,10 @@ export function useEventLog() {
     let active = true;
     // Two-stage cold load: paint the first FIRST_PAINT_LIMIT rows as soon as
     // the fast small query lands, then backfill the full INITIAL_LIMIT window
-    // in an idle slot. fetchRecentEvents replaces the store list wholesale, so
-    // stage 2 is a superset swap — rows already on screen never disappear.
+    // in an idle slot. fetchRecentEvents MERGES each snapshot by id (it used to
+    // assign wholesale), so neither stage can drop a row already on screen —
+    // including the live events the bus pushes while either request is in
+    // flight, which the wholesale assign silently discarded twice per mount.
     const load = async () => {
       setIsFetching(true);
       try {
