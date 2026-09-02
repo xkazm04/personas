@@ -575,5 +575,10 @@
   "conv_queued_sending": "送信中…",
   "conv_queued_waiting": "待機中",
   "conv_rail_resize": "ドラッグしてパネルのサイズを変更",
-  "conv_sidebar_resize": "ドラッグしてプロジェクトサイドバーのサイズを変更"
+  "conv_sidebar_resize": "ドラッグしてプロジェクトサイドバーのサイズを変更",
+  "feed_as_of": "データの時点",
+  "feed_error_health": "ペルソナの状態を読み取れなかったため、タイルが古い状態を示している可能性があります。",
+  "feed_error_messages": "レポートを読み取れなかったため、未読数が少なく表示されている可能性があります。",
+  "feed_error_title": "このボードの一部が欠けています",
+  "feed_never": "なし"
 }

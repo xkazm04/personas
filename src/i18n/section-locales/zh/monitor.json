@@ -575,5 +575,10 @@
   "conv_queued_sending": "发送中…",
   "conv_queued_waiting": "已排队",
   "conv_rail_resize": "拖动以调整面板大小",
-  "conv_sidebar_resize": "拖动以调整项目侧栏大小"
+  "conv_sidebar_resize": "拖动以调整项目侧栏大小",
+  "feed_as_of": "数据截至",
+  "feed_error_health": "无法读取人格健康状态，磁贴可能显示过期状态。",
+  "feed_error_messages": "无法读取报告，未读计数可能偏少。",
+  "feed_error_title": "此面板缺少部分数据",
+  "feed_never": "从未"
 }

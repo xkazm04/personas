@@ -576,7 +576,12 @@
     "conv_queued_sending": "भेजा जा रहा है…",
     "conv_queued_waiting": "कतार में",
     "conv_rail_resize": "पैनल का आकार बदलने के लिए खींचें",
-    "conv_sidebar_resize": "प्रोजेक्ट साइडबार का आकार बदलने के लिए खींचें"
+    "conv_sidebar_resize": "प्रोजेक्ट साइडबार का आकार बदलने के लिए खींचें",
+    "feed_as_of": "डेटा इस समय तक का",
+    "feed_error_health": "पर्सोना की स्थिति पढ़ी नहीं जा सकी, इसलिए टाइलें पुरानी स्थिति दिखा सकती हैं।",
+    "feed_error_messages": "रिपोर्ट पढ़ी नहीं जा सकीं, इसलिए अपठित गिनती कम हो सकती है।",
+    "feed_error_title": "इस बोर्ड का एक हिस्सा गायब है",
+    "feed_never": "कभी नहीं"
   },
   "common": {
     "loading": "लोड हो रहा है…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "टोकन",
       "monitor_totals_working": "चालू",
       "monitor_view_switcher_aria": "ग्रिड दृश्य",
-      "monitor_waiting_minutes": "{count} मि से प्रतीक्षा"
+      "monitor_waiting_minutes": "{count} मि से प्रतीक्षा",
+      "broadcast_append_suffix": "ताकि Claude उसे तुरंत सबमिट करे",
+      "broadcast_no_sessions": "कोई सक्रिय सत्र नहीं",
+      "broadcast_placeholder": "चयनित सत्रों में प्रसारित करने के लिए प्रॉम्प्ट लिखें…",
+      "broadcast_targets_count": "लक्ष्य ({selected}/{total})",
+      "broadcast_title": "प्रॉम्प्ट प्रसारित करें",
+      "broadcast_waiting_count": "प्रतीक्षारत ({count})"
     },
     "title": "प्लगइन",
     "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",

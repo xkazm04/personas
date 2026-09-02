@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "token",
     "monitor_totals_working": "运行中",
     "monitor_view_switcher_aria": "网格视图",
-    "monitor_waiting_minutes": "已等待 {count} 分"
+    "monitor_waiting_minutes": "已等待 {count} 分",
+    "broadcast_append_suffix": "以便 Claude 立即提交",
+    "broadcast_no_sessions": "没有活动会话",
+    "broadcast_placeholder": "输入要广播到所选会话的提示词…",
+    "broadcast_targets_count": "目标 ({selected}/{total})",
+    "broadcast_title": "广播提示词",
+    "broadcast_waiting_count": "等待中 ({count})"
   },
   "title": "插件",
   "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

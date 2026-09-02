@@ -576,7 +576,12 @@
     "grid_session_recap_started": "Started",
     "grid_session_recap_last_activity": "Last activity",
     "grid_session_recap_state_reason": "State reason",
-    "grid_session_recap_truncated": "Read from the end of the transcript — anything older was not scanned."
+    "grid_session_recap_truncated": "Read from the end of the transcript — anything older was not scanned.",
+    "feed_error_title": "Part of this board is missing",
+    "feed_error_messages": "Reports could not be read, so unread counts may be short.",
+    "feed_error_health": "Persona health could not be read, so tiles may show a stale state.",
+    "feed_as_of": "Showing data as of",
+    "feed_never": "never"
   },
   "common": {
     "unknown_error": "Unknown error",
@@ -14154,7 +14159,13 @@
       "harvest_files": "files",
       "harvest_files_tooltip": "Distinct files this session edited or wrote",
       "harvest_turns": "turns",
-      "harvest_tokens": "tokens"
+      "harvest_tokens": "tokens",
+      "broadcast_title": "Broadcast prompt",
+      "broadcast_placeholder": "Type the prompt to broadcast to the selected sessions…",
+      "broadcast_append_suffix": "so Claude submits immediately",
+      "broadcast_targets_count": "Targets ({selected}/{total})",
+      "broadcast_waiting_count": "Waiting ({count})",
+      "broadcast_no_sessions": "No active sessions"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

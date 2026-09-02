@@ -583,6 +583,11 @@ export type Translations = {
     grid_session_recap_last_activity: string;
     grid_session_recap_state_reason: string;
     grid_session_recap_truncated: string;
+    feed_error_title: string;
+    feed_error_messages: string;
+    feed_error_health: string;
+    feed_as_of: string;
+    feed_never: string;
   };
   common: {
     unknown_error: string;
@@ -14161,6 +14166,12 @@ export type Translations = {
       harvest_files_tooltip: string;
       harvest_turns: string;
       harvest_tokens: string;
+      broadcast_title: string;
+      broadcast_placeholder: string;
+      broadcast_append_suffix: string;
+      broadcast_targets_count: string;
+      broadcast_waiting_count: string;
+      broadcast_no_sessions: string;
     };
     title: string;
     subtitle: string;

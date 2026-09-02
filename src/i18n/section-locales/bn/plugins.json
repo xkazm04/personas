@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "টোকেন",
     "monitor_totals_working": "চলছে",
     "monitor_view_switcher_aria": "গ্রিড ভিউ",
-    "monitor_waiting_minutes": "{count} মি ধরে অপেক্ষায়"
+    "monitor_waiting_minutes": "{count} মি ধরে অপেক্ষায়",
+    "broadcast_append_suffix": "যাতে Claude সঙ্গে সঙ্গে জমা দেয়",
+    "broadcast_no_sessions": "কোনো সক্রিয় সেশন নেই",
+    "broadcast_placeholder": "নির্বাচিত সেশনগুলিতে ব্রডকাস্ট করার প্রম্পট লিখুন…",
+    "broadcast_targets_count": "লক্ষ্য ({selected}/{total})",
+    "broadcast_title": "প্রম্পট ব্রডকাস্ট",
+    "broadcast_waiting_count": "অপেক্ষমাণ ({count})"
   },
   "title": "প্লাগিন",
   "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",

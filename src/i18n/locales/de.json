@@ -576,7 +576,12 @@
     "conv_queued_sending": "Wird gesendet…",
     "conv_queued_waiting": "In Warteschlange",
     "conv_rail_resize": "Ziehen, um das Panel zu vergrößern",
-    "conv_sidebar_resize": "Ziehen, um die Projekt-Seitenleiste zu vergrößern"
+    "conv_sidebar_resize": "Ziehen, um die Projekt-Seitenleiste zu vergrößern",
+    "feed_as_of": "Daten mit Stand",
+    "feed_error_health": "Der Persona-Zustand konnte nicht gelesen werden, Kacheln zeigen möglicherweise einen veralteten Stand.",
+    "feed_error_messages": "Berichte konnten nicht gelesen werden, die Ungelesen-Zähler können zu niedrig sein.",
+    "feed_error_title": "Ein Teil dieser Übersicht fehlt",
+    "feed_never": "nie"
   },
   "common": {
     "loading": "Laden…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "Token",
       "monitor_totals_working": "arbeitet",
       "monitor_view_switcher_aria": "Rasteransicht",
-      "monitor_waiting_minutes": "wartet {count}m"
+      "monitor_waiting_minutes": "wartet {count}m",
+      "broadcast_append_suffix": "damit Claude ihn sofort absendet",
+      "broadcast_no_sessions": "Keine aktiven Sitzungen",
+      "broadcast_placeholder": "Prompt eingeben, der an die ausgewählten Sitzungen gesendet wird…",
+      "broadcast_targets_count": "Ziele ({selected}/{total})",
+      "broadcast_title": "Prompt senden",
+      "broadcast_waiting_count": "Wartend ({count})"
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

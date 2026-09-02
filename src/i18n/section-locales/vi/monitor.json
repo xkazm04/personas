@@ -575,5 +575,10 @@
   "conv_queued_sending": "Đang gửi…",
   "conv_queued_waiting": "Đang chờ",
   "conv_rail_resize": "Kéo để đổi kích thước bảng",
-  "conv_sidebar_resize": "Kéo để đổi kích thước thanh bên dự án"
+  "conv_sidebar_resize": "Kéo để đổi kích thước thanh bên dự án",
+  "feed_as_of": "Dữ liệu tính đến",
+  "feed_error_health": "Không đọc được tình trạng persona, nên các ô có thể hiển thị trạng thái cũ.",
+  "feed_error_messages": "Không đọc được báo cáo, nên số chưa đọc có thể bị thiếu.",
+  "feed_error_title": "Một phần bảng này bị thiếu",
+  "feed_never": "chưa bao giờ"
 }

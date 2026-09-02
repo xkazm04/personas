@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "tokens",
     "monitor_totals_working": "en cours",
     "monitor_view_switcher_aria": "Vue grille",
-    "monitor_waiting_minutes": "attend {count}m"
+    "monitor_waiting_minutes": "attend {count}m",
+    "broadcast_append_suffix": "pour que Claude le soumette immédiatement",
+    "broadcast_no_sessions": "Aucune session active",
+    "broadcast_placeholder": "Saisissez le prompt à diffuser aux sessions sélectionnées…",
+    "broadcast_targets_count": "Cibles ({selected}/{total})",
+    "broadcast_title": "Diffuser un prompt",
+    "broadcast_waiting_count": "En attente ({count})"
   },
   "title": "Extensions",
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

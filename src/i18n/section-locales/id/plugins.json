@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "token",
     "monitor_totals_working": "bekerja",
     "monitor_view_switcher_aria": "Tampilan kisi",
-    "monitor_waiting_minutes": "menunggu {count}m"
+    "monitor_waiting_minutes": "menunggu {count}m",
+    "broadcast_append_suffix": "agar Claude langsung mengirimkannya",
+    "broadcast_no_sessions": "Tidak ada sesi aktif",
+    "broadcast_placeholder": "Ketik prompt yang akan disiarkan ke sesi terpilih…",
+    "broadcast_targets_count": "Target ({selected}/{total})",
+    "broadcast_title": "Siarkan prompt",
+    "broadcast_waiting_count": "Menunggu ({count})"
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

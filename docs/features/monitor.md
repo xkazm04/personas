@@ -82,7 +82,27 @@ fleet state palette. Teamless sessions and personas share the Ungrouped tray.
 The System band (persona-less app-level processes) sits above the board.
 
 > The former per-project columns view (MonitorProjectColumns) was descoped
-> 2026-08-26; its operation badges migrated onto the Activity squares.
+> 2026-08-26; its operation badges migrated onto the Activity squares. Its
+> three orphaned files were deleted 2026-09-02.
+
+**The board says when it cannot read its data (2026-09-02).** The three feeds
+behind the board (pending reviews, unread messages, persona health) used to
+fail into silence — a log line, then a fleet of idle-grey tiles that read as
+"your fleet is calm". A warning strip (`MonitorFeedStatus`) now sits above the
+board naming each feed that failed and stamping the picture with "as of" the
+**oldest** successful read across the feeds, so one healthy feed cannot make a
+stale board look fresh. The strip renders nothing when every feed answered;
+the rows underneath are never replaced by it. A quick-execute from the
+Capabilities tab that fails now toasts instead of spinning back to idle.
+
+**Messages arrive on the event, not the poll (2026-09-02).** A persona's new
+report lights its tile the moment the row lands: the board listens on the same
+`report-created` event the Overview report list uses (one shared
+subscription), and the 30-second poll stays as the fallback. A burst of
+reports costs at most two reads. An unchanged poll is also free all the way
+down now — messages and persona-health keep their array/record identity when
+nothing moved, so an idle fleet no longer re-sorts and re-renders every tile
+twice a minute.
 
 ### Timeline
 

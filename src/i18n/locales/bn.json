@@ -576,7 +576,12 @@
     "conv_queued_sending": "পাঠানো হচ্ছে…",
     "conv_queued_waiting": "সারিতে",
     "conv_rail_resize": "প্যানেলের আকার বদলাতে টানুন",
-    "conv_sidebar_resize": "প্রজেক্ট সাইডবারের আকার বদলাতে টানুন"
+    "conv_sidebar_resize": "প্রজেক্ট সাইডবারের আকার বদলাতে টানুন",
+    "feed_as_of": "ডেটা দেখানো হচ্ছে যে সময়ের",
+    "feed_error_health": "পারসোনার স্বাস্থ্য পড়া যায়নি, তাই টাইলগুলি পুরোনো অবস্থা দেখাতে পারে।",
+    "feed_error_messages": "রিপোর্ট পড়া যায়নি, তাই অপঠিত সংখ্যা কম দেখাতে পারে।",
+    "feed_error_title": "এই বোর্ডের একটি অংশ অনুপস্থিত",
+    "feed_never": "কখনও নয়"
   },
   "common": {
     "loading": "লোড হচ্ছে…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "টোকেন",
       "monitor_totals_working": "চলছে",
       "monitor_view_switcher_aria": "গ্রিড ভিউ",
-      "monitor_waiting_minutes": "{count} মি ধরে অপেক্ষায়"
+      "monitor_waiting_minutes": "{count} মি ধরে অপেক্ষায়",
+      "broadcast_append_suffix": "যাতে Claude সঙ্গে সঙ্গে জমা দেয়",
+      "broadcast_no_sessions": "কোনো সক্রিয় সেশন নেই",
+      "broadcast_placeholder": "নির্বাচিত সেশনগুলিতে ব্রডকাস্ট করার প্রম্পট লিখুন…",
+      "broadcast_targets_count": "লক্ষ্য ({selected}/{total})",
+      "broadcast_title": "প্রম্পট ব্রডকাস্ট",
+      "broadcast_waiting_count": "অপেক্ষমাণ ({count})"
     },
     "title": "প্লাগিন",
     "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",

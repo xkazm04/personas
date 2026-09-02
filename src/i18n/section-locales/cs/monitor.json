@@ -575,5 +575,10 @@
   "conv_queued_sending": "Odesílá se…",
   "conv_queued_waiting": "Ve frontě",
   "conv_rail_resize": "Tažením změníte velikost panelu",
-  "conv_sidebar_resize": "Tažením změníte velikost postranního panelu projektů"
+  "conv_sidebar_resize": "Tažením změníte velikost postranního panelu projektů",
+  "feed_as_of": "Data ke stavu z",
+  "feed_error_health": "Stav person se nepodařilo načíst, dlaždice mohou zobrazovat zastaralý stav.",
+  "feed_error_messages": "Zprávy se nepodařilo načíst, počty nepřečtených mohou být nižší.",
+  "feed_error_title": "Část tohoto přehledu chybí",
+  "feed_never": "nikdy"
 }

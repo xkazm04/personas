@@ -575,5 +575,10 @@
   "grid_session_recap_started": "Started",
   "grid_session_recap_last_activity": "Last activity",
   "grid_session_recap_state_reason": "State reason",
-  "grid_session_recap_truncated": "Read from the end of the transcript — anything older was not scanned."
+  "grid_session_recap_truncated": "Read from the end of the transcript — anything older was not scanned.",
+  "feed_error_title": "Part of this board is missing",
+  "feed_error_messages": "Reports could not be read, so unread counts may be short.",
+  "feed_error_health": "Persona health could not be read, so tiles may show a stale state.",
+  "feed_as_of": "Showing data as of",
+  "feed_never": "never"
 }

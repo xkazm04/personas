@@ -576,7 +576,12 @@
     "conv_queued_sending": "Envoi…",
     "conv_queued_waiting": "En file d’attente",
     "conv_rail_resize": "Glisser pour redimensionner le panneau",
-    "conv_sidebar_resize": "Glisser pour redimensionner la barre des projets"
+    "conv_sidebar_resize": "Glisser pour redimensionner la barre des projets",
+    "feed_as_of": "Données en date du",
+    "feed_error_health": "La santé des personas n’a pas pu être lue, les tuiles peuvent afficher un état obsolète.",
+    "feed_error_messages": "Les rapports n’ont pas pu être lus, les compteurs de non-lus peuvent être incomplets.",
+    "feed_error_title": "Une partie de ce tableau manque",
+    "feed_never": "jamais"
   },
   "common": {
     "loading": "Chargement…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "tokens",
       "monitor_totals_working": "en cours",
       "monitor_view_switcher_aria": "Vue grille",
-      "monitor_waiting_minutes": "attend {count}m"
+      "monitor_waiting_minutes": "attend {count}m",
+      "broadcast_append_suffix": "pour que Claude le soumette immédiatement",
+      "broadcast_no_sessions": "Aucune session active",
+      "broadcast_placeholder": "Saisissez le prompt à diffuser aux sessions sélectionnées…",
+      "broadcast_targets_count": "Cibles ({selected}/{total})",
+      "broadcast_title": "Diffuser un prompt",
+      "broadcast_waiting_count": "En attente ({count})"
     },
     "title": "Extensions",
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

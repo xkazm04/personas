@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "token",
     "monitor_totals_working": "đang chạy",
     "monitor_view_switcher_aria": "Chế độ lưới",
-    "monitor_waiting_minutes": "chờ {count}p"
+    "monitor_waiting_minutes": "chờ {count}p",
+    "broadcast_append_suffix": "để Claude gửi ngay lập tức",
+    "broadcast_no_sessions": "Không có phiên đang hoạt động",
+    "broadcast_placeholder": "Nhập prompt để phát tới các phiên đã chọn…",
+    "broadcast_targets_count": "Mục tiêu ({selected}/{total})",
+    "broadcast_title": "Phát prompt",
+    "broadcast_waiting_count": "Đang chờ ({count})"
   },
   "title": "Plugin",
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

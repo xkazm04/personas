@@ -576,7 +576,12 @@
     "conv_queued_sending": "发送中…",
     "conv_queued_waiting": "已排队",
     "conv_rail_resize": "拖动以调整面板大小",
-    "conv_sidebar_resize": "拖动以调整项目侧栏大小"
+    "conv_sidebar_resize": "拖动以调整项目侧栏大小",
+    "feed_as_of": "数据截至",
+    "feed_error_health": "无法读取人格健康状态，磁贴可能显示过期状态。",
+    "feed_error_messages": "无法读取报告，未读计数可能偏少。",
+    "feed_error_title": "此面板缺少部分数据",
+    "feed_never": "从未"
   },
   "common": {
     "loading": "加载中…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "token",
       "monitor_totals_working": "运行中",
       "monitor_view_switcher_aria": "网格视图",
-      "monitor_waiting_minutes": "已等待 {count} 分"
+      "monitor_waiting_minutes": "已等待 {count} 分",
+      "broadcast_append_suffix": "以便 Claude 立即提交",
+      "broadcast_no_sessions": "没有活动会话",
+      "broadcast_placeholder": "输入要广播到所选会话的提示词…",
+      "broadcast_targets_count": "目标 ({selected}/{total})",
+      "broadcast_title": "广播提示词",
+      "broadcast_waiting_count": "等待中 ({count})"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

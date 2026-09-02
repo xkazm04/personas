@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "токены",
     "monitor_totals_working": "в работе",
     "monitor_view_switcher_aria": "Вид сетки",
-    "monitor_waiting_minutes": "ждёт {count}м"
+    "monitor_waiting_minutes": "ждёт {count}м",
+    "broadcast_append_suffix": "чтобы Claude сразу его отправил",
+    "broadcast_no_sessions": "Нет активных сессий",
+    "broadcast_placeholder": "Введите промпт для рассылки в выбранные сессии…",
+    "broadcast_targets_count": "Цели ({selected}/{total})",
+    "broadcast_title": "Разослать промпт",
+    "broadcast_waiting_count": "Ожидают ({count})"
   },
   "title": "Плагины",
   "subtitle": "Расширьте рабочее пространство плагинами. Включите для отображения в боковой панели.",

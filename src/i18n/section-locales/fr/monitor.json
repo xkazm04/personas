@@ -575,5 +575,10 @@
   "conv_queued_sending": "Envoi…",
   "conv_queued_waiting": "En file d’attente",
   "conv_rail_resize": "Glisser pour redimensionner le panneau",
-  "conv_sidebar_resize": "Glisser pour redimensionner la barre des projets"
+  "conv_sidebar_resize": "Glisser pour redimensionner la barre des projets",
+  "feed_as_of": "Données en date du",
+  "feed_error_health": "La santé des personas n’a pas pu être lue, les tuiles peuvent afficher un état obsolète.",
+  "feed_error_messages": "Les rapports n’ont pas pu être lus, les compteurs de non-lus peuvent être incomplets.",
+  "feed_error_title": "Une partie de ce tableau manque",
+  "feed_never": "jamais"
 }

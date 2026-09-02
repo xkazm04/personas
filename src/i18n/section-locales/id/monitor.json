@@ -575,5 +575,10 @@
   "conv_queued_sending": "Mengirim…",
   "conv_queued_waiting": "Dalam antrean",
   "conv_rail_resize": "Seret untuk mengubah ukuran panel",
-  "conv_sidebar_resize": "Seret untuk mengubah ukuran bilah sisi proyek"
+  "conv_sidebar_resize": "Seret untuk mengubah ukuran bilah sisi proyek",
+  "feed_as_of": "Menampilkan data per",
+  "feed_error_health": "Kesehatan persona tidak dapat dibaca, jadi ubin mungkin menampilkan status lama.",
+  "feed_error_messages": "Laporan tidak dapat dibaca, jadi jumlah belum dibaca mungkin kurang.",
+  "feed_error_title": "Sebagian papan ini hilang",
+  "feed_never": "tidak pernah"
 }

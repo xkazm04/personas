@@ -334,7 +334,13 @@
     "harvest_files": "files",
     "harvest_files_tooltip": "Distinct files this session edited or wrote",
     "harvest_turns": "turns",
-    "harvest_tokens": "tokens"
+    "harvest_tokens": "tokens",
+    "broadcast_title": "Broadcast prompt",
+    "broadcast_placeholder": "Type the prompt to broadcast to the selected sessions…",
+    "broadcast_append_suffix": "so Claude submits immediately",
+    "broadcast_targets_count": "Targets ({selected}/{total})",
+    "broadcast_waiting_count": "Waiting ({count})",
+    "broadcast_no_sessions": "No active sessions"
   },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

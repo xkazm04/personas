@@ -575,5 +575,10 @@
   "conv_queued_sending": "Enviando…",
   "conv_queued_waiting": "En cola",
   "conv_rail_resize": "Arrastra para redimensionar el panel",
-  "conv_sidebar_resize": "Arrastra para redimensionar la barra de proyectos"
+  "conv_sidebar_resize": "Arrastra para redimensionar la barra de proyectos",
+  "feed_as_of": "Datos a fecha de",
+  "feed_error_health": "No se pudo leer la salud de las personas, así que las fichas pueden mostrar un estado desactualizado.",
+  "feed_error_messages": "No se pudieron leer los informes, así que los no leídos pueden estar incompletos.",
+  "feed_error_title": "Falta parte de este tablero",
+  "feed_never": "nunca"
 }

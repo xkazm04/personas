@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "トークン",
     "monitor_totals_working": "実行中",
     "monitor_view_switcher_aria": "グリッド表示",
-    "monitor_waiting_minutes": "{count}分待機"
+    "monitor_waiting_minutes": "{count}分待機",
+    "broadcast_append_suffix": "Claude がすぐに送信するように",
+    "broadcast_no_sessions": "アクティブなセッションはありません",
+    "broadcast_placeholder": "選択したセッションに一斉送信するプロンプトを入力…",
+    "broadcast_targets_count": "対象 ({selected}/{total})",
+    "broadcast_title": "プロンプトを一斉送信",
+    "broadcast_waiting_count": "待機中 ({count})"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",

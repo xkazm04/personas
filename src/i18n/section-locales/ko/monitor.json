@@ -575,5 +575,10 @@
   "conv_queued_sending": "전송 중…",
   "conv_queued_waiting": "대기 중",
   "conv_rail_resize": "드래그하여 패널 크기 조정",
-  "conv_sidebar_resize": "드래그하여 프로젝트 사이드바 크기 조정"
+  "conv_sidebar_resize": "드래그하여 프로젝트 사이드바 크기 조정",
+  "feed_as_of": "데이터 기준 시각",
+  "feed_error_health": "페르소나 상태를 읽을 수 없어 타일이 오래된 상태를 표시할 수 있습니다.",
+  "feed_error_messages": "보고서를 읽을 수 없어 읽지 않음 수가 적게 표시될 수 있습니다.",
+  "feed_error_title": "이 보드의 일부가 누락되었습니다",
+  "feed_never": "없음"
 }

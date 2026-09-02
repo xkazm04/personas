@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "Token",
     "monitor_totals_working": "arbeitet",
     "monitor_view_switcher_aria": "Rasteransicht",
-    "monitor_waiting_minutes": "wartet {count}m"
+    "monitor_waiting_minutes": "wartet {count}m",
+    "broadcast_append_suffix": "damit Claude ihn sofort absendet",
+    "broadcast_no_sessions": "Keine aktiven Sitzungen",
+    "broadcast_placeholder": "Prompt eingeben, der an die ausgewählten Sitzungen gesendet wird…",
+    "broadcast_targets_count": "Ziele ({selected}/{total})",
+    "broadcast_title": "Prompt senden",
+    "broadcast_waiting_count": "Wartend ({count})"
   },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

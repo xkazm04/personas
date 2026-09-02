@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "토큰",
     "monitor_totals_working": "작업 중",
     "monitor_view_switcher_aria": "그리드 보기",
-    "monitor_waiting_minutes": "{count}분 대기"
+    "monitor_waiting_minutes": "{count}분 대기",
+    "broadcast_append_suffix": "Claude가 즉시 제출하도록",
+    "broadcast_no_sessions": "활성 세션이 없습니다",
+    "broadcast_placeholder": "선택한 세션에 일괄 전송할 프롬프트를 입력하세요…",
+    "broadcast_targets_count": "대상 ({selected}/{total})",
+    "broadcast_title": "프롬프트 일괄 전송",
+    "broadcast_waiting_count": "대기 중 ({count})"
   },
   "title": "플러그인",
   "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

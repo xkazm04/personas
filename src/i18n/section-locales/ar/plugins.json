@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "رموز",
     "monitor_totals_working": "قيد العمل",
     "monitor_view_switcher_aria": "عرض الشبكة",
-    "monitor_waiting_minutes": "بالانتظار {count}د"
+    "monitor_waiting_minutes": "بالانتظار {count}د",
+    "broadcast_append_suffix": "ليُرسله Claude فورًا",
+    "broadcast_no_sessions": "لا توجد جلسات نشطة",
+    "broadcast_placeholder": "اكتب الموجّه لبثّه إلى الجلسات المحددة…",
+    "broadcast_targets_count": "الأهداف ({selected}/{total})",
+    "broadcast_title": "بثّ موجّه",
+    "broadcast_waiting_count": "قيد الانتظار ({count})"
   },
   "title": "الإضافات",
   "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",

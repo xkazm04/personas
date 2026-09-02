@@ -576,7 +576,12 @@
     "conv_queued_sending": "Enviando…",
     "conv_queued_waiting": "En cola",
     "conv_rail_resize": "Arrastra para redimensionar el panel",
-    "conv_sidebar_resize": "Arrastra para redimensionar la barra de proyectos"
+    "conv_sidebar_resize": "Arrastra para redimensionar la barra de proyectos",
+    "feed_as_of": "Datos a fecha de",
+    "feed_error_health": "No se pudo leer la salud de las personas, así que las fichas pueden mostrar un estado desactualizado.",
+    "feed_error_messages": "No se pudieron leer los informes, así que los no leídos pueden estar incompletos.",
+    "feed_error_title": "Falta parte de este tablero",
+    "feed_never": "nunca"
   },
   "common": {
     "loading": "Cargando…",
@@ -13899,7 +13904,13 @@
       "monitor_totals_tokens": "tokens",
       "monitor_totals_working": "trabajando",
       "monitor_view_switcher_aria": "Vista de cuadrícula",
-      "monitor_waiting_minutes": "esperando {count}m"
+      "monitor_waiting_minutes": "esperando {count}m",
+      "broadcast_append_suffix": "para que Claude lo envíe de inmediato",
+      "broadcast_no_sessions": "No hay sesiones activas",
+      "broadcast_placeholder": "Escribe el prompt que se enviará a las sesiones seleccionadas…",
+      "broadcast_targets_count": "Destinos ({selected}/{total})",
+      "broadcast_title": "Difundir prompt",
+      "broadcast_waiting_count": "En espera ({count})"
     },
     "title": "Plugins",
     "subtitle": "Amplíe su espacio de trabajo con plugins. Actívelos para mostrarlos u ocultarlos de la barra lateral.",

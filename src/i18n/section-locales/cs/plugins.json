@@ -334,7 +334,13 @@
     "monitor_totals_tokens": "tokeny",
     "monitor_totals_working": "pracuje",
     "monitor_view_switcher_aria": "Zobrazení mřížky",
-    "monitor_waiting_minutes": "čeká {count}m"
+    "monitor_waiting_minutes": "čeká {count}m",
+    "broadcast_append_suffix": "aby ho Claude hned odeslal",
+    "broadcast_no_sessions": "Žádné aktivní relace",
+    "broadcast_placeholder": "Napište prompt, který se rozešle do vybraných relací…",
+    "broadcast_targets_count": "Cíle ({selected}/{total})",
+    "broadcast_title": "Rozeslat prompt",
+    "broadcast_waiting_count": "Čeká ({count})"
   },
   "title": "Pluginy",
   "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
