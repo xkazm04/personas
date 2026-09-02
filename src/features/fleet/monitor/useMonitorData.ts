@@ -128,6 +128,44 @@ function sameReviews(a: readonly MonitorReviewItem[], b: readonly MonitorReviewI
 }
 
 /**
+ * Whether two unread-message lists say the same thing.
+ *
+ * The messages poll ran `raw.filter((m) => !m.is_read)` every 30 seconds, which
+ * allocates a fresh array whether or not anything changed — and that array is a
+ * dep of the Monitor's `buildMonitorModel` memo, so an idle fleet re-sorted
+ * itself and re-rendered every tile twice a minute for data that had not moved.
+ * Same reasoning as {@link sameReviews}, one feed over.
+ *
+ * `PersonaReport` is flat — every column is a scalar (see the ts-rs binding) —
+ * so a field-by-field compare is exact, not a heuristic, and allocates nothing.
+ */
+function sameReports(a: readonly PersonaReport[], b: readonly PersonaReport[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
+      x.persona_id !== y.persona_id ||
+      x.execution_id !== y.execution_id ||
+      x.title !== y.title ||
+      x.content !== y.content ||
+      x.content_type !== y.content_type ||
+      x.priority !== y.priority ||
+      x.is_read !== y.is_read ||
+      x.metadata !== y.metadata ||
+      x.created_at !== y.created_at ||
+      x.read_at !== y.read_at ||
+      x.thread_id !== y.thread_id ||
+      x.use_case_id !== y.use_case_id
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Which feeds the mounting surface actually RENDERS.
  *
  * This hook fuses four independent feeds and used to start four pollers
@@ -383,8 +421,19 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     try {
       const raw = await listReports(MESSAGE_SCAN_LIMIT);
       const unread = raw.filter((m) => !m.is_read);
-      messagesWarmCache = unread;
-      if (mounted.current) setUnreadMessages(unread);
+      if (mounted.current) {
+        // Keep the array we already have when nothing moved — see `sameReports`.
+        // The warm cache is written from INSIDE the updater so it always holds
+        // the exact reference the hook is serving; writing `unread` to it
+        // regardless would reintroduce the fresh identity on the next remount.
+        setUnreadMessages((prev) => {
+          const next = sameReports(prev, unread) ? prev : unread;
+          messagesWarmCache = next;
+          return next;
+        });
+      } else {
+        messagesWarmCache = unread;
+      }
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
     }

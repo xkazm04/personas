@@ -118,6 +118,55 @@ function mergeHeavyFields(prev: Persona[], incoming: Persona[]): Persona[] {
   });
 }
 
+/** Element-wise compare for the two small arrays a `PersonaHealth` carries. */
+function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+function sameHealth(a: PersonaHealth, b: PersonaHealth): boolean {
+  return (
+    a.status === b.status &&
+    a.successRate === b.successRate &&
+    a.totalRecent === b.totalRecent &&
+    a.runsToday === b.runsToday &&
+    sameList(a.recentStatuses, b.recentStatuses) &&
+    sameList(a.sparkline, b.sparkline)
+  );
+}
+
+/**
+ * Whether a freshly-built record says the same thing as the one in the store.
+ *
+ * `fetchPersonaSummaries` runs on the 30s dashboard cadence and used to `set` a
+ * brand-new object for all three of its records on EVERY call, whether or not
+ * the fleet had moved. `personaHealthMap` is the expensive one: it is a dep of
+ * the Persona Monitor's `buildMonitorModel` memo, so a new identity re-sorted
+ * the whole fleet, handed `FleetGridView` a new `cards` prop and defeated every
+ * memoized `PersonaTile` under it — twice a minute on an idle fleet, for data
+ * that had not changed. Zustand notifies on reference inequality, so returning
+ * the previous reference is what makes an unchanged poll free all the way down.
+ *
+ * Key-ordered is not required: equal key COUNT plus a lookup for each key of the
+ * previous record is order-independent and still O(n).
+ */
+function sameRecord<T>(
+  prev: Record<string, T>,
+  next: Record<string, T>,
+  eq: (a: T, b: T) => boolean,
+): boolean {
+  const prevKeys = Object.keys(prev);
+  if (prevKeys.length !== Object.keys(next).length) return false;
+  for (const key of prevKeys) {
+    if (!(key in next)) return false;
+    if (!eq(prev[key]!, next[key]!)) return false;
+  }
+  return true;
+}
+
+const identical = <T,>(a: T, b: T) => a === b;
+
 export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
   selectedPersonaId: null,
@@ -194,11 +243,20 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         lastRun[s.personaId] = s.lastRunAt;
         healthMap[s.personaId] = s.health;
       }
-      set({
-        personaTriggerCounts: triggerCounts,
-        personaLastRun: lastRun,
-        personaHealthMap: healthMap,
-      });
+      // Preserve the previous reference for any record the poll did not change
+      // (see `sameRecord`) — an unchanged 30s poll must cost its subscribers
+      // nothing.
+      set((state) => ({
+        personaTriggerCounts: sameRecord(state.personaTriggerCounts, triggerCounts, identical)
+          ? state.personaTriggerCounts
+          : triggerCounts,
+        personaLastRun: sameRecord(state.personaLastRun, lastRun, identical)
+          ? state.personaLastRun
+          : lastRun,
+        personaHealthMap: sameRecord(state.personaHealthMap, healthMap, sameHealth)
+          ? state.personaHealthMap
+          : healthMap,
+      }));
     } catch (err) {
       if (seq !== fetchSummariesSeq) return; // superseded by a newer request
       const category = classifyUnknownError(err);
