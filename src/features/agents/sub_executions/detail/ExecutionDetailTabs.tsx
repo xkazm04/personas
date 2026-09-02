@@ -65,7 +65,15 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
     ...(hasChain
       ? [{ id: 'chain' as const, label: t.agents.executions.tab_chain, icon: <Link2 className="w-3.5 h-3.5" /> }]
       : []),
-    ...(isTerminalState(executionStatus)
+    // Replay needs a run that actually STARTED, not merely one that reached a
+    // terminal status. `hasPipeline` is `!!execution.started_at`, and a run
+    // that never started has no log file and no elapsed time — so the tab
+    // opened onto an empty terminal, a dead scrubber and a playhead stuck at
+    // zero. (A run that started and was then CANCELLED still replays: it has
+    // no `duration_ms`, but `useReplayTimeline` derives the span from the
+    // log's own timestamps.) This is the honest signal available where the
+    // tabs are built; the tab strip has no access to the row's duration.
+    ...(isTerminalState(executionStatus) && hasPipeline
       ? [{ id: 'replay' as const, label: t.agents.executions.tab_replay, icon: <Play className="w-3.5 h-3.5" />, special: true }]
       : []),
   ];

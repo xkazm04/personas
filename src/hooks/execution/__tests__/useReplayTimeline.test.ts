@@ -140,6 +140,63 @@ describe('useReplayTimeline — a historical row with an unclosed mid-list step'
   });
 });
 
+describe('useReplayTimeline — recorded tempo', () => {
+  const log = [
+    '[2026-06-01T10:00:00.000Z] start',
+    '[2026-06-01T10:00:00.250Z] quick',
+    '[2026-06-01T10:04:00.250Z] after a four-minute stall',
+  ].join('\n');
+
+  it('places prefixed lines at the time they were written, not evenly', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, log, 300_000, 0));
+    const ts = result.current[0].allLines.map((l) => l.timestamp_ms);
+    expect(ts).toEqual([0, 250, 240_250]);
+    // The even apportionment this replaces would have put line 1 at 150_000.
+  });
+
+  it('surfaces the silence between two lines as a real gap', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, log, 300_000, 0));
+    expect(result.current[0].silences).toEqual([{ start_ms: 250, end_ms: 240_250 }]);
+  });
+
+  it('interpolates unprefixed continuation lines between their neighbours', () => {
+    const mixed = [
+      '[2026-06-01T10:00:00.000Z] start',
+      '  stack frame one',
+      '  stack frame two',
+      '[2026-06-01T10:00:00.300Z] done',
+    ].join('\n');
+    const { result } = renderHook(() => useReplayTimeline(null, mixed, 1_000, 0));
+    const ts = result.current[0].allLines.map((l) => l.timestamp_ms);
+    expect(ts[0]).toBe(0);
+    expect(ts[3]).toBe(300);
+    expect(ts[1]).toBeGreaterThan(0);
+    expect(ts[2]).toBeGreaterThan(ts[1]!);
+    expect(ts[2]).toBeLessThan(300);
+  });
+
+  it('falls back to even apportionment when no line carries a prefix', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, 'a\nb\nc', 1_000, 0));
+    expect(result.current[0].allLines.map((l) => l.timestamp_ms)).toEqual([0, 500, 1_000]);
+    expect(result.current[0].silences).toEqual([]);
+  });
+
+  it('still has a timeline when duration_ms is null but the log is timestamped', () => {
+    // A cancelled run has no duration; the record still knows how long it ran.
+    const { result } = renderHook(() => useReplayTimeline(null, log, null, 0));
+    expect(result.current[0].totalMs).toBe(240_250);
+    expect(result.current[0].allLines).toHaveLength(3);
+    act(() => result.current[1].jumpToEnd());
+    expect(result.current[0].visibleLines).toHaveLength(3);
+  });
+
+  it('has nothing to replay when there is neither a duration nor a timestamp', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, 'a\nb', null, 0));
+    expect(result.current[0].totalMs).toBe(0);
+    expect(result.current[0].hasTimeline).toBe(false);
+  });
+});
+
 describe('useReplayTimeline — visible window and reset', () => {
   it('reveals lines as the scrub advances', () => {
     const log = '[2026-06-01T10:00:00.000Z] a\n[2026-06-01T10:00:01.000Z] b\n[2026-06-01T10:00:02.000Z] c';
