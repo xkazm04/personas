@@ -40,6 +40,17 @@ const SESSION_STATE_KEYWORDS = new Set(['PRAGMA', 'ANALYZE']);
 // exists to offer. Keep the two lists in step.
 const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT|DROP|ALTER)\b/i;
 
+// Read-shaped writes: statements whose first token is SELECT or VALUES but
+// which the engine's own READ ONLY transaction mode refuses — `SELECT ... INTO`
+// creates a table (MySQL's `INTO OUTFILE` writes a file), `FOR UPDATE` /
+// `FOR SHARE` hold row locks to transaction end, `nextval`/`setval` advance a
+// sequence, and the pg_* / lo_* functions change engine state. Measured before
+// this scan existed, 8 of 9 such statements were dispatched as reads with no
+// confirm banner. Mirror of the backend's READ_SHAPED_WRITES
+// (src-tauri/src/engine/db_query.rs); keep the two in step. `UPDATE` (for
+// `FOR UPDATE`) is already in MUTATION_VERBS_RE.
+const READ_SHAPED_WRITES_RE = /\b(INTO|SHARE|NEXTVAL|SETVAL|LO_IMPORT|LO_EXPORT|PG_TERMINATE_BACKEND|PG_CANCEL_BACKEND)\b/i;
+
 interface StrippedSql {
   /** The statement with every literal and inert comment replaced by a space.
    *  Only meaningful when `unterminated` is false. */
@@ -228,8 +239,10 @@ export function isMutationQuery(queryText: string): boolean {
   const sep = body.text.indexOf(';');
   if (sep !== -1 && body.text.slice(sep + 1).trim().length > 0) return true;
 
-  if (leading === 'WITH' || leading === 'EXPLAIN') {
-    if (MUTATION_VERBS_RE.test(body.text)) return true;
+  // SELECT/VALUES join the scan for the read-shaped writes above: the leading
+  // keyword is exactly what those statements share with a real read.
+  if (leading === 'WITH' || leading === 'EXPLAIN' || leading === 'SELECT' || leading === 'VALUES') {
+    if (MUTATION_VERBS_RE.test(body.text) || READ_SHAPED_WRITES_RE.test(body.text)) return true;
   }
 
   return false;

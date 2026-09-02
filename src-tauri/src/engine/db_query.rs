@@ -98,7 +98,7 @@ fn inject_row_limit(query_text: &str) -> String {
     // Only bare read statements are eligible.
     let is_read = match extract_first_keyword(trimmed_end) {
         Some(ref kw) if kw == "SELECT" => true,
-        Some(ref kw) if kw == "WITH" => !cte_body_has_mutation(trimmed_end),
+        Some(ref kw) if kw == "WITH" => !body_has_mutation(trimmed_end),
         _ => false,
     };
     if !is_read {
@@ -294,6 +294,24 @@ const CTE_MUTATION_VERBS: &[&str] = &[
     "DELETE", "INSERT", "UPDATE", "MERGE", "REPLACE", "UPSERT", "TRUNCATE", "DROP", "ALTER",
 ];
 
+/// Read-shaped writes: tokens that make a `SELECT`/`VALUES`-led statement one
+/// the engine's own `READ ONLY` transaction mode refuses. `INTO` (Postgres
+/// `SELECT INTO` creates a table; MySQL `INTO OUTFILE` writes a file), `SHARE`
+/// (`FOR SHARE` row locks; `FOR UPDATE` is caught by `UPDATE` above),
+/// sequence advancement, and the engine-state functions. Seeded from the
+/// engine's definition, not from the verbs people type by hand. Mirrored by
+/// `READ_SHAPED_WRITES_RE` in the frontend `safeModeUtils.ts`.
+const READ_SHAPED_WRITES: &[&str] = &[
+    "INTO",
+    "SHARE",
+    "NEXTVAL",
+    "SETVAL",
+    "LO_IMPORT",
+    "LO_EXPORT",
+    "PG_TERMINATE_BACKEND",
+    "PG_CANCEL_BACKEND",
+];
+
 /// Output of [`strip_sql_literals`]: the executable skeleton of a statement plus
 /// the two flags a fail-closed caller needs.
 struct StrippedSql {
@@ -482,11 +500,11 @@ fn has_multiple_statements(query_text: &str) -> bool {
     stripped.text.trim().trim_end_matches(';').contains(';')
 }
 
-/// True if a `WITH`-led statement embeds a data-modifying verb in its body.
-/// Literals are stripped first, and matching is token-exact (split on
-/// non-`[A-Za-z0-9_]`) so columns like `updated_at` / `deleted` do not
-/// false-positive.
-fn cte_body_has_mutation(query_text: &str) -> bool {
+/// True if a read-led statement (`WITH`, `SELECT`, `VALUES`, `EXPLAIN`) embeds
+/// a data-modifying verb or a read-shaped write in its body. Literals are
+/// stripped first, and matching is token-exact (split on non-`[A-Za-z0-9_]`)
+/// so columns like `updated_at` / `deleted` / `shares` do not false-positive.
+fn body_has_mutation(query_text: &str) -> bool {
     let stripped = strip_sql_literals(query_text);
     // Fail CLOSED: an unreadable tail is assumed to mutate. This guard is only
     // ever consulted in order to GRANT read-only status, so "unknown" has to
@@ -499,7 +517,7 @@ fn cte_body_has_mutation(query_text: &str) -> bool {
         .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
         .any(|tok| {
             let up = tok.to_ascii_uppercase();
-            CTE_MUTATION_VERBS.contains(&up.as_str())
+            CTE_MUTATION_VERBS.contains(&up.as_str()) || READ_SHAPED_WRITES.contains(&up.as_str())
         })
 }
 
@@ -519,7 +537,7 @@ pub fn is_sqlite_read(query_text: &str) -> bool {
         None => true, // empty / comment-only — not a mutation
         Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => false,
         // A data-modifying CTE leads with WITH but is not read-only.
-        Some(ref kw) if kw == "WITH" => !cte_body_has_mutation(query_text),
+        Some(ref kw) if kw == "WITH" => !body_has_mutation(query_text),
         Some(kw) => matches!(
             kw.as_str(),
             "SELECT" | "PRAGMA" | "EXPLAIN" | "VALUES" | "ANALYZE"
@@ -543,7 +561,14 @@ pub fn is_mutation(query_text: &str) -> bool {
         Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => true, // fail-safe
         // A data-modifying CTE (`WITH ... (DELETE/INSERT/UPDATE ...)`) is a
         // mutation despite leading with WITH (bug-hunt 2026-06-07 mcp #1).
-        Some(ref kw) if kw == "WITH" => cte_body_has_mutation(query_text),
+        Some(ref kw) if kw == "WITH" => body_has_mutation(query_text),
+        // A read-shaped write (`SELECT ... INTO`, `FOR UPDATE`, `nextval(...)`)
+        // and `EXPLAIN ANALYZE <mutation>` (which executes) share their first
+        // token with a real read, so the body is scanned, as for WITH. Before
+        // this arm, 8 of 9 such statements walked through safe mode as reads.
+        Some(ref kw) if kw == "SELECT" || kw == "VALUES" || kw == "EXPLAIN" => {
+            body_has_mutation(query_text)
+        }
         Some(kw) => !matches!(
             kw.as_str(),
             // SQL read-only keywords (covers MySQL SHOW/DESCRIBE, Postgres, etc.)
@@ -3285,6 +3310,43 @@ mod tests {
         );
     }
 
+    // -- read-shaped writes (safe-mode bypass, 2026-09-02) -----------------
+
+    #[test]
+    fn test_read_shaped_writes_are_mutations() {
+        // First token SELECT/VALUES, but the engine's own READ ONLY transaction
+        // refuses every one of these. Before the body scan covered SELECT, all
+        // eight classified as reads and were dispatched with no confirm.
+        let cases = [
+            "SELECT * INTO users_backup FROM users",
+            "SELECT * FROM users INTO OUTFILE '/tmp/u.csv'",
+            "SELECT * FROM users WHERE id = 1 FOR UPDATE",
+            "SELECT * FROM users FOR SHARE",
+            "SELECT nextval('users_id_seq')",
+            "SELECT setval('users_id_seq', 1000)",
+            "VALUES (nextval('users_id_seq'))",
+            "SELECT pg_terminate_backend(1234)",
+            "EXPLAIN ANALYZE DELETE FROM users",
+        ];
+        for q in cases {
+            assert!(is_mutation(q), "must classify as a mutation: {q}");
+        }
+    }
+
+    #[test]
+    fn test_read_shaped_near_misses_stay_reads() {
+        let cases = [
+            "SELECT updated_at, deleted, inserted_by FROM users",
+            "SELECT shares FROM cap_table JOIN inventory USING (id)",
+            "SELECT * FROM t WHERE note = 'SELECT * INTO x FROM y'",
+            "SELECT * FROM t /* was: SELECT ... FOR UPDATE */",
+            "EXPLAIN ANALYZE SELECT * FROM users",
+        ];
+        for q in cases {
+            assert!(!is_mutation(q), "must stay a read: {q}");
+        }
+    }
+
     // -- comment-blind literal stripper (safe-mode bypass, 2026-08-22) -----
     //
     // INVARIANT (read this before touching `strip_sql_literals`):
@@ -3310,7 +3372,7 @@ mod tests {
             "a DELETE after a comment-hidden apostrophe must not classify as a read"
         );
         assert!(
-            cte_body_has_mutation(payload),
+            body_has_mutation(payload),
             "the CTE body guard must still see the DELETE"
         );
     }
