@@ -9,6 +9,7 @@ import { POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
@@ -161,7 +162,17 @@ export function useTitleBarTray() {
 
 /**
  * Mounts the Persona Monitor + Quick Answer popover for the dock's review and
- * monitor capsules. AnimatePresence so each overlay plays its exit fade-out
+ * monitor capsules, plus the provider circuit-breaker indicator.
+ *
+ * The breaker indicator had ZERO importers repo-wide until 2026-09-02, so a
+ * tripped provider reached no pixel and the user saw only a wall of
+ * unexplained failed runs. This is its mount, and it is deliberately the
+ * least-noisy slot in the app: the dock's capsule strip is a 36px key row
+ * that a full expandable panel cannot live in, and the title bar clips it —
+ * whereas here the indicator is a fixed sliver pinned under the title bar
+ * that occupies NO layout space and renders `null` outright while healthy
+ * (and while its first status is still in flight). It costs nothing until
+ * something is actually wrong, and then it is on every page at once. AnimatePresence so each overlay plays its exit fade-out
  * on close (a bare conditional unmounts instantly, skipping it).
  *
  * Exit + lazy: each keyed `<Suspense>` is the AnimatePresence child, and on
@@ -174,6 +185,12 @@ export function TrayOverlays() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   return (
+    <>
+      {/* Not inside AnimatePresence: it is not an overlay that opens and
+          closes with the dock — it appears when the fleet's providers break. */}
+      <div className="pointer-events-none fixed right-3 top-[calc(var(--titlebar-height,40px)+0.5rem)] z-40 w-80 max-w-[calc(100vw-1.5rem)] [&>*]:pointer-events-auto">
+        <CircuitBreakerIndicator />
+      </div>
     <AnimatePresence>
       {headerOverlay === 'monitor' && (
         <Suspense
@@ -203,5 +220,6 @@ export function TrayOverlays() {
         </FullScreenOverlay>
       )}
     </AnimatePresence>
+    </>
   );
 }

@@ -63,9 +63,11 @@ export function CircuitBreakerIndicator() {
     }
   }, []);
 
-  // Document-visibility-gated polling. The indicator is mounted at the
-  // dashboard top-bar regardless of whether the user is currently looking
-  // at the page; without this gate, a backgrounded window or hidden tab
+  // Document-visibility-gated polling. The indicator is mounted in the
+  // persistent title-bar tray (`TrayOverlays` in
+  // `src/features/shared/chrome/useTitleBarTray.tsx`), so it polls on every
+  // page regardless of whether the user is currently looking at the
+  // window; without this gate, a backgrounded window or hidden tab
   // continued to fire getCircuitBreakerStatus IPC every 10s for the full
   // session. document.hidden gating is preferred over useElementVisible
   // here because the component returns null when healthy + no recent
@@ -147,16 +149,10 @@ export function CircuitBreakerIndicator() {
     return () => { cancelled = true; unlistenFn?.(); };
   }, [fetchStatus]);
 
-  // Skeleton reserves the slot during initial load — no layout jump.
-  if (!status) {
-    return (
-      <div
-        className="h-8 w-full rounded-card bg-secondary/20 animate-pulse"
-        data-testid="circuit-breaker-indicator-skeleton"
-        aria-hidden="true"
-      />
-    );
-  }
+  // Nothing to reserve: this lives in an overlay slot that occupies no layout
+  // space, and the healthy state below renders null anyway — so a pulsing
+  // placeholder on every launch would be pure noise announcing "no problem".
+  if (!status) return null;
 
   const openProviders = status.providers.filter((p) => p.isOpen);
   const hasIssue = openProviders.length > 0 || status.globalPaused;
