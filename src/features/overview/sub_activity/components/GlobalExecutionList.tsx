@@ -25,7 +25,10 @@ import { SortableColumnHeader, type SortDirection } from '@/features/shared/comp
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 import { formatDuration, formatModelShort, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { GlobalExecution } from '@/lib/types/types';
+import type { GlobalExecutionListItem } from '@/lib/bindings/GlobalExecutionListItem';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { getExecution } from '@/api/agents/executions';
+import { toastCatch } from '@/lib/silentCatch';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -113,7 +116,18 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const [modelFilter, setModelFilter] = useState<string>('all');
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
-  const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
+  // The list rows are lean; the detail modal wants the whole record. Opening a
+  // row hydrates it through `get_execution` (the same fat door the per-persona
+  // list uses) instead of every page shipping blobs for rows nobody opens.
+  const [selectedExec, setSelectedExec] = useState<(PersonaExecution & { persona_name?: string }) | null>(null);
+  const openExecution = useCallback(async (row: GlobalExecutionListItem) => {
+    try {
+      const full = await getExecution(row.id, row.personaId);
+      setSelectedExec({ ...full, persona_name: row.personaName ?? undefined });
+    } catch (err) {
+      toastCatch('activity:open-execution')(err);
+    }
+  }, []);
   // True while a (re)fetch for the current filter context is in flight. It
   // NEVER hides rows that are already on screen — it only decides whether an
   // empty row-region shows ghost rows (fetch running) or the empty state
@@ -129,7 +143,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   }, []);
 
   const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
-    exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
+    exact: [{ field: 'personaId', value: selectedPersonaId || null }],
   });
 
   // Server-side counts — precise totals for the filter badges, independent
@@ -144,11 +158,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     incomplete: globalExecutionCounts.incomplete,
   };
 
-  const statusPredicate = useCallback((e: GlobalExecution) =>
+  const statusPredicate = useCallback((e: GlobalExecutionListItem) =>
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
     [filter]);
 
-  const modelPredicate = useCallback((e: GlobalExecution) => e.model_used === modelFilter, [modelFilter]);
+  const modelPredicate = useCallback((e: GlobalExecutionListItem) => e.modelUsed === modelFilter, [modelFilter]);
 
   const { filtered: statusFiltered } = useFilteredCollection(personaFiltered, {
     custom: [
@@ -162,7 +176,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   // stays in the list even when its rows page out, so the chip keeps its label.
   const modelOptions = useMemo(() => {
     const distinct = new Set<string>();
-    for (const e of globalExecutions) if (e.model_used) distinct.add(e.model_used);
+    for (const e of globalExecutions) if (e.modelUsed) distinct.add(e.modelUsed);
     if (modelFilter !== 'all') distinct.add(modelFilter);
     return [
       { value: 'all', label: t.overview.activity.all_models },
@@ -174,7 +188,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     if (startedSort === null) return statusFiltered;
     const tsMap = new Map<string, number>();
     for (const e of statusFiltered) {
-      tsMap.set(e.id, new Date(e.started_at || e.created_at).getTime());
+      tsMap.set(e.id, new Date(e.startedAt || e.createdAt).getTime());
     }
     const sorted = [...statusFiltered].sort((a, b) => {
       const ta = tsMap.get(a.id) ?? 0;
@@ -211,7 +225,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     if (!pendingExecutionFocus) return;
     const match = globalExecutions.find((e) => e.id === pendingExecutionFocus);
     if (match) {
-      setSelectedExec(match);
+      void openExecution(match);
       setPendingExecutionFocus(null);
       return;
     }
@@ -228,7 +242,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     // Preserve the active status filter — the bare refetch also used to
     // clobber the filtered list with unfiltered data.
     void fetchGlobalExecutions(true, filter === 'all' ? undefined : filter).catch(silentCatch('GlobalExecutionList:focusFetch'));
-  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus, filter]);
+  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus, filter, openExecution]);
 
   const hasRunning = useMemo(
     () => globalExecutions.some((e) => e.status === 'running' || e.status === 'pending'),
@@ -273,8 +287,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   // switches; a new (status, persona) context starts at the top.
   const groupLabels = useMemo(() => timeGroupLabels(t), [t]);
   const groupOf = useCallback(
-    (exec: GlobalExecution) => {
-      const key = timeGroupKey(exec.started_at || exec.created_at);
+    (exec: GlobalExecutionListItem) => {
+      const key = timeGroupKey(exec.startedAt || exec.createdAt);
       return { key, label: groupLabels[key] };
     },
     [groupLabels],
@@ -442,7 +456,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               <div className={`flex-1 min-h-0 flex flex-col ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
                 {!IS_MOBILE && columnHeaderRow}
 
-                <GroupedVirtualList<GlobalExecution>
+                <GroupedVirtualList<GlobalExecutionListItem>
                   items={filteredExecutions}
                   groupOf={groupOf}
                   getItemKey={(exec) => exec.id}
@@ -451,8 +465,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   scrollRestoreKey={scrollRestoreKey}
                   renderItem={(exec, index) => {
                     const status = getStatusEntry(exec.status);
-                    const fallbackModel = personaModelById.get(exec.persona_id);
-                    const modelShort = formatModelShort(exec.model_used) ?? formatModelShort(fallbackModel);
+                    const fallbackModel = personaModelById.get(exec.personaId);
+                    const modelShort = formatModelShort(exec.modelUsed) ?? formatModelShort(fallbackModel);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
                         : exec.status === 'completed' ? 'border-l-emerald-400'
@@ -461,13 +475,13 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     const row = IS_MOBILE ? (
                       <div
                         role="row" tabIndex={0}
-                        onClick={() => setSelectedExec(exec)}
+                        onClick={() => void openExecution(exec)}
                         className="h-full px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} name={exec.persona_name} display="framed" frameSize={"lg"} />
-                            <span className="typo-heading text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
+                            <PersonaIcon icon={exec.personaIcon ?? null} color={exec.personaColor ?? null} name={exec.personaName ?? undefined} display="framed" frameSize={"lg"} />
+                            <span className="typo-heading text-foreground truncate">{exec.personaName || 'Unknown'}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption flex-shrink-0 ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
@@ -475,23 +489,23 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
-                          <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
-                          {exec.cost_usd > 0 && <Numeric value={exec.cost_usd} unit="usd" language={language} className="font-mono" />}
+                          <span className="font-mono">{formatDuration(exec.durationMs)}</span>
+                          {exec.costUsd > 0 && <Numeric value={exec.costUsd} unit="usd" language={language} className="font-mono" />}
                           {modelShort && <span className="font-mono truncate">{modelShort}</span>}
-                          <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
+                          <span>{formatRelativeTime(exec.startedAt || exec.createdAt)}</span>
                         </div>
                       </div>
                     ) : (
                       <div
                         role="row" tabIndex={0}
-                        onClick={() => setSelectedExec(exec)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
+                        onClick={() => void openExecution(exec)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void openExecution(exec); } }}
                         style={{ gridTemplateColumns: execGridTemplate }}
                         className={`grid items-center h-full cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
-                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} name={exec.persona_name} display="framed" frameSize={"lg"} />
-                          <span className="typo-body text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
+                          <PersonaIcon icon={exec.personaIcon ?? null} color={exec.personaColor ?? null} name={exec.personaName ?? undefined} display="framed" frameSize={"lg"} />
+                          <span className="typo-body text-foreground truncate">{exec.personaName || 'Unknown'}</span>
                         </div>
                         <div className="px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-heading ${badgeClass(status)}`}>
@@ -501,7 +515,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="px-4 min-w-0">
                           {modelShort ? (
-                            <Tooltip content={exec.model_used ?? fallbackModel ?? ''}>
+                            <Tooltip content={exec.modelUsed ?? fallbackModel ?? ''}>
                               <span className="block typo-body text-foreground font-mono truncate">{modelShort}</span>
                             </Tooltip>
                           ) : (
@@ -509,14 +523,14 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                           )}
                         </div>
                         <div className="px-4 text-right">
-                          {exec.cost_usd > 0 ? (
-                            <Numeric value={exec.cost_usd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
+                          {exec.costUsd > 0 ? (
+                            <Numeric value={exec.costUsd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
                           ) : (
                             <span className="typo-body text-foreground font-mono">{'—'}</span>
                           )}
                         </div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatDuration(exec.durationMs)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatRelativeTime(exec.startedAt || exec.createdAt)}</span></div>
                       </div>
                     );
                     // One-shot entrance cascade for a fresh result set. Rows

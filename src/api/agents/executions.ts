@@ -2,7 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { ExecutionListItem } from "@/lib/bindings/ExecutionListItem";
-import type { GlobalExecutionRow } from "@/lib/bindings/GlobalExecutionRow";
+import type { GlobalExecutionListItem } from "@/lib/bindings/GlobalExecutionListItem";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import type { ExecutionSearchResult } from "@/lib/bindings/ExecutionSearchResult";
 import type { Continuation } from "@/lib/bindings/Continuation";
@@ -30,9 +30,23 @@ export const listExecutionsSummary = (personaId: string, limit?: number, offset?
     offset: offset,
   });
 
-export const listAllExecutions = (limit?: number, status?: string, personaId?: string) =>
-  invoke<GlobalExecutionRow[]>("list_all_executions", {
+/** The all-persona execution list. Returns the LEAN row (persona + status +
+ *  model + tokens + cost + duration + timestamps), not the whole execution
+ *  record: the fat shape shipped 9.26 MB per 500 rows of blobs no list draws,
+ *  and the transport `structuredClone`s every hand-out. Open a row's detail
+ *  with `getExecution`, which serves the full record.
+ *
+ *  `offset` pages forward — without it "load more" could only re-request the
+ *  window from row 0. */
+export const listAllExecutions = (
+  limit?: number,
+  offset?: number,
+  status?: string,
+  personaId?: string,
+) =>
+  invoke<GlobalExecutionListItem[]>("list_all_executions", {
     limit: limit,
+    offset: offset,
     status: status,
     personaId: personaId,
   });

@@ -147,6 +147,52 @@ pub struct GlobalExecutionRow {
     pub persona_color: Option<String>,
 }
 
+/// The LEAN row behind the global (all-persona) execution list — Activity, the
+/// LLM-calls table, Mission Control's success ring and the Home runs sample.
+///
+/// `GlobalExecutionRow` above flattens the whole `PersonaExecution`, blobs and
+/// all. Measured (`lean_global_list_payload_is_an_order_of_magnitude_smaller`,
+/// blob sizes taken from the 2026-06-02 snapshot): 500 rows serialize to
+/// **9.26 MB** as the fat row and **180 KB** as this one — 53x — and the IPC
+/// transport `structuredClone`s every hand-out. None of `input_data`,
+/// `output_data`, `execution_flows`, `tool_steps`, `execution_config`,
+/// `director_review_md` or the log paths is rendered by any of those four
+/// surfaces; the detail modal hydrates the fat record through `get_execution`
+/// when a row is opened, and the management HTTP API still serves the whole
+/// record from `get_all_global`.
+///
+/// This is deliberately NOT a flatten of `ExecutionListItem`: that struct is
+/// snake_case on the wire (legacy, baselined in the camelCase ratchet), and
+/// flattening it under a camelCase container would ship one object with two
+/// casings. It carries exactly the fields these surfaces draw — add one here
+/// when a surface starts drawing it, not before.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalExecutionListItem {
+    pub id: String,
+    pub persona_id: String,
+    pub status: String,
+    /// The model the run actually used; `None` when it was never recorded, in
+    /// which case the UI falls back to the persona's configured model.
+    pub model_used: Option<String>,
+    /// Thinking budget token, drawn as a chip beside the model.
+    pub thinking_level: Option<String>,
+    #[ts(type = "number")]
+    pub input_tokens: i64,
+    #[ts(type = "number")]
+    pub output_tokens: i64,
+    pub cost_usd: f64,
+    #[ts(type = "number | null")]
+    pub duration_ms: Option<i64>,
+    pub started_at: Option<String>,
+    pub created_at: String,
+    // Persona metadata from JOIN
+    pub persona_name: Option<String>,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+}
+
 /// Aggregate counts across all executions grouped by the high-level status
 /// categories surfaced in the Activity filter bar. Used to render precise
 /// filter badges independently from the paginated row list.

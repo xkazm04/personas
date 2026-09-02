@@ -94,7 +94,7 @@ export default function MissionControlHome() {
 
   const stats = useMemo(() => {
     const execs = selectedPersonaId
-      ? globalExecutions.filter((e) => e.persona_id === selectedPersonaId)
+      ? globalExecutions.filter((e) => e.personaId === selectedPersonaId)
       : globalExecutions;
     const successCount = execs.filter((e) => e.status === 'completed').length;
     // null when nothing ran in the window: an unmeasured rate is carried as

@@ -1,8 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::models::{
-    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionRow,
-    PersonaExecution, UpdateExecutionStatus,
+    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionListItem,
+    GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus,
 };
 use crate::DbPool;
 use crate::PoolExt;
@@ -117,6 +117,25 @@ fn columns_for(alias: &str) -> String {
         .join(", ")
 }
 
+/// The projection behind `row_to_global_list_item` — the lean, all-persona
+/// list. Eleven columns against `COLUMNS`' thirty-one: every blob column is
+/// absent because no global list surface draws one (see
+/// `GlobalExecutionListItem` for the measurement). Kept as its own const
+/// rather than derived from `LIST_ITEM_COLUMNS`, because the two shapes answer
+/// to different surfaces: this one has the model columns the per-persona list
+/// has no column for, and lacks the retry/outcome columns that list does draw.
+const GLOBAL_LIST_COLUMNS: &str = "id, persona_id, status, model_used, thinking_level,      input_tokens, output_tokens, cost_usd, duration_ms, started_at, created_at";
+
+/// `GLOBAL_LIST_COLUMNS` alias-qualified for the persona JOIN, derived from the
+/// one const exactly like `columns_for`.
+fn global_list_columns_for(alias: &str) -> String {
+    GLOBAL_LIST_COLUMNS
+        .split(',')
+        .map(|c| format!("{alias}.{}", c.trim()))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 // ---------------------------------------------------------------------------
 // Lenient numeric reads
 // ---------------------------------------------------------------------------
@@ -212,6 +231,28 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         director_review_md: row
             .get::<_, Option<String>>("director_review_md")
             .unwrap_or(None),
+    })
+}
+
+/// The global list's row. Numeric columns go through the same lenient reads
+/// the other two mappers use — a token count nobody can parse is 0, not a dead
+/// page (see the "Lenient numeric reads" block above).
+fn row_to_global_list_item(row: &Row) -> rusqlite::Result<GlobalExecutionListItem> {
+    Ok(GlobalExecutionListItem {
+        id: row.get("id")?,
+        persona_id: row.get("persona_id")?,
+        status: row.get("status")?,
+        model_used: row.get("model_used")?,
+        thinking_level: row.get("thinking_level")?,
+        input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
+        output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
+        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
+        duration_ms: coerce_i64(row, "duration_ms")?,
+        started_at: row.get("started_at")?,
+        created_at: row.get("created_at")?,
+        persona_name: row.get("persona_name")?,
+        persona_icon: row.get("persona_icon")?,
+        persona_color: row.get("persona_color")?,
     })
 }
 
@@ -408,6 +449,77 @@ pub fn get_all_global(
             };
 
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
+
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
+}
+
+/// The LEAN, PAGINATED global list — what every all-persona execution surface
+/// in the app actually renders.
+///
+/// Two defects in `get_all_global` above, which this replaces for the UI:
+///
+/// 1. It projects the FAT `COLUMNS` for a LIST. Measured on the 2026-06-02
+///    snapshot: `output_data` averages 7.2 KB (max 14.7 KB) and `tool_steps`
+///    7.6 KB (max 61 KB); the newest 200 rows carry 4.98 MB of blob columns
+///    that no list on the other side draws — and the IPC transport
+///    `structuredClone`s every hand-out. The sibling `list_items_by_persona_id`
+///    has used `LIST_ITEM_COLUMNS` for exactly this reason since it was written.
+/// 2. It has no OFFSET, so "load more" could only re-request the whole window
+///    from row 0. Paging 500 rows 50 at a time cost 2,750 rows of transfer.
+///
+/// `get_all_global` is deliberately left as it is: `engine::management_api`
+/// serves the whole record over HTTP and wants every column.
+#[allow(clippy::too_many_arguments)]
+pub fn list_global_items(
+    pool: &DbPool,
+    limit: Option<i64>,
+    offset: Option<i64>,
+    status: Option<&str>,
+    persona_id: Option<&str>,
+    since: Option<&str>,
+) -> Result<Vec<GlobalExecutionListItem>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::list_global_items",
+        {
+            let limit = limit.unwrap_or(200);
+            let offset = offset.unwrap_or(0).max(0);
+            let conn = pool.conn("executions::list_global_items")?;
+
+            let base = format!(
+                "SELECT {},                 COALESCE(p.name, 'Unknown') as persona_name,                 p.icon as persona_icon,                 p.color as persona_color              FROM persona_executions e              LEFT JOIN personas p ON p.id = e.persona_id",
+                global_list_columns_for("e")
+            );
+
+            let mut qb = crate::query_builder::QueryBuilder::new();
+
+            // Exclude ops chat executions from all execution lists
+            qb.where_raw(
+                |_| "(e.input_data IS NULL OR e.input_data NOT LIKE '%\"_ops\"%')".to_string(),
+                vec![],
+            );
+            if let Some(s) = status {
+                qb.where_eq("e.status", s.to_string());
+            }
+            if let Some(pid) = persona_id {
+                qb.where_eq("e.persona_id", pid.to_string());
+            }
+            if let Some(cutoff) = since {
+                qb.where_gte("e.created_at", cutoff.to_string());
+            }
+            // `created_at DESC, id DESC` — created_at alone is not a total
+            // order (two runs started in the same second tie), and a tie under
+            // LIMIT/OFFSET is how a paginated row gets served twice or never.
+            qb.order_by_multiple(&[("e.created_at", "DESC"), ("e.id", "DESC")]);
+            qb.limit(limit);
+            qb.offset(offset);
+
+            let sql = qb.build_select(&base);
+            let mut stmt = conn.prepare_cached(&sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_global_list_item)?;
 
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -2441,7 +2553,7 @@ mod tests {
             .query_row(
                 "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'persona_executions'",
                 [],
-                |row| row.get(0),
+                |row| row.get("sql"),
             )
             .unwrap();
         for state in ExecutionState::ALL_VARIANTS {
@@ -2463,6 +2575,160 @@ mod tests {
             err.to_string().contains("CHECK"),
             "expected a CHECK violation, got {err}"
         );
+    }
+
+    /// Same gate as `list_items_projection_covers_every_field_the_mapper_reads`,
+    /// for the global list's own projection: a by-name read of a column the
+    /// SELECT does not carry compiles fine and fails at runtime on the first
+    /// row, which is exactly how the per-persona list stayed broken for three
+    /// months.
+    #[test]
+    fn global_list_projection_covers_every_field_the_mapper_reads() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Global List Agent");
+        let created = create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            Some(personas_core::model_ids::DEFAULT_BALANCED.into()),
+            None,
+        )
+        .unwrap();
+
+        let items = list_global_items(&pool, None, None, None, None, None)
+            .expect("list_global_items must not fail");
+        assert_eq!(items.len(), 1);
+        let item = &items[0];
+        assert_eq!(item.id, created.id);
+        assert_eq!(item.persona_id, persona_id);
+        assert_eq!(item.status, "queued");
+        assert_eq!(
+            item.model_used.as_deref(),
+            Some(personas_core::model_ids::DEFAULT_BALANCED)
+        );
+        assert_eq!(item.persona_name.as_deref(), Some("Global List Agent"));
+
+        // And the alias-qualified projection prepares against the real schema.
+        let conn = pool.conn("executions::test").unwrap();
+        let sql = format!(
+            "SELECT {} FROM persona_executions e LIMIT 0",
+            global_list_columns_for("e")
+        );
+        conn.prepare(&sql)
+            .unwrap_or_else(|e| panic!("global list projection does not match schema: {e}"));
+    }
+
+    /// Paging with OFFSET must return DISJOINT pages that reassemble into the
+    /// unpaged result. The ordering is `created_at DESC, id DESC` precisely
+    /// because `created_at` alone ties for runs created in the same second,
+    /// and a tie under LIMIT/OFFSET serves a row twice or never — which is the
+    /// failure this test exists to catch.
+    #[test]
+    fn offset_paging_returns_disjoint_pages() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Paging Agent");
+        for _ in 0..25 {
+            create(&pool, &persona_id, None, None, None, None).unwrap();
+        }
+
+        let all = list_global_items(&pool, Some(100), None, None, None, None).unwrap();
+        assert_eq!(all.len(), 25);
+
+        let mut paged: Vec<String> = Vec::new();
+        for page in 0..3 {
+            let rows =
+                list_global_items(&pool, Some(10), Some(page * 10), None, None, None).unwrap();
+            assert_eq!(rows.len(), if page == 2 { 5 } else { 10 }, "page {page}");
+            paged.extend(rows.into_iter().map(|r| r.id));
+        }
+
+        let expected: Vec<String> = all.into_iter().map(|r| r.id).collect();
+        assert_eq!(
+            paged, expected,
+            "paged reads must reassemble the whole list"
+        );
+
+        let unique: std::collections::HashSet<&String> = paged.iter().collect();
+        assert_eq!(unique.len(), paged.len(), "pages must not overlap");
+    }
+
+    /// The measurement behind this change, run rather than asserted from
+    /// memory: serialize both shapes for the same rows and compare bytes.
+    ///
+    /// Row blobs are sized from the 2026-06-02 snapshot (output_data ~7.2 KB,
+    /// tool_steps ~7.6 KB) so the ratio reflects real data rather than empty
+    /// fixtures. Printed with `--nocapture`; the assertion is deliberately
+    /// loose (>=10x) so it gates the regression without gating the exact
+    /// fixture sizes.
+    #[test]
+    fn lean_global_list_payload_is_an_order_of_magnitude_smaller() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Payload Agent");
+
+        let output_data = "o".repeat(7_200);
+        // A realistic `tool_steps` blob: 12 typed ToolCallStep entries whose
+        // previews carry the bytes. A bare padded string does not deserialize
+        // (the column is `Vec<ToolCallStep>`), which this test discovered on
+        // its first run.
+        let tool_steps = {
+            let steps: Vec<serde_json::Value> = (0..12u32)
+                .map(|i| {
+                    serde_json::json!({
+                        "step_index": i,
+                        "tool_name": "Bash",
+                        "input_preview": "i".repeat(300),
+                        "output_preview": "o".repeat(300),
+                        "started_at_ms": 1_700_000_000_000u64,
+                        "ended_at_ms": 1_700_000_001_000u64,
+                        "duration_ms": 1_000u64,
+                    })
+                })
+                .collect();
+            serde_json::to_string(&steps).unwrap()
+        };
+        let input_data = "i".repeat(1_200);
+        let execution_flows = format!("{{\"f\":\"{}\"}}", "f".repeat(780));
+        let execution_config = format!("{{\"c\":\"{}\"}}", "c".repeat(380));
+
+        for _ in 0..500 {
+            let exec = create(&pool, &persona_id, None, None, None, None).unwrap();
+            pool.conn("executions::test")
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET input_data = ?1, output_data = ?2,                      tool_steps = ?3, execution_flows = ?4, execution_config = ?5,                      model_used = ?6 WHERE id = ?7",
+                    params![
+                        input_data,
+                        output_data,
+                        tool_steps,
+                        execution_flows,
+                        execution_config,
+                        personas_core::model_ids::DEFAULT_BALANCED,
+                        exec.id
+                    ],
+                )
+                .unwrap();
+        }
+
+        for n in [200i64, 500i64] {
+            let fat = get_all_global(&pool, Some(n), None, None, None).unwrap();
+            let lean = list_global_items(&pool, Some(n), None, None, None, None).unwrap();
+            assert_eq!(fat.len() as i64, n);
+            assert_eq!(lean.len() as i64, n);
+
+            let fat_bytes = serde_json::to_string(&fat).unwrap().len();
+            let lean_bytes = serde_json::to_string(&lean).unwrap().len();
+            println!(
+                "global execution list payload @ {n} rows: fat {fat_bytes} B ({:.2} MB) -> lean {lean_bytes} B ({:.1} KB), {:.1}x smaller",
+                fat_bytes as f64 / 1_048_576.0,
+                lean_bytes as f64 / 1024.0,
+                fat_bytes as f64 / lean_bytes as f64,
+            );
+            assert!(
+                fat_bytes >= lean_bytes * 10,
+                "@{n} rows the lean payload must be at least 10x smaller: fat {fat_bytes} vs lean {lean_bytes}"
+            );
+        }
     }
 
     fn make_persona(pool: &DbPool, name: &str) -> String {

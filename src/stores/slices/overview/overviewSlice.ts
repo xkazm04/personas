@@ -4,9 +4,9 @@ import { reportError } from "../../storeTypes";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type {
   OverviewTab,
-  GlobalExecution,
   ManualReviewItem,
 } from "@/lib/types/types";
+import type { GlobalExecutionListItem } from "@/lib/bindings/GlobalExecutionListItem";
 import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
@@ -31,7 +31,13 @@ export interface OverviewSlice {
   overviewTab: OverviewTab;
 
   // State -- executions
-  globalExecutions: GlobalExecution[];
+  /** The all-persona execution list, in the LEAN shape `list_all_executions`
+   *  now returns. It carries what Activity / the LLM-calls table / Mission
+   *  Control / Home actually draw and nothing else - the fat row was shipping
+   *  9.26 MB of blobs per 500 rows through a transport that `structuredClone`s
+   *  every hand-out. Opening a row hydrates the full record via
+   *  `getExecution`. */
+  globalExecutions: GlobalExecutionListItem[];
   /** Pagination hint, NOT a row count — `true` when the most recent fetch
    *  hit `globalExecutionsLimit`, suggesting there's more on the server. The
    *  authoritative total lives on `globalExecutionCounts.total`. Previously
@@ -41,8 +47,14 @@ export interface OverviewSlice {
    *  silently displayed wrong numbers. Renamed and retyped as a boolean to
    *  make misuse a type error. */
   globalExecutionsHasMore: boolean;
+  /** Rows loaded so far - and, since paging moved to OFFSET, the offset the
+   *  next page is requested at. */
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
+  /** Rows the NEXT request will ask for. With offset paging this is the page
+   *  size, not a growing window: "load more" now fetches 50 more rows from
+   *  where the list ends instead of re-fetching everything from row 0
+   *  (50+100+...+500 = 2,750 rows transferred to show 500). */
   globalExecutionsLimit: number;
   /** Precise server-side counts for the Activity filter badges (total /
    *  running / completed / failed / cancelled / incomplete). Updated
@@ -110,6 +122,9 @@ export interface OverviewSlice {
   /** Coalesced replacement for the pipeline's wave 2 (observabilityMetrics +
    *  healingIssues). Same shape as `runDashboardWave1`. */
   runDashboardWave2: (days: number, personaId?: string) => Promise<boolean>;
+  /** `reset` refetches the window already on screen from row 0 (a poll or a
+   *  filter change); otherwise the next page is appended at the current
+   *  offset. */
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchGlobalExecutionCounts: (personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
@@ -150,6 +165,22 @@ function safeTimestampToISO(value: number | null | undefined): string | null {
 // Server-side pagination constants.
 const GLOBAL_PAGE_SIZE = 50;
 const MAX_GLOBAL_LIMIT = 500;
+
+/** Drop rows whose id has already been seen, preserving order. The server can
+ *  legitimately repeat a row across pages when new runs land between requests,
+ *  and a duplicate key is a React warning plus a double-counted row. */
+function dedupeById(
+  rows: GlobalExecutionListItem[],
+  seen = new Set<string>(),
+): GlobalExecutionListItem[] {
+  const out: GlobalExecutionListItem[] = [];
+  for (const r of rows) {
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    out.push(r);
+  }
+  return out;
+}
 
 /** Sequence counter to discard stale fetchGlobalExecutions responses. */
 let fetchGlobalSeq = 0;
@@ -220,7 +251,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       measureStoreAction('fetchExecutionDashboard', () =>
         withRetry(() => getExecutionDashboard(days), "Failed to load execution dashboard"),
       ),
-      listAllExecutions(limit, undefined, personaId),
+      listAllExecutions(limit, 0, undefined, personaId),
     ]);
 
     let allOk = true;
@@ -249,22 +280,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       pipelineResults.push({ source: 'globalExecutions', error: null });
     } else if (globalSettled.status === 'fulfilled') {
       const rows = globalSettled.value;
-      const seen = new Set<string>();
-      const merged: GlobalExecution[] = [];
-      for (const r of rows) {
-        if (seen.has(r.id)) continue;
-        seen.add(r.id);
-        merged.push({
-          ...r,
-          director_score: null,
-          director_review_md: null,
-          cache_read_tokens: 0,
-          cache_creation_tokens: 0,
-          persona_name: r.persona_name ?? undefined,
-          persona_icon: r.persona_icon ?? undefined,
-          persona_color: r.persona_color ?? undefined,
-        });
-      }
+      const merged = dedupeById(rows);
       const rawCount = rows.length;
       patch.globalExecutions = merged;
       patch.globalExecutionsLimit = limit;
@@ -359,46 +375,31 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {
     const seq = ++fetchGlobalSeq;
     try {
-      const prevLimit = get().globalExecutionsLimit;
+      const loaded = get().globalExecutions.length;
+      // A reset (poll, refresh, filter change) re-reads the window that is
+      // already on screen - ONE request for `loaded` rows, not the page-size
+      // ladder the old code climbed. A load-more asks for one page starting
+      // where the list ends.
       const limit = reset
-        ? GLOBAL_PAGE_SIZE
-        : Math.min(prevLimit + GLOBAL_PAGE_SIZE, MAX_GLOBAL_LIMIT);
+        ? Math.min(Math.max(loaded, GLOBAL_PAGE_SIZE), MAX_GLOBAL_LIMIT)
+        : GLOBAL_PAGE_SIZE;
+      const offset = reset ? 0 : loaded;
 
       const statusFilter = status === 'running' ? 'running' : status;
-      const rows = await listAllExecutions(limit, statusFilter, personaId);
+      const rows = await listAllExecutions(limit, offset, statusFilter, personaId);
 
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
 
-      // Map GlobalExecutionRow to GlobalExecution (field names already match)
-      // Deduplicate by id to prevent React duplicate-key warnings
-      const seen = new Set<string>();
-      const merged: GlobalExecution[] = [];
-      for (const r of rows) {
-        if (seen.has(r.id)) continue;
-        seen.add(r.id);
-        merged.push({
-          ...r,
-          // Director verdict fields aren't part of the global JOIN row; the
-          // per-persona Activity list (full PersonaExecution) carries them.
-          director_score: null,
-          director_review_md: null,
-          // Cache-token breakdown isn't part of the global JOIN row either; the
-          // per-execution detail (full PersonaExecution) carries the real values.
-          cache_read_tokens: 0,
-          cache_creation_tokens: 0,
-          persona_name: r.persona_name ?? undefined,
-          persona_icon: r.persona_icon ?? undefined,
-          persona_color: r.persona_color ?? undefined,
-        });
-      }
+      const prev = reset ? [] : get().globalExecutions;
+      const merged = [...prev, ...dedupeById(rows, new Set(prev.map((r) => r.id)))];
 
       // Use raw row count (before dedup) for hasMore so duplicates don't
       // trick the heuristic into hiding the Load More button prematurely.
       const rawCount = rows.length;
       set({
         globalExecutions: merged,
-        globalExecutionsLimit: limit,
-        globalExecutionsHasMore: rawCount >= limit,
+        globalExecutionsLimit: GLOBAL_PAGE_SIZE,
+        globalExecutionsHasMore: rawCount >= limit && merged.length < MAX_GLOBAL_LIMIT,
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
       });

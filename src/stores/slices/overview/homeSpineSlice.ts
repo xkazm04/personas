@@ -106,11 +106,13 @@ export const createHomeSpineSlice: StateCreator<OverviewStore, [], [], HomeSpine
     if (runsInFlight) return;
     runsInFlight = true;
     try {
-      const rows = await listAllExecutions(RUNS_SAMPLE_LIMIT);
+      // The lean list row: this sample reads three fields, and the fat row it
+      // used to pull carried ~9 MB of blobs per 500 rows to deliver them.
+      const rows = await listAllExecutions(RUNS_SAMPLE_LIMIT, 0);
       const sample: RunSample[] = rows.map((r) => ({
-        persona_id: r.persona_id,
+        persona_id: r.personaId,
         status: r.status,
-        created_at: r.created_at,
+        created_at: r.createdAt,
       }));
       set((s) => ({
         homeRunsSample: sample,

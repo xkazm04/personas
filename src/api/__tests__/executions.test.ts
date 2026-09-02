@@ -35,7 +35,7 @@ describe("api/agents/executions", () => {
 
   it("listAllExecutions calls list_all_executions", async () => {
     mockInvoke("list_all_executions", []);
-    const result = await listAllExecutions(5, "completed");
+    const result = await listAllExecutions(5, 0, "completed");
     expect(result).toEqual([]);
   });
 

@@ -2,7 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionRow, PersonaExecution,
+    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionListItem,
+    PersonaExecution,
 };
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as repo;
@@ -87,20 +88,36 @@ fn parse_status_filter(status: Option<&str>) -> Result<Option<&'static str>, App
     Ok(Some(state.as_str()))
 }
 
+/// The all-persona execution list behind Activity, the LLM-calls table and the
+/// Home runs sample.
+///
+/// Returns the LEAN `GlobalExecutionListItem`, not the whole execution record:
+/// this list renders a persona, a status, a model, tokens, a cost, a duration
+/// and a timestamp, and the fat row was shipping `input_data`, `output_data`,
+/// `execution_flows`, `tool_steps`, `execution_config` and `director_review_md`
+/// with every page — 4.98 MB across the newest 200 rows on the 2026-06-02
+/// snapshot, `structuredClone`d by the transport on the way out. The detail
+/// modal hydrates the fat record on open through `get_execution`, and the
+/// management HTTP API still serves the whole record from `get_all_global`.
+///
+/// `offset` pages forward. Without it "load more" could only re-request the
+/// window from row 0, so paging to 500 rows fifty at a time transferred 2,750.
 #[tauri::command]
 pub fn list_all_executions(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
+    offset: Option<i64>,
     status: Option<String>,
     persona_id: Option<String>,
-) -> Result<Vec<GlobalExecutionRow>, AppError> {
+) -> Result<Vec<GlobalExecutionListItem>, AppError> {
     require_auth_sync(&state)?;
     let status = parse_status_filter(status.as_deref())?;
     let cutoff =
         (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS)).to_rfc3339();
-    repo::get_all_global(
+    repo::list_global_items(
         &state.db,
         limit,
+        offset,
         status,
         persona_id.as_deref(),
         Some(&cutoff),

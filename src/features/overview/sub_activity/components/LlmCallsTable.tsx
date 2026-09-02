@@ -13,7 +13,10 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { formatModelShort } from '@/lib/utils/formatters';
-import type { GlobalExecution } from '@/lib/types/types';
+import type { GlobalExecutionListItem } from '@/lib/bindings/GlobalExecutionListItem';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { getExecution } from '@/api/agents/executions';
+import { toastCatch } from '@/lib/silentCatch';
 
 /**
  * Per-call LLM usage table (Overview › Executions › "Calls" subtab).
@@ -21,7 +24,7 @@ import type { GlobalExecution } from '@/lib/types/types';
  * Surfaces the model / thinking-effort / token / cost the DB already records on
  * every execution as a queryable per-call table — the local-first counterpart
  * to an external LLM tracker. Reads the same paged `globalExecutions` the
- * Activity list loads (`list_all_executions` → `GlobalExecutionRow`, which
+ * Activity list loads (`list_all_executions` → `GlobalExecutionListItem`, which
  * already carries `model_used`, `thinking_level`, `input_tokens`,
  * `output_tokens`, `cost_usd`); no new IPC command. Filtering (model + rolling
  * time window) and sorting run client-side over the loaded rows, which the
@@ -49,8 +52,8 @@ const WINDOW_MS: Record<TimeWindow, number> = {
 const ROW_HEIGHT = 52;
 
 /** Resolved epoch-ms timestamp for a row (started, falling back to created). */
-function rowTime(e: GlobalExecution): number {
-  return new Date(e.started_at || e.created_at).getTime();
+function rowTime(e: GlobalExecutionListItem): number {
+  return new Date(e.startedAt || e.createdAt).getTime();
 }
 
 interface LlmCallsTableProps {
@@ -84,7 +87,17 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
   // decides whether an empty row region shows ghost rows (fetch running) or
   // the (UnifiedTable-owned) empty state (fetch settled, genuinely nothing).
   const [isFetching, setIsFetching] = useState(true);
-  const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
+  // Lean rows in the table, the full record in the modal - hydrated on open
+  // through `get_execution` rather than shipped with every page.
+  const [selectedExec, setSelectedExec] = useState<(PersonaExecution & { persona_name?: string }) | null>(null);
+  const openExecution = useCallback(async (row: GlobalExecutionListItem) => {
+    try {
+      const full = await getExecution(row.id, row.personaId);
+      setSelectedExec({ ...full, persona_name: row.personaName ?? undefined });
+    } catch (err) {
+      toastCatch('llm-calls:open-execution')(err);
+    }
+  }, []);
   const loadingMoreRef = useRef(false);
 
   // Persona-configured model backfills runs that never recorded `model_used`,
@@ -96,7 +109,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
   }, [personas]);
 
   const resolveModel = useCallback(
-    (e: GlobalExecution): string | null => e.model_used ?? personaModelById.get(e.persona_id) ?? null,
+    (e: GlobalExecutionListItem): string | null => e.modelUsed ?? personaModelById.get(e.personaId) ?? null,
     [personaModelById],
   );
 
@@ -169,7 +182,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
     [t],
   );
 
-  const columns = useMemo<TableColumn<GlobalExecution>[]>(
+  const columns = useMemo<TableColumn<GlobalExecutionListItem>[]>(
     () => [
       {
         key: 'time',
@@ -178,7 +191,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         sortable: true,
         sortFn: (a, b) => rowTime(a) - rowTime(b),
         render: (e) => (
-          <RelativeTime timestamp={e.started_at || e.created_at} className="typo-code text-foreground font-mono" />
+          <RelativeTime timestamp={e.startedAt || e.createdAt} className="typo-code text-foreground font-mono" />
         ),
       },
       {
@@ -187,8 +200,8 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         width: 'minmax(180px, 2fr)',
         render: (e) => (
           <span className="flex items-center gap-2 min-w-0">
-            <PersonaIcon icon={e.persona_icon ?? null} color={e.persona_color ?? null} name={e.persona_name} display="framed" frameSize="lg" />
-            <span className="typo-body text-foreground truncate">{e.persona_name || t.overview.activity.unknown}</span>
+            <PersonaIcon icon={e.personaIcon ?? null} color={e.personaColor ?? null} name={e.personaName ?? undefined} display="framed" frameSize="lg" />
+            <span className="typo-body text-foreground truncate">{e.personaName || t.overview.activity.unknown}</span>
           </span>
         ),
       },
@@ -211,12 +224,12 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
               ) : (
                 <span className="typo-code text-foreground font-mono">{'—'}</span>
               )}
-              {e.thinking_level && (
+              {e.thinkingLevel && (
                 <span
                   title={t.agents.executions.thinking_tooltip}
                   className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-secondary/40 border border-primary/10 text-foreground"
                 >
-                  {tokenLabel(t, 'thinking', e.thinking_level)}
+                  {tokenLabel(t, 'thinking', e.thinkingLevel)}
                 </span>
               )}
             </span>
@@ -229,10 +242,10 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         width: '96px',
         align: 'right',
         sortable: true,
-        sortFn: (a, b) => a.input_tokens - b.input_tokens,
+        sortFn: (a, b) => a.inputTokens - b.inputTokens,
         render: (e) =>
-          e.input_tokens > 0 ? (
-            <Numeric value={e.input_tokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
+          e.inputTokens > 0 ? (
+            <Numeric value={e.inputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
           ) : (
             <span className="typo-code text-foreground font-mono">{'—'}</span>
           ),
@@ -243,10 +256,10 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         width: '96px',
         align: 'right',
         sortable: true,
-        sortFn: (a, b) => a.output_tokens - b.output_tokens,
+        sortFn: (a, b) => a.outputTokens - b.outputTokens,
         render: (e) =>
-          e.output_tokens > 0 ? (
-            <Numeric value={e.output_tokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
+          e.outputTokens > 0 ? (
+            <Numeric value={e.outputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
           ) : (
             <span className="typo-code text-foreground font-mono">{'—'}</span>
           ),
@@ -257,10 +270,10 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         width: '104px',
         align: 'right',
         sortable: true,
-        sortFn: (a, b) => a.cost_usd - b.cost_usd,
+        sortFn: (a, b) => a.costUsd - b.costUsd,
         render: (e) =>
-          e.cost_usd > 0 ? (
-            <Numeric value={e.cost_usd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
+          e.costUsd > 0 ? (
+            <Numeric value={e.costUsd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
           ) : (
             <span className="typo-code text-foreground font-mono">{'—'}</span>
           ),
@@ -302,11 +315,11 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col mx-4 md:mx-6 mb-3">
-        <UnifiedTable<GlobalExecution>
+        <UnifiedTable<GlobalExecutionListItem>
           columns={columns}
           data={rows}
           getRowKey={(e) => e.id}
-          onRowClick={setSelectedExec}
+          onRowClick={(e) => void openExecution(e)}
           isLoading={isFetching}
           rowHeight={ROW_HEIGHT}
           density="compact"
