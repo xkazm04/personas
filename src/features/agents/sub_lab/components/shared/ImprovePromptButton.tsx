@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
@@ -73,10 +73,18 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [newVersion, setNewVersion] = useState<number | null>(null);
+  // One idempotency key per user GESTURE. `lab_improve_prompt` blocks on an LLM
+  // call and then commits a prompt version, so a retry after a visible failure
+  // (or after the IPC gave up while the backend kept going) would otherwise
+  // mint a SECOND version. Reusing the key across retries of the same gesture
+  // makes the backend hand back the version the first attempt created; the key
+  // is dropped on success so the next "Improve" is a genuinely new gesture.
+  const attemptKeyRef = useRef<string | null>(null);
 
   const handleClick = async () => {
     setState('loading');
     setErrorMsg(null);
+    attemptKeyRef.current ??= crypto.randomUUID();
     try {
       const results = getResultsForRun(runId, mode);
       const modelsTested = getModelsTested(runId, mode);
@@ -104,13 +112,16 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
 
       // 2. Run the real improvement engine — grounded in judge rationale +
       //    suggestions + user ratings server-side — and persist a new version.
-      const version = await useAgentStore.getState().improvePromptVersion(personaId, runId, mode);
+      const version = await useAgentStore
+        .getState()
+        .improvePromptVersion(personaId, runId, mode, attemptKeyRef.current ?? undefined);
       if (!version) {
         // reportError already surfaced the cause via the store.
         setState('error');
         setErrorMsg(lab.improve_failed);
         return;
       }
+      attemptKeyRef.current = null; // gesture completed — the next click is a new one
       setNewVersion(version.version_number);
       setState('success');
     } catch (err) {

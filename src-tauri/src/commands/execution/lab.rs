@@ -1,5 +1,5 @@
 use std::panic::AssertUnwindSafe;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use futures_util::FutureExt;
 use rusqlite::{params, OptionalExtension};
@@ -20,6 +20,7 @@ use crate::engine::test_runner::{self, parse_model_configs};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::keyed_pool::KeyedResourcePool;
 use crate::utils::extract_panic_message;
 use crate::validation;
 use crate::AppState;
@@ -1110,22 +1111,87 @@ pub fn lab_get_error_rate(
 // Prompt Improvement Engine -- Analyze results, generate improved prompt
 // ============================================================================
 
+/// Process-global memo for [`lab_improve_prompt`], keyed by the caller-minted
+/// idempotency key.
+///
+/// `lab_improve_prompt` is BLOCKING + MUTATING: it makes an inline LLM call and
+/// then commits a new prompt version. A Tauri `invoke` cannot be cancelled, so
+/// if the frontend wrapper ever gives up on the call (or the user retries after
+/// a visible failure), the original request keeps running and commits its
+/// version anyway — and the retry would mint a SECOND one. The frontend keeps
+/// one key per user gesture, so a retry of the *same* gesture lands here on the
+/// same slot and gets the version the first attempt created; a fresh gesture
+/// mints a fresh key and legitimately produces a new version.
+///
+/// Per-key `tokio::sync::Mutex` so a retry that arrives while the first attempt
+/// is still in flight WAITS for it instead of racing it. Entries are pruned by
+/// the pool once nothing holds a handle — this is a bounded in-process memo for
+/// the retry window, not a durable record.
+static IMPROVE_PROMPT_MEMO: LazyLock<
+    KeyedResourcePool<String, Arc<tokio::sync::Mutex<Option<PersonaPromptVersion>>>>,
+> = LazyLock::new(|| KeyedResourcePool::new(8, 16));
+
+/// Run `produce` at most once per idempotency key, returning the memoized
+/// version to every later caller with the same key.
+///
+/// Errors are deliberately NOT memoized: a failed improvement stays retryable.
+async fn with_improve_prompt_idempotency<F, Fut>(
+    idempotency_key: Option<&str>,
+    produce: F,
+) -> Result<PersonaPromptVersion, AppError>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = Result<PersonaPromptVersion, AppError>>,
+{
+    let Some(key) = idempotency_key else {
+        // No key supplied — no dedup is possible; behave exactly as before.
+        return produce().await;
+    };
+    // The handle is held for the whole call so the pool never prunes the slot
+    // out from under a concurrent caller.
+    let handle =
+        IMPROVE_PROMPT_MEMO.acquire(key.to_string(), || Arc::new(tokio::sync::Mutex::new(None)));
+    let slot = Arc::clone(&handle.value);
+    let mut guard = slot.lock().await;
+    if let Some(existing) = guard.as_ref() {
+        return Ok(existing.clone());
+    }
+    let version = produce().await?;
+    *guard = Some(version.clone());
+    Ok(version)
+}
+
 #[tauri::command]
 pub async fn lab_improve_prompt(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     run_id: String,
     mode: String,
+    // Client-minted key that makes a retry of the SAME user gesture return the
+    // version the first attempt created instead of minting a second one.
+    idempotency_key: Option<String>,
 ) -> Result<PersonaPromptVersion, AppError> {
     require_auth(&state).await?;
-    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    with_improve_prompt_idempotency(idempotency_key.as_deref(), || {
+        improve_prompt_inner(&state, &persona_id, &run_id, &mode)
+    })
+    .await
+}
+
+async fn improve_prompt_inner(
+    state: &Arc<AppState>,
+    persona_id: &str,
+    run_id: &str,
+    mode: &str,
+) -> Result<PersonaPromptVersion, AppError> {
+    let persona = persona_repo::get_by_id(&state.db, persona_id)?;
 
     // Verify run is completed before generating improvements from its results
-    let run_status = match mode.as_str() {
-        "arena" => arena_repo::get_run_by_id(&state.db, &run_id)?.status,
-        "ab" => ab_repo::get_run_by_id(&state.db, &run_id)?.status,
-        "matrix" => matrix_repo::get_run_by_id(&state.db, &run_id)?.status,
-        "eval" => eval_repo::get_run_by_id(&state.db, &run_id)?.status,
+    let run_status = match mode {
+        "arena" => arena_repo::get_run_by_id(&state.db, run_id)?.status,
+        "ab" => ab_repo::get_run_by_id(&state.db, run_id)?.status,
+        "matrix" => matrix_repo::get_run_by_id(&state.db, run_id)?.status,
+        "eval" => eval_repo::get_run_by_id(&state.db, run_id)?.status,
         _ => return Err(AppError::Validation(format!("Invalid mode: {mode}"))),
     };
 
@@ -1137,30 +1203,30 @@ pub async fn lab_improve_prompt(
     }
 
     // Load results based on mode and build a summary JSON
-    let results_summary = match mode.as_str() {
+    let results_summary = match mode {
         "arena" => {
-            let results = arena_repo::get_results_by_run(&state.db, &run_id)?;
+            let results = arena_repo::get_results_by_run(&state.db, run_id)?;
             if results.is_empty() {
                 return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
             }
             build_results_summary_arena(&results)
         }
         "ab" => {
-            let results = ab_repo::get_results_by_run(&state.db, &run_id)?;
+            let results = ab_repo::get_results_by_run(&state.db, run_id)?;
             if results.is_empty() {
                 return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
             }
             build_results_summary_ab(&results)
         }
         "matrix" => {
-            let results = matrix_repo::get_results_by_run(&state.db, &run_id)?;
+            let results = matrix_repo::get_results_by_run(&state.db, run_id)?;
             if results.is_empty() {
                 return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
             }
             build_results_summary_matrix(&results)
         }
         "eval" => {
-            let results = eval_repo::get_results_by_run(&state.db, &run_id)?;
+            let results = eval_repo::get_results_by_run(&state.db, run_id)?;
             if results.is_empty() {
                 return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
             }
@@ -1170,7 +1236,7 @@ pub async fn lab_improve_prompt(
     };
 
     // Load user ratings for this run
-    let ratings = ratings_repo::get_ratings_for_run(&state.db, &run_id)?;
+    let ratings = ratings_repo::get_ratings_for_run(&state.db, run_id)?;
     let user_feedback = if ratings.is_empty() {
         None
     } else {
@@ -1205,7 +1271,7 @@ pub async fn lab_improve_prompt(
 
     let version = metrics_repo::create_prompt_version(
         &state.db,
-        &persona_id,
+        persona_id,
         Some(improved_json_str),
         None,
         Some(change_summary),
@@ -1616,5 +1682,95 @@ mod tests {
         assert_eq!(prompt, "OLD", "prompt must be rolled back");
         let v: serde_json::Value = serde_json::from_str(&profile).unwrap();
         assert_eq!(v["model"], "haiku", "model must be rolled back");
+    }
+
+    // -- lab_improve_prompt idempotency -------------------------------------
+
+    /// A retry of the SAME user gesture (same idempotency key) must return the
+    /// version the first attempt created — not run the generator again and mint
+    /// a second version. This is the "timeout fires while the mutation is still
+    /// running, user retries" hazard `InvokeTimeoutError` documents.
+    #[tokio::test]
+    async fn improve_prompt_same_key_yields_one_version() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let key = "improve-key-same";
+        let calls = Arc::new(AtomicUsize::new(0));
+
+        let first = with_improve_prompt_idempotency(Some(key), || {
+            let calls = Arc::clone(&calls);
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(make_version("p1", "version-1", "{}"))
+            }
+        })
+        .await
+        .unwrap();
+
+        let second = with_improve_prompt_idempotency(Some(key), || {
+            let calls = Arc::clone(&calls);
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(make_version("p1", "version-2", "{}"))
+            }
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "the retry must not re-run the improvement generator"
+        );
+        assert_eq!(first.id, "version-1");
+        assert_eq!(
+            second.id, "version-1",
+            "the retry must return the version the first attempt created"
+        );
+    }
+
+    /// A fresh gesture mints a fresh key and legitimately produces a new
+    /// version — dedup must not freeze the feature after one use.
+    #[tokio::test]
+    async fn improve_prompt_different_key_yields_a_new_version() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let calls = Arc::new(AtomicUsize::new(0));
+        for (key, id) in [
+            ("improve-key-a", "version-a"),
+            ("improve-key-b", "version-b"),
+        ] {
+            let out = with_improve_prompt_idempotency(Some(key), || {
+                let calls = Arc::clone(&calls);
+                async move {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(make_version("p1", id, "{}"))
+                }
+            })
+            .await
+            .unwrap();
+            assert_eq!(out.id, id);
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+    }
+
+    /// Failures are not memoized: a retry after a failed generation must be
+    /// allowed to run again.
+    #[tokio::test]
+    async fn improve_prompt_failure_is_not_memoized() {
+        let key = "improve-key-fail";
+
+        let failed = with_improve_prompt_idempotency(Some(key), || async {
+            Err(AppError::Validation("generation failed".into()))
+        })
+        .await;
+        assert!(failed.is_err());
+
+        let retried = with_improve_prompt_idempotency(Some(key), || async {
+            Ok(make_version("p1", "version-after-retry", "{}"))
+        })
+        .await
+        .unwrap();
+        assert_eq!(retried.id, "version-after-retry");
     }
 }

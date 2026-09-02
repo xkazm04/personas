@@ -362,6 +362,12 @@ export interface LabSlice {
     personaId: string,
     runId: string,
     mode: 'arena' | 'ab' | 'eval' | 'matrix',
+    /**
+     * One key per user gesture. Reuse it when retrying the SAME gesture so the
+     * backend returns the version the first attempt created instead of minting
+     * a second one; mint a fresh key for a fresh gesture.
+     */
+    idempotencyKey?: string,
   ) => Promise<PersonaPromptVersion | null>;
   tagVersion: (id: string, tag: string) => Promise<void>;
   rollbackVersion: (versionId: string) => Promise<void>;
@@ -548,9 +554,9 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         reportError(err, "Failed to fetch prompt versions", set, { action: "lab.fetchVersions" });
       }
     },
-    improvePromptVersion: async (personaId, runId, mode) => {
+    improvePromptVersion: async (personaId, runId, mode, idempotencyKey) => {
       try {
-        const version = await api.labImprovePrompt(personaId, runId, mode);
+        const version = await api.labImprovePrompt(personaId, runId, mode, idempotencyKey);
         // A fresh experimental version now exists — surface it in the table so
         // the user can measure it against the baseline immediately.
         get().fetchVersions(personaId);

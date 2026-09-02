@@ -207,8 +207,31 @@ export const labGetVersionEconomics = (personaId: string) =>
 // Prompt Improvement Engine
 // ============================================================================
 
-export const labImprovePrompt = (personaId: string, runId: string, mode: string) =>
-  invoke<PersonaPromptVersion>("lab_improve_prompt", { personaId, runId, mode });
+/**
+ * `lab_improve_prompt` is BLOCKING + MUTATING (inline LLM call, then a new
+ * prompt version is committed). It sits on `BLOCKING_MUTATION_TIMEOUTS` so the
+ * IPC waits for the real result instead of rejecting at 90s while the backend
+ * runs on — and it carries an idempotency key so a retry that happens anyway
+ * returns the version the first attempt created instead of minting a second.
+ *
+ * Callers should pass ONE key per user gesture (mint it once, reuse it across
+ * retries of that gesture, drop it on success). A caller that doesn't think
+ * about it still gets self-dedup against a concurrent duplicate via the
+ * defaulted key below — same shape as `executePersona`.
+ */
+export const labImprovePrompt = (
+  personaId: string,
+  runId: string,
+  mode: string,
+  idempotencyKey?: string,
+) => {
+  const resolvedKey = idempotencyKey ?? crypto.randomUUID();
+  return invoke<PersonaPromptVersion>(
+    "lab_improve_prompt",
+    { personaId, runId, mode, idempotencyKey: resolvedKey },
+    { idempotencyKey: resolvedKey },
+  );
+};
 
 // ============================================================================
 // Active Progress -- Hydrate all active runs after page refresh

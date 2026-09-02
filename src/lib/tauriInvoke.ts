@@ -78,6 +78,12 @@ const BLOCKING_MUTATION_TIMEOUTS: Partial<Record<CommandName, number>> = {
   // First-run backfill tick: scans the last 24h of git/ledger activity and
   // writes one pulse. Blocking + mutating; can exceed 90s on a large repo.
   project_tracking_run_now: LONG_MUTATION_TIMEOUT_MS,
+  // Prompt-improvement engine: an inline LLM call, then a `create_prompt_version`
+  // commit. At the 90s default the wrapper rejected while the backend went on to
+  // commit the version anyway — a false failure, and a retry minted a SECOND
+  // version. Backed by a client-minted idempotency key (see `labImprovePrompt`)
+  // so a retry that still happens returns the first attempt's version.
+  lab_improve_prompt: LONG_MUTATION_TIMEOUT_MS,
 };
 
 /**
