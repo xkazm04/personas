@@ -22,7 +22,6 @@ import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
 export type { ToolCallStep };
 
-export function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
-  if (!raw) return [];
-  return Array.isArray(raw) ? raw : [];
-}
+// Re-exported, not re-implemented: this file carried a byte-identical second
+// copy of the hook's `parseToolSteps`, and only the hook's is under test.
+export { parseToolSteps } from '@/hooks/execution/useReplayTimeline';

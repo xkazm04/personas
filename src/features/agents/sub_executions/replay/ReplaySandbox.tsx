@@ -136,6 +136,8 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
       {/* Transport controls */}
       <div className="px-4 py-3 border-b border-primary/10 space-y-2.5">
         <TimelineScrubber
+          silences={state.silences}
+          hasRecordedTempo={state.hasRecordedTempo}
           currentMs={state.currentMs}
           totalMs={state.totalMs}
           toolSteps={state.toolSteps}
