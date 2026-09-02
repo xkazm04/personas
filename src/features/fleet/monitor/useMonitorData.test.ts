@@ -47,6 +47,9 @@ const registeredPollers: { name?: string; enabled: boolean }[] = [];
 vi.mock('@/hooks/utility/timing/usePolling', () => ({
   usePolling: (_fn: unknown, opts: { enabled: boolean; name?: string }) => {
     registeredPollers.push({ name: opts.name, enabled: opts.enabled });
+    // The hook now READS this return (`lastRefreshed` feeds the board's "as of"
+    // stamp); a mock that returned undefined made every test in this file throw.
+    return { isPolling: opts.enabled, lastRefreshed: null };
   },
   POLLING_CONFIG: {
     dashboardRefresh: { interval: 60_000 },

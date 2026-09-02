@@ -16,6 +16,7 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
 import { useReportCreatedListener } from '@/hooks/realtime/useReportCreatedListener';
 import { extractMessage } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -272,6 +273,48 @@ export interface MonitorData {
    */
   reviewsHasMore: boolean;
   unreadMessages: PersonaReport[];
+  /**
+   * Why {@link MonitorData.unreadMessages} is short, when it is short because
+   * the read FAILED rather than because everything has been read.
+   *
+   * Same contract as {@link MonitorData.reviewsError}, and it existed for the
+   * same reason: `list_reports` failing ended at `logger.error` and nothing
+   * else, so a fleet whose messages were unreadable rendered as a fleet with
+   * nothing to say. Null while the last read succeeded; cleared by the next
+   * successful poll or event refresh.
+   *
+   * The sentence is RESOLVED through the error registry before it is stored, so
+   * a caller that renders it shows the product's copy rather than SQLite's.
+   */
+  messagesError: string | null;
+  /**
+   * Why {@link MonitorData.healthMap} is empty or stale.
+   *
+   * The health read lives in `personaSlice.fetchPersonaSummaries`, whose only
+   * record of a failure was a `logger.warn` — so every tile fell back to its
+   * idle grey and the board read as a calm fleet. The store now carries the
+   * failure and this is the Monitor's window onto it.
+   */
+  healthError: string | null;
+  /**
+   * When the fused board last became true — the OLDEST successful read across
+   * the feeds this caller renders, in epoch ms, or null before the first one.
+   *
+   * Oldest rather than newest on purpose: one healthy feed must not stamp a
+   * fresh time onto a board whose other half has been failing for ten minutes.
+   *
+   * NOTE — the polling layer's own `lastRefreshed` is the FALLBACK here, not
+   * the source, and cannot be the source: `usePolling` stamps it whenever the
+   * fetch fn RESOLVES, and both loaders in this hook catch internally and
+   * resolve. For them that timestamp says "we ran", not "we succeeded". The
+   * same property is why `usePolling`'s exponential backoff is structurally
+   * unreachable for these two loaders and for `fetchPersonaSummaries` — they
+   * never reject, so `errorCountRef` never increments and a dead backend is
+   * re-queried at full cadence forever. That is a cross-cutting fix belonging
+   * to the polling context (every caller that catches inside its loader has
+   * it), NOT something to paper over per-caller here.
+   */
+  lastRefreshed: number | null;
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
   /** True while ANY review write is in flight. Presentational only — the write
@@ -346,6 +389,8 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
+  const healthError = useAgentStore((s) => s.personaSummariesError);
+  const healthRefreshedAt = useAgentStore((s) => s.personaSummariesRefreshedAt);
   const activeProcesses = useOverviewStore((s) => s.activeProcesses);
   const cloudReviews = useOverviewStore((s) => s.cloudReviews);
   const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
@@ -364,6 +409,11 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     () => messagesWarmCache ?? [],
   );
   const [loading, setLoading] = useState(warm === undefined);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  // Per-feed "last SUCCESSFUL read" stamps. See `MonitorData.lastRefreshed` for
+  // why the polling layer's own stamp cannot answer this on its own.
+  const [reviewsRefreshedAt, setReviewsRefreshedAt] = useState<number | null>(null);
+  const [messagesRefreshedAt, setMessagesRefreshedAt] = useState<number | null>(null);
   const { track, busy: isProcessing } = useInFlight();
   // The app's ONE persona-join helper, already used by ManualReviewList for the
   // same rows. This shaper populated no identity at all, which is why the deck
@@ -407,6 +457,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
         // Clearing on success is what makes the flag self-healing: React bails
         // out of a set to the identical value, so a healthy poll costs nothing.
         setReviewsError(null);
+        setReviewsRefreshedAt(Date.now());
       }
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
@@ -448,11 +499,20 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
           messagesWarmCache = next;
           return next;
         });
+        setMessagesError(null);
+        setMessagesRefreshedAt(Date.now());
       } else {
         messagesWarmCache = unread;
       }
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
+      // The log was the ONLY record, so an unreadable inbox and an empty one
+      // rendered identically — every tile idle-grey, "your fleet is calm".
+      // RESOLVED, not raw: `error-message-resolution.md` — a string that can
+      // reach a surface must be the product's sentence, not the producer's.
+      // (`reviewsError` above still stores the raw string; it predates this and
+      // is one of that rule's baselined violations, not a shape to copy.)
+      if (mounted.current) setMessagesError(resolveError(extractMessage(err)).message);
     }
   }, []);
 
@@ -560,17 +620,17 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   //
   // Named per call site so the shared PollingCoordinator's stats can say which
   // surface is paying for what.
-  usePolling(reloadReviews, {
+  const reviewsPoll = usePolling(reloadReviews, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,
     enabled: wantsReviewPoll,
     name: 'monitor:reviews',
   });
-  usePolling(reloadMessages, {
+  const messagesPoll = usePolling(reloadMessages, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,
     enabled: wantsMessages,
     name: 'monitor:messages',
   });
-  usePolling(fetchPersonaSummaries, {
+  const healthPoll = usePolling(fetchPersonaSummaries, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,
     enabled: wantsPersonaHealth,
     name: 'monitor:personaHealth',
@@ -583,6 +643,25 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
     name: 'monitor:cloudReviews',
   });
+
+  /**
+   * The oldest successful read across the feeds this caller renders. A feed's
+   * own success stamp wins; the ticker's is the fallback for the one loader
+   * this hook does not own (`fetchCloudReviews` is covered by the review feed's
+   * stamp, since both fill the same queue).
+   */
+  const lastRefreshed = useMemo(() => {
+    const stamps = [
+      reviewsRefreshedAt ?? reviewsPoll.lastRefreshed,
+      wantsMessages ? messagesRefreshedAt ?? messagesPoll.lastRefreshed : null,
+      wantsPersonaHealth ? healthRefreshedAt ?? healthPoll.lastRefreshed : null,
+    ].filter((n): n is number => n !== null);
+    return stamps.length > 0 ? Math.min(...stamps) : null;
+  }, [
+    reviewsRefreshedAt, reviewsPoll.lastRefreshed,
+    wantsMessages, messagesRefreshedAt, messagesPoll.lastRefreshed,
+    wantsPersonaHealth, healthRefreshedAt, healthPoll.lastRefreshed,
+  ]);
 
   const pendingCloud = useMemo<MonitorReviewItem[]>(
     // Cloud rows come from the cloud worker and have no resume-loop link — they
@@ -703,11 +782,13 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   return useMemo(
     () => ({
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      messagesError, healthError, lastRefreshed,
       activeProcesses, loading, isProcessing,
       handleReviewAction, handleDispatchAction, handleMarkRead,
     }),
     [
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      messagesError, healthError, lastRefreshed,
       activeProcesses, loading, isProcessing,
       handleReviewAction, handleDispatchAction, handleMarkRead,
     ],

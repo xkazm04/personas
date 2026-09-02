@@ -60,6 +60,19 @@ export interface PersonaSlice {
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
   personaHealthMap: Record<string, PersonaHealth>;
+  /**
+   * Why {@link PersonaSlice.personaHealthMap} is empty or stale.
+   *
+   * `fetchPersonaSummaries` failing ended at a `logger.warn` and nothing else,
+   * so every surface built on the health map -- the Persona Monitor's fleet
+   * board above all -- fell back to the idle-grey tile and rendered an
+   * unreadable fleet exactly like a calm one. Null while the last read
+   * succeeded; cleared by the next successful read, so a transient failure
+   * heals itself.
+   */
+  personaSummariesError: string | null;
+  /** Epoch ms of the last SUCCESSFUL summaries read (null before the first). */
+  personaSummariesRefreshedAt: number | null;
   /** Whether the editor has unsaved changes -- set by EditorBody. */
   isEditorDirty: boolean;
   /** Persona ID the user tried to switch to while dirty. */
@@ -175,6 +188,8 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   personaTriggerCounts: {},
   personaLastRun: {},
   personaHealthMap: {},
+  personaSummariesError: null,
+  personaSummariesRefreshedAt: null,
   isEditorDirty: false,
   pendingSelectPersonaId: null,
 
@@ -256,11 +271,18 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         personaHealthMap: sameRecord(state.personaHealthMap, healthMap, sameHealth)
           ? state.personaHealthMap
           : healthMap,
+        // Self-healing: React/zustand bail out of a set to the identical value,
+        // so a healthy poll costs nothing to clear this.
+        personaSummariesError: null,
+        personaSummariesRefreshedAt: Date.now(),
       }));
     } catch (err) {
       if (seq !== fetchSummariesSeq) return; // superseded by a newer request
       const category = classifyUnknownError(err);
       logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
+      // The warn was the ONLY record. A surface cannot render a log line, so an
+      // unreadable fleet looked exactly like an idle one.
+      set({ personaSummariesError: extractMessage(err) });
     }
   },
 

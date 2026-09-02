@@ -17,6 +17,7 @@ import {
 import { useThemeStore } from '@/stores/themeStore';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('monitor-capabilities');
@@ -66,9 +67,15 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
       );
     } catch (err) {
       logger.error('Quick-execute failed', { error: err, useCaseId: uc.id });
+      // The lock release is right — the run did NOT start, so the sigil must be
+      // pressable again. What was missing is the other half: releasing it in
+      // silence made a failed dispatch look identical to a run that started and
+      // finished, so the operator pressed once, saw the sigil settle, and
+      // believed work was underway. The toast is what tells them it was not.
       clearTimeout(tmr);
       timers.current.delete(uc.id);
       release();
+      toastCatch('MonitorCapabilities:quickExecute')(err);
     }
   }, [personaId]);
 

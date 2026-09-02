@@ -28,6 +28,7 @@ import { useChannelWorkspace } from './channels';
 import { Stream } from './channels/Stream';
 import { ConversationBriefing } from './channels/ConversationBriefing';
 import { ChannelMap } from './channels/map/ChannelMap';
+import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { FleetGridView } from './grid/FleetGridView';
 import { QuickDispatchDock } from './grid/QuickDispatchDock';
 import {
@@ -130,8 +131,14 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     () => ({ reviews: isActivityView, messages: isActivityView, personaHealth: isActivityView }),
     [isActivityView],
   );
+  // `reviewsError` / `messagesError` / `healthError` / `lastRefreshed` were all
+  // produced by the hook (or by its polling layer) and destructured by nobody,
+  // which is why a Monitor whose reads had been failing for ten minutes still
+  // rendered every tile idle-grey with no "as of" anywhere. See
+  // `MonitorFeedStatus`.
   const {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
+    reviewsError, messagesError, healthError, lastRefreshed,
     loading, isProcessing, handleReviewAction, handleMarkRead,
   } = useMonitorData(feeds);
 
@@ -403,6 +410,17 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           Activity board (the fleet read); the channel surfaces own their full
           height and carry no persona-less work. */}
       {view === 'activity' && <SystemBand processes={systemProcesses} now={now} />}
+
+      {/* A failed feed says so here, above a board that keeps whatever it last
+          knew. Renders nothing when all three answered. */}
+      {view === 'activity' && (
+        <MonitorFeedStatus
+          reviewsError={reviewsError}
+          messagesError={messagesError}
+          healthError={healthError}
+          lastRefreshed={lastRefreshed}
+        />
+      )}
 
       {view === 'activity' ? (
         /* Body — the fleet board with the drawer layered over it */
