@@ -580,5 +580,10 @@
   "feed_error_health": "تعذّرت قراءة صحة الشخصيات، لذا قد تعرض البلاطات حالة قديمة.",
   "feed_error_messages": "تعذّرت قراءة التقارير، لذا قد تكون أعداد غير المقروء ناقصة.",
   "feed_error_title": "جزء من هذه اللوحة مفقود",
-  "feed_never": "أبدًا"
+  "feed_never": "أبدًا",
+  "assertion_failures_summary": "فشل {failed} من أصل {total} تأكيدات مخرجات في هذا التشغيل.",
+  "assertion_failures_title": "فشلت تأكيدات المخرجات",
+  "auto_fix_confirmed_summary": "نجحت إعادة المحاولة ذاتية الإصلاح وأُغلقت المشكلة.",
+  "auto_fix_confirmed_title": "تم تأكيد الإصلاح التلقائي",
+  "clipboard_fix_found_summary": "تطابق {errorType} مع \"{kbName}\" في قاعدة معرفتك."
 }

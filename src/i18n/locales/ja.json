@@ -581,7 +581,12 @@
     "feed_error_health": "ペルソナの状態を読み取れなかったため、タイルが古い状態を示している可能性があります。",
     "feed_error_messages": "レポートを読み取れなかったため、未読数が少なく表示されている可能性があります。",
     "feed_error_title": "このボードの一部が欠けています",
-    "feed_never": "なし"
+    "feed_never": "なし",
+    "assertion_failures_summary": "この実行で {total} 件中 {failed} 件の出力アサーションが失敗しました。",
+    "assertion_failures_title": "出力アサーションが失敗しました",
+    "auto_fix_confirmed_summary": "自己修復の再試行が成功し、問題はクローズされました。",
+    "auto_fix_confirmed_title": "自動修正を確認しました",
+    "clipboard_fix_found_summary": "{errorType} がナレッジベースの「{kbName}」に一致しました。"
   },
   "common": {
     "loading": "読み込み中…",

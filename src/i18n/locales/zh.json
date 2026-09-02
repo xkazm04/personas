@@ -581,7 +581,12 @@
     "feed_error_health": "无法读取人格健康状态，磁贴可能显示过期状态。",
     "feed_error_messages": "无法读取报告，未读计数可能偏少。",
     "feed_error_title": "此面板缺少部分数据",
-    "feed_never": "从未"
+    "feed_never": "从未",
+    "assertion_failures_summary": "本次运行有 {failed}/{total} 个输出断言失败。",
+    "assertion_failures_title": "输出断言失败",
+    "auto_fix_confirmed_summary": "一次自愈重试已成功，问题已关闭。",
+    "auto_fix_confirmed_title": "已确认自动修复",
+    "clipboard_fix_found_summary": "{errorType} 与知识库中的“{kbName}”匹配。"
   },
   "common": {
     "loading": "加载中…",

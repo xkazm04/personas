@@ -6,7 +6,7 @@ Events and Triggers are the routing layer that lets personas react to schedules,
 
 `src/features/triggers/TriggersPage.tsx` owns the Events section. It reads the active tab from `useSystemStore().eventBusTab`, loads all triggers through `listAllTriggers()`, reads trigger health through `getTriggerHealthMap()`, and lazily mounts heavier canvas tabs.
 
-The Live Stream header includes a shortcut into `Overview -> Events` for the full event log.
+The Live Stream header includes a shortcut into `Overview -> Events` for the full event log. On mount the stream's backfill snapshot is merged *under* any live rows already buffered (2026-09-02), so events that fire during the first fetch are no longer dropped.
 
 ## Tabs
 

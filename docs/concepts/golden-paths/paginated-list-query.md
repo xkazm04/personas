@@ -121,7 +121,7 @@ return a projection type (`ExecutionListItem`, 16 scalars) — never the full re
 - **Hand-rolling page state over an array** — `useState(page)` + `.slice(page * SIZE, …)` + prev/next + a clamp effect. `DataGrid`'s `pageSize` includes the clamp-**don't-reset** behaviour (`:168-174`) that hand-rolls get wrong: resetting to page 1 on every `data.length` change snaps the user back after an ordinary edit.
 - **Clamping the derived page instead of the stored one** — `ClusterPatternsModal.tsx:260` computes `pageClamped` at render but leaves `page` stale, so after the list shrinks the first "prev" click decrements an out-of-range value and renders the same page.
 - **Using the page endpoint as a counts probe** — `useTaskQueue.ts:123` calls `devApi.tasksPage(projectId, undefined, 1)` to read `page.counts`, bypassing `useLayeredList`'s own `fetchCounts` slot and issuing an unfiltered counts read next to a filtered page.
-- **Discarding `hasMore`** — `useTimelineReplay.ts:190` takes `result.events` and drops `result.has_more`, then re-truncates client-side to `MAX_REPLAY_EVENTS`. The user is shown a replay that is silently missing its head.
+- **Discarding `hasMore`** — (the citing file was dead code and was deleted 2026-09-02 in `44b0bc8bd`; the shape is kept as the worked example) `useTimelineReplay.ts:190` took `result.events` and drops `result.has_more`, then re-truncates client-side to `MAX_REPLAY_EVENTS`. The user is shown a replay that is silently missing its head.
 - **A truncation flag with no continuation** — `DriveTreeNode.hasMoreChildren`: the backend admits it truncated and offers no way to ask for the rest.
 
 ## Evidence

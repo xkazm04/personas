@@ -460,6 +460,7 @@ export type { GitLabRollbackResult } from "./GitLabRollbackResult";
 export type { GitLabUser } from "./GitLabUser";
 export type { GitOperationResult } from "./GitOperationResult";
 export type { GitStatusSummary } from "./GitStatusSummary";
+export type { GlobalExecutionListItem } from "./GlobalExecutionListItem";
 export type { GlobalExecutionRow } from "./GlobalExecutionRow";
 export type { GlobalSlaStats } from "./GlobalSlaStats";
 export type { GoalProgressSuggestion } from "./GoalProgressSuggestion";

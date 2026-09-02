@@ -581,7 +581,12 @@
     "feed_error_health": "페르소나 상태를 읽을 수 없어 타일이 오래된 상태를 표시할 수 있습니다.",
     "feed_error_messages": "보고서를 읽을 수 없어 읽지 않음 수가 적게 표시될 수 있습니다.",
     "feed_error_title": "이 보드의 일부가 누락되었습니다",
-    "feed_never": "없음"
+    "feed_never": "없음",
+    "assertion_failures_summary": "이 실행에서 출력 어설션 {total}개 중 {failed}개가 실패했습니다.",
+    "assertion_failures_title": "출력 어설션 실패",
+    "auto_fix_confirmed_summary": "자가 복구 재시도가 성공하여 문제가 종료되었습니다.",
+    "auto_fix_confirmed_title": "자동 수정 확인됨",
+    "clipboard_fix_found_summary": "{errorType}이(가) 지식 베이스의 \"{kbName}\"과(와) 일치했습니다."
   },
   "common": {
     "loading": "로딩 중…",

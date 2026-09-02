@@ -10,7 +10,7 @@
 > **Sweep size.** Every backend push-stream attachment in `src/` — **43 hook sites** plus the raw
 > `listen()` population — enumerated three ways and reconciled. All **20** files attaching a stream
 > through the unbuffered hooks opened and classified by hand for guard tokens. `createSingletonListener.ts`,
-> `useTauriEvent.ts`, `executionSink.ts`, `executionSlice.ts`, `useRealtimeEvents.ts`,
+> `useTauriEvent.ts`, `executionSink.ts`, `executionSlice.ts`, `useRealtimeEvents.ts` (deleted 2026-09-02),
 > `useEventLog.ts`, `useCorrelatedCliStream.ts`, `LiveStreamTab.tsx`, `healingSlice.ts`,
 > `useConversationRoster.ts`, `ProjectTeamPreviewModal.tsx` read in full or around every fetch and
 > subscribe site; `commands/fleet/registry.rs` and `commands/fleet/commands.rs` read for the

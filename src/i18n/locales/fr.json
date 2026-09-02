@@ -581,7 +581,12 @@
     "feed_error_health": "La santé des personas n’a pas pu être lue, les tuiles peuvent afficher un état obsolète.",
     "feed_error_messages": "Les rapports n’ont pas pu être lus, les compteurs de non-lus peuvent être incomplets.",
     "feed_error_title": "Une partie de ce tableau manque",
-    "feed_never": "jamais"
+    "feed_never": "jamais",
+    "assertion_failures_summary": "{failed} assertion(s) de sortie sur {total} ont échoué pour cette exécution.",
+    "assertion_failures_title": "Des assertions de sortie ont échoué",
+    "auto_fix_confirmed_summary": "Une nouvelle tentative d’auto-réparation a réussi et le problème a été clos.",
+    "auto_fix_confirmed_title": "Correction automatique confirmée",
+    "clipboard_fix_found_summary": "{errorType} correspond à « {kbName} » dans votre base de connaissances."
   },
   "common": {
     "loading": "Chargement…",

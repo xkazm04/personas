@@ -5,8 +5,28 @@
  * categories surfaced in the Activity filter bar. Used to render precise
  * filter badges independently from the paginated row list.
  */
-export type ExecutionCounts = { total: number, 
+export type ExecutionCounts = { 
+/**
+ * Sum of every bucket below — an invariant asserted by
+ * `count_all_global`'s tests. A row whose stored status parses into no
+ * `ExecutionState` is logged and excluded from BOTH the total and the
+ * buckets, so the two can never disagree.
+ */
+total: number, 
 /**
  * Includes both `running` and `pending` — the UI bucket is "Running".
  */
-running: number, completed: number, failed: number, };
+running: number, completed: number, failed: number, 
+/**
+ * Runs the user (or a shutdown) stopped. `cancel_execution` writes exactly
+ * this status, and until 2026-09-02 it belonged to no bucket at all: it
+ * inflated `total` and appeared under no filter, so "N of M" never
+ * reconciled.
+ */
+cancelled: number, 
+/**
+ * Runs that finished without satisfying their contract (e.g. a critical
+ * output assertion downgraded a `completed` run). Same story as
+ * `cancelled` — counted in the total, reachable through no filter.
+ */
+incomplete: number, };

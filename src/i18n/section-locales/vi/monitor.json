@@ -580,5 +580,10 @@
   "feed_error_health": "Không đọc được tình trạng persona, nên các ô có thể hiển thị trạng thái cũ.",
   "feed_error_messages": "Không đọc được báo cáo, nên số chưa đọc có thể bị thiếu.",
   "feed_error_title": "Một phần bảng này bị thiếu",
-  "feed_never": "chưa bao giờ"
+  "feed_never": "chưa bao giờ",
+  "assertion_failures_summary": "{failed} trên {total} kiểm định đầu ra thất bại trong lần chạy này.",
+  "assertion_failures_title": "Kiểm định đầu ra thất bại",
+  "auto_fix_confirmed_summary": "Một lần thử lại tự phục hồi đã thành công và sự cố đã được đóng.",
+  "auto_fix_confirmed_title": "Đã xác nhận tự động sửa",
+  "clipboard_fix_found_summary": "{errorType} khớp với \"{kbName}\" trong cơ sở tri thức của bạn."
 }

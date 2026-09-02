@@ -320,7 +320,7 @@ question somewhere else" shape.
 
 The §9 rule's population. Nine are true feed items (§9). The two that matter most:
 
-- `hooks/realtime/useRealtimeEvents.ts:244-245` and `hooks/realtime/emitDeploymentEvent.ts:52-53`
+- `hooks/realtime/useRealtimeEvents.ts:244-245` (dead code since `sub_realtime/` was removed; file deleted 2026-09-02 in `44b0bc8bd`) and `hooks/realtime/emitDeploymentEvent.ts:52-53` (fixed 2026-09-02 in `c130ca956`: the deploy event now carries no `created_at` and rides at the live end of the feed, unranked)
   each synthesize a full `PersonaEvent` with **both** `processed_at` and `created_at` from
   `new Date()`, and push it into the same `recentEvents` store the Event Log ranks on
   `created_at` (`useEventLog.ts:237-245`) — beside rows whose `created_at` came from SQLite.
@@ -396,7 +396,7 @@ discriminates on *provenance* and not on the field name.
 
 | verdict | site | why |
 |---|---|---|
-| TP | `hooks/realtime/useRealtimeEvents.ts:245` | synthetic `PersonaEvent` into the Event Log's ranked store |
+| TP | `hooks/realtime/useRealtimeEvents.ts:245` (file deleted 2026-09-02, `44b0bc8bd` — it had no importer) | synthetic `PersonaEvent` into the Event Log's ranked store |
 | TP | `hooks/realtime/emitDeploymentEvent.ts:53` | same store, same shape |
 | TP | `features/fleet/monitor/channels/useConversation.ts:73` | `at:` on a proposal pushed into a conversation ranked on `at` |
 | TP | `features/plugins/companion/chat/athenaChatSend.ts:76` | `createdAt` drives the transcript's day separators |

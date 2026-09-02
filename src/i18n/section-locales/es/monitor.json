@@ -580,5 +580,10 @@
   "feed_error_health": "No se pudo leer la salud de las personas, así que las fichas pueden mostrar un estado desactualizado.",
   "feed_error_messages": "No se pudieron leer los informes, así que los no leídos pueden estar incompletos.",
   "feed_error_title": "Falta parte de este tablero",
-  "feed_never": "nunca"
+  "feed_never": "nunca",
+  "assertion_failures_summary": "Fallaron {failed} de {total} aserciones de salida en esta ejecución.",
+  "assertion_failures_title": "Fallaron aserciones de salida",
+  "auto_fix_confirmed_summary": "Un reintento de autorreparación tuvo éxito y el problema se cerró.",
+  "auto_fix_confirmed_title": "Corrección automática confirmada",
+  "clipboard_fix_found_summary": "{errorType} coincide con «{kbName}» en tu base de conocimiento."
 }

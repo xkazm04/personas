@@ -580,5 +580,10 @@
   "feed_error_health": "पर्सोना की स्थिति पढ़ी नहीं जा सकी, इसलिए टाइलें पुरानी स्थिति दिखा सकती हैं।",
   "feed_error_messages": "रिपोर्ट पढ़ी नहीं जा सकीं, इसलिए अपठित गिनती कम हो सकती है।",
   "feed_error_title": "इस बोर्ड का एक हिस्सा गायब है",
-  "feed_never": "कभी नहीं"
+  "feed_never": "कभी नहीं",
+  "assertion_failures_summary": "इस रन में {total} में से {failed} आउटपुट असर्शन विफल हुए।",
+  "assertion_failures_title": "आउटपुट असर्शन विफल",
+  "auto_fix_confirmed_summary": "एक स्व-उपचार पुनर्प्रयास सफल रहा और समस्या बंद कर दी गई।",
+  "auto_fix_confirmed_title": "स्वतः सुधार की पुष्टि",
+  "clipboard_fix_found_summary": "{errorType} आपके ज्ञान आधार में \"{kbName}\" से मेल खाता है।"
 }

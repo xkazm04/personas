@@ -425,7 +425,9 @@ them):
 |---|---|---|
 | `get_execution(id)` | `PersonaExecution` | Full record |
 | `list_executions(persona_id, limit?)` | `Vec<PersonaExecution>` | Persona history |
-| `list_all_executions(limit?, status?, persona_id?)` | `Vec<GlobalExecutionRow>` | Global filter |
+| `list_all_executions(limit?, offset?, status?, persona_id?)` | `Vec<GlobalExecutionListItem>` | Global filter — lean 11-column projection since 2026-09-03 (the fat record stays behind `get_execution`); `offset` pages at `created_at DESC, id DESC`; an unknown `status` is a validation error, not an empty list |
+| `count_executions()` | `ExecutionCounts` | Six buckets (`running`, `completed`, `failed`, `cancelled`, `incomplete`, `total`) — an exhaustive match on `ExecutionState`, so `total == sum(buckets)` |
+| `create_output_assertion(...)` | `OutputAssertion` | Assertion type, severity and failure action are typed enums at the door (2026-09-03); an unknown token is refused, never coerced to `contains`/`log` |
 | `get_execution_log(id)` | `Option<String>` | Full log text |
 | `get_execution_log_lines(id, offset?, limit?)` | `Vec<String>` | Paginated log |
 | `get_execution_trace(id)` | `Option<ExecutionTrace>` | Structured trace |

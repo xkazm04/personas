@@ -279,7 +279,7 @@ lands.**
 | Two calendars for the same series | `metrics.rs:1183` buckets with `DATE(e.created_at)` (UTC); `sla.rs:643` buckets with `DATE(created_at, ?1)` (the user's day). **17 of 17 day buckets differ; the largest per-day success-rate divergence is 12.09 pp.** |
 | `created_at >= datetime('now', '-N days')` against an RFC3339 column | It is a **string** comparison. `created_at` is `'2026-06-26T16:34:02.8+00:00'`; the boundary is `'2026-06-26 12:00:00'`. At index 10, `'T'` (0x54) beats `' '` (0x20) **before any time digit is read**, so every row on the boundary day is included whatever its time. Executed: 160 rows matched where 70 are actually after the instant — **90 over-included, 2.3×**. |
 | `else { 0.0 }` after a `> 0` guard on a rate | "Nothing has run yet" and "everything failed" render as the same 0%. **34 sites.** A persona that has never executed and one that failed every run are the same pixel. |
-| `Math.max(1, n)` inlined as the divisor | Worse than the above: it fabricates a denominator instead of declaring absence, so there is no branch to fix later. `useRealtimeEvents.ts:83` guards on `total` (all statuses) and divides by `Math.max(delivered + failed, 1)` — a 60-second window holding 10 pending events reports **0% success** for a queue that has not failed once. |
+| `Math.max(1, n)` inlined as the divisor | Worse than the above: it fabricates a denominator instead of declaring absence, so there is no branch to fix later. `useRealtimeEvents.ts:83` (file deleted 2026-09-02, `44b0bc8bd`) guarded on `total` (all statuses) and divides by `Math.max(delivered + failed, 1)` — a 60-second window holding 10 pending events reports **0% success** for a queue that has not failed once. |
 | A rate assigned in two units on two branches of one `if` | `personaHealthSlice.ts:395` writes `rel.success_rate * 100`; `:398` writes `dashboard.overall_success_rate` — which is 0–1. The field is documented `// 0-100%` at `:34`. Every proxied persona reads ~0.89 instead of ~89 and trips `healthCheckSlice.ts:137`'s `successRate < 80`. |
 | A metric derived from a table that does not contain the thing being measured | `fleetOptimizer.ts:127-130` builds a "success rate" from **open healing issues** and renders it as literal copy: `"…with only ${Math.round(worst.successRate)}% success rate"`. |
 | A rollup whose denominator is a hardcoded vocabulary | `policy_evidence.rs:62` sets `failed = runs - completed` over a 4-status set, so `incomplete` and `cancelled` are **reported as failures** — and that number is the fallback `quality_basis` for model-routing proposals (`policy_tuning.rs:227`). A model gets demoted for runs the user cancelled. |
@@ -431,7 +431,7 @@ different base, so the two cannot sum to 100); `BulkRerunReport.tsx:25`;
 50-row unwindowed feed ratio and a 30-day windowed ratio when the persona filter toggles — both
 through the *same* `SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions` identity, whose declared
 `timeWindow` is `'recent-50-or-filtered'`, which is not a time window);
-`useRealtimeEvents.ts:81-85`; `fleetOptimizer.ts:127-130`.
+`useRealtimeEvents.ts:81-85` (file deleted 2026-09-02, `44b0bc8bd`); `fleetOptimizer.ts:127-130`.
 
 ### D4 — Two calendars for one daily series · **17 of 17 buckets differ**
 

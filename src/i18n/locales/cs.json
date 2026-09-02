@@ -581,7 +581,12 @@
     "feed_error_health": "Stav person se nepodařilo načíst, dlaždice mohou zobrazovat zastaralý stav.",
     "feed_error_messages": "Zprávy se nepodařilo načíst, počty nepřečtených mohou být nižší.",
     "feed_error_title": "Část tohoto přehledu chybí",
-    "feed_never": "nikdy"
+    "feed_never": "nikdy",
+    "assertion_failures_summary": "V tomto běhu selhalo {failed} z {total} kontrol výstupu.",
+    "assertion_failures_title": "Kontroly výstupu selhaly",
+    "auto_fix_confirmed_summary": "Samoopravný pokus uspěl a problém byl uzavřen.",
+    "auto_fix_confirmed_title": "Automatická oprava potvrzena",
+    "clipboard_fix_found_summary": "{errorType} odpovídá položce „{kbName}“ ve vaší znalostní bázi."
   },
   "common": {
     "loading": "Načítání…",

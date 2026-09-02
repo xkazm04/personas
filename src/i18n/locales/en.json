@@ -581,7 +581,12 @@
     "feed_error_messages": "Reports could not be read, so unread counts may be short.",
     "feed_error_health": "Persona health could not be read, so tiles may show a stale state.",
     "feed_as_of": "Showing data as of",
-    "feed_never": "never"
+    "feed_never": "never",
+    "auto_fix_confirmed_title": "Auto-fix confirmed",
+    "auto_fix_confirmed_summary": "A self-healing retry succeeded and the issue was closed.",
+    "assertion_failures_title": "Output assertions failed",
+    "assertion_failures_summary": "{failed} of {total} output assertions failed on this run.",
+    "clipboard_fix_found_summary": "{errorType} matched \"{kbName}\" in your knowledge base."
   },
   "common": {
     "unknown_error": "Unknown error",

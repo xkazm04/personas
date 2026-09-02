@@ -580,5 +580,10 @@
   "feed_error_health": "Der Persona-Zustand konnte nicht gelesen werden, Kacheln zeigen möglicherweise einen veralteten Stand.",
   "feed_error_messages": "Berichte konnten nicht gelesen werden, die Ungelesen-Zähler können zu niedrig sein.",
   "feed_error_title": "Ein Teil dieser Übersicht fehlt",
-  "feed_never": "nie"
+  "feed_never": "nie",
+  "assertion_failures_summary": "{failed} von {total} Ausgabeprüfungen sind bei diesem Lauf fehlgeschlagen.",
+  "assertion_failures_title": "Ausgabeprüfungen fehlgeschlagen",
+  "auto_fix_confirmed_summary": "Ein selbstheilender Wiederholungsversuch war erfolgreich und das Problem wurde geschlossen.",
+  "auto_fix_confirmed_title": "Automatische Korrektur bestätigt",
+  "clipboard_fix_found_summary": "{errorType} passt zu „{kbName}“ in Ihrer Wissensdatenbank."
 }

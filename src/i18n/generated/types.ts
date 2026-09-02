@@ -588,6 +588,11 @@ export type Translations = {
     feed_error_health: string;
     feed_as_of: string;
     feed_never: string;
+    auto_fix_confirmed_title: string;
+    auto_fix_confirmed_summary: string;
+    assertion_failures_title: string;
+    assertion_failures_summary: string;
+    clipboard_fix_found_summary: string;
   };
   common: {
     unknown_error: string;
