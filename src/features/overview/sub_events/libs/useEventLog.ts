@@ -17,6 +17,52 @@ const logger = createLogger('event-log');
 
 export type SortDirection = 'desc' | 'asc';
 
+/**
+ * True when the row carries an ordering key assigned by the authority that
+ * timestamped its neighbours — i.e. a database `created_at` that parses.
+ *
+ * A row that returns false is a LOCAL-ONLY, not-yet-recorded item: today the
+ * only producer is `emitDeploymentEvent`, which synthesizes a client-side
+ * PersonaEvent that nothing persists (it is gone on reload) and therefore
+ * leaves `created_at` empty rather than minting one from the renderer's clock.
+ * Such rows are kept OUT of the created_at ranking — the legal fix in
+ * docs/concepts/golden-paths/chronological-feed.md — and pinned at the live end
+ * of the feed instead. A surface may also use this to label the row as local.
+ */
+export function hasServerOrderingKey(event: PersonaEvent): boolean {
+  if (!event.created_at) return false;
+  return !Number.isNaN(Date.parse(event.created_at));
+}
+
+/**
+ * Order a merged event list for the feed. Rows WITH a server ordering key are
+ * ranked against each other by `created_at`; rows without one are never entered
+ * into that comparison and ride at the live end of the list in arrival order.
+ */
+export function rankEventsForFeed(
+  merged: PersonaEvent[],
+  sortDirection: SortDirection,
+): PersonaEvent[] {
+  const ranked: PersonaEvent[] = [];
+  const unranked: PersonaEvent[] = [];
+  const tsMap = new Map<string, number>();
+  for (const e of merged) {
+    if (hasServerOrderingKey(e)) {
+      tsMap.set(e.id, Date.parse(e.created_at));
+      ranked.push(e);
+    } else {
+      unranked.push(e);
+    }
+  }
+  ranked.sort((a, b) => {
+    const ta = tsMap.get(a.id)!;
+    const tb = tsMap.get(b.id)!;
+    return sortDirection === 'desc' ? tb - ta : ta - tb;
+  });
+  // Newest-first puts the live end at the head; oldest-first puts it at the tail.
+  return sortDirection === 'desc' ? [...unranked, ...ranked] : [...ranked, ...unranked];
+}
+
 /** First-paint page: enough rows to fill the fold, small enough that the
  *  cold-start query returns fast. The full window streams in right after. */
 const FIRST_PAINT_LIMIT = 10;
@@ -271,17 +317,11 @@ export function useEventLog() {
       if (!seen.has(e.id)) { seen.add(e.id); merged.push(e); }
     }
 
-    // Sort by created_at
-    const tsMap = new Map<string, number>();
-    for (const e of merged) {
-      tsMap.set(e.id, new Date(e.created_at).getTime());
-    }
-    merged.sort((a, b) => {
-      const ta = tsMap.get(a.id)!;
-      const tb = tsMap.get(b.id)!;
-      return sortDirection === 'desc' ? tb - ta : ta - tb;
-    });
-    return merged;
+    // Sort by created_at — but ONLY the rows that have one. A local-only row
+    // (see hasServerOrderingKey) has no key from the database's clock, so it is
+    // never compared against rows that do; it sits at the live end of the feed
+    // in arrival order, which is honest about what is and isn't recorded.
+    return rankEventsForFeed(merged, sortDirection);
   }, [recentEvents, serverResults, olderEvents, statusFilter, typeFilter, selectedPersonaId, searchText, sortDirection, isSearching]);
 
   // Reset older-events cursor when filters change — they'd reference stale criteria.
