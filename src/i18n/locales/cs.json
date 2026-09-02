@@ -1764,7 +1764,10 @@
       "files_read_count": "{count} přečteno",
       "tokens_unit": "tokenů",
       "trace_evicted_notice": "Trasování je neúplné: {count} span odstraněn (limit: 10 000)",
-      "trace_evicted_notice_other": "Trasování je neúplné: {count} spanů odstraněno (limit: 10 000)"
+      "trace_evicted_notice_other": "Trasování je neúplné: {count} spanů odstraněno (limit: 10 000)",
+      "estimated_frontend_only": "Odhad (fáze frontendu)",
+      "stage_estimated": "odhad",
+      "stage_estimated_hint": "Nezachyceno ve stopě — odhadnuto z celkové doby běhu."
     },
     "lab": {
       "mode_arena": "Aréna",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "Nastavování integrace repository dispatch",
       "auto_deploy_zapier": "Ověřování a připojování catch hooku",
       "auto_deploy_custom": "Ukládání konfigurace automatizace",
-      "auto_deployed_warning": "Automatizace nasazena s varováním",
+      "auto_deployed_warning": "Automatizace uložena — před spuštěním je potřeba akce",
       "auto_deployed_ok": "Automatizace úspěšně nasazena",
       "auto_view_on": "Zobrazit na {platform}",
       "auto_done": "Hotovo",

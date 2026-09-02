@@ -553,7 +553,10 @@
     "files_read_count": "{count}개 읽음",
     "tokens_unit": "토큰",
     "trace_evicted_notice": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)",
-    "trace_evicted_notice_other": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)"
+    "trace_evicted_notice_other": "트레이스가 불완전합니다: 스팬 {count}개 제거됨 (제한: 10,000)",
+    "estimated_frontend_only": "추정 (프런트엔드 단계)",
+    "stage_estimated": "추정",
+    "stage_estimated_hint": "트레이스에 기록되지 않아 실행 전체 시간에서 추정했습니다."
   },
   "lab": {
     "mode_arena": "아레나",
@@ -1061,7 +1064,7 @@
     "auto_deploy_github": "리포지토리 디스패치 통합 설정",
     "auto_deploy_zapier": "캐치 훅 검증 및 연결",
     "auto_deploy_custom": "자동화 구성 저장",
-    "auto_deployed_warning": "경고와 함께 자동화 배포됨",
+    "auto_deployed_warning": "자동화가 저장되었습니다 — 실행 전에 조치가 필요합니다",
     "auto_deployed_ok": "자동화가 성공적으로 배포됨",
     "auto_view_on": "{platform}에서 보기",
     "auto_done": "완료",

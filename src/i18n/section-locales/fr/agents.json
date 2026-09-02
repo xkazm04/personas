@@ -553,7 +553,10 @@
     "files_read_count": "{count} lus",
     "tokens_unit": "jetons",
     "trace_evicted_notice": "Trace incomplète : {count} span supprimé (limite : 10 000)",
-    "trace_evicted_notice_other": "Trace incomplète : {count} spans supprimés (limite : 10 000)"
+    "trace_evicted_notice_other": "Trace incomplète : {count} spans supprimés (limite : 10 000)",
+    "estimated_frontend_only": "Estimé (étapes frontend)",
+    "stage_estimated": "est.",
+    "stage_estimated_hint": "Non capturé dans la trace — estimé à partir de la durée totale de l’exécution."
   },
   "lab": {
     "mode_arena": "Arène",
@@ -1061,7 +1064,7 @@
     "auto_deploy_github": "Configuration de l’intégration de déclenchement de dépôt",
     "auto_deploy_zapier": "Validation et connexion du hook de capture",
     "auto_deploy_custom": "Enregistrement de la configuration d’automatisation",
-    "auto_deployed_warning": "Automatisation déployée avec avertissement",
+    "auto_deployed_warning": "Automatisation enregistrée — une action est requise avant l’exécution",
     "auto_deployed_ok": "Automatisation déployée avec succès",
     "auto_view_on": "Voir sur {platform}",
     "auto_done": "Terminé",

@@ -1764,7 +1764,10 @@
       "files_read_count": "{count} مقروء",
       "tokens_unit": "رموز",
       "trace_evicted_notice": "التتبع غير مكتمل: تم استبعاد {count} مقطع (الحد: 10,000)",
-      "trace_evicted_notice_other": "التتبع غير مكتمل: تم استبعاد {count} مقاطع (الحد: 10,000)"
+      "trace_evicted_notice_other": "التتبع غير مكتمل: تم استبعاد {count} مقاطع (الحد: 10,000)",
+      "estimated_frontend_only": "تقديري (مراحل الواجهة)",
+      "stage_estimated": "تقديري",
+      "stage_estimated_hint": "غير مسجّل في التتبّع — مقدّر من وقت التشغيل الفعلي."
     },
     "lab": {
       "mode_arena": "الساحة",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "إعداد تكامل repository dispatch",
       "auto_deploy_zapier": "التحقق من catch hook وربطه",
       "auto_deploy_custom": "حفظ إعداد الأتمتة",
-      "auto_deployed_warning": "تم نشر الأتمتة مع تحذير",
+      "auto_deployed_warning": "تم حفظ الأتمتة — مطلوب إجراء قبل تشغيلها",
       "auto_deployed_ok": "تم نشر الأتمتة بنجاح",
       "auto_view_on": "عرض على {platform}",
       "auto_done": "تم",

@@ -553,7 +553,10 @@
     "files_read_count": "{count} leídos",
     "tokens_unit": "tokens",
     "trace_evicted_notice": "Traza incompleta: {count} span descartado (límite: 10.000)",
-    "trace_evicted_notice_other": "Traza incompleta: {count} spans descartados (límite: 10.000)"
+    "trace_evicted_notice_other": "Traza incompleta: {count} spans descartados (límite: 10.000)",
+    "estimated_frontend_only": "Estimado (etapas del frontend)",
+    "stage_estimated": "est.",
+    "stage_estimated_hint": "No capturado en la traza: estimado a partir del tiempo total de ejecución."
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1061,7 +1064,7 @@
     "auto_deploy_github": "Configurando integración de despacho de repositorio",
     "auto_deploy_zapier": "Validando y conectando el catch hook",
     "auto_deploy_custom": "Guardando configuración de automatización",
-    "auto_deployed_warning": "Automatización desplegada con advertencia",
+    "auto_deployed_warning": "Automatización guardada: se requiere una acción antes de ejecutarla",
     "auto_deployed_ok": "Automatización desplegada exitosamente",
     "auto_view_on": "Ver en {platform}",
     "auto_done": "Listo",

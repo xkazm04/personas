@@ -1764,7 +1764,10 @@
       "files_read_count": "{count} 件を読み取り",
       "tokens_unit": "トークン",
       "trace_evicted_notice": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)",
-      "trace_evicted_notice_other": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)"
+      "trace_evicted_notice_other": "トレースが不完全です: {count} 件のスパンを破棄しました (上限: 10,000)",
+      "estimated_frontend_only": "推定（フロントエンド段階）",
+      "stage_estimated": "推定",
+      "stage_estimated_hint": "トレースに記録されていないため、実行全体の時間から推定しています。"
     },
     "lab": {
       "mode_arena": "アリーナ",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "リポジトリディスパッチ統合を設定",
       "auto_deploy_zapier": "キャッチフックを検証・接続",
       "auto_deploy_custom": "オートメーション設定を保存",
-      "auto_deployed_warning": "警告ありでオートメーションをデプロイ",
+      "auto_deployed_warning": "自動化を保存しました — 実行前に対応が必要です",
       "auto_deployed_ok": "オートメーションを正常にデプロイしました",
       "auto_view_on": "{platform} で表示",
       "auto_done": "完了",

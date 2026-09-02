@@ -1764,7 +1764,10 @@
       "files_read_count": "已读取 {count} 个",
       "tokens_unit": "令牌",
       "trace_evicted_notice": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）",
-      "trace_evicted_notice_other": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）"
+      "trace_evicted_notice_other": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）",
+      "estimated_frontend_only": "估算（前端阶段）",
+      "stage_estimated": "估算",
+      "stage_estimated_hint": "未在追踪中记录，根据运行总时长估算。"
     },
     "lab": {
       "mode_arena": "竞技场",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "设置仓库调度集成",
       "auto_deploy_zapier": "验证并连接 catch hook",
       "auto_deploy_custom": "保存自动化配置",
-      "auto_deployed_warning": "自动化已部署（有警告）",
+      "auto_deployed_warning": "自动化已保存 — 运行前需要采取操作",
       "auto_deployed_ok": "自动化部署成功",
       "auto_view_on": "在 {platform} 上查看",
       "auto_done": "完成",

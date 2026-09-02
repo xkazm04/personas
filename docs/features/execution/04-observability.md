@@ -164,6 +164,42 @@ the app settings; default `{app_data}/logs/executions/`)
 dropped and `log_truncated = 1` is set on the execution row. The UI
 shows a banner "log was truncated" with the truncation marker.
 
+## Replay and Pipeline tabs (execution detail)
+
+Both tabs draw from records the run already wrote; since 2026-09-02 they read
+them instead of reconstructing them.
+
+- **Replay tempo is recorded, not invented.** Every log line carries the
+  logger's `[RFC3339]` prefix, and `useReplayTimeline` now parses it once per
+  log: prefixed lines sit at their recorded offset, unprefixed lines are
+  interpolated between their nearest prefixed neighbours, and a log with no
+  prefixes falls back to the old even apportionment. Stretches with no output
+  (threshold `max(2 s, 2 % of the run)`) are exposed as `silences` and drawn on
+  the scrubber as muted bands. Measured on 392 real logs the largest silence
+  was 47 minutes (89 % of its run) that the old timeline drew as one scrubber
+  tick; half of all runs have a silence of at least 18 %. A cancelled run with
+  no `duration_ms` takes its length from its own log; the tab is offered only
+  for terminal runs that actually started.
+- **Tool steps close the way spans close.** The runner's tool-result handler
+  now closes the newest *open* step (it used to peek only at the last step, so
+  a parallel Bash + Read pair left the first one open forever — 8 % of steps
+  across a third of runs), and a persist-time finalizer stamps any step the
+  stream never closed with the run end. The replay bounds every step by its
+  own end, the next step's start or the run end, so the active-step marker no
+  longer pins and the cost meter reaches 100 % at End. Step numbers are
+  rendered as written (1-based) in every tab.
+- **The Pipeline waterfall draws the captured trace.** Historical runs load
+  `execution_traces` (every stored trace carries the four backend stages
+  `validate` / `spawn_engine` / `stream_output` / `finalize_status` as
+  `pipeline_stage` spans keyed in `metadata.pipeline_stage`; a normalizer in
+  `lib/execution/pipeline.ts` maps them) and render measured bars for them.
+  Only the three frontend-emitted stages (`initiate`, `create_record`,
+  `frontend_complete`) remain estimates, sized from wall clock minus the
+  measured span and badged as such; the cost curve is unbadged when both of
+  its knees were measured. A missing trace falls back to the fully synthetic
+  waterfall with the full badge. The replay terminal is virtualized above 50
+  lines.
+
 ## Execution traces
 
 **Table**: `execution_traces` (schema in `engine/trace.rs`)

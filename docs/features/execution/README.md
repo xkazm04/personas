@@ -142,7 +142,8 @@ figures but no Sources section, nothing for plain operational messages.
   per persona and indexes by `execution_id` — cheap enough to power the
   activity-feed chip strip without per-row IPC.
 - Activity feed: tag-chip strip on `ActivityList` rows, plus `tagFilter` and
-  `starredOnly` filters on `ActivityFilters`.
+  `starredOnly` filters on `ActivityFilters` (hidden on the Executions view
+  since 2026-09-02, where `ExecutionList` owns filtering).
 - Execution detail: side panel hosts `AnnotationEditor` for save / clear.
 - Execution list: when ≥ 2 rows have annotations with `starred=true`, a
   "Compare starred" affordance auto-selects the two most recently starred

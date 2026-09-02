@@ -241,6 +241,17 @@ Automations do NOT emit events to the event bus by default. The
 persona receives the output synchronously and continues its agentic
 loop.
 
+**GitHub Actions is configured locally, not deployed (2026-09-02).** The
+GitHub path checks token scopes and registers a local `persona_triggers`
+row that sends a `repository_dispatch` of the chosen event type; it never
+creates or verifies a workflow file in the repository. Its result now says
+exactly that, carries an `activation_warning` (so the review step shows the
+amber "saved — action needed" state), names the workflow trigger the user
+must add (`on: repository_dispatch: types: [<event_type>]`), and no longer
+stores or presents the machine-local `127.0.0.1:<port>/webhook/…` bridge
+address as GitHub's target. Writing and verifying a real workflow file is a
+separate, unbuilt direction.
+
 **Fallback modes** when the platform fails:
 - `connector` — fall back to a matching native connector tool if one
   exists

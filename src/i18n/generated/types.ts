@@ -1852,6 +1852,9 @@ export type Translations = {
       tokens_unit: string;
       trace_evicted_notice: string;
       trace_evicted_notice_other: string;
+      estimated_frontend_only: string;
+      stage_estimated: string;
+      stage_estimated_hint: string;
     };
     lab: {
       vr_title: string;

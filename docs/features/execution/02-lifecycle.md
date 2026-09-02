@@ -307,6 +307,12 @@ emit.
    }
    ```
 
+   `tool_steps` are closed by the newest-*open* rule (a `ToolResult` closes
+   the most recent step without an `ended_at_ms`, mirroring the span closer,
+   so parallel tool calls each get their own result) and any step the stream
+   never closed is stamped with the run end by `finalize_open_tool_steps`
+   immediately before this record is written (2026-09-02).
+
 4. **Emit final events**:
    - `execution-status` with the terminal status + summary metrics
      (`duration_ms`, `cost_usd`) — there is no separate `execution-completed`

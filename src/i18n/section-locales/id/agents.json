@@ -553,7 +553,10 @@
     "files_read_count": "{count} dibaca",
     "tokens_unit": "token",
     "trace_evicted_notice": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)",
-    "trace_evicted_notice_other": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)"
+    "trace_evicted_notice_other": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)",
+    "estimated_frontend_only": "Perkiraan (tahap frontend)",
+    "stage_estimated": "perk.",
+    "stage_estimated_hint": "Tidak terekam dalam jejak — diperkirakan dari waktu total eksekusi."
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1061,7 +1064,7 @@
     "auto_deploy_github": "Menyiapkan integrasi repository dispatch",
     "auto_deploy_zapier": "Memvalidasi dan menghubungkan catch hook",
     "auto_deploy_custom": "Menyimpan konfigurasi otomasi",
-    "auto_deployed_warning": "Otomasi diterapkan dengan peringatan",
+    "auto_deployed_warning": "Otomatisasi disimpan — perlu tindakan sebelum dijalankan",
     "auto_deployed_ok": "Otomasi berhasil diterapkan",
     "auto_view_on": "Lihat di {platform}",
     "auto_done": "Selesai",

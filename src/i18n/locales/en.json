@@ -1845,7 +1845,10 @@
       "files_read_count": "{count} read",
       "tokens_unit": "tokens",
       "trace_evicted_notice": "Trace incomplete: {count} span evicted (limit: 10,000)",
-      "trace_evicted_notice_other": "Trace incomplete: {count} spans evicted (limit: 10,000)"
+      "trace_evicted_notice_other": "Trace incomplete: {count} spans evicted (limit: 10,000)",
+      "estimated_frontend_only": "Estimated (frontend stages)",
+      "stage_estimated": "est.",
+      "stage_estimated_hint": "Not captured in the trace — estimated from the run’s wall clock."
     },
     "lab": {
       "vr_title": "Versions & Ratings",
@@ -2353,7 +2356,7 @@
       "auto_deploy_github": "Setting up repository dispatch integration",
       "auto_deploy_zapier": "Validating and connecting catch hook",
       "auto_deploy_custom": "Saving automation configuration",
-      "auto_deployed_warning": "Automation deployed with warning",
+      "auto_deployed_warning": "Automation saved — action needed before it runs",
       "auto_deployed_ok": "Automation deployed successfully",
       "auto_view_on": "View on {platform}",
       "auto_done": "Done",

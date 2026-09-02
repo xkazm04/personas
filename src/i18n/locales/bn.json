@@ -1764,7 +1764,10 @@
       "files_read_count": "{count} পঠিত",
       "tokens_unit": "টোকেন",
       "trace_evicted_notice": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)",
-      "trace_evicted_notice_other": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)"
+      "trace_evicted_notice_other": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)",
+      "estimated_frontend_only": "আনুমানিক (ফ্রন্টএন্ড পর্যায়)",
+      "stage_estimated": "আনুমানিক",
+      "stage_estimated_hint": "ট্রেসে ধরা পড়েনি — রানের মোট সময় থেকে অনুমান করা হয়েছে।"
     },
     "lab": {
       "mode_arena": "আরেনা",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "রিপোজিটরি ডিসপ্যাচ ইন্টিগ্রেশন সেটআপ করা হচ্ছে",
       "auto_deploy_zapier": "ক্যাচ হুক যাচাই ও সংযুক্ত করা হচ্ছে",
       "auto_deploy_custom": "অটোমেশন কনফিগারেশন সংরক্ষণ করা হচ্ছে",
-      "auto_deployed_warning": "সতর্কতা সহ অটোমেশন ডেপ্লয় হয়েছে",
+      "auto_deployed_warning": "অটোমেশন সংরক্ষিত — চালানোর আগে পদক্ষেপ প্রয়োজন",
       "auto_deployed_ok": "অটোমেশন সফলভাবে ডেপ্লয় হয়েছে",
       "auto_view_on": "{platform}-এ দেখুন",
       "auto_done": "সম্পন্ন",

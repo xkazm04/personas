@@ -553,7 +553,10 @@
     "files_read_count": "{count} đã đọc",
     "tokens_unit": "token",
     "trace_evicted_notice": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
-    "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)"
+    "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
+    "estimated_frontend_only": "Ước tính (các giai đoạn frontend)",
+    "stage_estimated": "ước",
+    "stage_estimated_hint": "Không được ghi trong dấu vết — ước tính từ tổng thời gian chạy."
   },
   "lab": {
     "mode_arena": "Đấu trường",
@@ -1061,7 +1064,7 @@
     "auto_deploy_github": "Đang thiết lập tích hợp repository dispatch",
     "auto_deploy_zapier": "Đang xác thực và kết nối catch hook",
     "auto_deploy_custom": "Đang lưu cấu hình tự động hóa",
-    "auto_deployed_warning": "Đã triển khai tự động hóa với cảnh báo",
+    "auto_deployed_warning": "Đã lưu tự động hóa — cần thao tác trước khi chạy",
     "auto_deployed_ok": "Đã triển khai tự động hóa thành công",
     "auto_view_on": "Xem trên {platform}",
     "auto_done": "Xong",

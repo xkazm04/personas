@@ -1764,7 +1764,10 @@
       "files_read_count": "{count} gelesen",
       "tokens_unit": "Tokens",
       "trace_evicted_notice": "Trace unvollständig: {count} Span entfernt (Limit: 10.000)",
-      "trace_evicted_notice_other": "Trace unvollständig: {count} Spans entfernt (Limit: 10.000)"
+      "trace_evicted_notice_other": "Trace unvollständig: {count} Spans entfernt (Limit: 10.000)",
+      "estimated_frontend_only": "Geschätzt (Frontend-Phasen)",
+      "stage_estimated": "gesch.",
+      "stage_estimated_hint": "Nicht im Trace erfasst — aus der Gesamtlaufzeit geschätzt."
     },
     "lab": {
       "mode_arena": "Arena",
@@ -2272,7 +2275,7 @@
       "auto_deploy_github": "Repository-Dispatch-Integration wird eingerichtet",
       "auto_deploy_zapier": "Catch-Hook wird validiert und verbunden",
       "auto_deploy_custom": "Automatisierungskonfiguration wird gespeichert",
-      "auto_deployed_warning": "Automatisierung mit Warnung bereitgestellt",
+      "auto_deployed_warning": "Automatisierung gespeichert – vor dem Ausführen ist eine Aktion nötig",
       "auto_deployed_ok": "Automatisierung erfolgreich bereitgestellt",
       "auto_view_on": "Auf {platform} ansehen",
       "auto_done": "Fertig",
