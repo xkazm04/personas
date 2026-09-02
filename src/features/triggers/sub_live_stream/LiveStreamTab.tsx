@@ -156,8 +156,11 @@ export function LiveStreamTab() {
   }, []);
 
   const attached = useEventBusListener((evt: PersonaEvent) => {
-    // CDC multiplexes full events with lightweight {action,table,rowid}
-    // notifications on the same channel — reject the latter.
+    // CDC emits a FULL PersonaEvent on the event-bus channel for every
+    // persona_events INSERT *and* UPDATE (db/src/cdc.rs:407-431 re-fetches the
+    // row for both); the lightweight {action,table,rowid} shape reaches this
+    // channel on a DELETE only. This guard rejects a deletion notice — not, as
+    // the earlier comment implied, a status update.
     if (!evt?.id || !evt?.event_type) return;
 
     // Stats: track every received event regardless of pause state

@@ -33,12 +33,12 @@ export interface EventSearchState {
 
 export function useEventLog() {
   const {
-    recentEvents, pendingEventCount, fetchRecentEvents, pushRecentEvent,
+    recentEvents, pendingEventCount, fetchRecentEvents, pushRecentEvents,
   } = useOverviewStore(useShallow((s) => ({
     recentEvents: s.recentEvents,
     pendingEventCount: s.pendingEventCount,
     fetchRecentEvents: s.fetchRecentEvents,
-    pushRecentEvent: s.pushRecentEvent,
+    pushRecentEvents: s.pushRecentEvents,
   })));
   const personas = useAgentStore((s) => s.personas);
 
@@ -130,14 +130,36 @@ export function useEventLog() {
       .catch(silentCatch('useEventLog:getEventSkippedStats'));
   }, []);
 
+  // Per-frame ingest buffer. The singleton listener already hands a frame's
+  // payloads over in one synchronous pass, but it calls back once per payload.
+  const busBufferRef = useRef<PersonaEvent[]>([]);
+  const busFlushScheduledRef = useRef(false);
+
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
-    // The 'event-bus' channel multiplexes full PersonaEvent payloads (CDC INSERT
-    // + manual emit_event_to_frontend) AND lightweight CDC notifications
-    // ({action,table,rowid}) for UPDATE/DELETE. Reject the latter — they have
-    // no id/event_type and corrupt the events list.
+    // The 'event-bus' channel carries a FULL PersonaEvent for every
+    // persona_events INSERT *and* UPDATE — db/src/cdc.rs:407-431 re-fetches the
+    // row and emits it for both. The lightweight {action,table,rowid} CDC shape
+    // reaches this channel on a DELETE only (and persona_events is the only
+    // table mapped to it), so this guard rejects a deletion notice, not a
+    // status update. The earlier comment here claimed UPDATE arrived lite.
     if (!evt?.id || !evt?.event_type) return;
-    pushRecentEvent(evt, 200);
-  }, [pushRecentEvent]);
+    // Commit the whole frame in ONE store write. Pushing per event ran a
+    // findIndex over the 200-row window and allocated a fresh 200-row array for
+    // every event, so a 1,000-event tick cost ~200k id comparisons and ~1,000
+    // array allocations inside a single frame — spending the batching win the
+    // singleton listener earns upstream. The microtask lands after the
+    // listener's synchronous fan-out loop, so one flush covers the frame.
+    busBufferRef.current.push(evt);
+    if (busFlushScheduledRef.current) return;
+    busFlushScheduledRef.current = true;
+    queueMicrotask(() => {
+      busFlushScheduledRef.current = false;
+      const batch = busBufferRef.current;
+      if (batch.length === 0) return;
+      busBufferRef.current = [];
+      pushRecentEvents(batch, 200);
+    });
+  }, [pushRecentEvents]);
   useEventBusListener(handleBusEvent);
 
   // Server-side search with debounce
