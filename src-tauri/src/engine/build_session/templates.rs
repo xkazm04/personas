@@ -7,6 +7,44 @@
 //! don't change at runtime. Keyword extraction handles non-English intents by
 //! falling back to substring scans for known service names ("gmail", "slack",
 //! …) which are always written in ASCII regardless of the user's locale.
+//!
+//! ## Where the catalog is found (fixed 2026-09-02)
+//!
+//! This module used to open the bare relative path `scripts/templates`, which
+//! resolves ONLY when the process CWD happens to be the repo root. Under
+//! `tauri dev` the CWD is `src-tauri/`, and in a packaged build it is neither —
+//! so `load_template_index` returned an empty vec and the prompt's "Reference
+//! Templates" section silently vanished outside a repo-root run. The exact same
+//! defect was found and fixed for the Presets gallery in
+//! `personas_engine::team_preset_loader::templates_root`
+//! (`src-tauri/engine/src/team_preset_loader.rs:63-97`), whose docblock names
+//! this failure mode in as many words.
+//!
+//! **Why the resolver and not `include_str!`.** The other two precedents
+//! (`engine/src/archetype_catalog.rs:23`, `src/engine/recipe_seed.rs:62`) embed
+//! their catalog with `include_str!` — and both embed exactly ONE aggregate
+//! file (`_archetypes.json`, `_recipe_seeds.json`). The template catalog is
+//! **133 JSON files across 15 category directories** with no aggregate, so
+//! embedding it would mean either hand-enumerating 133 `include_str!` paths
+//! (silently stale the moment a template is added) or introducing a build-time
+//! aggregation step. The resolver is the precedent that actually fits the
+//! shape of this input.
+//!
+//! **What the resolver does and does not buy.** Candidate 3 is a
+//! `CARGO_MANIFEST_DIR` anchor, so resolution no longer depends on the CWD at
+//! all on a machine that has the repo checked out (dev, tests, a locally-built
+//! app started from anywhere). It does NOT conjure a catalog on an end user's
+//! machine: `scripts/templates` is not listed under `bundle.resources` in
+//! `tauri.conf.json`, so a distributed installer ships no catalog for this
+//! module to read. That remains open — see the module README — and is why the
+//! missing-directory case now logs at `warn` exactly once instead of
+//! disappearing into an empty `String::new()`.
+//!
+//! **No quality claim.** Restoring this section restores *parity* with a
+//! repo-root run. The effect of the "Reference Templates" block on build
+//! quality has never been measured here — there is no A/B, no eval, no rubric
+//! score behind it. This fix asserts only that dev and shipped builds get the
+//! same prompt, not that the prompt is better for having it.
 
 /// Lightweight template index entry for similarity matching.
 #[derive(Clone)]
@@ -17,73 +55,120 @@ struct TemplateEntry {
     service_flow: Vec<String>,
 }
 
-/// Load template index from `scripts/templates/` — reads only the lightweight
-/// fields (name, description, category, service_flow) from each JSON file.
-/// Results are cached in-process after the first load.
-fn load_template_index() -> Vec<TemplateEntry> {
-    static CACHE: std::sync::LazyLock<Vec<TemplateEntry>> = std::sync::LazyLock::new(|| {
-        let templates_dir = std::path::Path::new("scripts/templates");
-        if !templates_dir.exists() {
-            return vec![];
-        }
+/// Resolve the repo's `scripts/templates` root, robust to the process
+/// working directory.
+///
+/// Mirrors `personas_engine::team_preset_loader::templates_root`
+/// (`src-tauri/engine/src/team_preset_loader.rs:83`) — the same defect
+/// (a bare relative path that only resolves from the repo root) was fixed
+/// there first for the Presets gallery. This is a SECOND copy rather than a
+/// call: that function is private to the `personas-engine` crate, and making
+/// it `pub` is outside this change's write set. Consolidating the two into one
+/// exported resolver is the right follow-up.
+///
+/// Candidates, first existing directory wins:
+///   1. `scripts/templates`                       (CWD = repo root)
+///   2. `../scripts/templates`                    (CWD = `src-tauri/`, `tauri dev`)
+///   3. `{CARGO_MANIFEST_DIR}/../scripts/templates`
+///      (compile-time anchor. `CARGO_MANIFEST_DIR` for `app_lib` IS the
+///      `src-tauri` dir, so its parent is the repo root — this candidate is an
+///      absolute path and therefore independent of the CWD entirely.)
+///
+/// Returns `None` when none exist, so the caller can say so once at `warn`
+/// instead of silently returning an empty index.
+fn templates_root() -> Option<std::path::PathBuf> {
+    let candidates = [
+        std::path::PathBuf::from("scripts/templates"),
+        std::path::PathBuf::from("../scripts/templates"),
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("scripts")
+            .join("templates"),
+    ];
+    candidates.into_iter().find(|c| c.is_dir())
+}
 
-        let mut entries = Vec::new();
-        if let Ok(categories) = std::fs::read_dir(templates_dir) {
-            for cat_entry in categories.flatten() {
-                let cat_path = cat_entry.path();
-                if !cat_path.is_dir()
-                    || cat_path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().starts_with('_'))
-                        .unwrap_or(true)
-                {
-                    continue;
-                }
-                if let Ok(files) = std::fs::read_dir(&cat_path) {
-                    for file_entry in files.flatten() {
-                        let fp = file_entry.path();
-                        if fp.extension().map(|e| e == "json").unwrap_or(false) {
-                            if let Ok(content) = std::fs::read_to_string(&fp) {
-                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
-                                {
-                                    entries.push(TemplateEntry {
-                                        name: val
-                                            .get("name")
-                                            .and_then(|v| v.as_str())
-                                            .unwrap_or("")
-                                            .to_string(),
-                                        description: val
-                                            .get("description")
-                                            .and_then(|v| v.as_str())
-                                            .unwrap_or("")
-                                            .to_string(),
-                                        category: val
-                                            .get("category")
-                                            .and_then(|v| v.as_array())
-                                            .and_then(|a| a.first())
-                                            .and_then(|v| v.as_str())
-                                            .unwrap_or("")
-                                            .to_string(),
-                                        service_flow: val
-                                            .get("service_flow")
-                                            .and_then(|v| v.as_array())
-                                            .map(|a| {
-                                                a.iter()
-                                                    .filter_map(|v| {
-                                                        v.as_str().map(|s| s.to_string())
-                                                    })
-                                                    .collect()
-                                            })
-                                            .unwrap_or_default(),
-                                    });
-                                }
+/// Read the lightweight index (name, description, category, service_flow) out
+/// of every `<category>/*.json` under `dir`. Category directories whose name
+/// starts with `_` are internal bundles (`_archetypes.json`,
+/// `_team_presets/`, …) and are skipped.
+fn read_template_index(dir: &std::path::Path) -> Vec<TemplateEntry> {
+    let mut entries = Vec::new();
+    if let Ok(categories) = std::fs::read_dir(dir) {
+        for cat_entry in categories.flatten() {
+            let cat_path = cat_entry.path();
+            if !cat_path.is_dir()
+                || cat_path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().starts_with('_'))
+                    .unwrap_or(true)
+            {
+                continue;
+            }
+            if let Ok(files) = std::fs::read_dir(&cat_path) {
+                for file_entry in files.flatten() {
+                    let fp = file_entry.path();
+                    if fp.extension().map(|e| e == "json").unwrap_or(false) {
+                        if let Ok(content) = std::fs::read_to_string(&fp) {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                                entries.push(TemplateEntry {
+                                    name: val
+                                        .get("name")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("")
+                                        .to_string(),
+                                    description: val
+                                        .get("description")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("")
+                                        .to_string(),
+                                    category: val
+                                        .get("category")
+                                        .and_then(|v| v.as_array())
+                                        .and_then(|a| a.first())
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("")
+                                        .to_string(),
+                                    service_flow: val
+                                        .get("service_flow")
+                                        .and_then(|v| v.as_array())
+                                        .map(|a| {
+                                            a.iter()
+                                                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                                                .collect()
+                                        })
+                                        .unwrap_or_default(),
+                                });
                             }
                         }
                     }
                 }
             }
         }
-        tracing::info!("Template index loaded: {} entries (cached)", entries.len());
+    }
+    entries
+}
+
+/// Load template index from `scripts/templates/` — reads only the lightweight
+/// fields (name, description, category, service_flow) from each JSON file.
+/// Results are cached in-process after the first load, so the warn below is
+/// emitted at most once per process by construction.
+fn load_template_index() -> Vec<TemplateEntry> {
+    static CACHE: std::sync::LazyLock<Vec<TemplateEntry>> = std::sync::LazyLock::new(|| {
+        let Some(dir) = templates_root() else {
+            tracing::warn!(
+                "Template catalog not found (tried 'scripts/templates', '../scripts/templates' \
+                 and the CARGO_MANIFEST_DIR anchor) — the build prompt's 'Reference Templates' \
+                 section will be empty for this process"
+            );
+            return vec![];
+        };
+        let entries = read_template_index(&dir);
+        tracing::info!(
+            "Template index loaded: {} entries from {} (cached)",
+            entries.len(),
+            dir.display()
+        );
         entries
     });
     CACHE.clone()
@@ -232,4 +317,82 @@ pub(super) fn build_template_context(intent: &str) -> String {
         ));
     }
     section
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `std::env::set_current_dir` is process-global, so any test that moves
+    /// the CWD must serialise against every other one. One lock, held for the
+    /// few microseconds the resolver needs.
+    static CWD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// The regression this file was fixed for: from a working directory that is
+    /// NOT the repo root (which is every packaged run, and `tauri dev` too),
+    /// the catalog must still resolve and the index must be non-empty.
+    #[test]
+    fn resolves_catalog_from_a_non_repo_root_cwd() {
+        let _guard = CWD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let original = std::env::current_dir().expect("cwd readable");
+
+        let tmp = std::env::temp_dir().join("lotJ-templates-root-probe");
+        std::fs::create_dir_all(&tmp).expect("temp dir");
+        // Canonicalise: on Windows TEMP is often a short (8.3) path and the
+        // restore below must land on the same directory we left.
+        std::env::set_current_dir(&tmp).expect("chdir into temp");
+
+        let resolved = templates_root();
+        let entries = resolved.as_deref().map(read_template_index);
+
+        std::env::set_current_dir(&original).expect("chdir back");
+        drop(std::fs::remove_dir(&tmp));
+
+        let resolved = resolved.expect(
+            "templates_root() must resolve from a non-repo-root CWD — this is the whole \
+             point of the CARGO_MANIFEST_DIR anchor",
+        );
+        assert!(
+            resolved.is_absolute(),
+            "from a foreign CWD only the compile-time anchor can match, and that one is \
+             absolute; got {}",
+            resolved.display()
+        );
+        let entries = entries.expect("index read");
+        assert!(
+            !entries.is_empty(),
+            "the resolved catalog at {} produced zero entries — resolution succeeded but the \
+             read did not",
+            resolved.display()
+        );
+    }
+
+    /// A missing directory must produce an honest empty index, never a panic.
+    #[test]
+    fn missing_catalog_directory_yields_an_empty_index() {
+        let missing = std::env::temp_dir().join("lotJ-templates-does-not-exist");
+        assert!(read_template_index(&missing).is_empty());
+    }
+
+    /// The prompt section is built from the same index the resolver returns —
+    /// with the catalog present, a service-shaped intent must produce a
+    /// non-empty "Reference Templates" block.
+    #[test]
+    fn prompt_section_is_populated_when_the_catalog_resolves() {
+        // Same lock as the chdir test above: a relative candidate resolved here
+        // is read later, so a sibling test moving the CWD in between turns this
+        // into a zero-entry read. (It did, on the first run of this test.)
+        let _guard = CWD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(dir) = templates_root() else {
+            panic!("catalog must resolve in-tree");
+        };
+        let templates = read_template_index(&dir);
+        assert!(!templates.is_empty(), "catalog read produced no entries");
+        let matches = find_similar_templates("automate my gmail inbox triage", &templates, 3);
+        assert!(
+            !matches.is_empty(),
+            "an intent naming a shipped service matched nothing in {} templates",
+            templates.len()
+        );
+    }
 }
