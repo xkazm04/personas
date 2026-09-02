@@ -8,7 +8,6 @@ import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { FleetStatusDots } from './FleetStatusDots';
-import { DebtText, debtText } from '@/i18n/DebtText';
 
 
 /**
@@ -238,7 +237,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       <div data-testid="fleet-broadcast-modal">
         <div className="flex items-center justify-between mb-4">
           <h2 id="fleet-broadcast-title" className="typo-section-title">
-            {title ?? <DebtText k="auto_broadcast_prompt_26edef52" />}
+            {title ?? t.plugins.fleet.broadcast_title}
           </h2>
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
@@ -253,7 +252,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             data-testid="fleet-broadcast-text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={debtText("auto_type_the_prompt_to_broadcast_to_selected_s_77990da6")}
+            placeholder={t.plugins.fleet.broadcast_placeholder}
             rows={5}
             className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 resize-none font-mono"
             autoFocus
@@ -269,7 +268,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
           />
           {t.plugins.fleet.broadcast_append}{' '}
           <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code>{' '}
-          <DebtText k="auto_so_claude_submits_immediately_14f3a1f0" />
+          {t.plugins.fleet.broadcast_append_suffix}
         </label>
 
         {/* Which sessions missed it. role="status" so the recovery path is
@@ -297,8 +296,15 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
+            {/* One parametrized string, not "Targets (" + numbers + ")".
+                The concatenated form fixed English word order and the position
+                of the parenthesis in all 14 locales; a locale that puts the
+                count first, or uses different brackets, had nowhere to say so. */}
             <span className="typo-caption font-medium text-foreground">
-              <DebtText k="auto_targets_55d96a85" />{selected.size}/{targetable.length})
+              {tx(t.plugins.fleet.broadcast_targets_count, {
+                selected: selected.size,
+                total: targetable.length,
+              })}
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -308,7 +314,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                 disabled={waiting.length === 0}
                 onClick={selectWaiting}
               >
-                <DebtText k="auto_waiting_449531f9" />{waiting.length})
+                {tx(t.plugins.fleet.broadcast_waiting_count, { count: waiting.length })}
               </Button>
               <Button variant="ghost" size="sm" icon={<CheckSquare className="w-3 h-3" />} onClick={selectAll}>
                 {t.common.all}
@@ -320,7 +326,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
           </div>
           <div className="max-h-[200px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5">
             {targetable.length === 0 ? (
-              <p className="text-[13px] text-foreground text-center py-3"><DebtText k="auto_no_active_sessions_0dcbde78" /></p>
+              <p className="text-[13px] text-foreground text-center py-3">{t.plugins.fleet.broadcast_no_sessions}</p>
             ) : (
               targetable.map((s) => {
                 const isSel = selected.has(s.id);
@@ -350,17 +356,26 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             variant="primary"
             size="sm"
             icon={<Send className="w-3.5 h-3.5" />}
-            disabled={!text.trim() || selected.size === 0 || sending}
-            onClick={handleSend}
-          >
-            {sending
-              ? progress
+            /* Broadcasting is an ACTION the operator just pressed, so the
+               control owes a real spinner and aria-busy — a swapped label alone
+               is indistinguishable from a click that never registered, and a
+               fleet-wide write is exactly the press you do not want to repeat.
+               `loading` also keeps the button disabled, so the double-submit
+               guard here and in `handleSend` is unchanged; the {done}/{total}
+               progress simply becomes the loading label. */
+            loading={sending}
+            loadingLabel={
+              progress
                 ? tx(t.plugins.fleet.broadcast_sending_progress, {
                     done: progress.done,
                     total: progress.total,
                   })
                 : t.plugins.fleet.broadcast_sending
-              : tx(t.plugins.fleet.broadcast_send_to, { count: selected.size })}
+            }
+            disabled={!text.trim() || selected.size === 0 || sending}
+            onClick={handleSend}
+          >
+            {tx(t.plugins.fleet.broadcast_send_to, { count: selected.size })}
           </Button>
         </div>
       </div>
