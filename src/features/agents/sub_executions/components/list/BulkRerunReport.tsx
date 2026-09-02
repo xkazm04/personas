@@ -210,7 +210,12 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
             <div className="col-span-3 flex items-center gap-1.5 typo-body">
               <span className="text-foreground">{it.origStatus}</span>
               <span className="text-foreground">→</span>
-              <span className="text-foreground/95">{it.newStatus ?? '—'}</span>
+              {/* A dispatched-but-not-yet-landed re-run has no status, cost or
+                  duration yet — say "running", never a dash that reads as
+                  "nothing happened" next to a $0.00 cost column. */}
+              <span className="text-foreground/95">
+                {it.newStatus ?? (it.status === 'pending' || it.status === 'running' ? e.running_state : '—')}
+              </span>
             </div>
             <div className="col-span-2 typo-code text-foreground/90 flex items-center">
               {it.newDurationMs !== null && it.origDurationMs !== null

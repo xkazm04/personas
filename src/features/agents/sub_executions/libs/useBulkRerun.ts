@@ -3,12 +3,38 @@ import { executePersona, getExecution } from '@/api/agents/executions';
 import { createLogger } from '@/lib/log';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
-import { isFailedExecutionStatus } from './executionStatus';
+import { isFailedExecutionStatus, isSuccessExecutionStatus } from './executionStatus';
 import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('bulk-rerun');
 
 const MAX_CONCURRENT = 3;
+
+/** How often a dispatched re-run is re-read while waiting for it to land. */
+const DEFAULT_POLL_INTERVAL_MS = 2_000;
+/** How long a single re-run is waited on before its row is left pending. */
+const DEFAULT_POLL_TIMEOUT_MS = 15 * 60_000;
+
+/**
+ * A re-run has LANDED when its status is terminal. Anything else ('queued',
+ * 'running', ...) means the row's cost/duration/token columns are still the
+ * zeroes `execute_persona` returns at enqueue time.
+ */
+function hasLanded(status: string): boolean {
+  return isSuccessExecutionStatus(status) || isFailedExecutionStatus(status);
+}
+
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+export interface UseBulkRerunOptions {
+  /** Overridable for tests; defaults to DEFAULT_POLL_INTERVAL_MS. */
+  pollIntervalMs?: number;
+  /** Overridable for tests; defaults to DEFAULT_POLL_TIMEOUT_MS. */
+  pollTimeoutMs?: number;
+}
 
 export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed';
 
@@ -121,13 +147,28 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
 
 /**
  * Drives a bulk-rerun cohort: fans out execute_persona calls (capped at
- * MAX_CONCURRENT in flight), polls each result, and aggregates into a
- * cohort summary the UI can render.
+ * MAX_CONCURRENT in flight), WAITS for each dispatched run to land before
+ * reading its outcome, and aggregates into a cohort summary the UI can render.
+ *
+ * The waiting is a bounded poll of `get_execution`, not an event subscription,
+ * for two reasons. (1) The `execution-status` event carries status/duration/
+ * cost only — not `input_tokens`/`output_tokens` — so the authoritative row has
+ * to be read back either way and an event would only be a wake-up for that
+ * read. (2) A poll is still correct when an event is missed (a run that lands
+ * before a listener attaches, a dropped event), and it keeps the cancel +
+ * latest-wins discipline in this one file instead of splitting it across a
+ * listener's lifetime.
+ *
+ * Until a run lands, `newStatus` / `newCost` / `newDurationMs` stay null: the
+ * row reads as pending rather than as a $0.00 success, and the cohort
+ * aggregates count landed runs only.
  *
  * The hook owns its own state machine so cancellation/reset is local — no
  * Zustand churn while the cohort is in flight.
  */
-export function useBulkRerun(): UseBulkRerun {
+export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
+  const pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  const pollTimeoutMs = options.pollTimeoutMs ?? DEFAULT_POLL_TIMEOUT_MS;
   const [phase, setPhase] = useState<BulkRunPhase>('idle');
   const [items, setItems] = useState<BulkRunItem[]>([]);
   const [cohort, setCohort] = useState<BulkRunCohort>(emptyCohort);
@@ -149,6 +190,41 @@ export function useBulkRerun(): UseBulkRerun {
     });
   }, [latestWins]);
 
+  /**
+   * Re-read a dispatched re-run until it lands. Returns the landed execution,
+   * or null when the batch was cancelled/superseded or the run was still going
+   * when the wait budget ran out — in which case the row stays pending and is
+   * never reported as a zero-cost success.
+   */
+  const waitForLanding = useCallback(
+    async (
+      executionId: string,
+      personaId: string,
+      token: number,
+    ): Promise<PersonaExecution | null> => {
+      const deadline = Date.now() + pollTimeoutMs;
+      for (;;) {
+        if (cancelledRef.current || !latestWins.isCurrent(token)) return null;
+        try {
+          const exec = await getExecution(executionId, personaId);
+          if (hasLanded(exec.status)) return exec;
+        } catch (err) {
+          // A transient read failure is not a failed re-run — the run itself is
+          // still going. Retry until the budget runs out.
+          logger.warn('Failed to read re-run status; retrying', { id: executionId, err });
+        }
+        if (Date.now() >= deadline) {
+          logger.warn('Re-run did not land within the wait budget; left pending', {
+            id: executionId,
+          });
+          return null;
+        }
+        await delay(pollIntervalMs);
+      }
+    },
+    [latestWins, pollIntervalMs, pollTimeoutMs],
+  );
+
   const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number) => {
     if (cancelledRef.current) return;
     updateItem(token, row.id, { status: 'running' });
@@ -161,7 +237,7 @@ export function useBulkRerun(): UseBulkRerun {
         logger.warn('Failed to hydrate input_data; rerunning with empty input', { id: row.id, err });
       }
       const idempotencyKey = `bulk-rerun-${row.id}-${Date.now()}`;
-      const result: PersonaExecution = await executePersona(
+      const dispatched: PersonaExecution = await executePersona(
         personaId,
         undefined,
         inputData,
@@ -169,23 +245,32 @@ export function useBulkRerun(): UseBulkRerun {
         undefined,
         idempotencyKey,
       );
-      const successful = !isFailedExecutionStatus(result.status);
+      // `execute_persona` returns the row as it looked IMMEDIATELY after the
+      // enqueue — status 'queued', cost 0, duration null, tokens 0. Recording
+      // those as the re-run's outcome is what made every report read
+      // "$0.0431 -> $0.0000 · success". Only the id is usable here.
+      updateItem(token, row.id, { newExecutionId: dispatched.id });
+
+      const landed = await waitForLanding(dispatched.id, personaId, token);
+      if (!landed) return; // cancelled, superseded, or still running — stays pending
+
+      const successful = !isFailedExecutionStatus(landed.status);
       updateItem(token, row.id, {
         status: successful ? 'success' : 'failed',
-        newExecutionId: result.id,
-        newStatus: result.status,
-        newCost: result.cost_usd,
-        newDurationMs: result.duration_ms,
-        newInputTokens: result.input_tokens,
-        newOutputTokens: result.output_tokens,
-        error: result.error_message ?? null,
+        newExecutionId: landed.id,
+        newStatus: landed.status,
+        newCost: landed.cost_usd,
+        newDurationMs: landed.duration_ms,
+        newInputTokens: landed.input_tokens,
+        newOutputTokens: landed.output_tokens,
+        error: landed.error_message ?? null,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Bulk-rerun item failed', { id: row.id, error: msg });
       updateItem(token, row.id, { status: 'failed', error: msg });
     }
-  }, [updateItem]);
+  }, [updateItem, waitForLanding]);
 
   const start = useCallback(async (rows: ExecutionListItem[], personaId: string) => {
     if (rows.length === 0) return;
