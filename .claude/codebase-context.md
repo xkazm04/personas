@@ -989,17 +989,14 @@ Deep-dive execution detail view presenting a waterfall trace inspector, subagent
 
 **Files:**
 - `src/features/agents/sub_executions/detail/ExecutionDetail.tsx`
-- `src/features/agents/sub_executions/detail/ExecutionDetailContent.tsx`
 - `src/features/agents/sub_executions/detail/ExecutionDetailTabs.tsx`
 - `src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx`
-- `src/features/agents/sub_executions/detail/executionDetailTypes.ts`
 - `src/features/agents/sub_executions/detail/inspector/ExecutionInspector.tsx`
 - `src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx`
 - `src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx`
 - `src/features/agents/sub_executions/detail/inspector/WaterfallBar.tsx`
 - `src/features/agents/sub_executions/detail/inspector/SpanRow.tsx`
 - `src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx`
-- `src/features/agents/sub_executions/detail/inspector/ToolCallCard.tsx`
 - `src/features/agents/sub_executions/detail/inspector/HighlightedJsonBlock.tsx`
 - `src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx`
 - `src/features/agents/sub_executions/detail/inspector/inspectorShared.tsx`

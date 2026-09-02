@@ -1,6 +1,6 @@
 # Codebase Catalogs — personas
 
-> Generated: 2026-08-20T15:26:46.720Z
+> Generated: 2026-09-02T09:53:26.691Z
 > Templates: 131 across 15 categories
 > Connectors: 134 across 36 categories
 >
@@ -22,12 +22,12 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ### _team_presets (7)
 
+- **undefined** — 从任何来源捕获想法,将其分诊为有依据的待办列表,跟踪执行期间所做的决定,并自动解决问题。六个预先连接的智能体共同将原始信号转化为已交付的工作。
 - **backlog-execution** — Capture ideas from any source, triage them into a grounded backlog, track decisions made during execution, and resolve issues automatically. Six pre-wired agents that together turn raw signal into shipped work.
 - **daily-ops** — A lightweight three-agent set for daily operational rhythm: morning email digest into a standup compilation into appointment orchestration. Minimal connectors, maximum cadence.
 - **engineering-triage** — Keep the codebase healthy. Scan for issues, prune dead code, guard documentation freshness, and gate quality — four agents that work the engineering hygiene backlog while you ship features.
 - **reflective-journaling** — A single grounded journaling coach that reads your vault, surfaces recurring patterns over time, and reflects them back in your chosen tone. A focused starting point you can grow into a larger team later.
 - **sdlc-lifecycle** — Eight pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a QA guardian tests each PR the dev clone opens in an isolated git worktree and then merges it (auto-merge per the project's standards policy) or returns it for fixes, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, a docs steward keeps the README and changelog in sync, and an artist generates on-brand UI/visual assets for the feature in parallel with the build. They hand work forward through events and share the same codebase and memory. (The artist needs an image-generation credential, and QA Guardian's PR-merge action needs a GitHub credential; without those they stay idle and the build cascade is unaffected.)
-- **undefined** — 从任何来源捕获想法,将其分诊为有依据的待办列表,跟踪执行期间所做的决定,并自动解决问题。六个预先连接的智能体共同将原始信号转化为已交付的工作。
 - **web-development** — A best-practice pod for shipping web applications, end to end on one codebase: a solution architect scopes the feature into a story-pointed plan, a design handoff coordinator turns that into UI/UX specs and assets, a dev clone implements the frontend + backend (writes the code and tests, runs them), a code reviewer guards quality, a QA guardian tests each PR in an isolated git worktree and merges it or returns it for fixes, a DevOps guardian builds, deploys, and monitors the release, a website conversion auditor audits the live site for performance and conversion, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory. (QA Guardian's PR-merge action and DevOps Guardian's deploy steps need a GitHub credential; without it they stay idle and the rest of the build cascade is unaffected.)
 
 ### content (13)
