@@ -20,25 +20,24 @@
 //! (`src-tauri/engine/src/team_preset_loader.rs:63-97`), whose docblock names
 //! this failure mode in as many words.
 //!
-//! **Why the resolver and not `include_str!`.** The other two precedents
-//! (`engine/src/archetype_catalog.rs:23`, `src/engine/recipe_seed.rs:62`) embed
-//! their catalog with `include_str!` — and both embed exactly ONE aggregate
-//! file (`_archetypes.json`, `_recipe_seeds.json`). The template catalog is
-//! **133 JSON files across 15 category directories** with no aggregate, so
-//! embedding it would mean either hand-enumerating 133 `include_str!` paths
-//! (silently stale the moment a template is added) or introducing a build-time
-//! aggregation step. The resolver is the precedent that actually fits the
-//! shape of this input.
+//! **Two sources, in order: disk, then the binary.** The on-disk resolver runs
+//! first, so a developer editing `scripts/templates/` sees the edit on the next
+//! build session without a recompile. When nothing on disk matches, the index
+//! embedded at compile time by `src-tauri/build.rs` is used — that is the case
+//! on an end user's machine, where `scripts/templates` does not exist at all
+//! (`tauri.conf.json` bundles only `resources/skills`, and the third resolver
+//! candidate is a compile-time path from the machine that built the binary).
 //!
-//! **What the resolver does and does not buy.** Candidate 3 is a
-//! `CARGO_MANIFEST_DIR` anchor, so resolution no longer depends on the CWD at
-//! all on a machine that has the repo checked out (dev, tests, a locally-built
-//! app started from anywhere). It does NOT conjure a catalog on an end user's
-//! machine: `scripts/templates` is not listed under `bundle.resources` in
-//! `tauri.conf.json`, so a distributed installer ships no catalog for this
-//! module to read. That remains open — see the module README — and is why the
-//! missing-directory case now logs at `warn` exactly once instead of
-//! disappearing into an empty `String::new()`.
+//! The embedding is an aggregate of the whole template objects rather than a
+//! projection of the four fields this module reads, because `[build-dependencies]`
+//! carries no JSON parser; the reasoning and its ~2.3 MB cost are written up on
+//! `build.rs::embed_template_index`. Extraction is shared: [`entry_from_value`]
+//! is the one place the four fields are read, from either source.
+//!
+//! With the embedded fallback in place the "no catalog" branch should be
+//! unreachable — `build.rs` panics rather than emit an empty index — so the
+//! warn-once below is a tripwire for a state that should not occur, not a
+//! situation the app is expected to be in.
 //!
 //! **No quality claim.** Restoring this section restores *parity* with a
 //! repo-root run. The effect of the "Reference Templates" block on build
@@ -88,6 +87,58 @@ fn templates_root() -> Option<std::path::PathBuf> {
     candidates.into_iter().find(|c| c.is_dir())
 }
 
+/// Read the four indexed fields out of one template JSON object. The ONE place
+/// the projection lives — used for both the on-disk files and the embedded
+/// aggregate, so the two sources can never drift into different shapes.
+fn entry_from_value(val: &serde_json::Value) -> TemplateEntry {
+    TemplateEntry {
+        name: val
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        description: val
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        category: val
+            .get("category")
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.first())
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        service_flow: val
+            .get("service_flow")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default(),
+    }
+}
+
+/// The catalog aggregated into the binary at compile time by
+/// `src-tauri/build.rs` — a JSON array of the whole template objects.
+const EMBEDDED_TEMPLATE_INDEX: &str =
+    include_str!(concat!(env!("OUT_DIR"), "/template_index.json"));
+
+/// Parse the embedded aggregate. Returns empty only if the blob is malformed,
+/// which `build.rs` prevents by construction (it panics on a missing or empty
+/// catalog and skips any file that is not a JSON object).
+fn embedded_template_index() -> Vec<TemplateEntry> {
+    match serde_json::from_str::<Vec<serde_json::Value>>(EMBEDDED_TEMPLATE_INDEX) {
+        Ok(vals) => vals.iter().map(entry_from_value).collect(),
+        Err(e) => {
+            tracing::warn!("Embedded template index failed to parse: {e}");
+            vec![]
+        }
+    }
+}
+
 /// Read the lightweight index (name, description, category, service_flow) out
 /// of every `<category>/*.json` under `dir`. Category directories whose name
 /// starts with `_` are internal bundles (`_archetypes.json`,
@@ -111,34 +162,7 @@ fn read_template_index(dir: &std::path::Path) -> Vec<TemplateEntry> {
                     if fp.extension().map(|e| e == "json").unwrap_or(false) {
                         if let Ok(content) = std::fs::read_to_string(&fp) {
                             if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                                entries.push(TemplateEntry {
-                                    name: val
-                                        .get("name")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("")
-                                        .to_string(),
-                                    description: val
-                                        .get("description")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("")
-                                        .to_string(),
-                                    category: val
-                                        .get("category")
-                                        .and_then(|v| v.as_array())
-                                        .and_then(|a| a.first())
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("")
-                                        .to_string(),
-                                    service_flow: val
-                                        .get("service_flow")
-                                        .and_then(|v| v.as_array())
-                                        .map(|a| {
-                                            a.iter()
-                                                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                                                .collect()
-                                        })
-                                        .unwrap_or_default(),
-                                });
+                                entries.push(entry_from_value(&val));
                             }
                         }
                     }
@@ -149,26 +173,39 @@ fn read_template_index(dir: &std::path::Path) -> Vec<TemplateEntry> {
     entries
 }
 
-/// Load template index from `scripts/templates/` — reads only the lightweight
-/// fields (name, description, category, service_flow) from each JSON file.
-/// Results are cached in-process after the first load, so the warn below is
-/// emitted at most once per process by construction.
+/// Load the template index — on-disk catalog first, the compile-time embedded
+/// copy second. Cached in-process after the first load, so anything logged
+/// below is logged at most once per process by construction.
 fn load_template_index() -> Vec<TemplateEntry> {
     static CACHE: std::sync::LazyLock<Vec<TemplateEntry>> = std::sync::LazyLock::new(|| {
-        let Some(dir) = templates_root() else {
+        if let Some(dir) = templates_root() {
+            let entries = read_template_index(&dir);
+            if !entries.is_empty() {
+                tracing::info!(
+                    "Template index loaded: {} entries from {} (cached)",
+                    entries.len(),
+                    dir.display()
+                );
+                return entries;
+            }
             tracing::warn!(
-                "Template catalog not found (tried 'scripts/templates', '../scripts/templates' \
-                 and the CARGO_MANIFEST_DIR anchor) — the build prompt's 'Reference Templates' \
-                 section will be empty for this process"
+                "Template catalog at {} yielded no entries — falling back to the embedded index",
+                dir.display()
             );
-            return vec![];
-        };
-        let entries = read_template_index(&dir);
-        tracing::info!(
-            "Template index loaded: {} entries from {} (cached)",
-            entries.len(),
-            dir.display()
-        );
+        }
+        let entries = embedded_template_index();
+        if entries.is_empty() {
+            tracing::warn!(
+                "No template catalog on disk AND the embedded index is empty — the build \
+                 prompt's 'Reference Templates' section will be empty for this process. \
+                 build.rs should have made this unreachable."
+            );
+        } else {
+            tracing::info!(
+                "Template index loaded: {} entries from the embedded catalog (cached)",
+                entries.len()
+            );
+        }
         entries
     });
     CACHE.clone()
@@ -364,6 +401,45 @@ mod tests {
             "the resolved catalog at {} produced zero entries — resolution succeeded but the \
              read did not",
             resolved.display()
+        );
+    }
+
+    /// The catalog travels inside the binary: this is the only source a
+    /// packaged install has, so an empty or unparseable blob here means a
+    /// shipped build grounds its prompts on nothing.
+    #[test]
+    fn embedded_index_is_populated_and_parses() {
+        let embedded = embedded_template_index();
+        assert!(
+            embedded.len() > 50,
+            "embedded catalog holds only {} templates — build.rs walked the wrong tree",
+            embedded.len()
+        );
+        assert!(
+            embedded.iter().all(|e| !e.name.is_empty()),
+            "an embedded entry has no name — the projection read the wrong shape"
+        );
+        assert!(
+            embedded.iter().any(|e| !e.service_flow.is_empty()),
+            "no embedded entry carries a service_flow"
+        );
+    }
+
+    /// Disk wins when it resolves: a developer editing `scripts/templates/`
+    /// must see the edit without a recompile.
+    #[test]
+    fn on_disk_catalog_is_preferred_over_the_embedded_one() {
+        let _guard = CWD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let dir = templates_root().expect("catalog resolves in-tree");
+        let on_disk = read_template_index(&dir);
+        assert!(!on_disk.is_empty(), "on-disk read produced nothing");
+        // Both sources describe the same catalog, so the counts must agree;
+        // a divergence means build.rs and load_template_index disagree about
+        // which files belong in the index.
+        assert_eq!(
+            on_disk.len(),
+            embedded_template_index().len(),
+            "on-disk and embedded catalogs disagree on how many templates exist"
         );
     }
 
