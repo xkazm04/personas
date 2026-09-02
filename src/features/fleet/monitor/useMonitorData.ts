@@ -14,6 +14,7 @@ import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@
 import { listReports, markReportRead } from '@/api/overview/reports';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
+import { useReportCreatedListener } from '@/hooks/realtime/useReportCreatedListener';
 import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -417,7 +418,23 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     }
   }, [reviewLimit]);
 
-  const reloadMessages = useCallback(async () => {
+  /**
+   * Coalescing gate for the messages read.
+   *
+   * `report-created` arrives in per-frame batches (the singleton listener
+   * collects a backend tick's payloads and fans them out in one animation
+   * frame), and a persona finishing a fan-out can emit a dozen at once. Without
+   * a gate that is a dozen `list_reports(300)` queries for one refresh. A call
+   * that lands while a read is open JOINS it and sets a "do it again" flag, so a
+   * burst costs at most two reads: the one in flight, and one more that is
+   * guaranteed to see everything the burst wrote. Same in-flight discipline the
+   * verdict writers use (`useInFlight`), scoped to a single loader.
+   */
+  const messagesInFlight = useRef<Promise<void> | null>(null);
+  const messagesQueued = useRef(false);
+  const reloadMessagesRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
+  const loadMessages = useCallback(async () => {
     try {
       const raw = await listReports(MESSAGE_SCAN_LIMIT);
       const unread = raw.filter((m) => !m.is_read);
@@ -438,6 +455,51 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       logger.error('Failed to load messages', { error: err });
     }
   }, []);
+
+  const reloadMessages = useCallback((): Promise<void> => {
+    const open = messagesInFlight.current;
+    if (open) {
+      messagesQueued.current = true;
+      return open;
+    }
+    const run = loadMessages().finally(() => {
+      messagesInFlight.current = null;
+      if (messagesQueued.current) {
+        messagesQueued.current = false;
+        void reloadMessagesRef.current();
+      }
+    });
+    messagesInFlight.current = run;
+    return run;
+  }, [loadMessages]);
+  reloadMessagesRef.current = reloadMessages;
+
+  /**
+   * A NEW MESSAGE LIGHTS THE TILE ON THE EVENT, NOT THE POLL.
+   *
+   * Rust emits `report-created` the moment a report row lands
+   * (`engine/dispatch.rs`), and the app already has ONE singleton listener for
+   * it — this layers on that hook rather than opening a second Tauri
+   * subscription, so every consumer still shares a single `listen()`.
+   *
+   * The 30s poll below stays exactly as it was: it is the fallback for anything
+   * the event path misses (an event emitted before this subscriber mounted and
+   * past the early-buffer cap, a write that reached SQLite by another route).
+   *
+   * The feed gate lives INSIDE the callback rather than around the hook, for
+   * the ordinary reason: a hook cannot be called conditionally. What the gate
+   * has to guarantee is that a surface which does not render messages performs
+   * no work for one — no read, no state write — and it does. The subscription
+   * itself is the shared singleton, so being registered on it costs nothing
+   * beyond a `Set` entry, and it is released on unmount with the component.
+   */
+  const wantsMessagesRef = useRef(wantsMessages);
+  wantsMessagesRef.current = wantsMessages;
+  const onReportCreated = useCallback(() => {
+    if (!wantsMessagesRef.current) return;
+    void reloadMessagesRef.current();
+  }, []);
+  useReportCreatedListener(onReportCreated);
 
   // Read through a ref: whether the roster is cold is a one-shot question at
   // mount, and putting `personas.length` in the dep list would re-run the whole
