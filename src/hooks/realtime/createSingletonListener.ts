@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Creates a singleton Tauri listener hook for a given event name.
@@ -39,6 +40,18 @@ export function createSingletonListener<T>(eventName: string) {
   let frameQueue: T[] = [];
   let frameScheduled = false;
 
+  // One throwing consumer must never take the fan-out down with it. Before
+  // containment, a subscriber that threw aborted the whole rAF callback: every
+  // subscriber later in the Set missed that payload AND the remainder of the
+  // batch was lost silently, because `frameQueue` had already been emptied.
+  // One buggy panel could starve the Event Log, Live Stream and Monitor at once.
+  const reportSubscriberError = silentCatch(
+    `hooks/realtime/createSingletonListener:${eventName}:subscriber`,
+  );
+  const reportDropListenerError = silentCatch(
+    `hooks/realtime/createSingletonListener:${eventName}:onDrop`,
+  );
+
   function scheduleFrameFlush() {
     if (frameScheduled) return;
     frameScheduled = true;
@@ -56,7 +69,11 @@ export function createSingletonListener<T>(eventName: string) {
       frameQueue = [];
       for (const payload of batch) {
         for (const cb of subscribers) {
-          cb(payload);
+          try {
+            cb(payload);
+          } catch (err) {
+            reportSubscriberError(err);
+          }
         }
       }
     });
@@ -71,7 +88,11 @@ export function createSingletonListener<T>(eventName: string) {
       );
     }
     for (const listener of dropListeners) {
-      listener(earlyDroppedCount);
+      try {
+        listener(earlyDroppedCount);
+      } catch (err) {
+        reportDropListenerError(err);
+      }
     }
   }
 
@@ -171,7 +192,37 @@ export function createSingletonListener<T>(eventName: string) {
     return attached;
   }
 
-  useSingletonListener.getEarlyDroppedCount = () => earlyDroppedCount;
+  /**
+   * Test-only escape hatch mandated by the HMR-singleton doctrine
+   * (`docs/concepts/golden-paths/hmr-safe-singletons.md`, § mandated
+   * primitives): a module-scope singleton that survives a module reload also
+   * survives between test cases, so a suite without this leaks a native
+   * listener, a populated early buffer and a non-zero drop count into the
+   * next test. Detaches the native listener and returns every closure
+   * variable to its initial value.
+   *
+   * Not a teardown API for production code — nothing but a test should call
+   * it, because a mounted component keeps its `attached` state after a reset.
+   */
+  useSingletonListener.__resetForTests = () => {
+    if (singletonUnlisten) {
+      try {
+        singletonUnlisten();
+      } catch (err) {
+        reportSubscriberError(err);
+      }
+    }
+    singletonUnlisten = null;
+    setupPromise = null;
+    setupInFlight = false;
+    subscribers.clear();
+    dropListeners.clear();
+    earlyBuffer = [];
+    earlyDroppedCount = 0;
+    dropWarningEmitted = false;
+    frameQueue = [];
+    frameScheduled = false;
+  };
 
   return useSingletonListener;
 }
