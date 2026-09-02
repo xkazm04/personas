@@ -1,4 +1,5 @@
 import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -99,11 +100,29 @@ const TerminalLine = memo(function TerminalLine({ text }: { text: string }) {
   const cls = TERMINAL_STYLE_MAP[style];
   const content = highlightLine(text);
   return (
-    <div className={cls || 'text-foreground/90'}>
+    <div className={cls || 'text-foreground/90'} data-testid="replay-terminal-line">
       {content || ' '}
     </div>
   );
 });
+
+/**
+ * Estimated height of one unwrapped log line (typo-code + leading-relaxed).
+ * Lines are NOT uniform -- a JSON payload expands into a multi-line `<pre>` --
+ * so this is only the virtualizer's opening guess; every mounted row reports
+ * its real height back through `measureElement`.
+ */
+const TERMINAL_LINE_HEIGHT = 20;
+
+/**
+ * Below this many lines the plain map is cheaper than a virtualizer. Same
+ * constant style and threshold as the sibling waterfall
+ * (`detail/inspector/TraceInspector.tsx`).
+ */
+const VIRTUALIZE_THRESHOLD = 50;
+
+/** Lines kept mounted beyond each viewport edge so a fast scroll never tears. */
+const TERMINAL_LINE_OVERSCAN = 20;
 
 /** Replay terminal panel -- shows log lines up to current scrub position. */
 export function ReplayTerminalPanel({
@@ -119,6 +138,21 @@ export function ReplayTerminalPanel({
   const stuckToBottomRef = useRef(true);
   const prevLengthRef = useRef(visibleLines.length);
 
+  // `get_execution_log` reads the whole file with no pagination against a
+  // 10 MB stdout cap, so `visibleLines` is unbounded by construction and a
+  // plain map created one element per line. Memoising TerminalLine bounded the
+  // per-tick RE-render cost but never the element COUNT -- at End of a long run
+  // the panel materialised the entire log. Virtualizing bounds the created set
+  // to the window regardless of line count.
+  const shouldVirtualize = visibleLines.length > VIRTUALIZE_THRESHOLD;
+  const virtualizer = useVirtualizer({
+    count: visibleLines.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => TERMINAL_LINE_HEIGHT,
+    overscan: TERMINAL_LINE_OVERSCAN,
+    enabled: shouldVirtualize,
+  });
+
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -129,12 +163,19 @@ export function ReplayTerminalPanel({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const grew = visibleLines.length > prevLengthRef.current;
-    prevLengthRef.current = visibleLines.length;
-    if (grew && stuckToBottomRef.current) {
+    const count = visibleLines.length;
+    const grew = count > prevLengthRef.current;
+    prevLengthRef.current = count;
+    if (!grew || !stuckToBottomRef.current) return;
+    if (shouldVirtualize) {
+      // `scrollHeight` describes only the spacer, whose size is still partly
+      // estimated while unmeasured rows exist -- scrollToIndex lands on the
+      // last line and re-corrects as real measurements arrive.
+      virtualizer.scrollToIndex(count - 1, { align: 'end' });
+    } else {
       el.scrollTop = el.scrollHeight;
     }
-  }, [visibleLines.length]);
+  }, [visibleLines.length, shouldVirtualize, virtualizer]);
 
   return (
     <div className="flex flex-col h-full">
@@ -150,7 +191,26 @@ export function ReplayTerminalPanel({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code leading-relaxed"
       >
-        {visibleLines.map((line) => (
+        {shouldVirtualize ? (
+          /* Spacer of the full list height so the scrollbar keeps describing
+             the whole log; only the windowed lines exist as elements. */
+          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const line = visibleLines[virtualRow.index]!;
+              return (
+                <div
+                  key={line.index}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  className="absolute inset-x-0 top-0"
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                >
+                  <TerminalLine text={line.text} />
+                </div>
+              );
+            })}
+          </div>
+        ) : visibleLines.map((line) => (
           <TerminalLine key={line.index} text={line.text} />
         ))}
         {visibleLines.length === 0 && (
