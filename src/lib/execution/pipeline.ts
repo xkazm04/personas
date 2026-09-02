@@ -232,6 +232,71 @@ export function isPipelineStage(spanType: UnifiedSpanType): spanType is Pipeline
   return (PIPELINE_STAGES as readonly string[]).includes(spanType);
 }
 
+/**
+ * The pipeline stages the BACKEND actually measures.
+ *
+ * `src-tauri/src/engine/runner/stages.rs` defines exactly four (`RunnerStage`),
+ * and each is opened with `SpanType::PipelineStage` carrying its key in
+ * `metadata.pipeline_stage`. The other three stages in `PIPELINE_STAGES` --
+ * `initiate`, `create_record`, `frontend_complete` -- are emitted by the
+ * FRONTEND pipeline and are genuinely absent from every persisted trace.
+ * A renderer that mixes the two must be able to say which half it measured.
+ */
+export const BACKEND_PIPELINE_STAGES = [
+  'validate',
+  'spawn_engine',
+  'stream_output',
+  'finalize_status',
+] as const;
+
+export type BackendPipelineStage = (typeof BACKEND_PIPELINE_STAGES)[number];
+
+/** Check whether a pipeline stage is one the backend records. */
+export function isBackendPipelineStage(stage: string): stage is BackendPipelineStage {
+  return (BACKEND_PIPELINE_STAGES as readonly string[]).includes(stage);
+}
+
+/**
+ * The pipeline stage a span names, or null if it names none.
+ *
+ * A persisted backend span does NOT carry the stage in `span_type` -- every
+ * one of the four arrives as the single `SpanType` variant `"pipeline_stage"`,
+ * with the stage itself in `metadata.pipeline_stage`. `isPipelineStage`
+ * therefore rejects a stored stage span outright, which is why stored traces
+ * could not draw the waterfall at all and every historical execution fell back
+ * to a reconstruction. Handles both shapes so a caller never has to know which
+ * side of the wire a span came from.
+ */
+export function pipelineStageOf(span: {
+  span_type: UnifiedSpanType | string;
+  metadata?: Record<string, unknown> | null;
+}): PipelineStage | null {
+  if (isPipelineStage(span.span_type as UnifiedSpanType)) {
+    return span.span_type as PipelineStage;
+  }
+  if (span.span_type !== 'pipeline_stage') return null;
+  const key = span.metadata?.['pipeline_stage'];
+  if (typeof key !== 'string') return null;
+  return isPipelineStage(key as UnifiedSpanType) ? (key as PipelineStage) : null;
+}
+
+/**
+ * Rewrite stored `pipeline_stage` spans onto the pipeline-stage union.
+ *
+ * Spans that name no stage are returned untouched -- this is a remap, not a
+ * filter, so a caller that also wants the engine spans still has them.
+ */
+export function normalizePipelineStageSpans(spans: UnifiedSpan[]): UnifiedSpan[] {
+  let changed = false;
+  const out = spans.map((s) => {
+    const stage = pipelineStageOf(s);
+    if (stage === null || s.span_type === stage) return s;
+    changed = true;
+    return { ...s, span_type: stage as UnifiedSpanType };
+  });
+  return changed ? out : spans;
+}
+
 let _spanCounter = 0;
 
 /**

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PipelineTraceEntry } from '@/lib/execution/pipeline';
+import type { PipelineTraceEntry, PipelineStage } from '@/lib/execution/pipeline';
 import { DollarSign, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -12,6 +12,7 @@ export function CostAccrualOverlay({
   totalDurationMs,
   totalCostUsd,
   isSynthetic = false,
+  estimatedStages,
 }: {
   entries: PipelineTraceEntry[];
   totalDurationMs: number;
@@ -22,9 +23,26 @@ export function CostAccrualOverlay({
    *  PipelineWaterfall shows on the waterfall itself, so the curve isn't
    *  mistaken for a real per-stage cost measurement. */
   isSynthetic?: boolean;
+  /**
+   * Which individual stages are reconstructions, on a trace that is only
+   * partly one. The curve has exactly two knees — `stream_output` and
+   * `finalize_status` — so its TIMING is a measurement whenever those two
+   * were read from a stored trace, even though three other bars beside it
+   * were not. Stamping the whole overlay from a chart-wide flag was the
+   * thing that made the badge unreadable: it appeared over a curve whose
+   * every anchor had been measured.
+   */
+  estimatedStages?: ReadonlySet<PipelineStage>;
 }) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
+
+  // The two stages the curve is actually built from.
+  const curveIsEstimated =
+    isSynthetic ||
+    estimatedStages == null ||
+    estimatedStages.has('stream_output') ||
+    estimatedStages.has('finalize_status');
 
   const points = useMemo(() => {
     if (totalCostUsd <= 0 || totalDurationMs <= 0) return [];
@@ -75,7 +93,7 @@ export function CostAccrualOverlay({
         <span className="typo-code text-foreground uppercase tracking-wider">
           {tx(e.cost_accrual, { cost: totalCostUsd.toFixed(4) })}
         </span>
-        {isSynthetic && (
+        {curveIsEstimated && (
           <span
             className="flex items-center gap-1 typo-code text-status-warning uppercase tracking-wider"
             data-testid="cost-accrual-synthetic-badge"

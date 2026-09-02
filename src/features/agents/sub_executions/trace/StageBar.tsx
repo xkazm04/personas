@@ -16,12 +16,22 @@ export function StageBar({
   isExpanded,
   onToggle,
   hasSubSpans,
+  isEstimated = false,
 }: {
   entry: PipelineTraceEntry;
   totalDurationMs: number;
   isExpanded: boolean;
   onToggle: () => void;
   hasSubSpans: boolean;
+  /**
+   * This ONE bar's geometry is a reconstruction, not a measurement.
+   *
+   * A trace read back from the database carries the four backend stages as
+   * closed, measured spans and the three frontend stages not at all, so a
+   * single chart-wide "estimated" badge would be wrong about most of its own
+   * bars. The mark belongs on the bars it describes.
+   */
+  isEstimated?: boolean;
 }) {
   const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
@@ -57,6 +67,14 @@ export function StageBar({
             {config.category}
           </span>
           <span className="typo-heading text-foreground/85 truncate">{meta.label}</span>
+          {isEstimated && (
+            <span
+              className="typo-code text-status-warning flex-shrink-0"
+              data-testid="stage-estimated-marker"
+            >
+              {t.agents.executions.stage_estimated}
+            </span>
+          )}
           {entry.error && <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />}
         </div>
 
@@ -79,6 +97,11 @@ export function StageBar({
             >
               <p className="typo-heading text-foreground/90 mb-1">{meta.label}</p>
               <p className="typo-body text-foreground mb-1">{meta.boundary}</p>
+              {isEstimated && (
+                <p className="typo-body text-status-warning mb-1 max-w-[240px] whitespace-normal">
+                  {t.agents.executions.stage_estimated_hint}
+                </p>
+              )}
               <div className="flex items-center gap-3 typo-body">
                 <span className="font-mono text-foreground">{formatDuration(durationMs)}</span>
                 <span className="text-foreground">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
