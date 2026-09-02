@@ -182,7 +182,14 @@ pub struct GlobalExecutionListItem {
     pub input_tokens: i64,
     #[ts(type = "number")]
     pub output_tokens: i64,
-    pub cost_usd: f64,
+    /// `None` when the run's cost was never recorded (a NULL column, or a
+    /// value the lenient numeric read could not parse) — which is NOT the same
+    /// fact as a free run, and is deliberately not collapsed to `0.0` here the
+    /// way the two older mappers in this table's repo do. A list that renders
+    /// an unknown cost as $0 makes a total that omits a call indistinguishable
+    /// from one that includes a free call; the consumer states the absence
+    /// instead (census rule `unknown-money-as-zero`).
+    pub cost_usd: Option<f64>,
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
     pub started_at: Option<String>,

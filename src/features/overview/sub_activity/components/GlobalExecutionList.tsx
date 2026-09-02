@@ -490,7 +490,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
                           <span className="font-mono">{formatDuration(exec.durationMs)}</span>
-                          {exec.costUsd > 0 && <Numeric value={exec.costUsd} unit="usd" language={language} className="font-mono" />}
+                          {exec.costUsd !== null && exec.costUsd > 0 && <Numeric value={exec.costUsd} unit="usd" language={language} className="font-mono" />}
                           {modelShort && <span className="font-mono truncate">{modelShort}</span>}
                           <span>{formatRelativeTime(exec.startedAt || exec.createdAt)}</span>
                         </div>
@@ -523,7 +523,10 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                           )}
                         </div>
                         <div className="px-4 text-right">
-                          {exec.costUsd > 0 ? (
+                          {/* Unknown cost and zero cost both read as an em
+                              dash; neither is ever rendered as a real $0.00,
+                              and neither is summed into anything. */}
+                          {exec.costUsd !== null && exec.costUsd > 0 ? (
                             <Numeric value={exec.costUsd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
                           ) : (
                             <span className="typo-body text-foreground font-mono">{'—'}</span>

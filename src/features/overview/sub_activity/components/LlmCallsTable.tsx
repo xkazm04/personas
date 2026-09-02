@@ -51,6 +51,15 @@ const WINDOW_MS: Record<TimeWindow, number> = {
 
 const ROW_HEIGHT = 52;
 
+/** Ascending comparator that keeps "unknown" out of the ordering rather than
+ *  substituting a number for it: rows with no recorded value sort last in both
+ *  directions of the table's toggle. */
+function byNullableNumber(a: number | null, b: number | null): number {
+  if (a === null) return b === null ? 0 : 1;
+  if (b === null) return -1;
+  return a - b;
+}
+
 /** Resolved epoch-ms timestamp for a row (started, falling back to created). */
 function rowTime(e: GlobalExecutionListItem): number {
   return new Date(e.startedAt || e.createdAt).getTime();
@@ -270,9 +279,11 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         width: '104px',
         align: 'right',
         sortable: true,
-        sortFn: (a, b) => a.costUsd - b.costUsd,
+        sortFn: (a, b) => byNullableNumber(a.costUsd, b.costUsd),
         render: (e) =>
-          e.costUsd > 0 ? (
+          // A cost the run never recorded is an em dash, not $0 — see
+          // `GlobalExecutionListItem::cost_usd`.
+          e.costUsd !== null && e.costUsd > 0 ? (
             <Numeric value={e.costUsd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
           ) : (
             <span className="typo-code text-foreground font-mono">{'—'}</span>

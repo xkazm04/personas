@@ -234,9 +234,14 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
     })
 }
 
-/// The global list's row. Numeric columns go through the same lenient reads
-/// the other two mappers use — a token count nobody can parse is 0, not a dead
-/// page (see the "Lenient numeric reads" block above).
+/// The global list's row. Token counts go through the same lenient reads the
+/// other two mappers use — a count nobody can parse is 0, not a dead page (see
+/// the "Lenient numeric reads" block above).
+///
+/// `cost_usd` is the exception and stays `Option<f64>`: unknown money is not
+/// zero money. The other two mappers `unwrap_or(0.0)` here and destroy a NULL
+/// the nullable column was holding correctly; this one carries it to the
+/// consumer, which renders the absence rather than a fabricated $0.
 fn row_to_global_list_item(row: &Row) -> rusqlite::Result<GlobalExecutionListItem> {
     Ok(GlobalExecutionListItem {
         id: row.get("id")?,
@@ -246,7 +251,7 @@ fn row_to_global_list_item(row: &Row) -> rusqlite::Result<GlobalExecutionListIte
         thinking_level: row.get("thinking_level")?,
         input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
         output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
-        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
+        cost_usd: coerce_f64(row, "cost_usd")?,
         duration_ms: coerce_i64(row, "duration_ms")?,
         started_at: row.get("started_at")?,
         created_at: row.get("created_at")?,
