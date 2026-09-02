@@ -798,6 +798,13 @@ impl FleetRegistry {
     /// ever came, and the doze pass reaped the session with her message still
     /// stranded in the composer.
     ///
+    /// The same distinction decides what happens to the newlines INSIDE the
+    /// text. Written raw, each one submits, so a multi-line payload (a
+    /// broadcast composed in a 5-row textarea) arrived as several truncated
+    /// prompts. A multi-line payload is therefore framed as a bracketed paste
+    /// (`super::keys::frame_paste`) — the same bytes xterm's own `paste()`
+    /// produces on the interactive lane. Single-line text is left unframed.
+    ///
     /// So: write the text alone, give the TUI a beat to ingest it, then send
     /// `\r` as its own chunk — and CONFIRM the submit (the session flipping
     /// `Running` via the `UserPromptSubmit`/tool hooks), retrying Enter once.
@@ -816,7 +823,15 @@ impl FleetRegistry {
                 return self.write_input(session_id, text.as_bytes());
             }
         }
-        self.write_input(session_id, text.as_bytes())?;
+        // "Paste this text" and "press this key" are different verbs. Internal
+        // newlines survived the trim above, and written raw the composer
+        // SUBMITS at each one — so a 3-line broadcast arrived as three partial
+        // prompts, the first two of them meaningless on their own. Frame a
+        // multi-line payload as a bracketed paste (exactly what xterm's own
+        // `paste()` emits on the interactive lane) so the whole thing lands in
+        // the composer as one prompt, and let the Enter below submit it.
+        // Single-line text is returned unframed, byte-identical to before.
+        self.write_input(session_id, &super::keys::frame_paste(text))?;
 
         let sid = session_id.to_string();
         tauri::async_runtime::spawn(async move {
@@ -2332,5 +2347,85 @@ mod tests {
             assert!(!reg.hibernate("slept", flag));
             assert!(!reg.hibernate("missing", flag));
         }
+    }
+
+    /// A `Write` sink that records every byte, so a test can assert what
+    /// actually reached the PTY rather than what the caller intended.
+    #[derive(Clone, Default)]
+    struct CaptureWriter(Arc<Mutex<Vec<u8>>>);
+
+    impl std::io::Write for CaptureWriter {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// Fixture session wired to a capture writer. Returns the sink so the test
+    /// can read the bytes back.
+    fn session_with_sink(
+        id: &str,
+        mode: FleetSessionMode,
+    ) -> (FleetSessionInner, Arc<Mutex<Vec<u8>>>) {
+        let mut s = session(id, FleetSessionState::Idle, Some("cc"));
+        s.mode = mode;
+        let sink: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+        *s.writer.lock().unwrap() = Some(Box::new(CaptureWriter(sink.clone())));
+        (s, sink)
+    }
+
+    fn written(sink: &Arc<Mutex<Vec<u8>>>) -> Vec<u8> {
+        sink.lock().unwrap().clone()
+    }
+
+    #[test]
+    fn a_multi_line_broadcast_reaches_the_pty_as_one_bracketed_paste() {
+        // The modal ships `${text}\r`; the trailing CR is trimmed and the
+        // INTERNAL newlines are what used to submit three partial prompts.
+        let reg = FleetRegistry::default();
+        let (s, sink) = session_with_sink("multi", FleetSessionMode::Interactive);
+        reg.insert(s);
+
+        reg.write_text_line("multi", "line one\nline two\nline three\r")
+            .unwrap();
+
+        assert_eq!(
+            written(&sink),
+            b"\x1b[200~line one\rline two\rline three\x1b[201~".to_vec(),
+            "the payload must arrive as ONE paste, Enter following separately"
+        );
+    }
+
+    #[test]
+    fn a_single_line_programmatic_write_is_byte_identical_to_before_framing() {
+        // `/compact\r` (FleetGridPage) and every other single-line call site
+        // must keep writing exactly the bytes they always did — no brackets.
+        let reg = FleetRegistry::default();
+        let (s, sink) = session_with_sink("one", FleetSessionMode::Interactive);
+        reg.insert(s);
+
+        reg.write_text_line("one", "/compact\r").unwrap();
+
+        assert_eq!(written(&sink), b"/compact".to_vec());
+    }
+
+    #[test]
+    fn the_headless_lane_is_never_framed() {
+        // Headless wraps the text into one stream-json user message and has no
+        // composer in the way — bracketing it would corrupt the JSON line.
+        let reg = FleetRegistry::default();
+        let (s, sink) = session_with_sink("hl", FleetSessionMode::Headless);
+        reg.insert(s);
+
+        reg.write_text_line("hl", "line one\nline two\r").unwrap();
+
+        let got = String::from_utf8(written(&sink)).unwrap();
+        assert!(!got.contains('\u{1b}'), "no escape sequences: {got:?}");
+        let v: serde_json::Value = serde_json::from_str(got.trim()).unwrap();
+        assert_eq!(v["type"], "user");
+        assert_eq!(v["message"]["content"][0]["text"], "line one\nline two");
     }
 }

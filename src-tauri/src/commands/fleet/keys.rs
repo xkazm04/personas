@@ -29,6 +29,43 @@
 /// confirmed-submit retry. Named so call sites stop repeating the literal.
 pub const RIGHT: &[u8] = b"\x1b[C";
 
+/// `ESC[200~` — DECSET 2004 bracketed-paste START.
+pub const PASTE_START: &[u8] = b"\x1b[200~";
+
+/// `ESC[201~` — DECSET 2004 bracketed-paste END.
+pub const PASTE_END: &[u8] = b"\x1b[201~";
+
+/// Frame `text` the way a real terminal paste arrives, iff it needs it.
+///
+/// The typed-vs-pasted distinction is the whole ballgame for a TUI composer: a
+/// newline that arrives as a keystroke SUBMITS, a newline that arrives inside a
+/// paste inserts a soft line-break. A multi-line programmatic payload (a
+/// broadcast typed into a 5-row textarea, a skill body) written raw therefore
+/// submitted its first line and left the rest to be submitted as separate,
+/// truncated prompts.
+///
+/// The interactive lane already gets this right: `fleetTerminalManager`'s
+/// clipboard path hands the payload to `@xterm/xterm`'s `paste()`, which
+/// normalises `\r?\n` → `\r` and wraps the result in the brackets. This is the
+/// same transformation for the lane that never goes through an emulator, byte
+/// for byte — deliberately, so the two lanes cannot diverge.
+///
+/// **Single-line text is returned untouched.** A payload with no internal
+/// newline needs no framing, and `/compact` must keep arriving as the exact six
+/// bytes it always has.
+pub fn frame_paste(text: &str) -> Vec<u8> {
+    if !text.contains('\n') && !text.contains('\r') {
+        return text.as_bytes().to_vec();
+    }
+    // xterm's `prepareTextForTerminal`: `text.replace(/\r?\n/g, '\r')`.
+    let normalized = text.replace("\r\n", "\r").replace('\n', "\r");
+    let mut out = Vec::with_capacity(PASTE_START.len() + normalized.len() + PASTE_END.len());
+    out.extend_from_slice(PASTE_START);
+    out.extend_from_slice(normalized.as_bytes());
+    out.extend_from_slice(PASTE_END);
+    out
+}
+
 /// Parse vim-style notation into byte chunks, **one chunk per key**.
 ///
 /// Literal characters coalesce into a single text chunk (a paste is what you
@@ -227,5 +264,42 @@ mod tests {
     #[test]
     fn right_constant_matches_notation() {
         assert_eq!(RIGHT, parse_plan("<Right>").unwrap()[0].as_slice());
+    }
+
+    #[test]
+    fn single_line_text_is_never_framed() {
+        // The five programmatic call sites all ship `${text}\r`; after the
+        // trailing-newline trim a single-line payload must stay byte-identical
+        // to what shipped before framing existed.
+        assert_eq!(frame_paste("/compact"), b"/compact".to_vec());
+        assert_eq!(frame_paste(""), Vec::<u8>::new());
+        assert_eq!(
+            frame_paste("fix the failing test in auth.rs"),
+            b"fix the failing test in auth.rs".to_vec()
+        );
+    }
+
+    #[test]
+    fn a_multi_line_payload_is_bracketed_and_newline_normalised() {
+        let framed = frame_paste("one\ntwo\nthree");
+        assert_eq!(framed, b"\x1b[200~one\rtwo\rthree\x1b[201~".to_vec());
+        // CRLF collapses to a single CR, exactly as xterm's paste() does —
+        // not to `\r\r`, which the composer would read as two line breaks.
+        assert_eq!(
+            frame_paste("one\r\ntwo"),
+            b"\x1b[200~one\rtwo\x1b[201~".to_vec()
+        );
+        // A lone CR is already the paste form and passes through framed.
+        assert_eq!(frame_paste("a\rb"), b"\x1b[200~a\rb\x1b[201~".to_vec());
+    }
+
+    #[test]
+    fn framing_starts_and_ends_with_the_bracket_constants() {
+        let framed = frame_paste("x\ny");
+        assert!(framed.starts_with(PASTE_START));
+        assert!(framed.ends_with(PASTE_END));
+        // The last byte is `~`, never a bare newline — which is precisely the
+        // shape `fleet_write_input` uses to tell a paste from a typed line.
+        assert_eq!(*framed.last().unwrap(), b'~');
     }
 }

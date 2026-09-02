@@ -84,8 +84,8 @@ pub async fn fleet_spawn_headless_session(
 ///   one chunk makes Claude Code's composer treat the trailing `\r` as a
 ///   *pasted* newline — a soft line-break, not a submit — so the text sat in
 ///   the composer unsubmitted (observed live 2026-07-24). Those are routed
-///   through `write_text_line`, which splits text/Enter and confirms the
-///   submit.
+///   through `write_text_line`, which frames a multi-line payload as a
+///   bracketed paste, splits text/Enter, and confirms the submit.
 ///
 /// An xterm PASTE also arrives as one multi-char chunk, but claude enables
 /// bracketed paste, so it's wrapped `ESC[200~ … ESC[201~` — its last char is
