@@ -139,7 +139,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
     reviewsError, messagesError, healthError, lastRefreshed,
-    loading, isProcessing, handleReviewAction, handleMarkRead,
+    loading, isProcessing, isReviewInFlight, handleReviewAction, handleDispatchAction,
+    handleMarkRead,
   } = useMonitorData(feeds);
 
   const { cards, systemProcesses } = useMemo(
@@ -270,12 +271,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // function identities. The drawer legitimately re-renders on `now` while
   // something runs, but when the fleet is idle these were the only unstable
   // props left.
+  // Both writers RETURN the promise (they used to `void` it): the drawer's
+  // AsyncButton awaits it to keep the pressed control busy, and the `.catch`
+  // is what turns a rejected write into a toast rather than a silent no-op.
   const handleDrawerReviewAction = useCallback(
     (id: string, status: Parameters<typeof handleReviewAction>[1], notes?: string) =>
-      void handleReviewAction(id, status, notes).catch(
+      handleReviewAction(id, status, notes).catch(
         toastCatch('PersonaMonitor:handleReviewAction'),
       ),
     [handleReviewAction],
+  );
+  const handleDrawerDispatchAction = useCallback(
+    (id: string, action: string) =>
+      handleDispatchAction(id, action).catch(
+        toastCatch('PersonaMonitor:handleDispatchAction'),
+      ),
+    [handleDispatchAction],
   );
   const handleDrawerMarkRead = useCallback(
     (id: string) => void handleMarkRead(id),
@@ -484,8 +495,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                     initialSection={selection.section}
                     designContext={selectedPersona?.design_context ?? null}
                     isProcessing={isProcessing}
+                    isReviewInFlight={isReviewInFlight}
                     now={now}
                     onReviewAction={handleDrawerReviewAction}
+                    onDispatchAction={handleDrawerDispatchAction}
                     onMarkRead={handleDrawerMarkRead}
                     onClose={closeDrawer}
                   />

@@ -4,26 +4,24 @@
 // Three switchable sections — Reviews, Messages, Activity — opened directly
 // to whichever badge the user clicked on the card.
 
-import { useState, useCallback, useMemo } from 'react';
-import { X, Check, MessageSquare, Clock, Mail, AlertCircle, Zap } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, Check, Clock, Mail, AlertCircle, Zap } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { stripPersonaPrefix } from '@/features/overview/sub_manual-review/libs/reviewHelpers';
-import { ContextDataPreview } from '@/features/overview/sub_manual-review/components/ReviewListItem';
 import { getUseCases } from '@/features/agents/sub_use_cases/libs/useCaseHelpers';
 import { toDisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 import { MonitorCapabilities } from './MonitorCapabilities';
+import { DrawerReviewCard } from './DrawerReviewCard';
 import { navigateToProcess } from './navigateToProcess';
-import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import {
-  SEVERITY_META, severityBucket, severityLabel, processStatusMeta, processStatusLabel, elapsedStr,
-  type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
+  SEVERITY_META, severityBucket, processStatusMeta, processStatusLabel, elapsedStr,
+  type PersonaCardModel, type ProcessEntry, type DrawerSection,
 } from './monitorModel';
 
 interface MonitorDrawerProps {
@@ -31,15 +29,24 @@ interface MonitorDrawerProps {
   initialSection: DrawerSection;
   /** Raw `design_context` JSON of the selected persona — source of capabilities. */
   designContext: string | null;
+  /**
+   * True while ANY review write is in flight. PRESENTATIONAL ONLY — it is the
+   * drawer-wide hint (see the tab strip), never a control's guard. Guarding a
+   * button on it is what made approving one review disable every other row.
+   */
   isProcessing: boolean;
+  /** Narrow query onto the hook's per-review keyed ledger — the real guard. */
+  isReviewInFlight: (id: string, intent?: string) => boolean;
   now: number;
-  onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
+  onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void | Promise<void>;
+  onDispatchAction?: (id: string, action: string) => void | Promise<void>;
   onMarkRead: (id: string) => void;
   onClose: () => void;
 }
 
 export function MonitorDrawer({
-  card, initialSection, designContext, isProcessing, now, onReviewAction, onMarkRead, onClose,
+  card, initialSection, designContext, isProcessing, isReviewInFlight, now,
+  onReviewAction, onDispatchAction, onMarkRead, onClose,
 }: MonitorDrawerProps) {
   const { t, tx } = useTranslation();
   const [section, setSection] = useState<DrawerSection>(initialSection);
@@ -115,8 +122,11 @@ export function MonitorDrawer({
         ))}
       </div>
 
-      {/* Section body */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+      {/* Section body.
+          `aria-busy` is the ONLY thing the drawer-wide `isProcessing` drives:
+          a hint that a write is somewhere in flight. It disables nothing — the
+          per-review ledger owns every control's busy state. */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4" aria-busy={isProcessing || undefined}>
         {section === 'reviews' && (
           sortedReviews.length === 0 ? (
             <EmptySection icon={AlertCircle} text={t.monitor.no_reviews} />
@@ -127,8 +137,9 @@ export function MonitorDrawer({
                   key={review.id}
                   review={review}
                   personaName={card.personaName}
-                  isProcessing={isProcessing}
+                  isReviewInFlight={isReviewInFlight}
                   onAction={onReviewAction}
+                  onDispatchAction={onDispatchAction}
                 />
               ))}
             </div>
@@ -178,111 +189,6 @@ function EmptySection({ icon: Icon, text }: { icon: React.ComponentType<{ classN
         <Icon className="w-5 h-5 text-foreground" />
       </div>
       <p className="typo-body text-foreground">{text}</p>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Review card — inline triage
-// ---------------------------------------------------------------------------
-
-interface DrawerReviewCardProps {
-  review: ManualReviewItem;
-  personaName: string;
-  isProcessing: boolean;
-  onAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
-}
-
-function DrawerReviewCard({ review, personaName, isProcessing, onAction }: DrawerReviewCardProps) {
-  const { t } = useTranslation();
-  const [notes, setNotes] = useState('');
-  const [showNotes, setShowNotes] = useState(false);
-  const sev: SeverityBucket = severityBucket(review.severity);
-  const M = SEVERITY_META[sev];
-  const Icon = M.icon;
-
-  const act = useCallback(
-    (status: ManualReviewStatus) => {
-      if (isProcessing) return;
-      onAction(review.id, status, notes || undefined);
-    },
-    [isProcessing, notes, onAction, review.id],
-  );
-
-  return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 overflow-hidden">
-      <div className="flex items-start gap-3 px-4 py-3">
-        <div className={`w-8 h-8 rounded-modal border flex items-center justify-center flex-shrink-0 ${M.chip}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`typo-caption font-medium uppercase ${M.text}`}>{severityLabel(t, sev)}</span>
-            {review.source === 'cloud' && (
-              <>
-                <span className="typo-caption text-foreground">·</span>
-                <span className="typo-caption text-cyan-400">{t.monitor.cloud}</span>
-              </>
-            )}
-            <span className="typo-caption text-foreground">·</span>
-            <Clock className="w-3 h-3 text-foreground" />
-            <span className="typo-caption text-foreground">{formatRelativeTime(review.created_at)}</span>
-          </div>
-          <h5 className="typo-body font-semibold text-foreground leading-snug">
-            {stripPersonaPrefix(review.title, personaName) || t.monitor.untitled}
-          </h5>
-          {review.content && (
-            <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">{review.content}</p>
-          )}
-          {review.context_data && (
-            <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2 mt-2">
-              <div className="typo-caption font-mono uppercase text-foreground mb-1.5">{t.monitor.context}</div>
-              <ContextDataPreview raw={review.context_data} />
-            </div>
-          )}
-          {showNotes && (
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t.monitor.notes_placeholder}
-              rows={3}
-              autoFocus
-              className="w-full mt-2 px-3 py-2 rounded-card border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/40"
-            />
-          )}
-        </div>
-      </div>
-      <div className="border-t border-primary/10 px-3 py-2 grid grid-cols-3 gap-2 bg-secondary/10">
-        <button
-          type="button"
-          onClick={() => act('rejected' as ManualReviewStatus)}
-          disabled={isProcessing}
-          className="flex items-center justify-center gap-1.5 py-2 rounded-modal border border-red-500/25 bg-red-500/8 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
-        >
-          <X className="w-4 h-4" />
-          <span className="typo-heading font-medium">{t.monitor.reject}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowNotes((s) => !s)}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${
-            showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground hover:text-foreground'
-          }`}
-          title={t.monitor.toggle_notes}
-        >
-          <MessageSquare className="w-4 h-4" />
-          <span className="typo-heading font-medium">{t.monitor.notes}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => act('approved' as ManualReviewStatus)}
-          disabled={isProcessing}
-          className="flex items-center justify-center gap-1.5 py-2 rounded-modal border border-emerald-500/25 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
-        >
-          <Check className="w-4 h-4" />
-          <span className="typo-heading font-medium">{t.monitor.approve}</span>
-        </button>
-      </div>
     </div>
   );
 }

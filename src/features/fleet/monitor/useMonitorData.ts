@@ -321,6 +321,17 @@ export interface MonitorData {
    *  guard is per-review (see `useInFlight`), never this flag. */
   isProcessing: boolean;
   /**
+   * The narrow, per-review read of the keyed ledger `isProcessing` aggregates.
+   *
+   * This is what a control should bind its busy/disabled state to. `intent` is
+   * the verdict (`'approved'` / `'rejected'`) or `action:<label>` for a
+   * dispatch — the same intent the writer keys on — so only the control that
+   * was actually pressed goes busy. Omit it to ask "is anything in flight for
+   * this row". Binding a button to `isProcessing` instead is what made
+   * approving one review grey out every other row in the Monitor drawer.
+   */
+  isReviewInFlight: (id: string, intent?: string) => boolean;
+  /**
    * Both verdict writers REJECT when the write fails. Callers that show the
    * decision as done before the round-trip (the triage deck resolves
    * optimistically) depend on that rejection to put the row back; swallowing it
@@ -372,7 +383,15 @@ function useInFlight() {
     return promise;
   }, []);
 
-  return { track, busy: busyKeys.length > 0 };
+  const isKeyInFlight = useCallback(
+    (id: string, intent?: string) =>
+      intent === undefined
+        ? busyKeys.some((k) => k.startsWith(`review:${id}:`))
+        : busyKeys.includes(verdictKey(id, intent)),
+    [busyKeys],
+  );
+
+  return { track, busy: busyKeys.length > 0, isKeyInFlight };
 }
 
 /** In-flight key for one verdict on one row. Two calls join ONLY when they ask
@@ -414,7 +433,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // why the polling layer's own stamp cannot answer this on its own.
   const [reviewsRefreshedAt, setReviewsRefreshedAt] = useState<number | null>(null);
   const [messagesRefreshedAt, setMessagesRefreshedAt] = useState<number | null>(null);
-  const { track, busy: isProcessing } = useInFlight();
+  const { track, busy: isProcessing, isKeyInFlight: isReviewInFlight } = useInFlight();
   // The app's ONE persona-join helper, already used by ManualReviewList for the
   // same rows. This shaper populated no identity at all, which is why the deck
   // rendered "Persona: —" on every review card while two other surfaces showed
@@ -783,13 +802,13 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     () => ({
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
       messagesError, healthError, lastRefreshed,
-      activeProcesses, loading, isProcessing,
+      activeProcesses, loading, isProcessing, isReviewInFlight,
       handleReviewAction, handleDispatchAction, handleMarkRead,
     }),
     [
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
       messagesError, healthError, lastRefreshed,
-      activeProcesses, loading, isProcessing,
+      activeProcesses, loading, isProcessing, isReviewInFlight,
       handleReviewAction, handleDispatchAction, handleMarkRead,
     ],
   );
