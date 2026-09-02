@@ -32,7 +32,10 @@ vi.mock('../FleetOverlayTile', () => ({
   FleetOverlayTile: ({ session }: { session: FleetSession }) => <div data-testid={`tile-${session.id}`} />,
 }));
 
-vi.mock('../fleetTerminalManager', () => ({ setFleetFontOverride: vi.fn() }));
+// MAX_WEBGL is the real budget the tile keep-alive caps its grace set against
+// (see useAttentionKeepAlive) — mirrored here so the mock cannot silently make
+// the cap `NaN`.
+vi.mock('../fleetTerminalManager', () => ({ setFleetFontOverride: vi.fn(), MAX_WEBGL: 6 }));
 
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 

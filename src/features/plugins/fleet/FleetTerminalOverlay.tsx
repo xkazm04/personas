@@ -9,7 +9,7 @@ import { FleetOverlayTile } from './FleetOverlayTile';
 import { FleetAttentionLegend } from './FleetAttentionLegend';
 import { FleetDebugLogButton } from './FleetDebugLogButton';
 import { DESKTOP_FOOTER_HEIGHT_PX } from '@/features/shared/chrome/DesktopFooter';
-import { setFleetFontOverride } from './fleetTerminalManager';
+import { setFleetFontOverride, MAX_WEBGL } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -22,6 +22,101 @@ import { MonitorView } from './sub_monitor/MonitorView';
 import {
   peekGridViewOnOpen, resolveGridViewOnOpen, recordGridViewPick, type GridViewId,
 } from './fleetGridView';
+
+/**
+ * How long a tile keeps its live terminal after it stops needing the operator.
+ *
+ * A tile's pane is mounted from `needsLiveAttention` (awaiting_input) or from
+ * being the focused tile, and an agent crosses that line constantly: every tool
+ * call it makes flips running -> awaiting_input -> running again. Each crossing
+ * used to run a full teardown (unsubscribe, dispose the WebGL renderer, park)
+ * and a full attach (re-subscribe, the lossy `term.reset()`, replay of up to
+ * 512 KiB of ring, reload WebGL) — the dominant terminal cost in a 16-session
+ * fleet, and a visible flash in the one tile the operator is watching.
+ *
+ * 5 seconds is chosen the way MAX_PARKED and MAX_WEBGL are: against the
+ * behaviour, not as a round number. A prompt-approval round trip and a tool
+ * loop's think-act-think cycle both land inside it, so the overwhelmingly
+ * common flip-and-flip-back is absorbed entirely; past that the session has
+ * genuinely settled into autonomous work and the pane is worth releasing.
+ * Longer would start holding renderers for tiles nobody returns to; shorter
+ * would let an ordinary agent pause reopen the whole teardown.
+ */
+const TILE_KEEPALIVE_MS = 5_000;
+
+/**
+ * Hold a tile's live pane for `TILE_KEEPALIVE_MS` after its attention lapses,
+ * and cancel the hold outright if attention comes back inside the window.
+ *
+ * Returns the ids currently held on grace; the caller unions them with the ones
+ * that genuinely want a pane right now. Deliberately a hysteresis in the
+ * OVERLAY rather than a keep-alive in the manager: the manager's contract is
+ * "attached means subscribed", and the thing that is actually flapping is this
+ * component's render policy, not the terminal's lifecycle. Putting the delay
+ * here leaves `attachTerminal`/`detachTerminal` exactly as honest as they were,
+ * and leaves every other pane call site (the preview panel, the passport modal,
+ * the single-pane view) unaffected.
+ *
+ * The hold is BUDGETED, not unbounded: a kept pane is an attached terminal and
+ * therefore holds a WebGL renderer like any other, so the grace set is capped at
+ * whatever headroom is left under `MAX_WEBGL` after the tiles that genuinely
+ * want a pane. Past the cap the oldest hold is released immediately — a fleet
+ * already at the renderer budget gets no grace at all, which is the correct
+ * answer: adding kept panes there would only churn the manager's WebGL LRU and
+ * demote a terminal somebody is reading.
+ */
+function useAttentionKeepAlive(wantedKey: string): ReadonlyMap<string, number> {
+  // id -> the timestamp its hold expires at. Insertion-ordered, so the first
+  // key is the oldest hold — the one the renderer budget releases first.
+  const [kept, setKept] = useState<ReadonlyMap<string, number>>(() => new Map());
+  const [seenKey, setSeenKey] = useState(wantedKey);
+
+  // Adjusted DURING RENDER, not in an effect — React's documented pattern for
+  // deriving state from changed props, and here it is load-bearing rather than
+  // stylistic. An effect runs after the commit, so the render in which
+  // attention lapses would still see the old (empty) grace set, unmount the
+  // pane, and only then be told to keep it: the teardown this exists to prevent
+  // happens anyway, followed by an immediate re-attach. Measured that way: 6
+  // mounts over 5 flips — exactly the unfixed number. React re-runs this
+  // component before committing, so the set is correct on the first paint.
+  if (wantedKey !== seenKey) {
+    const wanted = new Set(wantedKey ? wantedKey.split('|') : []);
+    const previously = seenKey ? seenKey.split('|') : [];
+    const next = new Map(kept);
+    // Attention just lapsed — hold the pane instead of tearing it down.
+    const expiresAt = Date.now() + TILE_KEEPALIVE_MS;
+    for (const id of previously) if (!wanted.has(id) && !next.has(id)) next.set(id, expiresAt);
+    // Attention returned inside the window — the teardown never happens.
+    for (const id of wanted) next.delete(id);
+    // A kept pane still costs a renderer, so the grace set only gets whatever
+    // headroom is left under MAX_WEBGL.
+    const budget = Math.max(0, MAX_WEBGL - wanted.size);
+    while (next.size > budget) next.delete(next.keys().next().value as string);
+    setSeenKey(wantedKey);
+    setKept(next);
+  }
+
+  // ONE timer for the nearest expiry rather than one per hold: the set is
+  // re-derived whenever it fires, so a second pass picks up whatever is due
+  // next. Nothing here is left running past a re-run or an unmount.
+  useEffect(() => {
+    if (kept.size === 0) return;
+    const soonest = Math.min(...kept.values());
+    const handle = window.setTimeout(
+      () => {
+        const now = Date.now();
+        setKept((prev) => {
+          const next = new Map([...prev].filter(([, expires]) => expires > now));
+          return next.size === prev.size ? prev : next;
+        });
+      },
+      Math.max(0, soonest - Date.now()),
+    );
+    return () => window.clearTimeout(handle);
+  }, [kept]);
+
+  return kept;
+}
 
 interface Props {
   open: boolean;
@@ -144,6 +239,21 @@ export function FleetTerminalOverlay({
   // status block — Athena triages those in the background with full backend
   // visibility, so the grid stays calm regardless of how many sessions run.
 
+  // The tiles that want a live pane RIGHT NOW. Joined into a string so the
+  // keep-alive effect keys on the membership rather than on a new array
+  // identity every render; ids are UUIDs, so '|' cannot appear inside one.
+  const wantedKey = useMemo(
+    () =>
+      bodiesReady
+        ? sessions
+            .filter((s) => needsLiveAttention(s) || s.id === activeSessionId)
+            .map((s) => s.id)
+            .join('|')
+        : '',
+    [sessions, activeSessionId, bodiesReady],
+  );
+  const keptAlive = useAttentionKeepAlive(wantedKey);
+
   // Route the global titlebar Back button (and Escape) to minimize, instead of
   // navigating the underlying page out from under the overlay.
   useEffect(() => {
@@ -257,7 +367,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
-            live={bodiesReady && (needsLiveAttention(s) || s.id === activeSessionId)}
+            live={bodiesReady && (needsLiveAttention(s) || s.id === activeSessionId || keptAlive.has(s.id))}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}
             onSelect={onSelect}

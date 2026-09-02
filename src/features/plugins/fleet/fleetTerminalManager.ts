@@ -331,7 +331,7 @@ const MAX_PARKED = 6;
  * 6 leaves headroom beneath the ~16-context floor browsers implement, for the
  * charts and canvases the rest of the app may hold at the same time.
  */
-const MAX_WEBGL = 6;
+export const MAX_WEBGL = 6;
 
 // Sessions holding a live WebGL addon, least-recently-loaded first.
 //
