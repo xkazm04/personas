@@ -180,6 +180,143 @@ impl OscTitleScanner {
     }
 }
 
+/// Incremental UTF-8 decoder for the PTY byte stream.
+///
+/// The reader hands us fixed 16 KiB reads, and a read boundary lands wherever
+/// the kernel put it — routinely in the MIDDLE of a multi-byte glyph. Decoding
+/// each read independently (`String::from_utf8_lossy`) turned every such split
+/// into U+FFFD in the live IPC stream, which is why Claude Code's box-drawing
+/// TUI arrived speckled on a fast dump and then "healed" on a re-attach: the
+/// ring stores raw bytes, so only the live path was lossy.
+///
+/// So: carry the incomplete trailing sequence (≤3 bytes) into the next read.
+/// Genuinely invalid bytes still degrade to U+FFFD exactly as before — a
+/// malformed stream must never stall the reader or panic it.
+#[derive(Default)]
+struct Utf8StreamDecoder {
+    /// A strict prefix of one multi-byte sequence — never longer than 3 bytes,
+    /// because that is the most `Utf8Error::error_len() == None` can leave.
+    carry: Vec<u8>,
+}
+
+impl Utf8StreamDecoder {
+    /// Decode one PTY read, prepending whatever the previous read left dangling
+    /// and retaining whatever this one leaves dangling.
+    fn decode(&mut self, bytes: &[u8]) -> String {
+        let joined: Vec<u8>;
+        let input: &[u8] = if self.carry.is_empty() {
+            bytes
+        } else {
+            let mut v = std::mem::take(&mut self.carry);
+            v.extend_from_slice(bytes);
+            joined = v;
+            &joined
+        };
+
+        let mut out = String::with_capacity(input.len());
+        let mut rest = input;
+        loop {
+            match std::str::from_utf8(rest) {
+                Ok(s) => {
+                    out.push_str(s);
+                    break;
+                }
+                Err(e) => {
+                    let valid = e.valid_up_to();
+                    // `valid_up_to` is by definition a valid UTF-8 boundary.
+                    out.push_str(std::str::from_utf8(&rest[..valid]).unwrap_or_default());
+                    match e.error_len() {
+                        // Incomplete tail — hold it for the next read.
+                        None => {
+                            self.carry.extend_from_slice(&rest[valid..]);
+                            break;
+                        }
+                        // Genuinely invalid bytes — one replacement char, then
+                        // keep decoding the remainder (a later split glyph in
+                        // the same read must still be carried, not lost).
+                        Some(len) => {
+                            out.push(char::REPLACEMENT_CHARACTER);
+                            rest = &rest[valid + len..];
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// Drop any dangling partial sequence. Called when the stream ends (EOF /
+    /// reader error) and whenever the emit path is skipped, so a half glyph can
+    /// never be spliced onto unrelated bytes — or onto the exit tombstone.
+    fn reset(&mut self) -> bool {
+        let had = !self.carry.is_empty();
+        self.carry.clear();
+        had
+    }
+}
+
+#[cfg(test)]
+mod utf8_stream_tests {
+    use super::Utf8StreamDecoder;
+
+    #[test]
+    fn a_glyph_split_across_two_reads_survives_intact() {
+        // `─` U+2500 (box drawing) = E2 94 80 — Claude Code's TUI is built of
+        // these, and a 16 KiB boundary lands mid-frame on any fast dump.
+        let mut d = Utf8StreamDecoder::default();
+        let chunks = [d.decode(b"top\xe2\x94"), d.decode(b"\x80tail")];
+        let joined = chunks.concat();
+        assert_eq!(joined, "top─tail");
+        assert!(
+            !joined.contains('\u{fffd}'),
+            "no replacement char anywhere: {joined:?}"
+        );
+        // Cadence is unchanged: one decode per read, in order.
+        assert_eq!(chunks, ["top".to_string(), "─tail".to_string()]);
+    }
+
+    #[test]
+    fn a_four_byte_emoji_split_at_every_offset_survives() {
+        let emoji = "🚀"; // F0 9F 9A 80
+        let bytes = emoji.as_bytes();
+        for split in 1..bytes.len() {
+            let mut d = Utf8StreamDecoder::default();
+            let out = format!("{}{}", d.decode(&bytes[..split]), d.decode(&bytes[split..]));
+            assert_eq!(out, emoji, "split at {split}");
+            assert!(!out.contains('\u{fffd}'), "split at {split}");
+        }
+    }
+
+    #[test]
+    fn invalid_bytes_still_degrade_rather_than_panic() {
+        let mut d = Utf8StreamDecoder::default();
+        // 0xFF is never valid UTF-8 → one U+FFFD, and decoding continues.
+        assert_eq!(d.decode(b"a\xffb"), "a\u{fffd}b");
+        // An invalid byte followed by a REAL split tail: the tail is still
+        // carried, not swallowed by the lossy fallback.
+        assert_eq!(d.decode(b"\xffx\xe2\x94"), "\u{fffd}x");
+        assert_eq!(d.decode(b"\x80"), "─");
+    }
+
+    #[test]
+    fn reset_drops_a_dangling_tail() {
+        let mut d = Utf8StreamDecoder::default();
+        assert_eq!(d.decode(b"hi\xe2\x94"), "hi");
+        assert!(d.reset(), "a partial sequence was pending");
+        assert!(!d.reset(), "nothing pending after a reset");
+        // The orphaned continuation byte is now invalid on its own, as it must
+        // be — it is not spliced onto whatever comes next.
+        assert_eq!(d.decode(b"\x80ok"), "\u{fffd}ok");
+    }
+
+    #[test]
+    fn plain_ascii_is_byte_identical_to_the_old_lossy_decode() {
+        let mut d = Utf8StreamDecoder::default();
+        let s = "\x1b[2J\x1b[1;1H❯ hello world\r\n";
+        assert_eq!(d.decode(s.as_bytes()), s);
+    }
+}
+
 #[cfg(test)]
 mod osc_title_tests {
     use super::OscTitleScanner;
@@ -697,6 +834,10 @@ fn reader_loop(
     // stream so each session gets a distinct, meaningful header. State persists
     // across reads so a title split mid-chunk still assembles.
     let mut osc_title = OscTitleScanner::default();
+    // Carries an incomplete trailing UTF-8 sequence across the read boundary,
+    // so a glyph split by the 16 KiB buffer reaches the terminal whole instead
+    // of as U+FFFD. See `Utf8StreamDecoder`.
+    let mut decoder = Utf8StreamDecoder::default();
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -721,8 +862,15 @@ fn reader_loop(
                     r.push(&buf[..n]);
                     r.is_subscribed()
                 };
+                if !subscribed {
+                    // Nothing is being emitted, so a carried tail would be
+                    // spliced onto bytes that are many reads newer by the time
+                    // anyone re-subscribes. Drop it — the ring holds the raw
+                    // bytes and a re-subscribe replays from there.
+                    decoder.reset();
+                }
                 if subscribed {
-                    let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
+                    let chunk = decoder.decode(&buf[..n]);
                     let _ = app.emit(
                         event_name::FLEET_SESSION_OUTPUT,
                         OutputPayload {
@@ -747,6 +895,14 @@ fn reader_loop(
                 break;
             }
         }
+    }
+    // The stream is over: a dangling partial sequence can never be completed,
+    // so drop it rather than let it ride into whatever the exit path writes.
+    if decoder.reset() {
+        tracing::debug!(
+            session_id = %session_id,
+            "fleet PTY reader: dropped an incomplete UTF-8 tail at stream end"
+        );
     }
 }
 
