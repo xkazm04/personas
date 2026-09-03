@@ -177,7 +177,7 @@ use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueSta
 
 pub(crate) use self::execution_engine::persist::persist_status_update;
 use self::execution_engine::persist::{persist_status_if_not_final, persist_status_if_running};
-use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
+use self::queue::{admission_conflict_key, AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
 // ---------------------------------------------------------------------------
 // Host hooks

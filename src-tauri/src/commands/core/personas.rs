@@ -1057,7 +1057,11 @@ mod drain_tests {
         engine.mark_deleting(&p.id).await;
         assert!(engine.is_deleting(&p.id).await);
         let exec_id = insert_execution(&pool, &p.id, "running");
-        engine.tracker().lock().await.add_running(&p.id, &exec_id);
+        engine
+            .tracker()
+            .lock()
+            .await
+            .add_running(&p.id, &exec_id, None);
         assert!(
             !engine.all_slots_cleared(&p.id).await,
             "a tracked running slot must keep the drain waiting"
@@ -1080,8 +1084,8 @@ mod drain_tests {
         let e2 = insert_execution(&pool, &p.id, "running");
         {
             let mut t = engine.tracker().lock().await;
-            t.add_running(&p.id, &e1);
-            t.add_running(&p.id, &e2);
+            t.add_running(&p.id, &e1, None);
+            t.add_running(&p.id, &e2, None);
         }
         assert!(!engine.all_slots_cleared(&p.id).await);
 
