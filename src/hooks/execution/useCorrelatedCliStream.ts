@@ -6,8 +6,67 @@ import {
   ExecutionStatusSchema,
 } from '@/lib/validation/eventPayloads';
 import type { EventPayloadMap } from '@/lib/eventRegistry';
+import {
+  isTerminalState,
+  parseExecutionState,
+  type ExecutionState,
+} from '@/lib/execution/executionState';
 
-export type CliRunPhase = 'idle' | 'running' | 'completed' | 'failed';
+/**
+ * Phase of a correlated CLI run.
+ *
+ * This is the canonical execution vocabulary (`ExecutionState` -- queued /
+ * running / completed / failed / incomplete / cancelled / unknown) plus the
+ * frontend-only `idle`, which means "this hook has never been started".
+ *
+ * It used to be `'idle' | 'running' | 'completed' | 'failed'`, and the status
+ * listener accepted only those three backend values. Every other status the
+ * backend can emit -- `cancelled`, `incomplete`, `queued`, and anything
+ * unrecognised -- fell through the `if`, leaving the phase pinned at
+ * `running`: a cancelled run spun forever in the n8n transform/test wizards,
+ * the query debugger, the background template preview and every
+ * `CliOutputPanel`. Unknown is not a value; it is a state, and it is now one
+ * of ours.
+ */
+export type CliRunPhase = 'idle' | ExecutionState;
+
+/**
+ * Map a raw backend status string onto a `CliRunPhase`.
+ *
+ * Delegates to the canonical `parseExecutionState` (which also resolves the
+ * legacy `pending` -> `queued` alias) and treats an absent/blank status as
+ * `unknown` rather than `parseExecutionState`'s `queued` default -- a status
+ * event that carries no status is corruption, not a queue position.
+ */
+export function toCliRunPhase(status: string | null | undefined): CliRunPhase {
+  if (typeof status !== 'string' || status.trim().length === 0) return 'unknown';
+  return parseExecutionState(status.trim());
+}
+
+/**
+ * True while the run may still produce output: `queued` or `running`.
+ * `queued` is deliberately a distinct phase rather than an alias of
+ * `running` -- the run is waiting for a slot, so surfaces show a calm
+ * "Queued" label instead of a spinner over a fake progress bar.
+ */
+export function isCliRunActive(phase: CliRunPhase): boolean {
+  return phase === 'queued' || phase === 'running';
+}
+
+/** True once the run has stopped for any reason (including `unknown`). */
+export function isCliRunSettled(phase: CliRunPhase): boolean {
+  return phase !== 'idle' && isTerminalState(phase);
+}
+
+/**
+ * True when the run stopped without succeeding -- `failed`, `incomplete`,
+ * `cancelled` or `unknown`. Surfaces use it to stop a spinner and offer a
+ * retry; it is NOT the same as "errored", so callers that need the red error
+ * treatment keep checking `phase === 'failed'`.
+ */
+export function isCliRunUnsuccessful(phase: CliRunPhase): boolean {
+  return isCliRunSettled(phase) && phase !== 'completed';
+}
 
 /** Maximum lines kept in the stream buffer to prevent OOM on long executions. */
 const MAX_STREAM_LINES = 5000;
@@ -111,12 +170,14 @@ export function useCorrelatedCliStream({
         const validated = validatePayload(statusEvent, raw, ExecutionStatusSchema);
         if (!validated) return;
 
-        const nextStatus = validated.status;
-        if (nextStatus === 'running' || nextStatus === 'completed' || nextStatus === 'failed') {
-          setPhase(nextStatus);
-        }
+        const nextPhase = toCliRunPhase(validated.status);
+        setPhase(nextPhase);
 
-        if (nextStatus === 'failed' && onFailedRef.current) {
+        // `onFailed` stays scoped to a real failure: it is the door consumers
+        // use to show an error message and pre-fill a "fix this" request, and
+        // a user-initiated cancel is not an error. Consumers tell the other
+        // terminal states apart from `phase` via `isCliRunUnsuccessful`.
+        if (nextPhase === 'failed' && onFailedRef.current) {
           onFailedRef.current(validated.error ?? 'CLI transformation failed.');
         }
 

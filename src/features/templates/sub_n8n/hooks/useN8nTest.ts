@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { N8nImportAction } from './useN8nImportReducer';
 
 export interface N8nTestApi {
@@ -17,6 +18,7 @@ export interface N8nTestApi {
 export function useN8nTest(
   dispatch: React.Dispatch<N8nImportAction>,
 ): N8nTestApi {
+  const { t } = useTranslation();
   const {
     start: startTestStream,
     reset: resetTestStream,
@@ -48,12 +50,23 @@ export function useN8nTest(
   // TEST_FAILED and SET_ADJUSTMENT. Duplicating that here would race the
   // callback's structured message with the line-based fallback and the
   // *worse* message would win whichever ran second.
+  //
+  // The other terminal phases -- cancelled, incomplete, unknown -- had no
+  // handler at all: the phase was silently dropped by the hook, `testStatus`
+  // stayed 'running' and the wizard spun forever. They now close the test out
+  // with an honest label. The outcome action is dispatched BEFORE
+  // 'TEST_PHASE' so the phase written last is the real one (TEST_FAILED
+  // forces testPhase to 'failed').
   useEffect(() => {
-    dispatch({ type: 'TEST_PHASE', phase: testStreamPhase });
     if (testStreamPhase === 'completed') {
       dispatch({ type: 'TEST_PASSED' });
+    } else if (testStreamPhase === 'cancelled') {
+      dispatch({ type: 'TEST_FAILED', error: t.monitor.status_cancelled });
+    } else if (testStreamPhase === 'incomplete' || testStreamPhase === 'unknown') {
+      dispatch({ type: 'TEST_FAILED', error: t.agents.executions.stopped_while_running });
     }
-  }, [testStreamPhase, dispatch]);
+    dispatch({ type: 'TEST_PHASE', phase: testStreamPhase });
+  }, [testStreamPhase, dispatch, t]);
 
   return { startTestStream, resetTestStream };
 }

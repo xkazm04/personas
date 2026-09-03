@@ -6,6 +6,7 @@ import {
   HealingStatusSchema,
 } from '@/lib/validation/eventPayloads';
 import { EventName } from '@/lib/eventRegistry';
+import { silentCatch } from '@/lib/silentCatch';
 
 export type AiHealingPhase =
   | 'idle'
@@ -23,6 +24,41 @@ export interface AiHealingState {
   fixesApplied: string[];
   shouldRetry: boolean;
   executionId: string | null;
+}
+
+/**
+ * Every phase the backend can emit on `ai-healing-status`
+ * (`src-tauri/.../healing`: started / diagnosing / applying / completed /
+ * failed) plus the frontend-only `idle`.
+ */
+const AI_HEALING_PHASES: readonly AiHealingPhase[] = [
+  'idle',
+  'started',
+  'diagnosing',
+  'applying',
+  'completed',
+  'failed',
+];
+
+const reportUnknownPhase = silentCatch('useAiHealingStream:unknownPhase');
+
+/**
+ * Parse the `phase` field of a healing status event.
+ *
+ * The payload schema types `phase` as a bare `string`, and this used to be
+ * `validated.phase as AiHealingPhase` -- an unchecked cast that wrote any
+ * string the backend (or a version-drifted backend) sent straight into React
+ * state, where every consumer's `if` chain fell through to the "still
+ * working" branch. Returns `null` for anything unrecognised so the caller can
+ * keep the last phase it actually understood.
+ */
+function toAiHealingPhase(raw: unknown): AiHealingPhase | null {
+  // Invariant: the `includes` check above narrows `raw` to a member of the
+  // AiHealingPhase union; TypeScript cannot express that through
+  // `readonly AiHealingPhase[]`.`includes(string)`.
+  return typeof raw === 'string' && (AI_HEALING_PHASES as readonly string[]).includes(raw)
+    ? (raw as AiHealingPhase)
+    : null;
 }
 
 const MAX_LINES = 500;
@@ -93,11 +129,18 @@ export function useAiHealingStream(personaId: string): AiHealingState {
         if (!validated) return;
         if (validated.persona_id !== personaIdRef.current) return;
 
-        const phase = validated.phase as AiHealingPhase;
+        const phase = toAiHealingPhase(validated.phase);
+        if (phase === null) {
+          reportUnknownPhase(
+            new Error(`Unrecognised AI healing phase "${String(validated.phase)}"`),
+          );
+        }
 
         setState((prev) => ({
           ...prev,
-          phase,
+          // An unrecognised phase must not overwrite the last one we
+          // understood -- the other fields of the event are still merged.
+          phase: phase ?? prev.phase,
           executionId: validated.execution_id ?? prev.executionId,
           diagnosis: validated.diagnosis ?? prev.diagnosis,
           fixesApplied: validated.fixes_applied

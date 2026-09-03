@@ -5,7 +5,12 @@ import { testN8nDraft } from '@/api/agents/tests';
 import { sendAppNotification } from '@/api/system/system';
 import { silentCatch } from "@/lib/silentCatch";
 import { useSystemStore } from "@/stores/systemStore";
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { useTranslation } from '@/i18n/useTranslation';
+import {
+  isCliRunActive,
+  isCliRunSettled,
+  type CliRunPhase,
+} from '@/hooks/execution/useCorrelatedCliStream';
 
 export interface UseBackgroundPreviewReturn {
   phase: CliRunPhase;
@@ -21,6 +26,7 @@ export interface UseBackgroundPreviewReturn {
 }
 
 export function useBackgroundPreview(): UseBackgroundPreviewReturn {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [reviewName, setReviewName] = useState<string | null>(null);
@@ -36,20 +42,35 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
     onFailed: (msg) => setError(msg),
   });
 
-  // Send notification on completion/failure
+  // Notify on ANY settled outcome, not just completed/failed. A cancelled or
+  // incomplete run used to leave `templateTestActive` true forever -- the
+  // global "a template test is running" flag never cleared, so the app kept
+  // claiming a test was in flight until a new one replaced it.
   const prevPhaseRef = useRef<CliRunPhase>('idle');
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = stream.phase;
 
-    if (prev === 'running' && stream.phase === 'completed') {
-      setTemplateTestActive(false);
-      sendAppNotification('Preview Complete', `Template test "${reviewName ?? 'template'}" finished.`).catch(silentCatch("backgroundPreview:notifyComplete"));
-    } else if (prev === 'running' && stream.phase === 'failed') {
-      setTemplateTestActive(false);
-      sendAppNotification('Preview Failed', `Template test "${reviewName ?? 'template'}" failed.`).catch(silentCatch("backgroundPreview:notifyFailed"));
+    if (!isCliRunActive(prev) || !isCliRunSettled(stream.phase)) return;
+
+    setTemplateTestActive(false);
+    const name = reviewName ?? 'template';
+
+    if (stream.phase === 'completed') {
+      sendAppNotification('Preview Complete', `Template test "${name}" finished.`).catch(silentCatch("backgroundPreview:notifyComplete"));
+    } else if (stream.phase === 'failed') {
+      sendAppNotification('Preview Failed', `Template test "${name}" failed.`).catch(silentCatch("backgroundPreview:notifyFailed"));
+    } else {
+      // Cancelled / incomplete / unknown. The title comes from the app's own
+      // status vocabulary rather than an English literal -- an OS notification
+      // leaves the app for good, so nothing can re-render it later.
+      const title =
+        stream.phase === 'cancelled'
+          ? t.monitor.status_cancelled
+          : t.agents.executions.stopped_while_running;
+      sendAppNotification(title, `Template test "${name}"`).catch(silentCatch("backgroundPreview:notifyStopped"));
     }
-  }, [stream.phase, reviewName, setTemplateTestActive]);
+  }, [stream.phase, reviewName, setTemplateTestActive, t]);
 
   const startPreview = useCallback(async (rId: string, rName: string, draftJson: string) => {
     setError(null);

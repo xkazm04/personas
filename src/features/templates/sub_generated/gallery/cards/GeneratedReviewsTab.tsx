@@ -9,6 +9,7 @@ import { TemplateSearchBar } from '../search/TemplateSearchBar';
 const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 import { useBackgroundRebuild } from '@/hooks/design/core/useBackgroundRebuild';
 import { useBackgroundPreview } from '@/hooks/design/core/useBackgroundPreview';
+import { isCliRunSettled } from '@/hooks/execution/useCorrelatedCliStream';
 import { useModalStack } from '../modals/useModalStack';
 import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
@@ -292,7 +293,7 @@ export default function GeneratedReviewsTab({
             onViewFlows(review);
           }}
           onTryIt={(review) => {
-            if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+            if (preview.reviewId !== review.id || isCliRunSettled(preview.phase)) {
               preview.resetPreview();
             }
             modals.close('detail');
@@ -313,7 +314,7 @@ export default function GeneratedReviewsTab({
           onTryIt={(id) => {
             const review = compare.selected.find((r) => r.id === id);
             if (!review) return;
-            if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+            if (preview.reviewId !== review.id || isCliRunSettled(preview.phase)) {
               preview.resetPreview();
             }
             setCompareOpen(false);

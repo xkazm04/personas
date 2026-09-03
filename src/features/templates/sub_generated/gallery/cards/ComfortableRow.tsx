@@ -9,6 +9,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
 import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
@@ -41,7 +42,7 @@ interface ComfortableRowProps {
   rebuildPhase: string;
   onResetRebuild: () => void;
   previewReviewId: string | null;
-  previewPhase: string;
+  previewPhase: CliRunPhase;
   onResetPreview: () => void;
   isCompareSelected: boolean;
   compareDisabled: boolean;
@@ -214,7 +215,7 @@ function ComfortableRowImpl({
             credentialServiceTypes={credentialServiceTypes}
             onAdopt={() => modals.open({ type: 'adopt', review })}
             onTryIt={() => {
-              if (previewReviewId !== review.id || previewPhase === 'completed' || previewPhase === 'failed') {
+              if (previewReviewId !== review.id || isCliRunSettled(previewPhase)) {
                 onResetPreview();
               }
               modals.open({ type: 'preview', review });

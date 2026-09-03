@@ -12,6 +12,7 @@ import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
+import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
  * Rows in the first viewport that play the one-shot entrance cascade when a
@@ -39,7 +40,7 @@ interface TemplateVirtualListProps {
   rebuildPhase: string;
   onResetRebuild: () => void;
   previewReviewId: string | null;
-  previewPhase: string;
+  previewPhase: CliRunPhase;
   onResetPreview: () => void;
   isFetchingMore: boolean;
   hasMore: boolean;

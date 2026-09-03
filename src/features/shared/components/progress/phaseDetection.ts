@@ -5,7 +5,7 @@ import {
   Code,
   CheckCircle2,
 } from 'lucide-react';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunActive, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { PhaseIconComponent, TransformPhaseInfo, AnalysisPhaseInfo } from './transformProgressTypes';
 
 // -- Transform mode phases (5 phases for n8n/adopt workflow) --
@@ -28,7 +28,9 @@ export function detectTransformPhase(lines: string[], streamPhase: CliRunPhase):
   if (lines.length === 0) return null;
 
   let lastMatchedIndex = -1;
-  const maxIndex = streamPhase === 'running' ? TRANSFORM_PHASES.length - 2 : TRANSFORM_PHASES.length - 1;
+  // While the run is still active (queued or running) the final "ready" phase
+  // is withheld -- it is only reachable once the run has actually settled.
+  const maxIndex = isCliRunActive(streamPhase) ? TRANSFORM_PHASES.length - 2 : TRANSFORM_PHASES.length - 1;
 
   for (const line of lines) {
     const lower = line.toLowerCase();

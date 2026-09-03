@@ -8,7 +8,7 @@ import { BaseModal } from '../../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { BORDER_SUBTLE, BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 /**
@@ -89,7 +89,10 @@ export function TemplatePreviewModal({
   if (!isOpen || !review) return null;
 
   const isRunning = phase === 'running';
-  const isDone = phase === 'completed' || phase === 'failed';
+  // Every terminal phase offers "Run again", not just completed/failed -- a
+  // cancelled or incomplete preview used to leave the footer with no status
+  // and no way to re-run without closing the modal.
+  const isDone = isCliRunSettled(phase);
 
   return (
     <BaseModal
@@ -174,8 +177,19 @@ export function TemplatePreviewModal({
                 {t.templates.preview_modal.running}
               </span>
             )}
+            {phase === 'queued' && (
+              <span className="typo-body text-foreground">{t.monitor.status_queued}</span>
+            )}
             {phase === 'completed' && (
               <span className="typo-body text-emerald-400/80">{t.templates.preview_modal.completed}</span>
+            )}
+            {phase === 'cancelled' && (
+              <span className="typo-body text-foreground">{t.monitor.status_cancelled}</span>
+            )}
+            {(phase === 'incomplete' || phase === 'unknown') && (
+              <span className="typo-body text-amber-400/80">
+                {t.agents.executions.stopped_while_running}
+              </span>
             )}
             {phase === 'failed' && (
               <span className="typo-body text-red-400/80">

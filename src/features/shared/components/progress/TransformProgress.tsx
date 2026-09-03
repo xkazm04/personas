@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { isCliRunActive } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformProgressProps } from './transformProgressTypes';
 import { detectTransformPhase, detectAnalysisPhase } from './phaseDetection';
 import { AnalysisModeView } from './AnalysisModeView';
@@ -18,7 +19,10 @@ export function TransformProgress({
   isRunning = false,
 }: TransformProgressProps) {
   const transformPhase = useMemo(
-    () => (mode === 'transform' && (phase === 'running' || phase === 'completed') ? detectTransformPhase(lines, phase) : null),
+    () =>
+      mode === 'transform' && (isCliRunActive(phase) || phase === 'completed')
+        ? detectTransformPhase(lines, phase)
+        : null,
     [lines, phase, mode],
   );
 

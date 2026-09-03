@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
-import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import {
+  useCorrelatedCliStream,
+  type CliRunPhase,
+} from '@/hooks/execution/useCorrelatedCliStream';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { usePersistedContext } from '@/hooks/utility/data/usePersistedContext';
 import {
@@ -35,7 +39,7 @@ export interface N8nTransformApi {
   /** Override stream lines (used by snapshot sync) */
   setStreamLines: (lines: string[]) => void;
   /** Override stream phase (used by snapshot sync) */
-  setStreamPhase: (phase: 'idle' | 'running' | 'completed' | 'failed') => void;
+  setStreamPhase: (phase: CliRunPhase) => void;
 }
 
 /**
@@ -53,6 +57,7 @@ export function useN8nTransform(
   clearPersistedContext: () => void,
   setN8nTransformActive: (active: boolean) => void,
 ): N8nTransformApi {
+  const { t } = useTranslation();
   const [isRestoring, setIsRestoring] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -64,6 +69,7 @@ export function useN8nTransform(
 
   const {
     runId: currentTransformId,
+    phase: transformStreamPhase,
     start: startTransformStream,
     reset: resetTransformStream,
     setLines: setStreamLines,
@@ -77,6 +83,29 @@ export function useN8nTransform(
       dispatch({ type: 'TRANSFORM_FAILED', error: message });
     },
   });
+
+  // -- Terminal phases the `onFailed` door does not cover --
+  //
+  // `failed` arrives through `onFailed` above with the CLI's own message.
+  // `cancelled` / `incomplete` / `unknown` used to arrive nowhere at all: the
+  // hook dropped every status it did not recognise, so `transforming` stayed
+  // true and the wizard spun on a run that had already stopped.
+  useEffect(() => {
+    if (transformStreamPhase === 'cancelled') {
+      setIsRestoring(false);
+      setN8nTransformActive(false);
+      clearPersistedContext();
+      dispatch({ type: 'TRANSFORM_CANCELLED' });
+    } else if (transformStreamPhase === 'incomplete' || transformStreamPhase === 'unknown') {
+      setIsRestoring(false);
+      setN8nTransformActive(false);
+      clearPersistedContext();
+      dispatch({
+        type: 'TRANSFORM_FAILED',
+        error: t.agents.executions.stopped_while_running,
+      });
+    }
+  }, [transformStreamPhase, dispatch, clearPersistedContext, setN8nTransformActive, t]);
 
   // -- Restore persisted context on mount --
 

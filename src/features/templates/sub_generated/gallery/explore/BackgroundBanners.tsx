@@ -1,6 +1,6 @@
-import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle, Ban } from 'lucide-react';
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useTranslation } from '@/i18n/useTranslation';
 /** Label map for legacy adoption wizard steps shown in draft resume banners. */
 const ADOPT_STEP_LABELS: Record<string, string> = {
@@ -144,57 +144,84 @@ export function BackgroundBanners({
         </div>
       )}
 
-      {/* Background preview banner -- shows while running, completed, or failed */}
+      {/* Background preview banner -- shows for every phase of the run, active
+          or terminal. Before the phase vocabulary was completed, a cancelled
+          or incomplete preview kept the cyan "Testing" banner with its pulsing
+          dot forever, because every non-completed/failed phase fell through to
+          the "still running" branch of these ternaries. */}
       {previewIsActive && !previewModalOpen && (() => {
-        const isCompleted = previewPhase === 'completed';
-        const isFailed = previewPhase === 'failed';
-        const isDone = isCompleted || isFailed;
+        const isDone = isCliRunSettled(previewPhase);
 
-        const bgClass = isFailed
-          ? 'bg-red-500/8 border-red-500/15 hover:bg-red-500/12'
-          : isCompleted
-            ? 'bg-emerald-500/8 border-emerald-500/15 hover:bg-emerald-500/12'
-            : 'bg-cyan-500/8 border-cyan-500/15 hover:bg-cyan-500/12';
+        const tone =
+          previewPhase === 'failed'
+            ? 'red'
+            : previewPhase === 'completed'
+              ? 'emerald'
+              : previewPhase === 'cancelled'
+                ? 'slate'
+                : previewPhase === 'incomplete' || previewPhase === 'unknown'
+                  ? 'amber'
+                  : 'cyan';
 
-        const iconBgClass = isFailed
-          ? 'bg-red-500/15'
-          : isCompleted
-            ? 'bg-emerald-500/15'
-            : 'bg-cyan-500/15';
+        const bgClass = {
+          red: 'bg-red-500/8 border-red-500/15 hover:bg-red-500/12',
+          emerald: 'bg-emerald-500/8 border-emerald-500/15 hover:bg-emerald-500/12',
+          slate: 'bg-secondary/40 border-primary/10 hover:bg-secondary/60',
+          amber: 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12',
+          cyan: 'bg-cyan-500/8 border-cyan-500/15 hover:bg-cyan-500/12',
+        }[tone];
 
-        const textClass = isFailed
-          ? 'text-red-300'
-          : isCompleted
-            ? 'text-emerald-300'
-            : 'text-cyan-300';
+        const iconBgClass = {
+          red: 'bg-red-500/15',
+          emerald: 'bg-emerald-500/15',
+          slate: 'bg-secondary/60',
+          amber: 'bg-amber-500/15',
+          cyan: 'bg-cyan-500/15',
+        }[tone];
 
-        const Icon = isFailed
-          ? AlertTriangle
-          : isCompleted
-            ? CheckCircle2
-            : Play;
+        const textClass = {
+          red: 'text-red-300',
+          emerald: 'text-emerald-300',
+          slate: 'text-foreground',
+          amber: 'text-amber-300',
+          cyan: 'text-cyan-300',
+        }[tone];
 
-        const statusText = isFailed
-          ? t.templates.banners.status_failed
-          : isCompleted
-            ? t.templates.banners.status_completed
-            : t.templates.banners.status_testing;
+        const Icon = {
+          red: AlertTriangle,
+          emerald: CheckCircle2,
+          slate: Ban,
+          amber: AlertTriangle,
+          cyan: Play,
+        }[tone];
+
+        const statusText = {
+          red: t.templates.banners.status_failed,
+          emerald: t.templates.banners.status_completed,
+          slate: t.monitor.status_cancelled,
+          amber: t.agents.executions.stopped_while_running,
+          cyan: previewPhase === 'queued' ? t.monitor.status_queued : t.templates.banners.status_testing,
+        }[tone];
 
         const subtitleText = isDone
           ? t.templates.banners.click_to_view_result
           : t.templates.banners.click_to_view_output;
 
-        const iconColor = isFailed
-          ? 'text-red-400'
-          : isCompleted
-            ? 'text-emerald-400'
-            : 'text-cyan-400';
+        const iconColor = {
+          red: 'text-red-400',
+          emerald: 'text-emerald-400',
+          slate: 'text-foreground',
+          amber: 'text-amber-400',
+          cyan: 'text-cyan-400',
+        }[tone];
 
-        const dotColor = isFailed
-          ? 'bg-red-400'
-          : isCompleted
-            ? 'bg-emerald-400'
-            : 'bg-cyan-400';
+        const dotColor = {
+          red: 'bg-red-400',
+          emerald: 'bg-emerald-400',
+          slate: 'bg-secondary',
+          amber: 'bg-amber-400',
+          cyan: 'bg-cyan-400',
+        }[tone];
 
         return (
           <div className="mx-4 mt-3 mb-0">

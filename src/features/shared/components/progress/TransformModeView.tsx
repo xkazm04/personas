@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunUnsuccessful, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformPhaseInfo } from './transformProgressTypes';
 import { TerminalBody, useTerminalScroll } from './TerminalBody';
 import { TransformStatusPanels } from './TransformStatusPanels';
@@ -31,8 +31,10 @@ export function TransformModeView({
   const [showTerminal, setShowTerminal] = useState(true);
   const { terminalRef, handleTerminalScroll } = useTerminalScroll(lines);
 
+  // Any unsuccessful end (failed, cancelled, incomplete, unknown) reveals the
+  // output -- it is the only place the user can see what actually happened.
   useEffect(() => {
-    if (phase === 'failed') setShowTerminal(true);
+    if (isCliRunUnsuccessful(phase)) setShowTerminal(true);
   }, [phase]);
 
   const progressPercent = transformPhase ? (transformPhase.step / transformPhase.total) * 100 : 0;

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/terminal/TerminalHeader';
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
@@ -11,6 +11,12 @@ interface CliOutputPanelProps {
   lines: string[];
   idleText?: string;
   waitingText?: string;
+  /**
+   * Shown when the run has settled (completed / failed / cancelled /
+   * incomplete / unknown) without ever producing a line. Without it the panel
+   * sat on `waitingText` forever for a run that had already stopped.
+   */
+  settledText?: string;
   maxHeightClassName?: string;
   /** Optional TerminalStrip rendered below the header for healing/background processes */
   healingStrip?: ReactNode;
@@ -22,6 +28,7 @@ export default function CliOutputPanel({
   lines,
   idleText = 'No CLI output yet.',
   waitingText = 'Waiting for Claude CLI output...',
+  settledText = 'The run ended without producing any output.',
   maxHeightClassName = 'max-h-64',
   healingStrip,
 }: CliOutputPanelProps) {
@@ -29,7 +36,10 @@ export default function CliOutputPanel({
 
   const handleCopy = () => copyToClipboard(lines.join('\n'));
 
+  // `queued` deliberately does not count as running: nothing is executing
+  // yet, so the blinking cursor would be claiming output that cannot arrive.
   const isRunning = phase === 'running';
+  const isSettled = isCliRunSettled(phase);
 
   return (
     <div className="mt-3 rounded-xl border border-border/30 overflow-hidden bg-background shadow-[0_0_30px_rgba(0,0,0,0.3)]">
@@ -47,6 +57,8 @@ export default function CliOutputPanel({
         <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code leading-5`}>
           {phase === 'idle' ? (
             <div className="text-foreground text-center py-4">{idleText}</div>
+          ) : isSettled ? (
+            <div className="text-foreground text-center py-4">{settledText}</div>
           ) : (
             <div className="text-foreground text-center py-4">{waitingText}</div>
           )}
