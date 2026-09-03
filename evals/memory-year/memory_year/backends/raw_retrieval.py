@@ -20,7 +20,8 @@ class RawRetrieval(Backend):
 
     name = "raw-retrieval"
 
-    def __init__(self, embedder: str = DEFAULT_EMBEDDER, cache_dir: Path | None = None, recency_weight: float = 0.0):
+    def __init__(self, embedder: str = DEFAULT_EMBEDDER, cache_dir: Path | str | None = None, recency_weight: float = 0.0):
+        cache_dir = Path(cache_dir) if cache_dir else None
         self.embedder = Embedder(embedder, (cache_dir / "emb.sqlite") if cache_dir else None)
         self.ids: list[str] = []
         self.texts: list[str] = []

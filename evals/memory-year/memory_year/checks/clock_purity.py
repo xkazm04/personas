@@ -16,10 +16,21 @@ from datetime import datetime, timedelta, timezone
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\+00:00|Z)?)?")
 
 
+ID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{16,64}")
+
+
 def normalise(text: str) -> str:
-    """Rendered recall embeds absolute instants; the base-date shift moves every one of
-    them by design. Only the structure and the items must be identical."""
-    return DATE_RE.sub("<date>", text)
+    """Rendered recall embeds absolute instants and generated ids; the base-date shift
+    moves every instant by design and every replay mints fresh ids. Only the structure
+    and the substance must be identical."""
+    return ID_RE.sub("<id>", DATE_RE.sub("<date>", text))
+
+
+def first_diff(a: str, b: str, width: int = 90) -> str:
+    n = min(len(a), len(b))
+    i = next((k for k in range(n) if a[k] != b[k]), n)
+    lo = max(0, i - width // 2)
+    return f"@{i}: A {a[lo:i + width]!r} | B {b[lo:i + width]!r}"
 from pathlib import Path
 
 from .. import backends
@@ -43,7 +54,7 @@ def replay(rung: str, scenario: dict, base: datetime, budget: int, max_days: int
             b.ingest(obj, clock)
         else:
             c = b.recall(obj, clock, budget)
-            out[obj.id] = normalise(c.text) + chr(10) + "#items=" + ",".join(sorted(c.items))
+            out[obj.id] = normalise(c.text) + chr(10) + f"#items={len(c.items)}"
     b.close()
     return out
 
@@ -61,9 +72,13 @@ def main():
     a1 = replay(a.rung, scenario, EPOCH, a.budget, a.max_days, kw)
     a2 = replay(a.rung, scenario, EPOCH + timedelta(days=400), a.budget, a.max_days, kw)
     diff = [k for k in a1 if a1[k] != a2.get(k)]
+    out_dir = Path(a.scenario) / "clock-purity"
+    out_dir.mkdir(exist_ok=True)
+    (out_dir / f"{a.rung}-A.json").write_text(json.dumps(a1, indent=1), encoding="utf-8")
+    (out_dir / f"{a.rung}-B.json").write_text(json.dumps(a2, indent=1), encoding="utf-8")
     print(f"clock purity for {a.rung}: {len(a1)} probes compared, {len(diff)} differ -> {'PASS' if not diff else 'FAIL'}")
-    for k in diff[:5]:
-        print(f"  {k}: base A {a1[k][:120]!r} | base B {a2.get(k, '')[:120]!r}")
+    for k in diff[:6]:
+        print(f"  {k} {first_diff(a1[k], a2.get(k, ''))}")
     raise SystemExit(0 if not diff else 1)
 
 
