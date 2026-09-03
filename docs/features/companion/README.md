@@ -20,7 +20,7 @@ TTS) are unavailable and say so; identity and constitution are never written fro
 | --- | --- | --- |
 | Plugin page | Three-tab manager for Setup, Memory, Voice | `CompanionPluginPage.tsx` |
 | Setup | Global toggles such as footer icon visibility, chime, and beta self-improve exposure | `sub_setup/SetupPanel.tsx`, `companionPluginSlice.ts` |
-| Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
+| Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution, with sibling Sleep cycles and Health lanes | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx`, `BrainCycleReports.tsx`, `BrainHealthPanel.tsx` |
 | Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `chat/` (see **Panel structure** below), `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
 | Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel (or summons/hides the orb), **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, thread-attention badge. No text surface — see "Two dimensions" below | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`voiceTurnRequest`) |
@@ -470,6 +470,42 @@ Two things get written for two readers. `companion_cycle` is the structured row 
 
 Status is honest in both directions. A cycle that never reaches `finish_cycle` **stays `running` forever** — nothing sweeps it, because "the process died" and "the cycle is still working" are different facts and this ledger must not guess between them. A cycle that failed is finished *as* `failed`, with the reason in `stats_json.error` and its report still written: the record of a bad night is worth as much as a good one. Read surface: `companion_list_cycle_reports(limit)`.
 
+### Forgetting, reconciling and the health signals
+
+**Memory can age out.** Decay lowers an unused fact's importance by one per unused month and floors
+it at 1, while the retrieval gate admits anything above 0 — a floor of one against a gate at zero,
+so no fact could ever leave retrieval. A fact that reaches the floor and stays unrecalled past its
+horizon is now demoted to 0 through the same statement a supersede uses: **90 days** for project and
+world facts, **365** for user-scope ones, because `last_seen_at` records how often something is
+recalled rather than whether it is still true. Nothing is deleted — the markdown stays on disk and
+the row stays for provenance — and user-initiated forgetting is a separate mechanism this does not
+touch. Aging out runs before decay in the same sweep, so a fact moves one rung per pass. The sweep
+records what it did on every run, including the ones that changed nothing, as a
+`companion_night_event` of kind `memory_lifecycle_sweep`.
+
+**Orphaned episodes are recovered.** An episode's markdown is written before its index row, on
+purpose: the file is the source of truth. A crash between the two used to orphan the file forever.
+`companion_reconcile_episodes` rebuilds the index from the files' own frontmatter — original id,
+timestamp, session and role — through the same writer the live path uses, so the excerpt, machine
+classification, importance tier and full-text mirror all match a natively written row. It is
+idempotent, bounded per run, and runs at the top of every sleep cycle. A file whose frontmatter
+carries no id or timestamp is skipped **and counted**, because a corrupt brain must not read as a
+clean one.
+
+**Correlator records are bounded in recall.** Machine `fleet-event` episodes may still compete on
+relevance in the keyword lane, but at most two of its six episode slots, merged by BM25 so the
+surviving order is the one an unrestricted query would have produced. New correlator episodes are
+written at importance 1 against conversation's 3, and one is marked ` [machine]` where it is
+rendered into the prompt, so a machine row and something the user said no longer arrive under the
+same heading with nothing to tell them apart.
+
+**Health reports staleness and conversation.** The `consolidation` stage used to read `Ok` from the
+mere existence of a completed cycle, so a brain whose last cycle ran weeks ago looked fine. It is
+`Degraded` past 72 hours — the same threshold the sleep cycle's own admission layer uses — and
+`Unknown` on a timestamp it cannot parse, with distinct blocking codes for "never ran" and "stopped
+being scheduled". The counters also carry a conversation-only episode count beside the episode
+total, using the same machine exclusion the recency lane applies.
+
 ### The sleep cycle — memory maintenance that runs on its own
 
 Every maintenance capability under `brain/` used to be reachable only from a button, and the Memory tab's own doc comment said so: *"these are manual maintenance passes; nothing here runs on a schedule."* `companion_consolidation` held **0 rows in 77 days**. `brain/sleep_cycle.rs` is the pass that walks those organs unattended.
@@ -480,7 +516,7 @@ It is driven from the night-shift tick (which throttles its own measurement to o
 
 **Reading the gauge.** `companion_get_sleep_pressure` answers what the gate itself would answer — the same measurement, not a parallel estimate: chars accumulated, the threshold, episodes waiting, whether the floor is satisfied, how stale the last cycle is, and `wouldAdmit` with the reason in plain words.
 
-**Manual trigger:** `companion_run_sleep_cycle({ force? })` — fire-and-forget, answering `{status: "started", cycleId}` or `{status: "skipped", skippedReason}` immediately; progress is read back through `companion_list_cycle_reports`, which the **Brain viewer's "Sleep cycles" lane** renders (`src/features/plugins/companion/BrainCycleReports.tsx`): every cycle newest-first with its status, phase log, the episodes it read of those available, and each counter it recorded. The lane shows the cycle's *structured* truth only — the markdown narrative `render_report` writes lands in a `companion_node` of kind `cycle_report`, and no registered command returns that node's body (`companion_get_brain_item` has no `cycle_report` arm), so the prose stays unread until one does. The sibling **"Health" lane** renders `companion_brain_health` in full. A skip reason always carries the actual numbers ("pressure 12,431 of 40,000; the 6h floor is satisfied…") because it is shown to a human. `force` bypasses pressure, the floor and staleness — it does **not** bypass the single-flight guard, and nothing does.
+**Manual trigger:** `companion_run_sleep_cycle({ force? })` — fire-and-forget, answering `{status: "started", cycleId}` or `{status: "skipped", skippedReason}` immediately; progress is read back through `companion_list_cycle_reports`, which the **Brain viewer's "Sleep cycles" lane** renders (`src/features/plugins/companion/BrainCycleReports.tsx`): every cycle newest-first with its status, phase log, the episodes it read of those available, and each counter it recorded. The lane shows the cycle's structured truth; the markdown narrative `render_report` writes lands in a `companion_node` of kind `cycle_report`, and `companion_get_brain_item` now has a `cycle_report` arm that returns it. It takes either id the caller already holds — the report node's own `cyr_…` or the `cyc_…` of the cycle that wrote it — reads the body off disk the way episodes are read, and falls back to the stored excerpt when the file is gone, so a pruned brain answers with what it has rather than an error. The sibling **"Health" lane** renders `companion_brain_health` in full. A skip reason always carries the actual numbers ("pressure 12,431 of 40,000; the 6h floor is satisfied…") because it is shown to a human. `force` bypasses pressure, the floor and staleness — it does **not** bypass the single-flight guard, and nothing does.
 
 **The dev-build button.** On a debug build the Athena chat header carries a moon control beside the conversation-log button, gated on the same `companion_beta_flags().devModeAvailable` flag (`cfg!(debug_assertions)` mirrored to the frontend) — it does not render for anyone else. Clicking it force-runs a cycle and toasts either the new cycle id or the skip reason verbatim. Hovering or focusing it reads `companion_get_sleep_pressure` lazily and shows the live gauge — *"Sleep pressure: 42,310 / 40,000 chars · last cycle 14h ago"* — and the header never waits on that read: until it answers, the tooltip shows the plain label. It exists so the operator can enforce a milestone cycle and gather cycle data before the pressure would naturally trigger one.
 
