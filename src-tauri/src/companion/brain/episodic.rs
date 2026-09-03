@@ -391,7 +391,20 @@ pub fn reconcile_orphaned_episodes(pool: &UserDbPool) -> Result<ReconcileReport,
             };
             let rel_path = rel.to_string_lossy().replace(MAIN_SEPARATOR, "/");
 
+            // `parse_episode_body` keeps the single trailing newline
+            // `format_episode_markdown` appends after the content; the LIVE
+            // writer stores `excerpt_500(content)` from the raw content, which
+            // has none. Strip exactly that one newline so a recovered row's
+            // `body_excerpt` is byte-identical to a natively written one.
+            // Without this the read path -- which re-adds the trailing newline
+            // by contract (`retrieval::episode_body_from_excerpt`) -- serves
+            // every recovered episode with an extra blank line, and prompt
+            // bytes for a recovered turn differ from a written one.
             let (_, content) = parse_episode_body(&full);
+            let content = match content.strip_suffix('\n') {
+                Some(trimmed) => trimmed.to_string(),
+                None => content,
+            };
             let machine = is_machine_episode(&content);
             let importance = if machine {
                 MACHINE_EPISODE_IMPORTANCE
@@ -1193,8 +1206,37 @@ mod tests {
         let window = list_recent_conversation(&pool, "default", 10).unwrap();
         assert_eq!(window.len(), 1);
         assert_eq!(window[0].id, "ep_back");
-        assert_eq!(window[0].content, "the recovered turn");
         assert_eq!(window[0].role, "user");
+
+        // Byte-identical to what the LIVE writer would have produced for the
+        // same turn -- not merely "contains the text". A recovered row whose
+        // excerpt carries one extra newline renders an extra blank line into
+        // every prompt that recalls it, which is what this asserted away.
+        let native =
+            append_episode(&pool, "default", EpisodeRole::User, "the recovered turn").unwrap();
+        let both = list_recent_conversation(&pool, "default", 10).unwrap();
+        let recovered = both.iter().find(|e| e.id == "ep_back").unwrap();
+        let written = both.iter().find(|e| e.id == native).unwrap();
+        assert_eq!(
+            recovered.content, written.content,
+            "a recovered episode must render exactly like a written one"
+        );
+        assert_eq!(
+            excerpt_of(&pool, "ep_back"),
+            excerpt_of(&pool, &native),
+            "and its stored excerpt must match byte for byte"
+        );
+    }
+
+    fn excerpt_of(pool: &crate::db::UserDbPool, id: &str) -> String {
+        pool.conn("episodic_test::excerpt_of")
+            .unwrap()
+            .query_row(
+                "SELECT body_excerpt FROM companion_node WHERE id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap()
     }
 
     // -- the machine importance tier (X1) --------------------------------
