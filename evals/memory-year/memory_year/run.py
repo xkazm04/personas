@@ -17,7 +17,9 @@ from . import backends
 from .clock import Clock
 from .consumer import answer, final_answer
 from .judge import judge_form, judge_value
-from .llm import LLM
+from concurrent.futures import ThreadPoolExecutor
+
+from .llm import LLM, DEFAULT_CONSUMER, DEFAULT_JUDGE
 from .model import Answer, to_json
 from .world import World
 
@@ -26,30 +28,30 @@ def load_scenario(path: Path) -> dict:
     return World.load(path)
 
 
-def screen_unaided(scenario: dict, llm: LLM, elaboration: str, out_dir: Path, probe_ids: set[str] | None = None) -> set[str]:
+def screen_unaided(scenario: dict, llm: LLM, elaboration: str, out_dir: Path, probe_ids: set[str] | None = None, parallel: int = 6) -> set[str]:
     """Unaided-baseline screening: a probe the consumer answers correctly with NO context
     is not measuring memory. Cached per (scenario, consumer, elaboration, probe); only the
     probes this run will ask are screened."""
-    key = out_dir / f"screen-{llm.model.replace(':', '_')}-{elaboration}.json"
+    key = out_dir / f"screen-{llm.spec.replace(':', '_').replace('@', '-')}-{elaboration}.json"
     done: dict[str, bool] = json.loads(key.read_text(encoding="utf-8")) if key.exists() else {}
-    if isinstance(done, list):
-        done = {i: True for i in done}
-    for p in scenario["probes"]:
-        if probe_ids is not None and p.id not in probe_ids:
-            continue
-        if p.gold in ("UNKNOWN", "FORM") or p.id in done:
-            continue
+    todo = [p for p in scenario["probes"] if (probe_ids is None or p.id in probe_ids) and p.gold not in ("UNKNOWN", "FORM") and p.id not in done]
+
+    def one(p):
         r = answer(llm, p.question, "", elaboration, Clock(p.day, p.minute).iso)
         v, _ = judge_value(p, final_answer(r.text, elaboration))
-        done[p.id] = (v == "correct")
-        key.write_text(json.dumps(done), encoding="utf-8")
+        return p.id, (v == "correct")
+
+    with ThreadPoolExecutor(max_workers=parallel) as ex:
+        for pid, ok in ex.map(one, todo):
+            done[pid] = ok
+    key.write_text(json.dumps(done), encoding="utf-8")
     return {i for i, ok in done.items() if ok}
 
 
 def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | None, budget_tokens: int,
         elaboration: str, out_root: Path, backend_kw: dict | None = None, max_days: int | None = None,
         strict_judge: bool = True, consolidate_every: int = 1, probe_limit: int | None = None,
-        resume: Path | None = None) -> Path:
+        resume: Path | None = None, parallel: int = 6) -> Path:
     scenario = load_scenario(scenario_dir)
     meta = scenario["meta"]
     cache_dir = out_root / "cache"
@@ -83,9 +85,10 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     will_ask = [t[3].id for t in timeline if t[0] == "p"]
     if probe_limit is not None:
         will_ask = will_ask[:probe_limit]
-    screened = screen_unaided(scenario, llm, elaboration, out_root / scenario_dir.name, set(will_ask))
+    screened = screen_unaided(scenario, llm, elaboration, out_root / scenario_dir.name, set(will_ask), parallel)
 
     answers: list[Answer] = []
+    pending: list = []
     store_timeline = {}
     day_seen = -1
     write_ms = 0
@@ -115,18 +118,38 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
             keep(Answer(p.id, rung, "", 0, 0, "screened", "unaided-screen", 0, "rung-1 answers it"))
             continue
         t0 = time.time()
-        ctx = backend.recall(p, clock, budget_tokens)
-        r = answer(llm, p.question, ctx.text, elaboration, clock.iso)
+        if backend.answers_itself():
+            reply = backend.answer(p, clock)            # the design answers in its own voice, now
+            text = reply.text.strip()
+            ms = int((time.time() - t0) * 1000)
+            if p.gold == "FORM":
+                v, note, jname = judge_form(p, text, jllm, strict_judge)
+            else:
+                v, note = judge_value(p, text)
+                jname = "deterministic"
+            keep(Answer(p.id, rung, text[:2000], reply.tokens, len(reply.items), v, jname, ms, note))
+            continue
+        ctx = backend.recall(p, clock, budget_tokens)   # captured at the probe's own instant
+        pending.append((p, ctx, clock.iso, int((time.time() - t0) * 1000)))
+    backend.consolidate(Clock(day_seen, 23 * 60))
+
+    def answer_one(item):
+        p, ctx, iso, recall_ms = item
+        t0 = time.time()
+        r = answer(llm, p.question, ctx.text, elaboration, iso)
         text = final_answer(r.text, elaboration)
-        ms = int((time.time() - t0) * 1000)
+        ms = recall_ms + int((time.time() - t0) * 1000)
         if p.gold == "FORM":
             v, note, jname = judge_form(p, text, jllm, strict_judge)
         else:
             v, note = judge_value(p, text)
             jname = "deterministic"
-        keep(Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note))
+        return Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note)
+
+    with ThreadPoolExecutor(max_workers=parallel) as ex:
+        for a in ex.map(answer_one, pending):
+            keep(a)
     partial_f.close()
-    backend.consolidate(Clock(day_seen, 23 * 60))
     cost = backend.cost().as_dict()
     cost["write_ms"] = write_ms
     header = {

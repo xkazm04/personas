@@ -44,6 +44,15 @@ class Backend:
     def cost(self) -> Cost:
         return Cost()
 
+    def answers_itself(self) -> bool:
+        """True for a rung where the design under test produces the reply itself (its own
+        prompt assembler and model call), so the harness's consumer is bypassed. Such a
+        rung is reported beside the ladder, never as a rung of it: its consumer differs."""
+        return False
+
+    def answer(self, probe: Probe, clock: Clock) -> Context:
+        raise NotImplementedError
+
     def describe(self) -> dict:
         return {"name": self.name}
 
@@ -64,4 +73,7 @@ def make(name: str, **kw) -> Backend:
     if name == "athena":
         from .athena import Athena
         return Athena(**kw)
+    if name == "athena-turn":
+        from .athena import AthenaTurn
+        return AthenaTurn(**kw)
     raise SystemExit(f"unknown backend {name}")

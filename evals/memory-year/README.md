@@ -92,11 +92,17 @@ adapter so the adapter can suppress its own usage feedback.
 ## The consumer and the judge
 
 One consumer model answers every probe on every rung from `recall`'s context and the
-question, under one fixed prompt that permits `UNKNOWN`. The default is a local model so
-a full ladder costs nothing; a hosted model is a flag, and its name goes into the report.
-The judge is deterministic wherever the gold is a value (normalised match, abstention
-detection, wrong-old-value detection) and a strict local-model judge only for the form
-classes (`rule`, `adaptation`, applied preferences), with the lenient variant available
+question, under one fixed prompt that permits `UNKNOWN`. **The engine is the Claude Code
+CLI on the operator's subscription** (`claude -p`, replaced system prompt, JSON output, no
+session, no tools): the same engine Athena ships with, so the default consumer is Athena's
+own main-turn model at its effort (`claude:claude-opus-4-8@low`) and the ladder's number is
+her number. Model specs are `claude:<model>@<effort>`; every call is cached by content so
+re-runs, re-judges and further rungs over the same probes are free, and calls run
+concurrently (`--parallel`). "Local-first" here means freedom of database, server,
+language and architecture on the operator's machine, never a weaker model: no open-weight
+fallback is wired in. The judge is deterministic wherever the gold is a value (normalised
+match, abstention detection, wrong-old-value detection) and a strict model judge only for
+the form classes (`rule`, `adaptation`, applied preferences), with the lenient variant
 behind a flag so the two can be compared on the same answers.
 
 ## What the report carries

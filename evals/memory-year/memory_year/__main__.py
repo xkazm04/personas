@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .llm import DEFAULT_CONSUMER, DEFAULT_JUDGE
 from .run import compare, rejudge, run
 from .world import World
 
@@ -20,12 +21,12 @@ def main():
     g.add_argument("--density", type=float, default=10.0, help="mean events per weekday")
     g.add_argument("--projects", type=int, default=5)
     g.add_argument("--out", default=None)
-    g.add_argument("--paraphrase", default=None, help="local model used to reword fact-bearing events (value-preserving, cached)")
+    g.add_argument("--paraphrase", default=None, help="model spec used to reword fact-bearing events (value-preserving, cached), e.g. claude:claude-sonnet-5@low")
     r = sub.add_parser("run", help="replay a scenario through one or more rungs")
     r.add_argument("--scenario", required=True)
     r.add_argument("--rungs", default="none,full-history,raw-retrieval")
-    r.add_argument("--consumer", default="qwen2.5:7b-instruct")
-    r.add_argument("--judge", default="qwen2.5:7b-instruct")
+    r.add_argument("--consumer", default=DEFAULT_CONSUMER, help="claude:<model>@<effort>")
+    r.add_argument("--judge", default=DEFAULT_JUDGE, help="claude:<model>@<effort>")
     r.add_argument("--budget", type=int, default=6000)
     r.add_argument("--elaboration", default="direct", choices=["direct", "elaborate"])
     r.add_argument("--lenient", action="store_true")
@@ -33,9 +34,10 @@ def main():
     r.add_argument("--probe-limit", type=int, default=None)
     r.add_argument("--backend-kw", default="{}", help="JSON passed to the backend constructor")
     r.add_argument("--resume", default=None, help="an existing run directory whose partial answers are kept (single rung)")
+    r.add_argument("--parallel", type=int, default=6, help="concurrent CLI calls for answering and screening")
     j = sub.add_parser("rejudge", help="re-score cached answers with the current judge")
     j.add_argument("runs", nargs="+")
-    j.add_argument("--judge", default="qwen2.5:7b-instruct")
+    j.add_argument("--judge", default=DEFAULT_JUDGE)
     j.add_argument("--lenient", action="store_true")
     c = sub.add_parser("compare", help="one ladder table over several run directories")
     c.add_argument("runs", nargs="+")
@@ -58,7 +60,7 @@ def main():
         for rung in a.rungs.split(","):
             d = run(Path(a.scenario), rung.strip(), a.consumer, a.judge, a.budget, a.elaboration, OUT,
                     backend_kw=json.loads(a.backend_kw), max_days=a.max_days, strict_judge=not a.lenient, probe_limit=a.probe_limit,
-                    resume=Path(a.resume) if a.resume else None)
+                    resume=Path(a.resume) if a.resume else None, parallel=a.parallel)
             print(f"{rung}: {d}")
             dirs.append(d)
         print()
