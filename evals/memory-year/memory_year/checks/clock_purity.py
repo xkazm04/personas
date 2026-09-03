@@ -38,7 +38,7 @@ from ..clock import Clock, EPOCH
 from ..world import World
 
 
-def replay(rung: str, scenario: dict, base: datetime, budget: int, max_days: int, kw: dict) -> dict[str, str]:
+def replay(rung: str, scenario: dict, base: datetime, budget: int, max_days: int, kw: dict, consolidate: bool = True) -> dict[str, str]:
     b = backends.make(rung, **kw)
     events = [e for e in scenario["events"] if e.day < max_days]
     probes = [p for p in scenario["probes"] if p.day < max_days]
@@ -47,7 +47,7 @@ def replay(rung: str, scenario: dict, base: datetime, budget: int, max_days: int
     last_day = -1
     for kind, day, minute, obj in timeline:
         clock = Clock(day, minute, base)
-        if day != last_day and last_day >= 0:
+        if consolidate and day != last_day and last_day >= 0:
             b.consolidate(Clock(last_day, 23 * 60, base))
         last_day = day
         if kind == "e":
@@ -66,17 +66,20 @@ def main():
     ap.add_argument("--max-days", type=int, default=30)
     ap.add_argument("--budget", type=int, default=6000)
     ap.add_argument("--backend-kw", default="{}")
+    ap.add_argument("--no-consolidate", action="store_true",
+                    help="skip the design's scheduled passes: a model-driven consolidation is non-deterministic by nature, so the clock question is asked of the deterministic layer alone")
     a = ap.parse_args()
     scenario = World.load(Path(a.scenario))
     kw = json.loads(a.backend_kw)
-    a1 = replay(a.rung, scenario, EPOCH, a.budget, a.max_days, kw)
-    a2 = replay(a.rung, scenario, EPOCH + timedelta(days=400), a.budget, a.max_days, kw)
+    a1 = replay(a.rung, scenario, EPOCH, a.budget, a.max_days, kw, not a.no_consolidate)
+    a2 = replay(a.rung, scenario, EPOCH + timedelta(days=400), a.budget, a.max_days, kw, not a.no_consolidate)
     diff = [k for k in a1 if a1[k] != a2.get(k)]
     out_dir = Path(a.scenario) / "clock-purity"
     out_dir.mkdir(exist_ok=True)
     (out_dir / f"{a.rung}-A.json").write_text(json.dumps(a1, indent=1), encoding="utf-8")
     (out_dir / f"{a.rung}-B.json").write_text(json.dumps(a2, indent=1), encoding="utf-8")
-    print(f"clock purity for {a.rung}: {len(a1)} probes compared, {len(diff)} differ -> {'PASS' if not diff else 'FAIL'}")
+    layer = "deterministic layer only (no scheduled passes)" if a.no_consolidate else "full design"
+    print(f"clock purity for {a.rung} [{layer}]: {len(a1)} probes compared, {len(diff)} differ -> {'PASS' if not diff else 'FAIL'}")
     for k in diff[:6]:
         print(f"  {k} {first_diff(a1[k], a2.get(k, ''))}")
     raise SystemExit(0 if not diff else 1)
