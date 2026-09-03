@@ -48,7 +48,8 @@ def screen_unaided(scenario: dict, llm: LLM, elaboration: str, out_dir: Path, pr
 
 def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | None, budget_tokens: int,
         elaboration: str, out_root: Path, backend_kw: dict | None = None, max_days: int | None = None,
-        strict_judge: bool = True, consolidate_every: int = 1, probe_limit: int | None = None) -> Path:
+        strict_judge: bool = True, consolidate_every: int = 1, probe_limit: int | None = None,
+        resume: Path | None = None) -> Path:
     scenario = load_scenario(scenario_dir)
     meta = scenario["meta"]
     cache_dir = out_root / "cache"
@@ -57,7 +58,22 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     backend = backends.make(rung, **({"cache_dir": cache_dir} if rung == "raw-retrieval" else {}), **(backend_kw or {}))
     run_id = f"{rung}-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
     run_dir = out_root / scenario_dir.name / f"run-{run_id}"
+    done: dict[str, Answer] = {}
+    if resume is not None:
+        run_dir = resume
+        partial = run_dir / "answers.partial.jsonl"
+        if partial.exists():
+            for line in partial.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    a = Answer(**json.loads(line))
+                    done[a.probe_id] = a
+        run_id = run_dir.name[len("run-"):]
     run_dir.mkdir(parents=True, exist_ok=True)
+    partial_f = open(run_dir / "answers.partial.jsonl", "a", encoding="utf-8")
+
+    def keep(a: Answer):
+        answers.append(a)
+        partial_f.write(json.dumps(asdict(a)) + chr(10)); partial_f.flush()
 
     # merge events and probes on the simulated timeline
     timeline = [("e", e.day, e.minute, e) for e in scenario["events"]] + [("p", p.day, p.minute, p) for p in scenario["probes"]]
@@ -92,8 +108,11 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
         if probe_limit is not None and probes_done >= probe_limit:
             continue
         probes_done += 1
+        if p.id in done:
+            answers.append(done[p.id])
+            continue
         if p.id in screened:
-            answers.append(Answer(p.id, rung, "", 0, 0, "screened", "unaided-screen", 0, "rung-1 answers it"))
+            keep(Answer(p.id, rung, "", 0, 0, "screened", "unaided-screen", 0, "rung-1 answers it"))
             continue
         t0 = time.time()
         ctx = backend.recall(p, clock, budget_tokens)
@@ -105,7 +124,8 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
         else:
             v, note = judge_value(p, text)
             jname = "deterministic"
-        answers.append(Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note))
+        keep(Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note))
+    partial_f.close()
     backend.consolidate(Clock(day_seen, 23 * 60))
     cost = backend.cost().as_dict()
     cost["write_ms"] = write_ms

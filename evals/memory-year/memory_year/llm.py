@@ -53,8 +53,16 @@ class LLM:
                            "options": {"temperature": self.temperature, "num_ctx": self.num_ctx}}).encode()
         req = urllib.request.Request(f"{OLLAMA}/api/generate", data=body, headers={"Content-Type": "application/json"})
         t0 = time.time()
-        with urllib.request.urlopen(req, timeout=600) as r:
-            data = json.loads(r.read().decode())
+        data = None
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(req, timeout=900) as r:
+                    data = json.loads(r.read().decode())
+                break
+            except (TimeoutError, OSError) as exc:   # a stalled server is an instrument fault, not a miss
+                if attempt == 3:
+                    raise
+                time.sleep(15 * (attempt + 1))
         ms = int((time.time() - t0) * 1000)
         text = data.get("response", "")
         tin = int(data.get("prompt_eval_count") or 0)

@@ -32,6 +32,7 @@ def main():
     r.add_argument("--max-days", type=int, default=None)
     r.add_argument("--probe-limit", type=int, default=None)
     r.add_argument("--backend-kw", default="{}", help="JSON passed to the backend constructor")
+    r.add_argument("--resume", default=None, help="an existing run directory whose partial answers are kept (single rung)")
     j = sub.add_parser("rejudge", help="re-score cached answers with the current judge")
     j.add_argument("runs", nargs="+")
     j.add_argument("--judge", default="qwen2.5:7b-instruct")
@@ -56,7 +57,8 @@ def main():
         dirs = []
         for rung in a.rungs.split(","):
             d = run(Path(a.scenario), rung.strip(), a.consumer, a.judge, a.budget, a.elaboration, OUT,
-                    backend_kw=json.loads(a.backend_kw), max_days=a.max_days, strict_judge=not a.lenient, probe_limit=a.probe_limit)
+                    backend_kw=json.loads(a.backend_kw), max_days=a.max_days, strict_judge=not a.lenient, probe_limit=a.probe_limit,
+                    resume=Path(a.resume) if a.resume else None)
             print(f"{rung}: {d}")
             dirs.append(d)
         print()
