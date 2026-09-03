@@ -263,7 +263,7 @@ mod tests {
             pattern_data: "{}".to_string(),
             success_count: success,
             failure_count: failure,
-            avg_cost_usd: 0.01,
+            avg_cost_usd: Some(0.01),
             avg_duration_ms: 1000.0,
             confidence,
             last_execution_id: None,

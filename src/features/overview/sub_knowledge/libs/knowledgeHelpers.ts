@@ -49,7 +49,8 @@ import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
 export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
 import { formatCost as _formatCost } from '@/lib/utils/formatters';
-export const formatCost = (usd: number) => _formatCost(usd, { precision: 'auto' });
+export const formatCost = (usd: number | null | undefined) =>
+  _formatCost(usd, { precision: 'auto' });
 
 // Knowledge type/scope pills render via the shared `StatusBadge` (accent variant),
 // which is the single source of truth for these accent colors — see

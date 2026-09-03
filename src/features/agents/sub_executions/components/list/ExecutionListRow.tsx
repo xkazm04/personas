@@ -142,7 +142,7 @@ function ExecutionListRowImpl({
         </div>
         <div className={`${compareMode || bulkMode ? 'col-span-1' : 'col-span-2'} flex items-center gap-2`}>
           <span className="typo-code text-foreground/90">{formatCost(execution.cost_usd, { precision: 4, language })}</span>
-          {!compareMode && !bulkMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).reverse()} />}
+          {!compareMode && !bulkMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).filter((c): c is number => c != null).reverse()} />}
         </div>
       </div>
 

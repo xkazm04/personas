@@ -13,7 +13,7 @@ export function ReplayCostPanel({
   totalSteps,
 }: {
   accumulatedCost: number;
-  totalCost: number;
+  totalCost: number | null;
   currentMs: number;
   totalMs: number;
   completedSteps: number;
@@ -21,14 +21,14 @@ export function ReplayCostPanel({
 }) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
-  const costPct = totalCost > 0 ? (accumulatedCost / totalCost) * 100 : 0;
+  const costPct = totalCost != null && totalCost > 0 ? (accumulatedCost / totalCost) * 100 : 0;
   const timePct = totalMs > 0 ? (currentMs / totalMs) * 100 : 0;
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/20">
       {/* Cost + bar */}
       <div className="flex items-center gap-1.5 min-w-0">
-        {accumulatedCost === 0 && totalCost === 0 ? (
+        {accumulatedCost === 0 && (totalCost === 0 || totalCost == null) ? (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
             <ellipse cx="7" cy="9" rx="5" ry="2" fill="#10b981" fillOpacity="0.2" stroke="#10b981" strokeWidth="0.8" strokeOpacity="0.3" />
             <ellipse cx="7" cy="7" rx="5" ry="2" fill="#10b981" fillOpacity="0.15" stroke="#10b981" strokeWidth="0.8" strokeOpacity="0.25" />

@@ -72,7 +72,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
                   <span>{exec.input_tokens}{'→'}{exec.output_tokens} tokens</span>
                 )}
-                {exec.cost_usd > 0 && <span><Numeric value={exec.cost_usd} unit="usd" /></span>}
+                {exec.cost_usd != null && exec.cost_usd > 0 && <span><Numeric value={exec.cost_usd} unit="usd" /></span>}
               </div>
 
               {/* Payloads */}

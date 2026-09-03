@@ -22,7 +22,8 @@ interface PlaygroundResponse {
   data: string | null;
   error: string | null;
   durationMs: number | null;
-  costUsd: number;
+  /** `null` when the run's cost was never recorded — not the same as free. */
+  costUsd: number | null;
   model: string | null;
 }
 
@@ -237,7 +238,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
             {response.durationMs != null && (
               <Numeric value={response.durationMs} unit="ms" className="text-foreground" />
             )}
-            {response.costUsd > 0 && (
+            {response.costUsd != null && response.costUsd > 0 && (
               <Numeric value={response.costUsd} unit="usd" className="text-foreground" />
             )}
             {response.model && (

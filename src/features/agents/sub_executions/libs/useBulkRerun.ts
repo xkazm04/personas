@@ -41,7 +41,8 @@ export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed';
 export interface BulkRunItem {
   originalId: string;
   origStatus: string;
-  origCost: number;
+  /** `null` when the original run's cost was never recorded. */
+  origCost: number | null;
   origDurationMs: number | null;
   origInputTokens: number;
   origOutputTokens: number;
@@ -109,15 +110,19 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   let durDeltaN = 0;
 
   for (const it of items) {
-    totalCostOriginal += it.origCost;
+    // An unrecorded original cost contributes nothing to the total and no
+    // delta — it is not a $0 run.
+    if (it.origCost !== null) totalCostOriginal += it.origCost;
     if (it.status === 'success' || it.status === 'failed') finished += 1;
     if (it.status === 'success') successCount += 1;
     if (it.status === 'failed') failedCount += 1;
 
     if (it.newCost !== null) {
       totalCostNew += it.newCost;
-      costDeltaSum += it.newCost - it.origCost;
-      costDeltaN += 1;
+      if (it.origCost !== null) {
+        costDeltaSum += it.newCost - it.origCost;
+        costDeltaN += 1;
+      }
     }
     if (it.newDurationMs !== null && it.origDurationMs !== null) {
       durDeltaSum += it.newDurationMs - it.origDurationMs;

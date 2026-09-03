@@ -46,7 +46,7 @@ pub struct PersonaTestResult {
     pub input_tokens: i64,
     #[ts(type = "number")]
     pub output_tokens: i64,
-    pub cost_usd: f64,
+    pub cost_usd: Option<f64>,
     #[ts(type = "number")]
     pub duration_ms: i64,
     pub error_message: Option<String>,

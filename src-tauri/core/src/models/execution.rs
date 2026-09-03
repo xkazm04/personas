@@ -36,7 +36,7 @@ pub struct PersonaExecution {
     pub input_tokens: i64,
     #[ts(type = "number")]
     pub output_tokens: i64,
-    pub cost_usd: f64,
+    pub cost_usd: Option<f64>,
     /// Prompt-cache tokens served from cache (cheap input reuse). 0 when the CLI
     /// reported no cache usage. See P1 cache visibility.
     #[ts(type = "number")]
@@ -98,7 +98,7 @@ pub struct ExecutionListItem {
     pub input_tokens: i64,
     #[ts(type = "number")]
     pub output_tokens: i64,
-    pub cost_usd: f64,
+    pub cost_usd: Option<f64>,
     pub error_message: Option<String>,
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,

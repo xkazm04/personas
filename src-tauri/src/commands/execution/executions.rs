@@ -974,7 +974,9 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
                 let mut obj = serde_json::json!({
                     "status": e.status,
                     "started_at": e.started_at,
-                    "cost_usd": (e.cost_usd * 10000.0).round() / 10000.0,
+                    // null when unrecorded — telling the model a run cost
+                    // $0 is a fact it will reason from.
+                    "cost_usd": e.cost_usd.map(|c| (c * 10000.0).round() / 10000.0),
                 });
                 if let Some(dur) = e.duration_ms {
                     obj["duration_ms"] = serde_json::json!(dur);
@@ -1116,7 +1118,7 @@ mod tests {
             thinking_level: None,
             input_tokens: 0,
             output_tokens: 0,
-            cost_usd: 0.0,
+            cost_usd: Some(0.0),
             cache_read_tokens: 0,
             cache_creation_tokens: 0,
             error_message: None,

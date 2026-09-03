@@ -389,7 +389,7 @@ fn render_knowledge_note(k: &ExecutionKnowledge) -> String {
         .and_then(|v| serde_json::to_string_pretty(&v).ok())
         .unwrap_or_else(|| k.pattern_data.clone());
     format!(
-        "---\ntype: execution_knowledge\nknowledge_type: {kt}\npersona: {pid}\nconfidence: {conf:.2}\nupdated: {upd}\n---\n\n# {pk}\n\n- **Type:** {kt}\n- **Confidence:** {conf:.2}\n- **Success / Failure:** {sc} / {fc}\n- **Avg cost:** ${cost:.4}\n- **Avg duration:** {dur:.0} ms\n\n## Pattern\n\n```json\n{pretty}\n```\n",
+        "---\ntype: execution_knowledge\nknowledge_type: {kt}\npersona: {pid}\nconfidence: {conf:.2}\nupdated: {upd}\n---\n\n# {pk}\n\n- **Type:** {kt}\n- **Confidence:** {conf:.2}\n- **Success / Failure:** {sc} / {fc}\n- **Avg cost:** {cost}\n- **Avg duration:** {dur:.0} ms\n\n## Pattern\n\n```json\n{pretty}\n```\n",
         kt = k.knowledge_type,
         pid = k.persona_id,
         conf = k.confidence,
@@ -397,7 +397,12 @@ fn render_knowledge_note(k: &ExecutionKnowledge) -> String {
         pk = k.pattern_key,
         sc = k.success_count,
         fc = k.failure_count,
-        cost = k.avg_cost_usd,
+        // "unknown" rather than $0.0000: the vault note is read by a
+        // human and by the model, and a fabricated zero is a claim.
+        cost = k
+            .avg_cost_usd
+            .map(|c| format!("${c:.4}"))
+            .unwrap_or_else(|| "unknown".to_string()),
         dur = k.avg_duration_ms,
     )
 }

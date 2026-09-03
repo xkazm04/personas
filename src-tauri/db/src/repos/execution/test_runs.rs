@@ -22,7 +22,8 @@ fn row_to_run(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestRun> {
     })
 }
 
-// row_to_result uses custom logic (unwrap_or for tokens/cost/duration) -- keep manual
+// row_to_result uses custom logic (unwrap_or for tokens/duration; cost stays
+// Option) -- keep manual
 fn row_to_result(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestResult> {
     Ok(PersonaTestResult {
         id: row.get("id")?,
@@ -37,7 +38,9 @@ fn row_to_result(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestResult> {
         protocol_compliance: row.get("protocol_compliance")?,
         input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
         output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-        cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+        // `None` when the lab result never recorded a cost. Unknown money is
+        // not zero money (census rule `unknown-money-as-zero`).
+        cost_usd: row.get::<_, Option<f64>>("cost_usd")?,
         duration_ms: row.get::<_, Option<i64>>("duration_ms")?.unwrap_or(0),
         error_message: row.get("error_message")?,
         created_at: row.get("created_at")?,
@@ -434,5 +437,83 @@ mod tests {
         delete_run(&pool, &run.id).unwrap();
         let results_after = get_results_by_run(&pool, &run.id).unwrap();
         assert!(results_after.is_empty());
+    }
+
+    /// FAILED on its first run with
+    /// `NOT NULL constraint failed: persona_test_results.cost_usd`, which is
+    /// the finding: `row_to_result` collapsed a NULL to `0.0` and now carries
+    /// `Option<f64>`, but **the column is NOT NULL**, so a lab arm whose cost
+    /// was never captured is stored as a literal `0.0` and still presents as
+    /// the cheapest arm in the comparison this table exists to inform. The
+    /// mapper is no longer where the fact dies; the column is, and widening it
+    /// is a separate change with its own migration.
+    #[test]
+    fn an_unrecorded_result_cost_is_unrepresentable_and_a_real_zero_round_trips() {
+        let (pool, persona_id) = setup();
+        let run = create_run(&pool, &persona_id, "[]").unwrap();
+
+        let mk = |scenario: &str, cost: f64| {
+            create_result(
+                &pool,
+                &CreateTestResultInput {
+                    test_run_id: run.id.clone(),
+                    scenario_name: scenario.into(),
+                    model_id: "haiku".into(),
+                    provider: "anthropic".into(),
+                    status: "passed".into(),
+                    output_preview: None,
+                    tool_calls_expected: None,
+                    tool_calls_actual: None,
+                    tool_accuracy_score: None,
+                    output_quality_score: None,
+                    protocol_compliance: None,
+                    input_tokens: 10,
+                    output_tokens: 10,
+                    cost_usd: cost,
+                    duration_ms: 5,
+                    error_message: None,
+                },
+            )
+            .unwrap()
+        };
+
+        let unpriced = mk("unpriced", 0.0);
+        let free = mk("free", 0.0);
+
+        // A real zero round-trips as a real zero through the RETURNING mapper.
+        assert_eq!(free.cost_usd, Some(0.0));
+
+        // And the absence is refused by the storage layer, so no mapper can
+        // ever be handed one today.
+        {
+            let conn = pool.conn("test_runs::test").unwrap();
+            let err = conn
+                .execute(
+                    "UPDATE persona_test_results SET cost_usd = NULL WHERE id = ?1",
+                    params![unpriced.id],
+                )
+                .expect_err("cost_usd is NOT NULL — if this now succeeds, widen this test");
+            assert!(
+                err.to_string().contains("NOT NULL"),
+                "expected a NOT NULL violation, got {err}"
+            );
+        }
+
+        assert_eq!(
+            get_result_by_id(&pool, &unpriced.id).unwrap().cost_usd,
+            Some(0.0)
+        );
+        assert_eq!(
+            get_result_by_id(&pool, &free.id).unwrap().cost_usd,
+            Some(0.0)
+        );
+
+        let all = get_results_by_run(&pool, &run.id).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(
+            all.iter().filter(|r| r.cost_usd.is_none()).count(),
+            0,
+            "the column is NOT NULL, so nothing reads as unknown yet"
+        );
     }
 }

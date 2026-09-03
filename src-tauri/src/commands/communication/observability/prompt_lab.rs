@@ -169,7 +169,10 @@ pub struct PromptAbExecResult {
     pub status: String,
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
-    pub cost_usd: f64,
+    /// `None` when the run's cost was never recorded. An A/B comparison that
+    /// showed an unrecorded arm as $0.00 would report the wrong winner on the
+    /// one axis it exists to compare.
+    pub cost_usd: Option<f64>,
     #[ts(type = "number")]
     pub input_tokens: i64,
     #[ts(type = "number")]

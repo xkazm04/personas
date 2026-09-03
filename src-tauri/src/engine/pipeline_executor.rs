@@ -503,15 +503,19 @@ async fn run_persona_node(
                 "completed" => {
                     // P2: record this node's execution cost against the pipeline
                     // run budget (warn-only — the pipeline is not aborted).
-                    let outcome =
-                        crate::engine::run_budget::ledger().record(run_id, execution.cost_usd);
-                    if outcome.exceeded_now {
-                        tracing::warn!(
-                            run_id = %run_id,
-                            spent_usd = outcome.spent_usd,
-                            ceiling_usd = outcome.ceiling_usd,
-                            "Pipeline run exceeded its aggregate budget ceiling (warn-only; run continues)",
-                        );
+                    // A run whose cost was never recorded books NOTHING
+                    // against the ceiling. Booking 0.0 would be a claim the
+                    // node was free, which is not what an absent value says.
+                    if let Some(cost_usd) = execution.cost_usd {
+                        let outcome = crate::engine::run_budget::ledger().record(run_id, cost_usd);
+                        if outcome.exceeded_now {
+                            tracing::warn!(
+                                run_id = %run_id,
+                                spent_usd = outcome.spent_usd,
+                                ceiling_usd = outcome.ceiling_usd,
+                                "Pipeline run exceeded its aggregate budget ceiling (warn-only; run continues)",
+                            );
+                        }
                     }
                     update_node_status(
                         statuses,

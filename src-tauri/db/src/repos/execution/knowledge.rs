@@ -16,7 +16,10 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
         pattern_data: row.get("pattern_data")?,
         success_count: row.get::<_, Option<i64>>("success_count")?.unwrap_or(0),
         failure_count: row.get::<_, Option<i64>>("failure_count")?.unwrap_or(0),
-        avg_cost_usd: row.get::<_, Option<f64>>("avg_cost_usd")?.unwrap_or(0.0),
+        // `None` when this pattern has no recorded cost at all. Unknown money
+        // is not zero money — a $0.00 average reads as "this pattern is free",
+        // which is a different claim (census rule `unknown-money-as-zero`).
+        avg_cost_usd: row.get::<_, Option<f64>>("avg_cost_usd")?,
         avg_duration_ms: row.get::<_, Option<f64>>("avg_duration_ms")?.unwrap_or(0.0),
         confidence: row.get::<_, Option<f64>>("confidence")?.unwrap_or(0.0),
         last_execution_id: row.get("last_execution_id")?,
@@ -536,4 +539,187 @@ pub fn get_summary(
             recent_learnings,
         })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::CreatePersonaInput;
+    use crate::repos::core::personas;
+
+    fn setup() -> (DbPool, String) {
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Knowledge Agent".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                lifecycle: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+        let id = persona.id.clone();
+        (pool, id)
+    }
+
+    /// The first test this file has ever had, and it FAILED on its first run
+    /// with `NOT NULL constraint failed: execution_knowledge.avg_cost_usd` —
+    /// which is the finding, not an accident.
+    ///
+    /// `row_to_knowledge` collapsed a NULL `avg_cost_usd` to `0.0`, and the
+    /// mapper now carries `Option<f64>` instead (unknown money is not zero
+    /// money). But **this column is NOT NULL**, so a NULL is unreachable from
+    /// the migrated schema: an unrecorded pattern cost is written as a literal
+    /// `0.0` by the write path, and no mapper can tell it apart from a pattern
+    /// that genuinely cost nothing. The mapper is no longer where the fact is
+    /// destroyed; the COLUMN is. Widening it (plus the upsert's EMA, which
+    /// arithmetic on NULL would turn to NULL) is a separate change with its
+    /// own migration.
+    ///
+    /// So this test pins both halves: the constraint that makes the absence
+    /// unrepresentable today, and the real zero that must keep round-tripping
+    /// as `Some(0.0)` once it is.
+    #[test]
+    fn an_unrecorded_pattern_cost_is_unrepresentable_and_a_real_zero_round_trips() {
+        let (pool, persona_id) = setup();
+
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "unpriced",
+            "{}",
+            true,
+            0.0,
+            1_000.0,
+            "exec-1",
+        )
+        .unwrap();
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "free",
+            "{}",
+            true,
+            0.0,
+            1_000.0,
+            "exec-2",
+        )
+        .unwrap();
+
+        // The storage layer refuses the absence outright.
+        {
+            let conn = pool.conn("knowledge::test").unwrap();
+            let err = conn
+                .execute(
+                    "UPDATE execution_knowledge SET avg_cost_usd = NULL WHERE pattern_key = 'unpriced'",
+                    [],
+                )
+                .expect_err("avg_cost_usd is NOT NULL — if this now succeeds, widen this test");
+            assert!(
+                err.to_string().contains("NOT NULL"),
+                "expected a NOT NULL violation, got {err}"
+            );
+        }
+
+        let rows = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rows.len(), 2);
+        let by_key = |key: &str| {
+            rows.iter()
+                .find(|r| r.pattern_key == key)
+                .unwrap_or_else(|| panic!("missing {key}"))
+        };
+        // Both read as a real zero, because that is what is on disk. The
+        // mapper's `Option` is what makes the absence expressible the day the
+        // column allows it — it is not what makes it true today.
+        assert_eq!(by_key("unpriced").avg_cost_usd, Some(0.0));
+        assert_eq!(by_key("free").avg_cost_usd, Some(0.0));
+    }
+
+    /// The upsert is an exponential moving average (alpha = 0.2), not a
+    /// cumulative one, and it runs inside an IMMEDIATE transaction so the
+    /// `recentResults` read-modify-write cannot interleave with a concurrent
+    /// upsert of the same key. Both properties are asserted from the values
+    /// that come back out rather than from the SQL text.
+    ///
+    /// Seed 1.00, then a 0.00 sample: EMA gives 1.00*0.8 + 0.00*0.2 = 0.80.
+    /// A cumulative average would give 0.50, which is what this test would
+    /// have caught had it existed when the form changed.
+    #[test]
+    fn the_ema_upsert_round_trips_and_weights_the_recent_sample() {
+        let (pool, persona_id) = setup();
+
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "model_performance",
+            "sonnet",
+            "{}",
+            true,
+            1.00,
+            2_000.0,
+            "exec-1",
+        )
+        .unwrap();
+
+        let seeded = &list_for_persona(&pool, &persona_id, None, None).unwrap()[0];
+        assert_eq!(seeded.avg_cost_usd, Some(1.00));
+        assert_eq!(seeded.success_count, 1);
+        assert_eq!(seeded.failure_count, 0);
+
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "model_performance",
+            "sonnet",
+            "{}",
+            false,
+            0.00,
+            0.0,
+            "exec-2",
+        )
+        .unwrap();
+
+        let rows = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rows.len(), 1, "the unique key must upsert, not duplicate");
+        let row = &rows[0];
+        assert_eq!(row.success_count, 1);
+        assert_eq!(row.failure_count, 1);
+        let cost = row.avg_cost_usd.expect("a seeded cost is never unknown");
+        assert!(
+            (cost - 0.80).abs() < 1e-9,
+            "EMA(alpha=0.2) over 1.00 then 0.00 is 0.80, got {cost}"
+        );
+        assert!((row.avg_duration_ms - 1_600.0).abs() < 1e-9);
+        assert!((row.confidence - 0.80).abs() < 1e-9);
+
+        // The read-modify-write inside the IMMEDIATE transaction kept both
+        // outcomes in the sparkline, in order.
+        let recent: Vec<bool> = serde_json::from_str::<serde_json::Value>(&row.pattern_data)
+            .unwrap()
+            .get("recentResults")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .expect("recentResults must survive the merge");
+        assert_eq!(recent, vec![true, false]);
+        assert_eq!(row.last_execution_id.as_deref(), Some("exec-2"));
+    }
 }

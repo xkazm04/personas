@@ -310,7 +310,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         )}
 
         {/* Cost accrual overlay */}
-        {execution.cost_usd > 0 && !stored.loading && (
+        {execution.cost_usd != null && execution.cost_usd > 0 && !stored.loading && (
           <div className="border-t border-primary/10">
             <CostAccrualOverlay
               entries={trace.spans.filter(s => isPipelineStage(s.span_type))}

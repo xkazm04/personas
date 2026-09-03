@@ -21,7 +21,7 @@ pub struct ExecutionKnowledge {
     pub success_count: i64,
     #[ts(type = "number")]
     pub failure_count: i64,
-    pub avg_cost_usd: f64,
+    pub avg_cost_usd: Option<f64>,
     pub avg_duration_ms: f64,
     pub confidence: f64,
     pub last_execution_id: Option<String>,

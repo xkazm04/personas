@@ -30,7 +30,7 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
           <DollarSign className="w-2.5 h-2.5" /> {e.cost}
         </div>
         <div className="typo-code text-foreground/90">
-          {execution.cost_usd > 0 ? <>$<Numeric value={execution.cost_usd} precision={4} /></> : '-'}
+          {execution.cost_usd != null && execution.cost_usd > 0 ? <>$<Numeric value={execution.cost_usd} precision={4} /></> : '-'}
         </div>
       </div>
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">

@@ -1153,11 +1153,15 @@ pub fn gather_context(
 
     let latest_execution_id = recent.first().map(|e| e.id.clone());
 
-    let total_cost: f64 = recent.iter().map(|e| e.cost_usd).sum();
-    let avg_cost_usd = if total_executions > 0 {
-        total_cost / total_executions as f64
-    } else {
+    // Average over the runs that HAVE a recorded cost, not over all runs:
+    // dividing a real total by a denominator padded with unpriced runs
+    // reports a cheaper agent than the one that ran.
+    let priced_costs: Vec<f64> = recent.iter().filter_map(|e| e.cost_usd).collect();
+    let total_cost: f64 = priced_costs.iter().sum();
+    let avg_cost_usd = if priced_costs.is_empty() {
         0.0
+    } else {
+        total_cost / priced_costs.len() as f64
     };
 
     let days_since_last_run = recent.first().and_then(|e| {

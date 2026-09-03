@@ -38,7 +38,7 @@ export function fmtTokens(n: number, opts?: { withMillions?: boolean }): string 
  * exactly representable; `<` means "too small to show at this precision".
  * `formatCost` has known both of those since `formatters.ts:198`.
  */
-export function fmtCost(v: number, opts?: { precision?: 4 | 'auto' }): string {
+export function fmtCost(v: number | null | undefined, opts?: { precision?: 4 | 'auto' }): string {
   return formatCost(v, { precision: opts?.precision ?? 4 });
 }
 
@@ -119,7 +119,10 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
     }
   }
 
-  if (left.cost_usd > 0 && right.cost_usd > 0) {
+  // Both sides must HAVE a cost: comparing a recorded cost against an
+  // unrecorded one as if the latter were $0 reports a percentage that is not
+  // a fact about either run.
+  if (left.cost_usd != null && right.cost_usd != null && left.cost_usd > 0 && right.cost_usd > 0) {
     const costPct = pctChange(left.cost_usd, right.cost_usd);
     if (Math.abs(costPct) >= 10) {
       changes.push(

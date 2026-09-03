@@ -190,7 +190,10 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
   return (
     <div className="rounded-modal border border-primary/10 overflow-hidden">
       {rows.map((it) => {
-        const costDelta = it.newCost !== null ? it.newCost - it.origCost : null;
+        // No delta without BOTH costs: an unrecorded original is not a $0
+        // original, and subtracting from it would invent the whole saving.
+        const costDelta =
+          it.newCost !== null && it.origCost !== null ? it.newCost - it.origCost : null;
         const costTone = costDelta === null ? 'text-foreground' : deltaTone(costDelta, true);
         const canDrill = !!it.newExecutionId;
         return (
@@ -224,8 +227,8 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
             </div>
             <div className={`col-span-2 typo-code flex items-center ${costTone}`}>
               {it.newCost !== null
-                ? `${fmtCost(it.origCost)} → ${fmtCost(it.newCost)}`
-                : fmtCost(it.origCost)}
+                ? `${fmtCost(it.origCost ?? null)} → ${fmtCost(it.newCost)}`
+                : fmtCost(it.origCost ?? null)}
             </div>
             <div className="col-span-2 flex items-center justify-end">
               {canDrill && (

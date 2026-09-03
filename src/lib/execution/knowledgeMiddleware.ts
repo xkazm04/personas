@@ -30,7 +30,11 @@ function compileGuidance(entries: ExecutionKnowledge[]): string {
     lines.push('Preferred tool sequences:');
     for (const ts of toolSeqs.slice(0, 3)) {
       const rate = Math.round(ts.confidence * 100);
-      lines.push(`  - ${ts.pattern_key} (${rate}% success, avg $${ts.avg_cost_usd.toFixed(4)})`);
+      // Say "cost unknown" rather than "$0.0000": the line is read by the
+      // model and a fabricated zero is a fact it will reason from.
+      const cost =
+        ts.avg_cost_usd != null ? `avg $${ts.avg_cost_usd.toFixed(4)}` : 'cost unknown';
+      lines.push(`  - ${ts.pattern_key} (${rate}% success, ${cost})`);
     }
   }
 

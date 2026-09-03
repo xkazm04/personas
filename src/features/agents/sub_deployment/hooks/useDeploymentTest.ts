@@ -4,7 +4,8 @@ import { executePersona } from '@/api/agents/executions';
 export interface TestResult {
   status: 'pass' | 'fail';
   durationMs: number | null;
-  costUsd: number;
+  /** `null` when the run's cost was never recorded — not the same as free. */
+  costUsd: number | null;
   error?: string;
 }
 

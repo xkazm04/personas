@@ -114,7 +114,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
               <span className="typo-body text-foreground flex-1 truncate">
                 {formatRelativeTime(exec.created_at)}
               </span>
-              {exec.cost_usd > 0 && (
+              {exec.cost_usd != null && exec.cost_usd > 0 && (
                 <span className="typo-data text-foreground flex-shrink-0">
                   $<Numeric value={exec.cost_usd} precision={4} />
                 </span>

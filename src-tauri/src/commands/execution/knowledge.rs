@@ -139,7 +139,7 @@ pub fn seed_mock_knowledge(
             pattern_data: pattern_data.to_string(),
             success_count,
             failure_count,
-            avg_cost_usd: avg_cost,
+            avg_cost_usd: Some(avg_cost),
             avg_duration_ms: avg_duration,
             confidence,
             last_execution_id: None,

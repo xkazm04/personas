@@ -200,7 +200,7 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
   const durationLabel = execution.duration_ms != null
     ? tx(t.schedules.run_duration, { ms: execution.duration_ms })
     : null;
-  const costLabel = execution.cost_usd > 0
+  const costLabel = execution.cost_usd != null && execution.cost_usd > 0
     ? tx(t.schedules.run_cost_usd, { cost: execution.cost_usd.toFixed(4) })
     : null;
 

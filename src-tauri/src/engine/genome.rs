@@ -519,11 +519,18 @@ pub fn compute_fitness(
     let mut total_cost: f64 = 0.0;
     let mut total_duration: f64 = 0.0;
     let mut count: i64 = 0;
+    // Cost gets its own denominator: an entry with no recorded cost is not an
+    // entry that cost nothing, and averaging it in as 0.0 would score a
+    // genome as cheap on the strength of missing data.
+    let mut priced_count: i64 = 0;
 
     for entry in &entries {
         total_success += entry.success_count;
         total_failure += entry.failure_count;
-        total_cost += entry.avg_cost_usd;
+        if let Some(cost) = entry.avg_cost_usd {
+            total_cost += cost;
+            priced_count += 1;
+        }
         total_duration += entry.avg_duration_ms;
         count += 1;
     }
@@ -535,8 +542,8 @@ pub fn compute_fitness(
         0.0
     };
 
-    let avg_cost = if count > 0 {
-        total_cost / count as f64
+    let avg_cost = if priced_count > 0 {
+        total_cost / priced_count as f64
     } else {
         0.0
     };

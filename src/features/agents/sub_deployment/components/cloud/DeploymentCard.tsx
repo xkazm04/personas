@@ -194,7 +194,7 @@ export function DeploymentCard({
             {testResult.durationMs != null && (
               <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
             )}
-            {testResult.costUsd > 0 && (
+            {testResult.costUsd != null && testResult.costUsd > 0 && (
               <Numeric value={testResult.costUsd} unit="usd" className="text-foreground" />
             )}
             {testResult.error && (

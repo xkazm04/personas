@@ -100,7 +100,9 @@ export function useQuickStats(personaId: string | undefined) {
 
     const withCost = executions.filter((e) => e.cost_usd != null && e.cost_usd > 0);
     const avgCostPerRun = withCost.length > 0
-      ? withCost.reduce((sum, e) => sum + e.cost_usd, 0) / withCost.length
+      // `withCost` already excludes null and zero, so the coalesce is
+      // unreachable — it is here because the filter does not narrow the type.
+      ? withCost.reduce((sum, e) => sum + (e.cost_usd ?? 0), 0) / withCost.length
       : 0;
 
     const sorted = [...executions].sort((a, b) => {

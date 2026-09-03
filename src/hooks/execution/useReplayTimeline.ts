@@ -300,7 +300,9 @@ export function useReplayTimeline(
   toolStepsJson: ToolCallStep[] | null,
   logContent: string | null,
   durationMs: number | null,
-  totalCost: number,
+  /** `null` when the run's cost was never recorded — the accrual has no
+   *  denominator and the cost panel says so rather than showing $0.00. */
+  totalCost: number | null,
 ): [ReplayState, ReplayActions] {
   // A cancelled run has `duration_ms == null`, and the Replay tab was offered
   // for it anyway — opening onto an empty terminal, a dead scrubber and a
@@ -364,7 +366,10 @@ export function useReplayTimeline(
 
   // Proportional cost accumulation
   const accumulatedCost = useMemo(() => {
-    if (totalMs <= 0 || totalCost <= 0) return 0;
+    // No recorded total means nothing to accrue against — 0 here is the
+    // accumulator's own "nothing yet", not a claim the run was free (the
+    // cost panel renders the absence separately).
+    if (totalMs <= 0 || totalCost == null || totalCost <= 0) return 0;
     // Weight cost by tool step completion
     if (toolSteps.length === 0) return (currentMs / totalMs) * totalCost;
     const completedFraction = completedSteps.length / toolSteps.length;

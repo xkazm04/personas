@@ -227,7 +227,12 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         thinking_level: row.get("thinking_level").unwrap_or(None),
         input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
         output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
-        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
+        // `None` when the run's cost was never recorded (a NULL column, or a
+        // value the lenient read could not parse). Unknown money is not zero
+        // money: collapsing it here made a total that silently omits a call
+        // indistinguishable from one that includes a free call. The consumer
+        // states the absence (census rule `unknown-money-as-zero`).
+        cost_usd: coerce_f64(row, "cost_usd")?,
         cache_read_tokens: coerce_i64(row, "cache_read_tokens")?.unwrap_or(0),
         cache_creation_tokens: coerce_i64(row, "cache_creation_tokens")?.unwrap_or(0),
         error_message: row.get("error_message")?,
@@ -255,10 +260,10 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
 /// other two mappers use — a count nobody can parse is 0, not a dead page (see
 /// the "Lenient numeric reads" block above).
 ///
-/// `cost_usd` is the exception and stays `Option<f64>`: unknown money is not
-/// zero money. The other two mappers `unwrap_or(0.0)` here and destroy a NULL
-/// the nullable column was holding correctly; this one carries it to the
-/// consumer, which renders the absence rather than a fabricated $0.
+/// `cost_usd` stays `Option<f64>`: unknown money is not zero money. This
+/// mapper was the first to keep the NULL the nullable column holds; the two
+/// beside it `unwrap_or(0.0)`-ed it away until they were brought in line, and
+/// all three now carry the absence to the consumer rather than a fabricated $0.
 fn row_to_global_list_item(row: &Row) -> rusqlite::Result<GlobalExecutionListItem> {
     Ok(GlobalExecutionListItem {
         id: row.get("id")?,
@@ -286,7 +291,12 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
         status: row.get("status")?,
         input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
         output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
-        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
+        // `None` when the run's cost was never recorded (a NULL column, or a
+        // value the lenient read could not parse). Unknown money is not zero
+        // money: collapsing it here made a total that silently omits a call
+        // indistinguishable from one that includes a free call. The consumer
+        // states the absence (census rule `unknown-money-as-zero`).
+        cost_usd: coerce_f64(row, "cost_usd")?,
         error_message: row.get("error_message")?,
         duration_ms: coerce_i64(row, "duration_ms")?,
         retry_of_execution_id: row.get("retry_of_execution_id")?,
@@ -2536,7 +2546,9 @@ mod tests {
         assert_eq!(exec.cache_read_tokens, 0, "'mock' is not a token count");
         assert_eq!(exec.cache_creation_tokens, 0, "a timestamp is not a count");
         assert_eq!(exec.output_tokens, 0);
-        assert_eq!(exec.cost_usd, 0.0);
+        // Text that is not a number is 0, not unknown: the lenient read
+        // produced a value, it just could not parse the one that was stored.
+        assert_eq!(exec.cost_usd, Some(0.0));
         assert_eq!(exec.duration_ms, Some(0));
         assert_eq!(exec.retry_count, 0);
         assert!(!exec.log_truncated, "corrupt text is never truth");
@@ -2801,9 +2813,9 @@ mod tests {
         let conn = pool.conn("executions::test").unwrap();
         let index_exists: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM sqlite_master                  WHERE type = 'index' AND name = 'idx_pe_persona_created_id'",
+                "SELECT COUNT(*) AS n FROM sqlite_master                  WHERE type = 'index' AND name = 'idx_pe_persona_created_id'",
                 [],
-                |row| row.get(0),
+                |row| row.get("n"),
             )
             .unwrap();
         assert_eq!(
@@ -2877,6 +2889,69 @@ mod tests {
             "SELECT {RUNNING_COLUMNS} FROM persona_executions LIMIT 0"
         ))
         .unwrap_or_else(|e| panic!("running projection does not match schema: {e}"));
+    }
+
+    /// Unrecorded cost must survive every mapper as `None`, and a REAL zero
+    /// must survive as `Some(0.0)`. Until this commit `row_to_execution` and
+    /// `row_to_execution_list_item` both `unwrap_or(0.0)`-ed the NULL away, so
+    /// the two facts — "this run cost nothing" and "nobody knows what this run
+    /// cost" — arrived at the consumer identical.
+    ///
+    /// The NULL rate on the 2026-06-02 snapshot is 0/315, so this is a lock-in
+    /// rather than a live bug: the column is nullable, every write path can
+    /// leave it unset, and the mappers were the reason nobody could tell.
+    #[test]
+    fn an_unrecorded_cost_reads_as_unknown_and_a_real_zero_reads_as_zero() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Cost Mapper Agent");
+        let unpriced = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let free = create(&pool, &persona_id, None, None, None, None).unwrap();
+
+        {
+            let conn = pool.conn("executions::test").unwrap();
+            // A fresh row's cost is NULL; make the second one an explicit zero.
+            conn.execute(
+                "UPDATE persona_executions SET cost_usd = NULL WHERE id = ?1",
+                params![unpriced.id],
+            )
+            .unwrap();
+            conn.execute(
+                "UPDATE persona_executions SET cost_usd = 0.0 WHERE id = ?1",
+                params![free.id],
+            )
+            .unwrap();
+        }
+
+        // row_to_execution
+        assert_eq!(get_by_id(&pool, &unpriced.id).unwrap().cost_usd, None);
+        assert_eq!(get_by_id(&pool, &free.id).unwrap().cost_usd, Some(0.0));
+
+        // row_to_execution_list_item
+        let items = list_items_by_persona_id(&pool, &persona_id, None, None).unwrap();
+        let by_id = |id: &str| {
+            items
+                .iter()
+                .find(|i| i.id == id)
+                .unwrap_or_else(|| panic!("missing {id}"))
+        };
+        assert_eq!(by_id(&unpriced.id).cost_usd, None);
+        assert_eq!(by_id(&free.id).cost_usd, Some(0.0));
+
+        // row_to_global_list_item — already Option before this commit; asserted
+        // here so all three mappers are gated in one place.
+        let global = list_global_items(&pool, None, None, None, None, None).unwrap();
+        assert_eq!(
+            global
+                .iter()
+                .find(|i| i.id == unpriced.id)
+                .unwrap()
+                .cost_usd,
+            None
+        );
+        assert_eq!(
+            global.iter().find(|i| i.id == free.id).unwrap().cost_usd,
+            Some(0.0)
+        );
     }
 
     /// The measurement behind this change, run rather than asserted from
@@ -3133,7 +3208,7 @@ mod tests {
         assert_eq!(completed.duration_ms, Some(1500));
         assert_eq!(completed.input_tokens, 100);
         assert_eq!(completed.output_tokens, 200);
-        assert!((completed.cost_usd - 0.005).abs() < f64::EPSILON);
+        assert!((completed.cost_usd.unwrap() - 0.005).abs() < f64::EPSILON);
         assert!(completed.completed_at.is_some());
 
         // Get recent
