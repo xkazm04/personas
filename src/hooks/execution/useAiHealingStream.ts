@@ -7,6 +7,7 @@ import {
 } from '@/lib/validation/eventPayloads';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
+import { createCliStreamBuffer } from './cliStreamBuffer';
 
 export type AiHealingPhase =
   | 'idle'
@@ -92,6 +93,24 @@ export function useAiHealingStream(personaId: string): AiHealingState {
     let mounted = true;
     const pendingListeners: Promise<UnlistenFn>[] = [];
 
+    // Same per-frame batching the correlated CLI stream uses: a healing run
+    // streams its diagnosis line by line, and each Tauri event is its own
+    // task, so React cannot batch these `setState` calls itself. Adjacent
+    // duplicates are deliberately NOT suppressed here -- unlike the CLI
+    // stream, this log has always kept repeated lines.
+    const buffer = createCliStreamBuffer({
+      maxHeld: MAX_LINES,
+      onBatch: (batch) => {
+        if (!mounted) return;
+        setState((prev) => {
+          const merged = prev.lines.concat(batch);
+          const lines =
+            merged.length > MAX_LINES ? merged.slice(merged.length - MAX_LINES) : merged;
+          return { ...prev, lines, lastLine: lines[lines.length - 1] ?? prev.lastLine };
+        });
+      },
+    });
+
     const outputPromise = listen<Record<string, unknown>>(
       EventName.AI_HEALING_OUTPUT,
       (event) => {
@@ -109,13 +128,7 @@ export function useAiHealingStream(personaId: string): AiHealingState {
             ? rawLine.slice(0, MAX_LINE_LENGTH) + '...[truncated]'
             : rawLine;
 
-        setState((prev) => {
-          const lines =
-            prev.lines.length >= MAX_LINES
-              ? [...prev.lines.slice(prev.lines.length - MAX_LINES + 1), line]
-              : [...prev.lines, line];
-          return { ...prev, lines, lastLine: line };
-        });
+        buffer.push(line);
       },
     );
     pendingListeners.push(outputPromise);
@@ -128,6 +141,10 @@ export function useAiHealingStream(personaId: string): AiHealingState {
         const validated = validatePayload(EventName.AI_HEALING_STATUS, raw, HealingStatusSchema);
         if (!validated) return;
         if (validated.persona_id !== personaIdRef.current) return;
+
+        // A phase change is the end of a thought: deliver the lines that
+        // explain it before the phase that summarises them.
+        buffer.flushNow();
 
         const phase = toAiHealingPhase(validated.phase);
         if (phase === null) {
@@ -152,8 +169,14 @@ export function useAiHealingStream(personaId: string): AiHealingState {
     );
     pendingListeners.push(statusPromise);
 
+    // Release anything that landed while the two registrations were in flight.
+    void Promise.allSettled(pendingListeners).then(() => {
+      if (mounted) buffer.arm();
+    });
+
     return () => {
       mounted = false;
+      buffer.dispose();
       // Await any still-pending listener registrations, then tear them all down.
       // Use allSettled so one rejected registration doesn't prevent cleanup of others.
       void Promise.allSettled(pendingListeners).then((results) => {

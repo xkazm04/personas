@@ -11,9 +11,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
+import { flushCliStreamFrames } from '@/hooks/execution/cliStreamBuffer';
 import {
   installTauriEventEmitter,
-  emitTauriEvent,
+  emitTauriEvent as emitTauriEventRaw,
   teardownTauriEventEmitter,
 } from '../helpers/tauriEventEmitter';
 import {
@@ -28,6 +29,20 @@ beforeEach(() => {
 afterEach(() => {
   teardownTauriEventEmitter();
 });
+
+/**
+ * Emit a Tauri event, then drain the healing stream's per-frame batch.
+ *
+ * The hook hands its lines to React once per animation frame (one render per
+ * frame instead of one per event), so a synchronous assertion right after an
+ * emit would otherwise run before the batch is delivered. These tests wait
+ * for the flush rather than being weakened to accommodate it -- every
+ * assertion below is unchanged.
+ */
+function emitTauriEvent(eventName: string, payload: Record<string, unknown>): void {
+  emitTauriEventRaw(eventName, payload);
+  flushCliStreamFrames();
+}
 
 // ===========================================================================
 // 1. Initial state

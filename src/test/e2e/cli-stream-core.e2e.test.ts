@@ -10,9 +10,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import { flushCliStreamFrames } from '@/hooks/execution/cliStreamBuffer';
 import {
   installTauriEventEmitter,
-  emitTauriEvent,
+  emitTauriEvent as emitTauriEventRaw,
   listenerCount,
   teardownTauriEventEmitter,
 } from '../helpers/tauriEventEmitter';
@@ -40,6 +41,22 @@ beforeEach(() => {
 afterEach(() => {
   teardownTauriEventEmitter();
 });
+
+/**
+ * Emit a Tauri event, then drain `useCorrelatedCliStream`'s per-frame batch.
+ *
+ * The hook collects output lines and hands them to React once per animation
+ * frame (one render per frame instead of one per event). A synchronous
+ * assertion right after an emit therefore runs BEFORE the batch is delivered.
+ * These tests are not weakened to accommodate that -- they wait for the flush,
+ * which in a test means draining it deterministically instead of waiting on a
+ * real animation frame. Every assertion below is unchanged.
+ */
+function emitTauriEvent(eventName: string, payload: Record<string, unknown>): void {
+  emitTauriEventRaw(eventName, payload);
+  flushCliStreamFrames();
+}
+
 
 // ===========================================================================
 // 1. Full lifecycle: idle -> running -> lines -> completed

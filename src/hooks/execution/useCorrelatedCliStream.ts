@@ -11,6 +11,11 @@ import {
   parseExecutionState,
   type ExecutionState,
 } from '@/lib/execution/executionState';
+import {
+  appendCappedLines,
+  createCliStreamBuffer,
+  type CliStreamBuffer,
+} from './cliStreamBuffer';
 
 /**
  * Phase of a correlated CLI run.
@@ -102,7 +107,9 @@ export function useCorrelatedCliStream({
   const [runId, setRunId] = useState<string | null>(null);
   const [phase, setPhase] = useState<CliRunPhase>('idle');
   const [lines, setLines] = useState<string[]>([]);
+  const [earlyDroppedCount, setEarlyDroppedCount] = useState(0);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
+  const bufferRef = useRef<CliStreamBuffer | null>(null);
 
   // Capture bufferLines in a ref so the listener closure always sees the latest
   // value without recreating the `start` callback.
@@ -125,6 +132,8 @@ export function useCorrelatedCliStream({
       unlisten();
     }
     unlistenersRef.current = [];
+    bufferRef.current?.dispose();
+    bufferRef.current = null;
   }, []);
 
   const start = useCallback(
@@ -133,8 +142,29 @@ export function useCorrelatedCliStream({
       setRunId(nextRunId);
       setLines([]);
       setPhase('running');
+      setEarlyDroppedCount(0);
 
-      const unlistenOutput = await listen<Record<string, unknown>>(outputEvent, (event) => {
+      // One `setLines` per animation frame instead of one per event. Each
+      // Tauri event is its own task, so React 19 cannot batch them itself:
+      // before this, a 1,000-line burst was 1,000 renders and -- at the
+      // MAX_STREAM_LINES cap -- 1,000 full-array copies.
+      const buffer = createCliStreamBuffer({
+        maxHeld: MAX_STREAM_LINES,
+        onBatch: (batch) => {
+          if (bufferLinesRef.current) {
+            setLines((prev) => appendCappedLines(prev, batch, MAX_STREAM_LINES));
+          }
+          const onLine = onOutputLineRef.current;
+          if (onLine) {
+            for (const line of batch) onLine(line);
+          }
+          const dropped = buffer.earlyDroppedCount();
+          setEarlyDroppedCount((prev) => (prev === dropped ? prev : dropped));
+        },
+      });
+      bufferRef.current = buffer;
+
+      const unlistenOutputPromise = listen<Record<string, unknown>>(outputEvent, (event) => {
         const raw = event.payload ?? {};
         if (String(raw[idField] ?? '') !== nextRunId) return;
 
@@ -146,24 +176,14 @@ export function useCorrelatedCliStream({
           const line = rawLine.length > MAX_STREAM_LINE_LENGTH
             ? rawLine.slice(0, MAX_STREAM_LINE_LENGTH) + '...[truncated]'
             : rawLine;
-          if (bufferLinesRef.current) {
-            setLines((prev) => {
-              if (prev[prev.length - 1] === line) {
-                return prev;
-              }
-              if (prev.length >= MAX_STREAM_LINES) {
-                const trimmed = prev.slice(prev.length - MAX_STREAM_LINES + 1);
-                trimmed.push(line);
-                return trimmed;
-              }
-              return [...prev, line];
-            });
-          }
-          onOutputLineRef.current?.(line);
+          // Both the state buffer and the `onOutputLine` fan-out are served
+          // from the frame batch, so a consumer piping into an external store
+          // is batched too.
+          buffer.push(line);
         }
       });
 
-      const unlistenStatus = await listen<Record<string, unknown>>(statusEvent, (event) => {
+      const unlistenStatusPromise = listen<Record<string, unknown>>(statusEvent, (event) => {
         const raw = event.payload ?? {};
         if (String(raw[idField] ?? '') !== nextRunId) return;
 
@@ -171,6 +191,10 @@ export function useCorrelatedCliStream({
         if (!validated) return;
 
         const nextPhase = toCliRunPhase(validated.status);
+        // A terminal status must not overtake the lines that explain it: the
+        // frame batch is delivered first, so the render that shows "failed"
+        // already has the output the failure was written into.
+        if (isTerminalState(nextPhase)) buffer.flushNow();
         setPhase(nextPhase);
 
         // `onFailed` stays scoped to a real failure: it is the door consumers
@@ -186,7 +210,18 @@ export function useCorrelatedCliStream({
         onStatusEventRef.current?.(raw);
       });
 
+      // Concurrently, not one after the other: each registration is an IPC
+      // round trip, and anything the backend emits before they resolve is
+      // gone before the frontend can see it. Two sequential awaits made that
+      // window twice as wide as it needed to be.
+      const [unlistenOutput, unlistenStatus] = await Promise.all([
+        unlistenOutputPromise,
+        unlistenStatusPromise,
+      ]);
+
       unlistenersRef.current = [unlistenOutput, unlistenStatus];
+      // Release anything that landed while the registrations were in flight.
+      buffer.arm();
     },
     [cleanup, idField, outputEvent, statusEvent],
   );
@@ -196,6 +231,7 @@ export function useCorrelatedCliStream({
     setRunId(null);
     setLines([]);
     setPhase('idle');
+    setEarlyDroppedCount(0);
   }, [cleanup]);
 
   useEffect(() => {
@@ -204,6 +240,8 @@ export function useCorrelatedCliStream({
         unlisten();
       }
       unlistenersRef.current = [];
+      bufferRef.current?.dispose();
+      bufferRef.current = null;
     };
   }, []);
 
@@ -211,6 +249,12 @@ export function useCorrelatedCliStream({
     runId,
     phase,
     lines,
+    /**
+     * Lines the hold buffer could not keep while the listeners were being
+     * registered -- the same signal `createSingletonListener` reports as
+     * `earlyDroppedCount`. Reset by `start()` and `reset()`.
+     */
+    earlyDroppedCount,
     setLines,
     setPhase,
     start,
