@@ -101,6 +101,15 @@ pub fn set_chain_trace_id(
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
+///
+/// Served by `idx_et_chain_created` (`chain_trace_id, created_at` — migration
+/// `execution_traces_chain_created_index`), which satisfies BOTH the equality
+/// and the ordering. It is not an optional nicety: with only the single-column
+/// `idx_et_chain`, SQLite had to sort every matching row, and on the live
+/// database it abandoned that index altogether for
+/// `SCAN execution_traces USING INDEX idx_et_created` — reading all 2,942 rows
+/// and their 28.1 MB of `spans` JSON to answer a handful-of-rows question.
+/// `chain_trace_ordering_plan_is_a_search_without_a_temp_sort` is the gate.
 pub fn get_by_chain_trace_id(
     pool: &DbPool,
     chain_trace_id: &str,
@@ -138,8 +147,12 @@ pub fn get_by_chain_trace_id(
 }
 
 /// Count the traces already saved under a `chain_trace_id` — i.e. how many
-/// executions (links) this chain has spawned so far. Cheap: `chain_trace_id` is
-/// indexed (`idx_et_chain`), so this is an index-only `COUNT(*)`. Used by the
+/// executions (links) this chain has spawned so far. Cheap — and unlike the
+/// LIST above, genuinely cheap on the single-column index: `idx_et_chain`
+/// covers this `COUNT(*)` because no column outside the index is read and
+/// there is no ORDER BY to satisfy. The list query needs
+/// `idx_et_chain_created`; do not read this sentence as covering it, which is
+/// what the previous wording invited. Used by the
 /// cascade evaluator's fan-out BREADTH guard (the depth ceiling bounds path
 /// length; this bounds total width). Counting traces is preferred over counting
 /// the chain EVENTS because events store their trace id only inside the payload
@@ -214,6 +227,56 @@ mod tests {
         assert!(group
             .iter()
             .all(|t| t.chain_trace_id.as_deref() == Some("chain-A")));
+    }
+
+    /// The chain trace read must SEARCH, not SCAN, and must not sort.
+    ///
+    /// Measured on the live database before `idx_et_chain_created` existed:
+    /// `SCAN execution_traces USING INDEX idx_et_created` over 2,942 rows and
+    /// 28.1 MB of `spans` JSON, because `ORDER BY created_at` made the planner
+    /// walk away from the single-column `idx_et_chain`. This asserts the plan
+    /// itself rather than a timing, so it fails the day the index is dropped
+    /// or the ORDER BY drifts off the index's second column.
+    #[test]
+    fn chain_trace_ordering_plan_is_a_search_without_a_temp_sort() {
+        let pool = init_test_db().unwrap();
+        save(
+            &pool,
+            &make_trace("e1", "p", Some("chain-A"), "2026-07-10T00:00:01Z"),
+        )
+        .unwrap();
+
+        let conn = pool.conn("traces::test").unwrap();
+        let plan: Vec<String> = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN
+                 SELECT trace_id, execution_id, persona_id, chain_trace_id, spans,
+                        total_duration_ms, evicted_span_count, created_at
+                 FROM execution_traces WHERE chain_trace_id = ?1 ORDER BY created_at ASC",
+            )
+            .unwrap()
+            .query_map(params!["chain-A"], |row| row.get::<_, String>("detail"))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        let plan_text = plan.join(" | ");
+
+        assert!(
+            plan_text.contains("SEARCH execution_traces"),
+            "the chain read must SEARCH the index, got: {plan_text}"
+        );
+        assert!(
+            !plan_text.contains("SCAN execution_traces"),
+            "the chain read must not scan the table, got: {plan_text}"
+        );
+        assert!(
+            plan_text.contains("idx_et_chain_created"),
+            "the composite (chain_trace_id, created_at) index must be the one chosen: {plan_text}"
+        );
+        assert!(
+            !plan_text.to_uppercase().contains("TEMP B-TREE"),
+            "the index must satisfy ORDER BY created_at without a sort: {plan_text}"
+        );
     }
 
     #[test]

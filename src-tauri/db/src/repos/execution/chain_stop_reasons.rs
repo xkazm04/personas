@@ -180,6 +180,48 @@ mod tests {
         assert!(rows[1].detail.as_deref().unwrap().contains("limit 8"));
     }
 
+    /// Same gate as `traces::chain_trace_ordering_plan_is_a_search_without_a_temp_sort`:
+    /// `idx_csr_chain` stops at `chain_trace_id`, so `ORDER BY created_at ASC`
+    /// cost a `USE TEMP B-TREE FOR ORDER BY` over every row of the chain.
+    /// `idx_csr_chain_created` satisfies both halves.
+    #[test]
+    fn chain_stop_reason_ordering_plan_needs_no_temp_sort() {
+        let pool = init_test_db().unwrap();
+        record(
+            &pool,
+            input("chain-A", "exec-1", stop_reason::CYCLE_DETECTED, 1),
+        )
+        .unwrap();
+
+        let conn = pool.conn("chain_stop_reasons::test").unwrap();
+        let plan: Vec<String> = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN
+                 SELECT id, chain_trace_id, link_execution_id, trigger_id, target_persona_id,
+                        reason_token, detail, chain_depth, created_at
+                 FROM chain_stop_reasons WHERE chain_trace_id = ?1 ORDER BY created_at ASC",
+            )
+            .unwrap()
+            .query_map(params!["chain-A"], |row| row.get::<_, String>("detail"))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        let plan_text = plan.join(" | ");
+
+        assert!(
+            plan_text.contains("SEARCH chain_stop_reasons"),
+            "the stop-reason read must SEARCH the index, got: {plan_text}"
+        );
+        assert!(
+            plan_text.contains("idx_csr_chain_created"),
+            "the composite (chain_trace_id, created_at) index must be chosen: {plan_text}"
+        );
+        assert!(
+            !plan_text.to_uppercase().contains("TEMP B-TREE"),
+            "the index must satisfy ORDER BY created_at without a sort: {plan_text}"
+        );
+    }
+
     #[test]
     fn empty_when_no_rows() {
         let pool = init_test_db().unwrap();
