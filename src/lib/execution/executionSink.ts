@@ -34,6 +34,21 @@ function formatTruncationNotice(totalBytes: number): string {
   return `${OUTPUT_TRUNCATION_HEADER} (${mb} MB received)`;
 }
 
+/**
+ * The line-count twin of `formatTruncationNotice`. The ring evicts its oldest
+ * lines silently once a run passes MAX_TERMINAL_LINES, so a 12,000-line run's
+ * terminal simply starts at line 2,001, mid-sentence, with nothing saying why.
+ * Synthesised at the HEAD of the emitted output (see `ringOutput`) rather than
+ * pushed into the ring, so it can never consume a slot of the very budget it
+ * is reporting on.
+ */
+function formatDroppedLinesNotice(droppedLines: number): string {
+  const dropped = droppedLines.toLocaleString('en-US');
+  const kept = MAX_TERMINAL_LINES.toLocaleString('en-US');
+  const plural = droppedLines === 1 ? 'line' : 'lines';
+  return `[SYSTEM] Terminal buffer full — ${dropped} earlier ${plural} dropped. Showing the most recent ${kept} lines below.`;
+}
+
 // ---------------------------------------------------------------------------
 // Ring buffer -- fixed-capacity store for terminal lines with O(1) append/evict
 // ---------------------------------------------------------------------------
@@ -112,6 +127,12 @@ export interface ExecutionOutputProjections {
   meaningfulTail: string[];
   /** Most recent line, or '' if none. */
   lastLine: string;
+  /**
+   * How many lines the `MAX_TERMINAL_LINES` ring has evicted this execution.
+   * 0 means the terminal is showing every line the run produced. Disclosed to
+   * the user by the head notice `ringOutput` synthesises.
+   */
+  droppedLines: number;
 }
 
 /** Called by the sink to push flushed output into the Zustand store. */
@@ -144,6 +165,8 @@ export class ExecutionSink {
   // for the tail/truncated-mode cold path) --------------------------------
   private meaningfulTail: string[] = [];
   private lastLine = '';
+  /** Lines evicted from the main ring this execution (line-count truncation). */
+  private droppedLines = 0;
 
   /** Bind the flush callback. Called once when the slice is created. */
   bind(callback: SinkFlushCallback): void {
@@ -190,7 +213,7 @@ export class ExecutionSink {
 
     if (this.normalFlushScheduled) {
       this.lastNormalFlushTime = Date.now();
-      this.onFlush(this.ring.toArray(), this.totalBytes, this.currentProjections());
+      this.onFlush(this.ringOutput(), this.totalBytes, this.currentProjections());
     }
   }
 
@@ -228,6 +251,7 @@ export class ExecutionSink {
     this.tailRing.clear();
     this.meaningfulTail = [];
     this.lastLine = '';
+    this.droppedLines = 0;
   }
 
   /**
@@ -236,13 +260,14 @@ export class ExecutionSink {
    * active). Used by `globalThis.__executionBufferProbe__` to detect regressions
    * in long-running sessions.
    */
-  probe(): { ringLines: number; tailLines: number; totalBytes: number; spilled: boolean; capacity: number } {
+  probe(): { ringLines: number; tailLines: number; totalBytes: number; spilled: boolean; capacity: number; droppedLines: number } {
     return {
       ringLines: this.ring.count,
       tailLines: this.tailRing.count,
       totalBytes: this.totalBytes,
       spilled: this.truncated,
       capacity: MAX_TERMINAL_LINES,
+      droppedLines: this.droppedLines,
     };
   }
 
@@ -272,7 +297,7 @@ export class ExecutionSink {
     // Normal mode -- push to main ring, then advance the incremental
     // projections by the same delta so they never need to rescan the whole
     // buffer.
-    this.ring.pushMany(linesToFlush);
+    this.droppedLines += this.ring.pushMany(linesToFlush).length;
     this.applyProjectionDelta(linesToFlush);
 
     // Check if we just crossed the byte budget
@@ -281,8 +306,8 @@ export class ExecutionSink {
       // Freeze the main ring snapshot and start tail mode. This is a cold,
       // rare-once path -- recompute projections fully rather than reconcile
       // the incremental state against the reshaped (header + tail) output.
-      this.ring.pushMany([formatTruncationNotice(this.totalBytes)]);
-      const output = this.ring.toArray();
+      this.droppedLines += this.ring.pushMany([formatTruncationNotice(this.totalBytes)]).length;
+      const output = this.ringOutput();
       this.onFlush(output, this.totalBytes, this.recomputeProjections(output));
       return;
     }
@@ -311,7 +336,20 @@ export class ExecutionSink {
     return {
       meaningfulTail: this.meaningfulTail.slice(),
       lastLine: this.lastLine,
+      droppedLines: this.droppedLines,
     };
+  }
+
+  /**
+   * The main ring's snapshot as consumers see it: the raw lines, preceded by
+   * the line-eviction notice once anything has been dropped. The notice is
+   * synthesised here, at the read boundary, so it costs no ring slot and is
+   * not re-appended on every flush.
+   */
+  private ringOutput(): string[] {
+    const lines = this.ring.toArray();
+    if (this.droppedLines === 0) return lines;
+    return [formatDroppedLinesNotice(this.droppedLines), ...lines];
   }
 
   /**
@@ -328,7 +366,7 @@ export class ExecutionSink {
         if (meaningfulTail.length > MEANINGFUL_TAIL_SIZE) meaningfulTail.shift();
       }
     }
-    return { meaningfulTail, lastLine: lines[lines.length - 1] ?? '' };
+    return { meaningfulTail, lastLine: lines[lines.length - 1] ?? '', droppedLines: this.droppedLines };
   }
 
   /**
@@ -356,7 +394,7 @@ export class ExecutionSink {
       if (this.truncated) return;
 
       this.lastNormalFlushTime = Date.now();
-      this.onFlush(this.ring.toArray(), this.totalBytes, this.currentProjections());
+      this.onFlush(this.ringOutput(), this.totalBytes, this.currentProjections());
     };
 
     if (delay === 0) {

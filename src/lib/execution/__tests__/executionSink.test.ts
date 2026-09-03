@@ -29,6 +29,7 @@ function makeSink() {
       projections: {
         meaningfulTail: projections.meaningfulTail.slice(),
         lastLine: projections.lastLine,
+        droppedLines: projections.droppedLines,
       },
     });
   });
@@ -99,7 +100,7 @@ describe("ExecutionSink incremental projections", () => {
     assertProjectionsMatchOutput(last);
   });
 
-  it("evicts text lines from the projection once they fall out of the 10k-line ring window", () => {
+  it("evicts the oldest lines once they fall out of the 10k-line ring window, and counts + discloses the eviction", () => {
     const { sink, flushes } = makeSink();
     const total = MAX_TERMINAL_LINES + 50;
     const allLines = Array.from({ length: total }, (_, i) =>
@@ -112,9 +113,53 @@ describe("ExecutionSink incremental projections", () => {
     }
 
     const last = flushes[flushes.length - 1]!;
-    expect(last.output).toHaveLength(MAX_TERMINAL_LINES);
-    expect(last.output).toEqual(allLines.slice(-MAX_TERMINAL_LINES));
+    expect(last.projections.droppedLines).toBe(50);
+    expect(sink.probe().droppedLines).toBe(50);
+    // The notice is synthesised at the head, so the ring still holds a full
+    // MAX_TERMINAL_LINES of real output -- the disclosure costs no slot.
+    expect(last.output[0]).toBe(
+      "[SYSTEM] Terminal buffer full — 50 earlier lines dropped. Showing the most recent 10,000 lines below.",
+    );
+    expect(last.output).toHaveLength(MAX_TERMINAL_LINES + 1);
+    expect(last.output.slice(1)).toEqual(allLines.slice(-MAX_TERMINAL_LINES));
     assertProjectionsMatchOutput(last);
+  });
+
+  it("a 12,000-line run reports 2,000 dropped lines and says so at the head of the output", () => {
+    const { sink, flushes } = makeSink();
+    const allLines = Array.from({ length: 12_000 }, (_, i) => `line ${i}`);
+
+    const chunkSize = 1_000;
+    for (let i = 0; i < allLines.length; i += chunkSize) {
+      appendAndFlush(sink, allLines.slice(i, i + chunkSize));
+    }
+
+    const last = flushes[flushes.length - 1]!;
+    expect(last.projections.droppedLines).toBe(2_000);
+    expect(last.output[0]).toBe(
+      "[SYSTEM] Terminal buffer full — 2,000 earlier lines dropped. Showing the most recent 10,000 lines below.",
+    );
+    // Without the notice the terminal would simply start at line 2,000 with
+    // nothing saying why -- that first surviving line is still line 2,000.
+    expect(last.output[1]).toBe("line 2000");
+    expect(last.output).toHaveLength(MAX_TERMINAL_LINES + 1);
+    assertProjectionsMatchOutput(last);
+
+    // The count is per-execution: the next run must not inherit this one's
+    // notice on its very first flush.
+    sink.reset();
+    appendAndFlush(sink, ["fresh run, first line"]);
+    const afterReset = flushes[flushes.length - 1]!;
+    expect(afterReset.projections.droppedLines).toBe(0);
+    expect(afterReset.output).toEqual(["fresh run, first line"]);
+  });
+
+  it("a run that never fills the ring reports 0 dropped lines and shows no notice", () => {
+    const { sink, flushes } = makeSink();
+    appendAndFlush(sink, ["one", "two", "three"]);
+    const last = flushes[flushes.length - 1]!;
+    expect(last.projections.droppedLines).toBe(0);
+    expect(last.output).toEqual(["one", "two", "three"]);
   });
 
   it("recomputes projections at the truncation crossing and again for the reshaped [header, '', ...tail] tail flush", async () => {
