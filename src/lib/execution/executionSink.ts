@@ -169,9 +169,26 @@ export class ExecutionSink {
   /** Force-flush any pending batch immediately (used before state reset). */
   forceFlush(): void {
     this.flush(this.generation);
-    // flush() only schedules a throttled store push in normal mode; emit the
-    // current ring snapshot synchronously so callers see the final output.
-    if (!this.truncated && this.normalFlushScheduled && this.onFlush) {
+    if (!this.onFlush) return;
+
+    // flush() only ever SCHEDULES a throttled store push, so a caller that is
+    // about to snapshot the store (finishExecution) would otherwise miss up to
+    // one throttle window of final lines. Emit the current snapshot
+    // synchronously in whichever mode is active. The pending timer is left in
+    // place; when it fires it re-emits the same content, which is a no-op.
+    if (this.truncated) {
+      // Tail mode: TAIL_FLUSH_INTERVAL_MS is 500 ms and scheduleTailFlush has
+      // no delay===0 fast path, so without this the final lines of a truncated
+      // run -- including the trailing `[ERROR] …` line -- never reach the
+      // completed-output snapshot at all.
+      if (!this.tailFlushScheduled) return;
+      this.lastTailFlushTime = Date.now();
+      const output = this.buildTailOutput();
+      this.onFlush(output, this.totalBytes, this.recomputeProjections(output));
+      return;
+    }
+
+    if (this.normalFlushScheduled) {
       this.lastNormalFlushTime = Date.now();
       this.onFlush(this.ring.toArray(), this.totalBytes, this.currentProjections());
     }
@@ -182,7 +199,11 @@ export class ExecutionSink {
     this.resetState();
   }
 
-  /** Clear everything and notify the store. */
+  /**
+   * Clear all buffered output. Identical to `reset()` -- it does NOT notify the
+   * store; the caller owns clearing the store-side output fields in the same
+   * update it makes for its own reasons (see `clearExecutionOutput`).
+   */
   clear(): void {
     this.resetState();
   }
@@ -358,6 +379,20 @@ export class ExecutionSink {
   }
 
   /**
+   * Tail-mode output shape: truncation header + blank + the tail ring. Cold
+   * path (throttled to once per TAIL_FLUSH_INTERVAL_MS, bounded by
+   * TAIL_BUFFER_LINES) -- rebuilding it is cheap and simpler than reconciling
+   * incremental state against this reshaped output.
+   */
+  private buildTailOutput(): string[] {
+    return [
+      formatTruncationNotice(this.totalBytes),
+      "",
+      ...this.tailRing.toArray(),
+    ];
+  }
+
+  /**
    * Schedule a throttled flush of the tail buffer so we don't overwhelm the
    * store with rapid updates after truncation.
    */
@@ -375,17 +410,7 @@ export class ExecutionSink {
       if (gen !== this.generation || !this.onFlush) return;
 
       this.lastTailFlushTime = Date.now();
-
-      // Build output: truncation header + tail lines. Cold path (throttled to
-      // once per TAIL_FLUSH_INTERVAL_MS, bounded by TAIL_BUFFER_LINES) -- full
-      // recompute is cheap and simpler than reconciling incremental state
-      // against this reshaped output.
-      const tailLines = this.tailRing.toArray();
-      const output = [
-        formatTruncationNotice(this.totalBytes),
-        "",
-        ...tailLines,
-      ];
+      const output = this.buildTailOutput();
       this.onFlush(output, this.totalBytes, this.recomputeProjections(output));
     };
 

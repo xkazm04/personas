@@ -131,8 +131,7 @@ describe("ExecutionSink incremental projections", () => {
     assertProjectionsMatchOutput(crossing);
 
     // Unlike scheduleNormalFlush, scheduleTailFlush has no delay===0 fast path
-    // -- it always defers through a real setTimeout, and forceFlush()'s own
-    // synchronous fallback only covers normal mode. Wait for the real timer.
+    // -- it always defers through a real setTimeout. Wait for the real timer.
     sink.append("one more line after truncation");
     await new Promise((resolve) => setTimeout(resolve, 20));
 
@@ -141,6 +140,27 @@ describe("ExecutionSink incremental projections", () => {
     expect(tailFlush.output[1]).toBe("");
     expect(tailFlush.output[2]).toBe("one more line after truncation");
     assertProjectionsMatchOutput(tailFlush);
+  });
+
+  it("forceFlush emits the tail synchronously in tail mode, so a truncated run's final [ERROR] line reaches the completed snapshot", () => {
+    const { sink, flushes } = makeSink();
+    appendAndFlush(sink, Array.from({ length: 2600 }, (_, i) => `${"x".repeat(5000)}-${i}`));
+    const flushesAfterCrossing = flushes.length;
+
+    // The run ends here: usePersonaExecution appends its terminal [ERROR] line
+    // and finishExecution force-flushes, then snapshots the store immediately.
+    // No timers are advanced -- the tail throttle is 500 ms, so before this fix
+    // the line was simply absent from the snapshot.
+    sink.append("[ERROR] run failed at the very end");
+    sink.forceFlush();
+
+    expect(flushes.length).toBeGreaterThan(flushesAfterCrossing);
+    const final = flushes[flushes.length - 1]!;
+    expect(final.output[0]).toMatch(/Output truncated/);
+    expect(final.output[1]).toBe("");
+    expect(final.output[final.output.length - 1]).toBe("[ERROR] run failed at the very end");
+    expect(final.projections.lastLine).toBe("[ERROR] run failed at the very end");
+    assertProjectionsMatchOutput(final);
   });
 
   it("reset() clears projections so a stale generation can't pollute the next execution", () => {
