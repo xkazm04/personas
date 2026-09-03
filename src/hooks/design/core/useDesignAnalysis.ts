@@ -45,6 +45,15 @@ export function useDesignAnalysis() {
   const applyingRef = useRef(false);
   const traceSessionRef = useRef<SystemTraceSession | null>(null);
 
+  // Navigating away mid-analysis used to leave the session "active" in the
+  // system-trace registry for the life of the app session, inflating the
+  // Observability panel's active count with an operation that no longer
+  // exists. Nothing failed, so it is abandoned rather than errored.
+  useEffect(() => () => {
+    traceSessionRef.current?.abandon();
+    traceSessionRef.current = null;
+  }, []);
+
   // Stream option callbacks as closures capturing the local designIdRef.
   // The ref object is stable across renders so useCallback produces a stable identity.
   const getLine = useCallback((payload: Record<string, unknown>): string => {

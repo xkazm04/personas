@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTauriStream, type TauriStreamActions } from './useTauriStream';
 import { defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
 import type { SystemOperationType } from '@/lib/execution/pipeline';
@@ -108,6 +108,15 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
   } = config;
 
   const traceSessionRef = useRef<SystemTraceSession | null>(null);
+
+  // An unmount with a session still open used to leave it "active" in the
+  // system-trace registry forever -- the operation is gone, but its row keeps
+  // inflating the Observability panel's active count. Nothing failed here, so
+  // the session is abandoned rather than completed with an error.
+  useEffect(() => () => {
+    traceSessionRef.current?.abandon();
+    traceSessionRef.current = null;
+  }, []);
 
   // Wrap resolveStatus to also complete the trace session on resolution
   const baseResolveStatus = userResolveStatus ?? buildResolveStatus<TResult>(errorMessage);
