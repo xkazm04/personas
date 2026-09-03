@@ -34,6 +34,8 @@ mod e12_shared_event_routes;
 mod e13_execution_numeric_repair;
 mod e14_project_team_invariant;
 mod e15_memory_reaper_ledger;
+mod e16_persona_run_paging_index;
+mod e17_chain_trace_ordering_index;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -65,6 +67,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e13_execution_numeric_repair::run(conn)?;
     e14_project_team_invariant::run(conn)?;
     e15_memory_reaper_ledger::run(conn)?;
+    e16_persona_run_paging_index::run(conn)?;
+    e17_chain_trace_ordering_index::run(conn)?;
 
     Ok(())
 }

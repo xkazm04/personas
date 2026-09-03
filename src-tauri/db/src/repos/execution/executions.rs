@@ -375,7 +375,12 @@ pub fn list_items_by_persona_id(
              FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
-             ORDER BY created_at DESC LIMIT ?2 OFFSET ?3",
+             -- `created_at DESC, id DESC` — created_at alone is not a total
+             -- order (two runs created in the same second tie), and a tie
+             -- under LIMIT/OFFSET serves a row twice or never. Matches
+             -- `list_global_items`; served without a sort by
+             -- `idx_pe_persona_created_id`.
+             ORDER BY created_at DESC, id DESC LIMIT ?2 OFFSET ?3",
             ))?;
             let rows = stmt.query_map(
                 params![persona_id, limit, offset],
@@ -2656,6 +2661,124 @@ mod tests {
 
         let unique: std::collections::HashSet<&String> = paged.iter().collect();
         assert_eq!(unique.len(), paged.len(), "pages must not overlap");
+    }
+
+    /// The per-persona list pages with the same `LIMIT/OFFSET` the global list
+    /// does, and until this commit ordered by `created_at DESC` alone. Every
+    /// row here is forced onto ONE `created_at` value, which is the tie the
+    /// missing `id DESC` tiebreak leaves unresolved: under a total order the
+    /// three pages are disjoint and reassemble; under a partial one SQLite is
+    /// free to serve a row twice and another never.
+    ///
+    /// The mid-paging insert is deliberately an OLDER row. A genuinely NEWER
+    /// row shifts every offset by one and no tiebreak can save `LIMIT/OFFSET`
+    /// from that — it is a property of offset paging, not of the ordering. An
+    /// older row lands past the last page, so the ranks already served must not
+    /// move: no duplicate, and no row lost from the tail.
+    #[test]
+    fn per_persona_offset_paging_returns_disjoint_pages() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Per Persona Paging Agent");
+        for _ in 0..25 {
+            create(&pool, &persona_id, None, None, None, None).unwrap();
+        }
+        // Collapse every row onto one timestamp so the tie is guaranteed
+        // rather than dependent on how fast the loop above ran.
+        {
+            let conn = pool.conn("executions::test").unwrap();
+            conn.execute(
+                "UPDATE persona_executions SET created_at = '2026-01-01T00:00:00Z'                  WHERE persona_id = ?1",
+                params![persona_id],
+            )
+            .unwrap();
+        }
+
+        let all = list_items_by_persona_id(&pool, &persona_id, Some(100), None).unwrap();
+        assert_eq!(all.len(), 25);
+
+        let mut paged: Vec<String> = Vec::new();
+        let mut older_id = String::new();
+        for page in 0..3 {
+            // A row created BEFORE every other one is inserted between pages.
+            if page == 1 {
+                let older = create(&pool, &persona_id, None, None, None, None).unwrap();
+                older_id = older.id.clone();
+                let conn = pool.conn("executions::test").unwrap();
+                conn.execute(
+                    "UPDATE persona_executions SET created_at = '2020-01-01T00:00:00Z'                      WHERE id = ?1",
+                    params![older.id],
+                )
+                .unwrap();
+            }
+            let rows =
+                list_items_by_persona_id(&pool, &persona_id, Some(10), Some(page * 10)).unwrap();
+            // Page 2 carries the 5 remaining originals PLUS the older row
+            // inserted mid-paging, which sorted past all of them.
+            assert_eq!(rows.len(), if page == 2 { 6 } else { 10 }, "page {page}");
+            paged.extend(rows.into_iter().map(|r| r.id));
+        }
+
+        let expected: Vec<String> = all.into_iter().map(|r| r.id).collect();
+        assert_eq!(
+            &paged[..25],
+            expected.as_slice(),
+            "per-persona paged reads must reassemble the whole list"
+        );
+        assert_eq!(
+            paged.last(),
+            Some(&older_id),
+            "the row inserted mid-paging must be served at the tail, not lost"
+        );
+        let unique: std::collections::HashSet<&String> = paged.iter().collect();
+        assert_eq!(unique.len(), paged.len(), "pages must not overlap");
+    }
+
+    /// The `id DESC` tiebreak is free only if an index carries it. Without
+    /// `idx_pe_persona_created_id` SQLite satisfies `persona_id = ?` from the
+    /// two-column `idx_pe_persona_created` and then sorts every matching row
+    /// to break the tie — a TEMP B-TREE over the whole persona's history on
+    /// every page. Assert the plan the migration exists to produce.
+    #[test]
+    fn per_persona_paging_orders_from_the_index_without_a_sort() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.conn("executions::test").unwrap();
+        let index_exists: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master                  WHERE type = 'index' AND name = 'idx_pe_persona_created_id'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            index_exists, 1,
+            "e16_persona_run_paging_index must have created idx_pe_persona_created_id"
+        );
+
+        let sql = format!(
+            "EXPLAIN QUERY PLAN SELECT {LIST_ITEM_COLUMNS}              FROM persona_executions              WHERE persona_id = ?1                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')              ORDER BY created_at DESC, id DESC LIMIT ?2 OFFSET ?3"
+        );
+        let mut stmt = conn.prepare(&sql).unwrap();
+        let plan: Vec<String> = stmt
+            .query_map(params!["p", 10i64, 0i64], |row| {
+                row.get::<_, String>("detail")
+            })
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        let plan_text = plan.join(" | ");
+
+        assert!(
+            plan_text.contains("SEARCH"),
+            "expected an indexed SEARCH, got: {plan_text}"
+        );
+        assert!(
+            plan_text.contains("idx_pe_persona_created_id"),
+            "expected the paging index to be chosen, got: {plan_text}"
+        );
+        assert!(
+            !plan_text.to_uppercase().contains("TEMP B-TREE"),
+            "the tiebreak must be served by the index, not a sort: {plan_text}"
+        );
     }
 
     /// The measurement behind this change, run rather than asserted from
