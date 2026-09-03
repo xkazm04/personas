@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, Row, Transaction};
 
 use crate::models::{
     AssertionFailureAction, AssertionResult, AssertionSeverity, AssertionType,
@@ -254,25 +254,81 @@ crud_delete!("output_assertions");
 
 // -- Result operations ----------------------------------------
 
-pub fn insert_result(pool: &DbPool, result: &AssertionResult) -> Result<(), AppError> {
-    timed_query!("output_assertions", "output_assertions::insert_result", {
-        let conn = pool.conn("assertions::insert_result")?;
-        conn.execute(
-            "INSERT INTO assertion_results
+/// Insert one assertion result. The `_in` form is the only place this SQL
+/// lives; both the standalone door below and [`record_result_in`] go through it,
+/// so the two can never write a different row shape.
+pub(crate) fn insert_result_in(
+    tx: &Transaction<'_>,
+    result: &AssertionResult,
+) -> Result<(), AppError> {
+    tx.execute(
+        "INSERT INTO assertion_results
              (id, assertion_id, execution_id, persona_id, passed, explanation, matched_value, evaluation_ms, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![
-                result.id,
-                result.assertion_id,
-                result.execution_id,
-                result.persona_id,
-                result.passed as i32,
-                result.explanation,
-                result.matched_value,
-                result.evaluation_ms,
-                result.created_at,
-            ],
-        )?;
+        params![
+            result.id,
+            result.assertion_id,
+            result.execution_id,
+            result.persona_id,
+            result.passed as i32,
+            result.explanation,
+            result.matched_value,
+            result.evaluation_ms,
+            result.created_at,
+        ],
+    )?;
+    Ok(())
+}
+
+pub fn insert_result(pool: &DbPool, result: &AssertionResult) -> Result<(), AppError> {
+    timed_query!("output_assertions", "output_assertions::insert_result", {
+        let mut conn = pool.conn("assertions::insert_result")?;
+        let tx = conn.transaction()?;
+        insert_result_in(&tx, result)?;
+        tx.commit()?;
+        Ok(())
+    })
+}
+
+/// Insert an assertion's result AND move that assertion's pass/fail counter as
+/// ONE atomic step.
+///
+/// This exists because the two writes were previously issued on two different
+/// pooled connections, each failure only `warn!`ed and neither able to undo the
+/// other: `output_assertions.pass_count + fail_count` and
+/// `COUNT(*) FROM assertion_results` are two recordings of the same event, and
+/// nothing in the system compared them — so a dropped write left the persona's
+/// assertion badge quoting a tally its own rows did not support, permanently,
+/// with no error anywhere.
+///
+/// The counter UPDATE asserts it moved exactly one row. An assertion deleted
+/// between the read and this write would otherwise leave a result row behind
+/// with a counter nobody incremented, which is the drift this function exists to
+/// make impossible; failing the transaction rolls the result row back with it.
+pub(crate) fn record_result_in(
+    tx: &Transaction<'_>,
+    result: &AssertionResult,
+) -> Result<(), AppError> {
+    insert_result_in(tx, result)?;
+    let moved = increment_counter_in(tx, &result.assertion_id, result.passed)?;
+    if moved != 1 {
+        return Err(AppError::NotFound(format!(
+            "OutputAssertion {} (counter update matched {moved} rows)",
+            result.assertion_id
+        )));
+    }
+    Ok(())
+}
+
+/// The pooled door for [`record_result_in`]. `Immediate` because the UPDATE is a
+/// read-modify-write of a counter: a deferred transaction that reads first fails
+/// `SQLITE_BUSY_SNAPSHOT` in 0 ms under concurrency and ignores `busy_timeout`.
+pub fn record_result(pool: &DbPool, result: &AssertionResult) -> Result<(), AppError> {
+    timed_query!("output_assertions", "output_assertions::record_result", {
+        let mut conn = pool.conn("assertions::record_result")?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        record_result_in(&tx, result)?;
+        tx.commit()?;
         Ok(())
     })
 }
@@ -355,22 +411,78 @@ pub fn get_results_by_assertion(
     )
 }
 
+/// Move one pass/fail counter and stamp `last_evaluated_at`, returning how many
+/// rows the UPDATE matched so a caller that requires the assertion to still
+/// exist can say so. `col` comes from a two-value literal vocabulary, never from
+/// caller text.
+pub(crate) fn increment_counter_in(
+    tx: &Transaction<'_>,
+    assertion_id: &str,
+    passed: bool,
+) -> Result<usize, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let col = if passed { "pass_count" } else { "fail_count" };
+    let moved = tx.execute(
+        &format!(
+            "UPDATE output_assertions SET {col} = {col} + 1, last_evaluated_at = ?1 WHERE id = ?2"
+        ),
+        params![now, assertion_id],
+    )?;
+    Ok(moved)
+}
+
 /// Increment pass/fail counter and update last_evaluated_at on an assertion.
+///
+/// Prefer [`record_result`] whenever a result row is written alongside: this
+/// door on its own is exactly how the counters and the rows drifted apart.
 pub fn increment_counter(pool: &DbPool, assertion_id: &str, passed: bool) -> Result<(), AppError> {
     timed_query!(
         "output_assertions",
         "output_assertions::increment_counter",
         {
-            let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.conn("assertions::increment_counter")?;
-            let col = if passed { "pass_count" } else { "fail_count" };
-            conn.execute(
-            &format!(
-                "UPDATE output_assertions SET {col} = {col} + 1, last_evaluated_at = ?1 WHERE id = ?2"
-            ),
-            params![now, assertion_id],
-        )?;
+            let mut conn = pool.conn("assertions::increment_counter")?;
+            let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            increment_counter_in(&tx, assertion_id, passed)?;
+            tx.commit()?;
             Ok(())
+        }
+    )
+}
+
+/// Recompute every assertion's pass/fail counters from the result rows that are
+/// supposed to back them, and report how many assertions were wrong.
+///
+/// A repair, not a routine: with [`record_result`] in place the counters cannot
+/// drift going forward, but nothing has ever repaired a database that drifted
+/// while the two writes were independent. Touches only rows that actually
+/// disagree, so a clean database is a no-op that writes nothing and returns 0.
+pub fn recount_counters(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!(
+        "output_assertions",
+        "output_assertions::recount_counters",
+        {
+            let mut conn = pool.conn("assertions::recount_counters")?;
+            let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let repaired = tx.execute(
+                "UPDATE output_assertions SET
+                 pass_count = (SELECT COUNT(*) FROM assertion_results r
+                               WHERE r.assertion_id = output_assertions.id AND r.passed = 1),
+                 fail_count = (SELECT COUNT(*) FROM assertion_results r
+                               WHERE r.assertion_id = output_assertions.id AND r.passed = 0)
+             WHERE pass_count <> (SELECT COUNT(*) FROM assertion_results r
+                                  WHERE r.assertion_id = output_assertions.id AND r.passed = 1)
+                OR fail_count <> (SELECT COUNT(*) FROM assertion_results r
+                                  WHERE r.assertion_id = output_assertions.id AND r.passed = 0)",
+                [],
+            )?;
+            tx.commit()?;
+            if repaired > 0 {
+                tracing::warn!(
+                repaired,
+                "output_assertions: repaired counters that disagreed with their own result rows"
+            );
+            }
+            Ok(repaired)
         }
     )
 }
@@ -411,6 +523,26 @@ mod tests {
         crate::repos::execution::executions::create(pool, persona_id, None, None, None, None)
             .unwrap()
             .id
+    }
+
+    fn make_result(
+        id: &str,
+        assertion_id: &str,
+        execution_id: &str,
+        persona_id: &str,
+        passed: bool,
+    ) -> AssertionResult {
+        AssertionResult {
+            id: id.to_string(),
+            assertion_id: assertion_id.to_string(),
+            execution_id: execution_id.to_string(),
+            persona_id: persona_id.to_string(),
+            passed,
+            explanation: if passed { "ok".into() } else { "nope".into() },
+            matched_value: None,
+            evaluation_ms: 1,
+            created_at: chrono::Utc::now().to_rfc3339(),
+        }
     }
 
     /// The valid path: a typed vocabulary goes in and the SAME value comes
@@ -578,6 +710,177 @@ mod tests {
                 .unwrap_or_else(|e| panic!("severity '{stored}' must not fail the read: {e}"));
             assert_eq!(read.severity, expected, "stored '{stored}'");
         }
+    }
+
+    /// The invariant V2 exists to create: the result row and the counter move
+    /// together or not at all.
+    ///
+    /// Rolling the transaction back must leave BOTH untouched. Before this
+    /// change the two writes went out on two different pooled connections, so
+    /// the counter was already committed by the time anything could roll the
+    /// row back — this test could not have passed, and no test could have
+    /// failed, because nothing compared them.
+    #[test]
+    fn a_result_and_its_counter_share_one_transaction() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Atomic",
+            None,
+            AssertionType::Contains,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Log,
+        )
+        .unwrap();
+        let exec_id = make_execution(&pool, &persona_id);
+
+        let mut conn = pool.conn("assertions::test").unwrap();
+        let tx = conn.transaction().unwrap();
+        record_result_in(
+            &tx,
+            &make_result("r-1", &created.id, &exec_id, &persona_id, true),
+        )
+        .unwrap();
+        let inside: i64 = tx
+            .query_row(
+                "SELECT pass_count FROM output_assertions WHERE id = ?1",
+                params![created.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(inside, 1, "the counter must move inside the transaction");
+        tx.rollback().unwrap();
+        drop(conn);
+
+        let after = get_by_id(&pool, &created.id).unwrap();
+        assert_eq!(
+            after.pass_count, 0,
+            "a rolled-back counter must not survive"
+        );
+        assert!(
+            get_results_by_execution(&pool, &exec_id)
+                .unwrap()
+                .is_empty(),
+            "a rolled-back result row must not survive"
+        );
+    }
+
+    /// After N recorded results the counters equal the rows they claim to count
+    /// — the equality the two-connection version could not promise.
+    #[test]
+    fn counters_equal_the_rows_they_count() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Tally",
+            None,
+            AssertionType::Contains,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Log,
+        )
+        .unwrap();
+        let exec_id = make_execution(&pool, &persona_id);
+
+        for i in 0..7 {
+            record_result(
+                &pool,
+                &make_result(
+                    &format!("r-{i}"),
+                    &created.id,
+                    &exec_id,
+                    &persona_id,
+                    i % 3 != 0,
+                ),
+            )
+            .unwrap();
+        }
+
+        let rows = get_results_by_assertion(&pool, &created.id, Some(100)).unwrap();
+        let passed = rows.iter().filter(|r| r.passed).count() as i64;
+        let failed = rows.len() as i64 - passed;
+        let assertion = get_by_id(&pool, &created.id).unwrap();
+        assert_eq!(assertion.pass_count, passed);
+        assert_eq!(assertion.fail_count, failed);
+        assert_eq!(assertion.pass_count + assertion.fail_count, 7);
+        assert!(assertion.last_evaluated_at.is_some());
+    }
+
+    /// A result whose assertion no longer exists must not half-land: nothing is
+    /// left behind on either table.
+    #[test]
+    fn a_result_for_a_missing_assertion_lands_nowhere() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let exec_id = make_execution(&pool, &persona_id);
+
+        record_result(
+            &pool,
+            &make_result("r-orphan", "no-such-assertion", &exec_id, &persona_id, true),
+        )
+        .expect_err("a result with no owning assertion must not be stored");
+        assert!(get_results_by_execution(&pool, &exec_id)
+            .unwrap()
+            .is_empty());
+    }
+
+    /// The repair door, against drift built by hand exactly the way the pre-V2
+    /// engine built it: a result row written with no counter move, and a counter
+    /// inflated past its rows.
+    #[test]
+    fn recount_counters_repairs_existing_drift_and_is_idempotent() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Drifted",
+            None,
+            AssertionType::Contains,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Log,
+        )
+        .unwrap();
+        let exec_id = make_execution(&pool, &persona_id);
+
+        insert_result(
+            &pool,
+            &make_result("d-1", &created.id, &exec_id, &persona_id, true),
+        )
+        .unwrap();
+        insert_result(
+            &pool,
+            &make_result("d-2", &created.id, &exec_id, &persona_id, false),
+        )
+        .unwrap();
+        pool.conn("assertions::test")
+            .unwrap()
+            .execute(
+                "UPDATE output_assertions SET fail_count = 9 WHERE id = ?1",
+                params![created.id],
+            )
+            .unwrap();
+
+        assert_eq!(
+            recount_counters(&pool).unwrap(),
+            1,
+            "one assertion disagreed"
+        );
+        let fixed = get_by_id(&pool, &created.id).unwrap();
+        assert_eq!(fixed.pass_count, 1);
+        assert_eq!(fixed.fail_count, 1);
+
+        assert_eq!(
+            recount_counters(&pool).unwrap(),
+            0,
+            "a clean database is a no-op"
+        );
     }
 
     /// The invalid path, and the whole point of the change: a stored token

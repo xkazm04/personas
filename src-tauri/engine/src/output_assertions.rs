@@ -440,6 +440,37 @@ pub fn evaluate_assertions(
         let mut result = evaluate_one(assertion, output);
         result.execution_id = execution_id.to_string();
 
+        // The verdict is recorded BEFORE it is counted, and one failure ends
+        // this assertion's turn.
+        //
+        // The row and the assertion's pass/fail counter now move inside one
+        // transaction (`record_result`), which is what stops the two recordings
+        // of the same event from drifting. What that cannot do is invent a
+        // verdict for a store that failed, so this loop refuses to report one:
+        // an assertion whose result could not be written counts as NEITHER
+        // passed nor failed, is absent from `results` (and therefore from
+        // `total`), and fires no failure action — a `heal` or `review` item
+        // pointing at a result row that does not exist is worse than no item.
+        // The summary that comes back is exactly what is durable, and
+        // `passed + failed == total` still holds.
+        //
+        // KNOWN CONSEQUENCE, stated rather than hidden: a CRITICAL assertion
+        // whose store fails will not downgrade the execution, because the whole
+        // payload of that downgrade is an explanation the user is meant to look
+        // up. The storage failure is loud here instead (`error!`, not `warn!`),
+        // and `repo::recount_counters` repairs the tallies of any database that
+        // drifted before this existed.
+        if let Err(e) = repo::record_result(pool, &result) {
+            tracing::error!(
+                assertion_id = %assertion.id,
+                execution_id,
+                persona_id,
+                "assertion verdict could not be recorded — reporting it as neither passed nor failed: {}",
+                e
+            );
+            continue;
+        }
+
         if result.passed {
             passed_count += 1;
         } else {
@@ -457,20 +488,7 @@ pub fn evaluate_assertions(
                         Some(format!("{}: {}", assertion.name, result.explanation));
                 }
             }
-        }
 
-        // Persist result
-        if let Err(e) = repo::insert_result(pool, &result) {
-            tracing::warn!(assertion_id = %assertion.id, "Failed to persist assertion result: {}", e);
-        }
-
-        // Update assertion counters
-        if let Err(e) = repo::increment_counter(pool, &assertion.id, result.passed) {
-            tracing::warn!(assertion_id = %assertion.id, "Failed to update assertion counter: {}", e);
-        }
-
-        // Handle failure actions
-        if !result.passed {
             handle_failure_action(
                 pool,
                 assertion,
