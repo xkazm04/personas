@@ -2,6 +2,48 @@
 
 ## Active
 
+- **[2026-09-03 12:49]**
+- **Paths:** `src-tauri/db/src/repos/execution/**` · `src-tauri/db/src/migrations/**` · `src-tauri/engine/src/output_assertions.rs` · `src-tauri/src/commands/core/personas.rs` · `src-tauri/src/companion/brain/**` · `src-tauri/src/companion/dispatcher/catalog.rs` · `src-tauri/src/companion/templates/constitution.md` · `src/features/plugins/companion/**` · `src/api/companion/**` · `src/lib/bindings/**` · `src/i18n/locales/*.json` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-03 09:26]**
+- **Paths:** `src/hooks/execution/**` · `src/lib/execution/**` · `src/lib/validation/eventPayloads.ts` · `src/stores/slices/agents/executionSlice.ts` · `src/stores/slices/agents/chatSlice.ts` · `src/hooks/index.ts` · `src/features/agents/sub_executions/**` · `src/hooks/design/core/**` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-02 23:31]**
+- **Paths:** `src/hooks/realtime/**` · `src/stores/slices/overview/**` · `src/features/overview/sub_activity/**` · `src/features/triggers/sub_live_stream/**` · `src-tauri/src/commands/execution/**` · `src-tauri/db/src/repos/execution/**` · `src-tauri/core/src/models/execution.rs` · `src-tauri/core/src/models/output_assertion.rs` · `src/api/agents/executions.ts` · `src/stores/slices/home/homeSpineSlice.ts` · `src/features/agents/sub_executions/libs/useBulkRerun.ts` · `src/lib/tauriInvoke.ts` · `scripts/check-event-registry.mjs` · `src/lib/eventRegistry.ts` · `src/lib/bindings/**` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-02 17:57]**
+- **Paths:** `src/features/agents/sub_executions/**` · `src/features/agents/sub_activity/**` · `src/hooks/execution/**` · `src/lib/execution/pipeline.ts` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src-tauri/src/engine/runner/mod.rs` · `src-tauri/src/engine/build_session/**` · `src-tauri/src/engine/platforms/**` · `src-tauri/db/src/repos/core/build_sessions.rs` · `src/stores/slices/agents/matrixBuildSlice.ts` · `src/i18n/locales/*.json` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-02 12:15]**
+- **Paths:** `src/features/plugins/fleet/**` · `src-tauri/src/commands/fleet/**` · `src/features/fleet/monitor/**` · `src/stores/slices/agents/personaSlice.ts` · `src/stores/slices/processActivitySlice.ts` · `src/i18n/locales/*.json` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-02 11:52]**
+- **Paths:** `.claude/codebase-context.md` · `.claude/codebase-catalogs.md` · `.perfect/**`
+- **Status:** started
+
+### friend-triggers — C:/Program Files/Git/friend endless development loop over Triggers (worktree-friend-triggers-094700)
+- **[2026-09-02 09:47]**
+- **Paths:** `src/features/triggers/**` · `src-tauri/src/commands/communication/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-01 21:24]**
+- **Paths:** `src/features/vault/**` · `src-tauri/src/commands/credentials/**` · `src/i18n/locales/*.json` (additive)
+- **Status:** started
+- Branch: worktree-friend-vault-212413 · Worktree: .claude/worktrees/friend-vault-212413/ · commits land on the branch, user owns merge
+
+- **[2026-09-01 21:23]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/**`
+- **Status:** started
+
+- **[2026-09-01 21:23]**
+- **Paths:** `src/features/agents/sub_new_persona/capabilityView/**`
+- **Status:** started
+
 - **[2026-09-01 15:39]**
 - **Paths:** `src/features/fleet/monitor/**` · `src/features/shared/chrome/TitleBarDock.tsx` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src/features/overview/sub_manual-review/components/dispatch/**` · `src/features/plugins/fleet/quick-dispatch/**` · `src/features/agents/quick-answer/triage/deck/DeckDispatchBar.tsx`
 - **Status:** started
@@ -554,6 +596,24 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### perfect-round3-wave5 — /perfect round 3 wave 5: companion-brain + db-repos-execution (5 lots on master, isolated-index commits)
+
+### perfect-round3-wave4 — /perfect round 3 wave 4: hooks-execution + lib-execution (5 TS lots on master, isolated-index commits)
+
+### perfect-round3-wave3 — /perfect round 3 wave 3: commands-execution + hooks-realtime (5 lots on master, isolated-index commits)
+
+### perfect-round3-wave2 — /perfect round 3 wave 2: execution-replay + agents-executions-components + engine-build-session (5 lots on master, isolated-index commits)
+
+### perfect-round3-wave1 — /perfect round 3 wave 1: fleet-terminal-manager + fleet-monitor-shell (5 lots on master, isolated-index commits)
+
+### refresh-context-perfect — refresh-context render + /perfect coverage cycles
+
+### friend-vault — /friend endless development loop over the Vault module
+
+### perfect-2026-09-01-r2 — /perfect propose: fleet-monitor-channels + commands-fleet scouts (Director session)
+
+### explorer-capability-config-view — /explorer sweep of capability-config-view (new-persona capability rows)
 
 ### monitor-consolidation-cleanup — Post-consolidation cleanup: retire Approved/QuickDispatch overlays, LiveComms routing, ActivityRail grouping+resize+project filter
 

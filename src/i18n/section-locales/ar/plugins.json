@@ -3102,7 +3102,7 @@
     "health_load_failed": "تعذّرت قراءة تقرير الحالة",
     "health_stage_consolidation": "التوحيد",
     "health_stage_corpus": "المُدوَّنة",
-    "health_stage_embedder": "Embedder",
+    "health_stage_embedder": "أداة التضمين",
     "health_stage_embedding_coverage": "تغطية Embedding",
     "health_stage_keyword_index": "فهرس الكلمات المفتاحية",
     "health_stage_ml_feature": "بنية ML",
