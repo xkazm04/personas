@@ -27,14 +27,17 @@ use std::path::{Path, PathBuf};
 /// How many backup sets (newest first) survive rotation.
 const MAX_BACKUPS: usize = 3;
 
-/// Subdirectory of the app data dir where snapshots live.
-const BACKUP_DIR_NAME: &str = "backups";
+/// Subdirectory of the app data dir where snapshots live. Shared with
+/// [`crate::restore`], which lists what this module writes.
+pub(crate) const BACKUP_DIR_NAME: &str = "backups";
 
 /// SQLite sidecar suffixes copied/rotated together with the main file.
 /// SQLite appends these to the FULL file name (`foo.db` → `foo.db-wal`,
 /// `store` → `store-wal`); [`sidecar_path`] applies that rule, so a restored
 /// backup keeps the sidecar naming SQLite expects whatever the store is named.
-const SIDECAR_SUFFIXES: [&str; 2] = ["-wal", "-shm"];
+/// A restore copies and removes the same set of siblings a snapshot copies —
+/// [`crate::restore`] shares this list so the two halves cannot drift apart.
+pub(crate) const SIDECAR_SUFFIXES: [&str; 2] = ["-wal", "-shm"];
 
 use crate::sidecar_path;
 

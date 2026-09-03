@@ -75,6 +75,7 @@ pub mod perf;
 pub mod query_builder;
 #[allow(dead_code)]
 pub mod repos;
+pub mod restore;
 pub mod settings_keys;
 
 use r2d2::{CustomizeConnection, Pool, PooledConnection};
@@ -377,6 +378,14 @@ pub fn init_db_with_journal(
     // (every-boot backup, keep newest 3 sets) is documented in db/backup.rs.
     backup::backup_before_migrations(app_data_dir, &db_path);
 
+    // The other half of that safety net: an operator who chose a backup set
+    // (`restore::request_restore`) gets the copy performed HERE — after the
+    // snapshot above, so the file being replaced is itself preserved, and
+    // before the pool below, so no handle is open on the file being
+    // overwritten. That precondition is why the restore is deferred to a boot
+    // instead of run from the surface that offers it.
+    let restored_from = restore::apply_pending_restore(&db_path);
+
     let manager = SqliteConnectionManager::file(&db_path);
     let customizer: Box<dyn CustomizeConnection<rusqlite::Connection, rusqlite::Error>> =
         match (cdc_sender, journal_sender) {
@@ -412,22 +421,34 @@ pub fn init_db_with_journal(
         // is not exhaustive, and a store that passes it after a structural
         // incident is not thereby healthy — the process recovers on a repaired
         // file, never in place.
-        let reason = if damage::previous_session_quarantined(&db_path) {
-            Some("a previous session quarantined this store and it has not been cleared")
+        let reason: Option<String> = if damage::previous_session_quarantined(&db_path) {
+            Some("a previous session quarantined this store and it has not been cleared".into())
         } else if damage::check_at_open(&conn) == damage::DamageClass::Canonical {
-            Some("PRAGMA quick_check failed at open")
+            // A restore that was just applied and still fails is a SECOND
+            // failure, and it has to read as one: the operator chose that set,
+            // and offering them the same list again without naming what their
+            // choice did is how a restore surface becomes a loop.
+            Some(match &restored_from {
+                Some(set) => format!(
+                    "PRAGMA quick_check failed at open — the store restored from {set} is not readable either"
+                ),
+                None => "PRAGMA quick_check failed at open".to_string(),
+            })
         } else {
             None
         };
         if let Some(reason) = reason {
-            let _ = damage::quarantine(&db_path, reason);
+            let _ = damage::quarantine(&db_path, reason.clone());
             damage::harden_connection(&conn)?;
             drop(conn);
             tracing::error!(
                 path = %db_path.display(),
-                reason,
+                reason = %reason,
                 "Database opened QUARANTINED — migrations, seeds and the FTS pass are all skipped"
             );
+            // The boot that used to end here now ends in a choice: the backup
+            // sets, with a probed state each, in the log the operator has.
+            restore::log_offer(app_data_dir, &db_path);
             return Ok(pool);
         }
     }
