@@ -7,9 +7,26 @@
  * fallback, and derives the TERMINAL / ACTIVE sets so there is exactly
  * one place to update when a new variant is added.
  *
- * Valid transitions:
- *   Queued -> Running
+ * Valid transitions (the full map is `VALID_TRANSITIONS` below):
+ *   Queued  -> Running | Failed | Cancelled
  *   Running -> Completed | Failed | Incomplete | Cancelled
+ *
+ * ## Why `'unknown'` is TERMINAL
+ *
+ * `'unknown'` is not a state the backend can emit -- it is what
+ * `parseExecutionState` returns for a token this frontend does not recognise
+ * (a newer backend variant, a corrupted row, a hand-edited log). It is listed
+ * in `TERMINAL_STATES` on purpose, and the reason is a liveness one rather
+ * than a semantic one: `isTerminalState` is the predicate that clears
+ * `activeExecutionId` / `isExecuting` / the recovery key. If `'unknown'` were
+ * non-terminal, an unrecognised terminal event would finalize NOTHING -- the
+ * run would keep `isExecuting` pinned for up to `RUN_MAX_DURATION_MS` and
+ * force every later run into background mode, which is exactly the failure
+ * `execution-runner #2` describes. Treating it as terminal costs at worst an
+ * early teardown of a run that was in fact still alive; treating it as active
+ * costs a wedged UI with no way back. It is deliberately NOT a member of
+ * `TerminalStatus`, so a caller that needs one of the four REAL outcomes
+ * (chat finalize, badge mapping) still cannot silently receive it.
  */
 
 import type { ExecutionState as RustExecutionState } from '@/lib/bindings/ExecutionState';
@@ -108,3 +125,29 @@ export function canTransition(current: ExecutionState, next: ExecutionState): bo
 
 /** Terminal status type -- only the terminal subset of ExecutionState. */
 export type TerminalStatus = 'completed' | 'failed' | 'cancelled' | 'incomplete';
+
+/**
+ * Every state a run can END in, including the frontend-only `'unknown'`
+ * fallback.
+ *
+ * Distinct from `TerminalStatus` on purpose: a consumer that must branch on a
+ * REAL outcome (chat finalize, the background badge's three-arm union) takes
+ * `TerminalStatus` and therefore cannot be handed `'unknown'`, while a
+ * consumer that merely RECORDS the outcome (the finalize_status middleware
+ * payload, `finishExecution`) takes this wider type and can name the
+ * corruption instead of asserting it into one of the four.
+ */
+export type TerminalExecutionState = TerminalStatus | 'unknown';
+
+/**
+ * Narrowing form of `isTerminalState` for an already-parsed state.
+ *
+ * `isTerminalState` deliberately keeps its `(status: string) => boolean`
+ * signature -- it is called with raw event fields all over the app. This one
+ * is the door-side guard: it turns a parsed `ExecutionState` into the
+ * `TerminalExecutionState` the finalize path needs, so no caller has to
+ * assert.
+ */
+export function isTerminalExecutionState(s: ExecutionState): s is TerminalExecutionState {
+  return TERMINAL_STATUS_SET.has(s);
+}

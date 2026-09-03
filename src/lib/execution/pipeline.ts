@@ -23,7 +23,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import { storeBus } from '@/lib/storeBus';
-import type { TerminalStatus } from '@/lib/execution/executionState';
+import type { TerminalExecutionState } from '@/lib/execution/executionState';
 
 // =============================================================================
 // Stage definitions
@@ -140,10 +140,20 @@ export interface StreamOutputPayload {
   line: string;
 }
 
-/** Payload when execution reaches a terminal status. */
+/**
+ * Payload when execution reaches a terminal status.
+ *
+ * `status` is `TerminalExecutionState`, not `TerminalStatus`: the door in
+ * `usePersonaExecution` parses the raw event through `parseExecutionState`,
+ * and a token this frontend does not recognise arrives here as `'unknown'`.
+ * The middlewares that consume this payload only RECORD the status (Sentry
+ * telemetry, the audit log), so naming the corruption is strictly better than
+ * asserting it into one of the four real outcomes -- which is what the
+ * `status as FinalizeStatusPayload['status']` cast at the door used to do.
+ */
 export interface FinalizeStatusPayload {
   executionId: string;
-  status: TerminalStatus;
+  status: TerminalExecutionState;
   error: string | null;
   durationMs: number | null;
   costUsd: number | null;

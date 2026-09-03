@@ -90,7 +90,23 @@ export const CliOutputSchema = {
   line: { type: 'string' as const },
 } as const;
 
-/** Schema for execution status events. */
+/**
+ * Schema for execution status events.
+ *
+ * `status` is validated as a bare `string` here BY DESIGN, and that is not the
+ * end of the check: this validator has no enum arm, and adding one would be
+ * the wrong shape of gate anyway. A status token this frontend does not
+ * recognise (a newer backend variant, a corrupted row) must still FINALIZE the
+ * run -- rejecting the payload outright would drop the terminal event on the
+ * floor and pin `isExecuting` for up to `RUN_MAX_DURATION_MS`.
+ *
+ * The narrowing happens at the ONE door instead: `usePersonaExecution`'s
+ * `handleStatusEvent` runs every validated payload through
+ * `parseExecutionState` (`lib/execution/executionState.ts`), which resolves
+ * the legacy `pending` alias, names an unrecognised token as `'unknown'`
+ * exactly once, and hands the closed union to `finishExecution`. Nothing
+ * downstream of that door asserts a raw string into the union any more.
+ */
 export const ExecutionStatusSchema = {
   status: { type: 'string' as const },
   error: { type: 'string' as const, optional: true as const },

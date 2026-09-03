@@ -25,7 +25,7 @@ import { cancelExecution, executePersona, getExecution, listExecutionsSummary } 
 import { InvokeTimeoutError } from "@/lib/tauriInvoke";
 
 import { executionSink } from "@/lib/execution/executionSink";
-import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
+import { TERMINAL_STATUS_SET, type ExecutionState } from "@/lib/execution/executionState";
 import { classifyLine } from "@/lib/utils/terminalColors";
 import { createRunLifecycle } from "./runLifecycle";
 import { trackRecentAgent } from "@/hooks/agents/useRecentAgents";
@@ -186,7 +186,17 @@ export interface ExecutionSlice {
   // Actions
   executePersona: (personaId: string, inputData?: object, useCaseId?: string, continuation?: Continuation) => Promise<string | null>;
   cancelExecution: (executionId: string) => Promise<void>;
-  finishExecution: (status?: string, statusData?: { durationMs?: number | null; costUsd?: number | null; errorMessage?: string | null }) => void;
+  /**
+   * Commit a terminal execution state.
+   *
+   * `status` is the closed `ExecutionState` union, not a bare string: the
+   * hook's `handleStatusEvent` is the ONE door that parses the raw event
+   * (`parseExecutionState`), so by the time it reaches the store the token is
+   * either a real state or the named `'unknown'` fallback. It used to widen
+   * back to `string` here, which is how an unparsed token reached the
+   * finalize_status middleware payload and was asserted into `TerminalStatus`.
+   */
+  finishExecution: (status?: ExecutionState, statusData?: { durationMs?: number | null; costUsd?: number | null; errorMessage?: string | null }) => void;
   fetchExecutions: (personaId: string) => Promise<void>;
   appendExecutionOutput: (line: string) => void;
   clearExecutionOutput: () => void;

@@ -6,7 +6,14 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
-import { isTerminalState } from '@/lib/execution/executionState';
+import {
+  canTransition,
+  isTerminalExecutionState,
+  isTerminalState,
+  parseExecutionState,
+  type ExecutionState,
+  type TerminalExecutionState,
+} from '@/lib/execution/executionState';
 import { validatePayload, ExecutionStatusSchema, type ExecutionStatusPayload } from '@/lib/validation/eventPayloads';
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 import { getExecutionLogLines } from '@/api/agents/executions';
@@ -27,6 +34,13 @@ export function usePersonaExecution() {
   // the background EXECUTION_STATUS listener finalizes the owning run's terminal
   // event (execution-runner #2). Reset when a fresh execution attaches its stream.
   const focusedStreamDetachedRef = useRef(false);
+  /**
+   * Last execution state observed for the focused run, so an illegal edge
+   * (`completed -> running`, a second terminal event, a backwards hop) can be
+   * NAMED. Null until the first status event of a run; reset when a fresh
+   * execution attaches its stream.
+   */
+  const lastStateRef = useRef<ExecutionState | null>(null);
 
   /** Guard: returns true when the executing persona still matches the selected persona. */
   const isOwnerAligned = (): boolean => {
@@ -60,8 +74,8 @@ export function usePersonaExecution() {
    * (execution-runner #2). Neither caller is gated on owner-alignment here,
    * because a run navigated away from must still finalize.
    */
-  const finalizeTerminalStatus = useCallback((validated: ExecutionStatusPayload) => {
-    const { status, error, duration_ms, cost_usd } = validated;
+  const finalizeTerminalStatus = useCallback((validated: ExecutionStatusPayload, status: TerminalExecutionState) => {
+    const { error, duration_ms, cost_usd } = validated;
     const store = useAgentStore.getState();
 
     // Pipeline: trace finalize_status
@@ -81,7 +95,7 @@ export function usePersonaExecution() {
       if (trace) {
         const finalizePayload: FinalizeStatusPayload = {
           executionId: store.activeExecutionId ?? '',
-          status: status as FinalizeStatusPayload['status'],
+          status,
           error: error ?? null,
           durationMs: duration_ms ?? null,
           costUsd: cost_usd ?? null,
@@ -115,7 +129,15 @@ export function usePersonaExecution() {
     const validated = validatePayload('execution-status', raw, ExecutionStatusSchema);
     if (!validated) return;
 
-    const { status } = validated;
+    // ONE DOOR. The raw event field is a bare string (the payload validator has
+    // no enum arm -- see ExecutionStatusSchema's docblock for why that is
+    // deliberate); it is narrowed to the closed `ExecutionState` union HERE and
+    // nowhere else. Before this, `status` travelled as a string all the way to
+    // `finishExecution(status?: string)` and was finally ASSERTED into
+    // `TerminalStatus` at the middleware payload -- so a malformed token tore
+    // down a live run's UI under the name of a real outcome instead of being
+    // named once as `unknown`.
+    const state = parseExecutionState(validated.status);
 
     // Correlate by execution id: drop events that belong to a different run than
     // the focused one. Owner-alignment alone can't distinguish two runs of the
@@ -128,14 +150,32 @@ export function usePersonaExecution() {
     const focusedExecId = useAgentStore.getState().activeExecutionId;
     if (eventExecId && focusedExecId && eventExecId !== focusedExecId) return;
 
+    // Transition check -- LOG-ONLY, on purpose, for now.
+    //
+    // `VALID_TRANSITIONS` has never had a consumer, so we have no field
+    // evidence for how often the backend emits an edge it does not declare
+    // (duplicate terminals, a `running` after a `completed` from a retried
+    // process, a queued->completed shortcut). Blocking an unmodelled-but-real
+    // edge would wedge a run that is otherwise fine, which is a strictly worse
+    // failure than the one we are fixing. So the machine is made LOAD-BEARING
+    // in the sense that matters first: every transition is now measured and
+    // named. Promote this to a hard reject only once the log is quiet.
+    const prev = lastStateRef.current;
+    if (prev !== null && prev !== state && !canTransition(prev, state)) {
+      silentCatch('hooks/execution/usePersonaExecution:illegalTransition')(
+        new Error(`Illegal execution transition ${prev} -> ${state}`),
+      );
+    }
+    lastStateRef.current = state;
+
     // When promoted from queue to running, clear queue position
-    if (status === 'running') {
+    if (state === 'running') {
       useAgentStore.getState().setQueueStatus(null, null);
     }
 
-    if (!isTerminalState(status)) return;
+    if (!isTerminalExecutionState(state)) return;
 
-    finalizeTerminalStatus(validated);
+    finalizeTerminalStatus(validated, state);
   }, [finalizeTerminalStatus]);
 
   const { start, cleanup } = useCorrelatedCliStream({
@@ -272,6 +312,9 @@ export function usePersonaExecution() {
       // A fresh focused stream is being attached for this execution; clear any
       // detached flag left over from a previous run's persona switch.
       focusedStreamDetachedRef.current = false;
+      // A fresh run starts with no observed state, so its first status event
+      // is never reported as an illegal edge off the previous run's terminal.
+      lastStateRef.current = null;
       void start(activeExecutionId);
     }
   }, [activeExecutionId, start]);
@@ -302,9 +345,12 @@ export function usePersonaExecution() {
         // recovery key always clear on terminal.
         if (store.activeExecutionId === execId) {
           if (!focusedStreamDetachedRef.current) return; // stream still live → it finalizes
-          if (!isTerminalState(payload.status as string)) return; // only terminal finalizes a detached run
           const validated = validatePayload('execution-status', payload, ExecutionStatusSchema);
-          if (validated) finalizeTerminalStatus(validated);
+          if (!validated) return;
+          // Same one door as handleStatusEvent: parse, never assert.
+          const detachedState = parseExecutionState(validated.status);
+          if (!isTerminalExecutionState(detachedState)) return; // only terminal finalizes a detached run
+          finalizeTerminalStatus(validated, detachedState);
           return;
         }
 
@@ -312,7 +358,12 @@ export function usePersonaExecution() {
         const bg = store.backgroundExecutions.find((b) => b.executionId === execId);
         if (!bg) return;
 
-        const status = payload.status as string;
+        // Same one door again: a background run's status is parsed, not cast.
+        // `parseExecutionState` takes `string | null | undefined`, so the raw
+        // field needs no assertion to reach it.
+        const status = parseExecutionState(
+          typeof payload.status === 'string' ? payload.status : null,
+        );
         if (isTerminalState(status)) {
           // `incomplete` (abandoned by a dead process) collapses to 'failed'
           // here DELIBERATELY: this drives a transient badge that fades after
