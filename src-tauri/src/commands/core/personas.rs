@@ -716,7 +716,10 @@ async fn delete_persona_inner(
     }
 
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
-    let running = match exec_repo::get_running(&state.db) {
+    // The lean in-flight projection: this loop reads `id` and `persona_id` and
+    // nothing else, and the fat row carried two blobs averaging 7.4 KB + 9.6 KB
+    // per run on the 2026-06-02 snapshot.
+    let running = match exec_repo::get_running_lean(&state.db) {
         Ok(r) => r,
         Err(e) => {
             tracing::error!(

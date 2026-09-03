@@ -126,6 +126,23 @@ fn columns_for(alias: &str) -> String {
 /// has no column for, and lacks the retry/outcome columns that list does draw.
 const GLOBAL_LIST_COLUMNS: &str = "id, persona_id, status, model_used, thinking_level,      input_tokens, output_tokens, cost_usd, duration_ms, started_at, created_at";
 
+/// The projection behind `get_running_lean` — the in-flight (`queued`/
+/// `running`) set, which is POLLED rather than opened.
+///
+/// Five columns against `COLUMNS`' thirty-one, and every blob column but
+/// `input_data` is gone. Both callers were reading the fat row and discarding
+/// nearly all of it: the live chains panel keeps three fields
+/// (`ActiveChainRow`) and persona deletion keeps two (`id`, `persona_id`).
+/// `input_data` stays because the chain grouping parses `_chain_trace_id` /
+/// `_chain_depth` / `_chain_cost_usd` out of it — it is the reason this set is
+/// read at all.
+///
+/// Measured on the 2026-06-02 snapshot (315 rows; `output_data` avg 7,397 B,
+/// `tool_steps` avg 9,557 B, `input_data` avg 4,948 B): the fat row averages
+/// 21,314 B and this one 4,995 B — **4.27x** less over the wire per polled
+/// row, and the saving is the two blobs no caller reads.
+const RUNNING_COLUMNS: &str = "id, persona_id, input_data, started_at, created_at";
+
 /// `GLOBAL_LIST_COLUMNS` alias-qualified for the persona JOIN, derived from the
 /// one const exactly like `columns_for`.
 fn global_list_columns_for(alias: &str) -> String {
@@ -594,7 +611,7 @@ pub fn count_all_global(
                 counts.total += n;
                 match state {
                     // `queued` is the canonical pre-start status every other
-                    // query in this repo treats as in-flight (`get_running`,
+                    // query in this repo treats as in-flight (`get_running_lean`,
                     // `has_running_executions`, `get_running_count_for_persona`
                     // all use `IN ('queued','running')`). `pending` is only the
                     // legacy alias kept for old rows (see
@@ -1409,16 +1426,56 @@ pub fn count_environmental_failures_in_window(
     )
 }
 
-pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_running", {
-        let conn = pool.conn("executions::get_running")?;
-        let mut stmt = conn.prepare_cached(&format!(
-            "SELECT {COLUMNS} FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
-        ))?;
-        let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
+/// One in-flight run, in the only five fields anything asks the in-flight set
+/// for. Not a `PersonaExecution`: this set is polled by the live chains panel,
+/// and the full row carries two blobs (avg 7.4 KB + 9.6 KB on the 2026-06-02
+/// snapshot) that neither caller reads and the IPC transport `structuredClone`s
+/// on every hand-out.
+#[derive(Debug, Clone)]
+pub struct RunningExecutionRow {
+    pub id: String,
+    pub persona_id: String,
+    /// The runtime input — the chain grouping parses `_chain_*` out of it.
+    pub input_data: Option<String>,
+    /// NULL for a `queued` run that has not started yet.
+    pub started_at: Option<String>,
+    pub created_at: String,
+}
+
+fn row_to_running_row(row: &Row) -> rusqlite::Result<RunningExecutionRow> {
+    Ok(RunningExecutionRow {
+        id: row.get("id")?,
+        persona_id: row.get("persona_id")?,
+        input_data: row.get("input_data")?,
+        started_at: row.get("started_at")?,
+        created_at: row.get("created_at")?,
     })
+}
+
+/// Every execution the engine currently has in flight (`queued` or `running`),
+/// in the lean projection above.
+///
+/// This replaced a `get_running` that returned the full 31-column row to two
+/// callers that between them read five fields. The status predicate is still a
+/// SCAN — `idx_pe_status` is a single-column index and SQLite does not use it
+/// for `IN ('queued','running')` here (measured on the 2026-06-02 snapshot:
+/// `SCAN persona_executions USING INDEX idx_pe_created`). That is a separate
+/// index decision with its own evidence; the row width is this one.
+pub fn get_running_lean(pool: &DbPool) -> Result<Vec<RunningExecutionRow>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_running_lean",
+        {
+            let conn = pool.conn("executions::get_running_lean")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {RUNNING_COLUMNS} FROM persona_executions \
+                 WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
+            ))?;
+            let rows = stmt.query_map([], row_to_running_row)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 // =============================================================================
@@ -1560,7 +1617,7 @@ pub fn group_active_chains(rows: &[ActiveChainRow]) -> Vec<ActiveChain> {
 /// List the chains that currently have in-flight (running/queued) executions,
 /// grouped by `chain_trace_id`. An empty vec means no chain work is in flight.
 pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
-    let running = get_running(pool)?;
+    let running = get_running_lean(pool)?;
     let rows: Vec<ActiveChainRow> = running
         .into_iter()
         .map(|e| ActiveChainRow {
@@ -2781,6 +2838,47 @@ mod tests {
         );
     }
 
+    /// Same gate as the two projection tests above, for the in-flight set: a
+    /// by-name read of a column the SELECT does not carry compiles fine and
+    /// fails at runtime on the first row.
+    ///
+    /// It also pins the field set both callers actually read — the live chains
+    /// panel takes `persona_id` / `input_data` / `started_at`-or-`created_at`,
+    /// and persona deletion takes `id` / `persona_id`. If a caller starts
+    /// needing a sixth field, this test is where the projection gets widened.
+    #[test]
+    fn running_projection_covers_every_field_the_mapper_reads() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Running Projection Agent");
+        let created = create(
+            &pool,
+            &persona_id,
+            None,
+            Some("{\"hello\":1}".into()),
+            None,
+            None,
+        )
+        .unwrap();
+
+        let rows = get_running_lean(&pool).expect("get_running_lean must not fail");
+        assert_eq!(rows.len(), 1);
+        let row = &rows[0];
+        assert_eq!(row.id, created.id);
+        assert_eq!(row.persona_id, persona_id);
+        assert_eq!(row.input_data.as_deref(), Some("{\"hello\":1}"));
+        // A queued run has not started; the chain grouping falls back to
+        // created_at, which must therefore be present.
+        assert!(row.started_at.is_none());
+        assert!(!row.created_at.is_empty());
+
+        // And the projection prepares against the real migrated schema.
+        let conn = pool.conn("executions::test").unwrap();
+        conn.prepare(&format!(
+            "SELECT {RUNNING_COLUMNS} FROM persona_executions LIMIT 0"
+        ))
+        .unwrap_or_else(|e| panic!("running projection does not match schema: {e}"));
+    }
+
     /// The measurement behind this change, run rather than asserted from
     /// memory: serialize both shapes for the same rows and compare bytes.
     ///
@@ -2990,7 +3088,7 @@ mod tests {
         assert_eq!(by_persona.len(), 1);
 
         // Get running
-        let running = get_running(&pool).unwrap();
+        let running = get_running_lean(&pool).unwrap();
         assert_eq!(running.len(), 1); // queued counts as running
 
         // Get running count for persona
@@ -3055,7 +3153,7 @@ mod tests {
     /// P1 durability invariant: startup recovery must distinguish mid-RUN rows
     /// (to fail) from durable `queued` rows (to re-admit). `get_running_only`
     /// sees only `running`; `get_queued_only` sees only `queued`; the legacy
-    /// `get_running` union still sees both.
+    /// `get_running_lean` union still sees both.
     #[test]
     fn running_only_and_queued_only_partition_by_status() {
         let pool = init_test_db().unwrap();
@@ -3083,7 +3181,7 @@ mod tests {
         assert_eq!(queued_only[0].id, queued.id);
 
         // The legacy union still returns both (back-compat).
-        assert_eq!(get_running(&pool).unwrap().len(), 2);
+        assert_eq!(get_running_lean(&pool).unwrap().len(), 2);
 
         // A completed row is in neither partition.
         update_status(
