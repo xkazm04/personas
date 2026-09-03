@@ -19,6 +19,48 @@ import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 import { getExecutionLogLines } from '@/api/agents/executions';
 import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
 
+/**
+ * Page size for the reload recovery replay.
+ *
+ * `get_execution_log_lines` (src-tauri/src/commands/execution/executions.rs)
+ * has TWO modes and they are selected by whether `offset` is present, not by
+ * whether `limit` is: with no offset it returns the LAST `limit ?? 500`
+ * matching lines (tail mode, ring-buffered); with an offset it pages forward.
+ * The recovery replay called it with neither argument, so it silently asked
+ * for the tail — a run that had produced more than 500 lines before the reload
+ * came back with only its last 500 and everything above them was gone from the
+ * transcript, with nothing in the UI saying so. 500 matches the backend's own
+ * default, so a short run still costs exactly one round trip.
+ */
+const RECOVERY_PAGE_SIZE = 500;
+
+/**
+ * Ceiling on lines pulled back by the replay. `MAX_TERMINAL_LINES` in
+ * `executionSink.ts` is 10,000 and the sink evicts past it (announcing the
+ * truncation), so pulling more would be work whose result is dropped one call
+ * later. It is also the loop's liveness guarantee: a backend that somehow
+ * returned a full page forever terminates here rather than paging without end.
+ */
+const RECOVERY_MAX_LINES = 10_000;
+
+/**
+ * Read a run's whole persisted transcript by paging FORWARD from offset 0.
+ *
+ * Stops on the first short page (the documented end-of-stream signal for this
+ * command) or at `RECOVERY_MAX_LINES`, whichever comes first.
+ */
+async function fetchLogLinesPaged(execId: string, personaId: string): Promise<string[]> {
+  const all: string[] = [];
+  for (let offset = 0; offset < RECOVERY_MAX_LINES; offset += RECOVERY_PAGE_SIZE) {
+    const page = await getExecutionLogLines(execId, personaId, offset, RECOVERY_PAGE_SIZE);
+    all.push(...page);
+    // A short page means the backend ran out of matching lines. An empty page
+    // is the same signal and is covered by the same test.
+    if (page.length < RECOVERY_PAGE_SIZE) break;
+  }
+  return all.length > RECOVERY_MAX_LINES ? all.slice(0, RECOVERY_MAX_LINES) : all;
+}
+
 export function usePersonaExecution() {
   const { clearOutput, activeExecutionId, selectedPersonaId } = useAgentStore(useShallow((s) => ({
     clearOutput: s.clearExecutionOutput,
@@ -203,7 +245,7 @@ export function usePersonaExecution() {
 
     // Replay log lines that were missed during reload, deduplicating against
     // lines already delivered by the real-time event bus stream.
-    getExecutionLogLines(execId, personaId)
+    fetchLogLinesPaged(execId, personaId)
       .then((lines) => {
         const current = useAgentStore.getState().executionOutput;
         // Build a counted set so legitimately repeated identical lines are
