@@ -5,6 +5,12 @@ import { CLOUD_BACKOFF_STEPS, CLOUD_MAX_RECONNECT_ATTEMPTS, type CloudReconnectS
 import { isAuthError } from '@/stores/slices/system/deployTarget';
 
 const HEALTH_POLL_INTERVAL = 30_000; // 30s between health pings when connected
+// A tick that fires this far past the time it was armed did not run on time:
+// the host slept or was suspended. Such a tick says something about the host,
+// not the peer, so its first failure is not a verdict — the network is often
+// still coming back when it lands.
+const LATE_TICK_THRESHOLD = 2 * HEALTH_POLL_INTERVAL;
+const LATE_TICK_REPROBE_DELAY = 3_000; // grace before the one re-probe a late tick gets
 
 /**
  * Monitors cloud connection health after a successful connection.
@@ -13,6 +19,9 @@ const HEALTH_POLL_INTERVAL = 30_000; // 30s between health pings when connected
  * - If the poll fails (orchestrator unreachable), marks the connection as
  *   dropped and begins auto-reconnection with exponential backoff
  *   (5s → 10s → 20s → 60s cap).
+ * - A tick that fires long after it was scheduled (host resumed from sleep)
+ *   re-probes once after a short grace instead; only that second failure
+ *   starts the reconnect loop.
  * - On successful reconnection, restores normal health polling.
  * - Stops entirely when the user explicitly disconnects or on auth errors.
  */
@@ -22,7 +31,7 @@ export function useCloudHealthMonitor() {
   const wasConnectedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
-  const runHealthCheckRef = useRef<(gen: number) => Promise<void>>(async () => undefined);
+  const runHealthCheckRef = useRef<(gen: number, lateTick?: boolean) => Promise<void>>(async () => undefined);
   const startReconnectLoopRef = useRef<(gen: number) => void>(() => undefined);
   const attemptReconnectRef = useRef<(attempt: number, gen: number) => Promise<void>>(async () => undefined);
   // Generation counter: incremented on every effect teardown (including unmount).
@@ -42,8 +51,18 @@ export function useCloudHealthMonitor() {
     return unmountedRef.current || gen !== generationRef.current;
   }, []);
 
+  // Every health timer remembers when it was armed, so the tick can tell
+  // whether it fired on time or is the first thing to run after a resume.
+  const scheduleHealthCheck = useCallback((gen: number, delay: number = HEALTH_POLL_INTERVAL) => {
+    const scheduledAt = Date.now();
+    timerRef.current = setTimeout(() => {
+      const lateTick = Date.now() - scheduledAt > LATE_TICK_THRESHOLD;
+      void runHealthCheckRef.current(gen, lateTick);
+    }, delay);
+  }, []);
+
   // Health check: try cloudGetConfig. If connected, fine. If not, trigger reconnect loop.
-  const runHealthCheck = useCallback(async (gen: number) => {
+  const runHealthCheck = useCallback(async (gen: number, lateTick = false) => {
     if (isStale(gen)) return;
     const store = useSystemStore.getState();
     // Don't health-check if already reconnecting or user disconnected
@@ -54,17 +73,23 @@ export function useCloudHealthMonitor() {
       if (isStale(gen)) return;
       if (config?.is_connected) {
         // Still connected — schedule next check
-        timerRef.current = setTimeout(() => void runHealthCheckRef.current(gen), HEALTH_POLL_INTERVAL);
+        scheduleHealthCheck(gen);
       } else {
         // Connection dropped — start reconnect loop
         startReconnectLoopRef.current(gen);
       }
     } catch {
       if (isStale(gen)) return;
+      if (lateTick) {
+        // The host slept through this tick; the network may not be back yet.
+        // One re-probe after a short grace — only its failure is a verdict.
+        scheduleHealthCheck(gen, LATE_TICK_REPROBE_DELAY);
+        return;
+      }
       // Error reaching backend — start reconnect loop
       startReconnectLoopRef.current(gen);
     }
-  }, [isStale]);
+  }, [isStale, scheduleHealthCheck]);
   runHealthCheckRef.current = runHealthCheck;
 
   const startReconnectLoop = useCallback((gen: number) => {
@@ -99,7 +124,7 @@ export function useCloudHealthMonitor() {
           cloudError: null,
         });
         // Resume health polling
-        timerRef.current = setTimeout(() => void runHealthCheckRef.current(gen), HEALTH_POLL_INTERVAL);
+        scheduleHealthCheck(gen);
         return;
       }
     } catch (err) {
@@ -150,7 +175,7 @@ export function useCloudHealthMonitor() {
     };
     useSystemStore.setState({ cloudReconnectState: nextState });
     timerRef.current = setTimeout(() => void attemptReconnectRef.current(nextAttempt, gen), delay);
-  }, [isStale]);
+  }, [isStale, scheduleHealthCheck]);
   attemptReconnectRef.current = attemptReconnect;
 
   useEffect(() => {
@@ -161,7 +186,7 @@ export function useCloudHealthMonitor() {
       // Connection is live — start health polling
       wasConnectedRef.current = true;
       clearTimer();
-      timerRef.current = setTimeout(() => void runHealthCheckRef.current(gen), HEALTH_POLL_INTERVAL);
+      scheduleHealthCheck(gen);
     } else if (!isConnected && wasConnectedRef.current && !reconnectState.isReconnecting) {
       // Was connected but now dropped (external state change) — start reconnect
       startReconnectLoopRef.current(gen);
@@ -176,7 +201,7 @@ export function useCloudHealthMonitor() {
       if (timer.current != null) clearTimeout(timer.current);
       clearTimer();
     };
-  }, [clearTimer, isConnected, reconnectState.isReconnecting]);
+  }, [clearTimer, scheduleHealthCheck, isConnected, reconnectState.isReconnecting]);
 
   // When user explicitly disconnects, reset our tracking
   useEffect(() => {
