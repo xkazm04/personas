@@ -199,6 +199,19 @@ them instead of reconstructing them.
   its knees were measured. A missing trace falls back to the fully synthetic
   waterfall with the full badge. The replay terminal is virtualized above 50
   lines.
+- **The live terminal buffer (2026-09-03).** The output sink keeps the last
+  10,000 lines; when it evicts, a `[SYSTEM] Terminal buffer full — N earlier
+  lines dropped` head line discloses it, the same way the 10 MB byte cap
+  already did. A truncated run's final lines (including its error line) now
+  reach the completed transcript synchronously at finish. Reloading during a
+  long run replays the whole log through the paginated door (500 lines a page,
+  capped at 10,000) instead of the last 500. The CLI stream renders once per
+  animation frame rather than once per line, holds lines that arrive before
+  its listener lands, and reports its phase through the canonical seven-state
+  vocabulary, so a cancelled run no longer spins forever. The status event is
+  parsed through that vocabulary at one door with the transition table
+  asserted (log-only for now); the live pipeline trace carries the run's cost on
+  its finalize stage.
 
 ## Execution traces
 
