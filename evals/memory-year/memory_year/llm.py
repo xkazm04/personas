@@ -27,7 +27,7 @@ import shutil
 
 CLAUDE = shutil.which("claude") or "claude"   # the resolved shim, so no shell is needed and argv stays short
 
-DEFAULT_CONSUMER = "claude:claude-opus-4-8@low"
+DEFAULT_CONSUMER = "claude:claude-opus-4-8@medium"
 DEFAULT_JUDGE = "claude:claude-sonnet-5@low"
 
 

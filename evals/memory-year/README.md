@@ -105,6 +105,23 @@ match, abstention detection, wrong-old-value detection) and a strict model judge
 the form classes (`rule`, `adaptation`, applied preferences), with the lenient variant
 behind a flag so the two can be compared on the same answers.
 
+## Two findings the harness made about itself before measuring any design
+
+- **Effort is part of the consumer's predicate, and low effort abstains.** On the same
+  full-history context with the fact plainly present, the production main-turn model at
+  `low` effort answered `UNKNOWN` on 15 of 40 probes; at `medium` it answered all three
+  re-tested probes correctly, and so did `low` with an elaboration step. That is the
+  doctrine's "elaboration regime" confound reproduced on the consumer Athena ships with,
+  and it is why the ladder's default consumer is `claude:claude-opus-4-8@medium` while
+  her production turn runs `low`. A rung measured at one effort does not travel to the
+  other.
+- **A smaller sibling model conflates a same-project update with the key asked.** Given a
+  line "project quill update: framework = Axum" beside "we use GitHub Actions as the CI
+  system", it answered the CI question with "Axum (originally GitHub Actions)". The
+  scenario's template phrasing is not the cause - the two lines name different keys -
+  but it is the kind of confusion a memory design that stores facts per key exists to
+  remove, and the harness will show whether it does.
+
 ## What the report carries
 
 Per rung × probe class: n, correct, wrong, abstained, *wrong-with-old-value*; per rung:
