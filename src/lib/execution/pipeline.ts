@@ -496,15 +496,46 @@ export function createPipelineTrace(executionId: string): UnifiedTrace {
 }
 
 /**
+ * Measurements a stage can carry that the frontend cannot derive from its own
+ * clock.
+ *
+ * Only `costUsd` for now, and the omission of a duration is deliberate: the
+ * run's wall-clock duration is NOT the finalize_status stage's duration, and
+ * writing it into `span.duration_ms` would draw a bar covering the whole run
+ * at the finalize offset in every waterfall. Run duration stays where it
+ * already is -- the span's `metadata.durationMs` and the trace's
+ * `completedAt - startedAt`.
+ */
+export interface StageMeasurements {
+  /**
+   * Money this stage is where the run's spend becomes known.
+   *
+   * `null` means "not priced", `0` means "this was free" -- the same rule
+   * `SpanRow` and `TraceSummary` state per row, and the reason this is
+   * nullable rather than defaulted to 0.
+   */
+  costUsd?: number | null;
+}
+
+/**
  * Record a pipeline stage span in the trace.
  * Automatically finalizes the previous stage's end_ms/duration_ms and
  * records high-resolution `performance.now()` stage timings.
+ *
+ * `measurements.costUsd` is how a LIVE, frontend-built trace gets priced. It
+ * used to be structurally impossible: every frontend stage span hard-coded
+ * `cost_usd: null` while the real number sat one line away in the status
+ * payload, so a running execution's trace could show every stage and no money
+ * at all. (`SyntheticTrace` still refuses to price a run -- that one is
+ * RECONSTRUCTED from a finished record and has nothing measured to report.
+ * This one watched the run happen.)
  */
 export function traceStage(
   trace: UnifiedTrace,
   stage: PipelineStage,
   metadata?: Record<string, unknown>,
   error?: string,
+  measurements?: StageMeasurements,
 ): UnifiedTrace {
   const now = Date.now();
   const relativeMs = now - trace.startedAt;
@@ -535,7 +566,7 @@ export function traceStage(
     start_ms: relativeMs,
     end_ms: null,
     duration_ms: null,
-    cost_usd: null,
+    cost_usd: measurements?.costUsd ?? null,
     error: error ?? null,
     metadata: metadata ?? null,
   };
@@ -746,6 +777,25 @@ export function hasPassedStage(
 export function traceDuration(trace: UnifiedTrace): number | null {
   if (!trace.completedAt) return null;
   return trace.completedAt - trace.startedAt;
+}
+
+/**
+ * Total cost recorded on a trace, or `null` when nothing priced it.
+ *
+ * Sums every span that carries a cost rather than reading one root span: a
+ * live frontend trace has no `execution` root (the backend writes that at
+ * finalize), so the only priced span is the stage the money became known at.
+ * A trace with priced spans summing to exactly 0 reports `0`, not `null` --
+ * free and unpriced are different facts and only one of them is safe to add
+ * up.
+ */
+export function traceCost(trace: UnifiedTrace): number | null {
+  let total: number | null = null;
+  for (const s of trace.spans) {
+    if (s.cost_usd == null) continue;
+    total = (total ?? 0) + s.cost_usd;
+  }
+  return total;
 }
 
 /** Extract only pipeline stage spans from a unified trace (ordered). */

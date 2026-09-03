@@ -26,7 +26,16 @@ export interface DesignDriftEvent {
 interface ExecutionSummary {
   status: string;
   durationMs: number | null;
-  costUsd: number;
+  /**
+   * `null` = this run was never priced; `0` = it was free.
+   *
+   * The caller used to collapse both into `0` before it got here, which the
+   * cost-overrun rule below happened to survive (its `> 0` guard rejects
+   * either) -- but only by accident, and every future reader of this field
+   * would have inherited a zero that means "unknown". Same rule the trace
+   * inspector states per span.
+   */
+  costUsd: number | null;
   errorMessage: string | null;
   toolSteps: string | null;
   executionId: string;
@@ -161,7 +170,7 @@ export function detectDesignDrift(
   }
 
   // 3. Cost overrun -- execution cost exceeds budget threshold
-  if (ctx.maxBudgetUsd != null && ctx.maxBudgetUsd > 0 && exec.costUsd > 0) {
+  if (ctx.maxBudgetUsd != null && ctx.maxBudgetUsd > 0 && exec.costUsd != null && exec.costUsd > 0) {
     const costRatio = exec.costUsd / ctx.maxBudgetUsd;
     if (costRatio > 0.5) {
       events.push({

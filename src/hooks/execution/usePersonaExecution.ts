@@ -124,11 +124,18 @@ export function usePersonaExecution() {
     if (store.pipelineTrace) {
       useAgentStore.setState((state) => ({
         pipelineTrace: state.pipelineTrace
-          ? traceStage(state.pipelineTrace, 'finalize_status', {
-            status,
-            durationMs: duration_ms ?? null,
-            costUsd: cost_usd ?? null,
-          })
+          ? traceStage(
+            state.pipelineTrace,
+            'finalize_status',
+            { status, durationMs: duration_ms ?? null, costUsd: cost_usd ?? null },
+            undefined,
+            // The same number the metadata already carried, now on the span
+            // field every cost reader in the app actually looks at. Before
+            // this the live trace put the run's price in metadata nothing
+            // reads and left `cost_usd: null` on the span, so a running
+            // execution's trace was structurally unpriceable.
+            { costUsd: cost_usd ?? null },
+          )
           : null,
       }));
 

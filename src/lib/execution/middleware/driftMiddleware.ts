@@ -55,7 +55,10 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
       {
         status: finalStatus,
         durationMs: durationMs ?? null,
-        costUsd: costUsd ?? 0,
+        // Unknown stays unknown. `?? 0` said "this run was free" about a run
+        // nobody priced -- harmless today only because the cost-overrun rule
+        // guards on `> 0`, which is the wrong reason for a fact to survive.
+        costUsd: costUsd ?? null,
         errorMessage: errorMessage ?? null,
         toolSteps: null,
         executionId,
