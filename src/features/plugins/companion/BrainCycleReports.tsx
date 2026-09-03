@@ -8,7 +8,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionListCycleReports,
   parseCycleStats,
@@ -71,8 +72,14 @@ export function BrainCycleReports({ limit = DEFAULT_LIMIT }: { limit?: number })
         cycleCache.notify();
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-        toastCatch('companion_list_cycle_reports')(err);
+        // Nobody asked for this read - it fires on mount - so the failure is
+        // reported where the data would have been, not as a toast over
+        // whatever the user was actually doing. The inline state below is the
+        // surface; Sentry still gets the event.
+        if (!cancelled) {
+          setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        }
+        silentCatch('companion_list_cycle_reports')(err);
       });
     return () => {
       cancelled = true;

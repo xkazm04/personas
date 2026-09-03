@@ -32,6 +32,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionDeleteBrainItem,
   companionGetBrainItem,
@@ -188,7 +189,7 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
               <ArrowLeft className="w-4 h-4" />
             </button>
           ) : null}
-          <div className="typo-body font-medium truncate">
+          <div className="typo-body truncate">
             {brainView.kind
               ? `${t.plugins.companion.brain_title} — ${kindLabel(t, brainView.kind)}`
               : t.plugins.companion.brain_title}
@@ -343,14 +344,14 @@ function TypesView() {
             <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${accent.bar}`} />
             <div className="flex items-center gap-2 mb-1">
               <Icon className={`w-4 h-4 ${accent.icon}`} />
-              <span className="typo-body font-medium">
+              <span className="typo-body">
                 {t.plugins.companion[labelKey]}
               </span>
             </div>
             <div className="typo-caption text-foreground mb-1.5">
               {t.plugins.companion[descKey]}
             </div>
-            <div className="typo-body font-semibold text-foreground">
+            <div className="typo-body text-foreground">
               {counts[kind] === undefined
                 ? '…'
                 : counts[kind] === 1
@@ -418,7 +419,7 @@ function ListView({ kind }: { kind: BrainKind }) {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="typo-caption font-medium text-foreground truncate">
+                  <span className="typo-caption text-foreground truncate">
                     {item.title}
                   </span>
                   <span className="typo-caption text-foreground shrink-0">
@@ -647,7 +648,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       // After delete, drop back to the list view.
       setBrainView({ open: true, kind, id: null });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(resolveError(err instanceof Error ? err.message : String(err)).message);
       silentCatch(`companion_delete_brain_item:${kind}:${id}`)(err);
     } finally {
       setDeleting(false);
@@ -666,7 +667,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       setDetail((d) => (d ? { ...d, content: draft } : d));
       setEditing(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(resolveError(err instanceof Error ? err.message : String(err)).message);
       silentCatch('companion_save_identity')(err);
     } finally {
       setSaving(false);
@@ -692,7 +693,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 py-3 border-b border-foreground/5 shrink-0">
-        <div className="typo-body font-medium truncate">{detail.title}</div>
+        <div className="typo-body truncate">{detail.title}</div>
         {detail.meta && (
           <div className="typo-caption text-foreground mt-0.5">
             {detail.meta}
@@ -729,7 +730,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption font-medium disabled:opacity-50 transition-opacity focus-ring"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption disabled:opacity-50 transition-opacity focus-ring"
               >
                 <Save className="w-3.5 h-3.5" />
                 {saving ? t.plugins.companion.identity_saving : t.plugins.companion.identity_save}
@@ -738,7 +739,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
                 type="button"
                 onClick={() => setEditing(false)}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium disabled:opacity-50 transition-colors focus-ring"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption disabled:opacity-50 transition-colors focus-ring"
               >
                 <X className="w-3.5 h-3.5" />
                 {t.common.cancel}
@@ -749,7 +750,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             <button
               type="button"
               onClick={startEdit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium transition-colors focus-ring"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption transition-colors focus-ring"
             >
               <Pencil className="w-3.5 h-3.5" />
               {t.plugins.companion.identity_edit}
@@ -763,7 +764,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {deleting
@@ -813,7 +814,7 @@ function IdentityAdaptations() {
   if (mods.length === 0) return null;
   return (
     <div className="rounded-card border border-primary/15 bg-primary/[0.03] px-3 py-2.5 space-y-1">
-      <div className="typo-caption tracking-wide font-semibold text-primary">{c.identity_adapts_title}</div>
+      <div className="typo-caption tracking-wide text-primary">{c.identity_adapts_title}</div>
       {mods.map((m) => (
         <div key={m.kind} className="typo-caption text-foreground">
           {tx(c.identity_adapts_row, {
@@ -852,7 +853,7 @@ function IdentityClaimCorrections({ content }: { content: string }) {
 
   return (
     <div className="space-y-1.5 pt-2 border-t border-foreground/10">
-      <div className="typo-caption tracking-wide font-semibold text-foreground">{c.identity_correct_title}</div>
+      <div className="typo-caption tracking-wide text-foreground">{c.identity_correct_title}</div>
       <p className="typo-caption text-foreground">{c.identity_correct_hint}</p>
       {claims.map((claim) => {
         const done = corrected.has(claim.bullet);

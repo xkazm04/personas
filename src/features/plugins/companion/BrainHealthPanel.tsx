@@ -14,7 +14,8 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionBrainHealth,
   type BrainCounters,
@@ -52,7 +53,7 @@ import { titleCase } from './athenaLabels';
  *    magnitude.
  *
  * Loading law: a delayed ghost under permanent chrome, a module-scoped warm
- * cache so re-opening the tab paints warm, and errors through `toastCatch`
+ * cache so re-opening the tab paints warm, and errors reported inline
  * plus an inline state.
  */
 
@@ -138,8 +139,12 @@ export function BrainHealthPanel() {
         healthCache.notify();
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-        toastCatch('companion_brain_health')(err);
+        // Unsolicited read: it fires on mount, so it reports inline rather
+        // than toasting over the user's current task.
+        if (!cancelled) {
+          setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        }
+        silentCatch('companion_brain_health')(err);
       });
     return () => {
       cancelled = true;
@@ -166,7 +171,7 @@ export function BrainHealthPanel() {
       <HealthVerdict report={cached} />
       {cached.firstBlockingCause ? (
         <section className="rounded-card border border-rose-400/30 bg-rose-400/5 px-4 py-3">
-          <h3 className="typo-body font-medium text-rose-400 mb-1">
+          <h3 className="typo-body text-rose-400 mb-1">
             {t.plugins.companion.health_blocking_cause}
           </h3>
           <p className="typo-caption text-foreground">{cached.firstBlockingCause.summary}</p>
@@ -191,7 +196,7 @@ function HealthVerdict({ report }: { report: BrainHealth }) {
         className={`w-5 h-5 shrink-0 ${report.healthy ? 'text-emerald-400' : 'text-rose-400'}`}
         aria-hidden="true"
       />
-      <span className="typo-body font-medium">
+      <span className="typo-body">
         {report.healthy
           ? t.plugins.companion.health_healthy
           : t.plugins.companion.health_unhealthy}
@@ -210,7 +215,7 @@ function HealthStages({ report }: { report: BrainHealth }) {
   const { t } = useTranslation();
   return (
     <section>
-      <h3 className="typo-caption font-semibold text-foreground mb-2">
+      <h3 className="typo-caption text-foreground mb-2">
         {t.plugins.companion.health_stages}
       </h3>
       <ul className="space-y-1.5">
@@ -226,7 +231,7 @@ function HealthStages({ report }: { report: BrainHealth }) {
             >
               <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${accent}`} aria-hidden="true" />
               <div className="min-w-0">
-                <div className="typo-caption font-medium text-foreground">
+                <div className="typo-caption text-foreground">
                   {stageLabel(t, stage.name)}
                   <span className={`ml-1.5 font-normal ${accent}`}>
                     {statusLabel(t, stage.status)}
@@ -300,14 +305,14 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
   const { t } = useTranslation();
   return (
     <section>
-      <h3 className="typo-caption font-semibold text-foreground mb-2">
+      <h3 className="typo-caption text-foreground mb-2">
         {t.plugins.companion.health_counters}
       </h3>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         {COUNTER_ROWS.map((key) => (
           <div key={key} className="flex items-baseline justify-between gap-2" data-counter={key}>
             <dt className="typo-caption text-foreground">{counterLabel(t, key)}</dt>
-            <dd className="typo-caption font-semibold text-foreground">
+            <dd className="typo-caption text-foreground">
               {counters[key] === null ? (
                 t.plugins.companion.health_counter_absent
               ) : (
@@ -320,7 +325,7 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
           <dt className="typo-caption text-foreground">
             {t.plugins.companion.health_counter_last_cycle}
           </dt>
-          <dd className="typo-caption font-semibold text-foreground">
+          <dd className="typo-caption text-foreground">
             {counters.lastCycleAt ? (
               <RelativeTime timestamp={counters.lastCycleAt} className="text-foreground" />
             ) : (

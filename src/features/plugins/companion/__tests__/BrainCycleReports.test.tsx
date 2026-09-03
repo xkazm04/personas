@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { BrainCycleReports, __resetCycleCacheForTests } from '../BrainCycleReports';
 import type { CycleSummary } from '@/api/companion/brain';
 
@@ -110,7 +112,10 @@ describe('BrainCycleReports', () => {
     api.list.mockRejectedValue(new Error('db locked'));
     render(<BrainCycleReports />);
     await waitFor(() => expect(screen.getByTestId('cycles-error')).toBeInTheDocument());
-    expect(screen.getByText('db locked')).toBeInTheDocument();
+    // The inline state shows the registry's resolution of the raw error, not
+    // the raw string - so assert against resolveError rather than restating
+    // its output here, which would pin this test to today's wording.
+    expect(screen.getByText(resolveError('db locked').message)).toBeInTheDocument();
   });
 
   it('paints warm from the module cache on a remount — no second ghost', async () => {
