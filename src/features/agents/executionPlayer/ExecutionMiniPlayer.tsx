@@ -33,8 +33,12 @@ import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedC
 /** Raw tail used only by the expanded terminal view; empty when collapsed/Simple mode so we skip the slice entirely. */
 const EMPTY_LINES: string[] = [];
 
-/** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
-function SimpleExecutionView({
+/**
+ * Simplified execution view for Simple mode — progress bar while running,
+ * result summary when done. Exported for the fallback-branch test: a null
+ * summary must let the plain result text render.
+ */
+export function SimpleExecutionView({
   isExecuting,
   error,
   stageProgress,
@@ -159,9 +163,22 @@ export default function ExecutionMiniPlayer() {
 
   useExecutionScope(activeExecutionId, executionPersonaId);
 
-  // Structured execution trace for Power mode summary
+  // Structured execution trace for Power mode summary.
+  // The trace cannot see a cancellation (the structured stream carries no
+  // cancel event -- it just stops), so the finished run's persisted status is
+  // handed to the summary as the authoritative terminal state.
   const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
-  const executionSummary = useExecutionSummary(traceEntries, traceLive);
+  const lastExecutionId = useAgentStore((s) => s.lastExecutionId);
+  const executions = useAgentStore((s) => s.executions);
+  const finishedStatus = useMemo(() => {
+    if (!lastExecutionId) return null;
+    const row = executions.find((e) => e.id === lastExecutionId);
+    if (row?.status === 'cancelled' || row?.status === 'failed' || row?.status === 'completed') {
+      return row.status;
+    }
+    return null;
+  }, [executions, lastExecutionId]);
+  const executionSummary = useExecutionSummary(traceEntries, traceLive, finishedStatus);
 
   const personaName = useMemo(() => {
     if (!executionPersonaId) return 'Agent';
