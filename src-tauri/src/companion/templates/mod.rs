@@ -448,4 +448,37 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// is safe and the card says which rows are new. The project is never in the
 /// payload — it is read off the milestone row, so a proposal has no way to
 /// point at the wrong one.
-pub const CONSTITUTION_VERSION: u32 = 59;
+/// v60 (the op catalog stops drifting from the prose) teaches the eight ops
+/// and the one route that were wired end to end — allow-list, dispatcher arm,
+/// executor, approval card — and named nowhere in this document, so Athena had
+/// no vocabulary for them and could never emit one: `delete_procedural`,
+/// `delete_goal`, `set_ritual_active`, `delete_ritual` (each in its family's
+/// section, with the distinction that actually needed teaching — pause is not
+/// delete, abandoned is not delete, supersede is not delete), the two read ops
+/// `list_runner_tasks` and `describe_brain_health` (in "Detail on demand",
+/// which now reads "eight" and not "six"), the `mastermind` pseudo-route
+/// beside `monitor`, and a DEV MODE ONLY section for `dev_improve` /
+/// `dev_merge` whose real brief is injected by `companion::dev_mode` — the
+/// section's job is the negative rule, that without that brief in front of her
+/// the op can only produce a card that fails. Nothing was retired: all eight
+/// have live dispatcher arms. The drift is now gated —
+/// `dispatcher::catalog`'s `every_catalog_op_is_taught_by_the_constitution`
+/// fails the build on the next one, with a positive control so a broken
+/// matcher cannot pass as a clean catalog.
+///
+/// ## How a bump reaches the running app
+///
+/// Athena's prompt does NOT read this constant. `prompt::build`
+/// (`build_system_prompt`, ~line 68) reads the DISK copy at
+/// `~/.personas/companion-brain/constitution.md`, so an edit to
+/// `constitution.md` alone changes nothing on a machine that already has one.
+/// The re-seed is `disk::ensure_initialized`, which runs on companion init and
+/// compares this constant against the `companion_constitution_version` row in
+/// `app_settings`: when the stored stamp is missing or lower it copies the
+/// existing file to `constitution.bak-<UTC timestamp>.md`, writes the embedded
+/// copy over it, and re-stamps. That is the whole delivery mechanism — **not
+/// bumping this number ships prose that no session will ever read.** Verified
+/// 2026-09-03 by reading both ends (`disk.rs:72-106`, `prompt/build.rs:67-69`).
+/// Note that the backups are never reaped: 31 of them accumulated before
+/// anyone counted, and retention is a Director call, not this constant's.
+pub const CONSTITUTION_VERSION: u32 = 60;

@@ -391,3 +391,79 @@ pub(super) use crate::companion::generated_anchors::GUIDANCE_ANCHORS as ANCHOR_I
 /// job; more than this reads as a slideshow the user won't sit through.
 pub(super) const COMPOSE_MIN_STEPS: usize = 2;
 pub(super) const COMPOSE_MAX_STEPS: usize = 6;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::companion::templates::CONSTITUTION_MD;
+
+    /// An op is *taught* when the constitution names it verbatim, either as a
+    /// backticked token in prose or inside a quoted JSON field on an `OP:`
+    /// line. A bare substring search would be worthless here — half the op
+    /// names contain a common English word, and `ab` (a lab mode) would match
+    /// almost any paragraph. This asks the narrower question the gate is
+    /// actually about: does the name appear where a reader would take it as a
+    /// name.
+    fn taught(name: &str) -> bool {
+        CONSTITUTION_MD.contains(&format!("`{name}`"))
+            || CONSTITUTION_MD.contains(&format!("\"{name}\""))
+    }
+
+    /// The allow-lists in this file decide what Athena is *permitted* to emit.
+    /// The constitution decides what she has ever been *told about*. Nothing
+    /// tied the two together, so an op could be wired end to end — allow-list,
+    /// dispatcher arm, executor, approval card — and remain unreachable
+    /// because the one document that teaches her the vocabulary never
+    /// mentioned it. Measured 2026-09-03: eight of the sixty-six were in
+    /// exactly that state (`delete_procedural`, `delete_goal`,
+    /// `set_ritual_active`, `delete_ritual`, `list_runner_tasks`,
+    /// `describe_brain_health`, `dev_improve`, `dev_merge`).
+    ///
+    /// If this fails, the fix is to teach the op in the section its family
+    /// lives in — not to delete the entry here, unless the op is genuinely
+    /// retired (in which case its dispatcher arm and executor go with it).
+    #[test]
+    fn every_catalog_op_is_taught_by_the_constitution() {
+        let undocumented: Vec<&str> = ALLOWED_ACTIONS
+            .iter()
+            .chain(READ_OPS.iter())
+            .copied()
+            .filter(|op| !taught(op))
+            .collect();
+        assert!(
+            undocumented.is_empty(),
+            "these ops are in the dispatcher allow-list but appear nowhere in \
+             the constitution, so Athena can never emit them: {undocumented:?}"
+        );
+    }
+
+    /// Same contract for `open_route`'s destinations. A route Athena has not
+    /// been told about is a route she navigates to by guessing, and a
+    /// hallucinated one is rejected at the dispatcher — silently, from her
+    /// point of view. `mastermind` sat here undocumented until 2026-09-03.
+    #[test]
+    fn every_allowed_route_is_taught_by_the_constitution() {
+        let undocumented: Vec<&str> = ALLOWED_ROUTES
+            .iter()
+            .copied()
+            .filter(|r| !taught(r))
+            .collect();
+        assert!(
+            undocumented.is_empty(),
+            "these `open_route` destinations are allowed but untaught: {undocumented:?}"
+        );
+    }
+
+    /// The positive control for [`taught`]. `delete_fact` has been documented
+    /// since the semantic layer shipped; if this ever goes red the matcher is
+    /// broken, not the constitution — which is the failure mode that lets a
+    /// gate run green while checking nothing.
+    #[test]
+    fn the_documentation_matcher_finds_a_known_documented_op() {
+        assert!(taught("delete_fact"), "positive control failed: the matcher no longer finds an op the constitution demonstrably teaches");
+        assert!(
+            !taught("op_that_does_not_exist_anywhere"),
+            "negative control failed: the matcher matches a name that is not in the document"
+        );
+    }
+}
