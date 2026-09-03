@@ -12,6 +12,7 @@ pub mod policy_events;
 pub mod policy_evidence;
 pub mod policy_proposals;
 pub mod provider_audit;
+pub mod restart_recovery;
 pub mod scheduled_retries;
 pub mod test_runs;
 pub mod test_suites;

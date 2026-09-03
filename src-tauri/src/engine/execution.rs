@@ -487,44 +487,53 @@ impl ExecutionEngine {
         tracker.running_count(persona_id) == 0 && tracker.queue_depth(persona_id) == 0
     }
 
-    /// Fail executions that were mid-RUN when the app last exited.
+    /// Classify executions that were mid-RUN when the app last exited.
     ///
-    /// After a restart, a `running` row's CLI subprocess is dead, so the row is
-    /// orphaned — mark it `failed` so the tracker stays in sync and the slot is
-    /// freed. **`queued` rows are intentionally left untouched** here: they
-    /// never started a process, so they are durable work to be re-admitted by
-    /// [`Self::requeue_persisted_executions`] once the engine is constructed.
-    /// (Previously this failed `queued` rows too, silently dropping any
-    /// scheduled / event-triggered execution that was waiting in the queue at
-    /// shutdown — the P1 "never lose a queued execution" gap.)
-    pub fn recover_stale_executions(pool: &DbPool) {
-        match exec_repo::get_running_only(pool) {
-            Ok(stale) if stale.is_empty() => {
-                tracing::debug!("No mid-run executions to recover");
+    /// **This used to declare a failure it never observed.** Every `running`
+    /// row was marked `failed` with `"App restarted while execution was
+    /// running"`; the golden path measured 74 of 2,188 executions carrying
+    /// that marker (`docs/concepts/golden-paths/os-process-reconciliation.md`
+    /// §7.2), and §2(c) of the same document gives the rule this now follows:
+    /// *"At boot, do not declare — classify. Rows whose process cannot be
+    /// proven alive are unproven, not failed."*
+    ///
+    /// The classification itself lives in
+    /// [`exec_repo_restart::classify_running_rows`] (data layer, unit-tested
+    /// against the backup's shape). Three outcomes:
+    ///
+    /// * **resume-pending** — the row goes back to `queued`, which is the
+    ///   durable queue [`Self::requeue_persisted_executions`] already drains,
+    ///   with a mark that survives the re-admission and a restart counter that
+    ///   only a *completed* turn resets.
+    /// * **unproven** — `incomplete`, awaiting a person. Not a failure.
+    /// * **suspended** — the escalation: three consecutive restarts with this
+    ///   execution still active is a run that cannot be run at all on this
+    ///   history, and it stops being re-admitted.
+    ///
+    /// **`queued` rows are still intentionally left untouched**: they never
+    /// started a process, so they are durable work re-admitted once the engine
+    /// is constructed (the P1 "never lose a queued execution" invariant).
+    ///
+    /// Nothing here asks whether a process is alive — no pid, no `sysinfo`, no
+    /// kill. That is `os-process-reconciliation`'s leaf. The only liveness
+    /// question this path needs ("is another instance running this work?") is
+    /// answered before it, by the leadership lease in `boot::recovery`.
+    pub fn classify_stale_executions(pool: &DbPool) {
+        match exec_repo_restart::classify_running_rows(pool) {
+            Ok(sweep) if sweep.total() == 0 => {
+                tracing::debug!("No mid-run executions to classify");
             }
-            Ok(stale) => {
-                let count = stale.len();
-                for exec in &stale {
-                    // Startup recovery uses a direct sync DB call -- no async retry
-                    // needed because there is no contention during app init.
-                    let _ = exec_repo::update_status(
-                        pool,
-                        &exec.id,
-                        UpdateExecutionStatus {
-                            status: ExecutionState::Failed,
-                            error_message: Some("App restarted while execution was running".into()),
-                            ..Default::default()
-                        },
-                    );
-                }
+            Ok(sweep) => {
                 tracing::info!(
-                    count = count,
-                    "Recovered mid-run executions: marked {} as failed",
-                    count
+                    resume_pending = sweep.resume_pending.len(),
+                    unproven = sweep.unproven.len(),
+                    suspended = sweep.suspended.len(),
+                    "Classified {} mid-run execution(s) after an unclean start",
+                    sweep.total()
                 );
             }
             Err(e) => {
-                tracing::warn!("Failed to query mid-run executions: {}", e);
+                tracing::warn!("Failed to classify mid-run executions: {}", e);
             }
         }
     }
@@ -540,7 +549,7 @@ impl ExecutionEngine {
     /// updates it in place), so a crash mid-recovery just leaves it `queued` for
     /// the next startup. Best-effort per row — a persona that was deleted, or a
     /// row whose persona can't be loaded, is failed with a clear reason rather
-    /// than blocking the rest. Runs AFTER [`Self::recover_stale_executions`] and
+    /// than blocking the rest. Runs AFTER [`Self::classify_stale_executions`] and
     /// AFTER the engine is constructed (needs `app` + the live engine to spawn).
     pub async fn requeue_persisted_executions(&self, app: AppHandle, pool: DbPool) {
         let queued = match exec_repo::get_queued_only(&pool) {

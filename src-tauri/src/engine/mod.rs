@@ -164,6 +164,7 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::audit_incidents as incidents_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
+use crate::db::repos::execution::restart_recovery as exec_repo_restart;
 use crate::db::repos::execution::scheduled_retries as scheduled_retries_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;

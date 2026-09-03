@@ -119,6 +119,18 @@ impl EngineLeadership {
         &self.instance_id
     }
 
+    /// The resolved app-data dir this instance was constructed against —
+    /// including a `PERSONAS_DATA_DIR` override, because it is the dir the boot
+    /// phase actually used, not the one the platform would suggest.
+    ///
+    /// Exposed for the clean-shutdown marker on the exit path: `RunEvent::Exit`
+    /// hands back an `AppHandle`, not the `App` the boot resolved the dir from,
+    /// and a marker written beside a *different* data dir than the one the next
+    /// boot reads is worse than no marker at all.
+    pub fn app_data_dir(&self) -> &Path {
+        &self.app_data_dir
+    }
+
     /// Attempt to become the engine leader. Idempotent — if already leader,
     /// returns `true` without touching the file. Returns whether this instance
     /// holds leadership after the call.

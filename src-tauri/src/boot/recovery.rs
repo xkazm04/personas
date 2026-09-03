@@ -7,8 +7,11 @@ use crate::db::{self, DbPool};
 use crate::engine;
 use crate::startup_timing::StartupTimer;
 
-// Mark any executions left in running/queued state as failed
-// (their processes died when the app last exited).
+// Reconcile the rows an unclean exit left mid-flight. Persona executions are
+// CLASSIFIED (resume-pending / unproven / suspended, see
+// `ExecutionEngine::classify_stale_executions`); the four sibling sweeps below
+// still mark their rows failed, which is the shape this one used to have and
+// the next context to fix.
 //
 // That premise — "their processes died" — holds only while this is the sole
 // process on the DB. Since engine leadership (ADR 2026-05-26) a windowed app,
@@ -45,8 +48,28 @@ pub fn recover_interrupted_work(
         return;
     }
 
-    engine::ExecutionEngine::recover_stale_executions(pool);
-    st.checkpoint("stale_execution_recovery");
+    // A graceful quit is a fact, and it has to be recorded — otherwise every
+    // deliberate restart (an upgrade, a settings reload, the user closing the
+    // window) is indistinguishable from a crash, and the classification below
+    // manufactures a class of rows that only a crash should produce. The
+    // marker is written last on the exit path (`lib.rs`, `RunEvent::Exit`) and
+    // consumed here. Registry technique
+    // `session-continuation/stuck-loop-detection`, "A clean shutdown is a
+    // fact": absence of the marker IS the crash signal.
+    //
+    // Scoped to the execution sweep on purpose. The four sibling sweeps below
+    // still declare blind, and widening the gate to them before their rows are
+    // classified would only make their wrong verdicts rarer, not righter.
+    if personas_core::shutdown_marker::take_clean_shutdown(app_data_dir) {
+        tracing::info!(
+            "Startup: previous exit was graceful - skipping mid-run execution \
+             classification (no run was interrupted)"
+        );
+        st.checkpoint("stale_execution_recovery_skipped_clean");
+    } else {
+        engine::ExecutionEngine::classify_stale_executions(pool);
+        st.checkpoint("stale_execution_recovery");
+    }
 
     // Mark n8n transform sessions interrupted by app exit as failed
     // and clear their in-memory job entries (dead cancellation tokens,
