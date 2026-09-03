@@ -7,6 +7,7 @@
 //! consolidation can be rebuilt from the source log if it drifts.
 
 use std::fs;
+use std::path::MAIN_SEPARATOR;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
@@ -277,6 +278,222 @@ pub fn append_episode(
     )?;
 
     Ok(id)
+}
+
+/// Upper bound on episode files one [`reconcile_orphaned_episodes`] pass
+/// indexes.
+///
+/// The pass walks the whole episode tree (14,816 files on the machine this was
+/// measured on) but only WRITES for the ones with no index row (3,294 of them,
+/// 2,615 of which were user turns). Bounding the writes keeps one pass short on
+/// a badly-drifted brain; the walk is idempotent, so what a bounded pass leaves
+/// behind the next one picks up.
+const RECONCILE_MAX_PER_RUN: u32 = 2_000;
+
+/// What one reconcile pass did. Every number is reported, including zeros --
+/// "it ran and found nothing" and "it never ran" are different facts.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ReconcileReport {
+    /// Episode markdown files visited.
+    #[ts(type = "number")]
+    pub scanned: u32,
+    /// Files that had no `companion_node` row and now have one.
+    #[ts(type = "number")]
+    pub indexed: u32,
+    /// Of [`Self::indexed`], how many were machine correlator records.
+    #[ts(type = "number")]
+    pub indexed_machine: u32,
+    /// Files skipped because their frontmatter could not be read (no `id`, no
+    /// `created`, or no frontmatter block at all). Counted, never swallowed.
+    #[ts(type = "number")]
+    pub malformed: u32,
+    /// True when [`RECONCILE_MAX_PER_RUN`] stopped the pass with work left.
+    pub truncated: bool,
+}
+
+/// Index episode markdown files that have no `companion_node` row.
+///
+/// [`append_episode`] writes the markdown to disk BEFORE the SQL row, by
+/// design -- the file is the source of truth and the row is an index over it.
+/// The cost of that ordering is that a crash, a failed write, or a process
+/// killed between the two leaves a file with no index row, and until this
+/// function there was no reconciler and no rebuild-from-disk, so the episode
+/// was orphaned forever: invisible to recall, to the transcript, to the sleep
+/// cycle and to every count in the health report. Measured on the live brain:
+/// 14,816 files against 11,522 rows.
+///
+/// **It shares the writer's rules rather than restating them.** Timestamp,
+/// session and role come from the file's own frontmatter (what
+/// [`format_episode_markdown`] wrote), the body goes through the same
+/// [`excerpt_500`], the machine classification is [`is_machine_episode`] and
+/// the importance is the same [`MACHINE_EPISODE_IMPORTANCE`] /
+/// [`HUMAN_EPISODE_IMPORTANCE`] pair `append_episode` applies, and the
+/// `companion_fts` mirror is written too -- an indexed episode that skipped the
+/// mirror would be stored and unfindable, which is a different orphan.
+///
+/// Idempotent: a file whose id is already a `companion_node` row is skipped
+/// without a write, so a second pass over the same tree reports `indexed: 0`.
+pub fn reconcile_orphaned_episodes(pool: &UserDbPool) -> Result<ReconcileReport, AppError> {
+    let brain_root = disk::brain_root()?;
+    let episodes_root = brain_root.join("episodes");
+    let mut report = ReconcileReport::default();
+    if !episodes_root.is_dir() {
+        return Ok(report);
+    }
+
+    let conn = pool.get()?;
+    let mut exists = conn.prepare("SELECT 1 FROM companion_node WHERE id = ?1")?;
+
+    let mut stack = vec![episodes_root];
+    while let Some(dir) = stack.pop() {
+        let entries = match fs::read_dir(&dir) {
+            Ok(e) => e,
+            Err(e) => {
+                tracing::warn!(dir = %dir.display(), error = %e, "companion reconcile: unreadable directory");
+                continue;
+            }
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            report.scanned = report.scanned.saturating_add(1);
+
+            if report.indexed >= RECONCILE_MAX_PER_RUN {
+                report.truncated = true;
+                continue;
+            }
+
+            let Ok(full) = fs::read_to_string(&path) else {
+                report.malformed = report.malformed.saturating_add(1);
+                continue;
+            };
+            let Some(meta) = parse_episode_frontmatter(&full) else {
+                report.malformed = report.malformed.saturating_add(1);
+                continue;
+            };
+            if exists.exists(params![meta.id])? {
+                continue;
+            }
+            // `companion_node.file_path` is relative to the brain root, exactly
+            // as `append_episode` writes it -- every reader (`hydrate_row`,
+            // `get_episode`) joins it back onto that root.
+            let Ok(rel) = path.strip_prefix(&brain_root) else {
+                report.malformed = report.malformed.saturating_add(1);
+                continue;
+            };
+            let rel_path = rel.to_string_lossy().replace(MAIN_SEPARATOR, "/");
+
+            let (_, content) = parse_episode_body(&full);
+            let machine = is_machine_episode(&content);
+            let importance = if machine {
+                MACHINE_EPISODE_IMPORTANCE
+            } else {
+                HUMAN_EPISODE_IMPORTANCE
+            };
+
+            conn.execute(
+                // `ON CONFLICT(id) DO NOTHING` and not a statement-wide
+                // `OR IGNORE`: the only conflict this write may swallow is a
+                // row that already exists (a racing writer between the
+                // `exists` probe and here). `OR IGNORE` would also swallow a
+                // NOT NULL or CHECK violation and report the same silent zero.
+                "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+                 VALUES (?1, 'episode', ?6, ?2, ?3, ?7, ?4, ?5, ?5)
+                 ON CONFLICT(id) DO NOTHING",
+                params![
+                    meta.id,
+                    rel_path,
+                    sha256_hex(&full),
+                    excerpt_500(&content),
+                    meta.created,
+                    meta.session,
+                    importance
+                ],
+            )?;
+            conn.execute(
+                "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
+                params![
+                    meta.id,
+                    content,
+                    format!("session:{} role:{}", meta.session, meta.role)
+                ],
+            )?;
+
+            report.indexed = report.indexed.saturating_add(1);
+            if machine {
+                report.indexed_machine = report.indexed_machine.saturating_add(1);
+            }
+        }
+    }
+
+    if report.indexed > 0 {
+        tracing::info!(
+            scanned = report.scanned,
+            indexed = report.indexed,
+            machine = report.indexed_machine,
+            malformed = report.malformed,
+            truncated = report.truncated,
+            "companion: reconciled orphaned episode files into the index"
+        );
+    }
+    Ok(report)
+}
+
+/// The frontmatter fields the reconciler needs to reconstruct an index row.
+struct EpisodeFrontmatter {
+    id: String,
+    session: String,
+    role: String,
+    created: String,
+}
+
+/// Read `id` / `session` / `role` / `created` out of an episode file's
+/// frontmatter, or `None` when `id` or `created` is missing.
+///
+/// Strict about those two and forgiving about the rest: they are the primary
+/// key and the ordering key, and a guessed value for either would collide or
+/// silently reorder the transcript. A missing session or role only degrades a
+/// row.
+fn parse_episode_frontmatter(full: &str) -> Option<EpisodeFrontmatter> {
+    let after = full.strip_prefix("---\n")?;
+    let end = after.find("\n---")?;
+    let mut id = None;
+    let mut session = None;
+    let mut role = None;
+    let mut created = None;
+    for line in after[..end].lines() {
+        // `split_once` and not `split`: `created` is an RFC3339 timestamp and
+        // is full of colons, so only the FIRST one separates key from value.
+        let Some((key, value)) = line.trim().split_once(':') else {
+            continue;
+        };
+        let value = value.trim().trim_matches('"').to_string();
+        match key.trim() {
+            "id" => id = Some(value),
+            "session" => session = Some(value),
+            "role" => role = Some(value),
+            "created" => created = Some(value),
+            _ => {}
+        }
+    }
+    Some(EpisodeFrontmatter {
+        id: id.filter(|v| !v.is_empty())?,
+        created: created.filter(|v| !v.is_empty())?,
+        session: session
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| "default".to_string()),
+        role: role
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| "unknown".to_string()),
+    })
 }
 
 /// Same as `append_episode`, but also embeds the content into the
@@ -796,6 +1013,190 @@ mod tests {
 
     /// The markers are interpolated into a SQL `LIKE` pattern, so they must
     /// carry no quote or wildcard. Guards `machine_marker_exclusion_sql`.
+    // -- reconciling orphaned episode files (X2) --------------------------
+
+    /// Write an episode file to disk with NO index row -- exactly what
+    /// `append_episode` leaves behind when it dies between the two writes.
+    fn orphan_file(id: &str, session: &str, role: &str, created: &str, body: &str) {
+        let rel = format!("episodes/2026/08/01/{id}_{role}.md");
+        let abs = disk::brain_root().unwrap().join(&rel);
+        fs::create_dir_all(abs.parent().unwrap()).unwrap();
+        fs::write(
+            &abs,
+            format_episode_markdown(id, session, role, created, body),
+        )
+        .unwrap();
+    }
+
+    fn node_count(pool: &crate::db::UserDbPool) -> i64 {
+        pool.conn("episodic_test::node_count")
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM companion_node WHERE kind = 'episode'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    /// Fail-before: nothing in the tree read episode markdown back into the
+    /// index, so an orphaned file was invisible to recall, the transcript, the
+    /// sleep cycle and every count -- forever.
+    #[test]
+    fn an_orphaned_file_is_indexed_once_and_only_once() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_reconcile");
+        let pool = crate::db::init_test_user_db().unwrap();
+        orphan_file(
+            "ep_lost",
+            "default",
+            "user",
+            "2026-08-01T10:00:00+00:00",
+            "the question that was never indexed",
+        );
+        assert_eq!(node_count(&pool), 0, "fail-before: no index row exists");
+
+        let first = reconcile_orphaned_episodes(&pool).unwrap();
+        assert_eq!(first.indexed, 1);
+        assert_eq!(first.malformed, 0);
+        assert_eq!(node_count(&pool), 1);
+
+        // The recovered row must be a REAL index row: right timestamp, right
+        // session, right tier, and mirrored into FTS so it is findable.
+        let (session, created, importance, path): (String, String, i64, String) = pool
+            .conn("episodic_test::recovered_row")
+            .unwrap()
+            .query_row(
+                "SELECT session_id, created_at, importance, file_path FROM companion_node WHERE id = 'ep_lost'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(session, "default");
+        assert_eq!(
+            created, "2026-08-01T10:00:00+00:00",
+            "the ORIGINAL timestamp"
+        );
+        assert_eq!(importance, HUMAN_EPISODE_IMPORTANCE);
+        assert_eq!(path, "episodes/2026/08/01/ep_lost_user.md");
+        let fts: i64 = pool
+            .conn("episodic_test::recovered_fts")
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM companion_fts WHERE node_id = 'ep_lost'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            fts, 1,
+            "an indexed episode that skips the mirror is unfindable"
+        );
+
+        let second = reconcile_orphaned_episodes(&pool).unwrap();
+        assert_eq!(second.indexed, 0, "idempotent: nothing left to do");
+        assert_eq!(
+            second.scanned, 1,
+            "but it still LOOKED -- that is not nothing"
+        );
+        assert_eq!(node_count(&pool), 1);
+    }
+
+    /// A file the live writer already indexed must be skipped without a write.
+    #[test]
+    fn an_already_indexed_file_is_skipped() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_rec_skip");
+        let pool = crate::db::init_test_user_db().unwrap();
+        append_episode(&pool, "default", EpisodeRole::User, "already indexed").unwrap();
+
+        let report = reconcile_orphaned_episodes(&pool).unwrap();
+        assert_eq!(report.scanned, 1);
+        assert_eq!(report.indexed, 0);
+        assert_eq!(node_count(&pool), 1);
+    }
+
+    /// A malformed file is skipped AND counted. Swallowing it would make a
+    /// corrupt brain look like a clean one.
+    #[test]
+    fn a_malformed_file_is_skipped_and_counted() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_rec_bad");
+        let pool = crate::db::init_test_user_db().unwrap();
+        let dir = disk::brain_root().unwrap().join("episodes/2026/08/01");
+        fs::create_dir_all(&dir).unwrap();
+        // No frontmatter at all.
+        fs::write(dir.join("ep_nofm_user.md"), "just a body").unwrap();
+        // Frontmatter with no `id`.
+        fs::write(
+            dir.join("ep_noid_user.md"),
+            "---\ntype: episode\nrole: user\ncreated: \"2026-08-01T10:00:00+00:00\"\n---\n\nbody\n",
+        )
+        .unwrap();
+        // Frontmatter with an id but no `created` -- the ordering key.
+        fs::write(
+            dir.join("ep_nots_user.md"),
+            "---\nid: \"ep_nots\"\ntype: episode\nrole: user\n---\n\nbody\n",
+        )
+        .unwrap();
+
+        let report = reconcile_orphaned_episodes(&pool).unwrap();
+        assert_eq!(report.scanned, 3);
+        assert_eq!(report.indexed, 0);
+        assert_eq!(report.malformed, 3);
+        assert_eq!(node_count(&pool), 0);
+    }
+
+    /// The reconciler applies the SAME machine tier as the writer -- it does
+    /// not re-admit correlator rows at conversation importance.
+    #[test]
+    fn a_recovered_machine_record_lands_at_the_machine_tier() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_rec_mach");
+        let pool = crate::db::init_test_user_db().unwrap();
+        orphan_file(
+            "ep_m",
+            "default",
+            "system",
+            "2026-08-01T10:00:00+00:00",
+            "fleet-event session:loadgen-1 cc:- state:idle project:loadgen/1",
+        );
+        orphan_file(
+            "ep_h",
+            "default",
+            "user",
+            "2026-08-01T10:00:01+00:00",
+            "a real question",
+        );
+
+        let report = reconcile_orphaned_episodes(&pool).unwrap();
+        assert_eq!((report.indexed, report.indexed_machine), (2, 1));
+        assert_eq!(importance_of(&pool, "ep_m"), MACHINE_EPISODE_IMPORTANCE);
+        assert_eq!(importance_of(&pool, "ep_h"), HUMAN_EPISODE_IMPORTANCE);
+    }
+
+    /// A recovered episode must be reachable by the reads that matter, not
+    /// merely present as a row.
+    #[test]
+    fn a_recovered_episode_reaches_the_recency_window() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_rec_read");
+        let pool = crate::db::init_test_user_db().unwrap();
+        orphan_file(
+            "ep_back",
+            "default",
+            "user",
+            "2026-08-01T10:00:00+00:00",
+            "the recovered turn",
+        );
+        assert!(list_recent_conversation(&pool, "default", 10)
+            .unwrap()
+            .is_empty());
+
+        reconcile_orphaned_episodes(&pool).unwrap();
+
+        let window = list_recent_conversation(&pool, "default", 10).unwrap();
+        assert_eq!(window.len(), 1);
+        assert_eq!(window[0].id, "ep_back");
+        assert_eq!(window[0].content, "the recovered turn");
+        assert_eq!(window[0].role, "user");
+    }
+
     // -- the machine importance tier (X1) --------------------------------
     /// The write path applies the tier, so no future correlator row ever needs
     /// the backfill. Goes through `append_episode` (disk + SQL + FTS) rather

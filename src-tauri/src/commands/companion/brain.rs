@@ -21,6 +21,7 @@ use ts_rs::TS;
 use crate::companion::brain::backlog;
 use crate::companion::brain::decisions;
 use crate::companion::brain::doctrine;
+use crate::companion::brain::episodic;
 use crate::companion::brain::goals;
 use crate::companion::brain::health;
 use crate::companion::brain::identity;
@@ -192,6 +193,32 @@ pub fn companion_get_brain_item(
             "brain kind `{other}` not yet supported"
         ))),
     }
+}
+
+/// Index every episode markdown file that has no `companion_node` row.
+///
+/// The manual door onto [`episodic::reconcile_orphaned_episodes`]. The sleep
+/// cycle calls the same function on every run, so this exists for the operator
+/// who wants the recovery NOW rather than at the next cycle -- and for the one
+/// who wants to see the count.
+///
+/// Async over `spawn_blocking`: the pass walks the whole episode tree (14,816
+/// files when this was written) and a sync command doing that would block the
+/// IPC worker for the length of the walk.
+#[tauri::command]
+pub async fn companion_reconcile_episodes(
+    state: State<'_, Arc<AppState>>,
+) -> Result<episodic::ReconcileReport, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let pool = state.user_db.clone();
+    // The handle is BOUND, not discarded: a panic inside the walk arrives as
+    // `JoinError` and is reported to the caller as a failed reconcile, rather
+    // than as a task that vanished while the command waited on nothing.
+    let handle =
+        tauri::async_runtime::spawn_blocking(move || episodic::reconcile_orphaned_episodes(&pool));
+    handle
+        .await
+        .map_err(|e| AppError::Internal(format!("reconcile task join: {e}")))?
 }
 
 #[tauri::command]

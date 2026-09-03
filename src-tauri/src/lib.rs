@@ -1298,6 +1298,7 @@ pub fn run() {
             commands::companion::brain::companion_count_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,
+            commands::companion::brain::companion_reconcile_episodes,
             commands::companion::brain::companion_save_identity,
             commands::companion::brain::companion_correct_identity_claim,
             commands::companion::brain::companion_reembed_missing,

@@ -39,6 +39,23 @@ pub async fn run_admitted(
     pool: &UserDbPool,
     admitted: AdmittedCycle,
 ) -> Result<CycleOutcome, AppError> {
+    // Rebuild the index from disk BEFORE the cycle reads its window. Episode
+    // markdown is written before its SQL row, so a crash between the two
+    // orphans the file forever -- and the cycle is the one caller that both
+    // runs regularly and cares about a complete corpus. Failure is logged and
+    // never aborts the cycle: a cycle over a slightly short window is worth
+    // far more than no cycle at all.
+    match episodic::reconcile_orphaned_episodes(pool) {
+        Ok(r) if r.indexed > 0 => tracing::info!(
+            indexed = r.indexed,
+            machine = r.indexed_machine,
+            malformed = r.malformed,
+            "sleep cycle: recovered orphaned episode files before compress"
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "sleep cycle: episode reconcile failed (continuing)"),
+    }
+
     let llm = MeteredLegs { pool };
     run_admitted_with(pool, &llm, admitted).await
 }
