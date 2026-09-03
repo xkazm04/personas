@@ -5,7 +5,7 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("execution");
 import type { ExecutionListItem } from "@/lib/bindings/ExecutionListItem";
-import type { PipelineTrace } from "@/lib/execution/pipeline";
+import type { UnifiedTrace } from "@/lib/execution/pipeline";
 import {
   createPipelineTrace,
   traceStage,
@@ -169,7 +169,7 @@ export interface ExecutionSlice {
   /** Structured progress tracking (managed by RunLifecycle). */
   executionProgress: ExecutionRunProgress | null;
   /** Pipeline trace for the active execution (observability). */
-  pipelineTrace: PipelineTrace | null;
+  pipelineTrace: UnifiedTrace | null;
   /** Queue position for the active execution (null = not queued / running). */
   queuePosition: number | null;
   /** Total queue depth when queued. */

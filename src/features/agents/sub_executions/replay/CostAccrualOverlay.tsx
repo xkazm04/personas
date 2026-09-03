@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PipelineTraceEntry, PipelineStage } from '@/lib/execution/pipeline';
+import type { UnifiedSpan, PipelineStage } from '@/lib/execution/pipeline';
 import { DollarSign, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -14,7 +14,7 @@ export function CostAccrualOverlay({
   isSynthetic = false,
   estimatedStages,
 }: {
-  entries: PipelineTraceEntry[];
+  entries: UnifiedSpan[];
   totalDurationMs: number;
   totalCostUsd: number;
   /** True when the entries came from `buildSyntheticTrace` (reconstructed

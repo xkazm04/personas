@@ -112,8 +112,9 @@ export interface InitiatePayload {
   useCaseId?: string;
 }
 
-/** Payload after Tauri command validation (before DB insert). */
-export interface ValidatePayload {
+/** Payload after Tauri command validation (before DB insert). Internal:
+ *  reached only through `StagePayloadMap`. */
+interface ValidatePayload {
   personaId: string;
   personaName: string;
   triggerId: string | null;
@@ -134,8 +135,9 @@ export interface SpawnEnginePayload {
   taskSpawned: true;
 }
 
-/** Payload for each streamed output line. */
-export interface StreamOutputPayload {
+/** Payload for each streamed output line. Internal: reached only through
+ *  `StagePayloadMap`. */
+interface StreamOutputPayload {
   executionId: string;
   line: string;
 }
@@ -180,7 +182,7 @@ export interface FrontendCompletePayload {
  * Map from stage name to its output payload type.
  * Enables type-safe middleware that transforms or observes payloads.
  */
-export interface StagePayloadMap {
+interface StagePayloadMap {
   initiate: InitiatePayload;
   validate: ValidatePayload;
   create_record: CreateRecordPayload;
@@ -198,7 +200,7 @@ export interface StagePayloadMap {
  * Span types for system-wide operations that occur outside the execution
  * pipeline but still benefit from structured tracing.
  */
-export const SYSTEM_OPERATION_TYPES = [
+const SYSTEM_OPERATION_TYPES = [
   'design_conversation',
   'credential_design',
   'credential_negotiation',
@@ -259,11 +261,27 @@ export const BACKEND_PIPELINE_STAGES = [
   'finalize_status',
 ] as const;
 
-export type BackendPipelineStage = (typeof BACKEND_PIPELINE_STAGES)[number];
+type BackendPipelineStage = (typeof BACKEND_PIPELINE_STAGES)[number];
 
 /** Check whether a pipeline stage is one the backend records. */
 export function isBackendPipelineStage(stage: string): stage is BackendPipelineStage {
   return (BACKEND_PIPELINE_STAGES as readonly string[]).includes(stage);
+}
+
+/** The two halves a renderer can honestly name a stage by. */
+export type StageCategory = 'Backend' | 'Frontend';
+
+/**
+ * Which side of the wire a stage's bar was measured on.
+ *
+ * Derived from `BACKEND_PIPELINE_STAGES` rather than hand-written per stage,
+ * because a hand-written table drifts from it and did: the waterfall's colour
+ * map called `create_record` "Backend" (the backend never opens a span for it)
+ * and `spawn_engine` / `stream_output` "Engine" (the backend measures both).
+ * One derivation means the badge cannot disagree with the trace it labels.
+ */
+export function stageCategory(stage: PipelineStage): StageCategory {
+  return isBackendPipelineStage(stage) ? 'Backend' : 'Frontend';
 }
 
 /**
@@ -347,22 +365,12 @@ export interface UnifiedTrace {
   completedAt?: number;
 }
 
-/**
- * @deprecated Use `UnifiedSpan` instead. Kept as alias for migration.
- */
-export type PipelineTraceEntry = UnifiedSpan;
-
-/**
- * @deprecated Use `UnifiedTrace` instead. Kept as alias for migration.
- */
-export type PipelineTrace = UnifiedTrace;
-
 // =============================================================================
 // Stage timing
 // =============================================================================
 
 /** High-resolution timing record for a single pipeline stage. */
-export interface StageTiming {
+interface StageTiming {
   stage: PipelineStage;
   /** Absolute performance.now() timestamp when the stage was entered. */
   entryAt: number;
@@ -373,7 +381,7 @@ export interface StageTiming {
 }
 
 /** Per-execution collection of stage timings. */
-export interface PipelineTimingRecord {
+interface PipelineTimingRecord {
   executionId: string;
   stages: StageTiming[];
   /** Total pipeline duration from first entry to last exit (ms). */
@@ -659,7 +667,7 @@ export type PipelineMiddleware<S extends PipelineStage = PipelineStage> = (
 ) => StagePayloadMap[S] | Promise<StagePayloadMap[S]>;
 
 /** Options for registering a middleware. */
-export interface MiddlewareOptions {
+interface MiddlewareOptions {
   /**
    * Unique deduplication key. If a middleware with the same key already exists
    * for the stage, it is replaced. This prevents HMR from accumulating
@@ -719,16 +727,6 @@ export function addMiddleware<S extends PipelineStage>(
 }
 
 /**
- * Remove a middleware by its deduplication key.
- */
-export function removeMiddleware(stage: PipelineStage, key: string): void {
-  const list = middlewareRegistry.get(stage);
-  if (!list) return;
-  const idx = list.findIndex((e) => e.key === key);
-  if (idx >= 0) list.splice(idx, 1);
-}
-
-/**
  * Run all registered middleware for a stage, threading the payload through.
  * Entries execute in priority order (lower first, insertion-order tiebreak).
  */
@@ -750,34 +748,6 @@ export async function runMiddleware<S extends PipelineStage>(
 // =============================================================================
 // Utilities
 // =============================================================================
-
-/** Get the next stage in the pipeline (or null if at the end). */
-export function nextStage(current: PipelineStage): PipelineStage | null {
-  const idx = PIPELINE_STAGES.indexOf(current);
-  if (idx >= 0 && idx < PIPELINE_STAGES.length - 1) {
-    return PIPELINE_STAGES[idx + 1] as PipelineStage;
-  }
-  return null;
-}
-
-/** Get stage index (0-based). */
-export function stageIndex(stage: PipelineStage): number {
-  return PIPELINE_STAGES.indexOf(stage);
-}
-
-/** Check if an execution has passed a given stage based on its trace. */
-export function hasPassedStage(
-  trace: UnifiedTrace,
-  stage: PipelineStage,
-): boolean {
-  return trace.spans.some((s) => s.span_type === stage);
-}
-
-/** Total pipeline duration from trace (if complete). */
-export function traceDuration(trace: UnifiedTrace): number | null {
-  if (!trace.completedAt) return null;
-  return trace.completedAt - trace.startedAt;
-}
 
 /**
  * Total cost recorded on a trace, or `null` when nothing priced it.
@@ -804,11 +774,6 @@ export function pipelineSpans(trace: UnifiedTrace): UnifiedSpan[] {
   return trace.spans
     .filter((s) => isPipelineStage(s.span_type))
     .sort((a, b) => (stageOrder.get(a.span_type) ?? 0) - (stageOrder.get(b.span_type) ?? 0));
-}
-
-/** Extract backend engine spans (non-pipeline) from a unified trace. */
-export function engineSpans(trace: UnifiedTrace): UnifiedSpan[] {
-  return trace.spans.filter((s) => !isPipelineStage(s.span_type));
 }
 
 /**

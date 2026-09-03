@@ -1,5 +1,5 @@
 import type { PersonaExecution } from '@/lib/types/types';
-import type { PipelineTrace, PipelineStage, UnifiedSpan } from '@/lib/execution/pipeline';
+import type { UnifiedTrace, PipelineStage, UnifiedSpan } from '@/lib/execution/pipeline';
 import { normalizePipelineStageSpans, isBackendPipelineStage, pipelineStageOf } from '@/lib/execution/pipeline';
 
 // ---------------------------------------------------------------------------
@@ -7,7 +7,7 @@ import { normalizePipelineStageSpans, isBackendPipelineStage, pipelineStageOf } 
 // ---------------------------------------------------------------------------
 
 /**
- * A `PipelineTrace` reconstructed from an execution's start/end timestamps
+ * A `UnifiedTrace` reconstructed from an execution's start/end timestamps
  * (via `buildSyntheticTrace`) rather than captured live, per-stage, during
  * the run. Every span duration below is a proportional ESTIMATE (fixed %
  * splits of the total wall-clock time) — not a measurement. `isSynthetic`
@@ -15,7 +15,7 @@ import { normalizePipelineStageSpans, isBackendPipelineStage, pipelineStageOf } 
  * `isLive` signal PipelineWaterfall derives separately) so it can show an
  * "Estimated" badge instead of presenting ms-precision guesses as fact.
  */
-export interface SyntheticPipelineTrace extends PipelineTrace {
+export interface SyntheticPipelineTrace extends UnifiedTrace {
   isSynthetic: true;
 }
 
@@ -116,7 +116,7 @@ const FRONTEND_ONLY_STAGES = ['initiate', 'create_record', 'frontend_complete'] 
  * bars are which, so the renderer can mark the estimates individually instead
  * of stamping one badge across a chart that is mostly measurement.
  */
-export interface HybridPipelineTrace extends PipelineTrace {
+export interface HybridPipelineTrace extends UnifiedTrace {
   isSynthetic: false;
   estimatedStages: ReadonlySet<PipelineStage>;
 }

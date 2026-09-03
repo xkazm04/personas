@@ -17,15 +17,23 @@ export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; 
   pipeline_stage:        { label: 'Pipeline Stage',  color: 'text-teal-400',    bg: 'bg-teal-500/15',    border: 'border-teal-500/25' },
 };
 
-/** Styling config for pipeline stage span types. */
-const PIPELINE_STAGE_CONFIG: Record<PipelineStage, { label: string; color: string; bg: string; border: string }> = {
-  initiate:          { label: 'Initiate',          color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
-  validate:          { label: 'Validate',          color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  create_record:     { label: 'Create Record',     color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  spawn_engine:      { label: 'Spawn Engine',      color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  stream_output:     { label: 'Stream Output',     color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
-  finalize_status:   { label: 'Finalize Status',   color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  frontend_complete: { label: 'Frontend Complete',  color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+/**
+ * Colours for pipeline stage span types.
+ *
+ * No `label` column: it was a second copy of `STAGE_META[stage].label`, and the
+ * fallback one line down in `getSpanConfig` already read the label from
+ * `STAGE_META` — the file knew where the labels live and duplicated them
+ * anyway. `getSpanConfig` now composes the label from `STAGE_META` for every
+ * stage, so a renamed stage renames everywhere at once.
+ */
+const PIPELINE_STAGE_COLORS: Record<PipelineStage, { color: string; bg: string; border: string }> = {
+  initiate:          { color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  validate:          { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  create_record:     { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  spawn_engine:      { color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
+  stream_output:     { color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
+  finalize_status:   { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  frontend_complete: { color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
 };
 
 /** Styling config for system operation span types. */
@@ -53,7 +61,7 @@ export const SYSTEM_OPERATION_CONFIG: Record<SystemOperationType, { label: strin
 /** Get styling config for any unified span type (pipeline stage, engine span, or system operation). */
 export function getSpanConfig(spanType: UnifiedSpanType): { label: string; color: string; bg: string; border: string } {
   if (isPipelineStage(spanType)) {
-    return PIPELINE_STAGE_CONFIG[spanType] ?? { label: STAGE_META[spanType].label, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
+    return { label: STAGE_META[spanType].label, ...PIPELINE_STAGE_COLORS[spanType] };
   }
   if (isSystemOperation(spanType)) {
     return SYSTEM_OPERATION_CONFIG[spanType];

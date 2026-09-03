@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PipelineTraceEntry, PipelineStage } from '@/lib/execution/pipeline';
+import type { UnifiedSpan, PipelineStage } from '@/lib/execution/pipeline';
 import { STAGE_META } from '@/lib/execution/pipeline';
 import { AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
@@ -18,7 +18,7 @@ export function StageBar({
   hasSubSpans,
   isEstimated = false,
 }: {
-  entry: PipelineTraceEntry;
+  entry: UnifiedSpan;
   totalDurationMs: number;
   isExpanded: boolean;
   onToggle: () => void;

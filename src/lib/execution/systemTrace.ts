@@ -351,39 +351,3 @@ export function __resetSystemTracesForTests(): void {
   _completedTraces.length = 0;
   notifySystemTraceChange();
 }
-
-// =============================================================================
-// Convenience: wrap an async operation in a traced span
-// =============================================================================
-
-/**
- * Execute an async function wrapped in a system trace span.
- *
- * ```ts
- * const result = await tracedOperation(
- *   'credential_design',
- *   'Design: Stripe API key',
- *   async (session) => {
- *     const spanId = session.beginSpan('credential_design', 'AI Analysis');
- *     const result = await analyzeCredential();
- *     session.endSpan(spanId);
- *     return result;
- *   },
- * );
- * ```
- */
-export async function tracedOperation<T>(
-  operationType: SystemOperationType,
-  label: string,
-  fn: (session: SystemTraceSession) => Promise<T>,
-): Promise<T> {
-  const session = SystemTraceSession.start(operationType, label);
-  try {
-    const result = await fn(session);
-    session.complete();
-    return result;
-  } catch (err) {
-    session.complete(err instanceof Error ? err.message : String(err));
-    throw err;
-  }
-}
