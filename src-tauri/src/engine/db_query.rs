@@ -299,8 +299,11 @@ const CTE_MUTATION_VERBS: &[&str] = &[
 /// `SELECT INTO` creates a table; MySQL `INTO OUTFILE` writes a file), `SHARE`
 /// (`FOR SHARE` row locks; `FOR UPDATE` is caught by `UPDATE` above),
 /// sequence advancement, and the engine-state functions. Seeded from the
-/// engine's definition, not from the verbs people type by hand. Mirrored by
-/// `READ_SHAPED_WRITES_RE` in the frontend `safeModeUtils.ts`.
+/// engine's definition, not from the verbs people type by hand. The client's
+/// `READ_SHAPED_WRITES_RE` (`src/features/vault/sub_databases/safeModeUtils.ts`)
+/// carries the same set for instant feedback; the set is pinned by
+/// `tests::read_shaped_writes_set_is_pinned` below, whose failure names that
+/// file, so a change here cannot land without the client following.
 const READ_SHAPED_WRITES: &[&str] = &[
     "INTO",
     "SHARE",
@@ -3254,6 +3257,28 @@ fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// The tripwire on the side that changes (client-rule-mirroring, rung e):
+    /// the client regex `READ_SHAPED_WRITES_RE` in
+    /// `src/features/vault/sub_databases/safeModeUtils.ts` carries this exact
+    /// set. Change the list here and this fails naming that file.
+    #[test]
+    fn read_shaped_writes_set_is_pinned() {
+        let expected = [
+            "INTO",
+            "SHARE",
+            "NEXTVAL",
+            "SETVAL",
+            "LO_IMPORT",
+            "LO_EXPORT",
+            "PG_TERMINATE_BACKEND",
+            "PG_CANCEL_BACKEND",
+        ];
+        assert_eq!(
+            READ_SHAPED_WRITES, &expected,
+            "READ_SHAPED_WRITES changed: update READ_SHAPED_WRITES_RE in              src/features/vault/sub_databases/safeModeUtils.ts in the same change"
+        );
+    }
+
     use super::*;
     use serde_json::json;
 

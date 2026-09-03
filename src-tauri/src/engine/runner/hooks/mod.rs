@@ -518,12 +518,10 @@ impl HookRegistry {
     /// fails to install with a message naming the point rather than installing
     /// and doing nothing.
     pub fn register_observer(&mut self, hook: Arc<dyn Observer>) -> Result<(), AppError> {
-        if hook.observes().is_empty() {
-            return Err(AppError::Validation(format!(
-                "hook '{}' registered against no observation point",
-                hook.name()
-            )));
-        }
+        personas_core::validation::require_at_least_one(
+            &format!("hook '{}' observation points", hook.name()),
+            hook.observes(),
+        )?;
         for point in hook.observes() {
             if !ObservationPoint::ALL.contains(point) {
                 return Err(AppError::Validation(format!(

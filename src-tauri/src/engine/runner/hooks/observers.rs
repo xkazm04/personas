@@ -51,7 +51,8 @@ impl Observer for RunTelemetryObserver {
                     duration_ms = event.duration_ms.unwrap_or(0),
                     input_tokens = event.input_tokens.unwrap_or(0),
                     output_tokens = event.output_tokens.unwrap_or(0),
-                    cost_usd = event.cost_usd.unwrap_or(0.0),
+                    // Unknown is not free: an absent cost logs as None, never as 0.
+                    cost_usd = ?event.cost_usd,
                     error = event.error.as_deref().unwrap_or(""),
                     "run telemetry: task finished"
                 );

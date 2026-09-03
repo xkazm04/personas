@@ -2639,7 +2639,7 @@ mod boot_tests {
             let db_path = dir.join(name);
             let conn = rusqlite::Connection::open(&db_path).unwrap();
             conn.execute_batch(
-                "PRAGMA journal_mode = WAL; CREATE TABLE t(x); INSERT INTO t VALUES (1);",
+                "PRAGMA journal_mode = WAL; CREATE TABLE t(x INTEGER NOT NULL); INSERT INTO t VALUES (1);",
             )
             .unwrap();
             let wal = sidecar_path(&db_path, "-wal");

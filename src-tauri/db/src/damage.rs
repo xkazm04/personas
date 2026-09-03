@@ -255,7 +255,10 @@ pub fn refuse_write(reason: &str) -> AppError {
 /// available on purpose — quarantine has to be a recoverable state, which
 /// means the operator can still read and export while the file is out.
 pub(crate) fn harden_connection(conn: &Connection) -> Result<(), rusqlite::Error> {
-    conn.set_db_config(rusqlite::config::DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, true)?;
+    conn.set_db_config(
+        rusqlite::config::DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,
+        true,
+    )?;
     conn.execute_batch("PRAGMA query_only = ON;")?;
     Ok(())
 }
@@ -272,7 +275,9 @@ pub(crate) fn harden_connection(conn: &Connection) -> Result<(), rusqlite::Error
 /// Returns [`DamageClass::Canonical`] on a failed check, including when the
 /// check statement itself cannot run because the file is not a database.
 pub(crate) fn check_at_open(conn: &Connection) -> DamageClass {
-    match conn.query_row("PRAGMA quick_check(1)", [], |r| r.get::<_, String>(0)) {
+    match conn.query_row("PRAGMA quick_check(1)", [], |r| {
+        r.get::<_, String>("quick_check")
+    }) {
         Ok(verdict) if verdict.eq_ignore_ascii_case("ok") => DamageClass::Unrelated,
         Ok(verdict) => {
             tracing::error!(verdict = %verdict, "PRAGMA quick_check reported structural damage");
@@ -325,7 +330,7 @@ pub fn fts_detached(conn: &Connection) -> bool {
     conn.query_row(
         "SELECT value FROM app_settings WHERE key = ?1",
         rusqlite::params![settings_keys::EXECUTIONS_FTS_STALE],
-        |r| r.get::<_, String>(0),
+        |r| r.get::<_, String>("value"),
     )
     .map(|v| v == "1")
     .unwrap_or(false)
@@ -385,6 +390,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    /// The 16-byte magic string that opens every SQLite file. Overwriting exactly
+    /// that is the smallest damage that makes the file "not a database" to the
+    /// engine, which is the class the quarantine must catch at open.
+    const SQLITE_MAGIC_LEN: usize = 16;
+
     use super::*;
     use crate::PoolExt;
 
@@ -455,8 +465,9 @@ mod tests {
 
     fn seed_persona_and_execution(conn: &Connection, id: &str) {
         conn.execute(
-            "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
-             VALUES ('p-damage', 'damage', 'x', datetime('now'), datetime('now'))",
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p-damage', 'damage', 'x', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
             [],
         )
         .expect("seed persona");
@@ -501,9 +512,9 @@ mod tests {
 
         let count: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_executions WHERE id = 'e-after'",
+                "SELECT COUNT(*) AS n FROM persona_executions WHERE id = 'e-after'",
                 [],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .expect("count");
         assert_eq!(count, 1, "the canonical row must be durable after detach");
@@ -511,9 +522,9 @@ mod tests {
         assert!(fts_detached(&conn), "the stale marker must be durable");
         let triggers: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'executions_fts%'",
+                "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'executions_fts%'",
                 [],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .expect("count triggers");
         assert_eq!(triggers, 0, "the sync triggers must be dropped by a detach");
@@ -535,13 +546,11 @@ mod tests {
             PathBuf::from(conn.path().expect("a file-backed test database"))
         };
         drop(pool);
-        let victim = std::env::temp_dir().join(format!(
-            "personas_test_damaged_{}.db",
-            uuid::Uuid::new_v4()
-        ));
+        let victim =
+            std::env::temp_dir().join(format!("personas_test_damaged_{}.db", uuid::Uuid::new_v4()));
         std::fs::copy(&source, &victim).expect("copy the store before damaging it");
         let mut bytes = std::fs::read(&victim).expect("read the copy");
-        for b in bytes.iter_mut().take(16) {
+        for b in bytes.iter_mut().take(SQLITE_MAGIC_LEN) {
             *b = 0xFF;
         }
         std::fs::write(&victim, &bytes).expect("write the damaged copy");
@@ -576,7 +585,10 @@ mod tests {
         // Every later write on the handle fails immediately, without touching
         // the file — and the close-time checkpoint is off.
         harden_connection(&conn).expect("harden");
-        let write = conn.execute("CREATE TABLE quarantine_probe (x)", []);
+        let write = conn.execute(
+            "CREATE TEMP TABLE quarantine_probe (x INTEGER NOT NULL)",
+            [],
+        );
         assert!(
             write.is_err(),
             "a quarantined store must refuse writes at the engine, not at a call site"
@@ -590,9 +602,12 @@ mod tests {
         // guarded_write refuses before it reaches the file at all.
         let refused: Result<usize, AppError> =
             guarded_write(&conn, Provenance::Ambiguous, "test::write", |c| {
-                c.execute("CREATE TABLE never (x)", [])
+                c.execute("CREATE TEMP TABLE never (x INTEGER NOT NULL)", [])
             });
-        assert!(refused.is_err(), "guarded_write must refuse on a quarantined store");
+        assert!(
+            refused.is_err(),
+            "guarded_write must refuse on a quarantined store"
+        );
 
         clear_quarantine(&victim).expect("clear");
         assert!(!is_quarantined(&victim));

@@ -46,9 +46,11 @@ const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT
 // `FOR SHARE` hold row locks to transaction end, `nextval`/`setval` advance a
 // sequence, and the pg_* / lo_* functions change engine state. Measured before
 // this scan existed, 8 of 9 such statements were dispatched as reads with no
-// confirm banner. Mirror of the backend's READ_SHAPED_WRITES
-// (src-tauri/src/engine/db_query.rs); keep the two in step. `UPDATE` (for
-// `FOR UPDATE`) is already in MUTATION_VERBS_RE.
+// confirm banner. The set is owned by `db_query::READ_SHAPED_WRITES`, whose
+// test `read_shaped_writes_set_is_pinned` fails naming this file when the set
+// changes; this regex is the client's copy for instant feedback and falls
+// closed on anything it does not recognise. `UPDATE` (for `FOR UPDATE`) is
+// already in MUTATION_VERBS_RE.
 const READ_SHAPED_WRITES_RE = /\b(INTO|SHARE|NEXTVAL|SETVAL|LO_IMPORT|LO_EXPORT|PG_TERMINATE_BACKEND|PG_CANCEL_BACKEND)\b/i;
 
 interface StrippedSql {

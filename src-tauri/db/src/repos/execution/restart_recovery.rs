@@ -341,14 +341,20 @@ pub struct UnresolvedRecovery {
 /// this counts them so the number can be watched, not rewritten (a historical
 /// row's status is history).
 pub fn count_legacy_restart_failures(pool: &DbPool) -> Result<i64, AppError> {
-    let conn = pool.conn("executions::count_legacy_restart_failures")?;
-    let n: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM persona_executions
-         WHERE status = 'failed' AND error_message = ?1",
-        params![LEGACY_RESTART_MARKER],
-        |row| row.get(0),
-    )?;
-    Ok(n)
+    timed_query!(
+        "restart_recovery",
+        "restart_recovery::count_legacy_restart_failures",
+        {
+            let conn = pool.conn("executions::count_legacy_restart_failures")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_executions
+                 WHERE status = 'failed' AND error_message = ?1",
+                params![LEGACY_RESTART_MARKER],
+                |row| row.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 #[cfg(test)]
@@ -398,7 +404,9 @@ mod tests {
         started_offset_secs: Option<i64>,
         error_message: Option<&str>,
     ) -> Vec<String> {
-        let conn = pool.get().unwrap();
+        let conn = pool
+            .conn("restart_recovery::test")
+            .expect("a pooled connection");
         let now = chrono::Utc::now();
         let mut ids = Vec::with_capacity(count);
         for i in 0..count {
@@ -425,21 +433,25 @@ mod tests {
     }
 
     fn status_of(pool: &DbPool, id: &str) -> String {
-        let conn = pool.get().unwrap();
+        let conn = pool
+            .conn("restart_recovery::test")
+            .expect("a pooled connection");
         conn.query_row(
             "SELECT status FROM persona_executions WHERE id = ?1",
             params![id],
-            |r| r.get(0),
+            |r| r.get("status"),
         )
         .unwrap()
     }
 
     fn recovery_of(pool: &DbPool, id: &str) -> (Option<String>, i64) {
-        let conn = pool.get().unwrap();
+        let conn = pool
+            .conn("restart_recovery::test")
+            .expect("a pooled connection");
         conn.query_row(
             "SELECT recovery_state, restart_count FROM persona_executions WHERE id = ?1",
             params![id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get("recovery_state")?, r.get("restart_count")?)),
         )
         .unwrap()
     }
@@ -561,12 +573,14 @@ mod tests {
             0,
             "no row is marked failed for a failure nobody observed"
         );
-        let conn = pool.get().unwrap();
+        let conn = pool
+            .conn("restart_recovery::test")
+            .expect("a pooled connection");
         let failed: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_executions WHERE status = 'failed'",
+                "SELECT COUNT(*) AS n FROM persona_executions WHERE status = 'failed'",
                 [],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap();
         assert_eq!(failed, 0, "the sweep produces no failures at all");

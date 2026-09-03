@@ -2568,7 +2568,9 @@ mod tests {
         error_message: &str,
         error_category: Option<&str>,
     ) {
-        let conn = pool.get().unwrap();
+        let conn = pool
+            .conn("execution_metrics::test")
+            .expect("a pooled connection");
         conn.execute(
             "INSERT INTO persona_executions
                 (id, persona_id, status, error_message, error_category, created_at)
@@ -2687,7 +2689,7 @@ mod tests {
             .query_row(
                 "SELECT error_category FROM persona_executions WHERE id = 'x-null'",
                 [],
-                |r| r.get(0),
+                |r| r.get("error_category"),
             )
             .unwrap();
         assert!(
