@@ -16,7 +16,7 @@ there is no server-side replica, so the file on the operator's machine is the on
 copy"* (`src-tauri/db/src/damage.rs:3-5`). Everything that protects that one copy is
 already built and was accepted this week under `store-damage-policy`: a snapshot of the
 store plus its WAL and SHM siblings is taken before every boot of an existing database
-(`backup.rs:47-60`), three sets survive rotation (`backup.rs:27`), canonical damage
+(`backup.rs:50-62`), three sets survive rotation (`backup.rs:28`), canonical damage
 quarantines the store and stops rotation so a damaged file cannot eat its own history
 (`damage.rs:22-28`).
 
@@ -102,7 +102,7 @@ store plus a support conversation is the product's recovery path, then this dire
 is declined and the doc comment at `support.rs:230` should stop calling the absence a
 problem.
 
-**If restore-by-copy is unsafe while a pool is open.** `backup.rs:43-46` is explicit
+**If restore-by-copy is unsafe while a pool is open.** `backup.rs:46-49` is explicit
 that the snapshot is consistent only because no handle is open at that moment. A restore
 has the same precondition. If the boot sequence cannot guarantee the pool is closed at
 the point the dialog returns, the first context must restore *on the next boot* (write
