@@ -775,6 +775,7 @@ export type { RecipeSuggestionEventType } from "./RecipeSuggestionEventType";
 export type { RecipeSuggestionStats } from "./RecipeSuggestionStats";
 export type { RecipeVersion } from "./RecipeVersion";
 export type { RecipeVersionDraft } from "./RecipeVersionDraft";
+export type { ReconcileReport } from "./ReconcileReport";
 export type { ReembedResult } from "./ReembedResult";
 export type { ReferralStats } from "./ReferralStats";
 export type { RegistryCoverage } from "./RegistryCoverage";

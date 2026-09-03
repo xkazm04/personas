@@ -14,7 +14,7 @@ export type GlobalExecutionRow = { persona_name: string | null, persona_icon: st
  * Resolved Claude CLI `--effort` level the run was spawned with
  * (low/medium/high) — the "thinking" dial for cost observability.
  */
-thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number, 
+thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number | null, 
 /**
  * Prompt-cache tokens served from cache (cheap input reuse). 0 when the CLI
  * reported no cache usage. See P1 cache visibility.

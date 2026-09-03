@@ -6,7 +6,7 @@ export type PersonaExecution = { id: string, persona_id: string, trigger_id: str
  * Resolved Claude CLI `--effort` level the run was spawned with
  * (low/medium/high) — the "thinking" dial for cost observability.
  */
-thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number, 
+thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number | null, 
 /**
  * Prompt-cache tokens served from cache (cheap input reuse). 0 when the CLI
  * reported no cache usage. See P1 cache visibility.

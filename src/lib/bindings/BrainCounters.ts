@@ -17,7 +17,20 @@ unembedded: number,
  * Rows in the `companion_embedding` vec0 table, or `None` when that table
  * does not exist yet (never embedded) — which is itself the answer.
  */
-vectors: number | null, ftsRows: number, episodes: number, facts: number, procedurals: number, doctrineChunks: number, 
+vectors: number | null, ftsRows: number, episodes: number, 
+/**
+ * Episode nodes that are actual conversation — the same machine-correlator
+ * exclusion the recency lane and the sleep cycle already apply
+ * (`episodic::machine_marker_match_sql`).
+ *
+ * [`Self::episodes`] counts every episode node, and on a brain that has
+ * seen a Fleet load test that is overwhelmingly correlator records
+ * (10,687 of 11,522 when this was added). Reporting only the total tells
+ * an operator their brain is full of conversation when almost none of it
+ * is, and it is the conversation count — not the total — that a sleep
+ * cycle actually consumes.
+ */
+conversationEpisodes: number, facts: number, procedurals: number, doctrineChunks: number, 
 /**
  * Process-cumulative recall hits dropped by the embedding-model guard.
  */
