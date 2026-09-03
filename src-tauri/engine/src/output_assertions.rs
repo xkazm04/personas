@@ -10,8 +10,8 @@ use regex::Regex;
 use serde::Deserialize;
 
 use personas_db::models::{
-    AssertionFailureAction, AssertionResult, AssertionType, ExecutionAssertionSummary,
-    OutputAssertion,
+    AssertionFailureAction, AssertionResult, AssertionSeverity, AssertionType,
+    ExecutionAssertionSummary, OutputAssertion,
 };
 use personas_db::DbPool;
 
@@ -444,7 +444,13 @@ pub fn evaluate_assertions(
             passed_count += 1;
         } else {
             failed_count += 1;
-            if assertion.severity.eq_ignore_ascii_case("critical") {
+            // A token comparison, not a case-insensitive one: the repo mapper
+            // canonicalises `severity` through `AssertionSeverity` on the way
+            // out (`db/repos/execution/assertions.rs`), so what arrives here is
+            // always one of the vocabulary's tokens. The old
+            // `eq_ignore_ascii_case` was compensating for a reader that handed
+            // back whatever the column held.
+            if assertion.severity == AssertionSeverity::Critical.as_token() {
                 critical_failures += 1;
                 if first_critical_failure.is_none() {
                     first_critical_failure =

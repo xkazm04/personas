@@ -8,12 +8,34 @@ use crate::DbPool;
 use crate::PoolExt;
 use personas_core::error::AppError;
 
+// -- Projections -----------------------------------------------
+
+/// One projection for every full-row read of `output_assertions`, in the order
+/// `row_to_assertion` below consumes it. Mirrors
+/// `CREATE TABLE output_assertions` (`migrations/incremental/e03_p2p_and_telemetry.rs:172`).
+///
+/// Not a stylistic preference: `SELECT *` binds the read to whatever the table
+/// happens to hold, so an `ALTER TABLE ADD COLUMN` widens every row this module
+/// fetches without a single call site changing, and a column the mapper reads
+/// but the SELECT stops carrying fails at RUNTIME on the first row rather than
+/// at compile time. `every_projection_prepares_against_the_real_schema` is the
+/// gate that keeps this const and the schema in step.
+const ASSERTION_COLUMNS: &str = "id, persona_id, name, description, assertion_type, \
+     config, severity, enabled, on_failure, pass_count, fail_count, \
+     last_evaluated_at, created_at, updated_at";
+
+/// The same, for `assertion_results` and `row_to_result`
+/// (`e03_p2p_and_telemetry.rs:191`).
+const RESULT_COLUMNS: &str = "id, assertion_id, execution_id, persona_id, passed, \
+     explanation, matched_value, evaluation_ms, created_at";
+
 // -- Row mappers -----------------------------------------------
 
 // row_to_assertion uses custom enum conversions, so it stays manual.
 fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
     let assertion_type_str: String = row.get("assertion_type")?;
     let on_failure_str: String = row.get("on_failure")?;
+    let severity_str: String = row.get("severity")?;
 
     Ok(OutputAssertion {
         id: row.get("id")?,
@@ -22,7 +44,12 @@ fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
         description: row.get("description")?,
         assertion_type: parse_assertion_type(&assertion_type_str)?,
         config: row.get("config")?,
-        severity: row.get("severity")?,
+        // Canonicalised, never echoed raw: the struct's wire type is `String`
+        // (`OutputAssertion` is `#[ts(export)]`; `AssertionSeverity` deliberately
+        // is not), but every reader downstream — the engine's critical-failure
+        // branch included — compares it against a token, so the token is what
+        // must come out of the mapper.
+        severity: parse_severity(&severity_str).as_token().to_string(),
         enabled: row.get::<_, i32>("enabled")? != 0,
         on_failure: parse_failure_action(&on_failure_str)?,
         pass_count: row.get("pass_count")?,
@@ -70,6 +97,33 @@ row_mapper!(row_to_result -> AssertionResult {
 fn parse_assertion_type(s: &str) -> rusqlite::Result<AssertionType> {
     AssertionType::parse_token(s)
         .ok_or_else(|| unknown_token("assertion_type", s, AssertionType::TOKENS))
+}
+
+/// Severity is the ONE closed vocabulary here that does not get the
+/// `unknown_token` treatment, and the asymmetry is deliberate.
+///
+/// An unparseable `assertion_type` or `on_failure` changes WHAT runs — a
+/// different check under the user's name, or a disarmed healing workflow — so
+/// refusing the row is the honest answer. Severity changes only how loudly a
+/// failure is escalated; the assertion itself still evaluates correctly. Erroring
+/// the read would take a working assertion out of service over a label, which is
+/// strictly worse than what it replaced. So: case is normalised (rows written
+/// before the write door was typed carry `"Critical"`), an unrecognised token
+/// falls back to the vocabulary's default and says so, and the caller gets a
+/// canonical token either way — which is what lets the engine drop its
+/// `eq_ignore_ascii_case` compensation.
+fn parse_severity(s: &str) -> AssertionSeverity {
+    match AssertionSeverity::parse_token(&s.to_ascii_lowercase()) {
+        Some(sev) => sev,
+        None => {
+            tracing::warn!(
+                value = s,
+                default = AssertionSeverity::default().as_token(),
+                "output_assertions.severity: unknown token — reading at the default severity"
+            );
+            AssertionSeverity::default()
+        }
+    }
 }
 
 fn parse_failure_action(s: &str) -> rusqlite::Result<AssertionFailureAction> {
@@ -122,9 +176,10 @@ crud_get_by_id!(
 pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<OutputAssertion>, AppError> {
     timed_query!("output_assertions", "output_assertions::list_by_persona", {
         let conn = pool.conn("assertions::list_by_persona")?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM output_assertions WHERE persona_id = ?1 ORDER BY created_at DESC",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {ASSERTION_COLUMNS} FROM output_assertions \
+             WHERE persona_id = ?1 ORDER BY created_at DESC"
+        ))?;
         let rows = stmt.query_map(params![persona_id], row_to_assertion)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -140,9 +195,10 @@ pub fn list_enabled_by_persona(
         "output_assertions::list_enabled_by_persona",
         {
             let conn = pool.conn("assertions::list_enabled_by_persona")?;
-            let mut stmt = conn.prepare(
-            "SELECT * FROM output_assertions WHERE persona_id = ?1 AND enabled = 1 ORDER BY created_at DESC",
-        )?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {ASSERTION_COLUMNS} FROM output_assertions \
+                 WHERE persona_id = ?1 AND enabled = 1 ORDER BY created_at DESC"
+            ))?;
             let rows = stmt.query_map(params![persona_id], row_to_assertion)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -221,6 +277,14 @@ pub fn insert_result(pool: &DbPool, result: &AssertionResult) -> Result<(), AppE
     })
 }
 
+/// Every assertion result for one execution, oldest first.
+///
+/// `id` is the tiebreak, not decoration: `created_at` is written by the engine
+/// at second-ish resolution and two results of the same execution routinely
+/// share it, so `created_at` alone is not a total order — the same read can
+/// return them in a different order twice running, and under the LIMIT its
+/// sibling `get_results_by_assertion` uses, a tie at a page boundary serves a
+/// row twice or never.
 pub fn get_results_by_execution(
     pool: &DbPool,
     execution_id: &str,
@@ -230,9 +294,9 @@ pub fn get_results_by_execution(
         "output_assertions::get_results_by_execution",
         {
             let conn = pool.conn("assertions::get_results_by_execution")?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM assertion_results WHERE execution_id = ?1 ORDER BY created_at ASC",
-            )?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {RESULT_COLUMNS} FROM assertion_results WHERE execution_id = ?1 ORDER BY created_at ASC, id ASC"
+            ))?;
             let rows = stmt.query_map(params![execution_id], row_to_result)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -281,9 +345,9 @@ pub fn get_results_by_assertion(
         {
             let limit = limit.unwrap_or(50);
             let conn = pool.conn("assertions::get_results_by_assertion")?;
-            let mut stmt = conn.prepare(
-            "SELECT * FROM assertion_results WHERE assertion_id = ?1 ORDER BY created_at DESC LIMIT ?2",
-        )?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {RESULT_COLUMNS} FROM assertion_results WHERE assertion_id = ?1 ORDER BY created_at DESC, id DESC LIMIT ?2"
+            ))?;
             let rows = stmt.query_map(params![assertion_id, limit], row_to_result)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -343,6 +407,12 @@ mod tests {
         .id
     }
 
+    fn make_execution(pool: &DbPool, persona_id: &str) -> String {
+        crate::repos::execution::executions::create(pool, persona_id, None, None, None, None)
+            .unwrap()
+            .id
+    }
+
     /// The valid path: a typed vocabulary goes in and the SAME value comes
     /// back. Before this change the door took `&str` and the reader guessed.
     #[test]
@@ -371,6 +441,143 @@ mod tests {
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].assertion_type, AssertionType::NotContains);
         assert_eq!(listed[0].on_failure, AssertionFailureAction::Heal);
+    }
+
+    /// Both projections must PREPARE against the real migrated schema. A
+    /// by-name read of a column the table does not have compiles fine and fails
+    /// at runtime on the first row — the failure mode `SELECT *` hid by
+    /// construction, because a wildcard always "matches".
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.conn("assertions::test").unwrap();
+        for (columns, table) in [
+            (ASSERTION_COLUMNS, "output_assertions"),
+            (RESULT_COLUMNS, "assertion_results"),
+        ] {
+            conn.prepare(&format!("SELECT {columns} FROM {table} LIMIT 0"))
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
+
+    /// The other half of the gate: every field the mappers read must actually
+    /// arrive. Preparing proves the SQL is legal; only a round trip proves the
+    /// projection is complete.
+    #[test]
+    fn projections_cover_every_field_the_mappers_read() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Covers",
+            Some("every column"),
+            AssertionType::Length,
+            r#"{"min":1}"#,
+            AssertionSeverity::Critical,
+            AssertionFailureAction::Review,
+        )
+        .unwrap();
+
+        let listed = list_by_persona(&pool, &persona_id).unwrap();
+        assert_eq!(listed.len(), 1);
+        let a = &listed[0];
+        assert_eq!(a.id, created.id);
+        assert_eq!(a.persona_id, persona_id);
+        assert_eq!(a.name, "Covers");
+        assert_eq!(a.description.as_deref(), Some("every column"));
+        assert_eq!(a.assertion_type, AssertionType::Length);
+        assert_eq!(a.config, r#"{"min":1}"#);
+        assert_eq!(a.severity, "critical");
+        assert!(a.enabled);
+        assert_eq!(a.on_failure, AssertionFailureAction::Review);
+        assert_eq!(a.pass_count, 0);
+        assert_eq!(a.fail_count, 0);
+        assert!(a.last_evaluated_at.is_none());
+        assert!(!a.created_at.is_empty());
+        assert!(!a.updated_at.is_empty());
+
+        // The enabled-only door reads through the same projection.
+        assert_eq!(
+            list_enabled_by_persona(&pool, &persona_id).unwrap().len(),
+            1
+        );
+
+        // And the results projection, through both of its readers.
+        let exec_id = make_execution(&pool, &persona_id);
+        let result = AssertionResult {
+            id: "res-1".into(),
+            assertion_id: created.id.clone(),
+            execution_id: exec_id.clone(),
+            persona_id: persona_id.clone(),
+            passed: false,
+            explanation: "too short".into(),
+            matched_value: Some("x".into()),
+            evaluation_ms: 7,
+            created_at: "2026-07-10T00:00:01Z".into(),
+        };
+        insert_result(&pool, &result).unwrap();
+
+        let by_exec = get_results_by_execution(&pool, &exec_id).unwrap();
+        assert_eq!(by_exec.len(), 1);
+        let r = &by_exec[0];
+        assert_eq!(r.id, "res-1");
+        assert_eq!(r.assertion_id, created.id);
+        assert_eq!(r.execution_id, exec_id);
+        assert_eq!(r.persona_id, persona_id);
+        assert!(!r.passed, "INTEGER 0 must read back as false");
+        assert_eq!(r.explanation, "too short");
+        assert_eq!(r.matched_value.as_deref(), Some("x"));
+        assert_eq!(r.evaluation_ms, 7);
+        assert_eq!(r.created_at, "2026-07-10T00:00:01Z");
+
+        let by_assertion = get_results_by_assertion(&pool, &created.id, None).unwrap();
+        assert_eq!(by_assertion.len(), 1);
+        assert_eq!(by_assertion[0].id, "res-1");
+    }
+
+    /// Severity comes back as a canonical token, whatever case the row holds.
+    ///
+    /// This is what lets `engine::output_assertions` compare against
+    /// `AssertionSeverity::Critical.as_token()` instead of carrying an
+    /// `eq_ignore_ascii_case` compensation for a reader that echoed the column
+    /// verbatim. A row written before the write door was typed can hold
+    /// `"Critical"`; that assertion IS critical and must escalate.
+    #[test]
+    fn stored_severity_reads_back_as_a_canonical_token() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let created = create(
+            &pool,
+            &persona_id,
+            "Legacy severity",
+            None,
+            AssertionType::Contains,
+            "{}",
+            AssertionSeverity::Warning,
+            AssertionFailureAction::Log,
+        )
+        .unwrap();
+
+        for (stored, expected) in [
+            ("critical", "critical"),
+            ("Critical", "critical"),
+            ("INFO", "info"),
+            // Not a value the vocabulary knows: the assertion still runs, at
+            // the default severity, rather than the whole row failing to read.
+            ("urgent", AssertionSeverity::default().as_token()),
+        ] {
+            pool.conn("assertions::test")
+                .unwrap()
+                .execute(
+                    "UPDATE output_assertions SET severity = ?1 WHERE id = ?2",
+                    params![stored, created.id],
+                )
+                .unwrap();
+            let read = get_by_id(&pool, &created.id)
+                .unwrap_or_else(|e| panic!("severity '{stored}' must not fail the read: {e}"));
+            assert_eq!(read.severity, expected, "stored '{stored}'");
+        }
     }
 
     /// The invalid path, and the whole point of the change: a stored token

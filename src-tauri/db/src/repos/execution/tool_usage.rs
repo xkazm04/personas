@@ -47,6 +47,17 @@ fn internal_tools_exclusion(col: &str) -> String {
     format!("{} NOT IN ({})", col, placeholders.join(", "))
 }
 
+/// One projection for every full-row read of `persona_tool_usage`, in the order
+/// `row_to_usage` consumes it. Mirrors `CREATE TABLE persona_tool_usage`
+/// (`migrations/schema.rs:301`).
+///
+/// `SELECT *` is what this replaces, and the cost of it is not hypothetical:
+/// the mapper reads by NAME, so a column the projection stops carrying compiles
+/// fine and fails at runtime on the first row — the exact shape that left
+/// `list_items_by_persona_id` broken for three months in `executions.rs`.
+/// `projection_covers_every_field_the_mapper_reads` is the gate.
+const COLUMNS: &str = "id, execution_id, persona_id, tool_name, invocation_count, created_at";
+
 row_mapper!(row_to_usage -> PersonaToolUsage {
     id, execution_id, persona_id, tool_name, invocation_count, created_at,
 });
@@ -93,7 +104,7 @@ pub fn get_monthly_totals_by_tool(
     persona_id: &str,
 ) -> Result<Vec<(String, i64)>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_monthly_totals_by_tool", {
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::get_monthly_totals_by_tool")?;
         let sql = format!(
             "SELECT tool_name, COALESCE(SUM(invocation_count), 0)
              FROM persona_tool_usage
@@ -121,11 +132,10 @@ pub fn get_by_execution(
 ) -> Result<Vec<PersonaToolUsage>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_by_execution", {
         let conn = pool.conn("tool_usage::get_by_execution")?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_tool_usage
-             WHERE execution_id = ?1
-             ORDER BY created_at ASC",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM persona_tool_usage \
+             WHERE execution_id = ?1 ORDER BY created_at ASC"
+        ))?;
         let rows = stmt.query_map(params![execution_id], row_to_usage)?;
         let usages = rows
             .collect::<Result<Vec<_>, _>>()
@@ -306,6 +316,54 @@ mod tests {
         assert_eq!(empty.len(), 0);
     }
 
+    /// The projection must prepare against the real migrated schema AND carry
+    /// every field `row_to_usage` reads. `SELECT *` could not fail either check
+    /// by construction — a wildcard always matches, which is precisely why it
+    /// hides a mid-table `ALTER TABLE ADD COLUMN` until a user hits it.
+    #[test]
+    fn projection_covers_every_field_the_mapper_reads() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.conn("tool_usage::test").unwrap();
+        conn.prepare(&format!("SELECT {COLUMNS} FROM persona_tool_usage LIMIT 0"))
+            .unwrap_or_else(|e| panic!("persona_tool_usage projection does not match schema: {e}"));
+        drop(conn);
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Projection Agent".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+        let written = record(&pool, &exec.id, &persona.id, "gmail", 4).unwrap();
+
+        let read = get_by_execution(&pool, &exec.id).unwrap();
+        assert_eq!(read.len(), 1);
+        let got = &read[0];
+        assert_eq!(got.id, written.id);
+        assert_eq!(got.execution_id, exec.id);
+        assert_eq!(got.persona_id, persona.id);
+        assert_eq!(got.tool_name, "gmail");
+        assert_eq!(got.invocation_count, 4);
+        assert_eq!(got.created_at, written.created_at);
+    }
+
     /// KP bridge (WP4): monthly connector totals group by tool, stay inside
     /// the current UTC calendar month, and drop internal CLI tools — the same
     /// axes the execution rollup uses.
@@ -353,7 +411,7 @@ mod tests {
             .unwrap()
             - chrono::Duration::days(1))
         .to_rfc3339();
-        pool.get()
+        pool.conn("tool_usage::test")
             .unwrap()
             .execute(
                 "UPDATE persona_tool_usage SET created_at = ?1 WHERE id = ?2",
