@@ -5,7 +5,7 @@
 //! is worse. `RunTelemetryObserver` is neither: run-level telemetry is
 //! something the runner already needed and did not have in a structured form.
 
-use super::{Observer, ObservationPoint, RunEvent};
+use super::{ObservationPoint, Observer, RunEvent};
 
 /// Structured run telemetry.
 ///

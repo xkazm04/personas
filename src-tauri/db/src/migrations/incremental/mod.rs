@@ -36,6 +36,7 @@ mod e14_project_team_invariant;
 mod e15_memory_reaper_ledger;
 mod e16_living_agent;
 mod e17_restart_recovery;
+mod e18_failure_classification;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -69,6 +70,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e15_memory_reaper_ledger::run(conn)?;
     e16_living_agent::run(conn)?;
     e17_restart_recovery::run(conn)?;
+    e18_failure_classification::run(conn)?;
 
     Ok(())
 }

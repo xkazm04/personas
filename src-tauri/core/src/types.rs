@@ -343,6 +343,15 @@ pub struct ExecutionResult {
     /// (scope + reset time). Lets healing schedule a retry at the actual
     /// reset instead of giving up or blind-backoff.
     pub usage_limit: Option<super::error_taxonomy::UsageLimitInfo>,
+    /// The failure's class, MINTED at the raise site from structural facts —
+    /// never recovered from `error`'s text. `None` means the raise site did not
+    /// know (the common case for a CLI failure with diagnostic stderr), and the
+    /// readers fall back to `error_taxonomy::classify_error` exactly as before.
+    ///
+    /// This is the field the whole "class is lost at the DB round-trip" defect
+    /// turns on: see `error_taxonomy::mint_runner_class` and
+    /// `ENGINE_CEILING_CLASS`.
+    pub error_category: Option<super::error_taxonomy::ErrorCategory>,
     pub log_file_path: Option<String>,
     pub claude_session_id: Option<String>,
     pub duration_ms: u64,

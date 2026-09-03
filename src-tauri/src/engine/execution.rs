@@ -207,6 +207,15 @@ pub(super) async fn run_execution_with_ceiling(
                     "Engine safety ceiling exceeded ({}m). Execution forcibly terminated.",
                     ENGINE_MAX_EXECUTION_SECS / 60,
                 )),
+                // The class, stated by the site that KNOWS it. This is the app's
+                // own timer, so nothing has to be inferred from the sentence
+                // above -- and it is the site that produced the measured cost:
+                // 40 of 43 `Unknown` healing issues (93%) were this one string,
+                // landing on a recovery that never retries, while the `Timeout`
+                // recovery it should have reached succeeded 72.7% of the time.
+                // The message is still written, for a human; the class no longer
+                // depends on it.
+                error_category: Some(error_taxonomy::ENGINE_CEILING_CLASS),
                 duration_ms: ENGINE_MAX_EXECUTION_SECS * 1000,
                 // Point at the partial log so the run stays auditable. cost_usd /
                 // input_tokens / output_tokens stay 0: the Claude CLI only emits
@@ -2157,6 +2166,10 @@ async fn handle_execution_result(
             execution_config: result.execution_config.clone(),
             log_truncated: result.log_truncated,
             business_outcome: result.business_outcome.clone(),
+            // COALESCE on the DB side, so this confirming write cannot erase a
+            // class the runner's provisional write already recorded -- and
+            // cannot invent one either.
+            error_category: result.error_category.map(error_taxonomy::category_token),
         },
     )
     .await;

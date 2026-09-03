@@ -1032,6 +1032,11 @@ fn exec_status_update(
             execution_config = COALESCE(?15, execution_config),
             log_truncated = ?16,
             business_outcome = COALESCE(?17, business_outcome),
+            -- The class the RAISE SITE minted, never a re-derivation. COALESCE,
+            -- so a later confirming write that knows nothing cannot erase a
+            -- class an earlier write measured -- and so nothing here can invent
+            -- one for a row that never had it.
+            error_category = COALESCE(?18, error_category),
             -- Restart recovery: the mark rides through the re-admission and is
             -- cleared ONLY by a turn that completes. Clearing it when a resume
             -- BEGINS is the mistake that costs the whole mechanism -- every
@@ -1063,6 +1068,7 @@ fn exec_status_update(
         input.execution_config,
         input.log_truncated,
         input.business_outcome,
+        input.error_category,
     ])?;
     Ok(rows_changed)
 }
