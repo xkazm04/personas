@@ -28,6 +28,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -48,6 +49,8 @@ import {
 import { useCompanionStore } from './companionStore';
 import { titleCase } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
+import { BrainCycleReports } from './BrainCycleReports';
+import { BrainHealthPanel } from './BrainHealthPanel';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 
 type KindLabelKey =
@@ -204,13 +207,62 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        {!brainView.kind && <TypesView />}
+        {!brainView.kind && <RootView />}
         {brainView.kind && !brainView.id && (
           <ListView kind={brainView.kind} />
         )}
         {brainView.kind && brainView.id && (
           <DetailView kind={brainView.kind} id={brainView.id} />
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Root of the viewer — three lanes over the same brain.
+ *
+ * **Why sleep cycles are a lane and not a 14th card in the kind grid.** The
+ * grid's cards are `BrainKind`s, and every card routes into
+ * `companion_list_brain_items` / `companion_get_brain_item`. Neither command
+ * has a `cycle_report` arm (`commands/companion/brain.rs:184-194` dispatches on
+ * a closed set and errors on anything else), so a `cycle_report` card would be
+ * a tile that opens onto a backend error. The journal has its own command —
+ * `companion_list_cycle_reports` — with its own shape (phases, counters,
+ * status), which the generic list row cannot render anyway. So it gets a lane.
+ */
+type BrainLane = 'memory' | 'cycles' | 'health';
+
+function RootView() {
+  const { t } = useTranslation();
+  const [lane, setLane] = useState<BrainLane>('memory');
+
+  return (
+    <div className="flex flex-col">
+      <div className="px-5 pt-4">
+        <SegmentedTabs<BrainLane>
+          tabs={[
+            { id: 'memory', label: t.plugins.companion.brain_tab_memory },
+            { id: 'cycles', label: t.plugins.companion.brain_tab_cycles },
+            { id: 'health', label: t.plugins.companion.brain_tab_health },
+          ]}
+          activeTab={lane}
+          onTabChange={setLane}
+          ariaLabel={t.plugins.companion.brain_title}
+          idPrefix="brain-lane"
+        />
+      </div>
+      {/* The panel attributes are written out rather than spread from
+          `segmentedTabPanelProps`, matching the four compliant tab strips in
+          the repo (CloudDeployPanel, GitLabPanel, DraftEditStep,
+          TemplateDetailModal): the census rule `tabstrip-with-no-declared-panel`
+          keys on a literal `role="tabpanel"` in the same file, and a spread
+          helper is invisible to it. Ids match SegmentedTabs' own
+          `${idPrefix}-panel-${id}` / `${idPrefix}-tab-${id}` shape. */}
+      <div role="tabpanel" id={`brain-lane-panel-${lane}`} aria-labelledby={`brain-lane-tab-${lane}`}>
+        {lane === 'memory' && <TypesView />}
+        {lane === 'cycles' && <BrainCycleReports />}
+        {lane === 'health' && <BrainHealthPanel />}
       </div>
     </div>
   );
