@@ -748,7 +748,7 @@ mod tests {
             .query_row(
                 "SELECT pass_count FROM output_assertions WHERE id = ?1",
                 params![created.id],
-                |r| r.get(0),
+                |r| r.get("pass_count"),
             )
             .unwrap();
         assert_eq!(inside, 1, "the counter must move inside the transaction");
