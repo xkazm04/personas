@@ -10,7 +10,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import datetime, timedelta, timezone
+
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\+00:00|Z)?)?")
+
+
+def normalise(text: str) -> str:
+    """Rendered recall embeds absolute instants; the base-date shift moves every one of
+    them by design. Only the structure and the items must be identical."""
+    return DATE_RE.sub("<date>", text)
 from pathlib import Path
 
 from .. import backends
@@ -33,7 +42,8 @@ def replay(rung: str, scenario: dict, base: datetime, budget: int, max_days: int
         if kind == "e":
             b.ingest(obj, clock)
         else:
-            out[obj.id] = b.recall(obj, clock, budget).text
+            c = b.recall(obj, clock, budget)
+            out[obj.id] = normalise(c.text) + chr(10) + "#items=" + ",".join(sorted(c.items))
     b.close()
     return out
 
