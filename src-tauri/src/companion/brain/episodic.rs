@@ -137,6 +137,66 @@ static MACHINE_RETIER_DONE: std::sync::atomic::AtomicBool =
 /// Not restricted to one session. The write path applies the tier by body
 /// marker alone, and a backfill that used a different rule than the writer
 /// would leave the corpus in two states that nothing could later tell apart.
+/// The two writes that put an episode into the index: its `companion_node`
+/// row and its `companion_fts` mirror.
+///
+/// Both doors go through here — the live writer ([`append_episode`]) and the
+/// reconciler ([`reconcile_orphaned_episodes`]) — so the mirror cannot be
+/// remembered by one and forgotten by the other. That is not a hypothetical
+/// tidiness argument: `companion_fts` is hand-maintained across eleven
+/// `companion_node` producers, five of them already forget it, and
+/// `keyword.rs` is Athena's only keyword lane, so an unmirrored node is
+/// unreachable rather than merely unranked. A second copy of these two
+/// statements is a sixth producer waiting to drift.
+///
+/// `ignore_existing` is the reconciler's door only. `ON CONFLICT(id) DO
+/// NOTHING` — and not a statement-wide `OR IGNORE` — because the one
+/// conflict that write may swallow is a row that already exists (a racing
+/// writer between the `exists` probe and here); `OR IGNORE` would also
+/// swallow a NOT NULL or CHECK violation and report the same silent zero.
+#[allow(clippy::too_many_arguments)]
+fn index_episode(
+    conn: &rusqlite::Connection,
+    id: &str,
+    session_id: &str,
+    role: &str,
+    created_at: &str,
+    rel_path: &str,
+    content_hash: &str,
+    content: &str,
+    excerpt: &str,
+    importance: i64,
+    ignore_existing: bool,
+) -> Result<(), AppError> {
+    const NODE_INSERT: &str = "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+         VALUES (?1, 'episode', ?6, ?2, ?3, ?7, ?4, ?5, ?5)";
+    let node_sql = if ignore_existing {
+        format!(
+            "{NODE_INSERT}
+         ON CONFLICT(id) DO NOTHING"
+        )
+    } else {
+        NODE_INSERT.to_string()
+    };
+    conn.execute(
+        &node_sql,
+        params![
+            id,
+            rel_path,
+            content_hash,
+            excerpt,
+            created_at,
+            session_id,
+            importance
+        ],
+    )?;
+    conn.execute(
+        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
+        params![id, content, format!("session:{session_id} role:{role}")],
+    )?;
+    Ok(())
+}
+
 pub fn retier_machine_episodes(pool: &UserDbPool) -> Result<usize, AppError> {
     let conn = pool.get()?;
     let sql = format!(
@@ -262,19 +322,13 @@ pub fn append_episode(
     };
 
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
-         VALUES (?1, 'episode', ?6, ?2, ?3, ?7, ?4, ?5, ?5)",
-        params![id, rel_path, hash, excerpt, now_str, session_id, importance],
-    )?;
-
-    // Mirror into FTS: `brain::keyword` reads this table with BM25, so the
-    // mirror is the keyword lane's only source. (A sibling device deleted this
-    // write on 2026-08-07 because the table then had no reader; the 2026-08-08
-    // merge restored it, because now it does.)
-    conn.execute(
-        "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-        params![id, content, format!("session:{session_id} role:{role_str}")],
+    // The FTS mirror rides along inside `index_episode`: `brain::keyword`
+    // reads that table with BM25 and it is the keyword lane's only source. (A
+    // sibling device deleted this write on 2026-08-07 because the table then
+    // had no reader; the 2026-08-08 merge restored it, because now it does.)
+    index_episode(
+        &conn, &id, session_id, role_str, &now_str, &rel_path, &hash, content, &excerpt,
+        importance, false,
     )?;
 
     Ok(id)
@@ -412,32 +466,18 @@ pub fn reconcile_orphaned_episodes(pool: &UserDbPool) -> Result<ReconcileReport,
                 HUMAN_EPISODE_IMPORTANCE
             };
 
-            conn.execute(
-                // `ON CONFLICT(id) DO NOTHING` and not a statement-wide
-                // `OR IGNORE`: the only conflict this write may swallow is a
-                // row that already exists (a racing writer between the
-                // `exists` probe and here). `OR IGNORE` would also swallow a
-                // NOT NULL or CHECK violation and report the same silent zero.
-                "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
-                 VALUES (?1, 'episode', ?6, ?2, ?3, ?7, ?4, ?5, ?5)
-                 ON CONFLICT(id) DO NOTHING",
-                params![
-                    meta.id,
-                    rel_path,
-                    sha256_hex(&full),
-                    excerpt_500(&content),
-                    meta.created,
-                    meta.session,
-                    importance
-                ],
-            )?;
-            conn.execute(
-                "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-                params![
-                    meta.id,
-                    content,
-                    format!("session:{} role:{}", meta.session, meta.role)
-                ],
+            index_episode(
+                &conn,
+                &meta.id,
+                &meta.session,
+                &meta.role,
+                &meta.created,
+                &rel_path,
+                &sha256_hex(&full),
+                &content,
+                &excerpt_500(&content),
+                importance,
+                true,
             )?;
 
             report.indexed = report.indexed.saturating_add(1);
