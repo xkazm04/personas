@@ -185,3 +185,50 @@ Added 2026-05-13 from `/research` run on Hermes Agent codebase (v0.12 + v0.13 re
 - Letting hooks bypass `--dangerously-skip-permissions` framing — a `pre_tool_call` hook that approves dangerous commands silently is its own security problem; treat hook decisions as advisory, not authoritative.
 
 This section is **forward grounding only** — no v2 design commitment. When a concrete personas consumer surfaces (Hermes's "post-write lint" use case is a candidate via N2 of the 2026-05-13 Hermes codebase run, but is itself currently deferred), revisit this list to pick which hooks ship and in what shape.
+
+---
+
+## Execution note — 2026-09-03: what shipped, and where it departs from this doc
+
+The surface landed as `engine/runner/hooks/` (Approach B, as recommended).
+Three deliberate departures from the acceptance checklist above, each with its
+reason, so the next reader finds a decision rather than an omission:
+
+**1. Two registries, not one `RunnerHook`.** The `RunnerHook` sketch at §
+"Approach B" returns `Result<HookOutcome, AppError>` from every stage — one
+surface where a returned value is honoured for some names and ignored for
+others. Every consumer then has to carry the table of which names are obeyed,
+that table lives in prose, and a contributor who returns `HookOutcome::Fail`
+from `TaskSuccess` has written a guard that reports itself installed and does
+nothing. What shipped instead: `Observer::observe` returns `()` *by signature*
+(there is no return channel for the emitter to read), and `Interceptor`
+declares exactly one `MutationPoint` and returns a typed `Decision` whose
+refusal is a value, never an `Err`. A reviewer reading a contribution's
+registrations knows its blast radius without reading its handlers.
+
+**2. `try_auto_pr_after_success` was NOT migrated.** The checklist calls it the
+perfect first impl. It is not, for a reason that only shows up once the surface
+has a contract: it lives in `commands/infrastructure/task_executor.rs`, not in
+`run_execution`, and its whole body needs a `tauri::AppHandle`, a `DbPool` and
+a task id to emit its `[Warning]` lines. Handing those to a hook payload gives
+a contribution handles that reach past its surface into the runner's
+machinery — both surfaces' powers and neither's contract. Migrating it is a
+real follow-up, but it needs a task-executor emit site and a payload that
+carries values rather than handles; doing it badly to satisfy a checklist would
+have made the first impl the one that defines the surface's bad habits. The
+observer that shipped instead (`RunTelemetryObserver`) is a consumer that
+wanted to exist independently of the hook design.
+
+**3. No uniform 30s timeout.** §"Out of scope" plans one. Nothing on this
+surface can delay a decision — observers cannot withhold anything and the one
+mutating point is synchronous around a synchronous gate — so there is no
+handler whose abandonment direction needs classifying yet. The exemption list
+that would carry the reasons is `hooks::registry::NON_FIRE`'s neighbour and
+gets written the day the first stage arrives where abandonment has no safe
+direction (a last-chance flush, or anything gating a credential). A timeout is
+not a limit on how long a handler may take; it is the decision to abandon one
+in flight, and that decision needs a safe direction before it needs a number.
+
+The v2 catalogue in § "v2 scope reference" is unchanged and remains a
+*reference*, not a reservation: none of those names is in `ObservationPoint` or
+`MutationPoint`, because none of them has an emit site.
