@@ -71,6 +71,17 @@ const RECENCY_FLOOR: u32 = 6;
 /// Keyword-lane caps. Deliberately smaller than the recency tail: keyword hits
 /// are *additional* context, not a replacement for the live conversation.
 const KEYWORD_EPISODE_TOPK: usize = 6;
+/// How many of [`KEYWORD_EPISODE_TOPK`]'s slots a **machine correlator record**
+/// may occupy.
+///
+/// Machine records are deliberately still eligible for the keyword lane — "what
+/// happened with fleet session abc" should surface one — but on the live corpus
+/// they are 92.7% of all episodes (a two-day Fleet load test wrote 10,417 of
+/// them), and a terse fleet-vocabulary question takes all six slots with them,
+/// leaving the window with no conversation an older turn could have supplied.
+/// Two is a third of the lane: enough that a genuine fleet question is answered
+/// from memory, not enough for a load test to evict the conversation.
+const KEYWORD_EPISODE_MACHINE_CAP: usize = 2;
 const KEYWORD_DOCTRINE_TOPK: usize = 6;
 const KEYWORD_FACT_TOPK: usize = 4;
 const KEYWORD_PROCEDURAL_TOPK: usize = 3;
@@ -242,6 +253,10 @@ pub async fn retrieve(
     query: &str,
 ) -> Result<Recall, AppError> {
     consolidation::maybe_run_lifecycle_sweep(pool);
+    // One-shot backfill of the machine importance tier for rows written before
+    // it existed. Latched after the first success, so this is a single atomic
+    // load on every subsequent turn.
+    episodic::maybe_retier_machine_episodes(pool);
 
     let recent =
         episodic::list_recent_conversation(pool, session_id, RECENCY_TURNS).unwrap_or_default();
@@ -356,8 +371,17 @@ pub async fn retrieve(
     );
     union_keyword_ids(
         &mut episode_ids,
-        keyword::search_kind_in_session(pool, query, "episode", session_id, KEYWORD_EPISODE_TOPK)
-            .unwrap_or_default(),
+        keyword::search_episodes_in_session(
+            pool,
+            query,
+            session_id,
+            KEYWORD_EPISODE_TOPK,
+            KEYWORD_EPISODE_MACHINE_CAP,
+        )
+        .unwrap_or_default()
+        .into_iter()
+        .map(|hit| hit.id)
+        .collect(),
         KEYWORD_EPISODE_TOPK + VECTOR_EPISODE_TOPK,
         &recent_ids,
     );
@@ -466,6 +490,10 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     // days, every fact `last_decayed_at` NULL). Self-throttled to at most once
     // per 6h per process; a no-op on every other turn.
     consolidation::maybe_run_lifecycle_sweep(pool);
+    // One-shot backfill of the machine importance tier for rows written before
+    // it existed. Latched after the first success, so this is a single atomic
+    // load on every subsequent turn.
+    episodic::maybe_retier_machine_episodes(pool);
 
     // Query-independent tiers first — these are the stable "who you are /
     // what you're working toward" floor and must not depend on phrasing.
@@ -493,9 +521,17 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     // Episodes: query-relevant older turns, then a recency tail sized to fill
     // the remaining budget (so the window is RECALL_EPISODE_TARGET either way,
     // whether or not the keyword lane found anything).
-    let keyword_episode_ids =
-        keyword::search_kind_in_session(pool, query, "episode", session_id, KEYWORD_EPISODE_TOPK)
-            .unwrap_or_default();
+    let keyword_episode_ids: Vec<String> = keyword::search_episodes_in_session(
+        pool,
+        query,
+        session_id,
+        KEYWORD_EPISODE_TOPK,
+        KEYWORD_EPISODE_MACHINE_CAP,
+    )
+    .unwrap_or_default()
+    .into_iter()
+    .map(|hit| hit.id)
+    .collect();
     let recency_budget = RECALL_EPISODE_TARGET
         .saturating_sub(keyword_episode_ids.len() as u32)
         .max(RECENCY_FLOOR);

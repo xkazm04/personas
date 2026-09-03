@@ -56,19 +56,134 @@ pub fn is_machine_episode(content: &str) -> bool {
         .any(|marker| content.starts_with(marker))
 }
 
+/// SQL boolean that is TRUE for a machine correlator row, built from the same
+/// [`MACHINE_EPISODE_MARKERS`] the Rust classifier uses.
+///
+/// The *positive* half of the pair. [`machine_marker_exclusion_sql`] is its
+/// negation, so the two can never disagree about what a machine record is —
+/// which they could when each spelled the LIKE list out separately.
+///
+/// `body_excerpt` holds the raw body (the writer stores `excerpt_500(content)`,
+/// not the frontmatter-wrapped file), so the marker is at offset 0. A NULL
+/// excerpt yields NULL here, i.e. neither machine nor conversation; every
+/// caller pairs this with `body_excerpt IS NOT NULL`.
+pub fn machine_marker_match_sql() -> String {
+    let clauses: Vec<String> = MACHINE_EPISODE_MARKERS
+        .iter()
+        .map(|marker| format!("body_excerpt LIKE '{marker}%'"))
+        .collect();
+    format!("({})", clauses.join(" OR "))
+}
+
 /// SQL fragment excluding machine correlator rows, appended to a
 /// `companion_node` WHERE clause. Filtering in SQL rather than in Rust is what
 /// makes the window *fill up* with conversation — a post-filter would just
 /// shrink a 20-row page to 8.
 ///
-/// `body_excerpt` holds the raw body (the writer stores `excerpt_500(content)`,
-/// not the frontmatter-wrapped file), so the marker is at offset 0. Rows with a
-/// NULL excerpt are already excluded by the callers' `body_excerpt IS NOT NULL`.
+/// Expressed as the negation of [`machine_marker_match_sql`]. `NOT (a OR b)`
+/// and `NOT a AND NOT b` are the same three-valued expression, including the
+/// NULL case, so this is the identical predicate the exclusion always had.
 fn machine_marker_exclusion_sql() -> String {
-    MACHINE_EPISODE_MARKERS
-        .iter()
-        .map(|marker| format!(" AND body_excerpt NOT LIKE '{marker}%'"))
-        .collect()
+    format!(" AND NOT {}", machine_marker_match_sql())
+}
+
+/// Importance a **conversation** turn is written at. Unchanged from the value
+/// `append_episode` hard-coded before the machine tier existed.
+pub const HUMAN_EPISODE_IMPORTANCE: i64 = 3;
+
+/// Importance a **machine correlator record** is written at.
+///
+/// One, not zero, and the distinction is the whole design: `importance > 0` is
+/// this brain's "still retrievable" gate (`keyword::search_conn`, and how
+/// `semantic` marks a superseded fact), so zero would delete a correlator row
+/// from the keyword lane outright. The stated intent is that these records
+/// still *compete on relevance* — they just must not outrank conversation.
+/// `1` is the lowest value that keeps both properties.
+///
+/// **What this does NOT yet do, stated rather than implied.** The lifecycle
+/// sweep's decay and age-out (`consolidation::decay_unused_facts`,
+/// `age_out_dormant_facts`) are scoped to `kind = 'fact'` and join
+/// `companion_fact`; nothing in this tree decays an EPISODE today. So this
+/// tier is ordering information for retrieval, and a ready-made handle for an
+/// episode decay pass that does not exist yet — it is not a forgetting
+/// mechanism on its own, and reading it as one would be the same fiction the
+/// fact lane carried for 77 days.
+pub const MACHINE_EPISODE_IMPORTANCE: i64 = 1;
+
+/// Upper bound on rows one [`retier_machine_episodes`] pass rewrites.
+///
+/// The re-tier is a one-shot backfill over rows written before the tier
+/// existed (10,687 on the machine this was measured on, from a two-day Fleet
+/// load test). Bounded so a pathological corpus cannot turn a recall turn into
+/// a multi-second write; idempotent, so a corpus larger than the bound simply
+/// converges over successive process starts.
+const MACHINE_RETIER_MAX_ROWS: usize = 25_000;
+
+/// Latch so the backfill is attempted at most once per process **after it
+/// succeeds**. A failure deliberately does not latch: freezing the first
+/// attempt's error for the life of the process is how a transient DB lock
+/// becomes a permanent one.
+static MACHINE_RETIER_DONE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Demote already-written machine correlator rows to
+/// [`MACHINE_EPISODE_IMPORTANCE`]. Returns how many rows changed.
+///
+/// Idempotent by construction: the predicate selects only rows that are BOTH
+/// machine-marked AND still above the machine tier, so a second call over the
+/// same corpus matches nothing and returns 0.
+///
+/// Not restricted to one session. The write path applies the tier by body
+/// marker alone, and a backfill that used a different rule than the writer
+/// would leave the corpus in two states that nothing could later tell apart.
+pub fn retier_machine_episodes(pool: &UserDbPool) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    let sql = format!(
+        "UPDATE companion_node
+            SET importance = ?1
+          WHERE id IN (
+              SELECT id FROM companion_node
+               WHERE kind = 'episode'
+                 AND body_excerpt IS NOT NULL
+                 AND importance > ?1
+                 AND {}
+               LIMIT ?2
+          )",
+        machine_marker_match_sql()
+    );
+    let n = conn.execute(
+        &sql,
+        params![MACHINE_EPISODE_IMPORTANCE, MACHINE_RETIER_MAX_ROWS as i64],
+    )?;
+    Ok(n)
+}
+
+/// Run [`retier_machine_episodes`] at most once per process, on the path that
+/// actually runs (recall), and never fail a turn because of it.
+///
+/// Same shape and the same reasoning as
+/// `consolidation::maybe_run_lifecycle_sweep`: a maintenance write nobody
+/// schedules is a maintenance write that never happens.
+pub fn maybe_retier_machine_episodes(pool: &UserDbPool) {
+    use std::sync::atomic::Ordering;
+    if MACHINE_RETIER_DONE.load(Ordering::Relaxed) {
+        return;
+    }
+    match retier_machine_episodes(pool) {
+        Ok(n) => {
+            MACHINE_RETIER_DONE.store(true, Ordering::Relaxed);
+            if n > 0 {
+                tracing::info!(
+                    rows = n,
+                    importance = MACHINE_EPISODE_IMPORTANCE,
+                    "companion: re-tiered machine correlator episodes"
+                );
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "companion: machine-episode re-tier failed (will retry)");
+        }
+    }
 }
 
 /// Roles used in conversation episodes. Observation episodes (agent events
@@ -136,11 +251,20 @@ pub fn append_episode(
     let hash = sha256_hex(&body);
     let excerpt = excerpt_500(content);
 
+    // The machine tier is applied HERE, from the body, so the writer and the
+    // backfill (`retier_machine_episodes`) and the reader
+    // (`is_machine_episode`) all classify off the same one marker list.
+    let importance = if is_machine_episode(content) {
+        MACHINE_EPISODE_IMPORTANCE
+    } else {
+        HUMAN_EPISODE_IMPORTANCE
+    };
+
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
-         VALUES (?1, 'episode', ?6, ?2, ?3, 3, ?4, ?5, ?5)",
-        params![id, rel_path, hash, excerpt, now_str, session_id],
+         VALUES (?1, 'episode', ?6, ?2, ?3, ?7, ?4, ?5, ?5)",
+        params![id, rel_path, hash, excerpt, now_str, session_id, importance],
     )?;
 
     // Mirror into FTS: `brain::keyword` reads this table with BM25, so the
@@ -527,6 +651,7 @@ fn short_uuid() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_db::PoolExt;
     use rusqlite::Connection;
 
     /// Minimal `companion_node` shape the two list queries touch.
@@ -671,6 +796,149 @@ mod tests {
 
     /// The markers are interpolated into a SQL `LIKE` pattern, so they must
     /// carry no quote or wildcard. Guards `machine_marker_exclusion_sql`.
+    // -- the machine importance tier (X1) --------------------------------
+    /// The write path applies the tier, so no future correlator row ever needs
+    /// the backfill. Goes through `append_episode` (disk + SQL + FTS) rather
+    /// than asserting on a constant, because the classification decision the
+    /// test is about lives inside that function.
+    #[test]
+    fn the_write_path_tiers_machine_and_conversation_apart() {
+        let _home = crate::companion::brain::test_home::TestHome::new("ep_tier");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        let machine = append_episode(
+            &pool,
+            "default",
+            EpisodeRole::System,
+            "fleet-event session:abc cc:- state:running project:personas",
+        )
+        .unwrap();
+        let human = append_episode(
+            &pool,
+            "default",
+            EpisodeRole::User,
+            "Check the fleet sessions please",
+        )
+        .unwrap();
+
+        assert_eq!(importance_of(&pool, &machine), MACHINE_EPISODE_IMPORTANCE);
+        assert_eq!(importance_of(&pool, &human), HUMAN_EPISODE_IMPORTANCE);
+        assert_eq!(
+            retier_machine_episodes(&pool).unwrap(),
+            0,
+            "the backfill has nothing left to do once the writer tiers"
+        );
+    }
+
+    /// Seed one machine row and one conversation row through the REAL schema
+    /// at the pre-tier importance, then hand back the pool.
+    fn seeded_pool() -> crate::db::UserDbPool {
+        let pool = crate::db::init_test_user_db().unwrap();
+        {
+            let conn = pool.conn("episodic_test::seed").unwrap();
+            for (id, body) in [
+                (
+                    "ep_mach",
+                    "fleet-event session:loadgen-0001 cc:- state:stale project:loadgen/1",
+                ),
+                ("ep_orch", "fleet-orchestration wrapped up 3 sessions"),
+                ("ep_human", "Why do we still have stale fleet sessions?"),
+            ] {
+                conn.execute(
+                    "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+                     VALUES (?1, 'episode', 'default', 'p.md', 'h', 3, ?2, '2026-08-08', '2026-08-08')",
+                    params![id, body],
+                )
+                .unwrap();
+            }
+        }
+        pool
+    }
+
+    fn importance_of(pool: &crate::db::UserDbPool, id: &str) -> i64 {
+        pool.conn("episodic_test::importance_of")
+            .unwrap()
+            .query_row(
+                "SELECT importance FROM companion_node WHERE id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    /// Fail-before: every episode was written at importance 3, so nothing
+    /// downstream (a decay pass, a ranking tie-break) could tell a load-test
+    /// correlator row from something the user said.
+    #[test]
+    fn the_retier_demotes_machine_rows_and_leaves_conversation_alone() {
+        let pool = seeded_pool();
+        assert_eq!(importance_of(&pool, "ep_mach"), 3, "fail-before");
+
+        let n = retier_machine_episodes(&pool).unwrap();
+        assert_eq!(n, 2, "both marker families are re-tiered");
+        assert_eq!(importance_of(&pool, "ep_mach"), MACHINE_EPISODE_IMPORTANCE);
+        assert_eq!(importance_of(&pool, "ep_orch"), MACHINE_EPISODE_IMPORTANCE);
+        assert_eq!(
+            importance_of(&pool, "ep_human"),
+            HUMAN_EPISODE_IMPORTANCE,
+            "conversation keeps its tier"
+        );
+    }
+
+    /// The backfill runs on a hot path, so a second pass must be a no-op
+    /// rather than a rewrite of the same rows.
+    #[test]
+    fn the_retier_is_idempotent() {
+        let pool = seeded_pool();
+        assert_eq!(retier_machine_episodes(&pool).unwrap(), 2);
+        assert_eq!(
+            retier_machine_episodes(&pool).unwrap(),
+            0,
+            "a second pass changes nothing"
+        );
+    }
+
+    /// The demoted tier must stay ABOVE the `importance > 0` retrieval gate:
+    /// the design intent is that correlator rows still compete on relevance.
+    #[test]
+    fn the_machine_tier_stays_retrievable() {
+        assert!(
+            MACHINE_EPISODE_IMPORTANCE > 0,
+            "importance 0 would delete correlator rows from the keyword lane"
+        );
+        assert!(MACHINE_EPISODE_IMPORTANCE < HUMAN_EPISODE_IMPORTANCE);
+    }
+
+    /// The positive predicate and the exclusion must be exact complements over
+    /// rows that have a body — they are built from one marker list precisely so
+    /// they cannot drift.
+    #[test]
+    fn the_machine_predicate_and_its_exclusion_are_complements() {
+        let pool = seeded_pool();
+        let conn = pool.conn("episodic_test::complements").unwrap();
+        let machine: i64 = conn
+            .query_row(
+                &format!(
+                    "SELECT COUNT(*) FROM companion_node WHERE kind='episode' AND body_excerpt IS NOT NULL AND {}",
+                    machine_marker_match_sql()
+                ),
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let conversation: i64 = conn
+            .query_row(
+                &format!(
+                    "SELECT COUNT(*) FROM companion_node WHERE kind='episode' AND body_excerpt IS NOT NULL{}",
+                    machine_marker_exclusion_sql()
+                ),
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!((machine, conversation), (2, 1));
+    }
+
     #[test]
     fn markers_are_safe_to_interpolate_into_like() {
         for m in MACHINE_EPISODE_MARKERS {

@@ -45,11 +45,31 @@ fn render_episode_block(episodes: &[Episode], omitted: usize) -> String {
     }
     for ep in episodes {
         s.push_str(&format!(
-            "## {} — {}\n\n{}\n\n",
-            ep.role, ep.created_at, ep.content
+            "## {}{} — {}\n\n{}\n\n",
+            ep.role,
+            machine_marker(&ep.content),
+            ep.created_at,
+            ep.content
         ));
     }
     s
+}
+
+/// Ten characters that tell the model a recalled turn is a **machine
+/// correlator record**, not something the user said.
+///
+/// Without it a `fleet-event session:... state:running` row renders in the
+/// same shape as a human turn under the same `## system` heading, and the
+/// model has no way to weigh them differently -- it reads a load test as
+/// conversation. Kept to one bracketed token because this is paid on every
+/// rendered episode of every turn; the marker's job is to be
+/// *distinguishable*, not descriptive.
+fn machine_marker(content: &str) -> &'static str {
+    if crate::companion::brain::episodic::is_machine_episode(content) {
+        " [machine]"
+    } else {
+        ""
+    }
 }
 
 /// Render facts grouped by scope. Each fact lists its sources so Athena
@@ -222,4 +242,51 @@ pub(super) fn format_doctrine(doctrine: &[DoctrineHit]) -> String {
         s.push_str(&format!("## From `{}`\n\n{}\n\n", d.file_path, d.content));
     }
     s
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::companion::brain::episodic::Episode;
+
+    fn ep(role: &str, content: &str) -> Episode {
+        Episode {
+            id: "ep_x".into(),
+            session_id: "default".into(),
+            role: role.into(),
+            content: content.into(),
+            file_path: "p.md".into(),
+            created_at: "2026-08-08T00:00:00Z".into(),
+        }
+    }
+
+    /// Fail-before: a `fleet-event` row and a human turn both rendered as
+    /// `## system — <ts>` / `## user — <ts>`, so the model saw a load test in
+    /// the same shape as conversation.
+    #[test]
+    fn a_machine_episode_is_marked_and_a_human_turn_is_not() {
+        let block = format_episodes(&[
+            ep(
+                "system",
+                "fleet-event session:abc cc:- state:running project:personas",
+            ),
+            ep("user", "Why do we still have stale fleet sessions?"),
+        ]);
+        assert!(
+            block.contains("## system [machine] \u{2014}"),
+            "correlator record must be marked, got:\n{block}"
+        );
+        assert!(
+            block.contains("## user \u{2014}"),
+            "a human turn must carry no marker, got:\n{block}"
+        );
+        assert!(!block.contains("## user [machine]"));
+    }
+
+    /// The marker is paid on every turn, so its size is part of the contract.
+    #[test]
+    fn the_marker_stays_short() {
+        assert_eq!(machine_marker("fleet-event x"), " [machine]");
+        assert_eq!(machine_marker("hello"), "");
+    }
 }

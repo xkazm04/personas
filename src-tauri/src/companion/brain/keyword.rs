@@ -52,19 +52,112 @@ pub fn search_kind(
     Ok(search_conn(&conn, query, kind, None, limit)?)
 }
 
-/// Same as [`search_kind`], additionally scoped to one companion conversation.
-/// Episodes are per-session; a semantically similar turn from a *different*
-/// conversation must not bleed into this one's working memory (the isolation
-/// `episodic::list_recent` enforces).
-pub fn search_kind_in_session(
+/// One episode hit from the keyword lane, carrying whether the row is a
+/// machine correlator record.
+///
+/// Replaces the id-only `search_kind_in_session`, which this change left with
+/// zero callers and therefore deleted: both of its call sites were the episode
+/// lane, and both now need to know which hits are correlator records. A
+/// session-scoped search for some *other* kind has never existed -- episodes
+/// are the only tier that carries a `session_id` at all.
+///
+/// The flag rides along from SQL rather than being recomputed in Rust because
+/// the lane returns ids only — resolving 6 ids back to 6 bodies just to answer
+/// "is this a fleet event" would be an N+1 on the recall hot path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EpisodeHit {
+    pub id: String,
+    pub machine: bool,
+}
+
+/// BM25 episode search for one conversation, with a **cap on how many machine
+/// correlator records may take a slot**.
+///
+/// The design intent is unchanged — a correlator row may still be the best
+/// answer to "what happened with fleet session abc", so it still competes on
+/// relevance. What is new is a bound: on a corpus where machine records are
+/// 92.7% of episodes, a terse fleet-vocabulary question could take all six
+/// slots with load-test rows and leave no conversation in the window at all.
+///
+/// Implemented as two ranked reads rather than one over-fetch, because an
+/// over-fetch cannot be *exact* on a corpus of this shape: it would need to
+/// scan the whole machine majority to guarantee it found `limit` conversation
+/// rows. The conversation read takes the top `limit`, the machine read the top
+/// `machine_cap`, and the merge is by BM25 score, so the surviving order is
+/// the order a single unrestricted query would have produced.
+pub fn search_episodes_in_session(
     pool: &UserDbPool,
     query: &str,
-    kind: &str,
     session_id: &str,
     limit: usize,
-) -> Result<Vec<String>, AppError> {
+    machine_cap: usize,
+) -> Result<Vec<EpisodeHit>, AppError> {
     let conn = pool.get()?;
-    Ok(search_conn(&conn, query, kind, Some(session_id), limit)?)
+    Ok(search_episodes_conn(
+        &conn,
+        query,
+        session_id,
+        limit,
+        machine_cap,
+    )?)
+}
+
+/// Connection-level worker behind [`search_episodes_in_session`].
+fn search_episodes_conn(
+    conn: &Connection,
+    query: &str,
+    session_id: &str,
+    limit: usize,
+    machine_cap: usize,
+) -> rusqlite::Result<Vec<EpisodeHit>> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    let match_expr = build_fts5_match_query(query, MAX_QUERY_TERMS);
+    if match_expr.is_empty() {
+        return Ok(Vec::new());
+    }
+    let machine_sql = crate::companion::brain::episodic::machine_marker_match_sql();
+
+    let mut scored: Vec<(f64, EpisodeHit)> = Vec::new();
+    // (predicate over the machine expression, how many rows that side may take)
+    let lanes: [(String, usize, bool); 2] = [
+        (format!("NOT {machine_sql}"), limit, false),
+        (machine_sql.clone(), machine_cap, true),
+    ];
+    for (predicate, lane_limit, machine) in lanes {
+        if lane_limit == 0 {
+            continue;
+        }
+        let sql = format!(
+            "SELECT companion_fts.node_id, bm25(companion_fts)
+               FROM companion_fts
+               JOIN companion_node ON companion_node.id = companion_fts.node_id
+              WHERE companion_fts MATCH ?1
+                AND companion_node.kind = 'episode'
+                AND companion_node.importance > 0
+                AND companion_node.session_id = ?2
+                AND companion_node.body_excerpt IS NOT NULL
+                AND {predicate}
+              ORDER BY bm25(companion_fts) ASC
+              LIMIT ?3"
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt
+            .query_map(params![match_expr, session_id, lane_limit as i64], |r| {
+                Ok((r.get::<_, f64>(1)?, r.get::<_, String>(0)?))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        for (score, id) in rows {
+            scored.push((score, EpisodeHit { id, machine }));
+        }
+    }
+
+    // FTS5's bm25 is negated, so ascending is best-first — the same order both
+    // reads used. `total_cmp` keeps this a total order without an unwrap.
+    scored.sort_by(|a, b| a.0.total_cmp(&b.0));
+    scored.truncate(limit);
+    Ok(scored.into_iter().map(|(_, hit)| hit).collect())
 }
 
 /// Connection-level worker — takes a `Connection` rather than a pool so it is
@@ -273,6 +366,111 @@ mod tests {
         assert!(!doctrine.contains(&"ep_1".to_string()));
         let episodes = search_conn(&conn, "memory decay", "episode", None, 8).unwrap();
         assert_eq!(episodes, vec!["ep_1".to_string()]);
+    }
+
+    // -- the machine-correlator lane cap (X1) ---------------------------
+
+    /// A load-test corpus: one conversation turn against many machine
+    /// correlator rows that all match the same terse fleet vocabulary. This is
+    /// the live shape (92.7% machine) in miniature.
+    fn seed_fleet_flood(conn: &Connection) {
+        insert(
+            conn,
+            "ep_human",
+            "episode",
+            "default",
+            "Why do we still have stale fleet sessions in the sidebar?",
+            3,
+        );
+        for i in 0..12 {
+            insert(
+                conn,
+                &format!("ep_m{i:02}"),
+                "episode",
+                "default",
+                &format!("fleet-event session:loadgen-{i:04} cc:- state:stale project:loadgen/{i}"),
+                1,
+            );
+        }
+    }
+
+    /// Fail-before: with no cap, this same corpus and query fills every slot
+    /// with correlator rows. The cap is what leaves room for conversation.
+    #[test]
+    fn machine_records_cannot_take_more_than_the_cap() {
+        let conn = test_conn();
+        seed_fleet_flood(&conn);
+
+        let uncapped = search_episodes_conn(&conn, "fleet session stale", "default", 6, 6).unwrap();
+        assert_eq!(
+            uncapped.iter().filter(|h| h.machine).count(),
+            6,
+            "fail-before: an uncapped lane is all correlator rows, got {uncapped:?}"
+        );
+
+        let capped = search_episodes_conn(&conn, "fleet session stale", "default", 6, 2).unwrap();
+        assert_eq!(
+            capped.iter().filter(|h| h.machine).count(),
+            2,
+            "at most the cap may be machine, got {capped:?}"
+        );
+        assert!(
+            capped.iter().any(|h| h.id == "ep_human"),
+            "the conversation turn must survive the flood, got {capped:?}"
+        );
+    }
+
+    /// The design intent the cap must NOT break: a correlator record may still
+    /// be the best answer to a question about one.
+    #[test]
+    fn machine_records_still_compete_on_relevance() {
+        let conn = test_conn();
+        seed_fleet_flood(&conn);
+
+        let hits = search_episodes_conn(&conn, "loadgen 0003", "default", 6, 2).unwrap();
+        assert!(
+            hits.iter().any(|h| h.machine),
+            "a fleet question must still reach a fleet record, got {hits:?}"
+        );
+    }
+
+    /// A cap of zero excludes them entirely; the lane still answers with
+    /// conversation rather than returning nothing.
+    #[test]
+    fn a_zero_cap_excludes_machine_records_without_emptying_the_lane() {
+        let conn = test_conn();
+        seed_fleet_flood(&conn);
+
+        let hits = search_episodes_conn(&conn, "fleet session stale", "default", 6, 0).unwrap();
+        assert!(hits.iter().all(|h| !h.machine), "got {hits:?}");
+        assert_eq!(hits.len(), 1, "the one conversation turn, got {hits:?}");
+    }
+
+    /// The capped lane keeps every other guarantee `search_conn` gives:
+    /// session isolation, the `importance > 0` gate, and no filler.
+    #[test]
+    fn the_capped_lane_keeps_session_isolation_and_the_importance_gate() {
+        let conn = test_conn();
+        insert(&conn, "ep_a", "episode", "default", "the kpi dashboard", 3);
+        insert(&conn, "ep_b", "episode", "other", "the kpi dashboard", 3);
+        insert(
+            &conn,
+            "ep_gone",
+            "episode",
+            "default",
+            "the kpi dashboard",
+            0,
+        );
+
+        let hits = search_episodes_conn(&conn, "kpi dashboard", "default", 8, 2).unwrap();
+        assert_eq!(
+            hits.iter().map(|h| h.id.as_str()).collect::<Vec<_>>(),
+            vec!["ep_a"],
+            "no cross-session bleed and no superseded rows"
+        );
+
+        let none = search_episodes_conn(&conn, "what is it? and so?", "default", 8, 2).unwrap();
+        assert!(none.is_empty(), "a stopword query is still no filler");
     }
 
     #[test]
