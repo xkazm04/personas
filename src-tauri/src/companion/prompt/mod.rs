@@ -57,5 +57,14 @@ mod tests;
 
 pub use budget::*;
 pub use build::*;
+/// The memory block on its own, for a consumer that is not a chat turn (the
+/// `memory-year` harness). `mod recall` stays private; this is the one item of
+/// it anything outside `prompt` may reach.
+///
+/// Feature-gated because it has exactly one caller and that caller is gated:
+/// `mod companion` is private, so on a shipped build this re-export is
+/// unreachable *and* unused, and the workspace runs clippy with `-D warnings`.
+#[cfg(feature = "memory-sim")]
+pub use recall::render_memory_block;
 pub(crate) use indexes::*;
 pub use recall_preview::*;

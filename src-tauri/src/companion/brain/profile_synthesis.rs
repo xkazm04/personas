@@ -25,9 +25,15 @@ use crate::db::repos::core::settings;
 use crate::db::settings_keys as keys;
 use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 const TRIGGER_KIND: &str = "profile_synthesis";
 const INTERVAL_DAYS: i64 = 7;
+/// The rolling window every taste signal below is read over. Was the literal
+/// `'-30 days'` inside six `datetime('now', …)` predicates; it is a bound
+/// parameter now so the window follows [`sim_clock`] rather than SQLite's own
+/// idea of the time, which no simulation can move.
+const WINDOW_DAYS: i64 = 30;
 /// Max diffs proposed in one pass (one approval card stays reviewable).
 const MAX_DIFFS: usize = 3;
 
@@ -36,8 +42,9 @@ pub fn record_signal(pool: &UserDbPool, kind: &str, payload_json: &str) -> Resul
     let conn = pool.get()?;
     let id = format!("uxs_{}", short_id());
     conn.execute(
-        "INSERT INTO companion_ux_signal (id, kind, payload_json) VALUES (?1, ?2, ?3)",
-        rusqlite::params![id, kind, payload_json],
+        "INSERT INTO companion_ux_signal (id, kind, payload_json, created_at)
+         VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![id, kind, payload_json, sim_clock::now_sql()],
     )?;
     Ok(())
 }
@@ -60,7 +67,7 @@ async fn try_run(user_db: &UserDbPool, sys_db: &DbPool, app: &AppHandle) -> Resu
     // Cadence: at most once per INTERVAL_DAYS.
     if let Some(last) = settings::get(sys_db, keys::COMPANION_PROFILE_SYNTHESIS_LAST)? {
         if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&last) {
-            let age = chrono::Utc::now() - dt.with_timezone(&chrono::Utc);
+            let age = sim_clock::now() - dt.with_timezone(&chrono::Utc);
             if age.num_days() < INTERVAL_DAYS {
                 return Ok(());
             }
@@ -72,7 +79,7 @@ async fn try_run(user_db: &UserDbPool, sys_db: &DbPool, app: &AppHandle) -> Resu
     let _ = settings::set(
         sys_db,
         keys::COMPANION_PROFILE_SYNTHESIS_LAST,
-        &chrono::Utc::now().to_rfc3339(),
+        &sim_clock::now().to_rfc3339(),
     );
     if digest.trim().is_empty() {
         tracing::info!("profile_synthesis: no behavioral signal yet — skipping");
@@ -135,13 +142,13 @@ fn gather_digest(pool: &UserDbPool) -> Result<String, AppError> {
                     SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END),
                     SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END)
              FROM companion_proactive_message
-             WHERE created_at >= datetime('now', '-30 days')
+             WHERE created_at >= ?1
                AND status IN ('engaged', 'dismissed')
              GROUP BY trigger_kind
              ORDER BY COUNT(*) DESC",
         )?;
         let rows = stmt
-            .query_map([], |r| {
+            .query_map([sim_clock::days_ago_sql(WINDOW_DAYS)], |r| {
                 Ok((
                     r.get::<_, String>(0)?,
                     r.get::<_, i64>(1)?,
@@ -173,11 +180,11 @@ fn gather_digest(pool: &UserDbPool) -> Result<String, AppError> {
     // 3. Walkthrough completion vs abandon (30d) → does guidance land.
     {
         let completed: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM companion_ux_signal WHERE kind = 'walkthrough_complete' AND created_at >= datetime('now', '-30 days')",
-            [], |r| r.get(0))?;
+            "SELECT COUNT(*) FROM companion_ux_signal WHERE kind = 'walkthrough_complete' AND created_at >= ?1",
+            [sim_clock::days_ago_sql(WINDOW_DAYS)], |r| r.get(0))?;
         let aborted: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM companion_ux_signal WHERE kind = 'walkthrough_abort' AND created_at >= datetime('now', '-30 days')",
-            [], |r| r.get(0))?;
+            "SELECT COUNT(*) FROM companion_ux_signal WHERE kind = 'walkthrough_abort' AND created_at >= ?1",
+            [sim_clock::days_ago_sql(WINDOW_DAYS)], |r| r.get(0))?;
         if completed + aborted > 0 {
             out.push_str(&format!(
                 "Guided walkthroughs (30d): {completed} completed, {aborted} abandoned.\n\n"
@@ -190,8 +197,8 @@ fn gather_digest(pool: &UserDbPool) -> Result<String, AppError> {
         let (chat, voice): (i64, i64) = conn.query_row(
             "SELECT COUNT(*), COALESCE(SUM(voice), 0)
              FROM companion_turn
-             WHERE origin = 'chat' AND created_at >= datetime('now', '-30 days')",
-            [],
+             WHERE origin = 'chat' AND created_at >= ?1",
+            [sim_clock::days_ago_sql(WINDOW_DAYS)],
             |r| Ok((r.get(0)?, r.get(1)?)),
         )?;
         if chat > 0 {
@@ -226,10 +233,13 @@ fn count_ux_variants(
 ) -> Result<Vec<(String, i64)>, AppError> {
     let mut stmt = conn.prepare(
         "SELECT payload_json FROM companion_ux_signal
-         WHERE kind = ?1 AND created_at >= datetime('now', '-30 days')",
+         WHERE kind = ?1 AND created_at >= ?2",
     )?;
     let rows = stmt
-        .query_map([kind], |r| r.get::<_, String>(0))?
+        .query_map(
+            rusqlite::params![kind, sim_clock::days_ago_sql(WINDOW_DAYS)],
+            |r| r.get::<_, String>(0),
+        )?
         .collect::<Result<Vec<_>, _>>()?;
     let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
     for payload in rows {
@@ -249,11 +259,13 @@ fn count_ux_variants(
 fn approval_rates(conn: &rusqlite::Connection) -> Result<Vec<(String, i64, i64)>, AppError> {
     let mut stmt = conn.prepare(
         "SELECT payload, status FROM companion_approval
-         WHERE created_at >= datetime('now', '-30 days')
+         WHERE created_at >= ?1
            AND status IN ('approved', 'approved_failed', 'rejected')",
     )?;
     let rows = stmt
-        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .query_map([sim_clock::days_ago_sql(WINDOW_DAYS)], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })?
         .collect::<Result<Vec<_>, _>>()?;
     // action -> (approved, rejected)
     let mut by: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
@@ -357,8 +369,8 @@ fn insert_identity_approval(
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_approval (id, session_id, kind, payload, status, human_review_id, created_at)
-         VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, datetime('now'))",
-        rusqlite::params![id, DEFAULT_SESSION_ID, payload],
+         VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, ?4)",
+        rusqlite::params![id, DEFAULT_SESSION_ID, payload, sim_clock::now_sql()],
     )?;
     Ok(CreatedApproval {
         id,

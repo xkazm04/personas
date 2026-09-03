@@ -154,7 +154,11 @@ pub(super) struct CycleNotes {
 
 // ── Orchestration ──────────────────────────────────────────────────────────
 
-pub(super) async fn run_admitted_with(
+/// `pub` rather than `pub(super)` since 2026-09-03: the `memory-sim` driver
+/// runs a real cycle with a local model behind the [`CycleLlm`] seam, which is
+/// exactly the call [`run_admitted`] makes with `MeteredLegs`. Nothing else
+/// about the entry point changed.
+pub async fn run_admitted_with(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
     mut admitted: AdmittedCycle,

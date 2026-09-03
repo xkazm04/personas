@@ -14,7 +14,6 @@
 use std::fs;
 use std::time::Duration;
 
-use chrono::Utc;
 use rusqlite::params;
 
 use crate::companion::brain::episodic;
@@ -24,6 +23,7 @@ use crate::companion::disk;
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 const EPISODE_WINDOW: u32 = 60;
 const REFLECTION_TIMEOUT: Duration = Duration::from_secs(180);
@@ -51,7 +51,7 @@ pub async fn run_reflection(
     let reflection_text = call_claude_oneshot(pool, &prompt).await?;
 
     let id = format!("ref_{}", short_uuid());
-    let now = Utc::now();
+    let now = sim_clock::now();
     let now_str = now.to_rfc3339();
     let date_slug = now.format("%Y-%m-%d").to_string();
 

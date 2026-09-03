@@ -6,7 +6,6 @@
 
 use std::collections::HashSet;
 
-use chrono::Utc;
 use rusqlite::params;
 use serde_json::Value;
 
@@ -19,6 +18,7 @@ use super::run::{CycleNotes, CycleStats};
 use crate::companion::brain::{procedural, semantic, taxonomy};
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// Apply the `supersede` verdicts, capped.
 ///
@@ -36,7 +36,7 @@ pub(super) fn apply_supersedes(
     let Some(items) = reply.get("supersede").and_then(|v| v.as_array()) else {
         return Ok(());
     };
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     for item in items {
         if stats.supersedes_applied >= MAX_SUPERSEDES_PER_CYCLE {
             stats.supersedes_dropped += 1;

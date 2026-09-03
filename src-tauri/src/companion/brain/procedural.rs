@@ -21,7 +21,6 @@ use std::fs;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
 #[cfg(feature = "ml")]
@@ -32,6 +31,7 @@ use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// Where the rule applies. Scopes are intentionally coarse — a rule
 /// is either chat-shaped (how to talk), action-shaped (how to choose
@@ -112,7 +112,7 @@ pub fn write_rule(pool: &UserDbPool, input: &ProceduralInput<'_>) -> Result<Stri
     }
 
     let id = format!("proc_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let scope_s = input.scope.as_str();
     let importance = input.importance.clamp(1, 5);
     let confidence = input.confidence.clamp(0.0, 1.0);
@@ -317,7 +317,7 @@ pub fn touch_last_used(pool: &UserDbPool, ids: &[String]) -> Result<(), AppError
         return Ok(());
     }
     let conn = pool.get()?;
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     let sql =
         format!("UPDATE companion_procedural SET last_used_at = ? WHERE id IN ({placeholders})");

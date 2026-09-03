@@ -27,6 +27,7 @@ use rusqlite::{params, OptionalExtension};
 use crate::companion::brain::util;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// In use — may be applied to memory rows and offered to a classifier.
 pub const STATUS_ACTIVE: &str = "active";
@@ -88,10 +89,17 @@ pub fn propose(
     let id = format!("tax_{}", util::short_id(10));
     let conn = pool.get()?;
     let n = conn.execute(
-        "INSERT INTO companion_taxonomy (id, tag, definition, origin, status)
-         VALUES (?1, ?2, ?3, ?4, ?5)
+        "INSERT INTO companion_taxonomy (id, tag, definition, origin, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(tag) DO NOTHING",
-        params![id, tag, definition, origin_cycle, STATUS_PROPOSED],
+        params![
+            id,
+            tag,
+            definition,
+            origin_cycle,
+            STATUS_PROPOSED,
+            sim_clock::now_sql()
+        ],
     )?;
     if n == 0 {
         return Ok(None);

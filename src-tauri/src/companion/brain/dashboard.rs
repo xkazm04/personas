@@ -10,13 +10,13 @@
 
 use std::fs;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// Singleton id — there's only ever one dashboard.
 const DASHBOARD_ID: &str = "dashboard";
@@ -25,7 +25,7 @@ const DASHBOARD_REL_PATH: &str = "dashboard.md";
 /// Save (insert or replace) the dashboard spec. `spec_json` is the
 /// already-serialized JSON body the frontend will parse.
 pub fn save_dashboard(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let abs_path = disk::brain_root()?.join(DASHBOARD_REL_PATH);
     fs::write(&abs_path, spec_json)?;
     let hash = util::sha256_hex(spec_json);

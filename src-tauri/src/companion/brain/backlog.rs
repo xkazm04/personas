@@ -14,13 +14,13 @@
 
 use std::fs;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BacklogKind {
@@ -82,7 +82,7 @@ pub fn write_item(pool: &UserDbPool, input: &BacklogInput<'_>) -> Result<String,
     }
 
     let id = format!("blog_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let kind_s = input.kind.as_str();
     let rel_path = format!("backlog/{kind_s}/{id}.md");
     let abs_path = disk::brain_root()?.join(&rel_path);
@@ -110,7 +110,7 @@ pub fn write_item(pool: &UserDbPool, input: &BacklogInput<'_>) -> Result<String,
 }
 
 pub fn resolve_item(pool: &UserDbPool, id: &str, dropped: bool) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let new_status = if dropped { "dropped" } else { "done" };
     let conn = pool.get()?;
     let updated = conn.execute(

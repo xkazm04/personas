@@ -39,6 +39,7 @@ use crate::companion::brain::keyword;
 /// serialises the in-process `CYCLE_RUNNING` flag, which two concurrent cycle
 /// tests would otherwise make each other skip.
 use crate::companion::brain::test_home::TestHome as BrainHome;
+use crate::companion::brain::sim_clock;
 
 /// Canned replies per leg. The whole point of the seam: every decision the
 /// cycle makes about a reply is exercised without spawning a process.
@@ -672,7 +673,7 @@ fn seed_chars(pool: &UserDbPool, chars: usize) {
 /// Backdate the completed cycle so the floor is out of the way, and put its
 /// `consumed_through` at `boundary` so the next window is well defined.
 fn backdate_cycle(pool: &UserDbPool, cycle_id: &str, hours_ago: i64) {
-    let then = (Utc::now() - ChronoDuration::hours(hours_ago)).to_rfc3339();
+    let then = (sim_clock::now() - ChronoDuration::hours(hours_ago)).to_rfc3339();
     pool.get()
         .unwrap()
         .execute(
@@ -1300,7 +1301,7 @@ fn the_boundary_prefers_consumed_through_then_started_at_then_a_week() {
     // No cycle has ever completed: a bounded first look-back, not the archive.
     let fresh = boundary_for(None);
     let parsed = parse_ts(&fresh).expect("the fallback is a real timestamp");
-    let days = Utc::now().signed_duration_since(parsed).num_days();
+    let days = sim_clock::now().signed_duration_since(parsed).num_days();
     assert_eq!(days, FIRST_CYCLE_LOOKBACK_DAYS);
 }
 

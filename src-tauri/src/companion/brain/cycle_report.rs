@@ -46,7 +46,6 @@
 
 use std::fs;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 use ts_rs::TS;
@@ -55,6 +54,7 @@ use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// `companion_node.kind` for a cycle's narrative report. Public because
 /// retrieval callers pass it to `keyword::search_kind` and a second string
@@ -112,7 +112,7 @@ pub struct CycleSummary {
 /// until [`finish_cycle`].
 pub fn begin_cycle(pool: &UserDbPool) -> Result<String, AppError> {
     let id = format!("cyc_{}", util::short_id(12));
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_cycle (id, started_at, status, phases_json, stats_json)
@@ -151,7 +151,7 @@ pub fn record_phase(
         "phase": phase,
         "status": status,
         "detail": detail,
-        "at": Utc::now().to_rfc3339(),
+        "at": sim_clock::now().to_rfc3339(),
     }));
     let encoded = serde_json::to_string(&phases)
         .map_err(|e| AppError::Internal(format!("encode cycle phases: {e}")))?;
@@ -192,7 +192,7 @@ pub fn finish_cycle(
         ));
     }
 
-    let now = Utc::now();
+    let now = sim_clock::now();
     let now_str = now.to_rfc3339();
 
     {

@@ -606,6 +606,43 @@ fn with_recency_tail(
     out
 }
 
+/// True while a [`ProbeRead`] guard is alive. Never set in the shipped app.
+static PROBE_READ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Suppress recall's read-marking for the lifetime of this guard.
+///
+/// [`touch_recalled`] is how the production path marks a memory as *seen*: it
+/// restarts `last_seen_at` / `last_used_at`, which is exactly the column
+/// [`consolidation::decay_unused_facts`] keys off. That is right for a chat
+/// turn and wrong for a benchmark probe — a probe that keeps a fact alive has
+/// changed the thing it was measuring, and a year-long replay would report that
+/// nothing ever decays.
+///
+/// There was no read/probe distinction in this module before, so this adds one.
+/// A guard rather than a parameter because the two retrieval arms
+/// ([`retrieve`] and [`retrieve_keyword`]) have different signatures and
+/// different call graphs, and threading a `touch: bool` through both — plus
+/// `prompt::recall_for`, its two feature arms, and every caller of those —
+/// would spread a benchmark's concern across the production prompt path.
+/// Constructed only by `brain::memory_sim`.
+#[must_use = "read-marking resumes as soon as this guard drops"]
+#[cfg_attr(not(feature = "memory-sim"), allow(dead_code))]
+pub struct ProbeRead;
+
+impl ProbeRead {
+    #[cfg_attr(not(feature = "memory-sim"), allow(dead_code))]
+    pub fn new() -> Self {
+        PROBE_READ.store(true, std::sync::atomic::Ordering::Release);
+        ProbeRead
+    }
+}
+
+impl Drop for ProbeRead {
+    fn drop(&mut self) {
+        PROBE_READ.store(false, std::sync::atomic::Ordering::Release);
+    }
+}
+
 /// Restart the decay clock for everything Athena actually saw this turn.
 /// Best-effort — a failure here must never block a chat turn.
 ///
@@ -615,6 +652,10 @@ fn with_recency_tail(
 /// `consolidation::decay_unused_facts` keys off. Recall now keeps memory
 /// alive on every path, so decay measures real disuse.
 fn touch_recalled(pool: &UserDbPool, facts: &[Fact], procedurals: &[Procedural]) {
+    // A probe read observes memory; it does not use it. See [`ProbeRead`].
+    if PROBE_READ.load(std::sync::atomic::Ordering::Acquire) {
+        return;
+    }
     if !facts.is_empty() {
         let ids: Vec<String> = facts.iter().map(|f| f.id.clone()).collect();
         let _ = semantic::touch_last_seen(pool, &ids);

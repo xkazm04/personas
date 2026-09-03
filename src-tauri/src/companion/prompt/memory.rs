@@ -12,6 +12,16 @@ use crate::companion::brain::retrieval::DoctrineHit;
 use crate::companion::brain::semantic::Fact;
 
 pub(super) fn format_episodes(episodes: &[Episode]) -> String {
+    format_episodes_within(episodes, EPISODE_RENDER_BUDGET)
+}
+
+/// [`format_episodes`] against a caller-supplied char budget.
+///
+/// The production caller passes [`EPISODE_RENDER_BUDGET`] and is unchanged; the
+/// parameter exists because the `memory-sim` harness renders the same block
+/// under a budget the *benchmark* sets, and re-implementing the cut on its side
+/// would be a second definition of "what fits" free to drift from this one.
+pub(super) fn format_episodes_within(episodes: &[Episode], budget: usize) -> String {
     if episodes.is_empty() {
         return String::new();
     }
@@ -22,9 +32,7 @@ pub(super) fn format_episodes(episodes: &[Episode]) -> String {
     // 25x - because episodes themselves run from 2 chars to 4,918. A count
     // cannot bound what the prompt actually costs, so the cut happens here,
     // against the rendered block, with EPISODE_RENDER_BUDGET as the bound.
-    let keep = fit_trailing_to_render(episodes, EPISODE_RENDER_BUDGET, |eps| {
-        render_episode_block(eps, 0)
-    });
+    let keep = fit_trailing_to_render(episodes, budget, |eps| render_episode_block(eps, 0));
     render_episode_block(&episodes[episodes.len() - keep..], episodes.len() - keep)
 }
 

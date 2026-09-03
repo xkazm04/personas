@@ -18,6 +18,7 @@ use std::collections::HashSet;
 use crate::companion::brain::util;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 pub const MAX_GOALS_PER_SET: usize = 3;
 const MAX_TITLE_CHARS: usize = 120;
@@ -124,7 +125,7 @@ pub fn create_set(pool: &UserDbPool, titles: &[String]) -> Result<DailyGoalsSnap
         ));
     }
     let set_id = format!("dgset_{}", util::short_id(8));
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let tx = conn.unchecked_transaction()?;
     for (slot, title) in titles.iter().enumerate() {
@@ -202,7 +203,7 @@ pub fn update_set(pool: &UserDbPool, edits: &[GoalEdit]) -> Result<DailyGoalsSna
     }
 
     let next_slot = rows.iter().map(|r| r.slot).max().unwrap_or(-1) + 1;
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     // The active rows all share one set_id by construction; read it here
     // rather than widening DailyGoalRow, which the whole UI would carry.
@@ -244,7 +245,7 @@ pub fn toggle_goal(
     id: &str,
     done: bool,
 ) -> Result<(DailyGoalsSnapshot, bool), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let tx = conn.unchecked_transaction()?;
     let updated = tx.execute(

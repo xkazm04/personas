@@ -43,6 +43,7 @@ use rusqlite::params;
 use crate::companion::brain::util;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 /// A semantic fact (`companion_fact`-shaped payload).
 pub const KIND_FACT: &str = "fact";
@@ -84,9 +85,15 @@ pub fn insert_delta(
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_sync_inbox
-           (id, origin_device, item_kind, payload_json)
-         VALUES (?1, ?2, ?3, ?4)",
-        params![id, origin_device, item_kind, payload_json],
+           (id, origin_device, item_kind, payload_json, received_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            id,
+            origin_device,
+            item_kind,
+            payload_json,
+            sim_clock::now_sql()
+        ],
     )?;
     tracing::debug!(
         origin_device,

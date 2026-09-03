@@ -19,7 +19,6 @@
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::Duration;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +32,7 @@ use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
+use crate::companion::brain::sim_clock;
 
 /// Episodes to feed into the consolidation prompt. More = better
 /// recall, but the prompt grows quadratically with context. 80 is a
@@ -146,7 +146,7 @@ pub async fn run_consolidation(
     instructions: Option<&str>,
 ) -> Result<String, AppError> {
     let id = format!("cons_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
 
     // Insert the run row in `running` so the UI can show progress
     // immediately. We update to `review` when the JSON envelope lands.
@@ -222,8 +222,8 @@ pub async fn run_consolidation(
             tx.execute(
                 "INSERT INTO companion_consolidation_item
                  (id, consolidation_id, kind, scope, fact_key, proposed_value, sources_json,
-                  importance, confidence, supersedes_id, rationale, status)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending')",
+                  importance, confidence, supersedes_id, rationale, status, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending', ?12)",
                 params![
                     item_id,
                     id,
@@ -236,12 +236,13 @@ pub async fn run_consolidation(
                     raw.confidence.clamp(0.0, 1.0),
                     raw.supersedes_id,
                     raw.rationale,
+                    sim_clock::now_sql(),
                 ],
             )?;
             items_total += 1;
         }
         let summary_text = envelope.summary.clone();
-        let now2 = Utc::now().to_rfc3339();
+        let now2 = sim_clock::now().to_rfc3339();
         tx.execute(
             "UPDATE companion_consolidation
              SET status = 'review', completed_at = ?1, summary = ?2
@@ -384,7 +385,7 @@ pub async fn apply_item(
         None => semantic::write_fact(pool, &input)?,
     };
 
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation_item
@@ -431,7 +432,7 @@ pub async fn apply_item(
     };
 
     let fact_id = semantic::write_fact(pool, &input)?;
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation_item
@@ -445,7 +446,7 @@ pub async fn apply_item(
 /// Mark an item rejected — no fact is written. Status persists so the
 /// summary view can show "reviewed: 12 applied, 3 rejected".
 pub fn reject_item(pool: &UserDbPool, item_id: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let updated = conn.execute(
         "UPDATE companion_consolidation_item
@@ -465,8 +466,8 @@ pub fn reject_item(pool: &UserDbPool, item_id: &str) -> Result<(), AppError> {
 /// that haven't been recalled in a while. Floor of 1 — we never delete
 /// via decay, only reduce salience. Returns the number of facts touched.
 pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
-    let now = Utc::now().to_rfc3339();
-    let cutoff = (Utc::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
+    let cutoff = (sim_clock::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
     let conn = pool.get()?;
     // Guard on last_decayed_at so a fact decays at most once per
     // DECAY_THRESHOLD_DAYS window even if consolidation is re-run sooner
@@ -544,7 +545,7 @@ const LIFECYCLE_SWEEP_MIN_INTERVAL_SECS: i64 = 6 * 3600;
 /// for rows *above* the per-scope cap, keeps the markdown and the SQL row for
 /// provenance, and is a no-op on a brain under the cap.
 pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
-    let now = Utc::now().timestamp();
+    let now = sim_clock::now().timestamp();
     let last = LAST_LIFECYCLE_SWEEP.load(Ordering::Relaxed);
     if last != 0 && now.saturating_sub(last) < LIFECYCLE_SWEEP_MIN_INTERVAL_SECS {
         return;
@@ -653,7 +654,7 @@ pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     if candidates.is_empty() {
         return Ok(0);
     }
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let mut total_demoted = 0i64;
     for c in &candidates {
@@ -808,7 +809,7 @@ fn load_item(pool: &UserDbPool, item_id: &str) -> Result<ConsolidationItem, AppE
 }
 
 fn mark_failed(pool: &UserDbPool, id: &str, err: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation

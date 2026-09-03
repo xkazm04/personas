@@ -13,7 +13,6 @@
 //! NOT enter retrieval-into-prompt; they're behavioral guardrails for
 //! the proactive scheduler, not memory.
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use std::fs;
 
@@ -21,6 +20,7 @@ use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+use crate::companion::brain::sim_clock;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RitualKind {
@@ -107,7 +107,7 @@ pub fn write_ritual(pool: &UserDbPool, input: &RitualInput<'_>) -> Result<String
     }
 
     let id = format!("ritual_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let kind_s = input.kind.as_str();
     let rel_path = format!("rituals/{kind_s}/{id}.md");
     let abs_path = disk::brain_root()?.join(&rel_path);
@@ -189,7 +189,7 @@ pub fn get_ritual(pool: &UserDbPool, id: &str) -> Result<Option<Ritual>, AppErro
 }
 
 pub fn set_active(pool: &UserDbPool, id: &str, active: bool) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let updated = conn.execute(
         "UPDATE companion_ritual SET active = ?1, updated_at = ?2 WHERE id = ?3",

@@ -499,7 +499,7 @@ async fn upsert_chunk(
         .ok()
     };
 
-    let now = Utc::now().to_rfc3339();
+    let now = crate::companion::brain::sim_clock::now().to_rfc3339();
     let excerpt = excerpt_500(&chunk.content);
 
     match existing {
