@@ -36,7 +36,7 @@ DEFAULT_BIN = os.environ.get("MEMORY_YEAR_ATHENA_BIN", "")
 class Athena(Backend):
     name = "athena"
 
-    def __init__(self, binary: str = DEFAULT_BIN, leg_model: str = "gemma4:12b", ml: bool = False,
+    def __init__(self, binary: str = DEFAULT_BIN, leg_model: str = "qwen2.5:7b-instruct", ml: bool = False,
                  consolidate_force: bool = False, workdir: str | None = None):
         if not binary:
             raise SystemExit("athena backend needs --backend-kw '{\"binary\": \"<path to personas-memory-sim>\"}' or MEMORY_YEAR_ATHENA_BIN")
