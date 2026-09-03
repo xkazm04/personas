@@ -364,7 +364,7 @@ class World:
         for _ in range(8):
             p = rng.choice(self.projects)
             key = rng.choice(["monitoring stack", "on-call rota", "domain registrar", "license", "design tool"])
-            pd = rng.randint(30, N - 1)
+            pd = rng.randint(min(30, N - 2), N - 1)
             self._probe(pd, "distractor", p, f"What is the {key} for project {p}?", "UNKNOWN", newest_day=0)
 
     def _question(self, scope: str, key: str) -> str:
@@ -372,6 +372,30 @@ class World:
         if scope == "user":
             return f"What is my {kh}?"
         return f"What is the {kh} for project {scope}?"
+
+    # ---- optional paraphrase (realism), value-preserving
+    def paraphrase(self, llm, kinds=("say", "teach"), min_len: int = 20) -> int:
+        """Rewrite fact-bearing events in varied wording with a local model. A rewrite is
+        kept only if every value the event carries still appears verbatim; otherwise the
+        template text stands. Cached by the model client, so re-generation is free."""
+        by_id = {f.id: f for f in self.facts}
+        changed = 0
+        for e in self.events:
+            if e.kind not in kinds or len(e.text) < min_len:
+                continue
+            values = [by_id[i].value for i in e.facts if i in by_id]
+            must = values + ([e.scope] if e.scope != "user" else [])
+            prompt = ("Rewrite the following chat message from a user to their assistant in different, natural wording. "
+                      "Keep EXACTLY these strings unchanged and present: " + "; ".join(repr(m) for m in must) +
+                      ". Keep the meaning, keep it one or two sentences, no preamble, output only the rewritten message."
+                      + chr(10) * 2 + "MESSAGE: " + e.text)
+            r = llm.complete(prompt, "You rewrite messages faithfully.")
+            t = r.text.strip().strip('"')
+            if t and all(m.lower() in t.lower() for m in must) and len(t) < 4 * len(e.text) + 40:
+                e.meta["template"] = e.text
+                e.text = t
+                changed += 1
+        return changed
 
     # ---- persistence
     def save(self, out: Path):

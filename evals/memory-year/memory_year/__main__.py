@@ -20,6 +20,7 @@ def main():
     g.add_argument("--density", type=float, default=10.0, help="mean events per weekday")
     g.add_argument("--projects", type=int, default=5)
     g.add_argument("--out", default=None)
+    g.add_argument("--paraphrase", default=None, help="local model used to reword fact-bearing events (value-preserving, cached)")
     r = sub.add_parser("run", help="replay a scenario through one or more rungs")
     r.add_argument("--scenario", required=True)
     r.add_argument("--rungs", default="none,full-history,raw-retrieval")
@@ -38,6 +39,10 @@ def main():
     if a.cmd == "gen":
         out = Path(a.out) if a.out else OUT / f"s{a.seed}-d{a.days}-x{int(a.density)}"
         w = World(a.seed, a.days, a.density, a.projects).generate()
+        if a.paraphrase:
+            from .llm import LLM
+            n = w.paraphrase(LLM(a.paraphrase, OUT / "cache" / "llm.sqlite"))
+            print(f"paraphrased {n} events with {a.paraphrase}")
         w.save(out)
         cls = {}
         for p in w.probes:
