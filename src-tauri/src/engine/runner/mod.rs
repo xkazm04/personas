@@ -7,6 +7,7 @@
 mod credentials;
 mod env;
 mod globals;
+pub(crate) mod hooks;
 mod stages;
 mod team_context;
 
@@ -140,6 +141,19 @@ pub async fn run_execution(
             "boundary": RunnerStage::Validate.boundary(),
         })),
     );
+
+    // Hook emit site — `hooks::ObservationPoint::TaskStart`. Observers only:
+    // nothing registered here can refuse the run or change an argument, so
+    // this sits wherever it reads best rather than at a position defended by
+    // an ordering invariant. The payload closure is not called when nothing is
+    // registered.
+    hooks::emit(hooks::ObservationPoint::TaskStart, || {
+        hooks::RunEvent::starting(
+            hooks::ObservationPoint::TaskStart,
+            &execution_id,
+            &persona.id,
+        )
+    });
 
     // Set up logger
     let mut logger = match ExecutionLogger::new(&log_dir, &execution_id) {
@@ -3294,6 +3308,35 @@ pub async fn run_execution(
                 business_outcome: parsed_business_outcome.clone(),
             },
         );
+    }
+
+    // Hook emit sites — `hooks::ObservationPoint::TaskSuccess` /
+    // `hooks::ObservationPoint::TaskFailure` on the two terminal branches, then
+    // `hooks::ObservationPoint::SessionEnd` once the run's identity is done
+    // being written. Three sites, one per declared point; the pairing test in
+    // `hooks::tests` fails the build if any declared point loses its site.
+    //
+    // Cancellation deliberately does NOT emit — see `hooks::registry::NON_FIRE`.
+    {
+        let terminal_event = |point: hooks::ObservationPoint| hooks::RunEvent {
+            point,
+            execution_id: execution_id.clone(),
+            persona_id: persona.id.clone(),
+            duration_ms: Some(duration_ms),
+            input_tokens: Some(metrics.input_tokens),
+            output_tokens: Some(metrics.output_tokens),
+            cost_usd: Some(metrics.cost_usd),
+            error: error.clone(),
+        };
+        let terminal_point = if success {
+            hooks::ObservationPoint::TaskSuccess
+        } else {
+            hooks::ObservationPoint::TaskFailure
+        };
+        hooks::emit(terminal_point, || terminal_event(terminal_point));
+        hooks::emit(hooks::ObservationPoint::SessionEnd, || {
+            terminal_event(hooks::ObservationPoint::SessionEnd)
+        });
     }
 
     ExecutionResult {
