@@ -23,6 +23,10 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+import shutil
+
+CLAUDE = shutil.which("claude") or "claude"   # the resolved shim, so no shell is needed and argv stays short
+
 DEFAULT_CONSUMER = "claude:claude-opus-4-8@low"
 DEFAULT_JUDGE = "claude:claude-sonnet-5@low"
 
@@ -75,8 +79,13 @@ class LLM:
             with self._lock:
                 self.cache_hits += 1; self.calls += 1; self.tokens_in += row[1]; self.tokens_out += row[2]
             return Reply(row[0], row[1], row[2], row[3], True)
-        args = ["claude", "-p", "--no-session-persistence", "--output-format", "json",
-                "--model", self.model, "--effort", self.effort, "--system-prompt", system or "You are a helpful assistant.", prompt]
+        # the system prompt goes through a file and the prompt through stdin: a 6k-token context
+        # on the command line exceeds the platform's argument length limit
+        sys_path = self.workdir / f"system-{hashlib.sha256((system or 'x').encode()).hexdigest()[:12]}.txt"
+        if not sys_path.exists():
+            sys_path.write_text(system or "You are a helpful assistant.", encoding="utf-8")
+        args = [CLAUDE, "-p", "--no-session-persistence", "--output-format", "json",
+                "--model", self.model, "--effort", self.effort, "--system-prompt-file", str(sys_path)]
         env = dict(os.environ)
         env.pop("CLAUDECODE", None)   # allow a nested headless call from inside a Claude Code session
         t0 = time.time()
@@ -84,7 +93,7 @@ class LLM:
         last_err = ""
         for attempt in range(4):
             try:
-                out = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", timeout=600, cwd=str(self.workdir), env=env, shell=os.name == "nt")
+                out = subprocess.run(args, input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=600, cwd=str(self.workdir), env=env)
                 data = json.loads(out.stdout) if out.stdout.strip() else None
                 if data and not data.get("is_error"):
                     break
