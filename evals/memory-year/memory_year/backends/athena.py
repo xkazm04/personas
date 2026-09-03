@@ -57,6 +57,7 @@ class Athena(Backend):
         self.ml = ml
         self._cost = Cost()
         self.consolidations = 0
+        self.cycle_failures: list[tuple[int, str]] = []
 
     def _call(self, req: dict) -> dict:
         assert self.proc.stdin and self.proc.stdout
@@ -75,7 +76,13 @@ class Athena(Backend):
         self._call({"op": "ingest", "role": role, "text": event.text, "at": clock.unix, "conversation": "sim-year", "scope": event.scope})
 
     def consolidate(self, clock: Clock) -> None:
-        rep = self._call({"op": "consolidate", "at": clock.unix, "force": self.force})
+        try:
+            rep = self._call({"op": "consolidate", "at": clock.unix, "force": self.force})
+        except RuntimeError as exc:
+            # a failed cycle is a fact about the design under test (a parser that cannot
+            # take a self-correcting reply, a timeout), not a harness fault: record, continue
+            self.cycle_failures.append((clock.day, str(exc)[:300]))
+            return
         if rep.get("admitted"):
             self.consolidations += 1
         self._cost.model_calls += int(rep.get("llm_calls", 0))
@@ -97,7 +104,9 @@ class Athena(Backend):
         return self._cost
 
     def describe(self) -> dict:
-        return {"name": self.name, "leg_model": self.leg_model, "ml": self.ml, "consolidate_force": self.force, "consolidations": self.consolidations}
+        return {"name": self.name, "leg_model": self.leg_model, "ml": self.ml, "consolidate_force": self.force,
+                "consolidations": self.consolidations, "cycle_failures": len(self.cycle_failures),
+                "cycle_failure_samples": [f"day {d}: {m[:160]}" for d, m in self.cycle_failures[:3]]}
 
 
 class AthenaTurn(Athena):
