@@ -170,6 +170,32 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
     return "\n".join(L)
 
 
+def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path) -> Path:
+    """Re-score a run's cached answers with the current judge; model calls hit the cache."""
+    header = json.loads((run_dir / "header.json").read_text(encoding="utf-8"))
+    scenario_dir = out_root / run_dir.parent.name
+    scenario = load_scenario(scenario_dir)
+    probes = {p.id: p for p in scenario["probes"]}
+    jllm = LLM(judge_model, out_root / "cache" / "llm.sqlite") if judge_model else None
+    answers = [Answer(**a) for a in json.loads((run_dir / "answers.json").read_text(encoding="utf-8"))]
+    for a in answers:
+        if a.verdict == "screened":
+            continue
+        p = probes[a.probe_id]
+        if p.gold == "FORM":
+            a.verdict, a.note, a.judge = judge_form(p, a.text, jllm, strict)
+        else:
+            a.verdict, a.note = judge_value(p, a.text)
+            a.judge = "deterministic"
+    header["rejudged"] = time.strftime("%Y-%m-%d %H:%M")
+    header["judge"] = judge_model or "deterministic-only"
+    header["judge_direction"] = "strict" if strict else "lenient"
+    (run_dir / "header.json").write_text(json.dumps(header, indent=1), encoding="utf-8")
+    (run_dir / "answers.json").write_text(json.dumps(to_json(answers), indent=1), encoding="utf-8")
+    (run_dir / "report.md").write_text(report_run(header, answers, scenario), encoding="utf-8")
+    return run_dir
+
+
 def compare(run_dirs: list[Path]) -> str:
     rows = []
     for d in run_dirs:

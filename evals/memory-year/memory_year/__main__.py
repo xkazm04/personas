@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .run import compare, run
+from .run import compare, rejudge, run
 from .world import World
 
 HERE = Path(__file__).resolve().parent.parent
@@ -32,6 +32,10 @@ def main():
     r.add_argument("--max-days", type=int, default=None)
     r.add_argument("--probe-limit", type=int, default=None)
     r.add_argument("--backend-kw", default="{}", help="JSON passed to the backend constructor")
+    j = sub.add_parser("rejudge", help="re-score cached answers with the current judge")
+    j.add_argument("runs", nargs="+")
+    j.add_argument("--judge", default="qwen2.5:7b-instruct")
+    j.add_argument("--lenient", action="store_true")
     c = sub.add_parser("compare", help="one ladder table over several run directories")
     c.add_argument("runs", nargs="+")
     a = ap.parse_args()
@@ -56,6 +60,9 @@ def main():
             print(f"{rung}: {d}")
             dirs.append(d)
         print()
+        print(compare(dirs))
+    elif a.cmd == "rejudge":
+        dirs = [rejudge(Path(r), a.judge, not a.lenient, OUT) for r in a.runs]
         print(compare(dirs))
     elif a.cmd == "compare":
         print(compare([Path(p) for p in a.runs]))

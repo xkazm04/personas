@@ -26,15 +26,25 @@ def is_abstention(text: str) -> bool:
     return t.startswith("unknown") or t in ("i don t know", "i do not know", "not known") or "unknown" == t.split(" ")[0] if t else False
 
 
+ARTICLES = ("a ", "an ", "the ")
+
+
+def strip_article(v: str) -> str:
+    for art in ARTICLES:
+        if v.startswith(art):
+            return v[len(art):]
+    return v
+
+
 def contains_value(answer: str, value: str) -> bool:
-    a, v = norm(answer), norm(value)
+    a, v = norm(answer), strip_article(norm(value))
     if not v:
         return False
     if v in a:
         return True
     # tolerate the value's head token for multi-word values ("Postgres 16" -> "postgres")
     head = v.split(" ")[0]
-    return len(head) >= 4 and head in a and not any(other in a for other in ("not", "no longer") if False)
+    return len(head) >= 4 and head in a
 
 
 def judge_value(probe: Probe, answer: str) -> tuple[str, str]:
@@ -89,6 +99,12 @@ def judge_form(probe: Probe, answer: str, llm: LLM | None, strict: bool = True) 
         return ("correct" if cites else "wrong"), "citation check", "deterministic"
     if form.startswith("applies:"):
         fix = form.split(":", 1)[1]
+        # deterministic first: the fix's key phrase ("check that X is handled") present in the answer
+        m = re.search(r"check that (.+?) is handled", norm(fix))
+        if m and m.group(1) in norm(answer):
+            return "correct", "fix phrase present", "deterministic"
+        if is_abstention(answer):
+            return "abstained", "", "deterministic"
         if llm is None:
             return "error", "model judge required", "none"
         mode = "strict" if strict else "lenient"
