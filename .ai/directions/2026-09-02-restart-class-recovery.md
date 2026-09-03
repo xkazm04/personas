@@ -5,7 +5,7 @@ raised_by: intake intake-hermes-0902 (peer comparison)
 source: librarian/sources/2026-09-02-hermes-agent.md
 stage: boot reconciliation — `src-tauri/src/boot/recovery.rs` and `src-tauri/src/engine/execution.rs::recover_stale_executions`
 size: 5 files / ~450 lines / M
-status: proposed
+status: accepted
 ---
 
 ## Why the scope implies it

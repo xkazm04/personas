@@ -5,7 +5,7 @@ raised_by: intake intake-hermes-0902 (peer comparison)
 source: librarian/sources/2026-09-02-hermes-agent.md
 stage: execution pipeline — `src-tauri/src/engine/runner/` (dispatch around the four `run_execution` stages and around the `match &line_type` stream arm)
 size: 6 files / ~900 lines / M
-status: proposed
+status: accepted
 ---
 
 ## Why the scope implies it

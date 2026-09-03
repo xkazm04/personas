@@ -5,7 +5,7 @@ raised_by: intake intake-hermes-0902 (peer comparison)
 source: librarian/sources/2026-09-02-hermes-agent.md
 stage: data layer — `src-tauri/db/src/lib.rs` (the pool customizer, `ensure_executions_fts`, and the write path through `PoolExt`), with the boot half in `src-tauri/db/src/backup.rs`
 size: 4 files / ~350 lines / M
-status: proposed
+status: accepted
 ---
 
 ## Why the scope implies it
