@@ -83,3 +83,5 @@ PIPELINE_APPROVAL_NEEDED  # NO SURFACE (engine/pipeline_executor.rs:930); the pi
 PIPELINE_CYCLE_WARNING  # NO SURFACE (commands/teams/teams.rs:277); the refusal is also returned as an error from the same command, which IS surfaced
 SUBSCRIPTION_CRASHED  # NO SURFACE (engine/subscription/runner.rs:171); a panicking subscription tick has no health surface yet. Strong wiring candidate.
 
+EXECUTION_FILE_CHANGE  # NO SURFACE since 1ab7e17d9 (2026-09-03): its only listener, hooks/execution/useFileChanges.ts, had zero consumers and was deleted; the runner emit (engine/runner/mod.rs:2507) is kept as the file-change signal for a future run-detail surface. Wiring candidate.
+EXECUTION_HEARTBEAT  # NO SURFACE since 1ab7e17d9 (2026-09-03): its only listener, hooks/execution/useActivityMonitor.ts, had zero consumers and was deleted; useRunnerState infers silence from output timestamps instead. The emits (engine/dispatch.rs:1569, runner/mod.rs:2171) are kept as the liveness signal a future health surface should read. Strong wiring candidate.
