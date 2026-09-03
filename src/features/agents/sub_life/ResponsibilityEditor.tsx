@@ -84,6 +84,11 @@ export function ResponsibilityEditor({
           approvalGates: null,
           tenure: null,
           budgetMonthlyUsd: draft.budgetMonthlyUsd ?? null,
+          // Manifest columns (agent-manifest-rebase WP1) — not edited by
+          // this form yet (WP5-7); null = leave unchanged.
+          connectors: null,
+          procedure: null,
+          spec: null,
         };
         saved = await updatePersonaResponsibility(existing.id, payload);
       } else {
@@ -93,6 +98,10 @@ export function ResponsibilityEditor({
           approvalGates: [],
           budgetMonthlyUsd: draft.budgetMonthlyUsd,
           tenure: { retireCriteria: [] },
+          // Manifest columns (WP1): a hand-created charter starts empty.
+          connectors: [],
+          procedure: '',
+          spec: {},
         });
       }
       onSaved(saved);

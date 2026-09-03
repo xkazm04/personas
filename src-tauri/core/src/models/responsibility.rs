@@ -184,6 +184,87 @@ pub struct ResponsibilityTenure {
     pub headless_incomplete_streak: Option<u32>,
 }
 
+/// Post-error escalation routing for a charter (the legacy use case's
+/// `error_policy` / `error_handling`): where unrecovered failures go.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsibilityErrorPolicy {
+    /// Open an Incidents-inbox entry when a failure cannot auto-recover.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub incident: Option<bool>,
+    /// Queue the charter for improvement in the Lab when failures recur.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub lab: Option<bool>,
+    /// Escalate only after this many consecutive failures — stays far under
+    /// 2^53, so the JS `number` pin is lossless (persisted-model-struct).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    #[ts(type = "number")]
+    pub escalate_after: Option<i64>,
+}
+
+/// The runtime envelope a charter carries beyond its governance fields — the
+/// half of a legacy design-context use case that was never about *what the
+/// persona holds* but about *how a run of it is shaped* (input schema, engine
+/// mode, notification routing, fixtures, recipe provenance). Stored as the
+/// `persona_responsibilities.spec` JSON column (migration
+/// `e19_agent_manifest`); every field is optional so a charter authored by
+/// hand carries `{}` and a migrated one carries only what its use case had.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsibilitySpec {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub input_schema: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub sample_input: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub model_override: Option<String>,
+    /// The legacy use case's `execution_mode`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub engine_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub notification_channels: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub event_subscriptions: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub error_policy: Option<ResponsibilityErrorPolicy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub time_filter: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub test_fixtures: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub source_recipe_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub source_recipe_version: Option<String>,
+    /// The design-context use case this charter was minted from by the
+    /// one-way migration — the migration's idempotency key, and the pointer
+    /// the trigger remap (`persona_triggers.responsibility_id`) followed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub migrated_from_use_case_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub memory_policy: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub suggested_trigger: Option<serde_json::Value>,
+}
+
 /// One row of `persona_responsibilities` — a standing charter a persona holds.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -214,8 +295,20 @@ pub struct PersonaResponsibility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
-    /// Who authored the charter ('operator' | 'template' | 'athena' | ...).
+    /// Who authored the charter ('operator' | 'kp-hire' | 'migration' |
+    /// 'agent-proposed'; DB CHECK-enforced).
     pub source: String,
+    /// Connector ids the charter's runs may reach (the legacy use case's
+    /// `connectors`); `[]` = whatever the persona holds.
+    #[serde(default)]
+    pub connectors: Vec<String>,
+    /// How the persona carries the charter out — the operating procedure
+    /// (legacy: capability summary + description).
+    #[serde(default)]
+    pub procedure: String,
+    /// Runtime envelope (input schema, engine mode, routing, provenance).
+    #[serde(default)]
+    pub spec: ResponsibilitySpec,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -261,6 +354,12 @@ pub struct CreatePersonaResponsibilityInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
+    #[serde(default)]
+    pub connectors: Vec<String>,
+    #[serde(default)]
+    pub procedure: String,
+    #[serde(default)]
+    pub spec: ResponsibilitySpec,
 }
 
 /// Wire input for the operator's partial-update door
@@ -286,4 +385,7 @@ pub struct UpdatePersonaResponsibilityInput {
     pub tenure: Option<ResponsibilityTenure>,
     #[serde(default, deserialize_with = "crate::models::serde_util::double_option")]
     pub project_id: Option<Option<String>>,
+    pub connectors: Option<Vec<String>>,
+    pub procedure: Option<String>,
+    pub spec: Option<ResponsibilitySpec>,
 }

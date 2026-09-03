@@ -47,9 +47,11 @@ use std::collections::HashMap;
 
 use personas_core::error::AppError;
 use personas_core::validation::contract::{self, ValidationError};
+use personas_core::validation::persona::MAX_PROMPT_BYTES;
 use personas_db::models::{
     CreatePersonaResponsibilityInput, PersonaResponsibility, ResponsibilityCadence,
-    ResponsibilityStatus, ResponsibilityTenure, UpdatePersonaResponsibilityInput,
+    ResponsibilitySpec, ResponsibilityStatus, ResponsibilityTenure,
+    UpdatePersonaResponsibilityInput,
 };
 use personas_db::repos::core::responsibilities as repo;
 use personas_db::DbPool;
@@ -135,20 +137,42 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
     // Through the validation contract so the {field, rule} identity survives
     // (command-input-validation golden path), not an open-coded refusal.
     contract::check(
-        input
-            .title
-            .trim()
-            .is_empty()
-            .then(|| {
+        [
+            input.title.trim().is_empty().then(|| {
                 ValidationError::new(
                     "title",
                     "required",
                     "A responsibility needs a title: the charter is the operator's record of \
                      what this persona holds, and an unnamed one cannot be reviewed",
                 )
-            })
-            .into_iter()
-            .collect(),
+            }),
+            // The procedure is prompt-shaped text; it shares the prompt's
+            // byte ceiling rather than inventing a second one.
+            (input.procedure.len() > MAX_PROMPT_BYTES).then(|| {
+                ValidationError::new(
+                    "procedure",
+                    "max_length",
+                    format!(
+                        "Procedure exceeds maximum size of {} KB",
+                        MAX_PROMPT_BYTES / 1024
+                    ),
+                )
+            }),
+            input
+                .connectors
+                .iter()
+                .any(|c| c.trim().is_empty())
+                .then(|| {
+                    ValidationError::new(
+                        "connectors",
+                        "required",
+                        "Every connector entry must be a non-empty connector id",
+                    )
+                }),
+        ]
+        .into_iter()
+        .flatten()
+        .collect(),
     )?;
     if input.scope_rung > MAX_GRANTABLE_RUNG {
         return Err(AppError::Validation(format!(
@@ -271,6 +295,9 @@ pub fn from_mandate_record(rec: &MandateRecord, persona_id: &str) -> PersonaResp
         status: ResponsibilityStatus::Active.as_str().to_string(),
         project_id: (!rec.project_id.is_empty()).then(|| rec.project_id.clone()),
         source: "migration".to_string(),
+        connectors: Vec::new(),
+        procedure: String::new(),
+        spec: ResponsibilitySpec::default(),
         created_at: String::new(),
         updated_at: String::new(),
     }
@@ -378,6 +405,9 @@ fn create_from_responsibility(
             status: &resp.status,
             project_id: resp.project_id.as_deref(),
             source,
+            connectors: &resp.connectors,
+            procedure: &resp.procedure,
+            spec: &resp.spec,
         },
     )
 }
@@ -523,6 +553,9 @@ pub fn create_from_input(
             .unwrap_or_else(|| ResponsibilityStatus::Active.as_str().to_string()),
         project_id: input.project_id.clone(),
         source: "operator".to_string(),
+        connectors: input.connectors.clone(),
+        procedure: input.procedure.clone(),
+        spec: input.spec.clone(),
         created_at: String::new(),
         updated_at: String::new(),
     };
@@ -566,6 +599,9 @@ pub fn update_from_input(
             Some(v) => v,
             None => existing.project_id,
         },
+        connectors: input.connectors.clone().unwrap_or(existing.connectors),
+        procedure: input.procedure.clone().unwrap_or(existing.procedure),
+        spec: input.spec.clone().unwrap_or(existing.spec),
         ..PersonaResponsibility {
             id: existing.id,
             persona_id: existing.persona_id,
@@ -593,6 +629,9 @@ pub fn update_from_input(
             budget_monthly_usd: input.budget_monthly_usd,
             tenure: input.tenure,
             project_id: input.project_id,
+            connectors: input.connectors,
+            procedure: input.procedure,
+            spec: input.spec,
         },
     )
 }
@@ -773,6 +812,25 @@ mod tests {
         validate(&resp).expect("custom-prefixed and general-library classes are accepted");
         resp.refusal_classes.push("test_deleton_or_skip".into()); // typo
         assert!(matches!(validate(&resp), Err(AppError::Validation(_))));
+        resp.refusal_classes.pop();
+
+        // Manifest columns: a blank connector id and an oversized procedure
+        // are refused; a well-formed pair passes.
+        let mut blank_connector = resp.clone();
+        blank_connector.connectors = vec!["slack".into(), "  ".into()];
+        assert!(matches!(
+            validate(&blank_connector),
+            Err(AppError::Validation(_))
+        ));
+        let mut long_procedure = resp.clone();
+        long_procedure.procedure = "x".repeat(MAX_PROMPT_BYTES + 1);
+        assert!(matches!(
+            validate(&long_procedure),
+            Err(AppError::Validation(_))
+        ));
+        resp.connectors = vec!["slack".into()];
+        resp.procedure = "Read the channel, post a digest.".into();
+        validate(&resp).expect("manifest columns within bounds");
     }
 
     #[test]
@@ -959,6 +1017,12 @@ mod tests {
             UpdatePersonaResponsibilityInput {
                 title: Some("Keep the release notes honest".into()),
                 budget_monthly_usd: Some(Some(3.0)),
+                connectors: Some(vec!["github".into()]),
+                procedure: Some("Diff the changelog against merged PRs.".into()),
+                spec: Some(ResponsibilitySpec {
+                    engine_mode: Some("agentic".into()),
+                    ..Default::default()
+                }),
                 ..Default::default()
             },
         )
@@ -966,6 +1030,9 @@ mod tests {
         assert_eq!(renamed.title, "Keep the release notes honest");
         assert_eq!(renamed.budget_monthly_usd, Some(3.0));
         assert_eq!(renamed.refusal_classes, vec!["ExternalSend"]);
+        assert_eq!(renamed.connectors, vec!["github"]);
+        assert_eq!(renamed.procedure, "Diff the changelog against merged PRs.");
+        assert_eq!(renamed.spec.engine_mode.as_deref(), Some("agentic"));
 
         assert!(matches!(
             update_from_input(&pool, "resp_missing", Default::default()),

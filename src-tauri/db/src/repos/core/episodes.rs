@@ -9,7 +9,7 @@
 use rusqlite::params;
 use uuid::Uuid;
 
-use crate::models::PersonaEpisode;
+use crate::models::{CoverageCell, EpisodeDayCount, PersonaEpisode};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -162,10 +162,140 @@ pub fn list_after(
     })
 }
 
+/// Episodes per UTC day and role over the last `days` days (today included),
+/// oldest day first — the Brain dashboard's activity series. Each row carries
+/// the count and the summed ORIGINAL-body chars; a day with no episodes has
+/// no row (the caller fills gaps if it wants a dense axis).
+pub fn count_by_day_and_role(
+    pool: &DbPool,
+    persona_id: &str,
+    days: i64,
+) -> Result<Vec<EpisodeDayCount>, AppError> {
+    timed_query!("persona_episodes", "episodes::count_by_day_and_role", {
+        let conn = pool.conn("episodes::count_by_day_and_role")?;
+        let since = (chrono::Utc::now() - chrono::Duration::days(days.max(1) - 1))
+            .format("%Y-%m-%d")
+            .to_string();
+        let mut stmt = conn.prepare_cached(
+            "SELECT date(created_at) AS day, role, COUNT(*) AS n,
+                    COALESCE(SUM(chars), 0) AS total_chars
+             FROM persona_episodes
+             WHERE persona_id = ?1 AND date(created_at) >= ?2
+             GROUP BY date(created_at), role
+             ORDER BY day ASC, role ASC",
+        )?;
+        let rows = stmt.query_map(params![persona_id, since], |r| {
+            Ok(EpisodeDayCount {
+                day: r.get("day")?,
+                role: r.get("role")?,
+                count: r.get("n")?,
+                chars: r.get("total_chars")?,
+            })
+        })?;
+        Ok(collect_rows(rows, "episodes::count_by_day_and_role"))
+    })
+}
+
+/// Episodes per charter — the coverage strip: which responsibilities are
+/// actually producing a record. Rows with no `responsibility_id` land under
+/// the `unassigned` key so the un-chartered share is visible, not hidden.
+pub fn count_by_responsibility(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<CoverageCell>, AppError> {
+    timed_query!("persona_episodes", "episodes::count_by_responsibility", {
+        let conn = pool.conn("episodes::count_by_responsibility")?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT COALESCE(responsibility_id, 'unassigned') AS key, COUNT(*) AS n
+             FROM persona_episodes
+             WHERE persona_id = ?1
+             GROUP BY COALESCE(responsibility_id, 'unassigned')
+             ORDER BY n DESC, key ASC",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| {
+            Ok(CoverageCell {
+                key: r.get("key")?,
+                kind: "responsibility".to_string(),
+                count: r.get("n")?,
+            })
+        })?;
+        Ok(collect_rows(rows, "episodes::count_by_responsibility"))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::init_test_db;
+
+    #[test]
+    fn day_role_and_responsibility_aggregates_group_the_record() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+        let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        let conn = pool.get()?;
+        for (id, role, resp, chars, created) in [
+            (
+                "ep_1",
+                "assistant",
+                Some("resp_a"),
+                10,
+                format!("{today}T01:00:00Z"),
+            ),
+            (
+                "ep_2",
+                "assistant",
+                Some("resp_a"),
+                20,
+                format!("{today}T02:00:00Z"),
+            ),
+            ("ep_3", "user", None, 5, format!("{today}T03:00:00Z")),
+            (
+                "ep_old",
+                "assistant",
+                None,
+                999,
+                "2020-01-01T00:00:00Z".to_string(),
+            ),
+        ] {
+            conn.execute(
+                "INSERT INTO persona_episodes
+                    (id, persona_id, responsibility_id, role, source, body_excerpt,
+                     content_hash, chars, created_at)
+                 VALUES (?1, 'p1', ?2, ?3, 'execution', 'b', ?1, ?4, ?5)",
+                params![id, resp, role, chars, created],
+            )?;
+        }
+        conn.execute(
+            "INSERT INTO persona_episodes
+                (id, persona_id, role, source, body_excerpt, content_hash, chars, created_at)
+             VALUES ('ep_other', 'p2', 'assistant', 'execution', 'b', 'h', 1, ?1)",
+            params![format!("{today}T01:00:00Z")],
+        )?;
+        drop(conn);
+
+        let series = count_by_day_and_role(&pool, "p1", 7)?;
+        assert_eq!(
+            series.len(),
+            2,
+            "two roles today; 2020 is out of the window"
+        );
+        let assistant = series.iter().find(|r| r.role == "assistant").unwrap();
+        assert_eq!(assistant.day, today);
+        assert_eq!(assistant.count, 2);
+        assert_eq!(assistant.chars, 30);
+
+        let coverage = count_by_responsibility(&pool, "p1")?;
+        assert_eq!(coverage.len(), 2);
+        assert_eq!(coverage[0].key, "resp_a");
+        assert_eq!(coverage[0].count, 2);
+        assert_eq!(coverage[0].kind, "responsibility");
+        assert_eq!(coverage[1].key, "unassigned");
+        assert_eq!(coverage[1].count, 2);
+        assert!(count_by_responsibility(&pool, "p-none")?.is_empty());
+        Ok(())
+    }
 
     fn insert_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
         let conn = pool.get()?;

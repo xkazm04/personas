@@ -1,8 +1,8 @@
 use rusqlite::{params, OptionalExtension};
 
 use crate::models::{
-    normalize_category, validate_category, validate_importance, CreatePersonaMemoryInput,
-    PersonaMemory, DEFAULT_MEMORY_CATEGORY,
+    normalize_category, validate_category, validate_importance, CategoryCount,
+    CreatePersonaMemoryInput, PersonaMemory, DEFAULT_MEMORY_CATEGORY,
 };
 use crate::query_builder::QueryBuilder;
 use crate::repos::core::memory_reaper;
@@ -274,33 +274,29 @@ pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<Persona
     })
 }
 
-/// How many memories a persona holds in each tier.
-///
-/// One row per tier is the whole point: `core` is the always-included budget,
-/// `active` is the recall workhorse, `working` is the raw capture lane and
-/// `archive` never reaches a prompt. A single total would hide the only
-/// distinction that matters. Serialized to kp's roster as `memory` on the App
-/// master rollup (`engine::kp_reporter`), where it is how an operator sees
-/// accumulated experience: tenure made visible.
-///
-/// `archived` (not `archive`) on the wire: kp's field is an adjective about the
-/// rows, and the tier name is an internal enum value.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MemoryTierCounts {
-    pub core: i64,
-    pub active: i64,
-    pub working: i64,
-    pub archived: i64,
-}
+/// The per-tier count shape lives in `personas-core` (ts-exported for the
+/// Brain dashboard); re-exported here so `memories::MemoryTierCounts` keeps
+/// resolving for the kp reporter and every other existing caller.
+pub use crate::models::MemoryTierCounts;
 
-impl MemoryTierCounts {
-    /// True when the persona holds nothing at all — the caller's cue to send
-    /// *nothing* rather than four zeros, since "no memory yet" and "four tiers
-    /// measured at zero" are the same number and different findings.
-    pub fn is_empty(&self) -> bool {
-        self.core == 0 && self.active == 0 && self.working == 0 && self.archived == 0
-    }
+/// Memories per category for one persona, most populous first — the Brain
+/// dashboard's category strip. An empty vec means the persona holds no
+/// memories at all (the query ran).
+pub fn count_by_category(pool: &DbPool, persona_id: &str) -> Result<Vec<CategoryCount>, AppError> {
+    timed_query!("persona_memories", "persona_memories::count_by_category", {
+        let conn = pool.conn("memories::count_by_category")?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT category, COUNT(*) AS n FROM persona_memories
+             WHERE persona_id = ?1 GROUP BY category ORDER BY n DESC, category ASC",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |row| {
+            Ok(CategoryCount {
+                category: row.get("category")?,
+                count: row.get("n")?,
+            })
+        })?;
+        Ok(collect_rows(rows, "memories::count_by_category"))
+    })
 }
 
 /// Count one persona's memories per tier in a single grouped query.

@@ -1244,6 +1244,9 @@ mod attention_tests {
                 status: "active",
                 project_id: None,
                 source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
             },
         )
         .unwrap()

@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::models::{
     PersonaResponsibility, ResponsibilityCadence, ResponsibilityObjective, ResponsibilityOutcome,
-    ResponsibilityStatus, ResponsibilityTenure,
+    ResponsibilitySpec, ResponsibilityStatus, ResponsibilityTenure,
 };
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
@@ -23,7 +23,8 @@ use personas_core::error::AppError;
 /// `row_to_responsibility` consumes, nothing else.
 const COLUMNS: &str = "id, persona_id, title, domain, outcomes, objectives, \
      scope_rung, refusal_classes, approval_gates, owner, cadence, \
-     budget_monthly_usd, tenure, status, project_id, source, created_at, updated_at";
+     budget_monthly_usd, tenure, status, project_id, source, \
+     connectors, procedure, spec, created_at, updated_at";
 
 /// `COLUMNS` with every column qualified by `alias` — for joined queries
 /// where unqualified `id`/`created_at` would be ambiguous.
@@ -62,7 +63,12 @@ fn row_to_responsibility(row: &Row) -> rusqlite::Result<PersonaResponsibility> {
     let gates_raw: String = row.get("approval_gates")?;
     let cadence_raw: String = row.get("cadence")?;
     let tenure_raw: String = row.get("tenure")?;
+    let connectors_raw: String = row.get("connectors")?;
+    let spec_raw: String = row.get("spec")?;
     Ok(PersonaResponsibility {
+        connectors: parse_lenient::<Vec<String>>(&connectors_raw, &id, "connectors"),
+        spec: parse_lenient::<ResponsibilitySpec>(&spec_raw, &id, "spec"),
+        procedure: row.get("procedure")?,
         outcomes: parse_lenient::<Vec<ResponsibilityOutcome>>(&outcomes_raw, &id, "outcomes"),
         objectives: parse_lenient::<Vec<ResponsibilityObjective>>(
             &objectives_raw,
@@ -111,6 +117,9 @@ pub struct CreateResponsibilityInput<'a> {
     pub status: &'a str,
     pub project_id: Option<&'a str>,
     pub source: &'a str,
+    pub connectors: &'a [String],
+    pub procedure: &'a str,
+    pub spec: &'a ResponsibilitySpec,
 }
 
 pub fn create(
@@ -125,9 +134,10 @@ pub fn create(
             "INSERT INTO persona_responsibilities
                 (id, persona_id, title, domain, outcomes, objectives, scope_rung,
                  refusal_classes, approval_gates, owner, cadence, budget_monthly_usd,
-                 tenure, status, project_id, source, created_at, updated_at)
+                 tenure, status, project_id, source, connectors, procedure, spec,
+                 created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
-                     ?15, ?16, ?17, ?17)",
+                     ?15, ?16, ?18, ?19, ?20, ?17, ?17)",
             params![
                 id,
                 input.persona_id,
@@ -146,6 +156,9 @@ pub fn create(
                 input.project_id,
                 input.source,
                 now,
+                to_json(&input.connectors, "connectors")?,
+                input.procedure,
+                to_json(input.spec, "spec")?,
             ],
         )?;
         let mut stmt = conn.prepare_cached(&format!(
@@ -328,6 +341,9 @@ pub struct UpdateResponsibilityInput {
     pub budget_monthly_usd: Option<Option<f64>>,
     pub tenure: Option<ResponsibilityTenure>,
     pub project_id: Option<Option<String>>,
+    pub connectors: Option<Vec<String>>,
+    pub procedure: Option<String>,
+    pub spec: Option<ResponsibilitySpec>,
 }
 
 pub fn update(
@@ -367,6 +383,16 @@ pub fn update(
             .tenure
             .as_ref()
             .map(|v| to_json(v, "tenure"))
+            .transpose()?;
+        let connectors_json = input
+            .connectors
+            .as_ref()
+            .map(|v| to_json(v, "connectors"))
+            .transpose()?;
+        let spec_json = input
+            .spec
+            .as_ref()
+            .map(|v| to_json(v, "spec"))
             .transpose()?;
         let scope_rung = input.scope_rung.map(|v| v as i64);
 
@@ -445,6 +471,23 @@ pub fn update(
             param_values,
             clone
         );
+        push_field_param!(
+            connectors_json,
+            "connectors",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.procedure,
+            "procedure",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(spec_json, "spec", sets, param_idx, param_values, clone);
 
         let sql = format!(
             "UPDATE persona_responsibilities SET {} WHERE id = ?{}",
@@ -526,6 +569,8 @@ mod tests {
         std::sync::LazyLock::new(ResponsibilityCadence::default);
     static DEFAULT_TENURE: std::sync::LazyLock<ResponsibilityTenure> =
         std::sync::LazyLock::new(ResponsibilityTenure::default);
+    static DEFAULT_SPEC: std::sync::LazyLock<ResponsibilitySpec> =
+        std::sync::LazyLock::new(ResponsibilitySpec::default);
 
     fn base_input(persona_id: &str) -> CreateResponsibilityInput<'_> {
         CreateResponsibilityInput {
@@ -544,7 +589,66 @@ mod tests {
             status: "active",
             project_id: None,
             source: "operator",
+            connectors: &[],
+            procedure: "",
+            spec: &DEFAULT_SPEC,
         }
+    }
+
+    #[test]
+    fn manifest_columns_round_trip_and_update_partially() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+        let connectors = vec!["slack".to_string(), "github".to_string()];
+        let spec = ResponsibilitySpec {
+            engine_mode: Some("agentic".into()),
+            migrated_from_use_case_id: Some("uc_1".into()),
+            error_policy: Some(crate::models::ResponsibilityErrorPolicy {
+                incident: Some(true),
+                lab: None,
+                escalate_after: Some(3),
+            }),
+            ..Default::default()
+        };
+        let created = create(
+            &pool,
+            CreateResponsibilityInput {
+                connectors: &connectors,
+                procedure: "Watch the channel, summarize daily.",
+                spec: &spec,
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(created.connectors, connectors);
+        assert_eq!(created.procedure, "Watch the channel, summarize daily.");
+        assert_eq!(created.spec, spec);
+
+        // A hand-authored charter carries the defaults, not NULLs.
+        let plain = create(&pool, base_input("p1"))?;
+        assert!(plain.connectors.is_empty());
+        assert_eq!(plain.procedure, "");
+        assert_eq!(plain.spec, ResponsibilitySpec::default());
+
+        let updated = update(
+            &pool,
+            &created.id,
+            UpdateResponsibilityInput {
+                procedure: Some("Rewritten.".into()),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(updated.procedure, "Rewritten.");
+        assert_eq!(updated.connectors, connectors, "untouched field survives");
+        assert_eq!(updated.spec, spec);
+
+        // A corrupt spec degrades to the default, never an error.
+        pool.get()?.execute(
+            "UPDATE persona_responsibilities SET spec = '{nope' WHERE id = ?1",
+            params![created.id],
+        )?;
+        let fetched = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(fetched.spec, ResponsibilitySpec::default());
+        Ok(())
     }
 
     #[test]

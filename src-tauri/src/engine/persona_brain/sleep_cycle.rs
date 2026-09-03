@@ -82,7 +82,7 @@ impl Drop for CycleKey {
 /// One measurement: `(reading, boundary)`. The boundary is the last COMPLETED
 /// consolidation's `consumed_through`, else a week back (the same first-cycle
 /// bound the companion uses); the floor is keyed on that row's `completed_at`.
-fn gauge(pool: &DbPool, persona_id: &str) -> Result<(CycleReading, String), AppError> {
+pub(super) fn gauge(pool: &DbPool, persona_id: &str) -> Result<(CycleReading, String), AppError> {
     let last = attention_ledger::last_completed(pool, persona_id, KIND_CONSOLIDATION)?;
     let hours_since_last = last.as_ref().and_then(|l| {
         let completed = l.completed_at.as_deref()?;

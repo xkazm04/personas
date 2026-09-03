@@ -1,26 +1,54 @@
-//! Tauri commands for the living-agent persona brain (spark WP4): episodic
-//! record reads, the self-model surface, and the consolidation trigger.
+//! Tauri commands for the living-agent persona brain (spark WP4; manifest
+//! rebase WP1): episodic record reads, the manifest surface, the Brain
+//! dashboard, and the consolidation trigger.
 //!
 //! Thin adapters by doctrine — auth, one engine/repo call, map. The apply
 //! path for `self_model_diff` proposals deliberately does NOT live here: it
 //! is a branch inside the existing `apply_persona_memory_review_proposal`
 //! command (`commands::core::memories`), so every proposal family shares one
 //! human gate.
+//!
+//! The manifest and dashboard commands touch rusqlite AND the filesystem, so
+//! they are async over `spawn_blocking` rather than sync on the IPC worker.
 
 use std::sync::Arc;
 
 use tauri::State;
 
 use crate::companion::brain::identity::IdentityDiff;
-use crate::db::models::{AttentionLoopStatus, PersonaEpisode};
+use crate::db::models::{
+    AttentionLoopStatus, PersonaBrainDashboard, PersonaEpisode, PersonaManifestView,
+};
 use crate::db::repos::core::attention_ledger;
 use crate::db::repos::core::episodes as episodes_repo;
 use crate::engine::autonomy;
-use crate::engine::persona_brain::identity;
+use crate::engine::persona_brain::{dashboard, manifest};
 use crate::engine::persona_jobs;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Run a blocking brain read/write off the IPC worker.
+async fn blocking<T, F>(what: &'static str, f: F) -> Result<T, AppError>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, AppError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| AppError::Internal(format!("{what}: task failed: {e}")))?
+}
+
+/// A manifest write changed `personas.core_profile` (the mirror): drop the
+/// cached engine session so the next run assembles against the new text —
+/// the same invalidation `update_persona` performs.
+fn invalidate_session(state: &Arc<AppState>, persona_id: &str) {
+    let pool = state.session_pool.clone();
+    let pid = persona_id.to_string();
+    tauri::async_runtime::spawn(async move {
+        pool.invalidate(&pid).await;
+    });
+}
 
 /// Enqueue a FORCED sleep-consolidation job for one persona. Force bypasses
 /// pressure/floor/staleness — never the per-persona single-flight guard.
@@ -79,23 +107,78 @@ pub fn get_attention_loop_status(
     Ok(AttentionLoopStatus { enabled, summary })
 }
 
-/// The persona's current self-model (`identity.md`), or `None` when it has
-/// never been seeded.
+/// The persona's current manifest text (`manifest.md`), or `None` when it has
+/// never been seeded. Legacy name kept for the Life tab's read-only panel;
+/// [`get_persona_manifest`] is the editor's door and seeds on first access.
 #[tauri::command]
 pub fn get_persona_identity(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Option<String>, AppError> {
     require_auth_sync(&state)?;
-    Ok(identity::read(&persona_id))
+    Ok(manifest::read(&persona_id))
+}
+
+/// The persona's manifest, seeded (or migrated from `identity.md`) on first
+/// access, with the law / self-model section map and the count of
+/// `self_model_diff` proposals awaiting review.
+#[tauri::command]
+pub async fn get_persona_manifest(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<PersonaManifestView, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let pid = persona_id.clone();
+    let view = blocking("get_persona_manifest", move || manifest::view(&db, &pid)).await?;
+    // A first access seeds → mirrors → the prompt changed.
+    invalidate_session(&state, &persona_id);
+    Ok(view)
+}
+
+/// Operator door for the LAW sections: replace one section's body
+/// (`Mandate` | `Boundaries` | `Operation defaults`) on disk and refresh the
+/// `core_profile` mirror. Any other heading is a typed validation refusal.
+#[tauri::command]
+pub async fn update_persona_manifest_law(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    section: String,
+    content: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let pid = persona_id.clone();
+    blocking("update_persona_manifest_law", move || {
+        manifest::update_law(&db, &pid, &section, &content)
+    })
+    .await?;
+    invalidate_session(&state, &persona_id);
+    Ok(())
+}
+
+/// The Brain dashboard: memory tiers and categories, 30 days of episode
+/// activity, the consolidation history, the pressure gauge and the anomaly
+/// strip, plus per-charter coverage.
+#[tauri::command]
+pub async fn get_persona_brain_dashboard(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<PersonaBrainDashboard, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    blocking("get_persona_brain_dashboard", move || {
+        dashboard::build(&db, &persona_id)
+    })
+    .await
 }
 
 /// File anchored self-model diffs as a `self_model_diff` proposal (NEVER
 /// applies — a human decides through `apply_persona_memory_review_proposal`).
-/// `diffs_json` is a JSON array of `{section, op, anchor_text?, new_text?}`.
-/// Returns the proposal id.
+/// `diffs_json` is a JSON array of `{section, op, anchor_text?, new_text?}`;
+/// a diff aimed at a law section is refused. Returns the proposal id.
 #[tauri::command]
-pub fn propose_persona_identity_diffs(
+pub fn propose_persona_manifest_diffs(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     diffs_json: String,
@@ -109,5 +192,5 @@ pub fn propose_persona_identity_diffs(
         .iter()
         .map(IdentityDiff::from_json)
         .collect::<Result<Vec<_>, _>>()?;
-    identity::propose_diffs(&state.db, &persona_id, diffs, &rationale)
+    manifest::propose_diffs(&state.db, &persona_id, diffs, &rationale)
 }

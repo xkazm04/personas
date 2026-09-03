@@ -3047,6 +3047,9 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
                 status: "active",
                 project_id: None,
                 source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
             },
         )
         .unwrap();

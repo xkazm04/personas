@@ -266,7 +266,11 @@ pub fn run() {
             commands::core::persona_brain::list_persona_episodes,
             commands::core::persona_brain::get_persona_identity,
             commands::core::persona_brain::get_attention_loop_status,
-            commands::core::persona_brain::propose_persona_identity_diffs,
+            commands::core::persona_brain::propose_persona_manifest_diffs,
+            // Core -- Agent manifest + Brain dashboard (agent-manifest-rebase WP1)
+            commands::core::persona_brain::get_persona_manifest,
+            commands::core::persona_brain::update_persona_manifest_law,
+            commands::core::persona_brain::get_persona_brain_dashboard,
             // Core -- Custom persona icons (desktop only — image decode pipeline)
             #[cfg(feature = "desktop")]
             commands::core::persona_icons::import_persona_icon,
