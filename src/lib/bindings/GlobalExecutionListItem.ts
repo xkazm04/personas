@@ -30,4 +30,14 @@ modelUsed: string | null,
 /**
  * Thinking budget token, drawn as a chip beside the model.
  */
-thinkingLevel: string | null, inputTokens: number, outputTokens: number, costUsd: number, durationMs: number | null, startedAt: string | null, createdAt: string, personaName: string | null, personaIcon: string | null, personaColor: string | null, };
+thinkingLevel: string | null, inputTokens: number, outputTokens: number, 
+/**
+ * `None` when the run's cost was never recorded (a NULL column, or a
+ * value the lenient numeric read could not parse) — which is NOT the same
+ * fact as a free run, and is deliberately not collapsed to `0.0` here the
+ * way the two older mappers in this table's repo do. A list that renders
+ * an unknown cost as $0 makes a total that omits a call indistinguishable
+ * from one that includes a free call; the consumer states the absence
+ * instead (census rule `unknown-money-as-zero`).
+ */
+costUsd: number | null, durationMs: number | null, startedAt: string | null, createdAt: string, personaName: string | null, personaIcon: string | null, personaColor: string | null, };
