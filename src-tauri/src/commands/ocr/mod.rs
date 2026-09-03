@@ -23,6 +23,18 @@ use crate::SHARED_HTTP;
 // Gemini Vision OCR
 // ---------------------------------------------------------------------------
 
+// NOT bumped to gemini-3.8-flash on 2026-09-02, deliberately, and this is the reason so
+// nobody re-derives it. 3.8 Flash shipped that day and IS the current text/agentic Flash
+// (the fleet moved other call sites to it the same day), but this is a VISION path: it
+// posts inline image bytes. On 2026-09-02 the provider had published the id on its model
+// list while the spec table carrying INPUT MODALITIES was still unpublished, so 3.8's
+// image-input support was undocumented rather than confirmed. Swapping an OCR engine on
+// the assumption that a Flash model is multimodal is exactly the guess this codebase
+// should not make: if it is wrong, every OCR call fails at once.
+//
+// TO CLOSE: re-read the model page for gemini-3.8-flash; if it lists image input, bump
+// this constant and the vision connector options in scripts/connectors/builtin/
+// gemini-vision.json together. Nothing else here needs to change.
 const DEFAULT_GEMINI_MODEL: &str = "gemini-3.5-flash";
 const OCR_SYSTEM_PROMPT: &str =
     "Extract ALL text from this image/document. Preserve the original structure, \
