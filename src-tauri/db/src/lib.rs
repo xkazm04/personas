@@ -44,6 +44,7 @@ mod backup;
 pub mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+pub mod damage;
 pub mod journal;
 // Relocated from `engine/` in crate-split step 4c. Each of these six is
 // data-layer code that happened to live in the engine directory: they depend
@@ -244,8 +245,19 @@ pub(crate) const STANDARD_PRAGMAS: &str = "PRAGMA foreign_keys = ON;
 
 /// Apply [`STANDARD_PRAGMAS`] to `conn`. Shared by every connection customizer
 /// so the pragma set is maintained in exactly one place.
+///
+/// It is also where the quarantine posture is enforced. A store that
+/// [`damage`] has quarantined hands back `query_only` connections with the
+/// close-time checkpoint disabled, so **every** write fails at the engine
+/// rather than at the ~1,350 call sites somebody would otherwise have to
+/// remember to guard. Reads stay available: quarantine has to be a state the
+/// operator can read and export out of, not a dead end.
 pub(crate) fn apply_standard_pragmas(conn: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
-    conn.execute_batch(STANDARD_PRAGMAS)
+    conn.execute_batch(STANDARD_PRAGMAS)?;
+    if damage::is_connection_quarantined(conn) {
+        damage::harden_connection(conn)?;
+    }
+    Ok(())
 }
 
 /// Connection customizer that sets per-connection SQLite pragmas.
@@ -258,16 +270,51 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
     }
 }
 
+/// How many 300 s quiet-window passes between scheduled integrity checks.
+/// `quick_check` reads every page, so on a 331 MiB store it is seconds of I/O:
+/// cheap enough hourly, not cheap enough every pass. The checkpoint half of
+/// the pass keeps its 300 s cadence.
+const INTEGRITY_CHECK_EVERY_N_PASSES: u32 = 12;
+
 pub fn spawn_idle_maintenance_task(primary_pool: DbPool, user_pool: UserDbPool) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let mut pass: u32 = 0;
         loop {
             if personas_core::ipc_gauge::ipc_in_flight() == 0 {
+                let check_integrity = pass % INTEGRITY_CHECK_EVERY_N_PASSES == 0;
+                pass = pass.wrapping_add(1);
                 for (name, pool) in [
                     ("personas.db", &primary_pool),
                     ("personas_data.db", &user_pool),
                 ] {
                     if let Ok(conn) = pool.get() {
+                        // The cheap integrity check on a schedule. The quiet
+                        // window is already the right moment for it — the pass
+                        // only runs with zero IPC in flight — and it is the one
+                        // place a store that went bad mid-session is noticed
+                        // before the next boot.
+                        if check_integrity
+                            && damage::check_at_open(&conn) == damage::DamageClass::Canonical
+                        {
+                            if let Some(path) = conn.path().map(std::path::PathBuf::from) {
+                                damage::quarantine(&path, "PRAGMA quick_check failed while idle");
+                                let _ = damage::harden_connection(&conn);
+                            }
+                        }
+                        // A quarantined store gets NO checkpoint. Folding WAL
+                        // frames into a file with damaged canonical structure
+                        // is the single write with the widest blast radius,
+                        // and the intact sidecar is the recoverable half. This
+                        // skip is reachable only from the quarantine path, so
+                        // healthy installs still get their TRUNCATE.
+                        if damage::is_connection_quarantined(&conn) {
+                            tracing::warn!(
+                                db = name,
+                                "SQLite idle maintenance skipped — store is quarantined (no checkpoint)"
+                            );
+                            continue;
+                        }
                         match conn.execute_batch(
                             "PRAGMA optimize;
                              PRAGMA wal_checkpoint(TRUNCATE);",
@@ -350,6 +397,40 @@ pub fn init_db_with_journal(
         .connection_timeout(POOL_ACQUIRE_TIMEOUT)
         .connection_customizer(customizer)
         .build(manager)?;
+
+    // The integrity check at open. Everything below this point WRITES —
+    // `journal_mode = WAL`, 124 migration steps, three seed functions, the
+    // orphan scrub — and writing to a file with damaged canonical structure is
+    // how a damaged-but-readable database becomes one that will not open at
+    // all. So the class is decided first, and a canonical verdict returns a
+    // read-only pool: the app boots, the operator can read and export, and
+    // `backup.rs` stops rotating good copies out from under them.
+    {
+        let conn = pool.get()?;
+        // A marker left by a previous session is itself a verdict: nothing has
+        // cleared it, so nothing has been repaired or restored. `quick_check`
+        // is not exhaustive, and a store that passes it after a structural
+        // incident is not thereby healthy — the process recovers on a repaired
+        // file, never in place.
+        let reason = if damage::previous_session_quarantined(&db_path) {
+            Some("a previous session quarantined this store and it has not been cleared")
+        } else if damage::check_at_open(&conn) == damage::DamageClass::Canonical {
+            Some("PRAGMA quick_check failed at open")
+        } else {
+            None
+        };
+        if let Some(reason) = reason {
+            let _ = damage::quarantine(&db_path, reason);
+            damage::harden_connection(&conn)?;
+            drop(conn);
+            tracing::error!(
+                path = %db_path.display(),
+                reason,
+                "Database opened QUARANTINED — migrations, seeds and the FTS pass are all skipped"
+            );
+            return Ok(pool);
+        }
+    }
 
     // Set WAL journal mode (database-wide, only needs to run once)
     {
@@ -461,16 +542,50 @@ fn executions_fts_drift(conn: &rusqlite::Connection) -> Option<(i64, i64)> {
     (indexed_count != execution_count).then_some((execution_count, indexed_count))
 }
 
+/// Boot-time reconciliation of `executions_fts`.
+///
+/// This is the **only** sanctioned rebuild site in the tree. A rebuild is
+/// unbounded in the size of the history, so a live write or search must never
+/// start one — [`damage::guarded_write`] only ever drops the sinks, and this
+/// function is where they come back: `migrations::run` has already replayed the
+/// `CREATE TRIGGER IF NOT EXISTS` DDL by the time we get here, so a detached
+/// index reattaches through the ordinary idempotent replay.
+///
+/// The rebuild statement works entirely against a derived object, so any
+/// corruption it reports is derived damage by construction
+/// ([`damage::Provenance::DerivedOnly`]) — no message matching involved. When
+/// it cannot run, the correct steady state is *detached*: canonical writes
+/// available, the index absent and marked stale, boot continuing.
 fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
-    if let Some((execution_count, indexed_count)) = executions_fts_drift(conn) {
-        tracing::info!(
-            executions = execution_count,
-            indexed = indexed_count,
-            "Rebuilding executions_fts — the search index and persona_executions disagree",
-        );
-        conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');")?;
+    let Some((execution_count, indexed_count)) = executions_fts_drift(conn) else {
+        return Ok(());
+    };
+    tracing::info!(
+        executions = execution_count,
+        indexed = indexed_count,
+        "Rebuilding executions_fts — the search index and persona_executions disagree",
+    );
+    match conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');") {
+        Ok(()) => {
+            // The index is current again; drop the degraded-answer marker so
+            // search surfaces stop labelling their results as stale.
+            conn.execute(
+                "DELETE FROM app_settings WHERE key = ?1",
+                params![settings_keys::EXECUTIONS_FTS_STALE],
+            )?;
+            Ok(())
+        }
+        Err(e) => match damage::classify(&e, damage::Provenance::DerivedOnly) {
+            damage::DamageClass::Derived => {
+                // Detach and continue booting. Nothing here deletes canonical
+                // rows to make a derived-structure error go away.
+                damage::detach_derived_index(conn, &format!("boot rebuild: {e}"))
+                    .map_err(AppError::Database)?;
+                Ok(())
+            }
+            _ => Err(AppError::Database(e)),
+        },
     }
-    Ok(())
 }
 
 /// Scrub rows whose parent persona no longer exists. Runs once on init
