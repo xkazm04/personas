@@ -37,20 +37,19 @@ import { titleCase } from './athenaLabels';
  * second source of truth. Only the stage *names* and the counter labels are
  * translated — those are stable machine tokens the UI owns.
  *
- * ## Pending backend — two signals this panel currently under-states
+ * ## Both pending backend signals have landed
  *
- * Neither field exists in the binding yet, so nothing below invents one:
- *
- * 1. **Consolidation staleness.** `health.rs`'s `consolidation` stage
- *    (`brain/health.rs:412-431`) reports `Ok` from the mere existence of
- *    `counters.lastCycleAt`, so a cycle that last ran weeks ago still reads as
- *    healthy. When that stage becomes staleness-aware the new `StageStatus`
- *    flows through {@link STAGE_ICON} / {@link statusLabel} with no change here.
- * 2. **Conversation-only episode count.** `BrainCounters.episodes`
- *    (`health.rs:195`) counts every episode node, not the conversation
- *    episodes a cycle actually consumes. When a second, conversation-only
- *    counter lands it becomes one more row of {@link COUNTER_ROWS} —
- *    add it there, beside `episodes`, and give it its own `t.` label.
+ * 1. **Consolidation staleness.** The `consolidation` stage used to report
+ *    `Ok` from the mere existence of `counters.lastCycleAt`; it is now
+ *    staleness-aware (`Degraded` past 72h, `Unknown` on an unreadable
+ *    timestamp) and the new `StageStatus` flows through {@link STAGE_ICON} /
+ *    {@link statusLabel} with no change here, exactly as this note predicted.
+ * 2. **Conversation-only episode count.** `BrainCounters.conversationEpisodes`
+ *    excludes machine correlator records with the same exclusion the recency
+ *    lane and the sleep cycle use, and sits in {@link COUNTER_ROWS} beside
+ *    `episodes` — the total and the part of it a cycle would actually consume,
+ *    which on a brain that has seen a Fleet load test differ by two orders of
+ *    magnitude.
  *
  * Loading law: a delayed ghost under permanent chrome, a module-scoped warm
  * cache so re-opening the tab paints warm, and errors through `toastCatch`
@@ -258,6 +257,7 @@ const COUNTER_ROWS = [
   'vectors',
   'ftsRows',
   'episodes',
+  'conversationEpisodes',
   'facts',
   'procedurals',
   'doctrineChunks',
@@ -281,6 +281,8 @@ function counterLabel(
       return t.plugins.companion.health_counter_fts_rows;
     case 'episodes':
       return t.plugins.companion.health_counter_episodes;
+    case 'conversationEpisodes':
+      return t.plugins.companion.health_counter_conversation_episodes;
     case 'facts':
       return t.plugins.companion.health_counter_facts;
     case 'procedurals':

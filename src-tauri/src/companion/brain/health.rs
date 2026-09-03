@@ -115,6 +115,18 @@ pub struct BrainCounters {
     pub fts_rows: i64,
     #[ts(type = "number")]
     pub episodes: i64,
+    /// Episode nodes that are actual conversation — the same machine-correlator
+    /// exclusion the recency lane and the sleep cycle already apply
+    /// (`episodic::machine_marker_match_sql`).
+    ///
+    /// [`Self::episodes`] counts every episode node, and on a brain that has
+    /// seen a Fleet load test that is overwhelmingly correlator records
+    /// (10,687 of 11,522 when this was added). Reporting only the total tells
+    /// an operator their brain is full of conversation when almost none of it
+    /// is, and it is the conversation count — not the total — that a sleep
+    /// cycle actually consumes.
+    #[ts(type = "number")]
+    pub conversation_episodes: i64,
     #[ts(type = "number")]
     pub facts: i64,
     #[ts(type = "number")]
@@ -193,6 +205,7 @@ fn gather_counters(pool: &UserDbPool) -> Option<BrainCounters> {
         vectors: try_count(&conn, "SELECT COUNT(*) FROM companion_embedding"),
         fts_rows: count(&conn, "SELECT COUNT(*) FROM companion_fts"),
         episodes: nodes_of_kind(&conn, "episode"),
+        conversation_episodes: conversation_episodes(&conn),
         facts: nodes_of_kind(&conn, "fact"),
         procedurals: nodes_of_kind(&conn, "procedural"),
         doctrine_chunks: nodes_of_kind(&conn, "doctrine"),
@@ -210,6 +223,47 @@ fn model_guard_excluded() -> u64 {
 #[cfg(not(feature = "ml"))]
 fn model_guard_excluded() -> u64 {
     0
+}
+
+/// Episode nodes that are conversation rather than machine correlator records.
+///
+/// Deliberately built from `episodic::machine_marker_match_sql()` rather than
+/// from a second copy of the LIKE list: the recency lane, the sleep cycle's
+/// window and this counter must agree on what "conversation" means, or the
+/// diagnostic reports on a corpus the pipeline does not use.
+fn conversation_episodes(conn: &rusqlite::Connection) -> i64 {
+    let sql = format!(
+        "SELECT COUNT(*) FROM companion_node
+          WHERE kind = 'episode'
+            AND body_excerpt IS NOT NULL
+            AND NOT {}",
+        crate::companion::brain::episodic::machine_marker_match_sql()
+    );
+    try_count(conn, &sql).unwrap_or(0)
+}
+
+/// How long a completed sleep cycle may be in the past before the
+/// `consolidation` stage stops reporting `Ok`.
+///
+/// 72 hours, deliberately the same number as
+/// `sleep_cycle::limits::STALENESS_HOURS` — the admission layer's own release
+/// valve, the point past which it will admit a cycle on staleness alone even
+/// with no pressure. So beyond it a cycle *should* already have run, and one
+/// that has not is a scheduler that is not firing rather than a quiet week.
+/// Duplicated as a literal rather than imported because `sleep_cycle::limits`
+/// is a private module and widening it is not this change's business; if that
+/// number moves, this one moves with it.
+const CONSOLIDATION_STALE_HOURS: i64 = 72;
+
+/// Hours between an RFC3339 timestamp and now, or `None` when it does not
+/// parse. An unparseable timestamp is reported as unknown, never as fresh.
+fn hours_since(at: &str) -> Option<i64> {
+    let parsed = chrono::DateTime::parse_from_rfc3339(at).ok()?;
+    Some(
+        chrono::Utc::now()
+            .signed_duration_since(parsed.with_timezone(&chrono::Utc))
+            .num_hours(),
+    )
 }
 
 fn stage(name: &str, status: StageStatus, detail: String) -> HealthStage {
@@ -410,11 +464,29 @@ pub fn run(pool: &UserDbPool, embedder_loaded: bool) -> BrainHealth {
     // 8. Consolidation. Episodes that never consolidate never become facts, so
     //    recall keeps re-reading raw conversation instead of what it learned.
     stages.push(match (&counters.last_cycle_at, counters.episodes) {
-        (Some(at), _) => stage(
-            "consolidation",
-            StageStatus::Ok,
-            format!("Last sleep cycle completed {at}."),
-        ),
+        // A cycle exists, but WHEN it ran is the whole signal. Reporting `Ok`
+        // from the mere existence of the timestamp meant a brain whose last
+        // cycle ran weeks ago read as healthy — the one state this stage was
+        // added to catch.
+        (Some(at), _) => match hours_since(at) {
+            Some(h) if h >= CONSOLIDATION_STALE_HOURS => stage(
+                "consolidation",
+                StageStatus::Degraded,
+                format!(
+                    "The last sleep cycle completed {h}h ago ({at}) — past the                      {CONSOLIDATION_STALE_HOURS}h mark at which one should have run.                      Episodes since then have not become facts or procedurals."
+                ),
+            ),
+            Some(h) => stage(
+                "consolidation",
+                StageStatus::Ok,
+                format!("Last sleep cycle completed {h}h ago ({at})."),
+            ),
+            None => stage(
+                "consolidation",
+                StageStatus::Unknown,
+                format!("The last cycle's completion time ({at}) could not be read."),
+            ),
+        },
         (None, 0) => stage(
             "consolidation",
             StageStatus::Skipped,
@@ -433,7 +505,7 @@ pub fn run(pool: &UserDbPool, embedder_loaded: bool) -> BrainHealth {
     let first_blocking_cause = stages
         .iter()
         .find(|s| s.status.is_blocking())
-        .map(cause_for);
+        .map(|s| cause_for(s, &counters));
 
     BrainHealth {
         healthy: first_blocking_cause.is_none(),
@@ -450,7 +522,7 @@ pub fn run(pool: &UserDbPool, embedder_loaded: bool) -> BrainHealth {
 /// constructed stage: the fix is only ever read for the ONE stage that blocks,
 /// and building eight of them per call to discard seven is waste the report
 /// does not need.
-fn cause_for(stage: &HealthStage) -> BlockingCause {
+fn cause_for(stage: &HealthStage, counters: &BrainCounters) -> BlockingCause {
     // `Unknown` short-circuits the name table: the fix is never about the stage
     // it landed on, it is always "the probe could not read", and routing it
     // through the name arms would hand back a confident fix derived from
@@ -497,6 +569,15 @@ fn cause_for(stage: &HealthStage) -> BlockingCause {
             "model_guard_excluding",
             "The embedding model changed since these vectors were written. A \
              full re-embed clears the exclusions.",
+        ),
+        // Two conditions, two codes, and the discriminator is the counter the
+        // stage itself read -- never the stage's English detail, which is prose
+        // for a human and not a thing to branch on.
+        "consolidation" if counters.last_cycle_at.is_some() => (
+            "consolidation_stale",
+            "Trigger a sleep cycle. One has completed before, so the pipeline \
+             works -- what has stopped is the schedule that fires it, and every \
+             episode since is still raw conversation.",
         ),
         "consolidation" => (
             "consolidation_never_ran",
@@ -598,6 +679,7 @@ fn embedder_probe() -> bool {
 mod tests {
     use super::*;
     use crate::companion::brain::test_home::TestHome;
+    use personas_db::PoolExt;
 
     /// The real companion schema, which is the point: `companion_embedding` is
     /// a vec0 virtual table created lazily at first embed, so a fresh workspace
@@ -656,6 +738,131 @@ mod tests {
             .first_blocking_cause
             .as_ref()
             .map(|c| c.code.as_str())
+    }
+
+    /// Write a completed cycle whose `finished_at` is `hours_ago` in the past,
+    /// through the real `companion_cycle` schema `cycle_report::last_completed`
+    /// reads.
+    fn seed_completed_cycle(pool: &UserDbPool, hours_ago: i64) {
+        let at = (chrono::Utc::now() - chrono::Duration::hours(hours_ago)).to_rfc3339();
+        pool.conn("health_test::seed_cycle")
+            .expect("test pool")
+            .execute(
+                "INSERT INTO companion_cycle (id, started_at, finished_at, status, phases_json, stats_json)
+                 VALUES (?1, ?2, ?2, 'completed', '[]', '{}')",
+                rusqlite::params![format!("cyc_{hours_ago}"), at],
+            )
+            .expect("seed cycle");
+    }
+
+    fn stage_named<'a>(report: &'a BrainHealth, name: &str) -> &'a HealthStage {
+        report
+            .stages
+            .iter()
+            .find(|s| s.name == name)
+            .expect("stage present")
+    }
+
+    // -- X3(1): the consolidation stage is staleness-aware -----------------
+
+    /// Fail-before: the stage reported `Ok` from the mere EXISTENCE of a
+    /// completed cycle, so one that finished a month ago read as healthy.
+    #[test]
+    fn a_long_stale_cycle_degrades_consolidation() {
+        let pool = user_pool();
+        let _home = seed_indexed_episodes(&pool, 3);
+        seed_completed_cycle(&pool, CONSOLIDATION_STALE_HOURS + 24);
+
+        let report = run(&pool, true);
+        let s = stage_named(&report, "consolidation");
+        assert_eq!(s.status, StageStatus::Degraded, "detail: {}", s.detail);
+        assert!(
+            s.detail.contains("ago"),
+            "the detail must say HOW stale, got {}",
+            s.detail
+        );
+    }
+
+    /// A cycle inside the window is still `Ok` — the stage must not start
+    /// crying wolf on a brain that is consolidating normally.
+    #[test]
+    fn a_recent_cycle_keeps_consolidation_ok() {
+        let pool = user_pool();
+        let _home = seed_indexed_episodes(&pool, 3);
+        seed_completed_cycle(&pool, 1);
+
+        let report = run(&pool, true);
+        assert_eq!(
+            stage_named(&report, "consolidation").status,
+            StageStatus::Ok
+        );
+    }
+
+    /// The two consolidation conditions carry DIFFERENT codes, and the
+    /// discriminator is the counter rather than the English detail.
+    #[test]
+    fn stale_and_never_ran_are_different_causes() {
+        let pool = user_pool();
+        let _home = seed_indexed_episodes(&pool, 3);
+        assert_eq!(
+            cause_code(&run(&pool, true)),
+            Some("consolidation_never_ran")
+        );
+
+        seed_completed_cycle(&pool, CONSOLIDATION_STALE_HOURS + 24);
+        assert_eq!(cause_code(&run(&pool, true)), Some("consolidation_stale"));
+    }
+
+    /// An unparseable timestamp is reported as unknown, never as fresh.
+    #[test]
+    fn an_unreadable_cycle_timestamp_is_unknown_not_ok() {
+        let pool = user_pool();
+        let _home = seed_indexed_episodes(&pool, 3);
+        pool.conn("health_test::seed_bad_cycle")
+            .unwrap()
+            .execute(
+                "INSERT INTO companion_cycle (id, started_at, finished_at, status, phases_json, stats_json)
+                 VALUES ('cyc_bad', 'not-a-date', 'not-a-date', 'completed', '[]', '{}')",
+                [],
+            )
+            .unwrap();
+
+        let report = run(&pool, true);
+        assert_eq!(
+            stage_named(&report, "consolidation").status,
+            StageStatus::Unknown
+        );
+    }
+
+    // -- X3(2): the conversation-only episode counter ----------------------
+
+    /// Fail-before: `episodes` counts every episode node, so a brain whose
+    /// episodic memory is almost entirely Fleet correlator rows reported a
+    /// large, healthy-looking number for a corpus a sleep cycle would find
+    /// nearly empty.
+    #[test]
+    fn conversation_episodes_excludes_machine_correlator_records() {
+        let pool = user_pool();
+        let home = TestHome::new("health_conv");
+        use crate::companion::brain::episodic::{append_episode, EpisodeRole};
+        for i in 0..4 {
+            append_episode(
+                &pool,
+                "s",
+                EpisodeRole::System,
+                &format!("fleet-event session:loadgen-{i} cc:- state:idle project:loadgen/{i}"),
+            )
+            .unwrap();
+        }
+        append_episode(&pool, "s", EpisodeRole::User, "an actual question").unwrap();
+        drop(home);
+
+        let report = run(&pool, true);
+        assert_eq!(report.counters.episodes, 5, "the total is unchanged");
+        assert_eq!(
+            report.counters.conversation_episodes, 1,
+            "only the human turn is conversation"
+        );
     }
 
     /// A brain with tables but nothing in them: the cold-start case, which must

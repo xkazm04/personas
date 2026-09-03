@@ -11,30 +11,37 @@
  * Separated from the (very large) `@/api/companion` module for the same reason
  * `bridges.ts` is: these are consumed by one feature surface, not by the chat.
  *
- * ## Pending backend (not invented here)
+ * ## Both pending backend signals have landed
  *
- * Two signals the health report is known to under-state today, and which a
- * follow-up Rust change will correct **inside `brain/health.rs`**:
+ * The two the health report used to under-state are now real fields on the
+ * regenerated bindings, and `BrainHealthPanel` reads them at the two places
+ * that were marked for them:
  *
- * 1. the `consolidation` stage reports `Ok` from the mere existence of a last
- *    cycle, with no staleness judgement;
- * 2. `BrainCounters.episodes` counts every episode kind, not conversation
- *    episodes alone — the number the cycle actually consumes.
+ * 1. the `consolidation` stage is staleness-aware — `Degraded` once the last
+ *    completed cycle is more than 72h old, `Unknown` on a timestamp it cannot
+ *    parse, and the never-ran and stale conditions carry different blocking
+ *    codes;
+ * 2. `BrainCounters.conversationEpisodes` counts episodes that are actually
+ *    conversation, applying the same machine-correlator exclusion the recency
+ *    lane and the sleep cycle use — the number a cycle really consumes, beside
+ *    the raw total.
  *
- * Neither field exists in `BrainHealth` / `BrainCounters` yet, so nothing here
- * reads or fakes one. When they land, they arrive as ordinary regenerated
- * binding fields and `BrainHealthPanel`'s stage/counter tables pick them up at
- * the two marked places in that file.
- *
- * ## The narrative body is NOT reachable from TypeScript
+ * ## The narrative body IS now reachable
  *
  * `CycleSummary.reportNodeId` names the `companion_node` holding the cycle's
- * markdown narrative (`sleep_cycle/report.rs::render_report`), but no
- * registered command returns that node's body: `companion_get_brain_item`
- * dispatches on a closed set of kinds and has no `cycle_report` arm
- * (`commands/companion/brain.rs:184-194`). So this surface renders the
- * cycle's **structured** truth — phases, window, and every counter the cycle
- * recorded — and the prose stays unread until a backend reader exists.
+ * markdown narrative (`sleep_cycle/report.rs::render_report`), and
+ * `companion_get_brain_item` now has a `cycle_report` arm that returns its
+ * body — pass either that node id or the cycle's own `cyc_…` id, and it
+ * answers with a `BrainDetail`. Wiring it into `BrainCycleReports` is the
+ * remaining step; nothing here fakes it in the meantime.
+ *
+ * ## Not wrapped here yet: `companion_reconcile_episodes`
+ *
+ * The episode reconciler's command returns a `ReconcileReport`, whose ts-rs
+ * binding is generated in the same pass as the fields above. A wrapper is
+ * deliberately absent until that binding exists rather than being typed
+ * against a hand-written copy of it, which is how a binding and its consumer
+ * start to drift.
  */
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { BrainHealth } from '@/lib/bindings/BrainHealth';
