@@ -207,6 +207,15 @@ pub(super) async fn run_execution_with_ceiling(
                     "Engine safety ceiling exceeded ({}m). Execution forcibly terminated.",
                     ENGINE_MAX_EXECUTION_SECS / 60,
                 )),
+                // The class, stated by the site that KNOWS it. This is the app's
+                // own timer, so nothing has to be inferred from the sentence
+                // above -- and it is the site that produced the measured cost:
+                // 40 of 43 `Unknown` healing issues (93%) were this one string,
+                // landing on a recovery that never retries, while the `Timeout`
+                // recovery it should have reached succeeded 72.7% of the time.
+                // The message is still written, for a human; the class no longer
+                // depends on it.
+                error_category: Some(error_taxonomy::ENGINE_CEILING_CLASS),
                 duration_ms: ENGINE_MAX_EXECUTION_SECS * 1000,
                 // Point at the partial log so the run stays auditable. cost_usd /
                 // input_tokens / output_tokens stay 0: the Claude CLI only emits
@@ -686,10 +695,19 @@ impl ExecutionEngine {
             )));
         }
 
-        // Atomically try to run or enqueue
+        // Atomically try to run or enqueue. The conflict key is formed here, at
+        // the one caller of `admit`, because this is the only place that holds
+        // the persona AND the wrapped input the trigger's identity travels in.
+        let conflict_key = admission_conflict_key(&persona.id, input_data.as_ref());
         let admit_result = {
             let mut tracker = self.tracker.lock().await;
-            tracker.admit(&persona.id, &execution_id, persona.max_concurrent, priority)
+            tracker.admit(
+                &persona.id,
+                &execution_id,
+                persona.max_concurrent,
+                priority,
+                conflict_key.as_deref(),
+            )
         };
 
         match admit_result {
@@ -789,6 +807,46 @@ impl ExecutionEngine {
                         input_data,
                         continuation,
                     },
+                );
+                Ok(())
+            }
+            AdmitResult::AlreadyAdmitted {
+                execution_id: holder,
+            } => {
+                // A normal, correct deduplication — NOT a failure. Folding this
+                // into the error path would surface it to the operator as a
+                // failed run, which is the defect the hook surface's own rule
+                // warns about: veto-by-error makes a denial and a contributor
+                // bug indistinguishable at every consumer downstream. So the
+                // duplicate row is closed the same way a displaced waiter is
+                // (terminal, with the reason naming what holds the slot) and
+                // the call returns Ok.
+                self.queued_contexts.lock().await.remove(&execution_id);
+                persist_status_update(
+                    &pool,
+                    None,
+                    &execution_id,
+                    UpdateExecutionStatus {
+                        status: ExecutionState::Cancelled,
+                        error_message: Some(format!(
+                            "Duplicate fire for the same trigger — execution {holder} is already in flight"
+                        )),
+                        ..Default::default()
+                    },
+                )
+                .await;
+                tracing::info!(
+                    persona_id = %persona.id,
+                    execution_id = %execution_id,
+                    in_flight_execution_id = %holder,
+                    "Duplicate admission refused: a run for this trigger is already in flight",
+                );
+                process_activity::emit_process_activity(
+                    &app,
+                    "execution",
+                    "cancelled",
+                    Some(&execution_id),
+                    Some(&persona.name),
                 );
                 Ok(())
             }
@@ -1240,7 +1298,7 @@ impl ExecutionEngine {
         self.tracker
             .lock()
             .await
-            .add_running(persona_id, &execution_id);
+            .add_running(persona_id, &execution_id, None);
         self.cancelled_flags
             .lock()
             .await
@@ -2108,6 +2166,10 @@ async fn handle_execution_result(
             execution_config: result.execution_config.clone(),
             log_truncated: result.log_truncated,
             business_outcome: result.business_outcome.clone(),
+            // COALESCE on the DB side, so this confirming write cannot erase a
+            // class the runner's provisional write already recorded -- and
+            // cannot invent one either.
+            error_category: result.error_category.map(error_taxonomy::category_token),
         },
     )
     .await;

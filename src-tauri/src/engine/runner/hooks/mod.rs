@@ -216,7 +216,9 @@ impl ApiCall {
 pub(crate) enum GateVerdict {
     Allowed,
     /// The host's own policy refused. Carries the message the caller surfaces.
-    Blocked { reason: String },
+    Blocked {
+        reason: String,
+    },
 }
 
 /// What a frame returns. Refusal is a value, never an `Err` — that is the
@@ -266,7 +268,10 @@ pub(crate) struct Continuation<'a> {
 }
 
 impl<'a> Continuation<'a> {
-    fn new(frame: &'static str, inner: &'a dyn Fn(&ApiCall) -> Result<GateVerdict, AppError>) -> Self {
+    fn new(
+        frame: &'static str,
+        inner: &'a dyn Fn(&ApiCall) -> Result<GateVerdict, AppError>,
+    ) -> Self {
         Self {
             frame,
             used: Cell::new(false),
@@ -402,8 +407,7 @@ pub(crate) fn run_chain_with(
         // Shared-mutability cells rather than `&mut` captures, so the closure
         // is a plain `Fn` and the dispatcher can still read what happened
         // beneath after the frame has returned.
-        let inner_outcome: std::cell::RefCell<Option<ChainOutcome>> =
-            std::cell::RefCell::new(None);
+        let inner_outcome: std::cell::RefCell<Option<ChainOutcome>> = std::cell::RefCell::new(None);
         let inner_error: std::cell::RefCell<Option<AppError>> = std::cell::RefCell::new(None);
 
         let step_fn = |c: &ApiCall| -> Result<GateVerdict, AppError> {

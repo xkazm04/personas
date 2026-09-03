@@ -114,7 +114,15 @@ pub(super) fn evaluate_healing_and_retry(
         "failed"
     };
 
-    let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
+    // Reader one. Prefer the class the RAISE SITE minted; fall back to the
+    // string ladder only when nothing knew it. `diagnose` and the whole
+    // recovery policy below are untouched -- same policy, better input. The
+    // engine's own safety ceiling is the case this changes: it used to arrive
+    // here as prose that matched no timeout pattern and landed in `Unknown`,
+    // whose recovery is `CreateIssue` with no retry, ever.
+    let category = result.error_category.unwrap_or_else(|| {
+        healing::classify_error(error_str, timed_out, result.session_limit_reached)
+    });
 
     // Phase C5b — when the run fails for a technical reason (auth, network,
     // rate-limit, timeout, provider-not-found, API error), wipe any manual
@@ -834,6 +842,7 @@ pub(super) fn spawn_healing_chain(
                     execution_config: None,
                     log_truncated: result.log_truncated,
                     business_outcome: result.business_outcome.clone(),
+                    error_category: result.error_category.map(error_taxonomy::category_token),
                 },
             )
             .await;
@@ -1307,6 +1316,7 @@ pub(super) fn spawn_delayed_retry(
                     execution_config: None,
                     log_truncated: result.log_truncated,
                     business_outcome: result.business_outcome.clone(),
+                    error_category: result.error_category.map(error_taxonomy::category_token),
                 },
             )
             .await;

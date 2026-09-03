@@ -220,8 +220,9 @@ fn the_gate_judges_the_rewritten_value_not_the_original() {
     // this call would be allowed.
     let judged = Mutex::new(Vec::new());
     let gate = recording_gate(&judged);
-    let frames: Vec<Arc<dyn Interceptor>> =
-        vec![Arc::new(RewritingFrame { to: "/repos/acme/private/issues" })];
+    let frames: Vec<Arc<dyn Interceptor>> = vec![Arc::new(RewritingFrame {
+        to: "/repos/acme/private/issues",
+    })];
 
     let outcome = run_chain_with(call(), &frames, &gate).expect("chain ran");
     match outcome {
@@ -247,8 +248,9 @@ fn a_rewrite_carries_its_original_and_its_provenance() {
     // the original travels beside it.
     let judged = Mutex::new(Vec::new());
     let gate = recording_gate(&judged);
-    let frames: Vec<Arc<dyn Interceptor>> =
-        vec![Arc::new(RewritingFrame { to: "/repos/acme/public/pulls" })];
+    let frames: Vec<Arc<dyn Interceptor>> = vec![Arc::new(RewritingFrame {
+        to: "/repos/acme/public/pulls",
+    })];
 
     let outcome = run_chain_with(call(), &frames, &gate).expect("chain ran");
     match outcome {
@@ -256,7 +258,10 @@ fn a_rewrite_carries_its_original_and_its_provenance() {
             assert_eq!(effective.path, "/repos/acme/public/pulls");
             assert_eq!(effective.original_path, "/repos/acme/public/issues");
             assert!(effective.was_rewritten());
-            assert_eq!(effective.rewrites, vec![("rewriting", "test rewrite".to_string())]);
+            assert_eq!(
+                effective.rewrites,
+                vec![("rewriting", "test rewrite".to_string())]
+            );
         }
         other => panic!("expected allow, got {other:?}"),
     }
@@ -275,7 +280,11 @@ fn the_continuation_is_single_use_per_frame() {
     let outcome = run_chain_with(call(), &frames, &gate).expect("chain ran");
 
     let judged = judged.lock().expect("judged lock");
-    assert_eq!(judged.len(), 1, "the call beneath ran more than once: {judged:?}");
+    assert_eq!(
+        judged.len(),
+        1,
+        "the call beneath ran more than once: {judged:?}"
+    );
     drop(judged);
 
     // The frame turned the violation into a refusal; the important part is

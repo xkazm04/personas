@@ -3009,6 +3009,21 @@ pub async fn run_execution(
     };
     let mut error = error;
 
+    // The failure's class, minted HERE from what this function structurally
+    // knows -- the deadline it armed, the parser's typed usage-limit verdict,
+    // an exit code with no diagnostic stderr. No branch reads `error`'s text.
+    //
+    // `None` for a non-zero exit that DID write stderr is deliberate: telling a
+    // transient process failure from a provider 5xx there is a content
+    // judgment, and a raise site that makes one has reinvented the ladder. Those
+    // rows keep a NULL class and `classify_error` handles them exactly as today.
+    let error_category = crate::engine::error_taxonomy::mint_runner_class(
+        timed_out,
+        exit_code,
+        &stderr_text,
+        usage_limit.is_some(),
+    );
+
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
     let mut final_status = if success {
         ExecutionState::Completed
@@ -3306,6 +3321,9 @@ pub async fn run_execution(
                 execution_config: execution_config_json.clone(),
                 log_truncated,
                 business_outcome: parsed_business_outcome.clone(),
+                // The class rides the SAME write as the message, so a row can
+                // never carry one without the other.
+                error_category: error_category.map(crate::engine::error_taxonomy::category_token),
             },
         );
     }
@@ -3362,6 +3380,7 @@ pub async fn run_execution(
         execution_config: execution_config_json,
         log_truncated,
         business_outcome: parsed_business_outcome,
+        error_category,
     }
 }
 
