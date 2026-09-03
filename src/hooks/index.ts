@@ -38,8 +38,6 @@ export * from "./execution/usePersonaExecution";
 export * from "./utility/useDocumentVisibility";
 export * from "./utility/useTerminalClassification";
 export * from "./execution/useCorrelatedCliStream";
-export * from "./execution/useActivityMonitor";
-export * from "./execution/useFileChanges";
 export { useStructuredStream, type StreamHandlers } from "./execution/useStructuredStream";
 
 // Realtime hooks

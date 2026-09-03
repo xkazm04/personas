@@ -159,11 +159,10 @@ export interface ExecutionSlice {
   executionOutputBytes: number;
   /**
    * Incremental projections over executionOutput, maintained by executionSink
-   * so hot-path consumers (chat stream, mini player) never re-filter/re-
-   * classify the whole buffer per flush. Kept in lockstep with executionOutput
-   * via the sink's single onFlush callback below.
+   * so hot-path consumers (chat stream, mini player) never re-scan the whole
+   * buffer per flush. Kept in lockstep with executionOutput via the sink's
+   * single onFlush callback below.
    */
-  executionTextLines: string[];
   executionMeaningfulTail: string[];
   executionLastLine: string;
   isExecuting: boolean;
@@ -214,7 +213,6 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     set({
       executionOutput: output,
       executionOutputBytes: totalBytes,
-      executionTextLines: projections.textLines,
       executionMeaningfulTail: projections.meaningfulTail,
       executionLastLine: projections.lastLine,
     });
@@ -375,7 +373,6 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     activeUseCaseId: null,
     executionOutput: [],
     executionOutputBytes: 0,
-    executionTextLines: [],
     executionMeaningfulTail: [],
     executionLastLine: '',
     isExecuting: recoveredState?.isExecuting ?? false,
@@ -410,8 +407,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       set({
         executionOutput: [],
         executionOutputBytes: 0,
-        executionTextLines: [],
-        executionMeaningfulTail: [],
+            executionMeaningfulTail: [],
         executionLastLine: '',
         executionPersonaId: personaId,
         activeUseCaseId: useCaseId ?? null,
@@ -811,8 +807,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     set({
       executionOutput: [],
       executionOutputBytes: 0,
-      executionTextLines: [],
-      executionMeaningfulTail: [],
+        executionMeaningfulTail: [],
       executionLastLine: '',
       activeExecutionId: null,
       lastExecutionId: activeId ?? get().lastExecutionId,

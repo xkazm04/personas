@@ -11,7 +11,6 @@ import {
   getDocumentVisible,
   subscribeDocumentVisibility,
 } from '@/lib/documentVisibility';
-import { classifyLine } from '@/lib/utils/terminalColors';
 
 /** Maximum terminal output lines kept in memory to prevent OOM on long executions. */
 const MAX_TERMINAL_LINES = 10_000;
@@ -105,14 +104,10 @@ class TerminalRingBuffer {
 
 /**
  * Incremental projections over `output`, maintained by the sink so consumers
- * never need to re-filter/re-classify the whole (up to 10k-line) buffer on
- * every ~100ms flush. `textLines` and `meaningfulTail` are new-reference only
- * when their content actually changed this flush (same dirty-cache shape as
- * `TerminalRingBuffer.toArray`) so an unrelated flush can bail out cheaply.
+ * never need to re-scan the whole (up to 10k-line) buffer on every ~100ms
+ * flush.
  */
 export interface ExecutionOutputProjections {
-  /** Lines classified as `'text'` by classifyLine, in order. */
-  textLines: string[];
   /** Last `MEANINGFUL_TAIL_SIZE` non-blank lines. */
   meaningfulTail: string[];
   /** Most recent line, or '' if none. */
@@ -147,11 +142,6 @@ export class ExecutionSink {
 
   // -- Incremental projections (normal mode only -- see recomputeProjections
   // for the tail/truncated-mode cold path) --------------------------------
-  /** Text-classified subsequence of the ring, with a head pointer so eviction is O(evicted count), not O(buffer). */
-  private textLines: string[] = [];
-  private textLinesHead = 0;
-  private textLinesCache: string[] = [];
-  private textLinesDirty = true;
   private meaningfulTail: string[] = [];
   private lastLine = '';
 
@@ -215,10 +205,6 @@ export class ExecutionSink {
     this.normalVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
-    this.textLines = [];
-    this.textLinesHead = 0;
-    this.textLinesCache = [];
-    this.textLinesDirty = true;
     this.meaningfulTail = [];
     this.lastLine = '';
   }
@@ -263,10 +249,10 @@ export class ExecutionSink {
     }
 
     // Normal mode -- push to main ring, then advance the incremental
-    // projections by the same delta (+ whatever the ring evicted) so they
-    // never need to rescan the whole buffer.
-    const evicted = this.ring.pushMany(linesToFlush);
-    this.applyProjectionDelta(linesToFlush, evicted);
+    // projections by the same delta so they never need to rescan the whole
+    // buffer.
+    this.ring.pushMany(linesToFlush);
+    this.applyProjectionDelta(linesToFlush);
 
     // Check if we just crossed the byte budget
     if (this.totalBytes >= MAX_TOTAL_BYTES) {
@@ -284,42 +270,15 @@ export class ExecutionSink {
   }
 
   /**
-   * Advance the incremental projections by exactly the lines this flush
-   * added/evicted. `evicted` is bounded by this flush's batch size (see
-   * TerminalRingBuffer.pushMany), not the ring capacity, so this is O(delta)
-   * even once the ring is at capacity and evicting every flush.
+   * Advance the incremental projections by exactly the lines this flush added,
+   * so this is O(delta) even once the ring is at capacity and evicting every
+   * flush.
    */
-  private applyProjectionDelta(added: string[], evicted: string[]): void {
-    let textChanged = false;
-    if (evicted.length > 0) {
-      let evictedTextCount = 0;
-      for (const line of evicted) {
-        if (classifyLine(line) === 'text') evictedTextCount++;
-      }
-      if (evictedTextCount > 0) {
-        this.textLinesHead += evictedTextCount;
-        textChanged = true;
-      }
-    }
-
+  private applyProjectionDelta(added: string[]): void {
     for (const line of added) {
-      if (classifyLine(line) === 'text') {
-        this.textLines.push(line);
-        textChanged = true;
-      }
       if (line.trim().length > 0) {
         this.meaningfulTail.push(line);
         if (this.meaningfulTail.length > MEANINGFUL_TAIL_SIZE) this.meaningfulTail.shift();
-      }
-    }
-
-    if (textChanged) {
-      this.textLinesDirty = true;
-      // Compact the dead head prefix once it dominates the backing array so
-      // memory doesn't grow unbounded across a long execution.
-      if (this.textLinesHead > 1024 && this.textLinesHead * 2 > this.textLines.length) {
-        this.textLines = this.textLines.slice(this.textLinesHead);
-        this.textLinesHead = 0;
       }
     }
 
@@ -329,20 +288,9 @@ export class ExecutionSink {
   /** Snapshot of the incrementally-maintained projections (normal mode). */
   private currentProjections(): ExecutionOutputProjections {
     return {
-      textLines: this.textLinesSnapshot(),
       meaningfulTail: this.meaningfulTail.slice(),
       lastLine: this.lastLine,
     };
-  }
-
-  /** New-reference-only-when-changed cache, mirroring TerminalRingBuffer.toArray. */
-  private textLinesSnapshot(): string[] {
-    if (!this.textLinesDirty) return this.textLinesCache;
-    this.textLinesCache = this.textLinesHead === 0
-      ? this.textLines.slice()
-      : this.textLines.slice(this.textLinesHead);
-    this.textLinesDirty = false;
-    return this.textLinesCache;
   }
 
   /**
@@ -352,16 +300,14 @@ export class ExecutionSink {
    * approaches the O(10k) cost the incremental path exists to avoid.
    */
   private recomputeProjections(lines: string[]): ExecutionOutputProjections {
-    const textLines: string[] = [];
     const meaningfulTail: string[] = [];
     for (const line of lines) {
-      if (classifyLine(line) === 'text') textLines.push(line);
       if (line.trim().length > 0) {
         meaningfulTail.push(line);
         if (meaningfulTail.length > MEANINGFUL_TAIL_SIZE) meaningfulTail.shift();
       }
     }
-    return { textLines, meaningfulTail, lastLine: lines[lines.length - 1] ?? '' };
+    return { meaningfulTail, lastLine: lines[lines.length - 1] ?? '' };
   }
 
   /**

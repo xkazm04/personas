@@ -236,7 +236,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       });
     }
 
-    // 4. Start execution — set executionPersonaId so useExecutionStream can match output.
+    // 4. Start execution — set executionPersonaId so output consumers can match it.
     // Clear any prior turn error so a Retry doesn't show a stale error card next
     // to the new thinking indicator.
     set({
@@ -246,9 +246,8 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       executionPersonaId: personaId,
       executionOutput: [],
       // Keep the executionSink-maintained projections (see executionSlice.ts)
-      // in lockstep with this manual reset -- otherwise useExecutionStream's
-      // textLines would show the previous turn's content for one render.
-      executionTextLines: [],
+      // in lockstep with this manual reset -- otherwise the mini player's tail
+      // would show the previous turn's content for one render.
       executionMeaningfulTail: [],
       executionLastLine: '',
       isExecuting: true,

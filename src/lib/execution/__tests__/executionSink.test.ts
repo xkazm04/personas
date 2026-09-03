@@ -1,14 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { ExecutionSink, type ExecutionOutputProjections } from "../executionSink";
-import { classifyLine } from "@/lib/utils/terminalColors";
 
 const MEANINGFUL_TAIL_SIZE = 30;
 const MAX_TERMINAL_LINES = 10_000;
 
 /** Reference implementations -- the old O(full-buffer) per-consumer logic this ADR replaces. */
-function oldTextLines(output: string[]): string[] {
-  return output.filter((l) => classifyLine(l) === "text");
-}
 function oldMeaningfulTail(output: string[]): string[] {
   return output.filter((l) => l.trim().length > 0).slice(-MEANINGFUL_TAIL_SIZE);
 }
@@ -20,8 +16,6 @@ interface Flush {
   output: string[];
   totalBytes: number;
   projections: ExecutionOutputProjections;
-  /** The exact (unsliced) textLines reference the sink handed back this flush -- for identity checks. */
-  rawTextLines: string[];
 }
 
 /** Fresh sink + a recorder of every onFlush call, decoupled from the module singleton. */
@@ -33,11 +27,9 @@ function makeSink() {
       output: output.slice(),
       totalBytes,
       projections: {
-        textLines: projections.textLines.slice(),
         meaningfulTail: projections.meaningfulTail.slice(),
         lastLine: projections.lastLine,
       },
-      rawTextLines: projections.textLines,
     });
   });
   return { sink, flushes };
@@ -54,13 +46,12 @@ function appendAndFlush(sink: ExecutionSink, lines: string[]): void {
 }
 
 function assertProjectionsMatchOutput(flush: Flush): void {
-  expect(flush.projections.textLines).toEqual(oldTextLines(flush.output));
   expect(flush.projections.meaningfulTail).toEqual(oldMeaningfulTail(flush.output));
   expect(flush.projections.lastLine).toBe(oldLastLine(flush.output));
 }
 
 describe("ExecutionSink incremental projections", () => {
-  it("matches the old full-buffer filter/classify for a mixed stream, across multiple flushes", () => {
+  it("matches the old full-buffer scan for a mixed stream, across multiple flushes", () => {
     const { sink, flushes } = makeSink();
 
     appendAndFlush(sink, ["Hello world", "", "> Using tool: Read", "[ERROR] boom", "more text"]);
@@ -84,23 +75,21 @@ describe("ExecutionSink incremental projections", () => {
     assertProjectionsMatchOutput(last);
   });
 
-  it("a flush with no text-classified lines does not change the textLines reference", () => {
+  it("tool/meta lines still advance meaningfulTail and lastLine -- the tail is classification-blind", () => {
     const { sink, flushes } = makeSink();
     appendAndFlush(sink, ["first text line"]);
-    const afterText = flushes[flushes.length - 1]!;
 
-    // Only tool/meta-classified lines this time -- textLines content is
-    // unchanged, so the sink should hand back the SAME array reference
-    // (the whole point of the dirty-cache: consumers relying on reference
-    // equality can bail out instead of re-rendering for no reason).
     appendAndFlush(sink, ["> Using tool: Read", "  Tool result: ok"]);
     const afterTool = flushes[flushes.length - 1]!;
 
-    expect(afterTool.rawTextLines).toBe(afterText.rawTextLines);
+    expect(afterTool.projections.meaningfulTail).toEqual([
+      "first text line", "> Using tool: Read", "  Tool result: ok",
+    ]);
+    expect(afterTool.projections.lastLine).toBe("  Tool result: ok");
     assertProjectionsMatchOutput(afterTool);
   });
 
-  it("blank lines never advance meaningfulTail, but do advance lastLine and textLines (classifyLine('') is 'text', matching the old filter)", () => {
+  it("blank lines never advance meaningfulTail, but do advance lastLine", () => {
     const { sink, flushes } = makeSink();
     appendAndFlush(sink, ["real content"]);
     appendAndFlush(sink, ["", "   "]);
@@ -163,7 +152,6 @@ describe("ExecutionSink incremental projections", () => {
 
     const last = flushes[flushes.length - 1]!;
     expect(last.output).toEqual(["fresh line"]);
-    expect(last.projections.textLines).toEqual(["fresh line"]);
     expect(last.projections.meaningfulTail).toEqual(["fresh line"]);
     expect(last.projections.lastLine).toBe("fresh line");
   });
