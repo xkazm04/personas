@@ -19,6 +19,7 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::companion::brain::backlog;
+use crate::companion::brain::cycle_report;
 use crate::companion::brain::decisions;
 use crate::companion::brain::doctrine;
 use crate::companion::brain::episodic;
@@ -184,6 +185,7 @@ pub fn companion_get_brain_item(
     }
     match kind.as_str() {
         "episode" => get_episode(&state, &id),
+        "cycle_report" => get_cycle_report(&state, &id),
         "doctrine" => get_doctrine(&state, &id),
         "reflection" => get_reflection(&state, &id),
         "design_decision" => get_design_decision(&state, &id),
@@ -489,6 +491,59 @@ fn list_doctrine(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
         });
     }
     Ok(out)
+}
+
+/// A sleep cycle's narrative report — the markdown a cycle writes about what
+/// it did, stored as a `companion_node` of kind `cycle_report`.
+///
+/// Every cycle has written one since `finish_cycle` shipped, and `CycleSummary`
+/// has carried its `report_node_id` all along, but no registered command
+/// returned the body — so the prose was stored, indexed into `companion_fts`,
+/// and unreadable from the app.
+///
+/// Accepts **either** id the caller has to hand: the report node's own
+/// `cyr_…` id, or the `cyc_…` id of the cycle that wrote it (resolved through
+/// `cycle_report::get`). The cycle list carries both, and making the caller
+/// pick would be a trap for no gain.
+///
+/// The body comes off disk — the same source of truth `get_episode` reads —
+/// falling back to the stored 500-char excerpt when the file is gone, so a
+/// pruned brain still answers with what it has rather than an error.
+fn get_cycle_report(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
+    let node_id = match cycle_report::get(&state.user_db, id)? {
+        Some(summary) => summary.report_node_id.ok_or_else(|| {
+            AppError::NotFound(format!("cycle {id} completed without a narrative report"))
+        })?,
+        // Not a cycle id — treat it as the report node's own id.
+        None => id.to_string(),
+    };
+
+    let conn = state.user_db.get()?;
+    let (file_path, body_excerpt, created_at): (String, Option<String>, String) = conn
+        .query_row(
+            "SELECT file_path, body_excerpt, created_at FROM companion_node
+              WHERE kind = ?1 AND id = ?2",
+            params![cycle_report::CYCLE_REPORT_KIND, node_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .map_err(|_| AppError::NotFound(format!("no cycle report `{node_id}`")))?;
+
+    let content = disk::brain_root()
+        .ok()
+        .and_then(|root| std::fs::read_to_string(root.join(&file_path)).ok())
+        .map(|full| body_after_frontmatter(&full))
+        .filter(|body| !body.trim().is_empty())
+        .or(body_excerpt)
+        .unwrap_or_default();
+
+    Ok(BrainDetail {
+        id: node_id,
+        kind: cycle_report::CYCLE_REPORT_KIND.into(),
+        title: "Sleep cycle report".into(),
+        content,
+        meta: created_at,
+        deletable: false,
+    })
 }
 
 fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
