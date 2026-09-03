@@ -5,7 +5,7 @@ raised_by: intake intake-chatterino2 (design read, direction pass)
 source: librarian/sources/2026-09-03-chatterino2.md
 stage: boot - `src-tauri/db/src/backup.rs` (the pre-migration snapshot, three rotating sets), `src-tauri/db/src/damage.rs` (the quarantine that stops rotation), and the boot-failure path in `src-tauri/src/boot/mod.rs` where a failed `init_db` currently has nowhere to send the operator
 size: 4 files / ~250 lines / S-M
-status: proposed
+status: accepted
 ---
 
 ## Why the scope implies it
