@@ -44,9 +44,62 @@ const EPISODE_WINDOW: u32 = 80;
 const CONSOLIDATION_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// Importance decay applied at the end of a consolidation pass to
-/// facts that haven't been touched in `DECAY_THRESHOLD_DAYS`. Floor 1.
+/// facts that haven't been touched in `DECAY_THRESHOLD_DAYS`. Floor 1 —
+/// decay lowers salience and never crosses the retrieval gate on its own.
+/// Aging out is the separate, slower step below.
 const DECAY_THRESHOLD_DAYS: i64 = 30;
 const DECAY_DECREMENT: i32 = 1;
+
+/// How long a fact must sit unrecalled before it stops being retrievable.
+///
+/// Decay alone could never reach this: it floors at 1 and the recall gate is
+/// `importance > 0` (`keyword.rs`), so before 2026-09-03 **no fact could ever
+/// age out of Athena's memory**, and the size cap was the only thing that
+/// could demote one — a cap of 500 per scope against a real corpus of 113.
+/// The README said forgetting happened. Nothing did.
+///
+/// Measured on the operator's own brain, 2026-09-03: 113 facts, 97 of them
+/// retrievable, and the entire tail older than 90 days is six `fleet_*_14d`
+/// rows — statistics about a fortnight that ended in May, still eligible to be
+/// recited as current. That is the shape of the harm, and it is why the
+/// horizon is a season rather than a year: a fact nothing has recalled in
+/// three months is either wrong or was never load-bearing.
+///
+/// Aging out is a **demotion to importance 0 through the same statement a
+/// supersede uses** (`semantic::demote_superseded`) — never a delete. The
+/// markdown stays on disk, the row stays for the provenance chain, the
+/// tombstone machinery is untouched, and a fact that becomes relevant again
+/// can be rewritten. User-initiated forgetting (Memory Engine v2 tombstones)
+/// is a different mechanism entirely and is not involved here.
+const AGE_OUT_DAYS: i64 = 90;
+
+/// The same horizon for `user`-scope facts, deliberately four times longer.
+///
+/// `last_seen_at` is bumped by *recall*, so it measures how often a fact is
+/// retrieved — not how true it is. That is a fair proxy for a project fact
+/// (a stale build statistic stops matching queries because the work moved on)
+/// and a bad one for a user fact: "prefers readable ids", "does not want code
+/// review as the primary lens" are the things that make Athena his rather
+/// than generic, and they are load-bearing on turns where no query happens to
+/// pull them. Forgetting one costs far more than carrying it, and the corpus
+/// is 12 rows — there is no budget argument on the other side. A year is long
+/// enough that anything aging out under this rule genuinely is not in use.
+const AGE_OUT_DAYS_USER: i64 = 365;
+
+/// The `companion_night_event.kind` a completed lifecycle sweep records.
+///
+/// The sweep needed somewhere durable to say what it did, and the two obvious
+/// tables both refuse it for good reasons: `companion_cycle` is read by
+/// `sleep_cycle::admission` through `cycle_report::last_completed`, so a sweep
+/// row marked `completed` would suppress the next real sleep cycle; and
+/// `companion_consolidation` is the LLM proposal-pass ledger the Brain viewer
+/// lists, where a sweep would read as a consolidation that never ran.
+/// `companion_night_event` is the tree's one append-only, kind-discriminated,
+/// free-payload ledger of autonomous acts, and a row with `plan_id = NULL` is
+/// invisible to `night_shift::events_for_plan` — the only reader — so the
+/// morning report cannot pick it up. Its *name* is now narrower than its role;
+/// widening that is a Director call, because it lives in `src-tauri/db`.
+pub const EVENT_MEMORY_LIFECYCLE_SWEEP: &str = "memory_lifecycle_sweep";
 
 /// Hard cap on active facts per scope. Time-based decay alone doesn't
 /// bound disk/vec0 size — facts that get touched periodically never
@@ -510,6 +563,85 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     Ok(updated as i64)
 }
 
+/// The horizon for one scope. Split out so the tests and the doc comments
+/// above cannot disagree with the query.
+fn age_out_horizon_days(scope: &str) -> i64 {
+    match scope {
+        "user" => AGE_OUT_DAYS_USER,
+        _ => AGE_OUT_DAYS,
+    }
+}
+
+/// The facts [`age_out_dormant_facts`] would demote right now: still
+/// retrievable, already decayed to the floor, and unrecalled past their
+/// scope's horizon. Reads only.
+///
+/// Requiring `importance = 1` rather than any low value is what makes this a
+/// ladder instead of a cliff. A fact written at 3 has to survive two decay
+/// windows before it is even a candidate, so the sweep's first visible effect
+/// on a neglected corpus is small and its second is smaller — which is the
+/// right shape for a process nobody watches.
+pub fn dormant_fact_candidates(pool: &UserDbPool) -> Result<Vec<PruneCandidate>, AppError> {
+    let conn = pool.get()?;
+    let mut out = Vec::new();
+    for scope in ["user", "project", "world"] {
+        let cutoff =
+            (Utc::now() - chrono::Duration::days(age_out_horizon_days(scope))).to_rfc3339();
+        let mut stmt = conn.prepare(
+            "SELECT n.id, f.scope, f.fact_key, n.importance, f.last_seen_at
+             FROM companion_node n
+             JOIN companion_fact f ON f.id = n.id
+             WHERE n.kind = 'fact'
+               AND n.importance = 1
+               AND f.scope = ?1
+               AND f.last_seen_at < ?2
+             ORDER BY f.last_seen_at ASC",
+        )?;
+        let rows = stmt
+            .query_map(params![scope, cutoff], |r| {
+                Ok(PruneCandidate {
+                    id: r.get(0)?,
+                    scope: r.get(1)?,
+                    key: r.get(2)?,
+                    importance: r.get(3)?,
+                    last_seen_at: r.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        out.extend(rows);
+    }
+    Ok(out)
+}
+
+/// Demote every dormant fact to importance 0 — the retrieval gate — through
+/// the shared supersede statement. Returns how many were aged out.
+///
+/// This is the half of forgetting that was missing. `decay_unused_facts`
+/// lowers salience and stops at 1; this crosses the line, on a horizon four
+/// times longer for `user` scope. Nothing is deleted: markdown, row and
+/// provenance all survive, exactly as for a supersede or a size-cap prune.
+/// Idempotent — a second run finds nothing, because the candidates it just
+/// demoted no longer satisfy `importance = 1`.
+pub fn age_out_dormant_facts(pool: &UserDbPool) -> Result<i64, AppError> {
+    let candidates = dormant_fact_candidates(pool)?;
+    if candidates.is_empty() {
+        return Ok(0);
+    }
+    let now = Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let mut total = 0i64;
+    for c in &candidates {
+        total += semantic::demote_superseded(&conn, &c.id, &now)? as i64;
+    }
+    if total > 0 {
+        tracing::info!(
+            aged_out = total,
+            "companion: aged dormant facts out of retrieval"
+        );
+    }
+    Ok(total)
+}
+
 /// Wall-clock timestamp of this process's last lifecycle sweep, 0 = never.
 /// Process-local rather than persisted on purpose: [`decay_unused_facts`] is
 /// already idempotent within its own `DECAY_THRESHOLD_DAYS` window (it guards
@@ -538,11 +670,25 @@ const LIFECYCLE_SWEEP_MIN_INTERVAL_SECS: i64 = 6 * 3600;
 /// [`MAX_FACTS_PER_SCOPE`] rows per scope. Best-effort: a failure is logged and
 /// never blocks a turn.
 ///
-/// Safety of the two actions: decay decrements `importance` by 1 with a floor
-/// of 1 — it lowers salience, it never deletes and never makes a fact
-/// retrieval-ineligible. Pruning demotes to 0 (retrieval-ineligible) but only
-/// for rows *above* the per-scope cap, keeps the markdown and the SQL row for
-/// provenance, and is a no-op on a brain under the cap.
+/// Safety of the three actions: aging out demotes to importance 0 — the
+/// retrieval gate — but only a fact already at the decay floor that nothing
+/// has recalled in [`AGE_OUT_DAYS`] (four times that for `user` scope), and it
+/// demotes through the same statement a supersede uses, so nothing is deleted.
+/// Decay decrements `importance` by 1 with a floor of 1: it lowers salience
+/// and cannot cross the gate by itself. Pruning demotes to 0 as well, but only
+/// for rows *above* the per-scope cap, and is a no-op on a brain under it.
+///
+/// **Age-out runs FIRST, against the pre-decay importances.** Run last it
+/// would compound with the same pass's decrement — a fact at 2 would drop to 1
+/// and be aged out in the same breath, collapsing the ladder the horizon
+/// exists to create. Run first, a fact has to spend a whole sweep at the floor
+/// before it can leave.
+///
+/// The outcome is persisted, not just logged: one
+/// [`EVENT_MEMORY_LIFECYCLE_SWEEP`] row per sweep, **including sweeps that
+/// changed nothing**. "It ran and there was nothing to do" and "it never ran"
+/// are different facts, and this pass exists precisely because the second one
+/// went unnoticed for 77 days.
 pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
     let now = Utc::now().timestamp();
     let last = LAST_LIFECYCLE_SWEEP.load(Ordering::Relaxed);
@@ -558,18 +704,74 @@ pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
         return;
     }
 
-    match decay_unused_facts(pool) {
-        Ok(n) if n > 0 => {
-            tracing::info!(
-                decayed = n,
-                "companion: lifecycle sweep decayed unused facts"
-            )
+    let mut errors: Vec<String> = Vec::new();
+
+    let aged_out = match age_out_dormant_facts(pool) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(error = %e, "companion: fact age-out failed (continuing)");
+            errors.push(format!("age_out: {e}"));
+            0
         }
-        Ok(_) => {}
-        Err(e) => tracing::warn!(error = %e, "companion: fact decay failed (continuing)"),
-    }
-    if let Err(e) = prune_low_value_facts(pool) {
-        tracing::warn!(error = %e, "companion: fact prune failed (continuing)");
+    };
+    let decayed = match decay_unused_facts(pool) {
+        Ok(n) => {
+            if n > 0 {
+                tracing::info!(
+                    decayed = n,
+                    "companion: lifecycle sweep decayed unused facts"
+                );
+            }
+            n
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "companion: fact decay failed (continuing)");
+            errors.push(format!("decay: {e}"));
+            0
+        }
+    };
+    let pruned = match prune_low_value_facts(pool) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(error = %e, "companion: fact prune failed (continuing)");
+            errors.push(format!("prune: {e}"));
+            0
+        }
+    };
+
+    record_lifecycle_sweep(pool, aged_out, decayed, pruned, &errors);
+}
+
+/// Persist one sweep's outcome to the audit ledger. Best-effort by design —
+/// failing to record a sweep must not be worse than not sweeping — but the
+/// failure is logged loudly, because a silent ledger is the exact condition
+/// this whole pass was written to end.
+fn record_lifecycle_sweep(
+    pool: &UserDbPool,
+    aged_out: i64,
+    decayed: i64,
+    pruned: i64,
+    errors: &[String],
+) {
+    let payload = serde_json::json!({
+        "aged_out": aged_out,
+        "decayed": decayed,
+        "pruned": pruned,
+        "age_out_days": AGE_OUT_DAYS,
+        "age_out_days_user": AGE_OUT_DAYS_USER,
+        "decay_threshold_days": DECAY_THRESHOLD_DAYS,
+        "max_facts_per_scope": MAX_FACTS_PER_SCOPE,
+        "errors": errors,
+    });
+    if let Err(e) = crate::companion::night_shift::record_event(
+        pool,
+        None,
+        EVENT_MEMORY_LIFECYCLE_SWEEP,
+        None,
+        None,
+        &payload,
+    ) {
+        tracing::warn!(error = %e, "companion: could not record the lifecycle sweep");
     }
 }
 
@@ -973,4 +1175,415 @@ fn parse_envelope(text: &str) -> Result<ProposalEnvelope, AppError> {
 
 fn short_uuid() -> String {
     util::short_id(10)
+}
+
+#[cfg(test)]
+mod tests {
+    //! First tests for this module (976 lines, zero coverage until
+    //! 2026-09-03), aimed at the one thing it claimed to do and could not:
+    //! forget.
+    //!
+    //! The pre-change arithmetic, stated once so a future reader can check it
+    //! against the code: `decay_unused_facts` floors at `MAX(1, importance-1)`
+    //! and `keyword.rs` gates recall on `importance > 0`. One is a floor of
+    //! one, the other is a gate at zero, and no path connected them — so on the
+    //! operator's real brain decay had fired exactly once (all sixteen
+    //! `last_decayed_at` values identical), the size cap could not fire at 113
+    //! facts against a 500-per-scope cap, and nothing had ever aged out.
+    //!
+    //! Pool checkouts propagate rather than unwrap, for the reason
+    //! `pool-get-unwrapped` counts fixtures at all.
+
+    use super::*;
+    use crate::companion::brain::episodic::{self, EpisodeRole};
+    use crate::companion::brain::semantic::{FactInput, FactScope};
+    use crate::companion::brain::test_home::TestHome;
+
+    /// The sweep's throttle is a process-global atomic, so the tests that
+    /// drive it must not run concurrently with each other.
+    static SWEEP_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    struct Brain {
+        pool: UserDbPool,
+        _home: TestHome,
+    }
+
+    fn brain() -> Result<Brain, AppError> {
+        let home = TestHome::new("consolidation");
+        Ok(Brain {
+            pool: crate::db::init_test_user_db()?,
+            _home: home,
+        })
+    }
+
+    /// Write a fact through the real writer, then backdate its `last_seen_at`
+    /// and set its importance — the two inputs every lifecycle rule reads.
+    /// Going through `write_fact` keeps the fixture honest about the schema
+    /// (both rows, the provenance chain, the markdown on disk); the two
+    /// UPDATEs afterwards are simply time travel, which the writer has no API
+    /// for.
+    fn seed_fact(
+        b: &Brain,
+        scope: FactScope,
+        key: &str,
+        importance: i32,
+        days_ago: i64,
+    ) -> Result<String, AppError> {
+        let ep = episodic::append_episode(&b.pool, "s1", EpisodeRole::User, "context for a fact")?;
+        let id = crate::companion::brain::semantic::write_fact(
+            &b.pool,
+            &FactInput {
+                scope,
+                key,
+                value: "a fact worth remembering for a while",
+                sources: std::slice::from_ref(&ep),
+                importance,
+                confidence: 0.9,
+                supersedes_id: None,
+                contradicts_id: None,
+            },
+        )?;
+        let seen = (Utc::now() - chrono::Duration::days(days_ago)).to_rfc3339();
+        let conn = b.pool.get()?;
+        conn.execute(
+            "UPDATE companion_fact SET last_seen_at = ?1, last_decayed_at = NULL WHERE id = ?2",
+            params![seen, id],
+        )?;
+        conn.execute(
+            "UPDATE companion_node SET importance = ?1 WHERE id = ?2",
+            params![importance, id],
+        )?;
+        Ok(id)
+    }
+
+    fn importance(b: &Brain, id: &str) -> Result<i32, AppError> {
+        let conn = b.pool.get()?;
+        Ok(conn.query_row(
+            "SELECT importance FROM companion_node WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )?)
+    }
+
+    // ── decay ───────────────────────────────────────────────────────────
+
+    /// Decay lowers salience by one per window and **stops at 1**. This is the
+    /// floor that made forgetting impossible on its own; the test pins it so a
+    /// future change to the age-out horizon cannot be made by quietly moving
+    /// the floor instead.
+    #[test]
+    fn decay_stops_at_the_floor_and_never_reaches_the_retrieval_gate() -> Result<(), AppError> {
+        let b = brain()?;
+        let id = seed_fact(&b, FactScope::Project, "stale_build_stat", 1, 400)?;
+        assert_eq!(
+            decay_unused_facts(&b.pool)?,
+            0,
+            "a fact already at the floor is not a decay candidate"
+        );
+        assert_eq!(importance(&b, &id)?, 1);
+
+        let id2 = seed_fact(&b, FactScope::Project, "older_build_stat", 3, 400)?;
+        decay_unused_facts(&b.pool)?;
+        assert_eq!(importance(&b, &id2)?, 2);
+        Ok(())
+    }
+
+    /// A fact seen inside the window is not touched, however low its
+    /// importance. Decay is about disuse, not about being unimportant.
+    #[test]
+    fn a_recently_seen_fact_does_not_decay() -> Result<(), AppError> {
+        let b = brain()?;
+        let id = seed_fact(&b, FactScope::Project, "fresh", 3, 1)?;
+        assert_eq!(decay_unused_facts(&b.pool)?, 0);
+        assert_eq!(importance(&b, &id)?, 3);
+        Ok(())
+    }
+
+    /// The `last_decayed_at` guard: two passes inside one window decrement
+    /// once. Without it every recall-path sweep would strip a fact.
+    #[test]
+    fn decay_is_idempotent_within_its_own_window() -> Result<(), AppError> {
+        let b = brain()?;
+        let id = seed_fact(&b, FactScope::Project, "twice", 3, 400)?;
+        decay_unused_facts(&b.pool)?;
+        decay_unused_facts(&b.pool)?;
+        assert_eq!(importance(&b, &id)?, 2, "one window, one decrement");
+        Ok(())
+    }
+
+    // ── age-out ─────────────────────────────────────────────────────────
+
+    /// The gap this direction closes: a fact CAN now reach 0, which is the
+    /// value `keyword.rs` gates recall on. Run against the pre-change module
+    /// there is no function that makes this assertion pass.
+    #[test]
+    fn a_dormant_fact_ages_out_to_the_retrieval_gate() -> Result<(), AppError> {
+        let b = brain()?;
+        let id = seed_fact(
+            &b,
+            FactScope::Project,
+            "fleet_14d_snapshot",
+            1,
+            AGE_OUT_DAYS + 5,
+        )?;
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 1);
+        assert_eq!(
+            importance(&b, &id)?,
+            0,
+            "aged out means retrieval-ineligible"
+        );
+
+        // Never a delete: both rows and the provenance survive.
+        let conn = b.pool.get()?;
+        let rows: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM companion_fact f JOIN companion_node n ON n.id = f.id \
+             WHERE f.id = ?1",
+            params![id],
+            |r| r.get(0),
+        )?;
+        assert_eq!(rows, 1, "aging out demotes; it must never delete");
+        Ok(())
+    }
+
+    /// Only from the floor. A fact still at 2 has not served its decay ladder
+    /// and must not skip it, however old it is.
+    #[test]
+    fn age_out_only_takes_facts_that_reached_the_decay_floor() -> Result<(), AppError> {
+        let b = brain()?;
+        let id = seed_fact(
+            &b,
+            FactScope::Project,
+            "not_yet_floored",
+            2,
+            AGE_OUT_DAYS * 4,
+        )?;
+        // A second fact that IS at the floor, so this cannot pass merely
+        // because nothing ages out at all — which is exactly what it would
+        // have proved against the pre-change module.
+        let floored = seed_fact(&b, FactScope::Project, "floored", 1, AGE_OUT_DAYS * 4)?;
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 1);
+        assert_eq!(importance(&b, &id)?, 2);
+        assert_eq!(importance(&b, &floored)?, 0);
+        Ok(())
+    }
+
+    /// The scope asymmetry, which is the one product judgement in this
+    /// direction: a user-scope fact at the same age survives, because
+    /// `last_seen_at` measures recall frequency and user facts are
+    /// load-bearing on turns that never query them.
+    #[test]
+    fn user_scope_facts_get_the_longer_horizon() -> Result<(), AppError> {
+        let b = brain()?;
+        let user = seed_fact(
+            &b,
+            FactScope::User,
+            "prefers_readable_ids",
+            1,
+            AGE_OUT_DAYS + 5,
+        )?;
+        let world = seed_fact(&b, FactScope::World, "some_world_fact", 1, AGE_OUT_DAYS + 5)?;
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 1);
+        assert_eq!(
+            importance(&b, &user)?,
+            1,
+            "a user fact is kept four times longer"
+        );
+        assert_eq!(importance(&b, &world)?, 0);
+
+        let ancient = seed_fact(&b, FactScope::User, "long_gone", 1, AGE_OUT_DAYS_USER + 5)?;
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 1);
+        assert_eq!(
+            importance(&b, &ancient)?,
+            0,
+            "the longer horizon is a horizon, not an exemption"
+        );
+        Ok(())
+    }
+
+    /// Idempotent: the second run finds nothing, because what it demoted no
+    /// longer satisfies `importance = 1`.
+    #[test]
+    fn age_out_is_idempotent() -> Result<(), AppError> {
+        let b = brain()?;
+        seed_fact(&b, FactScope::World, "gone", 1, AGE_OUT_DAYS + 5)?;
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 1);
+        assert_eq!(age_out_dormant_facts(&b.pool)?, 0);
+        Ok(())
+    }
+
+    // ── prune (size cap) ────────────────────────────────────────────────
+
+    /// A brain under the cap is the normal state and the pass must be a
+    /// no-op there — on the operator's real corpus (113 facts against
+    /// 3 x 500) the cap has never once been able to fire.
+    #[test]
+    fn prune_is_a_no_op_under_the_cap() -> Result<(), AppError> {
+        let b = brain()?;
+        seed_fact(&b, FactScope::Project, "one", 3, 1)?;
+        assert!(low_value_prune_candidates(&b.pool)?.is_empty());
+        assert_eq!(prune_low_value_facts(&b.pool)?, 0);
+        Ok(())
+    }
+
+    /// Over the cap, the excess is demoted lowest-value first. Seeded with
+    /// direct row inserts rather than `write_fact`: the cap is 500 per scope
+    /// and going through the real writer would put 501 markdown files on disk
+    /// for one assertion. The columns written here are exactly the ones the
+    /// selection reads.
+    #[test]
+    fn prune_demotes_the_excess_above_the_cap_lowest_value_first() -> Result<(), AppError> {
+        let b = brain()?;
+        let over = MAX_FACTS_PER_SCOPE + 3;
+        {
+            let conn = b.pool.get()?;
+            let now = Utc::now().to_rfc3339();
+            for i in 0..over {
+                let id = format!("fact_seed_{i:04}");
+                // The three oldest carry importance 1 so the ordering
+                // (importance ASC, last_seen_at ASC) has something to sort on.
+                let imp = if i < 3 { 1 } else { 3 };
+                let seen =
+                    (Utc::now() - chrono::Duration::days(over as i64 - i as i64)).to_rfc3339();
+                conn.execute(
+                    "INSERT INTO companion_node (id, kind, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+                     VALUES (?1, 'fact', ?2, 'sha256:x', ?3, 'x', ?4, ?4)",
+                    params![id, format!("semantic/world/{id}.md"), imp, now],
+                )?;
+                conn.execute(
+                    "INSERT INTO companion_fact (id, scope, fact_key, confidence, last_seen_at)
+                     VALUES (?1, 'world', ?2, 0.9, ?3)",
+                    params![id, format!("k{i}"), seen],
+                )?;
+            }
+        }
+        let candidates = low_value_prune_candidates(&b.pool)?;
+        assert_eq!(
+            candidates.len(),
+            3,
+            "exactly the overflow, not the whole tail"
+        );
+        assert!(
+            candidates.iter().all(|c| c.importance == 1),
+            "lowest value first: {candidates:?}"
+        );
+        assert_eq!(prune_low_value_facts(&b.pool)?, 3);
+        assert!(low_value_prune_candidates(&b.pool)?.is_empty());
+        Ok(())
+    }
+
+    // ── the sweep ───────────────────────────────────────────────────────
+
+    fn sweep_rows(b: &Brain) -> Result<Vec<String>, AppError> {
+        let conn = b.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT payload_json FROM companion_night_event
+             WHERE kind = ?1 ORDER BY created_at, id",
+        )?;
+        let rows = stmt
+            .query_map(params![EVENT_MEMORY_LIFECYCLE_SWEEP], |r| {
+                r.get::<_, String>(0)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// The sweep now leaves a record. Before this, `maybe_run_lifecycle_sweep`
+    /// logged its counts to `tracing` and persisted nothing — so on a machine
+    /// where it had never fired, and on one where it had fired a hundred times
+    /// and found nothing, the database looked identical.
+    #[test]
+    fn the_sweep_persists_its_outcome_even_when_it_changes_nothing() -> Result<(), AppError> {
+        let _serial = SWEEP_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let b = brain()?;
+        LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
+
+        maybe_run_lifecycle_sweep(&b.pool);
+        let rows = sweep_rows(&b)?;
+        assert_eq!(
+            rows.len(),
+            1,
+            "an empty sweep is still a sweep that happened"
+        );
+        let v: serde_json::Value = serde_json::from_str(&rows[0])
+            .map_err(|e| AppError::Internal(format!("payload is not json: {e}")))?;
+        assert_eq!(v["aged_out"], 0);
+        assert_eq!(v["decayed"], 0);
+        assert_eq!(v["pruned"], 0);
+        assert_eq!(v["age_out_days"], AGE_OUT_DAYS);
+        assert_eq!(v["age_out_days_user"], AGE_OUT_DAYS_USER);
+        assert_eq!(v["errors"].as_array().map(|a| a.len()), Some(0));
+        Ok(())
+    }
+
+    /// The throttle: a second sweep inside the interval does nothing at all,
+    /// including writing a second ledger row.
+    #[test]
+    fn the_sweep_throttles_itself_within_the_interval() -> Result<(), AppError> {
+        let _serial = SWEEP_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let b = brain()?;
+        LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
+
+        maybe_run_lifecycle_sweep(&b.pool);
+        maybe_run_lifecycle_sweep(&b.pool);
+        assert_eq!(
+            sweep_rows(&b)?.len(),
+            1,
+            "throttled sweeps must not log a run that did not happen"
+        );
+
+        // Pretend the interval elapsed, and it runs again.
+        LAST_LIFECYCLE_SWEEP.store(
+            Utc::now().timestamp() - LIFECYCLE_SWEEP_MIN_INTERVAL_SECS - 1,
+            Ordering::Relaxed,
+        );
+        maybe_run_lifecycle_sweep(&b.pool);
+        assert_eq!(sweep_rows(&b)?.len(), 2);
+        Ok(())
+    }
+
+    /// End to end, through the entry point the recall path actually calls: a
+    /// dormant fact goes from retrievable to not, and the ledger says so.
+    #[test]
+    fn a_full_sweep_ages_a_dormant_fact_out_and_records_it() -> Result<(), AppError> {
+        let _serial = SWEEP_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let b = brain()?;
+        LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
+
+        let dormant = seed_fact(
+            &b,
+            FactScope::Project,
+            "fleet_f8a981a8_14d",
+            1,
+            AGE_OUT_DAYS + 10,
+        )?;
+        let live = seed_fact(&b, FactScope::Project, "current_work", 3, 2)?;
+
+        maybe_run_lifecycle_sweep(&b.pool);
+
+        assert_eq!(importance(&b, &dormant)?, 0);
+        assert_eq!(importance(&b, &live)?, 3, "a fact in use is untouched");
+        let v: serde_json::Value = serde_json::from_str(&sweep_rows(&b)?[0])
+            .map_err(|e| AppError::Internal(format!("payload is not json: {e}")))?;
+        assert_eq!(v["aged_out"], 1);
+        Ok(())
+    }
+
+    /// Age-out runs against the PRE-decay importances. A fact at 2 that is
+    /// also past its horizon decays to 1 in this sweep and ages out in the
+    /// next one — one step per sweep, never two.
+    #[test]
+    fn the_sweep_does_not_decay_and_age_out_the_same_fact_in_one_pass() -> Result<(), AppError> {
+        let _serial = SWEEP_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let b = brain()?;
+        LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
+
+        let id = seed_fact(&b, FactScope::World, "two_steps_away", 2, AGE_OUT_DAYS + 10)?;
+        maybe_run_lifecycle_sweep(&b.pool);
+        assert_eq!(importance(&b, &id)?, 1, "decayed, not aged out");
+
+        LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
+        maybe_run_lifecycle_sweep(&b.pool);
+        assert_eq!(importance(&b, &id)?, 0, "the second sweep takes it out");
+        Ok(())
+    }
 }
