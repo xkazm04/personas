@@ -25,6 +25,7 @@ class RawRetrieval(Backend):
         self.embedder = Embedder(embedder, (cache_dir / "emb.sqlite") if cache_dir else None)
         self.ids: list[str] = []
         self.texts: list[str] = []
+        self.embed_texts: list[str] = []
         self.days: list[int] = []
         self.vecs: list[np.ndarray] = []
         self.pending: list[int] = []
@@ -34,12 +35,15 @@ class RawRetrieval(Backend):
     def ingest(self, event: Event, clock: Clock) -> None:
         r = render(event, clock)
         self.ids.append(event.id); self.texts.append(r); self.days.append(clock.day)
+        # the embedded text carries no instant: a date inside the vector leaks the clock
+        # into the ranking, which the clock-purity check exposed on this rung
+        self.embed_texts.append(("user" if event.kind in ("say", "task", "teach", "noise") else "system") + ": " + event.text)
         self.pending.append(len(self.texts) - 1)
         self.bytes += len(r.encode())
 
     def _flush(self):
         if self.pending:
-            vecs = self.embedder.embed([self.texts[i] for i in self.pending])
+            vecs = self.embedder.embed([self.embed_texts[i] for i in self.pending])
             for i, v in zip(self.pending, vecs):
                 while len(self.vecs) <= i:
                     self.vecs.append(None)
