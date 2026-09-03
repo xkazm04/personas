@@ -688,25 +688,39 @@ pub fn create_with_idempotency_reporting(
                 // recipe behind the run.
                 let (source_recipe_id, source_recipe_version) =
                     resolve_recipe_provenance(&conn, persona_id, use_case_id.as_deref());
-                let mut stmt = conn.prepare_cached(
-                "INSERT INTO persona_executions
-                 (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at, source_recipe_id, source_recipe_version)
-                 VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9, ?10, ?11)
-                 ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
-                )?;
-                stmt.execute(params![
-                    id,
-                    persona_id,
-                    trigger_id,
-                    input_data,
-                    model_used,
-                    use_case_id,
-                    idempotency_key,
-                    is_simulation as i64,
-                    now,
-                    source_recipe_id,
-                    source_recipe_version
-                ])?
+                // The execution row is canonical and irreplaceable;
+                // `executions_fts` hangs off it through three sync triggers and
+                // is rebuildable from it. Those are opposite corruption
+                // classes, so the write goes through the class policy: a
+                // damaged index detaches and this insert still lands, while
+                // structural damage quarantines the store and is never
+                // retried. `ON CONFLICT … DO NOTHING` makes the one retry safe.
+                crate::damage::guarded_write(
+                    &conn,
+                    crate::damage::Provenance::Ambiguous,
+                    "executions::create_with_idempotency",
+                    |c| {
+                        let mut stmt = c.prepare_cached(
+                        "INSERT INTO persona_executions
+                         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at, source_recipe_id, source_recipe_version)
+                         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9, ?10, ?11)
+                         ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
+                        )?;
+                        stmt.execute(params![
+                            id,
+                            persona_id,
+                            trigger_id,
+                            input_data,
+                            model_used,
+                            use_case_id,
+                            idempotency_key,
+                            is_simulation as i64,
+                            now,
+                            source_recipe_id,
+                            source_recipe_version
+                        ])
+                    },
+                )?
             };
 
             // rows_changed == 0 means the INSERT hit ON CONFLICT DO NOTHING:

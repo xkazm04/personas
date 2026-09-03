@@ -143,6 +143,26 @@ pub(super) fn backup_before_migrations(app_data_dir: &Path, db_path: &Path) -> O
         "Pre-migration DB backup created"
     );
 
+    // The quarantine clause. Three slots is enough for a bad migration — the
+    // risk this module was written for — and NOT enough for slow structural
+    // damage: a session that keeps writing to a damaged file, then three more
+    // boots, has rotated every pre-damage copy out of existence before anyone
+    // noticed. So if the previous session ended quarantined, take the backup
+    // and do not rotate. The marker is a file beside the store, read here
+    // BEFORE any connection opens it — a flag stored inside the damaged
+    // database is unreadable exactly when it matters.
+    //
+    // Nothing clears the marker automatically: `damage::clear_quarantine` is a
+    // deliberate operator act after a restore. Rotation debt is disk usage; a
+    // rotated-away last good copy is the user's data.
+    if crate::damage::previous_session_quarantined(db_path) {
+        tracing::warn!(
+            dir = %backup_dir.display(),
+            "Backup rotation HELD — the store is quarantined, so no pre-damage backup is deleted"
+        );
+        return Some(backup_db);
+    }
+
     rotate_backups(&backup_dir);
     Some(backup_db)
 }
