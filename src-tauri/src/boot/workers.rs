@@ -13,7 +13,7 @@ use crate::{cloud, commands, companion, daemon, engine, notifications, radio, Ap
 use crate::tray;
 
 // Re-admit executions persisted as `queued` when the app last exited
-// (recover_stale_executions above only fails mid-RUN rows now). This
+// (classify_stale_executions above only classifies mid-RUN rows). This
 // is what makes scheduled / event-triggered work survive a restart
 // instead of being silently dropped (P1 durable-queue guarantee).
 // Spawned so it never blocks startup; re-admission is idempotent.

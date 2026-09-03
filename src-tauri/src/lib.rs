@@ -2173,6 +2173,17 @@ pub fn run() {
             if matches!(event, tauri::RunEvent::Exit) {
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.stop_all();
+
+                    // LAST, after the teardown above, and never optimistically:
+                    // absence of this marker is the crash signal the next boot
+                    // reads (`boot::recovery`), so writing it before the drain
+                    // completes would be a claim about a shutdown that had not
+                    // happened yet. `RunEvent::Exit` does not fire on SIGKILL,
+                    // power loss or a Windows force-quit — which is the point:
+                    // those are exactly the exits that must read as crashes.
+                    personas_core::shutdown_marker::record_clean_shutdown(
+                        state.leadership.app_data_dir(),
+                    );
                 }
             }
         });

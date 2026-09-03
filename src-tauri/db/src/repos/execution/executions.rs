@@ -971,7 +971,7 @@ fn redact_json_value(value: &mut serde_json::Value) {
     }
 }
 
-/// Shared 18-column execution-status `UPDATE`, parameterized only by the
+/// Shared 20-column execution-status `UPDATE`, parameterized only by the
 /// trailing `WHERE` predicate. `update_status`, `update_status_if_running`,
 /// and `update_status_if_not_final` differ *only* in which rows they're
 /// allowed to touch (unguarded / CAS-if-running / CAS-if-not-final) — this
@@ -1017,7 +1017,17 @@ fn exec_status_update(
             claude_session_id = COALESCE(?14, claude_session_id),
             execution_config = COALESCE(?15, execution_config),
             log_truncated = ?16,
-            business_outcome = COALESCE(?17, business_outcome)
+            business_outcome = COALESCE(?17, business_outcome),
+            -- Restart recovery: the mark rides through the re-admission and is
+            -- cleared ONLY by a turn that completes. Clearing it when a resume
+            -- BEGINS is the mistake that costs the whole mechanism -- every
+            -- crash would look like the first crash and the escalation in
+            -- `restart_recovery` could never fire. See that module's header
+            -- and registry technique `session-continuation/stuck-loop-detection`.
+            -- A `failed` turn deliberately clears nothing: an observed failure
+            -- is the OTHER key (failure identity) and must not reset this one.
+            recovery_state = CASE WHEN ?1 = 'completed' THEN NULL ELSE recovery_state END,
+            restart_count = CASE WHEN ?1 = 'completed' THEN 0 ELSE restart_count END
          {where_clause}"
     );
     let mut stmt = conn.prepare_cached(&sql)?;
@@ -1457,9 +1467,10 @@ pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
 }
 
 /// Only executions whose process was mid-RUN at shutdown (`status='running'`).
-/// Used by startup recovery to fail orphaned runs WITHOUT touching durable
+/// Used by startup recovery to CLASSIFY orphaned runs WITHOUT touching durable
 /// `queued` rows (which are re-admitted instead). See
-/// `ExecutionEngine::recover_stale_executions`.
+/// `restart_recovery::classify_running_rows`, which reads the same partition
+/// and replaced the sweep that marked every one of these rows failed.
 pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!(
         "persona_executions",
