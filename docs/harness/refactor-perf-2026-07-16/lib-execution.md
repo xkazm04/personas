@@ -2,8 +2,16 @@
 
 > Total: 5 findings (0 critical / 1 high / 3 medium / 1 low)
 > Context group: Core Libraries & State | Files read: 11 | Missing: 0
+>
+> **Status re-measured 2026-09-03: 4 of 5 RESOLVED, #5 still open.** Each resolved
+> finding carries the commit that closed it, so the next reader does not re-chase
+> a fix that already shipped.
 
 ## 1. Normal-mode sink flush is unthrottled — rebuilds up to a 10k-line array and pushes a store update per output event
+
+> **RESOLVED — `56ce5af28` `perf(streaming): throttle executionSink normal-mode flush; batch per-line store writes`.**
+> Normal mode now carries the same throttle discipline tail mode already had
+> (`lastNormalFlushTime` in `executionSink.ts`).
 - **Severity**: High
 - **Lens**: perf-optimizer
 - **Category**: rerender
@@ -14,6 +22,22 @@
 - **Fix sketch**: Apply the same throttling discipline to normal mode that tail mode already has: after the first immediate flush, coalesce subsequent flushes into a `requestAnimationFrame` or a ~100–250 ms `setTimeout` window (reuse the `lastTailFlushTime`/`scheduled` pattern, generation-guarded). The visibility-gating logic in `scheduleTailFlush` can be shared. UI freshness at 4–10 Hz is indistinguishable for a scrolling terminal.
 
 ## 2. Six exported pipeline utilities have no callers anywhere in src/
+
+> **RESOLVED — `88f0760ea` `chore(lib-execution): delete the dead API surface and
+> settle the deprecated trace aliases`.** All six (`removeMiddleware`,
+> `nextStage`, `stageIndex`, `hasPassedStage`, `traceDuration`, `engineSpans`) are
+> deleted, each after a whole-word grep across `src/` and `docs/` returned only its
+> own definition. The trailing note is closed too: the `@deprecated`
+> `PipelineTrace` / `PipelineTraceEntry` aliases were **renamed through** to
+> `UnifiedTrace` / `UnifiedSpan` in all five consumers rather than un-deprecated,
+> so the migration they were placeholders for is actually finished and the aliases
+> are gone. Eight internal-only types (`StagePayloadMap`, `ValidatePayload`,
+> `StreamOutputPayload`, `BackendPipelineStage`, `PipelineTimingRecord`,
+> `StageTiming`, `MiddlewareOptions`, `SYSTEM_OPERATION_TYPES`) lost their `export`
+> keyword in the same pass. `systemTrace.ts`'s `tracedOperation` — 15 lines of
+> docblock over a wrapper nobody called — went with them; `getActiveSessions` /
+> `getCompletedTraces` were KEPT, because they are the registry's read API and its
+> test suite's only window onto it.
 - **Severity**: Medium
 - **Lens**: code-refactor
 - **Category**: dead-code
@@ -24,6 +48,11 @@
 - **Fix sketch**: Delete the six functions (verify no dynamic access first — none found). If `removeMiddleware` is kept as the symmetric counterpart to `addMiddleware` for future HMR cleanup, keep only that one and drop the other five. Note: the `@deprecated` aliases `PipelineTrace`/`PipelineTraceEntry` (lines 278, 283) are NOT dead — 5 files still import them; either finish that rename or remove the deprecation markers.
 
 ## 3. ExecutionSink.reset() and clear() are byte-identical, and clear()'s doc comment is wrong
+
+> **RESOLVED — `25eb09940` (the shared `private resetState()` both now delegate to)
+> and `8f884d616` (the wrong doc comment on `clear()`; it now states that it does
+> NOT notify and that the caller owns the store-side clear).** Both halves of the
+> finding are closed.
 - **Severity**: Medium
 - **Lens**: code-refactor
 - **Category**: duplication
@@ -34,6 +63,11 @@
 - **Fix sketch**: Keep one private `resetInternal()` and make `reset()`/`clear()` both delegate to it — or simply alias `clear = reset` and fix the doc comment. If store notification on clear is actually desired, add an explicit `this.onFlush?.([], 0)` and keep the two methods distinct for real.
 
 ## 4. onSystemTraceChange supports exactly one subscriber — a second subscription silently disconnects the first
+
+> **RESOLVED — `20a3a8502` `fix(lib-execution): the system-trace registry accepts
+> more than one subscriber and forgets abandoned sessions`.** The single mutable
+> slot is a `Set<() => void>` (`systemTrace.ts`), each unsubscribe removes only its
+> own callback, and one throwing listener no longer starves the rest.
 - **Severity**: Medium
 - **Lens**: code-refactor
 - **Category**: structure
@@ -44,6 +78,10 @@
 - **Fix sketch**: Replace the slot with `const _listeners = new Set<() => void>()`; `onSystemTraceChange` adds to the set and returns `() => _listeners.delete(callback)`; every `_onSessionChange?.()` call site becomes `for (const l of _listeners) l()` (or a small `notify()` helper). Zero behavior change for the current single consumer.
 
 ## 5. timingMiddleware rescans all of localStorage and JSON.parses every timing entry on every execution completion
+
+> **STILL OPEN as of 2026-09-03.** `_pruneTimingEntries` still walks the whole
+> `localStorage` keyspace and `JSON.parse`s every timing entry on every
+> `frontend_complete`.
 - **Severity**: Low
 - **Lens**: perf-optimizer
 - **Category**: data-layer
