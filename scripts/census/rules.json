@@ -560,7 +560,7 @@
       },
       "baseline": {
         "files": 791,
-        "matches": 1910
+        "matches": 1901
       },
       "floor": 2000
     },
@@ -745,7 +745,7 @@
       },
       "baseline": {
         "files": 54,
-        "matches": 136
+        "matches": 137
       },
       "floor": 200
     },
@@ -1146,8 +1146,8 @@
         "description": "a pub repository fn returning Result<(), AppError> that reaches an UPDATE or DELETE whose entire WHERE clause is `id = ?N` - a primary-key-targeted, exactly-one-row write - without ever binding the usize that .execute() returns and without any existence probe. PROXY FOR the stack-free condition: a write addressed at one identified row completes without reporting whether that row existed, so 'nothing happened' and 'it worked' are the same value. rusqlite's execute() returns the affected-row count; on a PK-targeted statement 0 means exactly one thing - no such row - and the unit return type physically cannot carry it. Measured 2026-08-14 at HEAD: 82 matches across 35 of 116 files, every match a distinct (file, fn) pair, median matched span 377 chars and max 2355 against a 4000 bound, zero matches inside a #[cfg(test)] module. 22 matches were opened and read during the pattern's refinement: the final pattern's set contains 20 verified true positives and the 2 verified false positives found on the way are excluded BY CONSTRUCTION rather than by an allowlist - a scope-keyed bulk DELETE (dev_workspaces.rs:1067 sync_harvest_scopes, WHERE project_id = ?1, where 0 rows is normal) is excluded by requiring the bare column `id`, and a function that probes existence first (rotation.rs:257 mark_rotated calls get_policy_by_id) is excluded by the `\\w*by_id\\s*\\(` guard. The other guards do the same work: a fn that already binds the count, maps QueryReturnedNoRows, constructs AppError::NotFound, or calls .optional() has made the no-op observable and does not match; INSERT/ON CONFLICT are excluded because an upsert can never affect zero rows. Live consequences in this tree: persona_triggers::set_enabled (triggers.rs:1856) flips a trigger that may not exist and the UI renders the new state; deliberation::finalize (deliberation.rs:306) finalizes a vanished deliberation; dev_goals::reorder_goals (dev_tools.rs:861) reorders stale ids one blind UPDATE at a time. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite's `.execute(sql, params)` inside functions declared `pub fn`, returns a unit-typed Result on writes, and spells its primary key `id`. A repo whose driver returns a result object the caller must destructure (better-sqlite3's {changes}), whose ORM raises on a zero-row update, or which returns the updated row via RETURNING has the SAME condition wearing different markup and this pattern scores zero against it. LEGAL FIX, in order: (1) bind the count and turn 0 into AppError::NotFound - resources/notification_subscriptions.rs:215 is the shape to copy, six lines; (2) return the refreshed entity instead of unit, which makes the absent row a NotFound from the re-read - resources/notification_subscriptions.rs:135 update is that shape; (3) reach for crud_delete! (macros.rs:196), which returns Ok(rows > 0) and cannot be written blind. Do NOT silence a match by widening the WHERE clause or by dropping the id predicate - that trades this condition for a worse one."
       },
       "baseline": {
-        "files": 40,
-        "matches": 82
+        "files": 39,
+        "matches": 81
       },
       "floor": 100
     },
@@ -1745,8 +1745,8 @@
         "description": "an identifier naming a monetary quantity (cost/Cost/spend/Spend) collapsed to the literal 0 by a zero-default operator (`unwrap_or(0`, `unwrap_or_default()`, `?? 0`, `|| 0`). PROXY FOR the stack-free condition: *unknown* and *free* are rendered as the same value, so a total that omits a call is indistinguishable from one that includes a free call, and any ceiling computed from that total silently rises. Precision measured 25/25 on a full read of every match. The two highest-severity are engine/background.rs:2510 and engine/mod.rs:2778, both `get_monthly_spend(...).unwrap_or(0.0)` — a database error there reads as '$0 spent this month' and OPENS the monthly budget cap, so the failure mode of the measurement becomes a bypass of the control. Seven more are DB row-mappers (`row.get::<_, Option<f64>>(\"cost_usd\")?.unwrap_or(0.0)`) that destroy a NULL the nullable column was holding correctly; the remainder are TS reducers and adapters where a span, day-bucket or dashboard field of unknown cost contributes 0 to a displayed or gated total (ChainSpanRow/useChainTrace feed the chain-cost accumulator that CHAIN_MAX_COST_USD gates). CASE-SENSITIVITY IS LOAD-BEARING: an `i` flag matches `haSPENDing`, admitting six `hasPending = (x?.length ?? 0)` false positives in src/features/agents/sub_glyph — do not add it. PRECONDITION (measured, must be re-derived per repo): this repo names money with the tokens cost/spend, expresses absence as Rust `Option` or TS `null|undefined`, and spells the collapse with `unwrap_or`/`??`/`||`. A repo naming money `amount`/`price`/`charge`, or using a Money newtype with a total function, scores zero while the condition is present — and the sibling `personas-cloud` has the identical defect spelled `costUsd: msg.totalCostUsd ?? 0` (dispatcher.ts:461) feeding its own budget gate, while `brainiac` refuses it in a comment (providers/openai.rs:196) and has no dollar field to falsify. LEGAL FIX: keep the money `Option<f64>` / `number | null` from the parse site to the column (both ends already are — it is the carrier struct in between that destroys it), and make the consumer handle absence explicitly. For a spend read that gates a budget, fail CLOSED: propagate the error rather than substituting 0."
       },
       "baseline": {
-        "files": 18,
-        "matches": 22
+        "files": 16,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -1840,8 +1840,8 @@
         }
       ],
       "baseline": {
-        "files": 84,
-        "matches": 119
+        "files": 83,
+        "matches": 117
       },
       "floor": 4000
     },
@@ -2337,8 +2337,8 @@
         }
       ],
       "baseline": {
-        "files": 16,
-        "matches": 34
+        "files": 15,
+        "matches": 33
       },
       "floor": 500
     },
