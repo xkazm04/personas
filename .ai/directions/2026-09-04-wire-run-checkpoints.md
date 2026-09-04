@@ -5,7 +5,7 @@ raised_by: intake intake-exo (peer comparison, operator gate 2026-09-04)
 source: librarian/sources/2026-09-04-exo.md
 stage: `src-tauri/engine/src/git_checkpoint.rs` (checkpoint/snapshot/fork/rollback, 272 lines, zero call sites) and the dev-tools stage loop that should be calling it
 size: 3 files / ~180 lines / M
-status: proposed
+status: accepted
 ---
 
 ## Why the scope implies it

@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: reviewed
 date: 2026-09-04
 source: stencil.so/blog/harness-playbook
 kind: comparison-study
@@ -359,3 +359,18 @@ Mandatory section. Each item is something the source's own text identifies as ha
 **I8 — Structured truncation asserted by a test named after the property.** `src-tauri/engine/src/tool_outcome.rs:22-29` (*"Truncation is always surfaced via a `truncated` flag — never silent"*, with the 256 KiB cap justified in prose) and `src-tauri/engine/src/prompt/tests/runtime_safety.rs:153 truncated_variable_tells_the_model_it_was_cut_and_where_the_rest_is`. The source's complaint is that harness commentary gets smuggled into the data; personas puts it in a field and asserts it. §2.5 asks for this to reach thirty-five more sites — it does not ask for it to be designed.
 
 **I9 — Measurement before architecture.** `src-tauri/src/stream_harness.rs:1-30` — a purpose-built, `debug_assertions`-only diagnostic with a defined wire format, built to answer whether Tauri's custom-protocol path streams or buffers, *because four planned phases depended on the answer* and static analysis was not considered sufficient. The source arrived at TLA+ by first shipping a fuzzer; personas' habit is the same instinct applied before the code exists rather than after it broke.
+
+---
+
+## Operator decision - 2026-09-04
+
+All three ranked candidate directions were **accepted** at the /intake Phase 7.7 gate
+(operator multi-select review). Ledger rows are in `.ai/directions/ledger.jsonl`:
+
+1. `bound-and-measure-the-tool-roster` - accepted
+2. `make-cancellation-mean-cancellation` - accepted
+3. `athena-report-tool-defect` - accepted, and the study's own condition stands: it ships
+   only with its reader, or it is a write-only channel.
+
+The study itself is `reviewed` rather than `proposed`: it is a comparison record, not a
+single buildable item, and its value outlives the three directions drawn from it.
