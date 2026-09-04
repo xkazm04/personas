@@ -12,8 +12,6 @@ import path from "node:path";
 import {
   ROOT,
   fnv1a,
-  band,
-  expectedDialDirectives,
   parseBindingFields,
   loadBindingFields,
   validateAgainstBinding,
@@ -61,15 +59,16 @@ test("matrix covers all 9 archetypes and all 7 focus domains, with 1-2 templates
   }
 });
 
-test("cell ids are unique and carry the archetype dials as expectations", () => {
+test("cell ids are unique and keyed on archetype × domain × template, nothing else", () => {
   const cells = composeCells(inputs);
   const ids = new Set(cells.map((c) => c.id));
   assert.equal(ids.size, cells.length, "duplicate cell ids");
   const byArchetype = new Map(inputs.archetypes.map((a) => [a.id, a]));
   for (const c of cells) {
-    const a = byArchetype.get(c.archetypeId);
-    assert.equal(c.expected.dials.riskTolerance, a.persona.core.riskTolerance, c.id);
-    assert.equal(c.expected.dials.conflictStyle, a.persona.core.conflictStyle, c.id);
+    // The id IS the key: dropping the deleted dials from the cell must not
+    // change which cells exist or what identifies them.
+    assert.equal(c.id, `${c.archetypeId}.${c.domainId}.${c.templateId}`);
+    assert.ok(byArchetype.has(c.archetypeId), `unknown archetype ${c.archetypeId}`);
   }
 });
 
@@ -111,37 +110,12 @@ test("buildArchetypeCore folds identity/voice/principles into camelCase PersonaC
 });
 
 // ---------------------------------------------------------------------------
-// Dial bands — pinned to core_section.rs cuts (<0.34 / <0.67)
+// Dial bands — the two tests that lived here are GONE with the machinery they
+// covered (`band`, `expectedDialDirectives`, `DIAL_DIRECTIVES`). WP2 deleted
+// the band tables from `core_section.rs`; a mirror of prose that no longer
+// exists cannot fail honestly. The grid-shape test above is what now proves
+// the 126 cells survived their removal.
 // ---------------------------------------------------------------------------
-
-test("band cuts mirror core_section.rs exactly", () => {
-  assert.equal(band(0), 0);
-  assert.equal(band(0.3399), 0);
-  assert.equal(band(0.34), 1);
-  assert.equal(band(0.6699), 1);
-  assert.equal(band(0.67), 2);
-  assert.equal(band(1), 2);
-});
-
-test("expectedDialDirectives picks the banded sentence per dial", () => {
-  const d = expectedDialDirectives({
-    riskTolerance: 0.15,
-    speedVsQuality: 0.5,
-    deference: 0.9,
-    conflictStyle: "challenger",
-  });
-  assert.match(d.riskTolerance, /^You are risk-averse/);
-  assert.match(d.speedVsQuality, /^You balance speed and quality/);
-  assert.match(d.deference, /^You yield readily/);
-  assert.match(d.conflictStyle, /challenger/);
-  const unknown = expectedDialDirectives({
-    riskTolerance: 0.5,
-    speedVsQuality: 0.5,
-    deference: 0.5,
-    conflictStyle: "freestyle",
-  });
-  assert.equal(unknown.conflictStyle, null, "unknown style: no exact-sentence assert");
-});
 
 // ---------------------------------------------------------------------------
 // Payload validation against the REAL bindings

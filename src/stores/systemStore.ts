@@ -9,6 +9,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createCoreState, type SystemStore } from "./storeTypes";
+import type { DesignSubTab } from "@/lib/types/types";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
 
 import { createUiSlice } from "./slices/system/uiSlice";
@@ -178,29 +179,60 @@ export const useSystemStore = create<SystemStore>()(
           state.onboardingStepCompleted = cleaned as typeof state.onboardingStepCompleted;
         }
         // Migrate legacy editor tabs that were consolidated into the Design hub.
+        // INVARIANT for the cast: the value came back through JSON.parse from a
+        // localStorage blob an OLDER BUILD wrote, so its real type is `unknown`
+        // and the declared union constrains nothing here. Read it as a string,
+        // decide, then write a value from the CURRENT union.
         const legacyTab = state.editorTab as unknown as string;
         if (legacyTab === 'prompt') {
           state.editorTab = 'design';
-          state.designSubTab = 'prompt';
+          state.designSubTab = 'manifest';
         } else if (legacyTab === 'connectors') {
           state.editorTab = 'design';
           state.designSubTab = 'connectors';
         } else if (legacyTab === 'health') {
           state.editorTab = 'design';
-          state.designSubTab = 'prompt';
+          state.designSubTab = 'manifest';
         } else if (legacyTab === 'use-cases') {
+          // Use cases became standing charters with the agent-manifest rebase.
           state.editorTab = 'design';
-          state.designSubTab = 'use-cases';
+          state.designSubTab = 'responsibilities';
         } else if (legacyTab === 'life') {
           // The top-level Life tab (living-agent surface) folded into the
-          // Design hub as the core / responsibilities / brain sub-tabs.
+          // Design hub; its Core half is the Manifest tab now.
           state.editorTab = 'design';
-          state.designSubTab = 'core';
+          state.designSubTab = 'manifest';
         }
-        // Migrate legacy designSubTab value: 'design' (former LLM-wizard tab) → 'prompt'.
-        const legacySubTab = state.designSubTab as unknown as string;
-        if (legacySubTab === 'design') {
-          state.designSubTab = 'prompt';
+
+        // Remap every retired designSubTab value onto the four that remain
+        // (agent-manifest rebase, 2026-09-04). A REMAP, not a discard: the
+        // surface moved, so land the user on the tab that inherited its job.
+        // The trailing guard covers anything not named here — including a
+        // value written by a NEWER build the user has rolled back from, which
+        // is the case that has no entry in any table by construction.
+        const RETIRED_SUB_TABS: Record<string, DesignSubTab> = {
+          design: 'manifest',
+          prompt: 'manifest',
+          parameters: 'manifest',
+          core: 'manifest',
+          'use-cases': 'responsibilities',
+          triggers: 'connectors',
+          messaging: 'connectors',
+          automations: 'connectors',
+        };
+        const LIVE_SUB_TABS: readonly DesignSubTab[] = [
+          'manifest',
+          'responsibilities',
+          'brain',
+          'connectors',
+        ];
+        // Same invariant as `legacyTab` above: a persisted token, not a union.
+        const persistedSubTab = state.designSubTab as unknown as string;
+        const remapped = RETIRED_SUB_TABS[persistedSubTab];
+        if (remapped) {
+          state.designSubTab = remapped;
+        } else if (!LIVE_SUB_TABS.includes(state.designSubTab)) {
+          state.designSubTab = 'manifest';
         }
       },
     },

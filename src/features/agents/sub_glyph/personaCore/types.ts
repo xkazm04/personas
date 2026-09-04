@@ -27,7 +27,11 @@ export interface CharacterTrait {
 
 export interface PersonaCoreState {
   archetypeId: string | null;
-  disposition: number;          // 0 cautious … 1 bold (risk + speed collapsed)
+  // `disposition` (a 0…1 cautious-to-bold slider) was removed with the
+  // agent-manifest rebase: its only two consumers were the runtime Core's
+  // numeric risk/speed dials, which the prompt no longer renders, and a
+  // three-band prose line generated FROM the number, which is exactly the
+  // "calibrated pseudo-prose" Stage B deleted on the Rust side.
   conflictStyle: string | null; // challenger | analyst | pragmatist | harmonizer
   traits: string[];             // selected trait ids from TRAIT_CATALOG
   model: ModelTier;
@@ -55,7 +59,6 @@ export interface PersonaCore {
   /** Put the discarded trait set back, keeping the archetype the user just
    *  picked. Null-safe: a no-op when nothing was discarded. */
   restoreTraits: () => void;
-  setDisposition: (v: number) => void;
   setConflict: (id: string | null) => void;
   toggleTrait: (id: string) => void;
   setModel: (m: ModelTier) => void;

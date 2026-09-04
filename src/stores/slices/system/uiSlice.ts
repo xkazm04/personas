@@ -110,7 +110,9 @@ export interface UiSlice {
   templateTab: TemplateTab;
   agentTab: AgentTab;
   editorTab: EditorTab;
-  /** Sub-tab inside the Design hub (absorbs former Prompt / Connectors / Health tabs). */
+  /** Sub-tab inside the Design hub: manifest / responsibilities / brain /
+   *  connectors. Collapsed from ten by the agent-manifest rebase; the retired
+   *  values are remapped on rehydrate (`systemStore`). */
   designSubTab: DesignSubTab;
   cloudTab: CloudTab;
   settingsTab: SettingsTab;
@@ -404,7 +406,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
-  designSubTab: "use-cases" as DesignSubTab,
+  designSubTab: "manifest" as DesignSubTab,
   cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
@@ -511,14 +513,18 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
   setEditorTab: (tab) => startTransition(() => {
-    // Migrate legacy tab IDs → design hub with the matching sub-tab.
-    if (tab === "prompt") return set({ editorTab: "design", designSubTab: "prompt" });
+    // Migrate legacy tab IDs → design hub with the matching sub-tab. The
+    // sub-tab targets moved again with the agent-manifest rebase (2026-09-04):
+    // Prompt and Health have no successor surface, so they land on the
+    // manifest (what a persona IS is the manifest now), and Use Cases lands on
+    // the charters that replaced it.
+    if (tab === "prompt") return set({ editorTab: "design", designSubTab: "manifest" });
     if (tab === "connectors") return set({ editorTab: "design", designSubTab: "connectors" });
-    if (tab === "health") return set({ editorTab: "design", designSubTab: "prompt" });
+    if (tab === "health") return set({ editorTab: "design", designSubTab: "manifest" });
     // Use Cases moved from a top-level tab into the Design hub.
-    if (tab === "use-cases") return set({ editorTab: "design", designSubTab: "use-cases" });
-    // Life (living-agent surface) folded into the Design hub; land on Core.
-    if (tab === "life") return set({ editorTab: "design", designSubTab: "core" });
+    if (tab === "use-cases") return set({ editorTab: "design", designSubTab: "responsibilities" });
+    // Life (living-agent surface) folded into the Design hub; land on Manifest.
+    if (tab === "life") return set({ editorTab: "design", designSubTab: "manifest" });
     set({ editorTab: tab });
   }),
   setDesignSubTab: (tab) => startTransition(() => set({ designSubTab: tab })),

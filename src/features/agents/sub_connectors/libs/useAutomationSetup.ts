@@ -10,8 +10,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
 import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
-import type { DesignUseCase } from '@/lib/types/frontendTypes';
+import { usePersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
 
@@ -88,12 +87,14 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const [elapsed, setElapsed] = useState(0);
 
   const personas = useAgentStore((s) => s.personas);
-  const availableUseCases = useMemo<DesignUseCase[]>(() => {
-    const persona = personas.find((p) => p.id === personaId);
-    if (!persona) return [];
-    const ucs = parseDesignContext(persona.design_context).useCases ?? [];
-    return ucs.filter((uc) => uc.enabled !== false);
-  }, [personas, personaId]);
+  // The capability picker: charters first, design-context use cases only for a
+  // persona the e19 migration has not reached. `includeInactive` stays false —
+  // an automation may only target a capability that is live.
+  const designContext = useMemo(
+    () => personas.find((p) => p.id === personaId)?.design_context ?? null,
+    [personas, personaId],
+  );
+  const { capabilities: availableUseCases } = usePersonaCapabilities(personaId, { designContext });
 
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);

@@ -173,14 +173,20 @@ pub fn list_claims(pool: &DbPool, memory_id: &str) -> Result<Vec<MemoryClaim>, A
 /// — the Brain dashboard's `open_disputes` cell. Reads the denormalized
 /// counter this module maintains, so it is one indexed scan.
 pub fn count_disputed_for_persona(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
-    let conn = pool.conn("memory_claims::count_disputed_for_persona")?;
-    let n: i64 = conn.query_row(
-        "SELECT COUNT(*) AS n FROM persona_memories
-         WHERE persona_id = ?1 AND open_claim_count > 0",
-        params![persona_id],
-        |r| r.get("n"),
-    )?;
-    Ok(n)
+    timed_query!(
+        "persona_memories",
+        "memory_claims::count_disputed_for_persona",
+        {
+            let conn = pool.conn("memory_claims::count_disputed_for_persona")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memories
+                 WHERE persona_id = ?1 AND open_claim_count > 0",
+                params![persona_id],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 /// Disputed memories (open negatives > 0) projected onto dev projects: a

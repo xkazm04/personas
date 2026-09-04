@@ -28,10 +28,11 @@ import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes"
 // React components + the archetype API hook; this pure module keeps the promote
 // path's import graph free of them.
 import {
-  composeCoreProfile,
-  extractDesignCore,
+  composeManifestSeed,
+  extractDesignSeed,
   type PersonaCoreLaunchSnapshot,
 } from "@/features/agents/sub_glyph/personaCore/composeCoreProfile";
+import { getPersonaManifest } from "@/api/agents/personaBrain";
 import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
@@ -281,7 +282,7 @@ export function useLifecycle({
           excluded.length > 0 ? excluded : undefined,
         );
 
-        // Persona Core Codex → typed runtime Core (seam b). This is
+        // Persona Core Codex → MANIFEST SEED PROSE (seam b). This is
         // deterministic ordering, not a race: `promote_build_draft` runs its
         // seed-if-absent `core_profile` stamp (build_sessions.rs "Design D",
         // write-if-null) inside the command body BEFORE returning, so this
@@ -290,18 +291,29 @@ export function useLifecycle({
         // exists (cinema layout has no codex; codex untouched; adoption flow),
         // the stamp source stands unchanged. Best-effort: a failed update
         // leaves the seeded core in place, so the persona is never core-less.
+        //
+        // The `getPersonaManifest` call that follows is NOT a read — it is the
+        // seeder's only door. `core_profile` is the manifest MIRROR now, and
+        // the codex's prose reaches the persona's `# Mandate` / `# Boundaries`
+        // only when `manifest::ensure` folds it in. Without this call the JSON
+        // sits in the column until someone opens the Manifest tab, and the
+        // prompt's `## Manifest` section skips it in the meantime (a
+        // prose-only blob no longer deserializes as the legacy `PersonaCore`,
+        // whose dial fields are still required). Best-effort, same as above.
         const coreSnapshot = consumeCoreSnapshot?.() ?? null;
         if (coreSnapshot) {
-          const composed = composeCoreProfile(
+          const composed = composeManifestSeed(
             coreSnapshot.state,
             coreSnapshot.archetype,
-            extractDesignCore(agentIR),
+            extractDesignSeed(agentIR),
           );
           if (composed) {
             await updatePersona(
               effectivePid,
               buildUpdateInput({ core_profile: JSON.stringify(composed) }),
-            ).catch(silentCatch("lifecycle:codexCoreProfile"));
+            )
+              .then(() => getPersonaManifest(effectivePid))
+              .catch(silentCatch("lifecycle:codexManifestSeed"));
           }
         }
 

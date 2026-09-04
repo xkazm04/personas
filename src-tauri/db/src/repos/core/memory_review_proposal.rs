@@ -296,14 +296,20 @@ pub fn count_pending_for_persona(
     persona_id: &str,
     kind: &str,
 ) -> Result<i64, AppError> {
-    let conn = pool.conn("memory_review_proposal::count_pending_for_persona")?;
-    let n: i64 = conn.query_row(
-        "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
-         WHERE persona_id = ?1 AND kind = ?2 AND status = 'pending_review'",
-        params![persona_id, kind],
-        |r| r.get("n"),
-    )?;
-    Ok(n)
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_pending_for_persona",
+        {
+            let conn = pool.conn("memory_review_proposal::count_pending_for_persona")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND kind = ?2 AND status = 'pending_review'",
+                params![persona_id, kind],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 /// Proposals (any kind) a human DISCARDED since `since` (RFC-3339 / SQLite
@@ -314,15 +320,21 @@ pub fn count_discarded_since(
     persona_id: &str,
     since: &str,
 ) -> Result<i64, AppError> {
-    let conn = pool.conn("memory_review_proposal::count_discarded_since")?;
-    let n: i64 = conn.query_row(
-        "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
-         WHERE persona_id = ?1 AND status = 'discarded'
-           AND decided_at IS NOT NULL AND decided_at >= ?2",
-        params![persona_id, since],
-        |r| r.get("n"),
-    )?;
-    Ok(n)
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_discarded_since",
+        {
+            let conn = pool.conn("memory_review_proposal::count_discarded_since")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND status = 'discarded'
+                   AND decided_at IS NOT NULL AND decided_at >= ?2",
+                params![persona_id, since],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 /// Mark a proposal as `applied`. Caller is responsible for executing

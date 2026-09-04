@@ -376,7 +376,7 @@ pub struct RosterMember {
 /// frontmatter stripped; legacy `PersonaCore` JSON is reduced to its prose
 /// fields. Char-capped with an ellipsis; `single_line` flattens newlines for
 /// roster bullets. `None` when nothing readable remains.
-fn core_digest(raw: &str, max_chars: usize, single_line: bool) -> Option<String> {
+fn core_digest(raw: &str, max_chars: usize, single_line: bool) -> Option<(String, bool)> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return None;
@@ -428,11 +428,22 @@ fn core_digest(raw: &str, max_chars: usize, single_line: bool) -> Option<String>
         text
     };
     // Char-safe truncation (byte-slicing a multibyte boundary panics).
+    // Returns `(text, truncated)` rather than splicing an ellipsis in as the
+    // only record of the cut: the caller decides how to mark it, and a size
+    // check downstream can tell a whole digest from a clipped one.
     if text.chars().count() <= max_chars {
-        Some(text)
+        Some((text, false))
     } else {
-        let head: String = text.chars().take(max_chars).collect();
-        Some(format!("{head}…"))
+        Some((text.chars().take(max_chars).collect(), true))
+    }
+}
+
+/// Render a digest for a prompt, naming the cut in words when there was one.
+fn render_digest((text, truncated): (String, bool)) -> String {
+    if truncated {
+        format!("{text} [truncated]")
+    } else {
+        text
     }
 }
 
@@ -496,7 +507,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
             .and_then(|c| core_digest(c, ROSTER_CORE_DIGEST_CHARS, true))
         {
             Some(core) => {
-                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
+                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, render_digest(core));
             }
             None => {
                 let _ = writeln!(p, "- {} ({})", m.name, m.id);
@@ -1271,6 +1282,7 @@ pub fn build_turn_prompt(
     );
     let _ = writeln!(p, "\n## YOUR IDENTITY\n{identity}");
     if let Some(core) = core_profile.and_then(|c| core_digest(c, TURN_CORE_DIGEST_CHARS, false)) {
+        let core = render_digest(core);
         let _ = writeln!(p, "\n## YOUR CORE (think and speak from this)\n{core}");
     }
     if let Some(ns) = north_star {
@@ -1756,7 +1768,7 @@ pub fn build_split_prompt(
             .and_then(|c| core_digest(c, ROSTER_CORE_DIGEST_CHARS, true))
         {
             Some(core) => {
-                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
+                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, render_digest(core));
             }
             None => {
                 let _ = writeln!(p, "- {} ({})", m.name, m.id);

@@ -10,14 +10,14 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {
   getHealthMeta,
   STATE_HEX,
-  type DisplayUseCase,
-} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+  type PersonaCapability,
+} from '@/lib/personas/capabilities';
 
 const RUN_LOCK_MS = 60_000;
 const SIGIL_SIZE = 72;
 
 interface UseCaseRowProps {
-  uc: DisplayUseCase;
+  uc: PersonaCapability;
   isPendingToggle: boolean;
   onOpen: () => void;
   onToggle: () => void;

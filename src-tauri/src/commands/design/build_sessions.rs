@@ -3022,36 +3022,34 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     // BEGIN TRANSACTION — all writes are atomic from here
     // ================================================================
-    let mut conn = match state.db.get() {
-        Ok(c) => c,
-        Err(e) => {
-            super::template_adopt::delete_charter_rows(&state.db, &charter_ids);
-            return Err(AppError::Internal(format!("Pool error: {e}")));
-        }
-    };
-    let tx_outcome = (|| -> Result<(u32, u32, Vec<String>, u32, u32), AppError> {
-        let tx = conn.transaction().map_err(AppError::Database)?;
+    // The connection and the transaction belong to the persistence layer:
+    // `build_session_repo::with_promote_tx` checks out, opens an IMMEDIATE
+    // transaction (the snapshot step reads MAX(version_number) and then writes
+    // against it), commits on Ok and rolls back on Err. This command only
+    // supplies the writes, and holds no pooled connection of its own — which
+    // matters because the post-commit section below asks the pool for more.
+    let tx_outcome = build_session_repo::with_promote_tx(&state.db, |tx| {
         let now = chrono::Utc::now().to_rfc3339();
 
-        let tools_created = create_tools_in_tx(&tx, &persona_id, &tool_actions, &now)?;
+        let tools_created = create_tools_in_tx(tx, &persona_id, &tool_actions, &now)?;
         // Compute the persona's own emit-event set once; both trigger config
         // patching and subscription insertion need it to decide whether an inbound
         // listen is intra-persona (self-loop) or cross-persona (chain) so the
         // promote path can default `source_filter = "*"` for chain inbounds.
         let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
         let (triggers_created, created_trigger_ids) =
-            create_triggers_in_tx(&tx, &persona_id, &ir, &charter_ids, &persona_emits, &now)?;
+            create_triggers_in_tx(tx, &persona_id, &ir, &charter_ids, &persona_emits, &now)?;
         let subscriptions_created = create_event_subscriptions_in_tx(
-            &tx,
+            tx,
             &persona_id,
             &ir,
             &use_cases,
             &persona_emits,
             &now,
         )?;
-        let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
+        let assertions_created = create_output_assertions_in_tx(tx, &persona_id, &ir, &now)?;
         update_persona_in_tx(
-            &tx,
+            tx,
             &persona_id,
             &ir,
             &notification_channels,
@@ -3060,7 +3058,7 @@ pub async fn promote_build_draft_inner(
             &now,
         )?;
         create_version_snapshot_in_tx(
-            &tx,
+            tx,
             &persona_id,
             &ir,
             &design_context_str,
@@ -3076,10 +3074,6 @@ pub async fn promote_build_draft_inner(
         )
         .map_err(AppError::Database)?;
 
-        // ================================================================
-        // COMMIT — all entities are persisted atomically
-        // ================================================================
-        tx.commit().map_err(AppError::Database)?;
         Ok((
             tools_created,
             triggers_created,
@@ -3087,7 +3081,7 @@ pub async fn promote_build_draft_inner(
             subscriptions_created,
             assertions_created,
         ))
-    })();
+    });
     let (
         tools_created,
         triggers_created,

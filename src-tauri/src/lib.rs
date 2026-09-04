@@ -254,6 +254,7 @@ pub fn run() {
             commands::core::responsibilities::create_persona_responsibility,
             commands::core::responsibilities::update_persona_responsibility,
             commands::core::responsibilities::retire_persona_responsibility,
+            commands::core::responsibilities::set_persona_responsibility_status,
             commands::core::responsibilities::list_attention_ledger,
             commands::core::memory_compile::compile_persona_memories,
             // Core -- Memory curation runs (persona_background_job framework)

@@ -1090,8 +1090,18 @@ async fn harvest_improve_draft(pool: &DbPool, persona_id: &str, execution_id: &s
 /// neither the daily cap nor the improve once-per-day gate tighten.
 pub(crate) fn absorb_improve_output(pool: &DbPool, persona_id: &str, output: &str) {
     use crate::engine::persona_brain::growth;
-    let Some(op) = growth::extract_responsibility_draft_op(output) else {
-        return;
+    let op = match growth::extract_responsibility_draft_op(output) {
+        Ok(Some(op)) => op,
+        // Nothing proposed — the ordinary outcome of an improve pass.
+        Ok(None) => return,
+        // The pass DID try and the envelope was unreadable. Same terminal
+        // `refused` note an invalid draft gets, under its own kind, so a
+        // grammar the model cannot follow shows up in the ledger instead of
+        // reading as a run that proposed nothing.
+        Err(reason) => {
+            ledger_draft_refusal(pool, persona_id, "responsibility_draft_unparsed", &reason);
+            return;
+        }
     };
     match growth::file_responsibility_draft(pool, persona_id, &op) {
         Ok(growth::DraftFiling::Filed { proposal_id }) => tracing::info!(
@@ -1104,24 +1114,28 @@ pub(crate) fn absorb_improve_output(pool: &DbPool, persona_id: &str, output: &st
             "persona_attention: draft charter op deduped — one per persona per day"
         ),
         Ok(growth::DraftFiling::Invalid { reason }) => {
-            let note = serde_json::json!({
-                "kind": "responsibility_draft_rejected",
-                "error": reason,
-            });
-            if let Err(e) = attention_ledger::insert_refusal(
-                pool,
-                persona_id,
-                None,
-                KIND_ATTENTION,
-                Some(LANE_IMPROVE),
-                &note.to_string(),
-            ) {
-                tracing::warn!(persona_id, error = %e,
-                    "persona_attention: failed to ledger the dropped draft");
-            }
+            ledger_draft_refusal(pool, persona_id, "responsibility_draft_rejected", &reason);
         }
         Err(e) => tracing::warn!(persona_id, error = %e,
             "persona_attention: draft charter filing failed"),
+    }
+}
+
+/// One terminal `refused` note for a draft that never became a proposal.
+/// `count_today` excludes refusals, so neither the daily cap nor the improve
+/// once-per-day gate tighten because the model got the grammar wrong.
+fn ledger_draft_refusal(pool: &DbPool, persona_id: &str, kind: &str, reason: &str) {
+    let note = serde_json::json!({ "kind": kind, "error": reason });
+    if let Err(e) = attention_ledger::insert_refusal(
+        pool,
+        persona_id,
+        None,
+        KIND_ATTENTION,
+        Some(LANE_IMPROVE),
+        &note.to_string(),
+    ) {
+        tracing::warn!(persona_id, kind, error = %e,
+            "persona_attention: failed to ledger the dropped draft");
     }
 }
 

@@ -928,6 +928,7 @@ fn record_failure(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+    use personas_db::PoolExt;
     use rusqlite::Connection;
 
     const PERSONA: &str = "persona-1";
@@ -1327,7 +1328,7 @@ mod tests {
             crate::companion::brain::test_home::TestHome::new("persona_channel_absorb_reply");
         let pool = init_test_db().unwrap();
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.conn("test:persona_channel").unwrap();
             seed_persona(&conn, PERSONA);
         }
 
@@ -1392,7 +1393,7 @@ mod tests {
             crate::companion::brain::test_home::TestHome::new("persona_channel_absorb_edges");
         let pool = init_test_db().unwrap();
         {
-            let conn = pool.get().unwrap();
+            let conn = pool.conn("test:persona_channel").unwrap();
             seed_persona(&conn, PERSONA);
         }
 

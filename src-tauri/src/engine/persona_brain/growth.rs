@@ -75,35 +75,85 @@ fn op_payload(trimmed: &str) -> Option<&str> {
     candidate.starts_with('{').then_some(candidate)
 }
 
+/// How much of an unparseable op line is carried into the failure reason.
+/// Long enough to identify the offending envelope in a log or a ledger row,
+/// short enough that a runaway line cannot become the row.
+const MALFORMED_HEAD: usize = 240;
+
+/// What [`extract_op_lines`] saw.
+pub(crate) struct OpScan {
+    /// `text` with every matched op line removed.
+    pub text: String,
+    /// The envelopes that parsed AND carried the requested op name.
+    pub ops: Vec<serde_json::Value>,
+    /// Op-shaped lines (`OP: {…}` or a bare `{…}`) whose JSON did not parse,
+    /// each already reduced to a bounded, quotable reason. These are the
+    /// proposals the model PAID to emit and got wrong; they are NOT stripped
+    /// from `text`, and a caller that treats "nothing proposed" and "the
+    /// proposal was unreadable" as the same outcome is discarding the only
+    /// evidence that the attempt happened.
+    pub malformed: Vec<String>,
+}
+
 /// Scan `text` line by line for `{"op": <op_name>, …}` lines. Matched lines
 /// are REMOVED from the returned text and their parsed envelopes returned.
 /// An op-shaped line that fails to parse, or parses to a different op, is
 /// left in the text untouched — stripping only what was actually understood
 /// keeps a malformed proposal visible instead of silently vanishing.
-pub(crate) fn extract_op_lines(text: &str, op_name: &str) -> (String, Vec<serde_json::Value>) {
+///
+/// A line that parses but names a DIFFERENT op is not malformed: the two
+/// grammars share this scanner and a reply may legitimately carry both.
+pub(crate) fn extract_op_lines(text: &str, op_name: &str) -> OpScan {
     let mut kept: Vec<&str> = Vec::new();
     let mut ops: Vec<serde_json::Value> = Vec::new();
+    let mut malformed: Vec<String> = Vec::new();
     for line in text.lines() {
         let trimmed = line.trim();
         if let Some(payload) = op_payload(trimmed) {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(payload) {
-                if v.get("op").and_then(|o| o.as_str()) == Some(op_name) {
-                    ops.push(v);
-                    continue;
+            match serde_json::from_str::<serde_json::Value>(payload) {
+                Ok(v) => {
+                    if v.get("op").and_then(|o| o.as_str()) == Some(op_name) {
+                        ops.push(v);
+                        continue;
+                    }
+                }
+                Err(e) => {
+                    let head: String = payload.chars().take(MALFORMED_HEAD).collect();
+                    let ellipsis = if payload.chars().count() > MALFORMED_HEAD {
+                        "…"
+                    } else {
+                        ""
+                    };
+                    malformed.push(format!(
+                        "op line did not parse as JSON: {e} — {head}{ellipsis}"
+                    ));
                 }
             }
         }
         kept.push(line);
     }
-    (kept.join("\n"), ops)
+    OpScan {
+        text: kept.join("\n"),
+        ops,
+        malformed,
+    }
 }
 
 // ── Channel door: self-model diffs out of a chat reply ─────────────────────
 
 /// Strip every `propose_manifest_diff` OP line from a chat reply. Returns
 /// `(visible_reply, envelopes)`.
+///
+/// An op-shaped line that did not parse is warned here rather than returned:
+/// the chat path's contract is that the visible reply survives whatever the
+/// model did, and the malformed line is already left in that reply for the
+/// operator to see. The warn is what makes it countable.
 pub(crate) fn extract_manifest_diff_ops(text: &str) -> (String, Vec<serde_json::Value>) {
-    extract_op_lines(text, OP_PROPOSE_MANIFEST_DIFF)
+    let scan = extract_op_lines(text, OP_PROPOSE_MANIFEST_DIFF);
+    for reason in &scan.malformed {
+        tracing::warn!(reason = %reason, "channel reply carried an unreadable OP line");
+    }
+    (scan.text, scan.ops)
 }
 
 /// File the diffs carried by a reply's OP envelopes as ONE `self_model_diff`
@@ -192,18 +242,32 @@ pub(crate) fn file_channel_manifest_diffs(
 
 /// The first `propose_responsibility_draft` envelope in an execution's
 /// output; extras are ignored with a warn (the grammar says ONE).
-pub(crate) fn extract_responsibility_draft_op(output: &str) -> Option<serde_json::Value> {
-    let (_, mut ops) = extract_op_lines(output, OP_PROPOSE_RESPONSIBILITY_DRAFT);
-    if ops.len() > 1 {
-        tracing::warn!(
-            extras = ops.len() - 1,
-            "improve output carried more than one responsibility-draft op; keeping the first"
-        );
+///
+/// Three outcomes, deliberately kept apart:
+///
+/// * `Ok(Some(op))` — an envelope was understood.
+/// * `Ok(None)` — the pass proposed nothing. The common, legitimate case.
+/// * `Err(reason)` — the pass DID emit an op-shaped line and it was
+///   unreadable. Collapsing this into `Ok(None)` would throw away the reason
+///   a paid improve run produced nothing, which is the one thing that makes
+///   a bad grammar addendum visible: the caller ledgers it as a terminal
+///   `refused` note instead of letting the run look idle.
+pub(crate) fn extract_responsibility_draft_op(
+    output: &str,
+) -> Result<Option<serde_json::Value>, String> {
+    let mut scan = extract_op_lines(output, OP_PROPOSE_RESPONSIBILITY_DRAFT);
+    if !scan.ops.is_empty() {
+        if scan.ops.len() > 1 {
+            tracing::warn!(
+                extras = scan.ops.len() - 1,
+                "improve output carried more than one responsibility-draft op; keeping the first"
+            );
+        }
+        return Ok(Some(scan.ops.swap_remove(0)));
     }
-    if ops.is_empty() {
-        None
-    } else {
-        Some(ops.swap_remove(0))
+    match scan.malformed.into_iter().next() {
+        Some(reason) => Err(reason),
+        None => Ok(None),
     }
 }
 
@@ -442,10 +506,11 @@ fn draft_resp_from_input(input: &CreatePersonaResponsibilityInput) -> PersonaRes
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+    use personas_db::PoolExt;
     use personas_engine::prompt::SELF_MODEL_OP_ADDENDUM;
 
     fn seed_persona(pool: &DbPool, id: &str) {
-        pool.get()
+        pool.conn("test:seed_persona")
             .unwrap()
             .execute(
                 "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
@@ -537,9 +602,36 @@ mod tests {
             serde_json::json!({"op": OP_PROPOSE_RESPONSIBILITY_DRAFT, "input": {"title": "A"}}),
             serde_json::json!({"op": OP_PROPOSE_RESPONSIBILITY_DRAFT, "input": {"title": "B"}}),
         );
-        let op = extract_responsibility_draft_op(&out).expect("op found");
+        let op = extract_responsibility_draft_op(&out)
+            .expect("scan succeeded")
+            .expect("op found");
         assert_eq!(op["input"]["title"], "A");
-        assert!(extract_responsibility_draft_op("no ops here").is_none());
+
+        // Nothing proposed is Ok(None), not an error.
+        assert!(extract_responsibility_draft_op("no ops here")
+            .expect("scan succeeded")
+            .is_none());
+
+        // An op-shaped line the model got wrong is Err(reason), NOT Ok(None):
+        // the caller must be able to tell "proposed nothing" from "proposed
+        // something unreadable", and the reason must quote the offender.
+        let broken = "report...\nOP: {\"op\": \"propose_responsibility_draft\", \"input\":}\n";
+        let err = extract_responsibility_draft_op(broken).expect_err("malformed op line");
+        assert!(err.contains("did not parse as JSON"), "reason was: {err}");
+        assert!(
+            err.contains("propose_responsibility_draft"),
+            "reason was: {err}"
+        );
+
+        // A line naming a DIFFERENT op is not malformed — the two grammars
+        // share the scanner and a reply may carry both.
+        let other = format!(
+            "{}\n",
+            serde_json::json!({"op": OP_PROPOSE_MANIFEST_DIFF, "diffs": []})
+        );
+        assert!(extract_responsibility_draft_op(&other)
+            .expect("scan succeeded")
+            .is_none());
     }
 
     // -- Draft filing (validate → dedupe → propose-only) ---------------------

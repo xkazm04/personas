@@ -62,9 +62,35 @@ export const updatePersonaResponsibility = (
 ) =>
   invoke<PersonaResponsibility>("update_persona_responsibility", { id, input });
 
+/**
+ * The `persona_responsibilities.status` vocabulary. The Rust enum is
+ * deliberately not ts-exported (the wire carries the lowercase string, like
+ * `Persona.lifecycle`), so the union is declared here and the server re-parses
+ * it — an unknown value is refused there, not silently stored.
+ */
+export type ResponsibilityStatusValue =
+  | "draft"
+  | "active"
+  | "suspended"
+  | "retired";
+
 /** Retire a charter (status -> `retired`); returns the refreshed row. */
 export const retirePersonaResponsibility = (id: string) =>
   invoke<PersonaResponsibility>("retire_persona_responsibility", { id });
+
+/**
+ * Move a charter along the status ladder. This is the door that makes `draft`
+ * escapable: an agent-proposed charter is minted as a draft on approval, so
+ * without an activation path every proposed charter would stay inert.
+ */
+export const setPersonaResponsibilityStatus = (
+  id: string,
+  status: ResponsibilityStatusValue,
+) =>
+  invoke<PersonaResponsibility>("set_persona_responsibility_status", {
+    id,
+    status,
+  });
 
 /**
  * A persona's attention/consolidation passes, newest first (read-only — the

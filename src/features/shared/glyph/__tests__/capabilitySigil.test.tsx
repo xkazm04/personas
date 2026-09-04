@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { CapabilitySigil } from '../CapabilitySigil';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import type { PersonaCapability } from '@/lib/personas/capabilities';
 
 /**
  * The sigil's `<radialGradient>` (and, in CVD-safe mode, its eight
@@ -15,7 +15,7 @@ import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/
  * because both copies happened to emit identical stops — while the stops
  * already vary with `isDisabled` and the id did not.
  */
-const uc = (overrides: Partial<DisplayUseCase> = {}): DisplayUseCase => ({
+const uc = (overrides: Partial<PersonaCapability> = {}): PersonaCapability => ({
   id: 'uc-1',
   title: 'Draft the weekly digest',
   description: '',
@@ -32,7 +32,8 @@ const uc = (overrides: Partial<DisplayUseCase> = {}): DisplayUseCase => ({
   // `raw` is the escape hatch for policy controls and history fetches, which
   // this component has none of. Building a full DesignUseCase here would add
   // ~30 lines of irrelevant shape.
-  raw: {} as DisplayUseCase['raw'],
+  origin: 'design-use-case',
+  raw: {} as PersonaCapability['raw'],
   ...overrides,
 });
 

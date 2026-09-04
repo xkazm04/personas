@@ -24,7 +24,7 @@ import {
   Sword, Feather, ChevronDown, Check, DollarSign, Pin, Plus,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 import { ALL_MODELS, selectedModelsToConfigs, ANTHROPIC_MODELS, OLLAMA_LOCAL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelOption } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
@@ -33,7 +33,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ArenaHistory } from './ArenaHistory';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
+import { resolveEffectiveModel } from '@/lib/personas/modelResolution';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -165,7 +165,8 @@ export function ArenaPanelColosseum({
     defaultModels: new Set(['haiku', 'sonnet']),
   });
 
-  const useCases = useSelectedUseCases();
+  // Charters first, design-context use cases only pre-migration — one door.
+  const useCases = useSelectedPersonaCapabilities();
   const selectedUseCase = useMemo(
     () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,
     [useCases, selectedUseCaseId],
@@ -176,12 +177,12 @@ export function ArenaPanelColosseum({
   // had a model_override, defeating the arena's multi-model premise. We now
   // surface the override as an opt-in chip; the user adds it explicitly.
   const overrideHint = useMemo(() => {
-    const override = selectedUseCase?.model_override;
+    const override = selectedUseCase?.modelOverride;
     if (!override) return null;
     const match = ALL_MODELS.find((m) => m.provider === override.provider && m.model === override.model);
     if (!match) return null;
     return { id: match.id, label: match.label };
-  }, [selectedUseCase?.model_override]);
+  }, [selectedUseCase?.modelOverride]);
   const addOverrideToRoster = () => {
     if (overrideHint && !selectedModels.has(overrideHint.id)) {
       setSelectedModels(new Set([...selectedModels, overrideHint.id]));
@@ -217,8 +218,8 @@ export function ArenaPanelColosseum({
     : '';
 
   const effectiveModel = useMemo(
-    () => resolveEffectiveModel(selectedUseCase?.model_override ?? undefined, selectedPersona?.model_profile),
-    [selectedUseCase?.model_override, selectedPersona?.model_profile],
+    () => resolveEffectiveModel(selectedUseCase?.modelOverride ?? undefined, selectedPersona?.model_profile),
+    [selectedUseCase?.modelOverride, selectedPersona?.model_profile],
   );
   const championModel = useMemo(() => {
     const match = ALL_MODELS.find(

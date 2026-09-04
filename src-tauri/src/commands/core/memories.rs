@@ -904,12 +904,10 @@ pub fn apply_persona_memory_review_proposal(
         );
         // The mirror changed `core_profile`: drop the cached engine session
         // so the next run assembles against the new text (same invalidation
-        // `update_persona` performs).
-        let pool = state.session_pool.clone();
-        let pid = outcome.persona_id.clone();
-        tauri::async_runtime::spawn(async move {
-            pool.invalidate(&pid).await;
-        });
+        // `update_persona` performs). Through the ONE invalidation door, which
+        // owns the detached task's panic boundary — a second inline spawn here
+        // would be a second place that can die silently.
+        super::persona_brain::invalidate_session(&state, &outcome.persona_id);
         return Ok(ApplyMemoryReviewProposalResult {
             proposal_id,
             deleted: 0,

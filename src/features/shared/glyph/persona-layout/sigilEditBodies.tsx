@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import type { PersonaCapability } from '@/lib/personas/capabilities';
 import type { Translations } from '@/i18n/en';
 import { interpolate } from '@/i18n/useTranslation';
 
 interface SigilBodyArgs {
   /** The capability the modal is editing. */
-  uc: DisplayUseCase;
+  uc: PersonaCapability;
   /** Active translations, threaded so this read-only body renders localized copy. */
   t: Translations;
 }

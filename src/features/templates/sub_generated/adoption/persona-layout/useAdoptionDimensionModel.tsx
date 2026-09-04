@@ -12,7 +12,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
-import { toDisplayUseCase, type DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import { capabilityFromUseCase, type PersonaCapability } from '@/lib/personas/capabilities';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
@@ -41,9 +41,9 @@ const BUILT_IN_INBOX: ChannelSpecV2 = {
 };
 
 export interface AdoptionDimensionModel {
-  items: DisplayUseCase[];
+  items: PersonaCapability[];
   activeCapabilityId: string | null;
-  activeUc: DisplayUseCase | null;
+  activeUc: PersonaCapability | null;
   setActiveCapabilityId: (id: string) => void;
   activeDim: GlyphDimension | null;
   setActiveDim: React.Dispatch<React.SetStateAction<GlyphDimension | null>>;
@@ -131,14 +131,14 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     });
   }, [activeCapabilityId, sessionId]);
 
-  const items = useMemo<DisplayUseCase[]>(() => {
+  const items = useMemo<PersonaCapability[]>(() => {
     const raw = ((designResult?.use_cases ?? []) as unknown[]) as DesignUseCase[];
     return raw.map((uc) => {
       const id = String((uc as { id?: unknown }).id ?? '').trim();
       if (!id) return null;
       const enabled = selectedUseCaseIds.has(id);
-      return toDisplayUseCase({ ...uc, id, enabled } as DesignUseCase);
-    }).filter((u): u is DisplayUseCase => u !== null);
+      return capabilityFromUseCase({ ...uc, id, enabled } as DesignUseCase);
+    }).filter((u): u is PersonaCapability => u !== null);
   }, [designResult, selectedUseCaseIds]);
 
   useEffect(() => {

@@ -1,7 +1,8 @@
-export { DesignTab } from './DesignTab';
 export { DesignHub } from './DesignHub';
-export { DesignPhasePanel } from './phases/DesignPhasePanel';
-export { DesignQuestionPanel } from './DesignQuestionPanel';
-export { PhaseIndicator } from './PhaseIndicator';
-export { IntentResultExtras } from './IntentResultExtras';
-export { useDesignTabState } from './libs/useDesignTabState';
+
+// The LLM design-wizard chrome (`DesignTab`, `DesignQuestionPanel`,
+// `PhaseIndicator`, `IntentResultExtras`, `DesignPhasePanel` and the whole
+// `phases/` tree) was retired with the agent-manifest rebase (2026-09-04)
+// together with the `prompt` sub-tab that was its only mount point. Nothing
+// outside this folder ever imported it — `EditorLazyTabs`' `DesignTab` is an
+// alias for `DesignHub`, not for the deleted wizard.

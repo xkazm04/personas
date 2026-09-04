@@ -11,8 +11,10 @@
 //! The manifest and dashboard commands touch rusqlite AND the filesystem, so
 //! they are async over `spawn_blocking` rather than sync on the IPC worker.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use tauri::State;
 
 use crate::companion::brain::identity::IdentityDiff;
@@ -42,11 +44,35 @@ where
 /// A manifest write changed `personas.core_profile` (the mirror): drop the
 /// cached engine session so the next run assembles against the new text —
 /// the same invalidation `update_persona` performs.
-fn invalidate_session(state: &Arc<AppState>, persona_id: &str) {
+///
+/// The ONE door for this — `commands::core::memories` routes its
+/// `self_model_diff` apply branch through here rather than spawning its own
+/// copy, so there is a single place that decides who waits on the detached
+/// task. Detached deliberately (the caller must not block an IPC reply on a
+/// cache drop), so it carries its own panic boundary: a panic inside
+/// `invalidate` would otherwise be indistinguishable from a completed
+/// invalidation, and the persona would keep answering from the pre-write Core
+/// with nothing anywhere saying why.
+///
+/// `tauri::async_runtime::spawn` rather than `background_job::spawn_guarded`:
+/// `apply_persona_memory_review_proposal` is a SYNC command, so there is no
+/// tokio runtime in scope for `tokio::spawn` at that call site.
+pub(crate) fn invalidate_session(state: &Arc<AppState>, persona_id: &str) {
     let pool = state.session_pool.clone();
     let pid = persona_id.to_string();
+    let reported = pid.clone();
     tauri::async_runtime::spawn(async move {
-        pool.invalidate(&pid).await;
+        let outcome = AssertUnwindSafe(async move { pool.invalidate(&pid).await })
+            .catch_unwind()
+            .await;
+        if let Err(panic) = outcome {
+            tracing::error!(
+                persona_id = %reported,
+                panic = %crate::utils::extract_panic_message(panic),
+                "session invalidation panicked — the cached engine session may still \
+                 hold the pre-write core_profile until the next natural eviction"
+            );
+        }
     });
 }
 

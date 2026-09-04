@@ -414,10 +414,30 @@ export type GoalsTab = "board" | "timeline" | "progress";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
 export type KpisTab = "dashboard" | "proposals";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
-/** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing.
- *  `core` | `responsibilities` | `brain` are the living-agent surfaces, folded in
- *  from the short-lived top-level Life tab (2026-08-31). */
-export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations" | "core" | "responsibilities" | "brain";
+/** Sub-tab within the Design hub — the agent's four standing surfaces, in the
+ *  order it is authored: what it IS (`manifest`), what it OWNS
+ *  (`responsibilities`), what it REMEMBERS (`brain`), what it REACHES
+ *  (`connectors`). `manifest` is the default landing.
+ *
+ *  Collapsed from ten to four with the agent-manifest rebase (2026-09-04).
+ *  `core` became `manifest`; `use-cases` was absorbed by `responsibilities`
+ *  (a charter replaces a use case); `prompt` / `parameters` / `triggers` /
+ *  `messaging` were read-only recaps of the build wizard; `automations` never
+ *  had a tab at all — it was a union member nothing ever rendered. Every
+ *  retired value is remapped on rehydrate (`systemStore`), never discarded. */
+export type DesignSubTab = "manifest" | "responsibilities" | "brain" | "connectors";
+/** Retired DesignSubTab values, kept only for migrating persisted state.
+ *  A build that meets one of these in localStorage remaps it rather than
+ *  landing the hub on a value no tab answers to. */
+export type LegacyDesignSubTab =
+  | "use-cases"
+  | "prompt"
+  | "parameters"
+  | "triggers"
+  | "messaging"
+  | "automations"
+  | "core"
+  | "design";
 /** Legacy EditorTab values kept only for migrating persisted state.
  *  "life" was the top-level living-agent tab, folded into Design sub-tabs. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health" | "life";

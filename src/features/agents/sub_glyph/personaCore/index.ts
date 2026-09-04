@@ -6,5 +6,5 @@ export { PersonaCoreBadge } from "./PersonaCoreBadge";
 export { PersonaCoreModal } from "./PersonaCoreModal";
 export { usePersonaCore } from "./usePersonaCore";
 export type { PersonaCore } from "./types";
-export { composeCoreProfile, extractDesignCore, narrowCoreProfile } from "./composeCoreProfile";
-export type { PersonaCoreLaunchSnapshot } from "./composeCoreProfile";
+export { composeManifestSeed, extractDesignSeed, narrowManifestSeed } from "./composeCoreProfile";
+export type { PersonaCoreLaunchSnapshot, ManifestSeed } from "./composeCoreProfile";

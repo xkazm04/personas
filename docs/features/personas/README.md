@@ -30,24 +30,29 @@ as a **persona-core configurator**, so creation is one flow:
    3-column grid: Character · Configuration · Mentality), rethought 2026-07-08
    against the real corpus. Three surfaces (Memory is deliberately NOT here — the
    build surface's memory dimension owns it):
-   - **Disposition** — one Cautious↔Bold slider. (Collapsed from Risk+Speed,
-     which are near-collinear across the 18 dial-carrying personas.)
    - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
      Autonomy / Communication / Reliability / Temperament), distilled from the
      `principles`/`decision_principles`/`voice`/`stance` prose of all 120
      personas and ordered by corpus frequency (`catalog.ts`). This carries
-     most of the character — 102/111 base templates have no numeric `core` at
-     all. Plus a **conflict style** (challenger/analyst/pragmatist/harmonizer):
-     same model + traits, different conflict style = different deliberation.
+     the character. Plus a **conflict style**
+     (challenger/analyst/pragmatist/harmonizer): same model + traits,
+     different conflict style = different deliberation.
    - **Model** — tier (Haiku/Sonnet/Opus) **× reasoning effort** (low/medium/
      high/xhigh). Both are first-class, backend-wired (`--effort` on every run;
      `cli_args.rs`). Effort was previously UI-hidden outside Settings→Model
      Routing. There is no separate "Speed" knob — effort is the real compute axis.
    - **Mentality** — the 9 archetypes (`scripts/templates/_archetypes.json`,
      served by `list_archetypes`) as a snapshot column; picking one seeds
-     disposition + conflict style **and preloads that archetype's dominant traits**
+     conflict style **and preloads that archetype's dominant traits**
      (`ARCHETYPE_TRAITS` in `catalog.ts`) so a preset lands as a complete
      character.
+   - **What the codex produces is prose, not numbers.** `composeManifestSeed`
+     (`personaCore/composeCoreProfile.ts`) maps the archetype's authored
+     identity / voice / motivation / stance / north-star, plus each selected
+     trait's directive, onto the exact key set the Rust manifest seeder reads.
+     There are no numeric dials to compose: the runtime stopped rendering them
+     and the codex stopped authoring them, so a persona's character is words
+     somebody wrote rather than a band table derived from a slider.
    - The chosen core is appended to the launch intent as a directive block (same
      mechanism as the review toggles) — **prototype scope**: it does not yet write
      hard config (`model_profile`, `--effort`). Wiring those is the flagged
@@ -56,17 +61,21 @@ as a **persona-core configurator**, so creation is one flow:
 
 Simple tier renders `UnifiedBuildEntry` directly (no tab strip; templates gated).
 
-`core_profile` (the deliberation dials) is stamped on the adoption path since
-2026-07-06 — previously the stamp read `persona_meta.core`, a field no template
-on disk ever carried, making it dead code (the dials live at
-`payload.persona.core`).
+`core_profile` is stamped on the adoption path from `payload.persona.core`.
+That stamp is now a **seed**, not the final value: the first time anything
+opens the persona's Manifest, the seeder folds whatever prose it finds in that
+JSON into the manifest's `# Mandate` and `# Boundaries` sections, keeps the
+original beside the file as `core.legacy.json`, and overwrites the column with
+the rendered markdown. From then on `personas.core_profile` is the **mirror of
+`manifest.md`** and holds plain markdown. See
+[01-data-model.md](01-data-model.md#the-manifest-and-its-mirror-core_profile).
 
 The system has three layers worth documenting separately:
 
 | Doc | Scope | Read when… |
 |---|---|---|
 | [01-data-model.md](01-data-model.md) | `Persona` struct, `personas` table, associated join tables | Adding a field, migrating schema, debugging a missing column |
-| [02-capabilities.md](02-capabilities.md) | What a persona can DO: tools, triggers, event subscriptions, memory, manual reviews, notifications, automations | Adding a new capability surface or debugging "why isn't my tool running" |
+| [02-capabilities.md](02-capabilities.md) | What a persona can DO: charters, tools, triggers, attention, event subscriptions, memory, manual reviews, notifications, automations | Adding a new capability surface or debugging "why isn't my tool running" |
 | [03-trust-and-governance.md](03-trust-and-governance.md) | Trust level, origin, score, sensitive flag, headless mode, budget, turn limits, gateway exposure | Touching approval flow, cost controls, API exposure, or audit requirements |
 
 ## TL;DR architecture
@@ -75,9 +84,11 @@ The system has three layers worth documenting separately:
 personas (table)
   │
   ├── system_prompt           ← core Claude instructions (NOT NULL)
-  ├── structured_prompt       ← JSON { identity, instructions, toolGuidance, examples, errorHandling }
-  ├── parameters              ← JSON array of runtime-adjustable PersonaParameter
-  ├── design_context          ← JSON envelope { designFiles, credentialLinks, useCases, twinId }
+  ├── core_profile            ← the MANIFEST MIRROR: manifest.md verbatim (markdown)
+  ├── structured_prompt       ← JSON { identity, instructions, toolGuidance, examples, errorHandling };
+  │                             a persona with a manifest no longer renders it
+  ├── parameters              ← JSON array of runtime-adjustable PersonaParameter ({{param.*}} values)
+  ├── design_context          ← JSON envelope { designFiles, credentialLinks, twinId, … }
   ├── last_design_result      ← JSON snapshot of the last AgentIr that built this persona
   ├── notification_channels   ← JSON array of channel configs (slack, email, webhook, …)
   │
@@ -94,29 +105,44 @@ personas (table)
   └── cli_awareness_enabled   ← per-persona gate for Athena CLI session-resume awareness (Phase 5 v1, default OFF)
 
  Join tables (FK persona_id):
+  ├── persona_responsibilities                      ← the CHARTERS it holds (what it can do)
   ├── persona_tools + persona_tool_definitions      ← what the persona can CALL
-  ├── persona_triggers                              ← how the persona gets INVOKED
+  ├── persona_triggers                              ← how the persona gets INVOKED (carries responsibility_id)
   ├── persona_event_subscriptions                   ← what system events it REACTS TO
   ├── persona_automations + automation_runs         ← external workflow integration (n8n, Zapier, …)
   ├── persona_memories                              ← what it REMEMBERS between runs
+  ├── persona_episodes + persona_memory_sources     ← the raw experience log + memory provenance
+  ├── persona_memory_tombstone                      ← facts that must stay forgotten
+  ├── persona_attention_ledger                      ← every attention/consolidation pass and refusal
+  ├── persona_memory_review_proposal                ← the human gate for agent-proposed changes
   ├── persona_messages + persona_message_deliveries ← OUTBOUND notifications
   ├── persona_manual_reviews + review_messages      ← human APPROVAL gates
   ├── persona_executions + persona_tool_usage       ← run history + tool accounting
   └── persona_prompt_versions                       ← prompt version history
+
+ On disk, per persona (~/.personas/personas/<id>/):
+  ├── manifest.md                                   ← the two-author core document
+  └── episodes/YYYY/MM/DD/*.md                      ← full episode markdown
 ```
 
-Rust surface:
+Rust surface (the models live in the extracted `personas-core` crate):
 
 ```
-src-tauri/src/db/models/persona.rs              (Persona + design context types)
-src-tauri/src/db/models/agent_ir.rs             (AgentIr the template → persona pipeline uses)
-src-tauri/src/db/models/tool.rs                 (PersonaToolDefinition, PersonaTool join)
-src-tauri/src/db/models/trigger.rs              (PersonaTrigger + TriggerConfig enum)
-src-tauri/src/db/models/memory.rs               (PersonaMemory — tiers, importance)
-src-tauri/src/db/models/review.rs               (PersonaManualReview)
-src-tauri/src/db/models/automation.rs           (PersonaAutomation + automation_runs)
-src-tauri/src/db/repos/core/personas.rs         (CRUD + queries)
+src-tauri/core/src/models/persona.rs            (Persona + design context types)
+src-tauri/core/src/models/responsibility.rs     (PersonaResponsibility + ResponsibilitySpec)
+src-tauri/core/src/models/brain.rs              (PersonaEpisode, AttentionLedgerEntry, dashboard shapes)
+src-tauri/core/src/models/agent_ir.rs           (AgentIr the template → persona pipeline uses)
+src-tauri/core/src/models/tool.rs               (PersonaToolDefinition, PersonaTool join)
+src-tauri/core/src/models/trigger.rs            (PersonaTrigger + TriggerConfig enum)
+src-tauri/core/src/models/memory.rs             (PersonaMemory — tiers, importance)
+src-tauri/core/src/models/review.rs             (PersonaManualReview)
+src-tauri/core/src/models/automation.rs         (PersonaAutomation + automation_runs)
+src-tauri/db/src/repos/core/personas.rs         (CRUD + queries)
+src-tauri/db/src/repos/core/responsibilities.rs (charter CRUD + set_status)
+src-tauri/src/engine/persona_brain/manifest.rs  (manifest.md: seed, law door, self-model diffs, mirror)
 src-tauri/src/commands/core/personas.rs         (Tauri IPC: list, create, update, delete, list_personas_using_connector)
+src-tauri/src/commands/core/responsibilities.rs (Tauri IPC: charter CRUD, status ladder, attention ledger)
+src-tauri/src/commands/core/persona_brain.rs    (Tauri IPC: manifest, episodes, brain dashboard)
 ```
 
 ## Relation to other pillars
@@ -264,9 +290,10 @@ orchestration/teams docs for the assignment model.
 ## Editor UI — the Design hub
 
 The per-persona editor surfaces are tabbed in `EditorTabBar`:
-`Activity · Design · Life · Lab · Settings` (Matrix, Use Cases and Chat are
-legacy tab ids that migrate into the Design hub; **Life** is the living-agent
-surface, see its section below).
+`Activity · Design · Lab · Settings`. Matrix, Use Cases, Chat and Life are
+legacy tab ids that migrate into the Design hub, where the living-agent
+surfaces now live (see [the Design hub](#editor-ui--the-design-hub) and its
+four sub-tabs below).
 
 **Share to the gallery.** The editor header (`PersonaEditorHeader`) carries a
 **Share** button (`ShareAgentButton`) that publishes the persona to the public
@@ -302,31 +329,56 @@ The agent editor's **run history** (`sub_executions/components/list/ExecutionLis
 
 An execution's cost inspector (`CostBreakdownBar`, `sub_executions/detail/inspector`) shows the input/output/total token cost at Anthropic API list prices. For **Claude models** — which run on the user's Claude subscription via the Claude Code CLI (`isSubscriptionModel`, `force_subscription_auth`) — it adds a note reframing that figure: "≈{cost} if billed to the Anthropic API — included on your Claude subscription." This is a reframe of the same estimate, not a second computation (so it never double-counts), and it is suppressed for external-API models (`gpt-*`, `gemini-*`), which are real per-token spend.
 
-**Design is a hub, not a single view.** It exposes horizontal sub-tabs (plus
-the inline health badge in `EditorTabBar`):
+**Design is a hub, not a single view.** It exposes four horizontal sub-tabs,
+in the order an agent is authored: what it **is**, what it **owns**, what it
+**remembers**, what it **reaches**.
 
-| Sub-tab | Component | Notes |
+| Sub-tab | Component | What it is |
 |---|---|---|
-| Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). When the persona has assigned tools, the tab-bar actions also expose **Run tool** — a modal (`ToolRunnerModal` wrapping `ToolRunnerPanel`) that invokes a single tool directly via `invoke_tool_direct` (no LLM), rendering the typed outcome contract: failure category, HTTP status when present, a retryable hint, and an output-truncated notice. |
-| Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
-| Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
+| Manifest | `ManifestTab` (`sub_manifest/`) | the two-author core document: operator-authored **law** sections (`# Mandate`, `# Boundaries`, `# Operation defaults`) editable in place, and agent-authored **self-model** sections (`# My work`, `# My self-reads`) that change only through approved diffs. A pending self-model proposal renders as a review card **under the section it would edit**, so the change and the text it changes are read together; accepting or rejecting it anywhere decides the whole proposal. |
+| Responsibilities | `ResponsibilitiesTab` (`sub_responsibilities/`) | the persona's standing **charters**, which are what it can do. A glyph master/detail surface: the hero sigil for the active charter, one row per charter, and a full detail pane with per-dimension editors, the charter's `{{param.*}}` knobs, a status ladder, and a per-charter **Run now**. It absorbed the retired Use Cases and Parameters sub-tabs. |
+| Brain | `BrainDashboard` (`sub_brain/`) via `BrainSection` | the memory and episode dashboard, plus the proposal inbox and a manual "Consolidate now". |
 | Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Swap alternative — above a read-only view of the saved design's connectors + tools |
-| Events & Triggers | `EventsSection` (via `DesignEventsPanel`) | read-only triggers + event subscriptions |
-| Notifications | `MessagesSection` (via `DesignNotificationsPanel`) | read-only notification channels (was "Messaging") |
 
-Parameters / Connectors / Events & Triggers / Notifications were split out of
-the former monolithic Prompt sub-tab (they used to stack inside its saved
-view); each section sub-tab renders the same read-only design-result section
-(`useSavedDesignResult`-driven, `DesignSubtabPanels.tsx`) with a quiet empty
-state when its dimension is empty. The Properties sub-tab passes
-`hideConnectors`/`hideEvents`/`hideMessages` to `DesignResultPreview` so those
-bodies aren't duplicated. The health badge lives in `EditorTabBar`; clicking it
-re-runs `runHealthCheck()` in-place.
+Six sub-tabs were retired when the charter became the capability. **Use Cases**
+is now Responsibilities. **Properties**, **Parameters**, **Events & Triggers**
+and **Notifications** were read-only recaps of the build wizard's saved result,
+and each of their dimensions is now an editable field on the charter that owns
+it (see the sigil-dimension map below). **Automations** was a sub-tab id with
+no tab behind it. Every retired value is remapped on rehydrate rather than
+discarded, so a persisted `use-cases` lands on Responsibilities and a persisted
+`prompt`, `core` or `life` lands on Manifest.
 
-Two of those sub-tabs are no longer read-only. **Events & Triggers** mounts the
-live `TriggerConfig` manager above its design recap, and **Connectors** mounts
-`ConnectorVerificationPanel`
-(`src/features/agents/sub_connectors/components/connectors/`) above its own. The
+**The eight sigil dimensions are charter fields now.** The Responsibilities
+detail pane opens one editor per glyph petal, each writing the charter column
+that actually carries that dimension (`components/sigil/charterSigilBodies.tsx`):
+
+| Dimension | Charter field |
+|---|---|
+| task | `procedure` + `outcomes` |
+| trigger | `cadence` (+ `budgetMonthlyUsd`) |
+| connector | the `connectors` allowlist |
+| message | `spec.notificationChannels` |
+| review | `approvalGates` + `spec.reviewPolicy` |
+| memory | `spec.memoryPolicy` |
+| event | `spec.eventSubscriptions` |
+| error | `spec.errorPolicy` + `spec.errorHandling` |
+
+`update_persona_responsibility` replaces the whole `spec` column rather than
+patching it, so every one of these editors merges onto the charter's current
+spec and sends the whole thing back; a partial write would silently erase
+recipe provenance, fixtures and the input schema.
+
+Per-agent trigger *rows* (`persona_triggers`) are managed in the standalone
+**Triggers** module, not in the editor. A trigger created by adoption or
+promotion carries the `responsibility_id` of the charter it belongs to.
+
+The health badge lives in `EditorTabBar`; clicking it re-runs `runHealthCheck()`
+in-place.
+
+**Connectors** mounts `ConnectorVerificationPanel`
+(`src/features/agents/sub_connectors/components/connectors/`) above its own
+read-only design recap. The
 verification panel derives its rows from the persona's actual tools via
 `useConnectorStatuses` — not from a saved design — so it renders for personas
 that were never designed, groups interchangeable connectors by their
@@ -387,19 +439,36 @@ single predicate.
 Wiring:
 
 ```
-src/features/agents/sub_design/DesignHub.tsx         (hub shell)
+src/features/agents/sub_design/DesignHub.tsx         (hub shell + the four sub-tabs)
 src/features/agents/sub_design/components/
-  DesignHubHeader.tsx                                (sub-tab nav + health badge)
+  DesignLifePanels.tsx                               (Manifest / Responsibilities / Brain mounts)
+  DesignSubtabPanels.tsx                             (Connectors mount)
+src/features/agents/sub_manifest/                    (ManifestTab, law + self-model sections)
+src/features/agents/sub_responsibilities/            (charter master/detail + sigil editors)
+src/features/agents/sub_brain/                       (the Brain dashboard tiles)
 src/features/agents/sub_editor/components/
-  EditorLazyTabs.tsx                                 (DesignTab now lazy-loads DesignHub)
+  EditorLazyTabs.tsx                                 (the Design tab lazy-loads DesignHub)
   EditorBody.tsx                                     (routes editorTab === 'design')
 src/stores/slices/system/uiSlice.ts                  (designSubTab state + migration)
+src/lib/personas/capabilities.ts                     (resolvePersonaCapabilities, the one read-model)
 ```
 
-Legacy persisted values (`editorTab === 'prompt' | 'connectors' | 'health'`)
-are migrated on rehydrate to `editorTab === 'design'` with the
-appropriate `designSubTab`. The `setEditorTab` action also accepts
-legacy IDs for back-compat with existing call sites.
+Legacy persisted values are migrated on rehydrate rather than dropped:
+`editorTab === 'prompt' | 'connectors' | 'health' | 'life' | 'use-cases'`
+becomes `editorTab === 'design'` with the appropriate `designSubTab`, and a
+retired `designSubTab` value redirects to Manifest. The `setEditorTab` action
+also accepts the legacy ids for back-compat with existing call sites, and
+`DesignHub` re-checks the persisted sub-tab against the live set so a value
+written by a newer build the user rolled back from cannot blank the hub.
+
+**"What can this persona do" has exactly one read-model.**
+`resolvePersonaCapabilities` projects charters and any surviving pre-migration
+`design_context.useCases` into one shape, so no consumer has to branch. The
+Responsibilities tab calls it directly; the Lab's versions table and arena and
+the automation card reach it through `useSelectedPersonaCapabilities`
+(`src/hooks/personas/usePersonaCapabilities.ts`), which fetches the charters
+over IPC and warm-caches them. Read capabilities through it, never
+`design_context.useCases` directly.
 
 The **Tool Runner** UI (inline invocation from the Connectors sub-tab)
 has been descoped; the backend `run_tool` command remains for future
@@ -427,7 +496,7 @@ Per-row **actions**:
 
 | Action | Effect |
 |---|---|
-| **Activate** | Atomically (one backend transaction, `lab_activate_version`) rolls the version's prompt live + tags it `production` **and** switches the persona's active model (`model_profile`) — a failure leaves the persona fully unchanged. If any use case still pins a different model via `model_override`, a post-activation dialog lists the diverging pins with per-use-case **Clear pin** (follow the new default) or keep-pin; dismissing changes nothing. |
+| **Activate** | Atomically (one backend transaction, `lab_activate_version`) rolls the version's prompt live + tags it `production` **and** switches the persona's active model (`model_profile`) — a failure leaves the persona fully unchanged. If any capability still pins a different model, a post-activation dialog lists the diverging pins with a per-capability **Clear pin** (follow the new default) or keep-pin; dismissing changes nothing. The pins are read through `resolvePersonaCapabilities`, so they come from the charters' `spec.modelOverride` (and from a legacy use case's `model_override` on a persona the migration has not touched). |
 | **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. Every version of a persona is graded on the **same** generated scenario set (the set is keyed on the persona + tools, not the prompt text), so a version-vs-version **Δ** compares like with like rather than two different exams. |
 | **Improve** | Runs the improvement engine (`lab_improve_prompt`): an LLM rewrite grounded in the current prompt + each scenario's judge rationale/suggestions + this run's user ratings, persisted as a new `experimental` version that appears in the table ready to measure. (A completed Arena run's detail modal also exposes per-scenario 👍/👎 ratings that feed this.) |
 | **Diff** | Compares the version's prompt against the active version. |
@@ -534,42 +603,66 @@ the optional `UpdatePersonaInput.source`), and a timestamp.
 - Read via the `list_persona_change_log` IPC command. Restore/rollback is out of
   scope — this is an inspection surface only.
 
-## Living-agent surfaces (Design › Core · Responsibilities · Brain)
+## Living-agent surfaces (Design › Manifest · Responsibilities · Brain)
 
-The living-agent surface (`src/features/agents/sub_life/`, spark
-`living-agent-core`) lives in the **Design** hub as three sub-tabs — Core,
-Responsibilities, Brain — all keyed to the selected persona. (It shipped
-briefly as a top-level **Life** editor tab; the post-ship checklist folded it
-into Design on 2026-08-31, and a persisted `editorTab: 'life'` migrates to
-Design › Core on rehydrate.)
+Three of the Design hub's four sub-tabs are the living-agent surface, all keyed
+to the selected persona. (It shipped briefly as a top-level **Life** editor
+tab; a persisted `editorTab: 'life'` migrates to Design › Manifest.)
 
-- **Core** — the persona's character: three 0..1 dials (risk tolerance,
-  speed-vs-quality, deference), the conflict style (challenger · harmonizer ·
-  analyst · pragmatist), authored prose (motivation, stance, north-star
-  commitment, identity, voice), and three string lists (principles,
-  constraints, decision principles). Stored as `PersonaCore` JSON in
-  `personas.core_profile`; saved in ONE `update_persona` call on an explicit
-  Save (no autosave), so the change log records it like any other field.
-- **Responsibilities** — standing charters (`persona_responsibilities`):
-  outcomes with success criteria, measurable objectives, scope rung 0..2 (the
-  grantable ceiling, same as App-master mandate intake), refusal classes from
-  the domain library plus `custom:` free text, owner, attention cadence,
-  monthly budget, and read-mostly tenure. Retire is the only status door in
-  the UI. The **attention ledger** strip below shows recent
-  attention/consolidation passes with verdicts and reasons; the same rows
-  also appear in the Activity tab as an item type.
-- **Brain** — the episodic record (`persona_episodes`, keyset "load older"),
-  the read-only self-model (`identity.md`), the proposal inbox
-  (`memory_curation` and `self_model_diff` proposals, applied or discarded
-  through the shared review doors), and a manual "Consolidate now" trigger.
+- **Manifest** (`sub_manifest/`) is the persona's core document, a markdown file
+  on disk at `~/.personas/personas/<id>/manifest.md` and mirrored into
+  `personas.core_profile`. It has two authors and the tab shows the seam:
+  - **LAW sections**, operator-authored: `# Mandate`, `# Boundaries`,
+    `# Operation defaults`. Edited in place, one section at a time, through
+    `update_persona_manifest_law`. The agent has no write path to them at all.
+  - **SELF-MODEL sections**, agent-authored: `# My work`, `# My self-reads`.
+    They are read-only here. They grow only through anchored diffs the persona
+    proposes and a human approves. A pending proposal renders as a review card
+    under the section it would edit, with a pending count in the tab header;
+    the same proposals also appear in the Brain tab's inbox.
 
-**The write-lane law:** the Core is operator-owned (only the operator edits
-it; a build/adopt seeds it once and never overwrites a non-null Core); the
+  The tab seeds the manifest on first open, and a persona that still carries a
+  pre-rebase `identity.md` is migrated then: the self-model sections are
+  carried over under freshly seeded law sections, and the old file is kept
+  beside the new one as `identity.migrated.md`.
+- **Responsibilities** (`sub_responsibilities/`) holds the standing charters
+  (`persona_responsibilities`), which are what the persona can do. Each carries
+  its operating **procedure**, outcomes with success criteria, measurable
+  objectives, a **connector allowlist**, scope rung 0..2 (the grantable
+  ceiling, same as App-master mandate intake), refusal classes from the domain
+  library plus `custom:` free text, owner, attention cadence, monthly budget,
+  read-mostly tenure, and the typed runtime `spec` the sigil editors write.
+  A full status ladder (`draft` · `active` · `suspended` · `retired`) is
+  available, not just Retire, because a draft charter has to be activatable for
+  the propose-and-adopt loop to close. **Run now** dispatches one charter by
+  hand. A **draft inbox** holds the charters the agent proposed for review. The
+  **attention ledger** strip shows recent attention/consolidation passes with
+  verdicts and reasons; the same rows also appear in the Activity tab.
+- **Brain** (`sub_brain/`) is a dashboard over one `get_persona_brain_dashboard`
+  read, grouped so an operator can evaluate it at a glance: what the brain
+  **holds** (memory by tier and category) and what it is **taking in** (episode
+  volume by day and role, with the flat episode record demoted to a drill-down
+  beneath it); what sleep **produced** from that intake (consolidation yield per
+  pass); what needs **reacting to** (a pressure gauge against the consolidation
+  admission threshold, an anomaly strip, and the attention ledger beside them);
+  and what the brain holds **nothing** about (charter coverage). Alongside it
+  sit the proposal inbox and a manual "Consolidate now".
+
+  **Absence renders as absence.** A series the backend has no data for gets a
+  stated empty state rather than a fabricated zero line, and the coverage tile
+  exists specifically to name the charters with no episodes at all: it lists
+  them first, and an unmeasured charter reads "nothing recorded" rather than a
+  `0` sitting in a numeric column where it would look like a measurement.
+
+**The write-lane law:** the manifest's law sections are operator-owned; the
 self-model changes only through APPROVED `self_model_diff` proposals, never by
-direct edit; memories change within the memory-review contract (apply/discard
-of proposals). Enforcement note surfaced in the UI: outside the
+direct edit, and both the propose door and the apply door refuse a diff aimed
+at a law section; memories change within the memory-review contract; a charter
+the agent proposes is minted only on approval, with its source and status
+forced server-side. Enforcement note surfaced in the UI: outside the
 software-engineering domain, refusal classes hold at prompt level only — the
-persona is instructed to refuse, nothing blocks it in software.
+persona is instructed to refuse, nothing blocks it in software. Full contract
+in [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law).
 
 ## Home team — workspace anchor
 
@@ -620,11 +713,15 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
 
 ## Gotchas that burn time
 
-1. **`design_context` has two formats.** Old personas store a flat
-   JSON with top-level `files` + `references`. New ones use the typed
-   `DesignContextData` envelope (`designFiles`, `credentialLinks`,
-   `useCases`, `twinId`). `parse_design_context()` in
-   `src-tauri/src/db/models/persona.rs` handles both.
+1. **`design_context` has two formats, and its `useCases` half is read-only
+   history.** Old personas store a flat JSON with top-level `files` +
+   `references`. Newer ones use the typed `DesignContextData` envelope
+   (`designFiles`, `credentialLinks`, `twinId`, …). `parse_design_context()` in
+   `src-tauri/core/src/models/persona.rs` handles both. The envelope still
+   *carries* a `useCases` array so pre-migration personas keep parsing, but
+   **nothing writes it any more**: adoption and promote mint
+   `persona_responsibilities` charters instead. Resolve capabilities through
+   `resolvePersonaCapabilities`, never by reading `useCases` directly.
 2. **`notification_channels` is encrypted JSON.** It's not a plain
    array. Writes go through the crypto layer; reads decrypt before
    parsing. Don't query it with raw SQL — use the repo helpers.
@@ -643,9 +740,10 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    run without a human in the loop.
 6. **`parameters` vs template adoption answers are different.**
    `parameters` is a JSON array of `PersonaParameter` objects the user
-   can tune at runtime (via the persona editor UI) without rebuilding.
-   Adoption answers are set once during template adoption and baked
-   into the prompt. See
+   can tune at runtime without rebuilding; the tuning surface is the
+   **charter's** parameter card in Design → Responsibilities, and the knobs a
+   charter offers are derived from its `spec.inputSchema`. Adoption answers are
+   set once during template adoption and baked into the prompt. See
    [templates/07-adoption-answer-pipeline.md](../templates/07-adoption-answer-pipeline.md).
 7. **Deleting a persona shows a blast radius — including team membership.**
    `persona_blast_radius` (`db/repos/core/personas.rs`) is the pre-delete
@@ -675,11 +773,14 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    through the agent → workspace → global → default cascade
    (`resolve_effective_config_bulk`, `engine/config_merge.rs`) and tags each cell
    with the tier that supplied it. When no tier sets the **Model** field (the
-   common case, since model tiering lives on use-cases rather than persona-level
-   `model_profile`), the Model cell surfaces the **distinct per-capability models**
-   the persona's use-cases declare via `model_override` — shown in violet with a
-   _Per capability_ tag (parsed client-side from `design_context`) instead of a
-   bare `--`. Other fields with no tier value still read `--` with a `DEFAULT`
+   common case, since model tiering lives on capabilities rather than
+   persona-level `model_profile`), the Model cell surfaces the **distinct
+   per-capability models** those capabilities declare, shown in violet with a
+   _Per capability_ tag instead of a bare `--`. This panel still reads them
+   client-side out of `design_context.useCases`, so it fills in only for
+   personas the charter migration has not touched; charter-declared model
+   overrides (`spec.modelOverride`) do not reach it yet. Other fields with no
+   tier value still read `--` with a `DEFAULT`
    badge. Each persona row is **expandable** (chevron in the Agent column): it
    reveals one indented sub-row per capability, surfacing that capability's
    **model** (from `model_override`) and its **provider**. Since bare-string

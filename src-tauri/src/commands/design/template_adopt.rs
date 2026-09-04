@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::communication::reviews as reviews_repo;
+use crate::db::repos::resources::triggers as trigger_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -612,25 +613,27 @@ pub fn instant_adopt_template_inner(
                 // The row keeps its legacy `use_case_id` value — the INSERT
                 // lives in `create_persona_atomically`
                 // (n8n_transform::confirmation), which the raw n8n import
-                // path shares; see the WP4 report.
-                if let Ok(conn) = state.db.get() {
-                    for charter in &minted {
-                        let Some(uc_id) = charter.spec.migrated_from_use_case_id.as_deref() else {
-                            continue;
-                        };
-                        if let Err(e) = conn.execute(
-                            "UPDATE persona_triggers SET responsibility_id = ?1 \
-                             WHERE persona_id = ?2 AND use_case_id = ?3",
-                            rusqlite::params![charter.id, pid, uc_id],
-                        ) {
-                            tracing::warn!(
-                                persona_id = %pid,
-                                charter_id = %charter.id,
-                                error = %e,
-                                "instant_adopt_template: trigger→charter remap failed (continuing)"
-                            );
-                        }
-                    }
+                // path shares; see the WP4 report. The UPDATE itself belongs
+                // to the triggers repo, which owns `persona_triggers` and
+                // applies the whole remap in one transaction.
+                let remap: Vec<(String, String)> = minted
+                    .iter()
+                    .filter_map(|c| {
+                        c.spec
+                            .migrated_from_use_case_id
+                            .as_deref()
+                            .map(|uc| (uc.to_string(), c.id.clone()))
+                    })
+                    .collect();
+                if let Err(e) =
+                    trigger_repo::remap_use_cases_to_responsibilities(&state.db, pid, &remap)
+                {
+                    tracing::warn!(
+                        persona_id = %pid,
+                        charters = remap.len(),
+                        error = %e,
+                        "instant_adopt_template: trigger→charter remap failed (continuing)"
+                    );
                 }
                 tracing::info!(
                     persona_id = %pid,

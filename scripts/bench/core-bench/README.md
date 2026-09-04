@@ -19,7 +19,7 @@ Two levels, chronological:
 
 | Level | Spend | Coverage | What it proves |
 |---|---|---|---|
-| **L1** | zero execution spend | every cell | the assembled prompt faithfully carries the Core (dials → band prose), the charter (`## Responsibilities`), and the stamp (`core_profile`) in every industry |
+| **L1** | zero execution spend | every cell | the assembled prompt faithfully carries the Core section, the charter (`## Responsibilities`), and the stamp (`core_profile`) in every industry |
 | **L2** | live executions, budget-capped | sampled cells | the run behaves in character on a real industry task (onboarding-bench `true_intent` rows) |
 
 ## Files
@@ -76,9 +76,8 @@ Per cell, serially: `/adopt-template` (synthesized design payload; zero-LLM
 `instant_adopt_template_inner` stamps `core_profile` from `persona.core`) →
 `create_persona_responsibility` via `/bridge-exec invokeCommand` →
 `preview_execution` for the assembled prompt → deterministic asserts
-(`adopted`, `core_profile_stamped`, `core_dials_match`,
-`responsibility_created`, `core_section_present`,
-`responsibilities_section_present`, `dial_prose_matches_band`,
+(`adopted`, `core_profile_stamped`, `responsibility_created`,
+`core_section_present`, `responsibilities_section_present`,
 `responsibility_title_present`) → prompt artifact for the judge →
 `deletePersona` teardown.
 
@@ -138,12 +137,31 @@ in the vault, and never expose the port beyond localhost.
   principles, constraints, decision_principles) from the archetype and keeps
   the template's goal, use cases, tools, connectors and parameters. The
   living-agent `PersonaCore` additive fields (identity/voice/principles…) are
-  folded into `persona.core` so the rendered `## Core` carries the full
-  Character.
-- **Dial-band prose asserts** are pinned copies of
-  `src-tauri/engine/src/prompt/core_section.rs` (cuts `<0.34` / `<0.67`); the
-  unit tests pin the cuts, and a Rust prose change must update
-  `cells.mjs:DIAL_DIRECTIVES` in the same commit.
+  folded into `persona.core` so the rendered `## Manifest` section carries the
+  full Character.
+- **Dial-band prose asserts are GONE** (agent-manifest rebase, WP7). `cells.mjs`
+  used to carry `band()` plus a verbatim copy of the dial and conflict directive
+  prose from `src-tauri/engine/src/prompt/core_section.rs`, feeding two L1
+  asserts (`core_dials_match`, `dial_prose_matches_band`). WP2 deleted the band
+  tables from the engine, so the mirror matched nothing and the two asserts
+  could only fail. Both are removed, along with `expected.dials` /
+  `expectedDialDirectives` and their entries in `baseline.json` and `run.mjs`.
+  The 126-cell grid is untouched: it is keyed on archetype × domain × template
+  and never on a dial value.
+
+> **Partly re-anchored; the rest is deliberately out of scope.** WP2 renamed
+> `## Core` to `## Manifest` in the assembled prompt, made `core_profile` the
+> rendered-markdown mirror of `manifest.md`, and retired
+> `## Active Capabilities`. WP7 repointed `core_section_present` at
+> `## Manifest` (both render branches emit it — the mirror path and the
+> `CoreSource::Legacy` path a bench persona actually takes,
+> `core_section.rs:74` / `:147`), so no assert here is knowingly broken.
+>
+> What is NOT done: the archetype seeds in `_archetypes.json` still carry the
+> seven numeric dials that no longer reach a prompt, `synthesizeDesignPayload`
+> still substitutes them, and `core_profile_stamped` only checks that the stamp
+> is non-empty rather than that it mirrors the manifest. Re-anchoring the seeds
+> and deepening that assert is a separate pass.
 - **`/execute-persona` wire shape** is `{name_or_id, input_data, use_case_id}`
   (snake_case; the brief's `{personaId}` spelling doesn't exist on that
   route — `test_automation.rs:761`).
@@ -151,4 +169,10 @@ in the vault, and never expose the port beyond localhost.
   budget, owner `operator`, `source` absent (the command stamps `operator`
   itself), refusal classes per domain family (general: ExternalSend +
   CredentialUse; software: credentials_or_permissions +
-  delivery_configuration — bare unknown strings are refused at intake).
+  delivery_configuration — bare unknown strings are refused at intake), plus
+  the three fields `e19_agent_manifest` made required on the create door:
+  `connectors: []` (the binding's own "whatever the persona holds"),
+  `procedure` composed from the template's use cases, and `spec: {}` (what a
+  hand-authored charter carries — a bench cell has no recipe provenance to
+  claim). The binding-validation unit test failed on all 126 cells until these
+  were added.
