@@ -308,6 +308,9 @@ pub async fn dispatch(
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
+    // A timed-out `cmd.output()` drops the child without killing it, which
+    // detaches the bridge process instead of stopping it.
+    cmd.kill_on_drop(true);
     let timeout = Duration::from_secs(DEFAULT_TIMEOUT_SECS);
     let output_res = tokio::time::timeout(timeout, cmd.output()).await;
     let duration_ms = start.elapsed().as_millis() as u64;

@@ -69,6 +69,8 @@ pub async fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     hide_window(&mut cmd);
+    // A timed-out build must stop, not detach and keep compiling.
+    cmd.kill_on_drop(true);
 
     let child = cmd
         .spawn()

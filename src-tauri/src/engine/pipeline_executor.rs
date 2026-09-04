@@ -621,6 +621,11 @@ async fn run_command_node(
         c
     };
 
+    // The 300s ceiling below drops the async block, and with it the child
+    // spawned inside it. Only the cancellation path kills explicitly, so
+    // without this a timed-out step detaches instead of stopping.
+    command.kill_on_drop(true);
+
     // Inject predecessor output as PIPELINE_INPUT env var
     if let Some(ref input_val) = input {
         command.env("PIPELINE_INPUT", input_val.to_string());

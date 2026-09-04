@@ -593,6 +593,7 @@ pub async fn get_app_version(binary_path: &str) -> Option<String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
+    cmd.kill_on_drop(true);
     let output = tokio::time::timeout(std::time::Duration::from_secs(1), cmd.output())
         .await
         .ok()? // timeout

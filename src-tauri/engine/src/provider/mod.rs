@@ -228,6 +228,7 @@ pub async fn check_cli_version(binary_path: &str, minimum: &str) -> Result<Strin
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
+    cmd.kill_on_drop(true);
     let output = match tokio::time::timeout(std::time::Duration::from_secs(2), cmd.output()).await {
         Ok(Ok(out)) => out,
         Ok(Err(e)) => {

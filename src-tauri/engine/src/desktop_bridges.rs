@@ -508,6 +508,7 @@ pub mod terminal {
                     cmd.creation_flags(0x08000000);
                 }
 
+                cmd.kill_on_drop(true);
                 let output = tokio::time::timeout(std::time::Duration::from_secs(30), cmd.output())
                     .await
                     .map_err(|_| AppError::Execution("Command timed out after 30 seconds".into()))?
@@ -1100,6 +1101,7 @@ async fn run_cli(binary: &str, args: &[&str]) -> Result<String, AppError> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
+    cmd.kill_on_drop(true);
     let output = tokio::time::timeout(std::time::Duration::from_secs(30), cmd.output())
         .await
         .map_err(|_| AppError::Execution("CLI command timed out after 30 seconds".into()))?

@@ -1454,6 +1454,7 @@ pub async fn execute_test_curl(
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
+    cmd.kill_on_drop(true);
     let result = tokio::time::timeout(TEST_TOOL_TIMEOUT, cmd.output()).await;
     let latency_ms = start.elapsed().as_millis() as u64;
 
