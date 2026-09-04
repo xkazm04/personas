@@ -15,7 +15,8 @@ const LATE_TICK_REPROBE_DELAY = 3_000; // grace before the one re-probe a late t
 /**
  * Monitors cloud connection health after a successful connection.
  *
- * - Polls `cloudFetchStatus` every 30s while connected.
+ * - Polls `cloudGetConfig` every 30s while connected (a config read, not the
+ *   heavier `cloudFetchStatus` the store exposes for the Status tab).
  * - If the poll fails (orchestrator unreachable), marks the connection as
  *   dropped and begins auto-reconnection with exponential backoff
  *   (5s → 10s → 20s → 60s cap).
