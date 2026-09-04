@@ -57,7 +57,10 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     cache_dir = out_root / "cache"
     llm = LLM(consumer_model, cache_dir / "llm.sqlite")
     jllm = LLM(judge_model, cache_dir / "llm.sqlite") if judge_model else None
-    backend = backends.make(rung, **({"cache_dir": cache_dir} if rung == "raw-retrieval" else {}), **(backend_kw or {}))
+    # every arm that embeds or calls a model shares one cache, so a re-run of the ladder
+    # pays only for what changed - asked for by name rather than by rung, because the
+    # rung list grows and a hard-coded name silently makes the newest arm the expensive one
+    backend = backends.make(rung, **backends.accepted(rung, {"cache_dir": cache_dir}), **(backend_kw or {}))
     run_id = f"{rung}-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
     run_dir = out_root / scenario_dir.name / f"run-{run_id}"
     done: dict[str, Answer] = {}

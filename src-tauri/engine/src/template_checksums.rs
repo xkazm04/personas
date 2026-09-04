@@ -12,7 +12,11 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(43);
+    let mut m = HashMap::with_capacity(61);
+    m.insert(
+        "content/analytics-content-distribution-use-case.json",
+        "001cf516b81f9d45",
+    );
     m.insert("content/audio-briefing-host.json", "0016d24f6727f677");
     m.insert("content/autonomous-art-director.json", "0010fe2cfbe92ab4");
     m.insert(
@@ -22,6 +26,8 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/demo-recorder.json", "00077655e0ff78b9");
     m.insert("content/feature-video-creator.json", "0003437ceb53f8d5");
     m.insert("content/newsletter-curator.json", "000fba2ef9927179");
+    m.insert("content/scientific-writing-editor.json", "0011b5192eed0257");
+    m.insert("content/social-media-designer.json", "00116fe4c3ad499d");
     m.insert(
         "development/autonomous-issue-resolver.json",
         "0010c5f3cd07faa2",
@@ -41,14 +47,22 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("devops/devops-guardian.json", "000903ec7b137cb6");
     m.insert("devops/incident-logger.json", "0018ff4da0040281");
     m.insert("devops/release-manager.json", "000e7e89e194bf67");
+    m.insert("email/intake-processor.json", "001e5d89c92d9983");
     m.insert("finance/budget-spending-monitor.json", "000e154f9accb32a");
+    m.insert("finance/expense-receipt-processor.json", "0014b23cb41a45b6");
     m.insert(
         "finance/financial-stocks-signaller.json",
         "00074f0fbda264e6",
     );
+    m.insert("finance/invoice-tracker.json", "000f184ae42450b7");
     m.insert(
         "finance/revenue-intelligence-copilot.json",
         "00183627fae9b101",
+    );
+    m.insert("finance/revenue-operations-hub.json", "000b630c375a9e2b");
+    m.insert(
+        "finance/subscription-billing-use-case.json",
+        "001ec4e13d5b749a",
     );
     m.insert("legal/ai-contract-reviewer.json", "00182fc8863bdfc6");
     m.insert("legal/contract-lifecycle-use-case.json", "0016a022e45d1544");
@@ -72,8 +86,16 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
         "000a211bd3d97a56",
     );
     m.insert("productivity/digital-clone.json", "00048ec76b518ee2");
+    m.insert(
+        "productivity/email-intelligence-operator.json",
+        "000c282542434490",
+    );
     m.insert("productivity/email-morning-digest.json", "0019c09408fb1bd0");
     m.insert("productivity/idea-harvester.json", "00024d0acab85e27");
+    m.insert(
+        "productivity/meeting-lifecycle-manager.json",
+        "0018b276807eb6f4",
+    );
     m.insert("productivity/router.json", "0001ec02412ffdd3");
     m.insert(
         "productivity/survey-insights-analyzer.json",
@@ -87,6 +109,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
         "project-management/technical-decision-tracker.json",
         "0008e9728d4820f5",
     );
+    m.insert("research/bi-dashboard-digest.json", "001b936730c1acd1");
     m.insert(
         "research/conversational-database-analyst.json",
         "001b1b17691cd753",
@@ -96,16 +119,29 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
         "0006a177a6b5fc56",
     );
     m.insert(
+        "research/industry-intelligence-aggregator.json",
+        "000e2df7cb0091c6",
+    );
+    m.insert(
         "research/knowledge-base-health-auditor.json",
         "0017ee9832c48cb2",
     );
     m.insert("research/product-scout.json", "0016a6cb1b037d52");
+    m.insert("research/product-signal-detector.json", "0016f53c30874a15");
     m.insert(
         "research/research-knowledge-curator.json",
         "0013042494fa5230",
     );
+    m.insert("research/research-paper-indexer.json", "001afacef2c12ddf");
+    m.insert(
+        "research/website-market-intelligence-profiler.json",
+        "001c4fc40b483e69",
+    );
+    m.insert("sales/contact-enrichment-agent.json", "0019ecca750e0f9e");
     m.insert("sales/lead-capture-pipeline.json", "00007a689d82c044");
+    m.insert("sales/sales-proposal-generator.json", "001a2dc727bf4e51");
     m.insert("security/security-sentinel.json", "0018d42e921f2a73");
+    m.insert("support/email-support-operator.json", "00157cf6033105b8");
     m.insert("support/support-escalation-engine.json", "0009ee193db1997c");
     m
 });

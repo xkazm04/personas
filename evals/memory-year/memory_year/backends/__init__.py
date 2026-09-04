@@ -70,10 +70,54 @@ def make(name: str, **kw) -> Backend:
     if name == "raw-retrieval":
         from .raw_retrieval import RawRetrieval
         return RawRetrieval(**kw)
+    if name == "compiled-truth":
+        from .compiled_truth import CompiledTruth
+        return CompiledTruth(**kw)
+    if name == "hybrid-verbatim":
+        from .hybrid_verbatim import HybridVerbatim
+        return HybridVerbatim(**kw)
     if name == "athena":
         from .athena import Athena
         return Athena(**kw)
     if name == "athena-turn":
         from .athena import AthenaTurn
         return AthenaTurn(**kw)
+    if name == "write-verdict":
+        from .write_verdict import WriteVerdict
+        return WriteVerdict(**kw)
     raise SystemExit(f"unknown backend {name}")
+
+
+def accepted(name: str, kw: dict) -> dict:
+    """Filter `kw` down to what this backend's constructor actually takes.
+
+    The caller offers shared resources (a cache directory today) to every arm; an arm
+    that has no use for one must not have to declare it. Asking the constructor is the
+    only way that stays true as arms are added.
+    """
+    import inspect
+
+    cls = _class_for(name)
+    if cls is None:
+        return {}
+    try:
+        params = inspect.signature(cls.__init__).parameters
+    except (TypeError, ValueError):
+        return {}
+    return {k: v for k, v in kw.items() if k in params}
+
+
+def _class_for(name: str):
+    if name == "raw-retrieval":
+        from .raw_retrieval import RawRetrieval
+        return RawRetrieval
+    if name == "hybrid-verbatim":
+        from .hybrid_verbatim import HybridVerbatim
+        return HybridVerbatim
+    if name == "write-verdict":
+        from .write_verdict import WriteVerdict
+        return WriteVerdict
+    if name == "compiled-truth":
+        from .compiled_truth import CompiledTruth
+        return CompiledTruth
+    return None
