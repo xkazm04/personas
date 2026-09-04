@@ -87,6 +87,8 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
         viewBox={`0 0 ${svgW} ${svgH}`}
         preserveAspectRatio="none"
         className="overflow-visible"
+        role="img"
+        aria-label={dt.daily_executions}
       >
         {/* Bars */}
         {data.map((d, i) => {
