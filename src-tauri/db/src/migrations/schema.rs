@@ -1589,6 +1589,37 @@ CREATE INDEX IF NOT EXISTS idx_evolution_cycles_policy ON evolution_cycles(polic
 CREATE INDEX IF NOT EXISTS idx_evolution_cycles_persona ON evolution_cycles(persona_id);
 CREATE INDEX IF NOT EXISTS idx_evolution_cycles_started ON evolution_cycles(started_at DESC);
 
+-- Per-variant provenance for an evolution cycle. `evolution_cycles` records
+-- `variants_tested` (a COUNT), the two fitness numbers and a prose `summary` —
+-- so a cycle that tested five variants and promoted none leaves no record of
+-- WHAT was tried. The breeder cannot then avoid re-proposing a variant the
+-- evaluator already rejected, and the count carries no predicate: "5" is five
+-- of nothing in particular.
+--
+-- This table keeps the two things that are observations — the candidate itself
+-- and the number it scored — for every variant, promoted or not. There is
+-- deliberately NO `reason` column: a reason written at rejection time is a
+-- hypothesis authored at the moment of least information, and it hardens into
+-- a fact that later cycles reason from. The prose belongs in the cycle's
+-- `summary`, which is where it already is.
+--
+-- `outcome` is a value, never inferred from whether the incumbent changed.
+-- Registry: software-engineering/agent-memory/rejected-revision-leaves-its-evidence.
+CREATE TABLE IF NOT EXISTS evolution_cycle_variants (
+    id            TEXT PRIMARY KEY,
+    cycle_id      TEXT NOT NULL REFERENCES evolution_cycles(id) ON DELETE CASCADE,
+    variant_index INTEGER NOT NULL,
+    prompt        TEXT NOT NULL,
+    variant_source TEXT,
+    fitness       REAL,
+    outcome       TEXT NOT NULL DEFAULT 'rejected'
+                  CHECK(outcome IN ('winner','rejected','error')),
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(cycle_id, variant_index)
+);
+CREATE INDEX IF NOT EXISTS idx_evolution_cycle_variants_cycle
+    ON evolution_cycle_variants(cycle_id);
+
 -- Phase 3 c v3 (Athena desktop awareness): ambient signal projection.
 -- The windowed app's AmbientContextFusion is in-memory only, so the
 -- daemon process can't see signals captured by clipboard/file/app_focus
