@@ -1,0 +1,27 @@
+{
+  "_note": "Pinned negative claims: promises whose truth-maker is that NO CODE EXISTS. Nothing in the tree can be coupled to them (there is no telemetry module to map a document onto - the whole claim is that there isn't one), so the doc-sync hook and check-doc-map-paths are structurally blind to them and always will be. They rot two ways, neither of which produces a diff any doc gate routes: somebody builds the thing, or somebody deletes the sentence in a rewrite. This file pins the wording; check-promise-pins.mjs enforces it. A pin proves a promise is still STATED, never that it is TRUE - so every entry carries the date a human established its truth and the wording that review approved.",
+  "pins": [
+    {
+      "id": "local-first-outbound-traffic",
+      "reviewed": "2026-09-04",
+      "reason": "The product's central user-facing commitment. Entirely negative, so no source area exists to couple it to. Lives in exactly ONE document today, which is itself the finding: one edit removes the whole privacy commitment and every gate stays green.",
+      "documents": ["README.md"],
+      "required": [
+        "never leave your machine unless you explicitly send them",
+        "The only outbound traffic goes to the AI providers and third-party services you configure",
+        "No telemetry dashboards",
+        "No cloud account required"
+      ]
+    }
+  ],
+  "forbidden": {
+    "_note": "The dual sweep: phrasings a pinned promise rules out. A floor, extended on every escape - never narrowed to make a document pass.",
+    "documents": ["README.md", "docs/README.md", "CONTRIBUTING.md"],
+    "phrases": [
+      "anonymous usage statistics",
+      "anonymized telemetry",
+      "usage analytics are collected",
+      "we collect telemetry"
+    ]
+  }
+}
