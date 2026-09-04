@@ -20,7 +20,8 @@ class RawRetrieval(Backend):
 
     name = "raw-retrieval"
 
-    def __init__(self, embedder: str = DEFAULT_EMBEDDER, cache_dir: Path | str | None = None, recency_weight: float = 0.0):
+    def __init__(self, embedder: str = DEFAULT_EMBEDDER, cache_dir: Path | str | None = None, recency_weight: float = 0.0,
+                 max_chunks: int = 40):
         cache_dir = Path(cache_dir) if cache_dir else None
         self.embedder = Embedder(embedder, (cache_dir / "emb.sqlite") if cache_dir else None)
         self.ids: list[str] = []
@@ -31,6 +32,10 @@ class RawRetrieval(Backend):
         self.pending: list[int] = []
         self.bytes = 0
         self.recency_weight = recency_weight
+        # the chunk ceiling is a predicate of the arm, not a constant: at 40 this
+        # rung leaves most of a 6k budget unspent, so a sibling arm that fills the
+        # budget is not comparable until this one is allowed to as well
+        self.max_chunks = max_chunks
 
     def ingest(self, event: Event, clock: Clock) -> None:
         r = render(event, clock)
@@ -69,7 +74,7 @@ class RawRetrieval(Backend):
                     break
                 continue
             chosen.append(int(i)); used += t
-            if len(chosen) >= 40:
+            if len(chosen) >= self.max_chunks:
                 break
         chosen.sort(key=lambda i: (self.days[i], i))
         return Context("\n".join(self.texts[i] for i in chosen), [self.ids[i] for i in chosen], used)
@@ -78,4 +83,5 @@ class RawRetrieval(Backend):
         return Cost(embeddings=self.embedder.calls, store_bytes=self.bytes + sum(v.nbytes for v in self.vecs if v is not None))
 
     def describe(self) -> dict:
-        return {"name": self.name, "embedder": self.embedder.name, "recency_weight": self.recency_weight}
+        return {"name": self.name, "embedder": self.embedder.name, "recency_weight": self.recency_weight,
+                "max_chunks": self.max_chunks}
