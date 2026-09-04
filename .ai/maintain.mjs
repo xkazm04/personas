@@ -11,13 +11,34 @@ import { execSync } from 'node:child_process';
 const cmd = process.argv[2] || 'check';
 const MEM = '.ai/memory';
 const INDEX = '.ai/context-index.json';
-const git = (a) => { try { return execSync('git ' + a, { encoding: 'utf8' }).trim(); } catch { return ''; } };
+// stderr ignored: a probe for an object that may not exist is a normal outcome
+// here, and a 'fatal:' line on a healthy run is how a gate teaches people to skim it.
+const git = (a) => { try { return execSync('git ' + a, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return ''; } };
 const dirOf = (p) => { const i = p.lastIndexOf('/'); return i < 0 ? '.' : p.slice(0, i); };
 const loadIndex = () => { try { return JSON.parse(readFileSync(INDEX, 'utf8')); } catch { return { modules: [] }; } };
 
 function changed() {
   const out = git('diff --name-only HEAD') + '\n' + git('diff --name-only --cached');
   return [...new Set(out.split('\n').map((s) => s.trim()).filter(Boolean))];
+}
+
+// Resolve the stamp the index says the module was reconciled to, and report the
+// drift committed since. The working-tree check below only sees an edit while it
+// is in flight; this sees drift that already landed.
+function drift(m) {
+  const dir = m.path === '.' ? '.' : String(m.path).replace(/\/$/, '');
+  const stamp = m.reconciledToSha;
+  if (!stamp) return 'no reconciledToSha recorded';
+  // cat-file, not rev-parse <sha>^{commit}: '^' is cmd.exe's escape character,
+  // so the peel syntax silently mangles the ref on Windows.
+  if (git('cat-file -t ' + stamp) !== 'commit')
+    return 'reconciledToSha ' + stamp + ' does not resolve to a commit in this repository';
+  const commits = git('rev-list --count ' + stamp + '..HEAD -- ' + dir).trim();
+  const n = parseInt(commits, 10);
+  if (!n) return null;
+  const touchedCtx = git('rev-list --count ' + stamp + '..HEAD -- ' + (m.context || '')).trim();
+  if (parseInt(touchedCtx, 10) > 0) return null;
+  return n + ' commit(s) under ' + dir + ' since reconciledToSha ' + stamp + ', and ' + (m.context || 'CONTEXT.md') + ' was not touched in any of them';
 }
 
 if (cmd === 'check') {
@@ -30,6 +51,8 @@ if (cmd === 'check') {
     const codeHere = files.some((f) => !f.endsWith('CONTEXT.md') && (dir === '' ? true : f.startsWith(dir + '/')));
     if (codeHere && !touched.has(dirOf(m.context || '')))
       warnings.push('CONTEXT may be stale for "' + m.id + '" (' + m.context + '): code under ' + m.path + ' changed but CONTEXT.md did not. Refresh it, then: node .ai/maintain.mjs touch ' + m.path);
+    const d = drift(m);
+    if (d) warnings.push('CONTEXT is stale for "' + m.id + '": ' + d + '. Refresh it, then: node .ai/maintain.mjs touch ' + m.path);
   }
   for (const w of warnings) console.log('[WARN] ' + w);
   if (!warnings.length) console.log('[OK  ] CONTEXT graph current for changed modules.');
