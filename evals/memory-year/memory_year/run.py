@@ -167,6 +167,51 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
     return run_dir
 
 
+def restraint(answers, probes) -> tuple[int, int, int, int]:
+    """The two rates that only mean something together.
+
+    A memory is judged on what it recalls, so every metric on this harness rewards
+    speaking. None of them can fail a design that answers whatever it holds, whether or
+    not the question was answerable - and a design that never holds back is the one that
+    invents a monitoring stack for a project that has none.
+
+    `false fire` counts the probes whose right answer is silence (nothing was ever
+    recorded, or the fact expired) that got an assertion anyway. Alone it is trivially
+    gamed: a design that abstains on everything scores zero. So it travels with
+    `silent failure`, the probes whose fact IS in the record that got an abstention.
+    Driving either to zero drives the other up; a design has to be read on the pair.
+
+    -> (false_fires, restraint_probes, silent_failures, answerable_probes)
+    """
+    ff = rp = sf = ap = 0
+    for a in answers:
+        if a.verdict == "screened":
+            continue
+        p = probes[a.probe_id]
+        if p.gold == "UNKNOWN":
+            rp += 1
+            if a.verdict not in ("correct", "abstained"):
+                ff += 1
+        elif p.gold != "FORM":
+            ap += 1
+            if a.verdict == "abstained":
+                sf += 1
+    return ff, rp, sf, ap
+
+
+def _restraint_lines(answers, probes) -> list[str]:
+    ff, rp, sf, ap = restraint(answers, probes)
+    return [
+        "| rate | numerator | denominator | value |",
+        "| --- | --- | --- | --- |",
+        f"| false fire (asserted where silence was right) | {ff} | {rp} | {(ff / rp if rp else 0):.2f} |",
+        f"| silent failure (abstained with the fact in the record) | {sf} | {ap} | {(sf / ap if ap else 0):.2f} |",
+        "",
+        "Read them together: either one alone can be driven to zero by a design that is "
+        "simply louder or simply quieter than it should be.",
+    ]
+
+
 def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
     probes = {p.id: p for p in scenario["probes"]}
     by_cls = defaultdict(lambda: defaultdict(int))
@@ -203,6 +248,7 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
             continue
         sc = c["n"] - c["screened"]
         L.append(f"| {b} | {c['n']} | {c['correct']} | {c['wrong-old']} | {c['abstained']} | {(c['correct'] / sc):.2f} |" if sc else f"| {b} | {c['n']} | - | - | - | - |")
+    L += ["", "## Restraint: the paired rates", ""] + _restraint_lines(answers, probes)
     wc = header["write_cost"]
     ev = max(1, header["events_replayed"])
     L += ["", "## Cost", "",
@@ -239,21 +285,36 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
     return run_dir
 
 
-def compare(run_dirs: list[Path]) -> str:
+def compare(run_dirs: list[Path], out_root: Path | None = None) -> str:
     rows = []
     for d in run_dirs:
         h = json.loads((d / "header.json").read_text(encoding="utf-8"))
         answers = json.loads((d / "answers.json").read_text(encoding="utf-8"))
+        probes = {}
+        try:
+            root = out_root or d.parent.parent
+            probes = {p.id: p for p in load_scenario(root / d.parent.name)["probes"]}
+        except Exception:
+            probes = {}
+        ff = rp = sf = ap = 0
+        if probes:
+            ff, rp, sf, ap = restraint([Answer(**a) for a in answers], probes)
         sc = [a for a in answers if a["verdict"] != "screened"]
         correct = sum(1 for a in sc if a["verdict"] == "correct")
         wo = sum(1 for a in sc if a["verdict"] == "wrong-old")
         ab = sum(1 for a in sc if a["verdict"] == "abstained")
         tok = sum(a["context_tokens"] for a in sc) / max(1, len(sc))
         wc = h["write_cost"]; ev = max(1, h["events_replayed"])
-        rows.append((h["rung"], len(sc), correct, wo, ab, tok, wc.get("model_calls", 0) / ev, wc.get("tokens_in", 0) / ev, h["consumer"], h["budget_tokens"], h["elaboration"]))
-    L = ["| rung | scored | correct | acc | wrong-old | abstained | ctx tokens/probe | write calls/event | write tokens/event |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+        rows.append((h["rung"], len(sc), correct, wo, ab, tok, wc.get("model_calls", 0) / ev, wc.get("tokens_in", 0) / ev, h["consumer"], h["budget_tokens"], h["elaboration"],
+                     (ff / rp if rp else None), (sf / ap if ap else None)))
+    L = ["| rung | scored | correct | acc | wrong-old | abstained | false fire | silent failure | ctx tokens/probe | write calls/event | write tokens/event |",
+         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for r in rows:
-        L.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[2] / max(1, r[1]):.2f} | {r[3]} | {r[4]} | {r[5]:.0f} | {r[6]:.2f} | {r[7]:.0f} |")
+        ffv = "-" if r[11] is None else f"{r[11]:.2f}"
+        sfv = "-" if r[12] is None else f"{r[12]:.2f}"
+        L.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[2] / max(1, r[1]):.2f} | {r[3]} | {r[4]} | {ffv} | {sfv} | {r[5]:.0f} | {r[6]:.2f} | {r[7]:.0f} |")
     if rows:
         L.append(f"\nconsumer `{rows[0][8]}` · budget {rows[0][9]} · elaboration `{rows[0][10]}` - every row shares them or the table is not a ladder.")
+        L.append("false fire and silent failure are a pair: a design can zero either one by "
+                 "being louder or quieter than it should be, so neither is a score on its own.")
     return "\n".join(L)
