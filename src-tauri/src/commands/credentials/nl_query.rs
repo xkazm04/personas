@@ -43,8 +43,11 @@ pub fn list_nl_query_jobs() -> Vec<crate::background_job::JobSnapshot> {
 
 /// Cancel an NL query job (called from unified workflows dispatcher).
 #[allow(dead_code)]
-pub fn cancel_nl_query_job(app: &tauri::AppHandle, query_id: &str) -> Result<(), AppError> {
-    NL_QUERY_JOBS.cancel(app, query_id)
+pub async fn cancel_nl_query_job(app: &tauri::AppHandle, query_id: &str) -> Result<(), AppError> {
+    NL_QUERY_JOBS
+        .cancel_and_reclaim(app, query_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 // -- Tauri commands ------------------------------------------------------

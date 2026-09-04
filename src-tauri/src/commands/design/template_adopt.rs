@@ -113,6 +113,11 @@ pub fn list_generate_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel an adopt job (non-command wrapper for workflows).
+///
+/// Deliberately signal-only. `ADOPT_JOBS` has no spawn site in this tree — the
+/// manager is polled and cancelled but nothing registers a worker against it —
+/// so there is no handle to reclaim and `cancel` reports `Requested`, which is
+/// the truth. Converting this would be a lie with an `.await` in it.
 pub fn cancel_adopt_job(
     app: &tauri::AppHandle,
     adopt_id: &str,
@@ -121,11 +126,16 @@ pub fn cancel_adopt_job(
 }
 
 /// Cancel a generate job (non-command wrapper for workflows).
-pub fn cancel_generate_job(
+///
+/// Async because it *reclaims* — `GEN_JOBS` spawns through `spawn_job`.
+pub async fn cancel_generate_job(
     app: &tauri::AppHandle,
     gen_id: &str,
 ) -> Result<(), crate::error::AppError> {
-    GEN_JOBS.cancel(app, gen_id)
+    GEN_JOBS
+        .cancel_and_reclaim(app, gen_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 // -- Payload validation ------------------------------------------
@@ -1496,13 +1506,16 @@ pub fn clear_template_generate_snapshot(
 }
 
 #[tauri::command]
-pub fn cancel_template_generate(
+pub async fn cancel_template_generate(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     gen_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    GEN_JOBS.cancel(&app, &gen_id)
+    GEN_JOBS
+        .cancel_and_reclaim(&app, &gen_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 #[tauri::command]
