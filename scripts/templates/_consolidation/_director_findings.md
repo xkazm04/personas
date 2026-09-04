@@ -429,3 +429,52 @@ model can represent "no cadence" but that currently means "never wakes", not "pa
   responsibility and from solution-architect's annotation.
 - The **Digital Clone** seat also receives support escalation and lead capture from two
   Recipe files, which the restructurer deliberately did not author.
+
+## 23. OPERATOR DECISIONS, 2026-09-04 - all twelve open items resolved
+
+### Model / design
+1. **Preset self-model ships EMPTY.** A preset carries only the LAW half (Mandate,
+   Boundaries, Operation defaults). Everything in the self-model must be earned by the
+   agent through approved diffs. This closes §19's sharpest question: pre-written
+   self-model would have been a two-author violation, not a head start.
+2. **Preset stance goes in Mandate prose.** No third manifest section, no dials returning.
+   "Prefer caution over speed; escalate rather than assume" is a sentence, not a number.
+   Resolves §19.2 - and note the dials never reached a prompt after the rebase anyway.
+3. **Router STAYS a preset agent.** *Operator override of the recommendation in §20.* The
+   analysis said it does not fit (decomposes by source, never self-paced, carries no debt,
+   sits under the roster) and the operator kept it anyway. Consequence to design around:
+   one roster member will behave unlike the rest, so any UI assuming every persona has
+   outcomes, cadence and debt needs an honest exception path rather than an empty state.
+4. **Self-pacing gets built NEXT, before any UI.** The three missing pieces: a self-paced
+   cadence state, an attention lane that asks a charter whether now is the time, and a
+   durable per-charter progress/debt record. 60 of 82 designed responsibilities depend on
+   it, so drawing the Responsibilities UI first would design against a capability that
+   does not exist.
+
+### Corpus
+5. **Delete all 22 held medium/low-confidence templates**, including the six the classifier
+   flagged as its weakest calls. Corpus lands near 39 templates / ~100 recipes.
+6. **Apply the 82 designed responsibilities to the recipe corpus**, restructure the 5
+   survivors, and apply the 8 live recipe merges with their template remaps. Corpus only;
+   not seeded into the working database.
+7. **Strip `spec.useCaseFlow` AND stop minting it** - `session_prompt.rs` and its gates
+   change in the same pass, otherwise the corpus refills with process definitions.
+8. **Re-author the 3 team presets against the roster** rather than patching member lists.
+   They were composed from templates that no longer exist.
+
+### Roster
+9. **Librarian becomes a sixth preset, authored fresh** from its four kinds of work.
+   Explicitly NOT based on technical-decision-tracker (a redesign target, not a working
+   file).
+10. **Artist covers all media** - motion and audio become kinds of work on the Artist seat.
+    No Producer seat. Resolves audio-briefing-host and feature-video-creator.
+11. **Fix both infrastructure defects now**: write the missing generator for
+    `recipeIndex.generated.json` (repairing its 6-character truncated `tags`), and remove
+    the `--forceExit` flag that breaks `npm run test`.
+12. **Database owner owns DB health**, moving it off DevOps Guardian. Overrides the
+    operator's own earlier annotation; three Recipe-flagged files already point there.
+
+### Still open, not asked
+- **The adoption questionnaire (§14a)** - generated rather than stored - has no build slot
+  yet. It pairs naturally with the self-pacing work as the other half of directive (a)/(b),
+  but no decision was taken on when.

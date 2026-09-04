@@ -54,33 +54,6 @@
 "toolCount": 0
 },
 {
-"id": "c390fe3a-d6a9-5f46-bcfb-d0f7ffcf8909",
-"name": "Detect + Distribute",
-"description": "Poll CMS for new posts and schedule platform-tuned captions via Buffer. Skips blocked categories and respects blackout hours. Default polling every 5 minutes — final cadence set at the trigger-composition step.",
-"category": "content",
-"sourceTemplateId": "analytics-content-distribution-use-case",
-"tags": "[\"anal",
-"toolCount": 0
-},
-{
-"id": "8ce82ac0-86e8-5f15-9a1b-9deda71dca93",
-"name": "48-Hour Performance Review",
-"description": "Review GA + Buffer engagement for posts published 48+ hours ago. Flag viral spikes and underperformers. Update rolling baselines and platform weights. Default daily 09:00 — final cadence set at the trigger-composition step.",
-"category": "content",
-"sourceTemplateId": "analytics-content-distribution-use-case",
-"tags": "[\"anal",
-"toolCount": 0
-},
-{
-"id": "3e54df29-6813-566a-8721-60a604efbb13",
-"name": "Weekly Strategy Digest",
-"description": "Compile top 3 posts, worst performer, platform rankings, caption-style scores, and recommended strategy adjustments. Platform-removal changes require human sign-off. Default Monday 10:00 — final cadence set at the trigger-composition step.",
-"category": "content",
-"sourceTemplateId": "analytics-content-distribution-use-case",
-"tags": "[\"anal",
-"toolCount": 0
-},
-{
 "id": "2969b6b1-5462-573c-970e-832844526258",
 "name": "Audio Production",
 "description": "On approved script, synthesize each segment via TTS, stitch with 300ms silences via ffmpeg, verify duration, and deliver the MP3 for final review. On approval, save hook/voice/pacing preferences to memory.",
@@ -162,15 +135,6 @@
 "toolCount": 0
 },
 {
-"id": "29e6ea99-4ce7-5fbe-9b01-9bb86891de36",
-"name": "Morning BI Digest",
-"description": "Consume curated BI saved queries/cards, compute deltas against the prior run, flag direction-aware anomalies, deliver plain-English digest with deep links. Cadence is managed at the trigger-composition step; default weekday 8am.",
-"category": "analytics",
-"sourceTemplateId": "bi-dashboard-digest",
-"tags": "[\"bi-d",
-"toolCount": 0
-},
-{
 "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
 "name": "Billing API Recovery Alerts",
 "description": "Listens for `budget.access.failure` from the weekly check and delivers a targeted Messages alert explaining why the agent is blind this week — expired credentials, rate limit, partial data, or empty billing — with provider-specific troubles",
@@ -195,33 +159,6 @@
 "category": "monitoring",
 "sourceTemplateId": "budget-spending-monitor",
 "tags": "[\"budg",
-"toolCount": 0
-},
-{
-"id": "4addfe48-e025-58fb-83fe-156095da7135",
-"name": "Batch Enrichment",
-"description": "Systematically process the full contact database against email history. Prioritises contacts by staleness (never-enriched first, then oldest last_enriched_at). Applies signature-extracted fields that clear the confidence threshold; routes c",
-"category": "analysis",
-"sourceTemplateId": "contact-enrichment-agent",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "ab17ac27-093b-5eb8-89e1-48a617575788",
-"name": "Conflict Resolution",
-"description": "Event-listen on conflicts emitted by batch or incremental enrichment. Presents the human with both values, confidence scores, source email counts, and a recommendation. Applies the decision and memorises the pattern so future similar confli",
-"category": "review",
-"sourceTemplateId": "contact-enrichment-agent",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "38a501e5-4c83-54b8-821f-8c2c23228edb",
-"name": "Incremental Update",
-"description": "Scan email for emails received since the last incremental run and merge any signature changes into matching contacts. Empty-field fills auto-apply at threshold; agreeing values reinforce existing confidence; contradictions route to uc_confl",
-"category": "analysis",
-"sourceTemplateId": "contact-enrichment-agent",
-"tags": "[\"cont",
 "toolCount": 0
 },
 {
@@ -486,33 +423,6 @@
 "toolCount": 0
 },
 {
-"id": "532e3e92-b844-5b2d-99b3-f72a763312a1",
-"name": "Anomaly Alerts",
-"description": "Real-time and weekly anomaly detection on the expense ledger — high-amount expenses, potential duplicates, missing recurring charges, category spending spikes, unusual vendor frequency — routed to the messaging channel with formatted messag",
-"category": "notifications",
-"sourceTemplateId": "expense-receipt-processor",
-"tags": "[\"expe",
-"toolCount": 0
-},
-{
-"id": "8b08747a-a936-5a54-9c74-ab9f64f223fd",
-"name": "Receipt Ingest",
-"description": "Poll email for receipt-shaped emails, extract structured expense data, normalize vendors, categorize, and append to the spreadsheet ledger. Idempotent by email message ID. Default every 10 minutes — final cadence set at the trigger-composit",
-"category": "operations",
-"sourceTemplateId": "expense-receipt-processor",
-"tags": "[\"expe",
-"toolCount": 0
-},
-{
-"id": "2d63dd2d-ba14-5935-b82d-53f0fe1fb01e",
-"name": "Weekly Summary",
-"description": "Compile the week's expense ledger into a messaging formatted layout summary: total, receipts count, category breakdown with WoW change, top 5 vendors, MTD vs monthly budget with projected month-end, anomalies, pending review items. Archives",
-"category": "reporting",
-"sourceTemplateId": "expense-receipt-processor",
-"tags": "[\"expe",
-"toolCount": 0
-},
-{
 "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
 "name": "Feature Announcement Video",
 "description": "Produce a short announcement video from a feature description: generate script + visual strategy, human-approve the script, generate voiceover via TTS, compose the final video via the cloud provider, human-approve the render. Route rejectio",
@@ -603,60 +513,6 @@
 "toolCount": 0
 },
 {
-"id": "563cf0cd-126c-5e8f-9ea2-ff1d04df897e",
-"name": "Daily Briefing",
-"description": "Daily rollup of the past 24h of ingested articles, categorized and ranked, delivered as an HTML email. Cadence is managed at the trigger-composition step; default daily 7am.",
-"category": "research",
-"sourceTemplateId": "industry-intelligence-aggregator",
-"tags": "[\"indu",
-"toolCount": 0
-},
-{
-"id": "2ecd8643-83ad-52e8-a8cb-7426b30c3cfb",
-"name": "Source Ingestion",
-"description": "Poll user-attached sources, dedupe against rolling 30-day index, AI-summarize with importance scoring, log to knowledge base, post breaking news alerts in real-time. Cadence is managed at the trigger-composition step; default every 30 minut",
-"category": "research",
-"sourceTemplateId": "industry-intelligence-aggregator",
-"tags": "[\"indu",
-"toolCount": 0
-},
-{
-"id": "1a683240-1f50-56d7-a504-d8773e527d12",
-"name": "Inbox Triage & messaging Routing",
-"description": "Poll email for unread mail, classify by sender memory + content, and post a formatted summary to the right messaging channels. Updates sender patterns after every processed message. Default polls every 1 minute — final cadence set at the tr",
-"category": "email_processing",
-"sourceTemplateId": "intake-processor",
-"tags": "[\"inta",
-"toolCount": 0
-},
-{
-"id": "fb063483-e4fa-534d-878e-bef4195a0b2d",
-"name": "knowledge base Databases Tracking",
-"description": "For each classified email, create a structured row in the configured knowledge base tracking database. Optional — skipped entirely if the knowledge base connector is disabled at adoption.",
-"category": "tracking",
-"sourceTemplateId": "intake-processor",
-"tags": "[\"inta",
-"toolCount": 0
-},
-{
-"id": "be6009e2-467f-5e8b-b140-201c66fc29f4",
-"name": "Invoice Ingest",
-"description": "Scan Email with multi-strategy queries, extract structured invoice data from body + attachments, dedupe against the SQLite ledger by message ID, insert with `pending` status, and flag low-confidence or high-value extractions for manual revi",
-"category": "operations",
-"sourceTemplateId": "invoice-tracker",
-"tags": "[\"invo",
-"toolCount": 0
-},
-{
-"id": "de4c0127-0738-5507-8600-b80ccc6abbce",
-"name": "Payment Monitor",
-"description": "Daily sweep that transitions past-due pending invoices to overdue, sends upcoming-payment reminders within the configured lead-time window, and delivers aging-bucketed overdue alerts respecting the alert-frequency cap. On the 1st of the mon",
-"category": "notifications",
-"sourceTemplateId": "invoice-tracker",
-"tags": "[\"invo",
-"toolCount": 0
-},
-{
 "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
 "name": "Monthly Deep Audit",
 "description": "Everything the weekly audit does, plus a cross-article contradiction pass over compiled wiki articles (title family clustering + body disagreement detection). More expensive than the weekly pass; opt-in. Cadence is managed at the trigger-co",
@@ -711,33 +567,6 @@
 "toolCount": 0
 },
 {
-"id": "987b9406-630d-5ed3-be71-c08a9213698a",
-"name": "Calendar Watch",
-"description": "Polls calendar during work hours, sends contextual prep emails 30 min before meetings, and posts 'in-meeting' status to the messaging channel when meetings start. Maintains per-event state to prevent duplicate actions. Default polling every",
-"category": "automation",
-"sourceTemplateId": "meeting-lifecycle-manager",
-"tags": "[\"meet",
-"toolCount": 0
-},
-{
-"id": "42cd9785-71fd-5172-88f7-6d9ea100b5f6",
-"name": "Daily Briefing",
-"description": "Morning summary email of the day's meetings — count, timeline, key attendees, preparation checklist. Initializes meeting state for the day so the calendar watch can operate on fresh entries. Default 08:00 weekdays — final cadence set at the",
-"category": "personal_productivity",
-"sourceTemplateId": "meeting-lifecycle-manager",
-"tags": "[\"meet",
-"toolCount": 0
-},
-{
-"id": "33fc8376-4cba-5803-969a-af2e502566a3",
-"name": "Post-meeting Follow-up",
-"description": "After each meeting ends, prompts the user for notes and action items, drafts a follow-up email (routed through manual review for meetings with > 2 attendees), distributes to all attendees, and clears the messaging custom status.",
-"category": "automation",
-"sourceTemplateId": "meeting-lifecycle-manager",
-"tags": "[\"meet",
-"toolCount": 0
-},
-{
 "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
 "name": "Newsletter Issue Curation",
 "description": "Fetch configured RSS feeds and web sources, deduplicate against past issues, score and select top articles, group into thematic sections, write editorial commentary, assemble responsive HTML, pass through human review, and deliver via SMTP ",
@@ -761,24 +590,6 @@
 "description": "Presents each discovered candidate to the human for accept/reject. Accepted items emit to downstream implementation agents; rejected items capture a reason and train topic preferences. Event-chained on `scout.opportunity.discovered`.",
 "category": "review",
 "sourceTemplateId": "product-scout",
-"tags": "[\"prod",
-"toolCount": 0
-},
-{
-"id": "0cc7cfe6-5605-5449-a052-50bad4e63372",
-"name": "Detect and Post",
-"description": "Query the analytics tool for the latest window, compare against EWMA baselines, classify deviations by severity, and post insight cards via Messages. Tracks signal persistence and recovery across runs. Cadence is managed at the trigger-comp",
-"category": "analysis",
-"sourceTemplateId": "product-signal-detector",
-"tags": "[\"prod",
-"toolCount": 0
-},
-{
-"id": "344f23eb-28c7-5eb3-95c3-6308794963a7",
-"name": "Ticket Critical Signals",
-"description": "For Critical signals and Warnings persistent for 3+ consecutive runs, open an investigation ticket in the user's ticketing tool. Deduplicates against existing open tickets on the same metric (last 7 days) — comments rather than re-creating.",
-"category": "automation",
-"sourceTemplateId": "product-signal-detector",
 "tags": "[\"prod",
 "toolCount": 0
 },
@@ -855,24 +666,6 @@
 "toolCount": 0
 },
 {
-"id": "c868be14-e5b0-503d-a691-e8d238d924a3",
-"name": "Paper Discovery",
-"description": "Query configured academic databases for papers matching keyword groups since the last scan. Dedup across databases, summarize with PMR framework, tag, cross-reference, and index. Flags low-confidence summaries for human review. Cadence is m",
-"category": "research",
-"sourceTemplateId": "research-paper-indexer",
-"tags": "[\"rese",
-"toolCount": 0
-},
-{
-"id": "ac78ce22-63c5-58a0-a4f9-551e9b62adca",
-"name": "Trend Analysis",
-"description": "Weekly index maintenance + trend detection. Dedupes preprint→published pairs, refreshes cross-references and citation counts, compares 30-day topic frequencies to the prior 30 to surface rising, new, declining, and consistent topics. Cadenc",
-"category": "analysis",
-"sourceTemplateId": "research-paper-indexer",
-"tags": "[\"rese",
-"toolCount": 0
-},
-{
 "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
 "name": "Alert & Outreach",
 "description": "Event-driven: on threshold crossings posts contextual messaging alerts (channel + owner DM) and drafts personalized email outreach (retention for churn, consultative upgrade for expansion) with 14-day suppression. Persists predictions and o",
@@ -900,33 +693,6 @@
 "toolCount": 0
 },
 {
-"id": "ea6f518f-2af2-546d-96f0-fb667e8cc0ed",
-"name": "Daily Revenue Summary",
-"description": "Compiles yesterday's revenue from Stripe balance transactions, enriches with spreadsheet context, computes trends against 7-day and 30-day baselines, and delivers an HTML report with anomaly detection. Default daily 08:00 — final cadence se",
-"category": "reporting",
-"sourceTemplateId": "revenue-operations-hub",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
-"id": "80257151-9304-500e-8952-560528229804",
-"name": "Payment Recovery Sequence",
-"description": "Event-driven: on each payment failure, reads customer failure history and sends the tier-appropriate email (friendly → urgent → final). Updates spreadsheet dunning state. Reverses state if a payment succeeds mid-sequence. Stops immediately ",
-"category": "communication",
-"sourceTemplateId": "revenue-operations-hub",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
-"id": "7dd523ae-6f86-59eb-ab66-3e5b56f2e233",
-"name": "Subscription Event Sync",
-"description": "Polls Stripe for subscription and payment events since the last cursor, classifies each, and reconciles the spreadsheet revenue tracker. Emits per-event signals so downstream capabilities (recovery, reporting) can react. Default every 5 min",
-"category": "analysis",
-"sourceTemplateId": "revenue-operations-hub",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
 "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
 "name": "Classify and Route",
 "description": "Receives webhook payloads, classifies source/event/priority via three-tier logic, loads the matching routing rule, transforms the payload for each destination, and fan-outs. Logs every event for traceability.",
@@ -942,33 +708,6 @@
 "category": "configuration",
 "sourceTemplateId": "router",
 "tags": "[\"rout",
-"toolCount": 0
-},
-{
-"id": "385ab63f-7e11-5332-9a53-eb362389f0f8",
-"name": "Proposal Generation",
-"description": "Detect newly qualified deals in the CRM, research prospect company + industry + competitors + contact, compose a tiered knowledge base proposal (startup / standard / enterprise), and flag for human review. Default every 5 minutes — final ca",
-"category": "generation",
-"sourceTemplateId": "sales-proposal-generator",
-"tags": "[\"sale",
-"toolCount": 0
-},
-{
-"id": "0419e838-2093-5027-9c82-bd257713b31f",
-"name": "Review Learning",
-"description": "On review completion, apply approval or revision outcome: approved → memory reinforces successful pattern, status updated in knowledge base, approval event emitted. Revision requested → regenerate only flagged sections, resubmit for review,",
-"category": "review",
-"sourceTemplateId": "sales-proposal-generator",
-"tags": "[\"sale",
-"toolCount": 0
-},
-{
-"id": "58b47096-e109-5b73-9ae4-c29b59b5fb91",
-"name": "Sainani-Rule Draft Edit",
-"description": "Receive a scientific draft, apply the 12 Sainani rule categories with per-sentence citations and explanations, deliver a diff + clean rewrite + style report, capture author accept/reject/counter-edit decisions, and learn author voice over t",
-"category": "content",
-"sourceTemplateId": "scientific-writing-editor",
-"tags": "[\"scie",
 "toolCount": 0
 },
 {
@@ -1005,51 +744,6 @@
 "category": "development",
 "sourceTemplateId": "skill-librarian",
 "tags": "[\"skil",
-"toolCount": 0
-},
-{
-"id": "8175b459-7cd6-558d-abe5-aacef9979308",
-"name": "Branded Design Batch",
-"description": "Transform a topic brief into a batch of branded social media variations. Loads the Canva brand kit, generates platform-optimized copy, creates multiple variations (autofill brand template when matching, from-scratch otherwise), delivers pre",
-"category": "content",
-"sourceTemplateId": "social-media-designer",
-"tags": "[\"soci",
-"toolCount": 0
-},
-{
-"id": "8e06e944-dd39-536e-b758-fd66d65f4fe5",
-"name": "Design Export",
-"description": "Export selected Canva designs as downloadable PNG/PDF files. Listens for selection events from uc_design_batch (or runs on manual request) and delivers download links via Messages, with edit URL fallback on export timeout.",
-"category": "content",
-"sourceTemplateId": "social-media-designer",
-"tags": "[\"soci",
-"toolCount": 0
-},
-{
-"id": "c22f9a28-f97a-5b1c-8d25-db15556baaff",
-"name": "Dunning Sequence",
-"description": "Event-driven 3-tier failed-payment recovery. Tier 1 = friendly reminder; tier 2 = urgent warning (+ messaging); tier 3 = final 48-hour warning + 'Churn Imminent' flag + messaging escalation. Resets on mid-sequence payment success; stops imm",
-"category": "communication",
-"sourceTemplateId": "subscription-billing-use-case",
-"tags": "[\"subs",
-"toolCount": 0
-},
-{
-"id": "892975a6-d166-51ed-b7e4-44c3ca430393",
-"name": "finance platform Event Sync",
-"description": "Processes finance platform webhook events (subscription + transaction) in real time. Dedupes, classifies, and reconciles spreadsheet. Posts contextual messaging notifications (celebrations to #revenue, failures to #billing-alerts). Fires wh",
-"category": "analysis",
-"sourceTemplateId": "subscription-billing-use-case",
-"tags": "[\"subs",
-"toolCount": 0
-},
-{
-"id": "8fec7960-5455-5c70-96bf-298ace875784",
-"name": "Monthly MRR Report",
-"description": "Pulls active subscriptions from spreadsheet, computes MRR (total, new, churned, expansion, net), compares to last month, detects anomalies (churn >5%, MRR drop >10%). Writes CSV backup locally, posts a summary to the messaging channel #reve",
-"category": "reporting",
-"sourceTemplateId": "subscription-billing-use-case",
-"tags": "[\"subs",
 "toolCount": 0
 },
 {
@@ -1188,24 +882,6 @@
 "toolCount": 0
 },
 {
-"id": "d9b3f724-35ef-54fd-a781-97b2af5a8d84",
-"name": "Landscape Report",
-"description": "Aggregates all classified rows into a structured market landscape report: industry breakdown, audience distribution, business model patterns, tech landscape, white-space opportunities, common positioning themes. Delivers via Messages and ar",
-"category": "analysis",
-"sourceTemplateId": "website-market-intelligence-profiler",
-"tags": "[\"webs",
-"toolCount": 0
-},
-{
-"id": "f026e7a3-90d7-5514-921e-c47ad9a3f43d",
-"name": "Profile URLs",
-"description": "Read URLs from the source list, fetch each site in rate-limited batches, apply 7-dimension classification, write results back. Handles paywalls, login walls, JS-rendered pages, and duplicates gracefully. Cadence is managed at the trigger-co",
-"category": "research",
-"sourceTemplateId": "website-market-intelligence-profiler",
-"tags": "[\"webs",
-"toolCount": 0
-},
-{
 "id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
 "name": "Error Classification",
 "description": "AI-classifies each ingested error across four dimensions: category (one of 7), root cause (pattern + dependency + temporal correlation), impact (blast radius + severity), and remediation (specific actionable fix). Stores classification back",
@@ -1302,114 +978,6 @@
 "category": "development",
 "sourceTemplateId": "qa-guardian",
 "tags": "[\"qa-g",
-"toolCount": 0
-},
-{
-"id": "4810f244-cfb6-53d4-98bb-1a710ddc39ea",
-"name": "Scheduled Scan",
-"description": "Primary tracking cycle: sweep sent email threads, detect replies, classify overdue threads into graduated urgency tiers with VIP priority, and deliver a batched messaging reminder. Default every 4 hours — final cadence set at the trigger-co",
-"category": "monitoring",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "a90716fa-f0c0-51d1-983f-25cc047032aa",
-"name": "On-demand Status",
-"description": "User-triggered full status report of all tracked threads — overdue, within-threshold, and recently resolved — for pre-meeting prep or end-of-day review. Does not advance escalation tiers.",
-"category": "monitoring",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "76fb3252-633e-56b7-8002-16ee006cf1e8",
-"name": "Scan and Extract",
-"description": "Scans the inbox for unprocessed actionable email, runs three-pass NLP extraction, and emits each candidate with its confidence score for downstream creation or review. Default every 15 minutes — final cadence set at the trigger-composition ",
-"category": "analysis",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "fb0e8a6e-47f8-59b6-92c4-0428d6458039",
-"name": "Create or Review",
-"description": "Consumes extracted candidates: high-confidence items check knowledge base for duplicates and create tasks; low-confidence items route through human review and train the confidence model. Learns from approve/dismiss decisions.",
-"category": "automation",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "2e1c3383-d083-5971-a703-23f478f8cb89",
-"name": "Inbox Scan & Extraction",
-"description": "Short-interval email polling loop. Filters non-lead signals, performs multi-layer extraction (header / body / signature), assembles structured lead records with confidence scores, and hands off to the qualification capability. Default every",
-"category": "analysis",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "657d3914-b610-5304-9940-a469e20d2b20",
-"name": "Lead Qualification & Scoring",
-"description": "Event-listen on extracted lead candidates. Applies the weighted 4-signal scoring model with contextual adjustments, classifies into tiers, performs three-tier deduplication against the master database, and persists new or updated records. E",
-"category": "analysis",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "3da43c82-0a28-58fd-bdad-fb03fb2e8872",
-"name": "Human Review",
-"description": "Human-in-the-loop capability for On Fire leads (fast-track), potential fuzzy duplicates (merge decision), and low-confidence extractions (verification). Every routing path lands here with full context so the reviewer can act without leaving",
-"category": "review",
-"sourceTemplateId": "email-intelligence-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "10a9bac8-581e-5e55-875a-997428016656",
-"name": "Email Triage & Ticketing",
-"description": "Fetches unread email support emails, classifies priority using multi-signal analysis (keywords, sender history, impact language, sender frequency), creates structured knowledge base tickets with priority-tier SLA deadlines, and marks email ",
-"category": "support",
-"sourceTemplateId": "email-support-operator",
-"tags": "[\"supp",
-"toolCount": 0
-},
-{
-"id": "6dbde915-d3ad-515b-bfa1-a9f951d70c51",
-"name": "SLA Monitoring & Escalation",
-"description": "Queries knowledge base for open tickets approaching or past their SLA deadline and escalates through warning (80%), critical (90%, unassigned), and breach (100%) stages. Default every 3 minutes (paired with triage) — final cadence set at th",
-"category": "support",
-"sourceTemplateId": "email-support-operator",
-"tags": "[\"supp",
-"toolCount": 0
-},
-{
-"id": "aeb4d1d4-0bc5-545a-83f1-60d0a8ba996e",
-"name": "Email Triage",
-"description": "Polls email for new support emails, matches each against the KB, computes confidence, and routes to auto-reply, human review, or knowledge-gap detection. Default every 3 minutes — final cadence set at the trigger-composition step.",
-"category": "support",
-"sourceTemplateId": "email-support-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "088b826e-981e-52b6-b871-5458c625c8a4",
-"name": "Knowledge Gap Handling",
-"description": "For emails where the KB has no relevant article, sends a customer acknowledgment with promised response time, creates a knowledge-gap report for the support team with a suggested article outline, and tracks frequency so recurring gaps escal",
-"category": "support",
-"sourceTemplateId": "email-support-operator",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "dc0f0f1c-b657-594e-b9b7-9d670164442a",
-"name": "Daily Activity Report",
-"description": "Compiles 24h metrics (total emails, auto-reply rate, approval rate, top categories, new gaps, confidence trend) and delivers to the configured channel. Default 9 AM daily — final cadence set at the trigger-composition step.",
-"category": "support",
-"sourceTemplateId": "email-support-operator",
-"tags": "[\"emai",
 "toolCount": 0
 }
 ]
