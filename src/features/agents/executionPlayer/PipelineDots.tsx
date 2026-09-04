@@ -35,9 +35,8 @@ export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
         const isLast = lastStage === stage && trace && !trace.completedAt;
 
         return (
-          <Tooltip content={STAGE_META[stage].label} placement="bottom">
+          <Tooltip key={stage} content={STAGE_META[stage].label} placement="bottom">
             <div
-              key={stage}
               className={`w-2 h-2 rounded-full transition-colors ${
                 hasError
                   ? 'bg-red-400'
