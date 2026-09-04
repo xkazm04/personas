@@ -6,7 +6,7 @@ import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
 import { useToastStore } from '@/stores/toastStore';
-import { CRON_PRESETS } from './cloudSchedulesHelpers';
+import { CLOUD_CRON_PRESETS, cloudCronPresetLabel } from './cloudSchedulesHelpers';
 import type { Persona } from '@/lib/types/types';
 
 interface CreateTriggerFormProps {
@@ -49,8 +49,9 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Persona selector */}
       <div className="space-y-1">
-        <label className="typo-caption text-foreground">{dt.persona_must_be_deployed}</label>
+        <label htmlFor="cloud-trigger-persona" className="typo-caption text-foreground">{dt.persona_must_be_deployed}</label>
         <select
+          id="cloud-trigger-persona"
           value={createPersonaId}
           onChange={(e) => setCreatePersonaId(e.target.value)}
           className="w-full px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
@@ -88,7 +89,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             }`}
           >
             <Webhook className="w-3.5 h-3.5" />
-            Webhook
+            {t.deployment.cloud_trigger_webhook}
           </button>
         </div>
       </div>
@@ -96,8 +97,9 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Cron config */}
       {createType === 'schedule' && (
         <div className="space-y-2">
-          <label className="typo-caption text-foreground">{dt.cron_expression} <span className="text-amber-400/60 font-medium">{dt.utc_suffix}</span></label>
+          <label htmlFor="cloud-trigger-cron" className="typo-caption text-foreground">{dt.cron_expression} <span className="text-amber-400/60 font-medium">{dt.utc_suffix}</span></label>
           <input
+            id="cloud-trigger-cron"
             type="text"
             value={createCron}
             onChange={(e) => setCreateCron(e.target.value)}
@@ -105,9 +107,9 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             className="w-full px-3 py-1.5 typo-code font-mono rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
           <div className="flex flex-wrap gap-1.5">
-            {CRON_PRESETS.map((preset) => (
+            {CLOUD_CRON_PRESETS.map((preset) => (
               <button
-                key={preset.cron}
+                key={preset.id}
                 type="button"
                 onClick={() => setCreateCron(preset.cron)}
                 className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
@@ -116,7 +118,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
                     : 'bg-secondary/30 text-foreground border-primary/10 hover:border-primary/20'
                 }`}
               >
-                {preset.label}
+                {cloudCronPresetLabel(t, preset)}
               </button>
             ))}
           </div>
@@ -146,7 +148,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           onClick={onCancel}
           className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>
