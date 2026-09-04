@@ -146,7 +146,19 @@ pub fn record_phase(
         .optional()?;
     let raw = raw.ok_or_else(|| AppError::NotFound(format!("cycle {cycle_id} not found")))?;
 
-    let mut phases: Vec<serde_json::Value> = serde_json::from_str(&raw).unwrap_or_default();
+    // This is a read-modify-write over one durable column, so the read's
+    // failure posture decides whether the UPDATE below is a repair or a
+    // deletion. Tolerating an unparseable payload here (`unwrap_or_default`)
+    // means a corrupt-but-recoverable value is silently replaced by a
+    // one-element array, by the component least aware it is happening, and
+    // the call still reports success. Refuse instead — consistent with the
+    // unknown-cycle case above, which already establishes that this function
+    // fails loudly rather than guessing.
+    let mut phases: Vec<serde_json::Value> = serde_json::from_str(&raw).map_err(|e| {
+        AppError::Internal(format!(
+            "cycle {cycle_id} has an unreadable phases_json ({e}); refusing to append over it"
+        ))
+    })?;
     phases.push(serde_json::json!({
         "phase": phase,
         "status": status,
@@ -579,5 +591,77 @@ mod tests {
         let pool = crate::db::init_test_user_db().unwrap();
         assert!(record_phase(&pool, "cyc_nope", "compress", "completed", "").is_err());
         assert!(finish_cycle(&pool, "cyc_nope", STATUS_COMPLETED, "{}", "body").is_err());
+    }
+
+    fn raw_phases(pool: &UserDbPool, cycle_id: &str) -> String {
+        let conn = pool.get().unwrap();
+        conn.query_row(
+            "SELECT phases_json FROM companion_cycle WHERE id = ?1",
+            params![cycle_id],
+            |r| r.get(0),
+        )
+        .unwrap()
+    }
+
+    /// `a_phase_for_an_unknown_cycle_is_an_error` above fixes the failure
+    /// posture for the ROW. This one fixes it for the PAYLOAD, which is the
+    /// half that can destroy data rather than merely lose a write.
+    ///
+    /// `record_phase` is a read-modify-write over one durable column. If the
+    /// read tolerates an unparseable value by treating it as empty, the write
+    /// that follows replaces recoverable bytes with a one-element array — the
+    /// component least aware it is happening deletes the evidence, and the
+    /// audit trail records a normal append.
+    ///
+    /// Three observation points on purpose. A paired assertion with only a
+    /// before and an after passes just as happily when the corruption never
+    /// landed in the store, so the mid-state is checked explicitly.
+    #[test]
+    fn a_corrupt_phases_payload_is_not_overwritten_by_the_next_phase() {
+        let _home = BrainHome::new("corrupt-phases");
+        let pool = crate::db::init_test_user_db().unwrap();
+
+        let cycle_id = begin_cycle(&pool).expect("begin_cycle");
+        record_phase(&pool, &cycle_id, "compress", "completed", "12 episodes").unwrap();
+
+        // 1. a real payload is in the column.
+        let seeded = raw_phases(&pool, &cycle_id);
+        assert!(
+            seeded.contains("compress"),
+            "expected a seeded payload, found {seeded}"
+        );
+
+        // Corrupt it the way a partial write or an interrupted migration
+        // would: valid UTF-8, not a JSON array.
+        const CORRUPT: &str = r#"[{"phase":"compress","status":"comp"#;
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE companion_cycle SET phases_json = ?1 WHERE id = ?2",
+                params![CORRUPT, &cycle_id],
+            )
+            .unwrap();
+        }
+
+        // 2. the mid-state — the corruption is actually in the store.
+        assert_eq!(
+            raw_phases(&pool, &cycle_id),
+            CORRUPT,
+            "the corruption must land, or the two arms below tie for the wrong reason"
+        );
+
+        // 3. the write path meets a store it could not read.
+        let result = record_phase(&pool, &cycle_id, "reconcile", "skipped", "nothing");
+        let after = raw_phases(&pool, &cycle_id);
+
+        assert!(
+            result.is_err(),
+            "a write that could not read the current value must refuse rather than \
+             append to an empty vec"
+        );
+        assert_eq!(
+            after, CORRUPT,
+            "the unreadable payload must survive the refused write; it became {after}"
+        );
     }
 }
