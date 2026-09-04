@@ -43,7 +43,7 @@ export function ManifestSelfSection({ section, proposals, onDecide }: ManifestSe
       </div>
 
       {section.body ? (
-        <MarkdownRenderer content={section.body} />
+        <MarkdownRenderer content={section.body} variant="document" />
       ) : (
         <p className="typo-caption text-foreground/85">{m.self_empty}</p>
       )}

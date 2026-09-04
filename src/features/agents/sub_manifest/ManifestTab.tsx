@@ -130,7 +130,9 @@ export function ManifestTab({ personaId }: { personaId: string }) {
                 {section.heading && (
                   <h3 className="typo-section-title text-foreground">{section.heading}</h3>
                 )}
-                {section.body && <MarkdownRenderer content={section.body} />}
+                {section.body && (
+                  <MarkdownRenderer content={section.body} variant="document" />
+                )}
               </section>
             ),
           )}
