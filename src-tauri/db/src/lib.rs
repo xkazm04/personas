@@ -815,6 +815,10 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // lane is the only retrieval lane the shipping build has — a tag
             // that lives solely in this column classifies nothing findable.
             "ALTER TABLE companion_node ADD COLUMN tags_json TEXT;",
+            // Self-dating facts. Pre-existing rows correctly backfill to NULL:
+            // nothing already in the store ever declared a boundary, so "no
+            // stated expiry" is the true value for every one of them.
+            "ALTER TABLE companion_fact ADD COLUMN expires_at TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -825,6 +829,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         let _ = conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_companion_node_session \
              ON companion_node(kind, session_id, created_at DESC);",
+        );
+        // Partial index: the expiry sweep only ever asks about rows that
+        // declared a boundary, and those are the rare ones. Runs after the
+        // expires_at ALTER above.
+        let _ = conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_companion_fact_expires              ON companion_fact(expires_at) WHERE expires_at IS NOT NULL;",
         );
         // Backfill: every pre-existing episode belongs to the migrated 'default'
         // conversation. Idempotent (only touches NULLs).
@@ -1069,7 +1079,18 @@ CREATE TABLE IF NOT EXISTS companion_fact (
     supersedes_id   TEXT,                      -- prior fact this replaces
     contradicts_id  TEXT,                      -- fact this contradicts (if any)
     last_seen_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    last_decayed_at TEXT
+    last_decayed_at TEXT,
+    -- The last calendar date (YYYY-MM-DD) on which this claim still holds,
+    -- when the claim stated one itself ("on leave until October", "the freeze
+    -- runs through the 14th"). NULL is the normal case and means "no stated
+    -- boundary" -- never "expires today". Read by
+    -- `companion::brain::consolidation::retire_expired_facts`, the only exit
+    -- from this store that needs no judgment: decay asks whether an item still
+    -- matters and supersedence asks whether something replaced it, and a
+    -- self-dating fact answered both when it was written. Set only from
+    -- evidence that named a boundary; the parser refuses anything that is not
+    -- an exact YYYY-MM-DD rather than coercing a guess.
+    expires_at      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_companion_fact_scope ON companion_fact(scope, fact_key);
 CREATE INDEX IF NOT EXISTS idx_companion_fact_super ON companion_fact(supersedes_id);
