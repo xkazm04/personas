@@ -4,7 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ExecutionProgressBar } from '../ExecutionProgressBar';
 
 export interface CloudStatusPanelProps {
@@ -164,6 +164,12 @@ function ActivityGauge({
 
   const progressTarget = Math.min(1, Math.max(0, value / safeMax));
   const spring = useSpring(progressTarget, { stiffness: 180, damping: 22, mass: 0.55 });
+  // `useSpring(number)` reads the number ONCE: motion-dom's `attachFollow`
+  // subscribes to a MotionValue source but never re-reads a plain number, so
+  // a re-render with a new `value` left the arc and the counter frozen at
+  // whatever the first poll delivered (`follow-value.mjs`, framer-motion 12).
+  // Pushing each new target through `.set()` is what makes the spring follow.
+  useEffect(() => { spring.set(progressTarget); }, [spring, progressTarget]);
   const arcLength = 157;
   const dashOffset = useTransform(spring, (p) => arcLength * (1 - p));
 
