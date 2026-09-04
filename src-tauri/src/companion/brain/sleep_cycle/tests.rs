@@ -1262,6 +1262,7 @@ fn untrusted_evidence_is_fenced_with_the_rules_outside_it() {
         importance: 3,
         confidence: 0.8,
         sources: vec!["ep_1".into()],
+        expires_at: None,
         supersedes_id: None,
         contradicts_id: None,
         updated_at: String::new(),
@@ -1371,6 +1372,7 @@ async fn a_cycle_refuses_to_relearn_a_fact_the_user_forgot() {
             confidence: 0.9,
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
         },
     )
     .unwrap();
