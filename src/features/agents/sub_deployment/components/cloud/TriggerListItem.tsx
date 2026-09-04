@@ -9,6 +9,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -126,7 +127,7 @@ export function TriggerListItem({
                   <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
                     {f.status === 'completed' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> :
                      f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
-                     <LoadingSpinner size="xs" className="text-blue-400" />}
+                     <LiveStatusDot tone="syncing" size="sm" className="mx-0.5" />}
                     <span className="text-foreground">{f.status}</span>
                     <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
                     {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}
