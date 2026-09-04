@@ -17,9 +17,7 @@ import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
-import { debtText } from '@/i18n/DebtText';
-
-
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface ToolInvocationCardProps {
   tool: PersonaToolDefinition;
@@ -91,7 +89,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         {result && (
           <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
             {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-            {result.duration_ms}ms
+            <Numeric value={Number(result.duration_ms)} unit="ms" />
           </span>
         )}
       </button>
@@ -120,10 +118,11 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {/* Input */}
               {!isBuiltin && (
               <div>
-                <label className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
+                <label htmlFor={`tool-input-${tool.id}`} className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
                   {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
+                  id={`tool-input-${tool.id}`}
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
@@ -132,7 +131,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                       ? 'border-red-500/40 focus-visible:ring-red-500/30'
                       : 'border-primary/20 focus-visible:ring-violet-500/30'
                   }`}
-                  placeholder={debtText("auto_key_value_9a434827")}
+                  placeholder={t.agents.tool_runner.input_json_placeholder}
                   aria-invalid={!!jsonError}
                 />
                 {jsonError && (
@@ -205,7 +204,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         </span>
         <span className="ml-auto flex items-center gap-1 text-foreground typo-body">
           <Clock className="w-2.5 h-2.5" />
-          {result.duration_ms}ms
+          <Numeric value={Number(result.duration_ms)} unit="ms" />
         </span>
       </div>
 
