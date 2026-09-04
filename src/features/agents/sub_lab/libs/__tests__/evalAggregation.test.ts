@@ -116,6 +116,43 @@ describe('buildEvalGridData', () => {
     expect(v1.compositeScore).toBe(0);
   });
 
+  it('separates a cheap failure from a cheap success', () => {
+    // v2 looks 25% cheaper than v1 on totalCost - but only because one of its
+    // two samples crashed after spending almost nothing. The unconditioned
+    // totals cannot tell that apart from efficiency; the scored ones can.
+    const out = buildEvalGridData([
+      evalResult('v1', 1, { ta: 80, cost: 0.20, duration: 2000 }),
+      evalResult('v1', 1, { ta: 80, cost: 0.20, duration: 2000 }),
+      evalResult('v2', 2, { ta: 80, cost: 0.29, duration: 2900 }),
+      evalResult('v2', 2, { ta: null, oq: null, pc: null, cost: 0.01, duration: 100 }),
+    ]);
+    const v1 = out.versionAggs.find((a) => a.versionId === 'v1')!;
+    const v2 = out.versionAggs.find((a) => a.versionId === 'v2')!;
+
+    // Unconditioned: v2 is the cheaper variant.
+    expect(v2.totalCost).toBeLessThan(v1.totalCost);
+    // Conditioned on a scored sample: v2 is the more expensive one.
+    expect(v2.scoredCost / v2.scoredCount).toBeGreaterThan(
+      v1.scoredCost / v1.scoredCount,
+    );
+    // And the denominator the quality averages used is now on the row.
+    expect(v1.scoredCount).toBe(2);
+    expect(v2.scoredCount).toBe(1);
+    expect(v2.avgScoredDuration).toBe(2900);
+  });
+
+  it('counts a non-completed sample as incomplete, in neither view', () => {
+    const out = buildEvalGridData([
+      evalResult('v1', 1, { ta: 80, cost: 0.20 }),
+      { ...evalResult('v1', 1, { ta: null, oq: null, pc: null, cost: 0.05 }), status: 'error' },
+    ]);
+    const v1 = out.versionAggs[0]!;
+    expect(v1.count).toBe(2);
+    expect(v1.scoredCount).toBe(1);
+    expect(v1.incompleteCount).toBe(1);
+    expect(v1.scoredCost).toBeCloseTo(0.20, 5);
+  });
+
   it('aggregates duplicate (versionId, modelId) cells', () => {
     const out = buildEvalGridData([
       evalResult('v1', 1, { modelId: 'haiku', ta: 60, scenario: 's1' }),

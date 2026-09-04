@@ -13,6 +13,19 @@ export interface CellAggregate {
   totalTokens: number;
   avgDuration: number;
   count: number;
+  /** Samples that produced at least one score - the denominator the three
+   *  averages above actually used. `totalCost`/`totalTokens`/`avgDuration`
+   *  are over `count`, so without this the row mixes two denominators. */
+  scoredCount: number;
+  /** Samples that never ran to completion. In neither view: they are not
+   *  failures of the variant, they are absent measurements. */
+  incompleteCount: number;
+  /** Cost, tokens and duration over the scored samples only. A variant that
+   *  crashes early looks cheap in the unconditioned totals; comparing the two
+   *  says whether a saving is efficiency or an unfinished trajectory. */
+  scoredCost: number;
+  scoredTokens: number;
+  avgScoredDuration: number;
 }
 
 export interface VersionAggregate extends CellAggregate {
@@ -40,6 +53,11 @@ interface VersionAccum {
   totalTokens: number;
   totalDuration: number;
   count: number;
+  scoredCount: number;
+  incompleteCount: number;
+  scoredCost: number;
+  scoredTokens: number;
+  scoredDuration: number;
 }
 
 /** Accumulator for grid cells that tracks scored counts per metric. */
@@ -54,6 +72,11 @@ interface CellAccum {
   totalTokens: number;
   totalDuration: number;
   count: number;
+  scoredCount: number;
+  incompleteCount: number;
+  scoredCost: number;
+  scoredTokens: number;
+  scoredDuration: number;
 }
 
 /**
@@ -76,9 +99,22 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         outputQuality: 0, outputQualityCount: 0,
         protocolCompliance: 0, protocolComplianceCount: 0,
         totalCost: 0, totalTokens: 0, totalDuration: 0, count: 0,
+        scoredCount: 0, incompleteCount: 0,
+        scoredCost: 0, scoredTokens: 0, scoredDuration: 0,
       });
       versionOrder.push(r.versionId);
     }
+    // Three states, not two: a sample that never completed is an absent
+    // measurement, a completed sample with no score is a failure that still
+    // spent, and a scored sample is the only one whose cost is comparable.
+    const incomplete = r.status !== 'completed';
+    const scored =
+      !incomplete &&
+      (r.toolAccuracyScore != null ||
+        r.outputQualityScore != null ||
+        r.protocolCompliance != null);
+    const tokens = r.inputTokens + r.outputTokens;
+
     const va = versionAccums.get(r.versionId)!;
     if (r.toolAccuracyScore != null) { va.toolAccuracy += r.toolAccuracyScore; va.toolAccuracyCount++; }
     if (r.outputQualityScore != null) { va.outputQuality += r.outputQualityScore; va.outputQualityCount++; }
@@ -87,6 +123,13 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     va.totalTokens += r.inputTokens + r.outputTokens;
     va.totalDuration += r.durationMs;
     va.count++;
+    if (incomplete) va.incompleteCount++;
+    if (scored) {
+      va.scoredCount++;
+      va.scoredCost += r.costUsd;
+      va.scoredTokens += tokens;
+      va.scoredDuration += r.durationMs;
+    }
 
     // Grid cell accumulation
     modelSet.add(r.modelId);
@@ -97,6 +140,8 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         outputQuality: 0, outputQualityCount: 0,
         protocolCompliance: 0, protocolComplianceCount: 0,
         totalCost: 0, totalTokens: 0, totalDuration: 0, count: 0,
+        scoredCount: 0, incompleteCount: 0,
+        scoredCost: 0, scoredTokens: 0, scoredDuration: 0,
       };
     }
     const cell = cellAccums[r.versionId]![r.modelId]!;
@@ -107,6 +152,13 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     cell.totalCost += r.costUsd;
     cell.totalTokens += r.inputTokens + r.outputTokens;
     cell.totalDuration += r.durationMs;
+    if (incomplete) cell.incompleteCount++;
+    if (scored) {
+      cell.scoredCount++;
+      cell.scoredCost += r.costUsd;
+      cell.scoredTokens += tokens;
+      cell.scoredDuration += r.durationMs;
+    }
   }
 
   // Finalize version aggregates
@@ -130,6 +182,12 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
       totalTokens: a.totalTokens,
       avgDuration: Math.round(a.totalDuration / n),
       count: a.count,
+      scoredCount: a.scoredCount,
+      incompleteCount: a.incompleteCount,
+      scoredCost: a.scoredCost,
+      scoredTokens: a.scoredTokens,
+      avgScoredDuration:
+        a.scoredCount > 0 ? Math.round(a.scoredDuration / a.scoredCount) : 0,
     };
   });
   aggs.sort((a, b) => b.compositeScore - a.compositeScore);
@@ -153,6 +211,12 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         totalTokens: c.totalTokens,
         avgDuration: Math.round(c.totalDuration / n),
         count: c.count,
+        scoredCount: c.scoredCount,
+        incompleteCount: c.incompleteCount,
+        scoredCost: c.scoredCost,
+        scoredTokens: c.scoredTokens,
+        avgScoredDuration:
+          c.scoredCount > 0 ? Math.round(c.scoredDuration / c.scoredCount) : 0,
       };
     }
   }
