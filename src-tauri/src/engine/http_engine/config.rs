@@ -91,6 +91,46 @@ pub(super) fn tool_allowed(name: &str, connectors_on: bool) -> bool {
     REMOTE_SAFE_MCP_TOOLS.contains(&name) || (connectors_on && CONNECTOR_TOOLS.contains(&name))
 }
 
+/// [`tool_allowed`] narrowed by a persona's positively-declared roster.
+///
+/// ORDER MATTERS AND IS NOT SYMMETRIC. `tool_allowed` is a SECURITY boundary
+/// (write/exec/connector tools withheld from a prompt-injectable remote model,
+/// see the `REMOTE_SAFE_MCP_TOOLS` doc comment); the persona roster is a
+/// LATENCY/COST lever. A latency lever must never be able to reopen a security
+/// boundary, so the roster can only intersect — a name the persona declares
+/// that `tool_allowed` rejects stays rejected, silently and by construction.
+pub(super) fn tool_allowed_for_roster(
+    name: &str,
+    connectors_on: bool,
+    roster: Option<&[String]>,
+) -> bool {
+    if !tool_allowed(name, connectors_on) {
+        return false;
+    }
+    match roster {
+        None => true,
+        Some(names) => names.iter().any(|n| n == name),
+    }
+}
+
+/// Stamp a run's measured tool-roster size onto its frozen config snapshot and
+/// serialize it for `persona_executions.execution_config`.
+///
+/// Returns `None` only if serialization fails, which the caller treats as "no
+/// snapshot" — exactly what the HTTP path stored before this existed, so a
+/// failure here can never be worse than the status quo it replaced.
+pub(super) fn stamp_roster(
+    mut config: personas_core::types::ExecutionConfig,
+    size: Option<usize>,
+    bytes: Option<usize>,
+    source: &str,
+) -> Option<String> {
+    config.tool_roster_size = size;
+    config.tool_roster_bytes = bytes;
+    config.tool_roster_source = source.to_string();
+    serde_json::to_string(&config).ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -128,5 +168,89 @@ mod tests {
         for t in CONNECTOR_TOOLS {
             assert!(!REMOTE_SAFE_MCP_TOOLS.contains(t), "{t} double-listed");
         }
+    }
+
+    #[test]
+    fn no_declared_roster_is_todays_behaviour_exactly() {
+        for name in REMOTE_SAFE_MCP_TOOLS {
+            assert_eq!(
+                tool_allowed_for_roster(name, false, None),
+                tool_allowed(name, false),
+                "{name} must be unaffected when no roster is declared"
+            );
+        }
+    }
+
+    #[test]
+    fn a_declared_roster_narrows_the_remote_safe_set() {
+        let roster = vec!["personas_health".to_string(), "personas_list".to_string()];
+        assert!(tool_allowed_for_roster(
+            "personas_health",
+            false,
+            Some(&roster)
+        ));
+        assert!(!tool_allowed_for_roster(
+            "personas_knowledge_search",
+            false,
+            Some(&roster)
+        ));
+    }
+
+    /// The roster is a latency lever; `tool_allowed` is a security boundary.
+    /// Declaring a withheld tool must not hand it to a prompt-injectable remote
+    /// model.
+    #[test]
+    fn a_declared_roster_can_never_widen_past_the_security_boundary() {
+        let roster = vec![
+            "personas_execute".to_string(),
+            "drive_write_text".to_string(),
+            "gmail_list_messages".to_string(),
+        ];
+        assert!(!tool_allowed_for_roster(
+            "personas_execute",
+            true,
+            Some(&roster)
+        ));
+        assert!(!tool_allowed_for_roster(
+            "drive_write_text",
+            true,
+            Some(&roster)
+        ));
+        // A connector tool declared while connectors are OFF stays off.
+        assert!(!tool_allowed_for_roster(
+            "gmail_list_messages",
+            false,
+            Some(&roster)
+        ));
+    }
+
+    /// The measurement is only evidence if it survives the round-trip into
+    /// `persona_executions.execution_config`, which is where the correlation
+    /// against `duration_ms` / `cost_usd` will be read from.
+    #[test]
+    fn roster_measurement_round_trips_through_the_config_snapshot() {
+        let cfg = personas_core::types::ExecutionConfig {
+            model_profile: None,
+            engine: "qwen".into(),
+            max_budget_usd: None,
+            max_turns: None,
+            timeout_ms: 1000,
+            has_workspace_instructions: false,
+            workspace_id: None,
+            tool_names: vec![],
+            tool_roster_size: None,
+            tool_roster_bytes: None,
+            tool_roster_source: String::new(),
+            credential_connectors: vec![],
+            routing_rule: None,
+            compliance_rule: None,
+            continuation_mode: "none".into(),
+            assembled_at: "2026-09-04T00:00:00Z".into(),
+        };
+        let json = stamp_roster(cfg, Some(20), Some(8123), "http_engine").expect("serializes");
+        let back: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(back["tool_roster_size"], 20);
+        assert_eq!(back["tool_roster_bytes"], 8123);
+        assert_eq!(back["tool_roster_source"], "http_engine");
     }
 }

@@ -25,7 +25,9 @@ Personas is a **Tauri v2 desktop app** that wraps the **Claude Code CLI** (and C
 
 ## 2. Engine: Claude Code CLI Wrapping (CRITICAL)
 
-**This is the single most important fact about personas:** the application does not implement an LLM client. It shells out to the `claude` binary on the user's `PATH` (or `claude-code` / `claude.exe` / `claude.cmd` on Windows) and treats it as the LLM provider. (Codex CLI was previously a secondary provider with the same shape but was removed — see "Codex provider was removed" below.)
+**This is the single most important fact about personas:** the DOMINANT path does not implement an LLM client. It shells out to the `claude` binary on the user's `PATH` (or `claude-code` / `claude.exe` / `claude.cmd` on Windows) and treats it as the LLM provider. (Codex CLI was previously a secondary provider with the same shape but was removed — see "Codex provider was removed" below.)
+
+**But "does not implement an LLM client" — which this line claimed unqualified until 2026-09-04 — is false, and had been for some time.** `src-tauri/src/engine/http_engine/` is a real OpenAI-compatible LLM client: it builds a tool array and posts it with `tool_choice` (`http_engine/tools.rs`), runs a bounded multi-turn tool loop executing the calls locally, carries its own remote-safe tool roster (`http_engine/config.rs::REMOTE_SAFE_MCP_TOOLS`) and its own per-1M-token price table (`config.rs::price_per_million`). It is dispatched from `runner::run_execution` whenever the resolved `ModelProfile.provider` is a remote HTTP provider (Qwen/DashScope). Anything you reason about here — roster size, token budgets, cost attribution — applies literally to that path and not only to the CLI. Corrected after the 2026-09-04 harness-playbook comparison study (`.ai/directions/2026-09-04-harness-playbook-comparison.md` §4.3, §5.1), which found this line stale.
 
 ### Provider abstraction
 

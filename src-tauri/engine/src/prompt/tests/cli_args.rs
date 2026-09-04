@@ -259,3 +259,60 @@ fn test_cli_args_strips_disable_prompt_caching_env() {
         );
     }
 }
+
+// -- Per-persona tool roster -------------------------------------------------
+//
+// The measurable behind these: before this landed, EVERY persona spawn carried
+// Claude Code's full default roster because no persona had ever been given
+// `--allowedTools`. The two assertions that matter are (a) an undeclared
+// persona is byte-for-byte unchanged, and (b) a declared one narrows.
+
+#[test]
+fn undeclared_persona_still_gets_no_allowed_tools_flag() {
+    let persona = test_persona();
+    let args = build_cli_args(Some(&persona), None);
+    assert!(
+        !args.args.contains(&"--allowedTools".to_string()),
+        "an undeclared persona must spawn exactly as it did before the roster existed"
+    );
+}
+
+#[test]
+fn declared_roster_becomes_one_comma_joined_allowed_tools_flag() {
+    let mut persona = test_persona();
+    persona.parameters =
+        Some(r#"[{"key":"allowed_tools","value":["Read","Grep","Bash"]}]"#.to_string());
+    let args = build_cli_args(Some(&persona), None);
+
+    let idx = args
+        .args
+        .iter()
+        .position(|a| a == "--allowedTools")
+        .expect("declared roster should emit --allowedTools");
+    // ONE argv element, not three — the value must not be able to split into
+    // extra flags.
+    assert_eq!(args.args[idx + 1], "Read,Grep,Bash");
+}
+
+#[test]
+fn an_invalid_roster_entry_falls_back_to_the_unbounded_default() {
+    let mut persona = test_persona();
+    persona.parameters = Some(
+        r#"[{"key":"allowed_tools","value":["Read","--dangerously-skip-permissions"]}]"#
+            .to_string(),
+    );
+    let args = build_cli_args(Some(&persona), None);
+    assert!(
+        !args.args.contains(&"--allowedTools".to_string()),
+        "a roster that cannot be trusted must not be applied as if it were narrower than it is"
+    );
+    // And it must not have leaked the entry onto the command line either.
+    assert_eq!(
+        args.args
+            .iter()
+            .filter(|a| *a == "--dangerously-skip-permissions")
+            .count(),
+        1,
+        "only the base flag, never a roster-smuggled copy"
+    );
+}

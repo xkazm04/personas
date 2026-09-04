@@ -611,6 +611,11 @@ pub async fn run_execution(
         }
     };
 
+    // The persona's positively-declared tool roster, resolved ONCE and shared
+    // by the config snapshot and the HTTP dispatch below. `None` = undeclared,
+    // which is every persona until an operator sets the parameter.
+    let declared_roster = personas_engine::prompt::resolve_allowed_tools(&persona);
+
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
     let execution_config = ExecutionConfig {
@@ -639,6 +644,18 @@ pub async fn run_execution(
         has_workspace_instructions: workspace_instructions.is_some(),
         workspace_id: persona.home_team_id.clone(),
         tool_names: tools.iter().map(|t| t.name.clone()).collect(),
+        // Roster measurement. `None` is the honest CLI default: with no
+        // `--allowedTools` the roster belongs to Claude Code and personas
+        // cannot count it. A declared roster makes the size a recorded fact on
+        // the same row as duration_ms/cost_usd. The HTTP branch below
+        // overwrites both with the exact assembled array.
+        tool_roster_size: declared_roster.as_ref().map(|r| r.len()),
+        tool_roster_bytes: None,
+        tool_roster_source: if declared_roster.is_some() {
+            "cli_allowlist".to_string()
+        } else {
+            "cli_default".to_string()
+        },
         credential_connectors: cred_hints.to_vec(),
         routing_rule: None, // Set after BYOM policy evaluation in spawn stage
         compliance_rule: None,
@@ -1659,6 +1676,12 @@ pub async fn run_execution(
             .flatten()
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
+            // The HTTP path assembles the tool array itself, so unlike the CLI
+            // path it knows the roster exactly — count AND serialized bytes.
+            // `execution_config` is handed in so those two numbers land on the
+            // run row: before this, the HTTP branch returned above the only
+            // site that persisted a config snapshot, so a remote run stored
+            // NO config at all (`execution_config` was NULL for every one).
             return super::http_engine::run_http_execution(
                 &*emitter,
                 &execution_id,
@@ -1666,6 +1689,8 @@ pub async fn run_execution(
                 model_profile.as_ref().unwrap(),
                 &prompt_text,
                 !tools.is_empty() || connectors_on,
+                declared_roster.clone(),
+                execution_config.clone(),
                 &cancelled,
                 start_time,
             )
