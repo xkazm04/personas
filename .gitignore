@@ -78,6 +78,7 @@ recordings/
 !.claude/skills/
 !.claude/rules/
 !.claude/perfect/
+!.claude/friend/
 !.claude/architect/
 !.claude/explorer/
 !.claude/research/
