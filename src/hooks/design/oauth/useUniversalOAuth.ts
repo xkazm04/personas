@@ -39,15 +39,15 @@ export function useUniversalOAuth(): UniversalOAuthState {
       const values: Record<string, string> = { ...prev };
       // Tokens stay server-side: only the one-time session ref crosses IPC,
       // and only once the backend actually captured a token.
-      if (poll.oauth_session_ref && (poll.has_access_token || poll.has_refresh_token)) {
-        values[OAUTH_FIELD.SESSION_REF] = poll.oauth_session_ref;
+      if (poll.oauthSessionRef && (poll.hasAccessToken || poll.hasRefreshToken)) {
+        values[OAUTH_FIELD.SESSION_REF] = poll.oauthSessionRef;
       }
       if (poll.scope) {
         values.scopes = poll.scope;
         values[OAUTH_FIELD.SCOPE] = poll.scope;
       }
-      if (poll.token_type) values.token_type = poll.token_type;
-      if (poll.expires_in) values.expires_in = String(poll.expires_in);
+      if (poll.tokenType) values.token_type = poll.tokenType;
+      if (poll.expiresIn) values.expires_in = String(poll.expiresIn);
       values[OAUTH_FIELD.COMPLETED_AT] = new Date().toISOString();
       values[OAUTH_FIELD.PROVIDER] = providerRef.current ?? 'unknown';
       return values;

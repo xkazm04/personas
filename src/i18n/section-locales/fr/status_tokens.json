@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "En file",
-    "running": "En cours",
-    "completed": "Terminé",
-    "failed": "Échoué",
-    "cancelled": "Annulé",
-    "incomplete": "Incomplet",
-    "error": "Erreur",
-    "unknown": "Inconnu"
-  },
-  "simple": {
-    "good": "Bon",
-    "warning": "À surveiller",
-    "problem": "Problème"
-  },
-  "event": {
-    "pending": "En attente",
-    "processing": "En traitement",
-    "processed": "Traité",
-    "failed": "Échoué",
-    "retrying": "Nouvelle tentative"
-  },
   "automation": {
-    "pending": "En attente",
-    "running": "En cours",
     "completed": "Terminé",
     "failed": "Échoué",
+    "pending": "En attente",
+    "running": "En cours",
     "timeout": "Délai dépassé"
-  },
-  "severity": {
-    "info": "Info",
-    "low": "Faible",
-    "medium": "Moyen",
-    "high": "Élevé",
-    "critical": "Critique"
-  },
-  "priority": {
-    "low": "Faible",
-    "normal": "Normal",
-    "high": "Élevé",
-    "urgent": "Urgent"
-  },
-  "healing_status": {
-    "open": "Ouvert",
-    "auto_fixed": "Corrigé auto",
-    "acknowledged": "Reconnu",
-    "resolved": "Résolu"
-  },
-  "healing_category": {
-    "config": "Configuration",
-    "auth": "Authentification",
-    "network": "Réseau",
-    "timeout": "Délai",
-    "quota": "Quota"
-  },
-  "connector_status": {
-    "ready": "Prêt",
-    "untested": "Non testé",
-    "failed": "Échoué",
-    "no_credential": "Aucun identifiant",
-    "testing": "Test"
-  },
-  "task_phase": {
-    "analyzing": "Analyse",
-    "planning": "Planification",
-    "implementing": "Implémentation",
-    "committing": "Commit en cours",
-    "validating": "Validation",
-    "complete": "Terminé"
-  },
-  "goal_state": {
-    "pending": "En attente",
-    "review": "En révision",
-    "blocked": "Bloqué",
-    "in_progress": "En cours",
-    "running": "En exécution",
-    "completed": "Terminé",
-    "done": "Terminé"
-  },
-  "test": {
-    "generating": "Génération",
-    "running": "En cours",
-    "completed": "Terminé",
-    "failed": "Échoué",
-    "pending": "En attente"
-  },
-  "dev": {
-    "open": "Ouvert",
-    "in_progress": "En cours",
-    "completed": "Terminé",
-    "blocked": "Bloqué",
-    "queued": "En file",
-    "running": "En cours",
-    "failed": "Échoué"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Global"
-  },
-  "forage_confidence": {
-    "high": "Élevée",
-    "medium": "Moyenne",
-    "low": "Faible"
-  },
-  "capability_risk": {
-    "low": "faible",
-    "medium": "moyen",
-    "high": "élevé"
-  },
-  "verdict": {
-    "production": "Production",
-    "promising": "Prometteur",
-    "not_ready": "Non prêt",
-    "broken": "Défaillant"
-  },
-  "deployment": {
-    "active": "Actif",
-    "paused": "En pause",
-    "failed": "Échoué",
-    "unknown": "Inconnu",
-    "file-based": "Basé sur un fichier"
-  },
-  "delivery": {
-    "delivered": "Livré",
-    "failed": "Échoué",
-    "pending": "En attente",
-    "queued": "En file d’attente"
-  },
-  "rotation": {
-    "anomaly": "Anomalie",
-    "paused": "En pause",
-    "disabled": "Désactivé",
-    "perm_errors": "Erreurs permanentes",
-    "degrading": "Dégradation",
-    "backoff": "Recul",
-    "fresh": "Récent",
-    "active": "Actif"
-  },
-  "thinking": {
-    "high": "Élevé",
-    "low": "Faible",
-    "medium": "Moyen"
-  },
-  "error_category": {
-    "api_error": "Erreur API",
-    "credential_error": "Erreur d’identifiants",
-    "network": "Réseau",
-    "provider_not_found": "Fournisseur introuvable",
-    "rate_limit": "Limite de débit",
-    "session_limit": "Limite de session",
-    "timeout": "Délai dépassé",
-    "tool_error": "Erreur d’outil",
-    "transient_process_failure": "Échec transitoire du processus",
-    "unknown": "Inconnu",
-    "validation": "Erreur de validation"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Limite de ramification atteinte",
-    "budget_exceeded": "Plafond de coût atteint",
-    "cas_lost": "Réclamée par une autre exécution",
-    "cycle_detected": "Cycle détecté",
-    "depth_limit": "Limite de profondeur",
-    "handoff_suppressed": "Relais supprimé",
-    "malformed_config": "Configuration invalide",
-    "outside_window": "Hors de la fenêtre active",
-    "predicate_unmet": "Condition non remplie",
-    "publish_failed": "Échec de la publication",
-    "quarantined": "Déclencheur en quarantaine",
-    "healing_abandoned": "Réparation abandonnée",
-    "healing_capped": "Tentatives de réparation épuisées",
-    "lookup_failed": "Échec de la recherche du déclencheur",
-    "cost_ceiling_corrupt": "Plafond de coût illisible"
   },
   "build": {
     "analyzing": "Analyse en cours",
@@ -186,6 +19,232 @@
     "test_complete": "Test terminé",
     "testing": "Test en cours"
   },
+  "capability_risk": {
+    "high": "élevé",
+    "low": "faible",
+    "medium": "moyen"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Limite de ramification atteinte",
+    "budget_exceeded": "Plafond de coût atteint",
+    "cas_lost": "Réclamée par une autre exécution",
+    "cost_ceiling_corrupt": "Plafond de coût illisible",
+    "cycle_detected": "Cycle détecté",
+    "depth_limit": "Limite de profondeur",
+    "handoff_suppressed": "Relais supprimé",
+    "healing_abandoned": "Réparation abandonnée",
+    "healing_capped": "Tentatives de réparation épuisées",
+    "lookup_failed": "Échec de la recherche du déclencheur",
+    "malformed_config": "Configuration invalide",
+    "outside_window": "Hors de la fenêtre active",
+    "predicate_unmet": "Condition non remplie",
+    "publish_failed": "Échec de la publication",
+    "quarantined": "Déclencheur en quarantaine"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  },
+  "competition": {
+    "awaiting_review": "En attente de revue",
+    "cancelled": "Annulé",
+    "resolved": "Résolu",
+    "running": "En cours"
+  },
+  "connector_status": {
+    "failed": "Échoué",
+    "no_credential": "Aucun identifiant",
+    "ready": "Prêt",
+    "testing": "Test",
+    "untested": "Non testé"
+  },
+  "delivery": {
+    "delivered": "Livré",
+    "failed": "Échoué",
+    "pending": "En attente",
+    "queued": "En file d’attente"
+  },
+  "deployment": {
+    "active": "Actif",
+    "failed": "Échoué",
+    "file-based": "Basé sur un fichier",
+    "paused": "En pause",
+    "unknown": "Inconnu"
+  },
+  "dev": {
+    "blocked": "Bloqué",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "in_progress": "En cours",
+    "open": "Ouvert",
+    "queued": "En file",
+    "running": "En cours"
+  },
+  "error_category": {
+    "api_error": "Erreur API",
+    "credential_error": "Erreur d’identifiants",
+    "network": "Réseau",
+    "provider_not_found": "Fournisseur introuvable",
+    "rate_limit": "Limite de débit",
+    "session_limit": "Limite de session",
+    "timeout": "Délai dépassé",
+    "tool_error": "Erreur d’outil",
+    "transient_process_failure": "Échec transitoire du processus",
+    "unknown": "Inconnu",
+    "validation": "Erreur de validation"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "En attente d’approbation",
+    "cascade_guard": "Déjà en cours",
+    "cross_team_blocked": "Bloqué entre équipes",
+    "dry_run": "Exécution à blanc (simulée)",
+    "handoff_target_disabled": "La cible du transfert est désactivée",
+    "no_subscriber": "Aucun abonné correspondant",
+    "persona_disabled": "L’agent est désactivé",
+    "stuck_reclaimed": "Repris et remis en file",
+    "stuck_retry_exhausted": "Repris, tentatives épuisées"
+  },
+  "event": {
+    "failed": "Échoué",
+    "pending": "En attente",
+    "processed": "Traité",
+    "processing": "En traitement",
+    "retrying": "Nouvelle tentative"
+  },
+  "execution": {
+    "cancelled": "Annulé",
+    "completed": "Terminé",
+    "error": "Erreur",
+    "failed": "Échoué",
+    "incomplete": "Incomplet",
+    "queued": "En file",
+    "running": "En cours",
+    "unknown": "Inconnu"
+  },
+  "forage_confidence": {
+    "high": "Élevée",
+    "low": "Faible",
+    "medium": "Moyenne"
+  },
+  "goal_state": {
+    "blocked": "Bloqué",
+    "completed": "Terminé",
+    "done": "Terminé",
+    "in_progress": "En cours",
+    "pending": "En attente",
+    "review": "En révision",
+    "running": "En exécution"
+  },
+  "healing_category": {
+    "auth": "Authentification",
+    "config": "Configuration",
+    "network": "Réseau",
+    "quota": "Quota",
+    "timeout": "Délai"
+  },
+  "healing_status": {
+    "acknowledged": "Reconnu",
+    "auto_fixed": "Corrigé auto",
+    "open": "Ouvert",
+    "resolved": "Résolu"
+  },
+  "kb_document": {
+    "indexing": "indexation",
+    "pending": "en attente"
+  },
+  "memory_action": {
+    "deleted": "Supprimée",
+    "error": "Erreur",
+    "kept": "Conservée",
+    "proposed_archive": "Archivage proposé",
+    "proposed_delete": "Suppression proposée",
+    "proposed_synthesize": "Fusion proposée",
+    "proposed_update_importance": "Réévaluation proposée"
+  },
+  "memory_category": {
+    "context": "Contexte",
+    "decision": "Décision",
+    "learning": "Apprentissage",
+    "observation": "Constat"
+  },
+  "memory_tier": {
+    "active": "Active",
+    "archive": "Archivée",
+    "core": "Essentielle",
+    "working": "En cours"
+  },
+  "priority": {
+    "high": "Élevé",
+    "low": "Faible",
+    "normal": "Normal",
+    "urgent": "Urgent"
+  },
+  "remote_job": {
+    "cancelled": "Annulé",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "pending": "En attente",
+    "refused": "Refusé",
+    "running": "En cours"
+  },
+  "rotation": {
+    "active": "Actif",
+    "anomaly": "Anomalie",
+    "backoff": "Recul",
+    "degrading": "Dégradation",
+    "disabled": "Désactivé",
+    "fresh": "Récent",
+    "paused": "En pause",
+    "perm_errors": "Erreurs permanentes"
+  },
+  "severity": {
+    "critical": "Critique",
+    "high": "Élevé",
+    "info": "Info",
+    "low": "Faible",
+    "medium": "Moyen"
+  },
+  "simple": {
+    "good": "Bon",
+    "problem": "Problème",
+    "warning": "À surveiller"
+  },
+  "span_type": {
+    "chain_evaluation": "Évaluation de chaîne",
+    "cli_spawn": "Lancement CLI",
+    "credential_resolution": "Identifiants",
+    "execution": "Exécution",
+    "healing_analysis": "Réparation",
+    "outcome_assessment": "Résultat",
+    "pipeline_stage": "Étape du pipeline",
+    "prompt_assembly": "Préparer prompt",
+    "protocol_dispatch": "Protocole",
+    "stream_processing": "Flux",
+    "tool_call": "Appel d’outil",
+    "unknown": "Inconnu"
+  },
+  "task_phase": {
+    "analyzing": "Analyse",
+    "committing": "Commit en cours",
+    "complete": "Terminé",
+    "implementing": "Implémentation",
+    "planning": "Planification",
+    "validating": "Validation"
+  },
+  "test": {
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "generating": "Génération",
+    "pending": "En attente",
+    "running": "En cours"
+  },
+  "thinking": {
+    "high": "Élevé",
+    "low": "Faible",
+    "medium": "Moyen"
+  },
   "tool_error_kind": {
     "auth": "Authentification",
     "http": "Erreur HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Erreur inconnue",
     "unsupported": "Non exécutable ici"
   },
-  "remote_job": {
-    "completed": "Terminé",
-    "failed": "Échoué",
-    "cancelled": "Annulé",
-    "refused": "Refusé",
-    "pending": "En attente",
-    "running": "En cours"
-  },
-  "event_reason": {
-    "approval_held": "En attente d’approbation",
-    "cascade_guard": "Déjà en cours",
-    "cross_team_blocked": "Bloqué entre équipes",
-    "dry_run": "Exécution à blanc (simulée)",
-    "handoff_target_disabled": "La cible du transfert est désactivée",
-    "no_subscriber": "Aucun abonné correspondant",
-    "persona_disabled": "L’agent est désactivé",
-    "stuck_reclaimed": "Repris et remis en file",
-    "stuck_retry_exhausted": "Repris, tentatives épuisées",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "En cours",
-    "awaiting_review": "En attente de revue",
-    "resolved": "Résolu",
-    "cancelled": "Annulé"
-  },
-  "kb_document": {
-    "pending": "en attente",
-    "indexing": "indexation"
-  },
-  "memory_tier": {
-    "core": "Essentielle",
-    "active": "Active",
-    "working": "En cours",
-    "archive": "Archivée"
-  },
-  "span_type": {
-    "execution": "Exécution",
-    "prompt_assembly": "Préparer prompt",
-    "credential_resolution": "Identifiants",
-    "cli_spawn": "Lancement CLI",
-    "tool_call": "Appel d’outil",
-    "protocol_dispatch": "Protocole",
-    "chain_evaluation": "Évaluation de chaîne",
-    "stream_processing": "Flux",
-    "outcome_assessment": "Résultat",
-    "healing_analysis": "Réparation",
-    "pipeline_stage": "Étape du pipeline",
-    "unknown": "Inconnu"
-  },
-  "memory_action": {
-    "kept": "Conservée",
-    "deleted": "Supprimée",
-    "error": "Erreur",
-    "proposed_delete": "Suppression proposée",
-    "proposed_update_importance": "Réévaluation proposée",
-    "proposed_synthesize": "Fusion proposée",
-    "proposed_archive": "Archivage proposé"
-  },
-  "memory_category": {
-    "observation": "Constat",
-    "decision": "Décision",
-    "context": "Contexte",
-    "learning": "Apprentissage"
+  "verdict": {
+    "broken": "Défaillant",
+    "not_ready": "Non prêt",
+    "production": "Production",
+    "promising": "Prometteur"
   }
 }

@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "Choisissez votre rôle",
-    "choose_role_hint": "Nous adapterons l’expérience à votre façon de travailler.",
-    "pick_tool": "Choisissez votre outil préféré",
-    "pick_tool_hint": "Ce sera votre première connexion de service.",
-    "describe_goal": "Que souhaitez-vous automatiser ?",
-    "describe_goal_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
-    "goal_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
-    "ready_to_save": "Prêt à enregistrer",
-    "step_role": "Votre rôle",
-    "step_role_hint": "Indiquez-nous votre rôle pour adapter l’expérience.",
-    "step_tool": "Outil préféré",
-    "step_tool_hint": "Choisissez le premier service à connecter.",
-    "step_goal": "Objectif d’automatisation",
-    "step_goal_hint": "Décrivez ce que vous souhaitez automatiser en premier.",
-    "select_role_first": "Sélectionnez d’abord un rôle pour débloquer les options d’outils.",
-    "select_tool_first": "Sélectionnez d’abord un outil pour définir votre objectif.",
-    "get_started": "Commencer",
-    "role_office_rat": "Employé de bureau",
-    "role_office_rat_hint": "Utilisateur non technique",
-    "role_developer": "Développeur",
-    "role_developer_hint": "Utilisateur technique",
-    "role_manager": "Responsable",
-    "role_manager_hint": "Planification & coordination",
-    "role": "Rôle",
-    "tool": "Outil",
-    "goal": "Objectif"
-  },
-  "learning": {
-    "title": "Centre d’apprentissage",
-    "subtitle": "Visites guidées et astuces pour maîtriser Personas",
-    "guided_tours": "Visites guidées",
-    "tours_completed": "{completed}/{total} terminées",
-    "done": "Terminé",
-    "restart": "Recommencer",
-    "start_tour": "Démarrer la visite",
-    "steps_count": "{count} étapes",
-    "tour_steps_label": "Ce que vous allez apprendre",
-    "power_moves": "Mouvements avancés",
-    "moves_used": "{used}/{total} utilisés",
-    "try_it": "Essayer",
-    "used_badge": "Utilisé",
-    "group_save_time": "Gagner du temps",
-    "group_prevent_failures": "Prévenir les échecs",
-    "group_level_up": "Améliorer les agents",
-    "group_orchestrate": "Orchestrer",
-    "pm_monitor_triage_title": "Trier toute la flotte depuis la barre de titre",
-    "pm_schedule_delay_title": "Ignorer ou retarder une exécution planifiée",
-    "pm_bulk_rerun_title": "Relancer en masse les exécutions échouées",
-    "pm_dead_letter_title": "Récupérer les événements de la file morte",
-    "pm_annotate_golden_title": "Marquer les exécutions réussies, annoter les régressions",
-    "pm_credential_health_title": "Laisser l’IA réparer les identifiants défaillants",
-    "pm_lab_measure_title": "Mesurer les prompts sur plusieurs modèles",
-    "pm_prompt_rollback_title": "Annuler un mauvais prompt en un clic",
-    "pm_director_coaching_title": "Obtenir des conseils de portefeuille du Directeur",
-    "pm_event_chain_title": "Enchaîner des agents avec des écouteurs d’événements",
-    "pm_live_stream_title": "Observer les enchaînements en temps réel",
-    "pm_athena_fleet_title": "Demander à Athena d’analyser votre flotte",
-    "composed_tours": "Composées par Athena",
-    "composed_badge": "Composé par Athena",
-    "composed_stale": "Peut-être obsolète — l’application a changé depuis sa composition",
-    "composed_failed": "Impossible de charger les visites guidées composées par Athena.",
-    "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu’elle compose arrivent ici.",
-    "composed_dismiss": "Masquer cette visite obsolète",
-    "composed_all_dismissed": "Vous avez masqué toutes les visites obsolètes. Les nouvelles apparaîtront ici au fur et à mesure qu’Athena les compose."
-  },
-  "setup_stepper": {
-    "your_profile": "Votre profil",
-    "choose_role": "Choisissez votre rôle",
-    "tailor_hint": "Nous adapterons l’expérience à votre façon de travailler.",
-    "simple_hint": "Nous avons configuré l’application pour un usage bureautique quotidien.",
-    "pick_tool": "Choisissez votre outil préféré",
-    "tool_hint": "Ce sera votre première intégration de connecteur.",
-    "automate_title": "Que souhaitez-vous automatiser ?",
-    "automate_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
-    "automate_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
-    "min_chars": "Min. 10 caractères ({current}/10)",
-    "ready_to_save": "Prêt à enregistrer",
-    "back": "Retour",
-    "next": "Suivant",
-    "finish": "Terminer"
-  },
-  "welcome_layout": {
-    "get_started": "Commencer",
-    "language": "Langue"
-  },
-  "resume": {
-    "failure": "Échec non lu dans {personaName} — à examiner",
-    "tour": "Reprendre {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
-    "edit": "Continuer à modifier {personaName}"
-  },
-  "nav_status": {
-    "incidents": "{count} incident ouvert",
-    "incidents_other": "{count} incidents ouverts",
-    "reviews": "{count} révision en attente",
-    "reviews_other": "{count} révisions en attente",
-    "teams": "{count} équipe",
-    "teams_other": "{count} équipes",
-    "agents_active": "{count} agent actif ces dernières 24h",
-    "agents_active_other": "{count} agents actifs ces dernières 24h",
-    "events_today": "{count} événement ces dernières 24h",
-    "events_today_other": "{count} événements ces dernières 24h",
-    "connections_external": "{count} connexion externe",
-    "connections_external_other": "{count} connexions externes",
-    "connections_builtin": "{count} connecteur intégré",
-    "connections_builtin_other": "{count} connecteurs intégrés",
-    "trend_up": "en hausse de {pct} % par rapport aux 24h précédentes",
-    "trend_down": "en baisse de {pct} % par rapport aux 24h précédentes",
-    "trend_flat": "aucun changement par rapport aux 24h précédentes",
-    "agents_enabled": "{count} agent actif",
-    "agents_enabled_other": "{count} agents actifs",
-    "reports": "{count} rapport non lu",
-    "reports_other": "{count} rapports non lus"
+  "commander": "Commandant",
+  "fleet": {
+    "active_agents": "Agents actifs",
+    "credentials": "Identifiants",
+    "executions_today": "Exécutions aujourd’hui",
+    "success_rate": "Taux de réussite"
   },
   "get_started": {
     "ask_cta": "Interroger l’assistant",
@@ -119,84 +12,184 @@
     "subtitle": "Décrivez une tâche en langage courant et nous configurerons un agent opérationnel — ou demandez à l’assistant de le faire pour vous.",
     "title": "Créez votre premier agent"
   },
-  "welcome": "Bienvenue",
-  "greeting_morning": "Bonjour",
   "greeting_afternoon": "Bon après-midi",
   "greeting_evening": "Bonsoir",
+  "greeting_morning": "Bonjour",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react — bibliothèque d’icônes générique — statique",
+    "lucide_tab": "Lucide (Bibliothèque)",
+    "personas_footer": "9 icônes personnalisées — motifs neuronaux/circuits — animées CSS — adaptatives au thème",
+    "personas_tab": "Personas (Animés)"
+  },
+  "learning": {
+    "composed_all_dismissed": "Vous avez masqué toutes les visites obsolètes. Les nouvelles apparaîtront ici au fur et à mesure qu’Athena les compose.",
+    "composed_badge": "Composé par Athena",
+    "composed_dismiss": "Masquer cette visite obsolète",
+    "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu’elle compose arrivent ici.",
+    "composed_failed": "Impossible de charger les visites guidées composées par Athena.",
+    "composed_stale": "Peut-être obsolète — l’application a changé depuis sa composition",
+    "composed_tours": "Composées par Athena",
+    "done": "Terminé",
+    "group_level_up": "Améliorer les agents",
+    "group_orchestrate": "Orchestrer",
+    "group_prevent_failures": "Prévenir les échecs",
+    "group_save_time": "Gagner du temps",
+    "guided_tours": "Visites guidées",
+    "moves_used": "{used}/{total} utilisés",
+    "pm_annotate_golden_title": "Marquer les exécutions réussies, annoter les régressions",
+    "pm_athena_fleet_title": "Demander à Athena d’analyser votre flotte",
+    "pm_bulk_rerun_title": "Relancer en masse les exécutions échouées",
+    "pm_credential_health_title": "Laisser l’IA réparer les identifiants défaillants",
+    "pm_dead_letter_title": "Récupérer les événements de la file morte",
+    "pm_director_coaching_title": "Obtenir des conseils de portefeuille du Directeur",
+    "pm_event_chain_title": "Enchaîner des agents avec des écouteurs d’événements",
+    "pm_lab_measure_title": "Mesurer les prompts sur plusieurs modèles",
+    "pm_live_stream_title": "Observer les enchaînements en temps réel",
+    "pm_monitor_triage_title": "Trier toute la flotte depuis la barre de titre",
+    "pm_prompt_rollback_title": "Annuler un mauvais prompt en un clic",
+    "pm_schedule_delay_title": "Ignorer ou retarder une exécution planifiée",
+    "power_moves": "Mouvements avancés",
+    "restart": "Recommencer",
+    "start_tour": "Démarrer la visite",
+    "steps_count": "{count} étapes",
+    "subtitle": "Visites guidées et astuces pour maîtriser Personas",
+    "title": "Centre d’apprentissage",
+    "tour_steps_label": "Ce que vous allez apprendre",
+    "tours_completed": "{completed}/{total} terminées",
+    "try_it": "Essayer",
+    "used_badge": "Utilisé"
+  },
+  "nav_status": {
+    "agents_active": "{count} agent actif ces dernières 24h",
+    "agents_active_other": "{count} agents actifs ces dernières 24h",
+    "agents_enabled": "{count} agent actif",
+    "agents_enabled_other": "{count} agents actifs",
+    "connections_builtin": "{count} connecteur intégré",
+    "connections_builtin_other": "{count} connecteurs intégrés",
+    "connections_external": "{count} connexion externe",
+    "connections_external_other": "{count} connexions externes",
+    "events_today": "{count} événement ces dernières 24h",
+    "events_today_other": "{count} événements ces dernières 24h",
+    "incidents": "{count} incident ouvert",
+    "incidents_other": "{count} incidents ouverts",
+    "reports": "{count} rapport non lu",
+    "reports_other": "{count} rapports non lus",
+    "reviews": "{count} révision en attente",
+    "reviews_other": "{count} révisions en attente",
+    "teams": "{count} équipe",
+    "teams_other": "{count} équipes",
+    "trend_down": "en baisse de {pct} % par rapport aux 24h précédentes",
+    "trend_flat": "aucun changement par rapport aux 24h précédentes",
+    "trend_up": "en hausse de {pct} % par rapport aux 24h précédentes"
+  },
+  "nav": {
+    "cloud": {
+      "description": "Exécutez vos agents dans le cloud pour qu’ils continuent de fonctionner même lorsque votre ordinateur est éteint.",
+      "label": "Cloud"
+    },
+    "credentials": {
+      "description": "Gérez les identifiants de connexion à vos services, les connexions aux bases de données et les mots de passe qui permettent à vos agents d’accéder à vos outils.",
+      "label": "Identifiants"
+    },
+    "design-reviews": {
+      "description": "Parcourez des modèles d’agents prêts à l’emploi, importez des workflows et générez de nouveaux plans d’agents.",
+      "label": "Modèles"
+    },
+    "events": {
+      "description": "Configurez ce qui déclenche l’exécution de vos agents — planifications, notifications entrantes ou changements que vous définissez.",
+      "label": "Événements"
+    },
+    "overview": {
+      "description": "Découvrez les performances de vos agents, ce qu’ils ont fait récemment, et surveillez tout depuis un seul endroit.",
+      "label": "Vue d’ensemble"
+    },
+    "personas": {
+      "description": "Créez, configurez et gérez vos agents IA — donnez-leur des comportements personnalisés et connectez-les à vos outils.",
+      "label": "Agents"
+    },
+    "plugins": {
+      "description": "Étendez vos agents avec des extensions tierces et des plugins personnalisés",
+      "label": "Extensions"
+    },
+    "settings": {
+      "description": "Votre compte, l’apparence de l’application, les préférences de notification et les options avancées.",
+      "label": "Paramètres"
+    },
+    "team": {
+      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes.",
+      "label": "Équipes"
+    },
+    "teams": {
+      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes",
+      "label": "Équipes"
+    }
+  },
   "operator": "Opérateur",
-  "commander": "Commandant",
-  "summary_empty": "Commencez par créer votre premier agent ou explorez la plateforme.",
-  "summary_stats": "Vous avez {personasCount} agent{personasPlural} et {credentialsCount} identifiant{credentialsPlural} configuré(s).",
-  "quick_navigation": "Navigation rapide",
   "platform_label": "plateforme Personas",
+  "quick_navigation": "Navigation rapide",
+  "resume": {
+    "edit": "Continuer à modifier {personaName}",
+    "failure": "Échec non lu dans {personaName} — à examiner",
+    "tour": "Reprendre {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}"
+  },
   "roadmap": {
-    "title": "Feuille de route produit",
-    "subtitle": "Ce que nous construisons maintenant et ce qui vient ensuite.",
-    "unavailable": "Feuille de route indisponible",
-    "unavailable_hint": "Impossible de charger la feuille de route. Vérifiez votre connexion et réessayez.",
+    "in_progress_count": "{count} en cours",
+    "next_count": "{count} suivant",
+    "priority_later": "Plus tard",
+    "priority_next": "Suivant",
+    "priority_now": "Maintenant",
+    "status_completed": "Terminé",
     "status_in_progress": "En cours",
     "status_next": "Suivant",
     "status_planned": "Planifié",
-    "status_completed": "Terminé",
-    "priority_now": "Maintenant",
-    "priority_next": "Suivant",
-    "priority_later": "Plus tard",
-    "in_progress_count": "{count} en cours",
-    "next_count": "{count} suivant"
+    "subtitle": "Ce que nous construisons maintenant et ce qui vient ensuite.",
+    "title": "Feuille de route produit",
+    "unavailable": "Feuille de route indisponible",
+    "unavailable_hint": "Impossible de charger la feuille de route. Vérifiez votre connexion et réessayez."
   },
-  "fleet": {
-    "executions_today": "Exécutions aujourd’hui",
-    "success_rate": "Taux de réussite",
-    "active_agents": "Agents actifs",
-    "credentials": "Identifiants"
+  "setup_stepper": {
+    "automate_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
+    "automate_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
+    "automate_title": "Que souhaitez-vous automatiser ?",
+    "back": "Retour",
+    "choose_role": "Choisissez votre rôle",
+    "finish": "Terminer",
+    "min_chars": "Min. 10 caractères ({current}/10)",
+    "next": "Suivant",
+    "pick_tool": "Choisissez votre outil préféré",
+    "ready_to_save": "Prêt à enregistrer",
+    "simple_hint": "Nous avons configuré l’application pour un usage bureautique quotidien.",
+    "tailor_hint": "Nous adapterons l’expérience à votre façon de travailler.",
+    "tool_hint": "Ce sera votre première intégration de connecteur.",
+    "your_profile": "Votre profil"
   },
-  "nav": {
-    "overview": {
-      "label": "Vue d’ensemble",
-      "description": "Découvrez les performances de vos agents, ce qu’ils ont fait récemment, et surveillez tout depuis un seul endroit."
-    },
-    "personas": {
-      "label": "Agents",
-      "description": "Créez, configurez et gérez vos agents IA — donnez-leur des comportements personnalisés et connectez-les à vos outils."
-    },
-    "events": {
-      "label": "Événements",
-      "description": "Configurez ce qui déclenche l’exécution de vos agents — planifications, notifications entrantes ou changements que vous définissez."
-    },
-    "credentials": {
-      "label": "Identifiants",
-      "description": "Gérez les identifiants de connexion à vos services, les connexions aux bases de données et les mots de passe qui permettent à vos agents d’accéder à vos outils."
-    },
-    "design-reviews": {
-      "label": "Modèles",
-      "description": "Parcourez des modèles d’agents prêts à l’emploi, importez des workflows et générez de nouveaux plans d’agents."
-    },
-    "team": {
-      "label": "Équipes",
-      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes."
-    },
-    "teams": {
-      "label": "Équipes",
-      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes"
-    },
-    "cloud": {
-      "label": "Cloud",
-      "description": "Exécutez vos agents dans le cloud pour qu’ils continuent de fonctionner même lorsque votre ordinateur est éteint."
-    },
-    "settings": {
-      "label": "Paramètres",
-      "description": "Votre compte, l’apparence de l’application, les préférences de notification et les options avancées."
-    },
-    "plugins": {
-      "label": "Extensions",
-      "description": "Étendez vos agents avec des extensions tierces et des plugins personnalisés"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Bibliothèque)",
-    "personas_tab": "Personas (Animés)",
-    "lucide_footer": "lucide-react — bibliothèque d’icônes générique — statique",
-    "personas_footer": "9 icônes personnalisées — motifs neuronaux/circuits — animées CSS — adaptatives au thème"
+  "setup": {
+    "choose_role": "Choisissez votre rôle",
+    "choose_role_hint": "Nous adapterons l’expérience à votre façon de travailler.",
+    "describe_goal": "Que souhaitez-vous automatiser ?",
+    "describe_goal_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
+    "get_started": "Commencer",
+    "goal": "Objectif",
+    "goal_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
+    "pick_tool": "Choisissez votre outil préféré",
+    "pick_tool_hint": "Ce sera votre première connexion de service.",
+    "ready_to_save": "Prêt à enregistrer",
+    "role": "Rôle",
+    "role_developer": "Développeur",
+    "role_developer_hint": "Utilisateur technique",
+    "role_manager": "Responsable",
+    "role_manager_hint": "Planification & coordination",
+    "role_office_rat": "Employé de bureau",
+    "role_office_rat_hint": "Utilisateur non technique",
+    "select_role_first": "Sélectionnez d’abord un rôle pour débloquer les options d’outils.",
+    "select_tool_first": "Sélectionnez d’abord un outil pour définir votre objectif.",
+    "step_goal": "Objectif d’automatisation",
+    "step_goal_hint": "Décrivez ce que vous souhaitez automatiser en premier.",
+    "step_role": "Votre rôle",
+    "step_role_hint": "Indiquez-nous votre rôle pour adapter l’expérience.",
+    "step_tool": "Outil préféré",
+    "step_tool_hint": "Choisissez le premier service à connecter.",
+    "tool": "Outil"
   },
   "since_left": {
     "alerts": "{count} alerte déclenchée",
@@ -209,5 +202,12 @@
     "runs": "{count} exécution",
     "runs_other": "{count} exécutions",
     "title": "Depuis votre départ"
+  },
+  "summary_empty": "Commencez par créer votre premier agent ou explorez la plateforme.",
+  "summary_stats": "Vous avez {personasCount} agent{personasPlural} et {credentialsCount} identifiant{credentialsPlural} configuré(s).",
+  "welcome": "Bienvenue",
+  "welcome_layout": {
+    "get_started": "Commencer",
+    "language": "Langue"
   }
 }

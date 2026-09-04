@@ -128,8 +128,13 @@ pub fn get_workflow_job_output(
 }
 
 /// Cancel a running job by type and ID.
+///
+/// Async because three of the five arms *reclaim* the task rather than merely
+/// signalling it. The two that do not say why at their own definition; the
+/// snapshot's `cancel_outcome` reports which happened, so the difference is
+/// legible to the caller instead of hidden behind a uniform "failed" row.
 #[tauri::command]
-pub fn cancel_workflow_job(
+pub async fn cancel_workflow_job(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     job_type: String,
@@ -137,25 +142,28 @@ pub fn cancel_workflow_job(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     match job_type.as_str() {
+        // Signal-only: worker is a bare `tokio::spawn` draining a CLI, and the
+        // surface is `cancel_or_preempt` (fires before a task may exist).
         "n8n_transform" => {
             use crate::commands::design::n8n_transform::job_state::manager;
             manager().cancel(&app, &job_id)
         }
+        // Signal-only: `ADOPT_JOBS` has no spawn site to register.
         "template_adopt" => {
             use crate::commands::design::template_adopt::cancel_adopt_job;
             cancel_adopt_job(&app, &job_id)
         }
         "template_generate" => {
             use crate::commands::design::template_adopt::cancel_generate_job;
-            cancel_generate_job(&app, &job_id)
+            cancel_generate_job(&app, &job_id).await
         }
         "query_debug" => {
             use crate::commands::credentials::query_debug::cancel_query_debug_job;
-            cancel_query_debug_job(&app, &job_id)
+            cancel_query_debug_job(&app, &job_id).await
         }
         "schema_proposal" => {
             use crate::commands::credentials::schema_proposal::cancel_schema_proposal_job;
-            cancel_schema_proposal_job(&app, &job_id)
+            cancel_schema_proposal_job(&app, &job_id).await
         }
         _ => Err(AppError::Validation(format!(
             "Unknown job type: {}",

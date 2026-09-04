@@ -1,9 +1,9 @@
 {
-  "haiku": "Haiku",
-  "sonnet": "Sonnet",
-  "opus": "Opus",
+  "effort_high": "Vysoké",
   "effort_low": "Low",
   "effort_medium": "Střední",
-  "effort_high": "Vysoké",
-  "effort_xhigh": "Velmi vysoké"
+  "effort_xhigh": "Velmi vysoké",
+  "haiku": "Haiku",
+  "opus": "Opus",
+  "sonnet": "Sonnet"
 }

@@ -124,9 +124,9 @@ export function ExportSection({
       </div>
 
       {/* Conflict resolution (pass 2) — dev projects and twins */}
-      {importResult && importResult.import_conflicts.length > 0 && (
+      {importResult && importResult.importConflicts.length > 0 && (
         <ImportConflictPanel
-          conflicts={importResult.import_conflicts}
+          conflicts={importResult.importConflicts}
           busy={importStatus === 'loading'}
           onConfirm={onImportWithResolutions}
           onDismiss={onDismissConflicts}
@@ -141,57 +141,57 @@ export function ExportSection({
             {s.import_complete}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 typo-body text-foreground">
-            {importResult.personas_created > 0 && (
-              <span>{s.import_personas.replace('{count}', String(importResult.personas_created))}</span>
+            {importResult.personasCreated > 0 && (
+              <span>{s.import_personas.replace('{count}', String(importResult.personasCreated))}</span>
             )}
-            {importResult.teams_created > 0 && (
-              <span>{s.import_teams.replace('{count}', String(importResult.teams_created))}</span>
+            {importResult.teamsCreated > 0 && (
+              <span>{s.import_teams.replace('{count}', String(importResult.teamsCreated))}</span>
             )}
-            {importResult.tools_created > 0 && (
-              <span>{s.import_tools.replace('{count}', String(importResult.tools_created))}</span>
+            {importResult.toolsCreated > 0 && (
+              <span>{s.import_tools.replace('{count}', String(importResult.toolsCreated))}</span>
             )}
-            {importResult.credentials_created > 0 && (
-              <span>{s.import_credentials_count.replace('{count}', String(importResult.credentials_created))}</span>
+            {importResult.credentialsCreated > 0 && (
+              <span>{s.import_credentials_count.replace('{count}', String(importResult.credentialsCreated))}</span>
             )}
-            {importResult.team_memories_created > 0 && (
-              <span>{s.import_team_memories.replace('{count}', String(importResult.team_memories_created))}</span>
+            {importResult.teamMemoriesCreated > 0 && (
+              <span>{s.import_team_memories.replace('{count}', String(importResult.teamMemoriesCreated))}</span>
             )}
-            {importResult.kpis_created > 0 && (
-              <span>{s.import_kpis.replace('{count}', String(importResult.kpis_created))}</span>
+            {importResult.kpisCreated > 0 && (
+              <span>{s.import_kpis.replace('{count}', String(importResult.kpisCreated))}</span>
             )}
-            {importResult.projects_imported > 0 && (
-              <span>{s.import_projects.replace('{count}', String(importResult.projects_imported))}</span>
+            {importResult.projectsImported > 0 && (
+              <span>{s.import_projects.replace('{count}', String(importResult.projectsImported))}</span>
             )}
-            {importResult.projects_skipped > 0 && (
-              <span>{s.import_projects_skipped.replace('{count}', String(importResult.projects_skipped))}</span>
+            {importResult.projectsSkipped > 0 && (
+              <span>{s.import_projects_skipped.replace('{count}', String(importResult.projectsSkipped))}</span>
             )}
-            {importResult.knowledge_imported > 0 && (
-              <span>{s.import_knowledge.replace('{count}', String(importResult.knowledge_imported))}</span>
+            {importResult.knowledgeImported > 0 && (
+              <span>{s.import_knowledge.replace('{count}', String(importResult.knowledgeImported))}</span>
             )}
-            {importResult.knowledge_skipped_duplicates > 0 && (
-              <span>{s.import_knowledge_skipped.replace('{count}', String(importResult.knowledge_skipped_duplicates))}</span>
+            {importResult.knowledgeSkippedDuplicates > 0 && (
+              <span>{s.import_knowledge_skipped.replace('{count}', String(importResult.knowledgeSkippedDuplicates))}</span>
             )}
-            {importResult.skills_written > 0 && (
-              <span>{s.import_skills_written.replace('{count}', String(importResult.skills_written))}</span>
+            {importResult.skillsWritten > 0 && (
+              <span>{s.import_skills_written.replace('{count}', String(importResult.skillsWritten))}</span>
             )}
-            {importResult.skills_deferred > 0 && (
-              <span>{s.import_skills_deferred.replace('{count}', String(importResult.skills_deferred))}</span>
+            {importResult.skillsDeferred > 0 && (
+              <span>{s.import_skills_deferred.replace('{count}', String(importResult.skillsDeferred))}</span>
             )}
-            {importResult.twins_imported > 0 && (
-              <span>{s.import_twins.replace('{count}', String(importResult.twins_imported))}</span>
+            {importResult.twinsImported > 0 && (
+              <span>{s.import_twins.replace('{count}', String(importResult.twinsImported))}</span>
             )}
-            {importResult.twins_skipped > 0 && (
-              <span>{s.import_twins_skipped.replace('{count}', String(importResult.twins_skipped))}</span>
+            {importResult.twinsSkipped > 0 && (
+              <span>{s.import_twins_skipped.replace('{count}', String(importResult.twinsSkipped))}</span>
             )}
-            {importResult.twin_kb_chunks_imported > 0 && (
-              <span>{s.import_twin_kb_chunks.replace('{count}', String(importResult.twin_kb_chunks_imported))}</span>
+            {importResult.twinKbChunksImported > 0 && (
+              <span>{s.import_twin_kb_chunks.replace('{count}', String(importResult.twinKbChunksImported))}</span>
             )}
-            {importResult.athena_memory_imported > 0 && (
-              <span>{s.import_athena_memory.replace('{count}', String(importResult.athena_memory_imported))}</span>
+            {importResult.athenaMemoryImported > 0 && (
+              <span>{s.import_athena_memory.replace('{count}', String(importResult.athenaMemoryImported))}</span>
             )}
-            {importResult.athena_identity_replaced && <span>{s.import_athena_identity_replaced}</span>}
-            {importResult.reembed_queued > 0 && (
-              <span>{s.import_reembed_queued.replace('{count}', String(importResult.reembed_queued))}</span>
+            {importResult.athenaIdentityReplaced && <span>{s.import_athena_identity_replaced}</span>}
+            {importResult.reembedQueued > 0 && (
+              <span>{s.import_reembed_queued.replace('{count}', String(importResult.reembedQueued))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

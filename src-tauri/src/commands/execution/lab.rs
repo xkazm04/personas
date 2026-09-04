@@ -84,6 +84,11 @@ pub async fn lab_start_arena(
             }
             persona.structured_prompt = v.structured_prompt.clone();
             persona.system_prompt = v.system_prompt.clone().unwrap_or_default();
+            // A version predating the core_profile column (NULL snapshot)
+            // keeps the persona's live Core — old snapshots never captured
+            // it, and measuring a historical prompt with no Character at all
+            // would measure the wrong thing.
+            persona.core_profile = v.core_profile.clone().or(persona.core_profile.take());
             Some((v.id, v.version_number))
         }
         None => None,
@@ -306,14 +311,24 @@ pub async fn lab_start_ab(
 
     let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
-    // Build persona variants — apply both fields from version to avoid hybrid state
+    // Build persona variants — apply both fields from version to avoid hybrid state.
+    // core_profile: a version predating the column (NULL snapshot) keeps the
+    // live Core — old snapshots never captured it.
     let mut persona_a = persona.clone();
     persona_a.structured_prompt = version_a.structured_prompt.clone();
     persona_a.system_prompt = version_a.system_prompt.clone().unwrap_or_default();
+    persona_a.core_profile = version_a
+        .core_profile
+        .clone()
+        .or(persona_a.core_profile.take());
 
     let mut persona_b = persona;
     persona_b.structured_prompt = version_b.structured_prompt.clone();
     persona_b.system_prompt = version_b.system_prompt.clone().unwrap_or_default();
+    persona_b.core_profile = version_b
+        .core_profile
+        .clone()
+        .or(persona_b.core_profile.take());
 
     let pool = state.db.clone();
     let cancelled_clone = cancelled.clone();
@@ -699,6 +714,9 @@ pub async fn lab_start_eval(
         let mut p = persona.clone();
         p.structured_prompt = version.structured_prompt.clone();
         p.system_prompt = version.system_prompt.clone().unwrap_or_default();
+        // A version predating the core_profile column keeps the live Core —
+        // old snapshots never captured it.
+        p.core_profile = version.core_profile.clone().or(p.core_profile.take());
         variants.push((version.id.clone(), version.version_number, p));
     }
 
@@ -873,6 +891,7 @@ pub fn lab_rollback_version(
          last_design_result = COALESCE(?6, last_design_result),
          icon = COALESCE(?7, icon),
          color = COALESCE(?8, color),
+         core_profile = COALESCE(?9, core_profile),
          updated_at = ?3
          WHERE id = ?4",
         rusqlite::params![
@@ -884,6 +903,7 @@ pub fn lab_rollback_version(
             version.last_design_result,
             version.icon,
             version.color,
+            version.core_profile,
         ],
     )?;
 
@@ -993,6 +1013,7 @@ fn activate_version_atomic(
          last_design_result = COALESCE(?6, last_design_result),
          icon = COALESCE(?7, icon),
          color = COALESCE(?8, color),
+         core_profile = COALESCE(?10, core_profile),
          model_profile = ?9,
          updated_at = ?3
          WHERE id = ?4",
@@ -1006,6 +1027,7 @@ fn activate_version_atomic(
             version.icon,
             version.color,
             merged_profile,
+            version.core_profile,
         ],
     )?;
     if rows == 0 {
@@ -1580,6 +1602,7 @@ mod tests {
             resolved_cells: None,
             icon: None,
             color: None,
+            core_profile: None,
         }
     }
 

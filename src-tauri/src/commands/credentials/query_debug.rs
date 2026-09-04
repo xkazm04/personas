@@ -165,11 +165,18 @@ pub fn list_query_debug_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel a query debug job.
-pub fn cancel_query_debug_job(
+///
+/// Async because it *reclaims*: the worker is spawned through `spawn_job`, so
+/// its handle is registered and this awaits it (bounded) before aborting,
+/// rather than firing a token and declaring the job over.
+pub async fn cancel_query_debug_job(
     app: &tauri::AppHandle,
     debug_id: &str,
 ) -> Result<(), crate::error::AppError> {
-    QUERY_DEBUG_JOBS.cancel(app, debug_id)
+    QUERY_DEBUG_JOBS
+        .cancel_and_reclaim(app, debug_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 // -- Tauri commands ------------------------------------------------------

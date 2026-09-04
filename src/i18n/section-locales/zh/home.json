@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "选择您的角色",
-    "choose_role_hint": "我们将根据您的工作方式定制体验。",
-    "pick_tool": "选择您最喜欢的工具",
-    "pick_tool_hint": "这将是您的第一个服务连接。",
-    "describe_goal": "您想自动化什么？",
-    "describe_goal_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
-    "goal_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道…",
-    "ready_to_save": "准备保存",
-    "step_role": "您的角色",
-    "step_role_hint": "告诉我们您的角色，以便定制体验。",
-    "step_tool": "喜爱的工具",
-    "step_tool_hint": "选择您想要连接的第一个服务。",
-    "step_goal": "自动化目标",
-    "step_goal_hint": "描述您首先想要自动化的内容。",
-    "select_role_first": "请先选择角色以解锁工具选项。",
-    "select_tool_first": "请先选择工具以设置目标。",
-    "get_started": "开始",
-    "role_office_rat": "办公室用户",
-    "role_office_rat_hint": "非技术用户",
-    "role_developer": "开发者",
-    "role_developer_hint": "技术用户",
-    "role_manager": "管理者",
-    "role_manager_hint": "规划与协调",
-    "role": "角色",
-    "tool": "工具",
-    "goal": "目标"
-  },
-  "learning": {
-    "title": "学习中心",
-    "subtitle": "引导教程和快速技巧，帮助您掌握 Personas",
-    "guided_tours": "引导教程",
-    "tours_completed": "{completed}/{total} 已完成",
-    "done": "完成",
-    "restart": "重新开始",
-    "start_tour": "开始教程",
-    "steps_count": "{count} 个步骤",
-    "tour_steps_label": "您将学到的内容",
-    "power_moves": "高效操作",
-    "moves_used": "已使用 {used}/{total}",
-    "try_it": "立即尝试",
-    "used_badge": "已使用",
-    "group_save_time": "节省时间",
-    "group_prevent_failures": "防止故障",
-    "group_level_up": "提升智能体",
-    "group_orchestrate": "编排",
-    "pm_monitor_triage_title": "从标题栏管理整个队列",
-    "pm_schedule_delay_title": "跳过或延迟计划运行",
-    "pm_bulk_rerun_title": "批量重新运行失败的执行",
-    "pm_dead_letter_title": "从死信队列中恢复事件",
-    "pm_annotate_golden_title": "标记优质运行，标注回归",
-    "pm_credential_health_title": "让 AI 修复失效凭证",
-    "pm_lab_measure_title": "跨模型测量提示词",
-    "pm_prompt_rollback_title": "一键回滚错误提示词",
-    "pm_director_coaching_title": "从 Director 获取组合建议",
-    "pm_event_chain_title": "通过事件监听器串联智能体",
-    "pm_live_stream_title": "实时观察链式反应",
-    "pm_athena_fleet_title": "让 Athena 分析您的队列",
-    "composed_tours": "由 Athena 编排",
-    "composed_badge": "Athena 编排",
-    "composed_stale": "可能已过时 — 应用在编排后已发生变化",
-    "composed_failed": "无法加载 Athena 为您编排的操作指引。",
-    "composed_empty": "当您请 Athena 演示某项功能时，她编排的操作指引会显示在这里。",
-    "composed_dismiss": "关闭这个已过时的导览",
-    "composed_all_dismissed": "你已清除所有过时的导览。Athena 新编排的导览会出现在这里。"
-  },
-  "setup_stepper": {
-    "your_profile": "您的个人资料",
-    "choose_role": "选择您的角色",
-    "tailor_hint": "我们将根据您的工作方式定制体验。",
-    "simple_hint": "我们已为日常办公使用设置了应用程序。",
-    "pick_tool": "选择您最喜欢的工具",
-    "tool_hint": "这将是您的第一个连接器集成。",
-    "automate_title": "您想自动化什么？",
-    "automate_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
-    "automate_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道…",
-    "min_chars": "最少 10 个字符（{current}/10）",
-    "ready_to_save": "准备保存",
-    "back": "返回",
-    "next": "下一步",
-    "finish": "完成"
-  },
-  "welcome_layout": {
-    "get_started": "开始使用",
-    "language": "语言"
-  },
-  "resume": {
-    "failure": "{personaName} 中有未读故障 — 请调查",
-    "tour": "继续 {tourTitle}（{stepIndex}/{totalSteps}）— {stepTitle}",
-    "edit": "继续编辑 {personaName}"
-  },
-  "nav_status": {
-    "incidents": "{count} 个未解决事件",
-    "incidents_other": "{count} 个未解决事件",
-    "reviews": "{count} 个待审核",
-    "reviews_other": "{count} 个待审核",
-    "teams": "{count} 个团队",
-    "teams_other": "{count} 个团队",
-    "agents_active": "过去 24 小时内 {count} 个智能体活跃",
-    "agents_active_other": "过去 24 小时内 {count} 个智能体活跃",
-    "events_today": "过去 24 小时内 {count} 个事件",
-    "events_today_other": "过去 24 小时内 {count} 个事件",
-    "connections_external": "{count} 个外部连接",
-    "connections_external_other": "{count} 个外部连接",
-    "connections_builtin": "{count} 个内置连接器",
-    "connections_builtin_other": "{count} 个内置连接器",
-    "trend_up": "较前 24 小时上升 {pct}%",
-    "trend_down": "较前 24 小时下降 {pct}%",
-    "trend_flat": "较前 24 小时无变化",
-    "agents_enabled": "{count} 个已启用智能体",
-    "agents_enabled_other": "{count} 个已启用智能体",
-    "reports": "{count} 份未读报告",
-    "reports_other": "{count} 份未读报告"
+  "commander": "指挥官",
+  "fleet": {
+    "active_agents": "活跃智能体",
+    "credentials": "凭证",
+    "executions_today": "今日运行",
+    "success_rate": "成功率"
   },
   "get_started": {
     "ask_cta": "向助手提问",
@@ -119,84 +12,184 @@
     "subtitle": "用日常语言描述一项任务，我们将为您搭建一个可运行的智能体——或者直接让助手来完成。",
     "title": "创建您的第一个智能体"
   },
-  "welcome": "欢迎",
-  "greeting_morning": "早上好",
   "greeting_afternoon": "下午好",
   "greeting_evening": "晚上好",
+  "greeting_morning": "早上好",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
+    "lucide_tab": "Lucide（库）",
+    "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应",
+    "personas_tab": "Personas（动画）"
+  },
+  "learning": {
+    "composed_all_dismissed": "你已清除所有过时的导览。Athena 新编排的导览会出现在这里。",
+    "composed_badge": "Athena 编排",
+    "composed_dismiss": "关闭这个已过时的导览",
+    "composed_empty": "当您请 Athena 演示某项功能时，她编排的操作指引会显示在这里。",
+    "composed_failed": "无法加载 Athena 为您编排的操作指引。",
+    "composed_stale": "可能已过时 — 应用在编排后已发生变化",
+    "composed_tours": "由 Athena 编排",
+    "done": "完成",
+    "group_level_up": "提升智能体",
+    "group_orchestrate": "编排",
+    "group_prevent_failures": "防止故障",
+    "group_save_time": "节省时间",
+    "guided_tours": "引导教程",
+    "moves_used": "已使用 {used}/{total}",
+    "pm_annotate_golden_title": "标记优质运行，标注回归",
+    "pm_athena_fleet_title": "让 Athena 分析您的队列",
+    "pm_bulk_rerun_title": "批量重新运行失败的执行",
+    "pm_credential_health_title": "让 AI 修复失效凭证",
+    "pm_dead_letter_title": "从死信队列中恢复事件",
+    "pm_director_coaching_title": "从 Director 获取组合建议",
+    "pm_event_chain_title": "通过事件监听器串联智能体",
+    "pm_lab_measure_title": "跨模型测量提示词",
+    "pm_live_stream_title": "实时观察链式反应",
+    "pm_monitor_triage_title": "从标题栏管理整个队列",
+    "pm_prompt_rollback_title": "一键回滚错误提示词",
+    "pm_schedule_delay_title": "跳过或延迟计划运行",
+    "power_moves": "高效操作",
+    "restart": "重新开始",
+    "start_tour": "开始教程",
+    "steps_count": "{count} 个步骤",
+    "subtitle": "引导教程和快速技巧，帮助您掌握 Personas",
+    "title": "学习中心",
+    "tour_steps_label": "您将学到的内容",
+    "tours_completed": "{completed}/{total} 已完成",
+    "try_it": "立即尝试",
+    "used_badge": "已使用"
+  },
+  "nav_status": {
+    "agents_active": "过去 24 小时内 {count} 个智能体活跃",
+    "agents_active_other": "过去 24 小时内 {count} 个智能体活跃",
+    "agents_enabled": "{count} 个已启用智能体",
+    "agents_enabled_other": "{count} 个已启用智能体",
+    "connections_builtin": "{count} 个内置连接器",
+    "connections_builtin_other": "{count} 个内置连接器",
+    "connections_external": "{count} 个外部连接",
+    "connections_external_other": "{count} 个外部连接",
+    "events_today": "过去 24 小时内 {count} 个事件",
+    "events_today_other": "过去 24 小时内 {count} 个事件",
+    "incidents": "{count} 个未解决事件",
+    "incidents_other": "{count} 个未解决事件",
+    "reports": "{count} 份未读报告",
+    "reports_other": "{count} 份未读报告",
+    "reviews": "{count} 个待审核",
+    "reviews_other": "{count} 个待审核",
+    "teams": "{count} 个团队",
+    "teams_other": "{count} 个团队",
+    "trend_down": "较前 24 小时下降 {pct}%",
+    "trend_flat": "较前 24 小时无变化",
+    "trend_up": "较前 24 小时上升 {pct}%"
+  },
+  "nav": {
+    "cloud": {
+      "description": "让您的智能体在云端运行，即使电脑关机也能继续工作。",
+      "label": "云端"
+    },
+    "credentials": {
+      "description": "管理服务登录信息、数据库连接和密码，让智能体能够访问您的工具。",
+      "label": "连接"
+    },
+    "design-reviews": {
+      "description": "浏览现成的智能体蓝图，导入工作流，并生成新的智能体设计。",
+      "label": "模板"
+    },
+    "events": {
+      "description": "配置事件触发器、webhook 监听器和定时自动化任务",
+      "label": "事件"
+    },
+    "overview": {
+      "description": "仪表盘分析、执行历史和所有智能体的实时系统监控",
+      "label": "概览"
+    },
+    "personas": {
+      "description": "创建、配置和管理具有自定义行为和能力的 AI 智能体",
+      "label": "智能体"
+    },
+    "plugins": {
+      "description": "通过第三方插件和自定义扩展扩展您的智能体",
+      "label": "插件"
+    },
+    "settings": {
+      "description": "账户偏好、外观主题、通知规则和引擎配置",
+      "label": "设置"
+    },
+    "team": {
+      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流。",
+      "label": "团队"
+    },
+    "teams": {
+      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流",
+      "label": "团队"
+    }
+  },
   "operator": "操作员",
-  "commander": "指挥官",
-  "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
-  "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",
-  "quick_navigation": "快速导航",
   "platform_label": "Personas 平台",
+  "quick_navigation": "快速导航",
+  "resume": {
+    "edit": "继续编辑 {personaName}",
+    "failure": "{personaName} 中有未读故障 — 请调查",
+    "tour": "继续 {tourTitle}（{stepIndex}/{totalSteps}）— {stepTitle}"
+  },
   "roadmap": {
-    "title": "产品路线图",
-    "subtitle": "我们正在构建的内容及下一步计划。",
-    "unavailable": "路线图不可用",
-    "unavailable_hint": "无法加载产品路线图。请检查网络连接后重试。",
+    "in_progress_count": "{count} 进行中",
+    "next_count": "{count} 即将到来",
+    "priority_later": "之后",
+    "priority_next": "下一步",
+    "priority_now": "现在",
+    "status_completed": "已完成",
     "status_in_progress": "进行中",
     "status_next": "即将到来",
     "status_planned": "已计划",
-    "status_completed": "已完成",
-    "priority_now": "现在",
-    "priority_next": "下一步",
-    "priority_later": "之后",
-    "in_progress_count": "{count} 进行中",
-    "next_count": "{count} 即将到来"
+    "subtitle": "我们正在构建的内容及下一步计划。",
+    "title": "产品路线图",
+    "unavailable": "路线图不可用",
+    "unavailable_hint": "无法加载产品路线图。请检查网络连接后重试。"
   },
-  "fleet": {
-    "executions_today": "今日运行",
-    "success_rate": "成功率",
-    "active_agents": "活跃智能体",
-    "credentials": "凭证"
+  "setup_stepper": {
+    "automate_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
+    "automate_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道…",
+    "automate_title": "您想自动化什么？",
+    "back": "返回",
+    "choose_role": "选择您的角色",
+    "finish": "完成",
+    "min_chars": "最少 10 个字符（{current}/10）",
+    "next": "下一步",
+    "pick_tool": "选择您最喜欢的工具",
+    "ready_to_save": "准备保存",
+    "simple_hint": "我们已为日常办公使用设置了应用程序。",
+    "tailor_hint": "我们将根据您的工作方式定制体验。",
+    "tool_hint": "这将是您的第一个连接器集成。",
+    "your_profile": "您的个人资料"
   },
-  "nav": {
-    "overview": {
-      "label": "概览",
-      "description": "仪表盘分析、执行历史和所有智能体的实时系统监控"
-    },
-    "personas": {
-      "label": "智能体",
-      "description": "创建、配置和管理具有自定义行为和能力的 AI 智能体"
-    },
-    "events": {
-      "label": "事件",
-      "description": "配置事件触发器、webhook 监听器和定时自动化任务"
-    },
-    "credentials": {
-      "label": "连接",
-      "description": "管理服务登录信息、数据库连接和密码，让智能体能够访问您的工具。"
-    },
-    "design-reviews": {
-      "label": "模板",
-      "description": "浏览现成的智能体蓝图，导入工作流，并生成新的智能体设计。"
-    },
-    "team": {
-      "label": "团队",
-      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流。"
-    },
-    "teams": {
-      "label": "团队",
-      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流"
-    },
-    "cloud": {
-      "label": "云端",
-      "description": "让您的智能体在云端运行，即使电脑关机也能继续工作。"
-    },
-    "settings": {
-      "label": "设置",
-      "description": "账户偏好、外观主题、通知规则和引擎配置"
-    },
-    "plugins": {
-      "label": "插件",
-      "description": "通过第三方插件和自定义扩展扩展您的智能体"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide（库）",
-    "personas_tab": "Personas（动画）",
-    "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
-    "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
+  "setup": {
+    "choose_role": "选择您的角色",
+    "choose_role_hint": "我们将根据您的工作方式定制体验。",
+    "describe_goal": "您想自动化什么？",
+    "describe_goal_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
+    "get_started": "开始",
+    "goal": "目标",
+    "goal_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道…",
+    "pick_tool": "选择您最喜欢的工具",
+    "pick_tool_hint": "这将是您的第一个服务连接。",
+    "ready_to_save": "准备保存",
+    "role": "角色",
+    "role_developer": "开发者",
+    "role_developer_hint": "技术用户",
+    "role_manager": "管理者",
+    "role_manager_hint": "规划与协调",
+    "role_office_rat": "办公室用户",
+    "role_office_rat_hint": "非技术用户",
+    "select_role_first": "请先选择角色以解锁工具选项。",
+    "select_tool_first": "请先选择工具以设置目标。",
+    "step_goal": "自动化目标",
+    "step_goal_hint": "描述您首先想要自动化的内容。",
+    "step_role": "您的角色",
+    "step_role_hint": "告诉我们您的角色，以便定制体验。",
+    "step_tool": "喜爱的工具",
+    "step_tool_hint": "选择您想要连接的第一个服务。",
+    "tool": "工具"
   },
   "since_left": {
     "alerts": "{count} 条告警",
@@ -209,5 +202,12 @@
     "runs": "{count} 次运行",
     "runs_other": "{count} 次运行",
     "title": "自您离开后"
+  },
+  "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
+  "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",
+  "welcome": "欢迎",
+  "welcome_layout": {
+    "get_started": "开始使用",
+    "language": "语言"
   }
 }

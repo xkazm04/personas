@@ -20,6 +20,19 @@ stance: string,
  */
 northStarCommitment: string, 
 /**
+ * The four dial fields below no longer reach any prompt — the band table
+ * that turned them into prose was deleted with the manifest rebase
+ * (spark `agent-manifest-rebase`, WP2), and the codex stopped authoring
+ * them. They stay on the struct so historical `core_profile` JSON and
+ * `persona_prompt_versions` snapshots keep round-tripping.
+ *
+ * EVERY field defaults deliberately. This type is only ever reached by
+ * deserializing a legacy blob, and a `required` field here means a
+ * prose-only blob fails to parse — which does not surface as an error,
+ * it silently SKIPS the whole `## Manifest` section for that persona
+ * (`prompt::assemble` logs and moves on). A tolerant parse renders the
+ * prose it did find; a strict one renders nothing at all.
+ *
  * 0 = risk-averse, 1 = risk-seeking.
  */
 riskTolerance: number, 
@@ -34,4 +47,27 @@ conflictStyle: string,
 /**
  * 0 = holds its ground, 1 = yields readily to stronger arguments.
  */
-deference: number, };
+deference: number, 
+/**
+ * Living-agent additive fields (spark `living-agent-core`). All default
+ * so pre-existing `core_profile` JSON keeps parsing unchanged.
+ *
+ * WHO the persona is — authored prose identity beyond the dials.
+ */
+identity?: string, 
+/**
+ * HOW it speaks — authored voice/tone prose.
+ */
+voice?: string, 
+/**
+ * Standing principles it works by.
+ */
+principles: Array<string>, 
+/**
+ * Hard constraints it must not cross.
+ */
+constraints: Array<string>, 
+/**
+ * How it decides when principles conflict.
+ */
+decisionPrinciples: Array<string>, };

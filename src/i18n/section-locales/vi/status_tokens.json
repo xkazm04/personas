@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "Đang chờ",
-    "running": "Đang chạy",
-    "completed": "Hoàn thành",
-    "failed": "Thất bại",
-    "cancelled": "Đã hủy",
-    "incomplete": "Chưa hoàn tất",
-    "error": "Lỗi",
-    "unknown": "Không rõ"
-  },
-  "simple": {
-    "good": "Tốt",
-    "warning": "Chú ý",
-    "problem": "Sự cố"
-  },
-  "event": {
-    "pending": "Đang chờ",
-    "processing": "Đang xử lý",
-    "processed": "Đã xử lý",
-    "failed": "Thất bại",
-    "retrying": "Đang thử lại"
-  },
   "automation": {
-    "pending": "Đang chờ",
-    "running": "Đang chạy",
     "completed": "Hoàn thành",
     "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "running": "Đang chạy",
     "timeout": "Hết thời gian"
-  },
-  "severity": {
-    "info": "Thông tin",
-    "low": "Thấp",
-    "medium": "Trung bình",
-    "high": "Cao",
-    "critical": "Nghiêm trọng"
-  },
-  "priority": {
-    "low": "Thấp",
-    "normal": "Bình thường",
-    "high": "Cao",
-    "urgent": "Khẩn cấp"
-  },
-  "healing_status": {
-    "open": "Mở",
-    "auto_fixed": "Tự động sửa",
-    "acknowledged": "Đã xác nhận",
-    "resolved": "Đã giải quyết"
-  },
-  "healing_category": {
-    "config": "Cấu hình",
-    "auth": "Xác thực",
-    "network": "Mạng",
-    "timeout": "Hết thời gian",
-    "quota": "Hạn ngạch"
-  },
-  "connector_status": {
-    "ready": "Sẵn sàng",
-    "untested": "Chưa kiểm tra",
-    "failed": "Thất bại",
-    "no_credential": "Không có thông tin xác thực",
-    "testing": "Đang kiểm tra"
-  },
-  "task_phase": {
-    "analyzing": "Đang phân tích",
-    "planning": "Đang lập kế hoạch",
-    "implementing": "Đang thực hiện",
-    "committing": "Đang commit",
-    "validating": "Đang kiểm tra",
-    "complete": "Hoàn tất"
-  },
-  "goal_state": {
-    "pending": "Đang chờ",
-    "review": "Đang đánh giá",
-    "blocked": "Bị chặn",
-    "in_progress": "Đang thực hiện",
-    "running": "Đang chạy",
-    "completed": "Hoàn tất",
-    "done": "Hoàn tất"
-  },
-  "test": {
-    "generating": "Đang tạo",
-    "running": "Đang chạy",
-    "completed": "Hoàn thành",
-    "failed": "Thất bại",
-    "pending": "Đang chờ"
-  },
-  "dev": {
-    "open": "Mở",
-    "in_progress": "Đang tiến hành",
-    "completed": "Hoàn thành",
-    "blocked": "Bị chặn",
-    "queued": "Đang chờ",
-    "running": "Đang chạy",
-    "failed": "Thất bại"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Toàn cục"
-  },
-  "forage_confidence": {
-    "high": "Cao",
-    "medium": "Trung bình",
-    "low": "Thấp"
-  },
-  "capability_risk": {
-    "low": "thấp",
-    "medium": "trung bình",
-    "high": "cao"
-  },
-  "verdict": {
-    "production": "Sản xuất",
-    "promising": "Triển vọng",
-    "not_ready": "Chưa sẵn sàng",
-    "broken": "Hỏng"
-  },
-  "deployment": {
-    "active": "Đang hoạt động",
-    "paused": "Đã tạm dừng",
-    "failed": "Thất bại",
-    "unknown": "Không xác định",
-    "file-based": "Dựa trên tệp"
-  },
-  "delivery": {
-    "delivered": "Đã giao",
-    "failed": "Thất bại",
-    "pending": "Đang chờ",
-    "queued": "Trong hàng đợi"
-  },
-  "rotation": {
-    "anomaly": "Bất thường",
-    "paused": "Đã tạm dừng",
-    "disabled": "Đã tắt",
-    "perm_errors": "Lỗi vĩnh viễn",
-    "degrading": "Đang suy giảm",
-    "backoff": "Đang chờ",
-    "fresh": "Mới",
-    "active": "Đang hoạt động"
-  },
-  "thinking": {
-    "high": "Cao",
-    "low": "Thấp",
-    "medium": "Trung bình"
-  },
-  "error_category": {
-    "api_error": "Lỗi API",
-    "credential_error": "Lỗi thông tin xác thực",
-    "network": "Mạng",
-    "provider_not_found": "Không tìm thấy nhà cung cấp",
-    "rate_limit": "Giới hạn tần suất",
-    "session_limit": "Giới hạn phiên",
-    "timeout": "Hết thời gian chờ",
-    "tool_error": "Lỗi công cụ",
-    "transient_process_failure": "Lỗi tiến trình tạm thời",
-    "unknown": "Không xác định",
-    "validation": "Xác thực"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Đã đạt giới hạn phân nhánh",
-    "budget_exceeded": "Đã đạt trần chi phí",
-    "cas_lost": "Đã bị lần chạy khác chiếm",
-    "cycle_detected": "Phát hiện vòng lặp",
-    "depth_limit": "Giới hạn độ sâu",
-    "handoff_suppressed": "Đã chặn bàn giao",
-    "malformed_config": "Cấu hình không hợp lệ",
-    "outside_window": "Ngoài khung thời gian hoạt động",
-    "predicate_unmet": "Chưa đạt điều kiện",
-    "publish_failed": "Phát hành thất bại",
-    "quarantined": "Trigger đã bị cách ly",
-    "healing_abandoned": "Đã ngừng tự sửa",
-    "healing_capped": "Hết lượt thử sửa lỗi",
-    "lookup_failed": "Không tìm được trigger",
-    "cost_ceiling_corrupt": "Không đọc được trần chi phí"
   },
   "build": {
     "analyzing": "Đang phân tích",
@@ -186,6 +19,232 @@
     "test_complete": "Kiểm thử hoàn tất",
     "testing": "Đang kiểm thử"
   },
+  "capability_risk": {
+    "high": "cao",
+    "low": "thấp",
+    "medium": "trung bình"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Đã đạt giới hạn phân nhánh",
+    "budget_exceeded": "Đã đạt trần chi phí",
+    "cas_lost": "Đã bị lần chạy khác chiếm",
+    "cost_ceiling_corrupt": "Không đọc được trần chi phí",
+    "cycle_detected": "Phát hiện vòng lặp",
+    "depth_limit": "Giới hạn độ sâu",
+    "handoff_suppressed": "Đã chặn bàn giao",
+    "healing_abandoned": "Đã ngừng tự sửa",
+    "healing_capped": "Hết lượt thử sửa lỗi",
+    "lookup_failed": "Không tìm được trigger",
+    "malformed_config": "Cấu hình không hợp lệ",
+    "outside_window": "Ngoài khung thời gian hoạt động",
+    "predicate_unmet": "Chưa đạt điều kiện",
+    "publish_failed": "Phát hành thất bại",
+    "quarantined": "Trigger đã bị cách ly"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Toàn cục"
+  },
+  "competition": {
+    "awaiting_review": "Chờ đánh giá",
+    "cancelled": "Đã hủy",
+    "resolved": "Đã giải quyết",
+    "running": "Đang chạy"
+  },
+  "connector_status": {
+    "failed": "Thất bại",
+    "no_credential": "Không có thông tin xác thực",
+    "ready": "Sẵn sàng",
+    "testing": "Đang kiểm tra",
+    "untested": "Chưa kiểm tra"
+  },
+  "delivery": {
+    "delivered": "Đã giao",
+    "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "queued": "Trong hàng đợi"
+  },
+  "deployment": {
+    "active": "Đang hoạt động",
+    "failed": "Thất bại",
+    "file-based": "Dựa trên tệp",
+    "paused": "Đã tạm dừng",
+    "unknown": "Không xác định"
+  },
+  "dev": {
+    "blocked": "Bị chặn",
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "in_progress": "Đang tiến hành",
+    "open": "Mở",
+    "queued": "Đang chờ",
+    "running": "Đang chạy"
+  },
+  "error_category": {
+    "api_error": "Lỗi API",
+    "credential_error": "Lỗi thông tin xác thực",
+    "network": "Mạng",
+    "provider_not_found": "Không tìm thấy nhà cung cấp",
+    "rate_limit": "Giới hạn tần suất",
+    "session_limit": "Giới hạn phiên",
+    "timeout": "Hết thời gian chờ",
+    "tool_error": "Lỗi công cụ",
+    "transient_process_failure": "Lỗi tiến trình tạm thời",
+    "unknown": "Không xác định",
+    "validation": "Xác thực"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "Đang chờ phê duyệt",
+    "cascade_guard": "Đang chạy rồi",
+    "cross_team_blocked": "Bị chặn giữa các nhóm",
+    "dry_run": "Chạy thử (mô phỏng)",
+    "handoff_target_disabled": "Đích bàn giao đang tắt",
+    "no_subscriber": "Không có người đăng ký nào khớp",
+    "persona_disabled": "Tác nhân đang tắt",
+    "stuck_reclaimed": "Đã thu hồi và xếp lại hàng đợi",
+    "stuck_retry_exhausted": "Đã thu hồi, hết lượt thử lại"
+  },
+  "event": {
+    "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "processed": "Đã xử lý",
+    "processing": "Đang xử lý",
+    "retrying": "Đang thử lại"
+  },
+  "execution": {
+    "cancelled": "Đã hủy",
+    "completed": "Hoàn thành",
+    "error": "Lỗi",
+    "failed": "Thất bại",
+    "incomplete": "Chưa hoàn tất",
+    "queued": "Đang chờ",
+    "running": "Đang chạy",
+    "unknown": "Không rõ"
+  },
+  "forage_confidence": {
+    "high": "Cao",
+    "low": "Thấp",
+    "medium": "Trung bình"
+  },
+  "goal_state": {
+    "blocked": "Bị chặn",
+    "completed": "Hoàn tất",
+    "done": "Hoàn tất",
+    "in_progress": "Đang thực hiện",
+    "pending": "Đang chờ",
+    "review": "Đang đánh giá",
+    "running": "Đang chạy"
+  },
+  "healing_category": {
+    "auth": "Xác thực",
+    "config": "Cấu hình",
+    "network": "Mạng",
+    "quota": "Hạn ngạch",
+    "timeout": "Hết thời gian"
+  },
+  "healing_status": {
+    "acknowledged": "Đã xác nhận",
+    "auto_fixed": "Tự động sửa",
+    "open": "Mở",
+    "resolved": "Đã giải quyết"
+  },
+  "kb_document": {
+    "indexing": "đang lập chỉ mục",
+    "pending": "đang chờ"
+  },
+  "memory_action": {
+    "deleted": "Đã xoá",
+    "error": "Lỗi",
+    "kept": "Đã giữ lại",
+    "proposed_archive": "Đề xuất lưu trữ",
+    "proposed_delete": "Đề xuất xoá",
+    "proposed_synthesize": "Đề xuất hợp nhất",
+    "proposed_update_importance": "Đề xuất đánh giá lại"
+  },
+  "memory_category": {
+    "context": "Bối cảnh",
+    "decision": "Quyết định",
+    "learning": "Bài học",
+    "observation": "Quan sát"
+  },
+  "memory_tier": {
+    "active": "Đang hoạt động",
+    "archive": "Đã lưu trữ",
+    "core": "Cốt lõi",
+    "working": "Đang xử lý"
+  },
+  "priority": {
+    "high": "Cao",
+    "low": "Thấp",
+    "normal": "Bình thường",
+    "urgent": "Khẩn cấp"
+  },
+  "remote_job": {
+    "cancelled": "Đã hủy",
+    "completed": "Đã hoàn tất",
+    "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "refused": "Đã từ chối",
+    "running": "Đang chạy"
+  },
+  "rotation": {
+    "active": "Đang hoạt động",
+    "anomaly": "Bất thường",
+    "backoff": "Đang chờ",
+    "degrading": "Đang suy giảm",
+    "disabled": "Đã tắt",
+    "fresh": "Mới",
+    "paused": "Đã tạm dừng",
+    "perm_errors": "Lỗi vĩnh viễn"
+  },
+  "severity": {
+    "critical": "Nghiêm trọng",
+    "high": "Cao",
+    "info": "Thông tin",
+    "low": "Thấp",
+    "medium": "Trung bình"
+  },
+  "simple": {
+    "good": "Tốt",
+    "problem": "Sự cố",
+    "warning": "Chú ý"
+  },
+  "span_type": {
+    "chain_evaluation": "Đánh giá chuỗi",
+    "cli_spawn": "Khởi chạy CLI",
+    "credential_resolution": "Thông tin đăng nhập",
+    "execution": "Thực thi",
+    "healing_analysis": "Khắc phục",
+    "outcome_assessment": "Kết quả",
+    "pipeline_stage": "Giai đoạn pipeline",
+    "prompt_assembly": "Soạn prompt",
+    "protocol_dispatch": "Giao thức",
+    "stream_processing": "Luồng",
+    "tool_call": "Gọi công cụ",
+    "unknown": "Không xác định"
+  },
+  "task_phase": {
+    "analyzing": "Đang phân tích",
+    "committing": "Đang commit",
+    "complete": "Hoàn tất",
+    "implementing": "Đang thực hiện",
+    "planning": "Đang lập kế hoạch",
+    "validating": "Đang kiểm tra"
+  },
+  "test": {
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "generating": "Đang tạo",
+    "pending": "Đang chờ",
+    "running": "Đang chạy"
+  },
+  "thinking": {
+    "high": "Cao",
+    "low": "Thấp",
+    "medium": "Trung bình"
+  },
   "tool_error_kind": {
     "auth": "Xác thực",
     "http": "Lỗi HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Lỗi không xác định",
     "unsupported": "Không thể chạy ở đây"
   },
-  "remote_job": {
-    "completed": "Đã hoàn tất",
-    "failed": "Thất bại",
-    "cancelled": "Đã hủy",
-    "refused": "Đã từ chối",
-    "pending": "Đang chờ",
-    "running": "Đang chạy"
-  },
-  "event_reason": {
-    "approval_held": "Đang chờ phê duyệt",
-    "cascade_guard": "Đang chạy rồi",
-    "cross_team_blocked": "Bị chặn giữa các nhóm",
-    "dry_run": "Chạy thử (mô phỏng)",
-    "handoff_target_disabled": "Đích bàn giao đang tắt",
-    "no_subscriber": "Không có người đăng ký nào khớp",
-    "persona_disabled": "Tác nhân đang tắt",
-    "stuck_reclaimed": "Đã thu hồi và xếp lại hàng đợi",
-    "stuck_retry_exhausted": "Đã thu hồi, hết lượt thử lại",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "Đang chạy",
-    "awaiting_review": "Chờ đánh giá",
-    "resolved": "Đã giải quyết",
-    "cancelled": "Đã hủy"
-  },
-  "kb_document": {
-    "pending": "đang chờ",
-    "indexing": "đang lập chỉ mục"
-  },
-  "memory_tier": {
-    "core": "Cốt lõi",
-    "active": "Đang hoạt động",
-    "working": "Đang xử lý",
-    "archive": "Đã lưu trữ"
-  },
-  "span_type": {
-    "execution": "Thực thi",
-    "prompt_assembly": "Soạn prompt",
-    "credential_resolution": "Thông tin đăng nhập",
-    "cli_spawn": "Khởi chạy CLI",
-    "tool_call": "Gọi công cụ",
-    "protocol_dispatch": "Giao thức",
-    "chain_evaluation": "Đánh giá chuỗi",
-    "stream_processing": "Luồng",
-    "outcome_assessment": "Kết quả",
-    "healing_analysis": "Khắc phục",
-    "pipeline_stage": "Giai đoạn pipeline",
-    "unknown": "Không xác định"
-  },
-  "memory_action": {
-    "kept": "Đã giữ lại",
-    "deleted": "Đã xoá",
-    "error": "Lỗi",
-    "proposed_delete": "Đề xuất xoá",
-    "proposed_update_importance": "Đề xuất đánh giá lại",
-    "proposed_synthesize": "Đề xuất hợp nhất",
-    "proposed_archive": "Đề xuất lưu trữ"
-  },
-  "memory_category": {
-    "observation": "Quan sát",
-    "decision": "Quyết định",
-    "context": "Bối cảnh",
-    "learning": "Bài học"
+  "verdict": {
+    "broken": "Hỏng",
+    "not_ready": "Chưa sẵn sàng",
+    "production": "Sản xuất",
+    "promising": "Triển vọng"
   }
 }

@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "في قائمة الانتظار",
-    "running": "جارٍ",
-    "completed": "مكتمل",
-    "failed": "فاشل",
-    "cancelled": "ملغى",
-    "incomplete": "غير مكتمل",
-    "error": "خطأ",
-    "unknown": "غير معروف"
-  },
-  "simple": {
-    "good": "جيد",
-    "warning": "انتباه",
-    "problem": "خلل"
-  },
-  "event": {
-    "pending": "معلّق",
-    "processing": "جارٍ المعالجة",
-    "processed": "تمت المعالجة",
-    "failed": "فاشل",
-    "retrying": "إعادة المحاولة"
-  },
   "automation": {
-    "pending": "معلّق",
-    "running": "جارٍ",
     "completed": "مكتمل",
     "failed": "فاشل",
+    "pending": "معلّق",
+    "running": "جارٍ",
     "timeout": "انتهت المهلة"
-  },
-  "severity": {
-    "info": "معلوماتي",
-    "low": "منخفض",
-    "medium": "متوسط",
-    "high": "مرتفع",
-    "critical": "حرج"
-  },
-  "priority": {
-    "low": "منخفض",
-    "normal": "طبيعي",
-    "high": "مرتفع",
-    "urgent": "عاجل"
-  },
-  "healing_status": {
-    "open": "مفتوح",
-    "auto_fixed": "إصلاح تلقائي",
-    "acknowledged": "مؤكَّد",
-    "resolved": "محلول"
-  },
-  "healing_category": {
-    "config": "الإعداد",
-    "auth": "المصادقة",
-    "network": "الشبكة",
-    "timeout": "انتهاء المهلة",
-    "quota": "الحصة"
-  },
-  "connector_status": {
-    "ready": "جاهز",
-    "untested": "لم يُختبَر",
-    "failed": "فاشل",
-    "no_credential": "لا بيانات اعتماد",
-    "testing": "جارٍ الاختبار"
-  },
-  "task_phase": {
-    "analyzing": "جارٍ التحليل",
-    "planning": "جارٍ التخطيط",
-    "implementing": "جارٍ التنفيذ",
-    "committing": "جارٍ الالتزام",
-    "validating": "جارٍ التحقق",
-    "complete": "مكتمل"
-  },
-  "goal_state": {
-    "pending": "معلّق",
-    "review": "قيد المراجعة",
-    "blocked": "محجوب",
-    "in_progress": "قيد التنفيذ",
-    "running": "جارٍ",
-    "completed": "مكتمل",
-    "done": "مكتمل"
-  },
-  "test": {
-    "generating": "جارٍ التوليد",
-    "running": "جارٍ التشغيل",
-    "completed": "مكتمل",
-    "failed": "فاشل",
-    "pending": "معلّق"
-  },
-  "dev": {
-    "open": "مفتوح",
-    "in_progress": "قيد التنفيذ",
-    "completed": "مكتمل",
-    "blocked": "محجوب",
-    "queued": "في قائمة الانتظار",
-    "running": "جارٍ",
-    "failed": "فاشل"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "عام"
-  },
-  "forage_confidence": {
-    "high": "مرتفع",
-    "medium": "متوسط",
-    "low": "منخفض"
-  },
-  "capability_risk": {
-    "low": "منخفض",
-    "medium": "متوسط",
-    "high": "مرتفع"
-  },
-  "verdict": {
-    "production": "إنتاج",
-    "promising": "واعد",
-    "not_ready": "غير جاهز",
-    "broken": "معطوب"
-  },
-  "deployment": {
-    "active": "نشط",
-    "paused": "متوقف مؤقتًا",
-    "failed": "فاشل",
-    "unknown": "غير معروف",
-    "file-based": "قائم على الملفات"
-  },
-  "delivery": {
-    "delivered": "تم التسليم",
-    "failed": "فاشل",
-    "pending": "معلّق",
-    "queued": "في قائمة الانتظار"
-  },
-  "rotation": {
-    "anomaly": "شذوذ",
-    "paused": "متوقف مؤقتًا",
-    "disabled": "معطّل",
-    "perm_errors": "أخطاء دائمة",
-    "degrading": "متدهور",
-    "backoff": "تراجع",
-    "fresh": "جديد",
-    "active": "نشط"
-  },
-  "thinking": {
-    "high": "مرتفع",
-    "low": "منخفض",
-    "medium": "متوسط"
-  },
-  "error_category": {
-    "api_error": "خطأ في API",
-    "credential_error": "خطأ في بيانات الاعتماد",
-    "network": "الشبكة",
-    "provider_not_found": "المزوّد غير موجود",
-    "rate_limit": "حد المعدل",
-    "session_limit": "حد الجلسة",
-    "timeout": "انتهاء المهلة",
-    "tool_error": "خطأ في الأداة",
-    "transient_process_failure": "فشل مؤقت في العملية",
-    "unknown": "غير معروف",
-    "validation": "التحقق"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "تم بلوغ حد التفرّع",
-    "budget_exceeded": "تم بلوغ سقف التكلفة",
-    "cas_lost": "استحوذ عليها تشغيل آخر",
-    "cycle_detected": "تم اكتشاف حلقة",
-    "depth_limit": "حد العمق",
-    "handoff_suppressed": "تم كبح التسليم",
-    "malformed_config": "إعداد غير صالح",
-    "outside_window": "خارج النافذة النشطة",
-    "predicate_unmet": "الشرط غير مستوفٍ",
-    "publish_failed": "فشل النشر",
-    "quarantined": "المُشغِّل معزول",
-    "healing_abandoned": "توقّف الإصلاح",
-    "healing_capped": "استُنفدت محاولات الإصلاح",
-    "lookup_failed": "فشل البحث عن المشغّل",
-    "cost_ceiling_corrupt": "سقف التكلفة غير قابل للقراءة"
   },
   "build": {
     "analyzing": "جارٍ التحليل",
@@ -186,6 +19,232 @@
     "test_complete": "اكتمل الاختبار",
     "testing": "جارٍ الاختبار"
   },
+  "capability_risk": {
+    "high": "مرتفع",
+    "low": "منخفض",
+    "medium": "متوسط"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "تم بلوغ حد التفرّع",
+    "budget_exceeded": "تم بلوغ سقف التكلفة",
+    "cas_lost": "استحوذ عليها تشغيل آخر",
+    "cost_ceiling_corrupt": "سقف التكلفة غير قابل للقراءة",
+    "cycle_detected": "تم اكتشاف حلقة",
+    "depth_limit": "حد العمق",
+    "handoff_suppressed": "تم كبح التسليم",
+    "healing_abandoned": "توقّف الإصلاح",
+    "healing_capped": "استُنفدت محاولات الإصلاح",
+    "lookup_failed": "فشل البحث عن المشغّل",
+    "malformed_config": "إعداد غير صالح",
+    "outside_window": "خارج النافذة النشطة",
+    "predicate_unmet": "الشرط غير مستوفٍ",
+    "publish_failed": "فشل النشر",
+    "quarantined": "المُشغِّل معزول"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "عام"
+  },
+  "competition": {
+    "awaiting_review": "بانتظار المراجعة",
+    "cancelled": "ملغى",
+    "resolved": "محلول",
+    "running": "جارٍ"
+  },
+  "connector_status": {
+    "failed": "فاشل",
+    "no_credential": "لا بيانات اعتماد",
+    "ready": "جاهز",
+    "testing": "جارٍ الاختبار",
+    "untested": "لم يُختبَر"
+  },
+  "delivery": {
+    "delivered": "تم التسليم",
+    "failed": "فاشل",
+    "pending": "معلّق",
+    "queued": "في قائمة الانتظار"
+  },
+  "deployment": {
+    "active": "نشط",
+    "failed": "فاشل",
+    "file-based": "قائم على الملفات",
+    "paused": "متوقف مؤقتًا",
+    "unknown": "غير معروف"
+  },
+  "dev": {
+    "blocked": "محجوب",
+    "completed": "مكتمل",
+    "failed": "فاشل",
+    "in_progress": "قيد التنفيذ",
+    "open": "مفتوح",
+    "queued": "في قائمة الانتظار",
+    "running": "جارٍ"
+  },
+  "error_category": {
+    "api_error": "خطأ في API",
+    "credential_error": "خطأ في بيانات الاعتماد",
+    "network": "الشبكة",
+    "provider_not_found": "المزوّد غير موجود",
+    "rate_limit": "حد المعدل",
+    "session_limit": "حد الجلسة",
+    "timeout": "انتهاء المهلة",
+    "tool_error": "خطأ في الأداة",
+    "transient_process_failure": "فشل مؤقت في العملية",
+    "unknown": "غير معروف",
+    "validation": "التحقق"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "في انتظار الموافقة",
+    "cascade_guard": "قيد التشغيل بالفعل",
+    "cross_team_blocked": "محظور بين الفرق",
+    "dry_run": "تشغيل تجريبي (محاكاة)",
+    "handoff_target_disabled": "وجهة التسليم متوقفة",
+    "no_subscriber": "لا يوجد مشترك مطابق",
+    "persona_disabled": "الوكيل متوقف",
+    "stuck_reclaimed": "تمت الاستعادة وإعادة الإدراج في الطابور",
+    "stuck_retry_exhausted": "تمت الاستعادة، ونفدت المحاولات"
+  },
+  "event": {
+    "failed": "فاشل",
+    "pending": "معلّق",
+    "processed": "تمت المعالجة",
+    "processing": "جارٍ المعالجة",
+    "retrying": "إعادة المحاولة"
+  },
+  "execution": {
+    "cancelled": "ملغى",
+    "completed": "مكتمل",
+    "error": "خطأ",
+    "failed": "فاشل",
+    "incomplete": "غير مكتمل",
+    "queued": "في قائمة الانتظار",
+    "running": "جارٍ",
+    "unknown": "غير معروف"
+  },
+  "forage_confidence": {
+    "high": "مرتفع",
+    "low": "منخفض",
+    "medium": "متوسط"
+  },
+  "goal_state": {
+    "blocked": "محجوب",
+    "completed": "مكتمل",
+    "done": "مكتمل",
+    "in_progress": "قيد التنفيذ",
+    "pending": "معلّق",
+    "review": "قيد المراجعة",
+    "running": "جارٍ"
+  },
+  "healing_category": {
+    "auth": "المصادقة",
+    "config": "الإعداد",
+    "network": "الشبكة",
+    "quota": "الحصة",
+    "timeout": "انتهاء المهلة"
+  },
+  "healing_status": {
+    "acknowledged": "مؤكَّد",
+    "auto_fixed": "إصلاح تلقائي",
+    "open": "مفتوح",
+    "resolved": "محلول"
+  },
+  "kb_document": {
+    "indexing": "جارٍ الفهرسة",
+    "pending": "في الانتظار"
+  },
+  "memory_action": {
+    "deleted": "محذوفة",
+    "error": "خطأ",
+    "kept": "محفوظة",
+    "proposed_archive": "اقتراح بالأرشفة",
+    "proposed_delete": "اقتراح بالحذف",
+    "proposed_synthesize": "اقتراح بالدمج",
+    "proposed_update_importance": "اقتراح بإعادة التقييم"
+  },
+  "memory_category": {
+    "context": "سياق",
+    "decision": "قرار",
+    "learning": "درس مستفاد",
+    "observation": "ملاحظة"
+  },
+  "memory_tier": {
+    "active": "نشطة",
+    "archive": "مؤرشفة",
+    "core": "أساسية",
+    "working": "قيد العمل"
+  },
+  "priority": {
+    "high": "مرتفع",
+    "low": "منخفض",
+    "normal": "طبيعي",
+    "urgent": "عاجل"
+  },
+  "remote_job": {
+    "cancelled": "أُلغيت",
+    "completed": "اكتملت",
+    "failed": "فشلت",
+    "pending": "قيد الانتظار",
+    "refused": "مرفوضة",
+    "running": "قيد التشغيل"
+  },
+  "rotation": {
+    "active": "نشط",
+    "anomaly": "شذوذ",
+    "backoff": "تراجع",
+    "degrading": "متدهور",
+    "disabled": "معطّل",
+    "fresh": "جديد",
+    "paused": "متوقف مؤقتًا",
+    "perm_errors": "أخطاء دائمة"
+  },
+  "severity": {
+    "critical": "حرج",
+    "high": "مرتفع",
+    "info": "معلوماتي",
+    "low": "منخفض",
+    "medium": "متوسط"
+  },
+  "simple": {
+    "good": "جيد",
+    "problem": "خلل",
+    "warning": "انتباه"
+  },
+  "span_type": {
+    "chain_evaluation": "تقييم السلسلة",
+    "cli_spawn": "تشغيل CLI",
+    "credential_resolution": "بيانات الاعتماد",
+    "execution": "تنفيذ",
+    "healing_analysis": "المعالجة",
+    "outcome_assessment": "النتيجة",
+    "pipeline_stage": "مرحلة المسار",
+    "prompt_assembly": "المُوجّه",
+    "protocol_dispatch": "البروتوكول",
+    "stream_processing": "البث",
+    "tool_call": "استدعاء أداة",
+    "unknown": "غير معروف"
+  },
+  "task_phase": {
+    "analyzing": "جارٍ التحليل",
+    "committing": "جارٍ الالتزام",
+    "complete": "مكتمل",
+    "implementing": "جارٍ التنفيذ",
+    "planning": "جارٍ التخطيط",
+    "validating": "جارٍ التحقق"
+  },
+  "test": {
+    "completed": "مكتمل",
+    "failed": "فاشل",
+    "generating": "جارٍ التوليد",
+    "pending": "معلّق",
+    "running": "جارٍ التشغيل"
+  },
+  "thinking": {
+    "high": "مرتفع",
+    "low": "منخفض",
+    "medium": "متوسط"
+  },
   "tool_error_kind": {
     "auth": "المصادقة",
     "http": "خطأ HTTP",
@@ -197,69 +256,10 @@
     "unknown": "خطأ غير معروف",
     "unsupported": "غير قابل للتشغيل هنا"
   },
-  "remote_job": {
-    "completed": "اكتملت",
-    "failed": "فشلت",
-    "cancelled": "أُلغيت",
-    "refused": "مرفوضة",
-    "pending": "قيد الانتظار",
-    "running": "قيد التشغيل"
-  },
-  "event_reason": {
-    "approval_held": "في انتظار الموافقة",
-    "cascade_guard": "قيد التشغيل بالفعل",
-    "cross_team_blocked": "محظور بين الفرق",
-    "dry_run": "تشغيل تجريبي (محاكاة)",
-    "handoff_target_disabled": "وجهة التسليم متوقفة",
-    "no_subscriber": "لا يوجد مشترك مطابق",
-    "persona_disabled": "الوكيل متوقف",
-    "stuck_reclaimed": "تمت الاستعادة وإعادة الإدراج في الطابور",
-    "stuck_retry_exhausted": "تمت الاستعادة، ونفدت المحاولات",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "جارٍ",
-    "awaiting_review": "بانتظار المراجعة",
-    "resolved": "محلول",
-    "cancelled": "ملغى"
-  },
-  "kb_document": {
-    "pending": "في الانتظار",
-    "indexing": "جارٍ الفهرسة"
-  },
-  "memory_tier": {
-    "core": "أساسية",
-    "active": "نشطة",
-    "working": "قيد العمل",
-    "archive": "مؤرشفة"
-  },
-  "span_type": {
-    "execution": "تنفيذ",
-    "prompt_assembly": "المُوجّه",
-    "credential_resolution": "بيانات الاعتماد",
-    "cli_spawn": "تشغيل CLI",
-    "tool_call": "استدعاء أداة",
-    "protocol_dispatch": "البروتوكول",
-    "chain_evaluation": "تقييم السلسلة",
-    "stream_processing": "البث",
-    "outcome_assessment": "النتيجة",
-    "healing_analysis": "المعالجة",
-    "pipeline_stage": "مرحلة المسار",
-    "unknown": "غير معروف"
-  },
-  "memory_action": {
-    "kept": "محفوظة",
-    "deleted": "محذوفة",
-    "error": "خطأ",
-    "proposed_delete": "اقتراح بالحذف",
-    "proposed_update_importance": "اقتراح بإعادة التقييم",
-    "proposed_synthesize": "اقتراح بالدمج",
-    "proposed_archive": "اقتراح بالأرشفة"
-  },
-  "memory_category": {
-    "observation": "ملاحظة",
-    "decision": "قرار",
-    "context": "سياق",
-    "learning": "درس مستفاد"
+  "verdict": {
+    "broken": "معطوب",
+    "not_ready": "غير جاهز",
+    "production": "إنتاج",
+    "promising": "واعد"
   }
 }

@@ -4,4 +4,4 @@
  * One entry of the built-in OAuth provider registry, as offered to the
  * connector-design UI.
  */
-export type OAuthProvider = { id: string, name: string, supports_pkce: boolean, default_scopes: Array<string>, };
+export type OAuthProvider = { id: string, name: string, supportsPkce: boolean, defaultScopes: Array<string>, };

@@ -12,4 +12,4 @@ export type VaultStatus = {
  * Where the master key came from — `"keychain"` when the OS keyring holds
  * it, a fallback label otherwise. The trust badge branches on this.
  */
-key_source: string, total: number, encrypted: number, plaintext: number, legacy_ipc_decrypt_calls: number, credential_audit_write_failures: number, };
+keySource: string, total: number, encrypted: number, plaintext: number, legacyIpcDecryptCalls: number, credentialAuditWriteFailures: number, };

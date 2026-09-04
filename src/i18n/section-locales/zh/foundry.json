@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "由 {count} 项能力组成",
-  "xray_tooltip": "此模板由一种心智加上配方目录中的能力组成——与你在 Foundry 中手动组合的部分相同。",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "此模板由一种心智加上配方目录中的能力组成——与你在 Foundry 中手动组合的部分相同。"
 }

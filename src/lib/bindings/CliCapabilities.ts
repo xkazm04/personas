@@ -33,6 +33,14 @@ hasTask: boolean,
  */
 deepFanoutAvailable: boolean, 
 /**
- * RFC3339 timestamp of the probe.
+ * RFC3339 timestamp of the probe itself — the moment the child CLI
+ * reported this surface, never the moment this struct was handed out.
  */
-probedAt: string, };
+probedAt: string, 
+/**
+ * `true` when this value was replayed from the in-process cache rather
+ * than obtained by spawning a CLI. A cached capability set is a past
+ * session's observation (see the module docs on the session axis), so it
+ * is marked rather than served as if it had just been measured.
+ */
+servedFromCache: boolean, };

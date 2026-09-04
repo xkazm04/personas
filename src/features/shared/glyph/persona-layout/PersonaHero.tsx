@@ -4,11 +4,11 @@ import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { GlyphSigilCanvas } from '@/features/shared/glyph/persona-sigil';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import type { PersonaCapability } from '@/lib/personas/capabilities';
 
 interface PersonaHeroProps {
   personaName: string;
-  useCases: DisplayUseCase[];
+  useCases: PersonaCapability[];
   /** Maximum sigil canvas size in px. The sigil scales responsively with
    *  the available column width (square aspect, capped at this value)
    *  rather than rendering at a fixed size — view mode complained that

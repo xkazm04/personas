@@ -74,3 +74,23 @@ pub fn encrypt_legacy_secrets(pool: &DbPool, st: &mut StartupTimer) {
     }
     st.checkpoint("credential_migrations");
 }
+
+/// Move legacy `app_master_mandate:<project_id>` app_settings rows into the
+/// `persona_responsibilities` table (living-agent WP3). Idempotent — a healthy
+/// second boot migrates 0 — and deliberately BEFORE the local HTTP server and
+/// every background loop starts, so no mandate reader ever races the move.
+pub fn migrate_app_master_mandates(pool: &DbPool) {
+    match personas_engine::responsibility::migrate_legacy_mandates(pool) {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(
+            migrated = n,
+            "App master mandates migrated from app_settings to persona_responsibilities"
+        ),
+        Err(e) => tracing::warn!(
+            error = %e,
+            "App master mandate migration failed; legacy rows stay in app_settings \
+             (mandate enforcement reads the table, so affected projects read as \
+             unmandated until the next boot retries)"
+        ),
+    }
+}

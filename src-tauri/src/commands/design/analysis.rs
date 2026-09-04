@@ -572,7 +572,11 @@ pub fn preview_prompt(
 
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
-    Ok(prompt::assemble_prompt(
+    // Living-agent inputs mirror the runner main path so the editor preview
+    // shows the prompt a real run would carry (best-effort, degrade to empty).
+    let (responsibilities, recent_episodes) =
+        crate::engine::runner::load_living_prompt_inputs(&state.db, &persona_id);
+    Ok(prompt::assemble_prompt_with_skills(
         &persona,
         &tools,
         None,
@@ -581,6 +585,9 @@ pub fn preview_prompt(
         None,
         #[cfg(feature = "desktop")]
         None,
+        None, // written-skills set: no connector hints on this surface
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice()),
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice()),
     ))
 }
 

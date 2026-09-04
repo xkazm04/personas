@@ -76,4 +76,14 @@ derived_from: Array<string> | null,
  * scorer: disputed memories sink in recall (bounded tanh penalty) but are
  * never silently removed — resolution is a human decision.
  */
-open_claim_count: number, };
+open_claim_count: number, 
+/**
+ * Stable fact identity (living-agent consolidation, e16). A short slug
+ * (e.g. `"tooling.build_needs_desktop_feature"`) naming the FACT this row
+ * states, so a later consolidation pass can recognise the same fact and
+ * the tombstone table (`persona_memory_tombstone`) can refuse its
+ * resurrection after a deliberate delete. `None` for organic memories —
+ * only the consolidation writer (`repos::core::memories::
+ * create_consolidated`) mints it.
+ */
+fact_key: string | null, };

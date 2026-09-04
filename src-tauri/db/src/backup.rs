@@ -27,14 +27,19 @@ use std::path::{Path, PathBuf};
 /// How many backup sets (newest first) survive rotation.
 const MAX_BACKUPS: usize = 3;
 
-/// Subdirectory of the app data dir where snapshots live.
-const BACKUP_DIR_NAME: &str = "backups";
+/// Subdirectory of the app data dir where snapshots live. Shared with
+/// [`crate::restore`], which lists what this module writes.
+pub(crate) const BACKUP_DIR_NAME: &str = "backups";
 
-/// SQLite sidecar extensions copied/rotated together with the main file.
-/// `foo.db`'s WAL is `foo.db-wal`, and `Path::with_extension("db-wal")` on
-/// a `.db` path produces exactly that shape — so a restored backup keeps
-/// the sidecar naming SQLite expects.
-const SIDECAR_EXTENSIONS: [&str; 2] = ["db-wal", "db-shm"];
+/// SQLite sidecar suffixes copied/rotated together with the main file.
+/// SQLite appends these to the FULL file name (`foo.db` → `foo.db-wal`,
+/// `store` → `store-wal`); [`sidecar_path`] applies that rule, so a restored
+/// backup keeps the sidecar naming SQLite expects whatever the store is named.
+/// A restore copies and removes the same set of siblings a snapshot copies —
+/// [`crate::restore`] shares this list so the two halves cannot drift apart.
+pub(crate) const SIDECAR_SUFFIXES: [&str; 2] = ["-wal", "-shm"];
+
+use crate::sidecar_path;
 
 /// Snapshot `db_path` into `<app_data_dir>/backups/personas-<stamp>-<nn>.db`
 /// (+ WAL/SHM siblings if present), then rotate old sets. Returns the path
@@ -118,12 +123,12 @@ pub(super) fn backup_before_migrations(app_data_dir: &Path, db_path: &Path) -> O
     // On Unix, fs::copy carries over the source's 0600 mode; on Windows the
     // file inherits the owner-only ACL that init_db set on the data dir —
     // so backups get the same protection as the live database for free.
-    for ext in SIDECAR_EXTENSIONS {
-        let src = db_path.with_extension(ext);
+    for suffix in SIDECAR_SUFFIXES {
+        let src = sidecar_path(db_path, suffix);
         if !src.exists() {
             continue; // clean shutdown last session — WAL was checkpointed away
         }
-        let dst = backup_db.with_extension(ext);
+        let dst = sidecar_path(&backup_db, suffix);
         if let Err(e) = std::fs::copy(&src, &dst) {
             // The .db copy alone is still a valid database as of its last
             // checkpoint; a missing WAL only means the tail of the final
@@ -140,6 +145,26 @@ pub(super) fn backup_before_migrations(app_data_dir: &Path, db_path: &Path) -> O
         path = %backup_db.display(),
         "Pre-migration DB backup created"
     );
+
+    // The quarantine clause. Three slots is enough for a bad migration — the
+    // risk this module was written for — and NOT enough for slow structural
+    // damage: a session that keeps writing to a damaged file, then three more
+    // boots, has rotated every pre-damage copy out of existence before anyone
+    // noticed. So if the previous session ended quarantined, take the backup
+    // and do not rotate. The marker is a file beside the store, read here
+    // BEFORE any connection opens it — a flag stored inside the damaged
+    // database is unreadable exactly when it matters.
+    //
+    // Nothing clears the marker automatically: `damage::clear_quarantine` is a
+    // deliberate operator act after a restore. Rotation debt is disk usage; a
+    // rotated-away last good copy is the user's data.
+    if crate::damage::previous_session_quarantined(db_path) {
+        tracing::warn!(
+            dir = %backup_dir.display(),
+            "Backup rotation HELD — the store is quarantined, so no pre-damage backup is deleted"
+        );
+        return Some(backup_db);
+    }
 
     rotate_backups(&backup_dir);
     Some(backup_db)
@@ -180,7 +205,11 @@ fn rotate_backups(backup_dir: &Path) {
     let excess = sets.len() - MAX_BACKUPS;
     for old in sets.into_iter().take(excess) {
         let mut doomed = vec![old.clone()];
-        doomed.extend(SIDECAR_EXTENSIONS.iter().map(|ext| old.with_extension(ext)));
+        doomed.extend(
+            SIDECAR_SUFFIXES
+                .iter()
+                .map(|suffix| sidecar_path(&old, suffix)),
+        );
         for path in doomed {
             if !path.exists() {
                 continue;

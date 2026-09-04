@@ -1,13 +1,13 @@
 {
   "accurate_prompt": "Prompt akurat",
-  "good_tool_selection": "Pemilihan alat baik",
-  "reliable": "Andal",
   "cost_efficient": "Hemat biaya",
-  "wrong_tools": "Alat salah",
-  "poor_instructions": "Instruksi buruk",
+  "credential_issues": "Masalah kredensial",
+  "good_tool_selection": "Pemilihan alat baik",
   "missing_context": "Konteks kurang",
   "over_engineered": "Terlalu kompleks",
+  "poor_instructions": "Instruksi buruk",
+  "reliable": "Andal",
   "under_specified": "Kurang spesifik",
-  "wrong_triggers": "Pemicu salah",
-  "credential_issues": "Masalah kredensial"
+  "wrong_tools": "Alat salah",
+  "wrong_triggers": "Pemicu salah"
 }

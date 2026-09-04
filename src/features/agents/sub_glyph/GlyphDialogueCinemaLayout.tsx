@@ -16,7 +16,7 @@
  *  into the brief on top. Post-question it hands off to the shared
  *  GlyphStageSurface (sigil + metadata panel), same as every surface.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Check } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
@@ -46,6 +46,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
     isBuilding, buildPhase, agentName, onAgentNameChange,
     hasDesignResult, pendingQuestions,
     onQuickConfigChange, initialNotificationChannels,
+    onLaunchCoreSnapshot,
   } = props;
 
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
@@ -62,6 +63,18 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
     coreAugmentation: core.launchAugmentation(),
   });
   const starters = useRecipeStarters(intentText);
+
+  // Hand the TYPED codex snapshot up before launch fires: `launchAugmentation`
+  // above only flattens these choices into prose, and the state resets once the
+  // session id lands (usePersonaCore's resetKey), so this is the one moment the
+  // typed selection can survive the build. The matrix entry holds it until
+  // promote composes it into `personas.core_profile`. Always sent — the
+  // composer itself decides whether the snapshot is Core-relevant.
+  const cfgLaunch = cfg.launch;
+  const launchWithCoreSnapshot = useCallback(() => {
+    onLaunchCoreSnapshot?.({ state: core.state, archetype: core.preset });
+    cfgLaunch();
+  }, [onLaunchCoreSnapshot, core.state, core.preset, cfgLaunch]);
 
   const [firstQuestionSeen, setFirstQuestionSeen] = useState(false);
   useEffect(() => { setFirstQuestionSeen(false); }, [buildSessionId]);
@@ -101,7 +114,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
             <DialogueComposePanel
               intentText={intentText}
               onIntentChange={onIntentChange}
-              onLaunch={cfg.launch}
+              onLaunch={launchWithCoreSnapshot}
               launchDisabled={launchDisabled}
               cfg={cfg}
               starters={starters}
@@ -119,7 +132,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
               <DialogueComposePanel
                 intentText={intentText}
                 onIntentChange={onIntentChange}
-                onLaunch={cfg.launch}
+                onLaunch={launchWithCoreSnapshot}
                 launchDisabled
                 cfg={cfg}
                 starters={starters}

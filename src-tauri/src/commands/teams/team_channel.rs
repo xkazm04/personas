@@ -851,6 +851,17 @@ async fn run_summon_followup(
     input_data: String,
     idempotency_key: String,
 ) {
+    // Captured before `input_data` moves into the execution: the inbound
+    // directive text, for the living-agent channel episode minted on reply.
+    let inbound_content: String = serde_json::from_str::<serde_json::Value>(&input_data)
+        .ok()
+        .and_then(|v| {
+            v.get("content")
+                .and_then(|c| c.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_default();
+
     let execution = crate::commands::execution::executions::execute_persona_inner(
         &state,
         app,
@@ -892,6 +903,26 @@ async fn run_summon_followup(
                     &message_id,
                     &text,
                 );
+                // Living-agent episodic record: ONE channel episode per
+                // exchange (the inbound + the reply). Log-only on failure.
+                let episode_body =
+                    format!("## User\n{inbound_content}\n\n## {persona_name}\n{text}");
+                if let Err(e) = crate::engine::persona_brain::episodes::record(
+                    &state.db,
+                    &persona_id,
+                    crate::engine::persona_brain::episodes::EpisodeRole::Channel,
+                    "channel",
+                    Some(&execution.id),
+                    None,
+                    &episode_body,
+                ) {
+                    tracing::warn!(
+                        team_id = %team_id,
+                        persona_id = %persona_id,
+                        error = %e,
+                        "team channel: episode mint failed (best-effort)"
+                    );
+                }
                 return;
             }
             Ok(None) => {

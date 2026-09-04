@@ -167,7 +167,7 @@ export function CredentialPortability({
               <div key={c.name} className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10">
                 <div className="flex-1 min-w-0">
                   <span className="typo-body font-medium text-foreground truncate block">{c.name}</span>
-                  <span className="typo-caption text-foreground">{c.service_type}</span>
+                  <span className="typo-caption text-foreground">{c.serviceType}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {(['skip', 'keep_both', 'replace'] as const).map((action) => {

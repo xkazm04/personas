@@ -4,4 +4,4 @@
  * Coaching category. Not persisted as a column — lives in review.context_data
  * so the UI can filter/group without a schema change.
  */
-export type DirectorCategory = "prompt" | "health" | "triggers" | "credentials" | "memory" | "usefulness";
+export type DirectorCategory = "prompt" | "health" | "triggers" | "credentials" | "memory" | "usefulness" | "core_fidelity" | "charter_health";

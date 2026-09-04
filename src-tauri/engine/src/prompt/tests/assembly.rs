@@ -471,6 +471,8 @@ fn test_prompt_usage_reference_section_present() {
         #[cfg(feature = "desktop")]
         None,
         Some(&[]),
+        None,
+        None,
     );
 
     assert!(prompt.contains("## Connector Usage Reference"));
@@ -510,6 +512,8 @@ fn test_prompt_usage_reference_shrinks_to_pointer_when_written() {
         #[cfg(feature = "desktop")]
         None,
         Some(&["github".to_string()]),
+        None,
+        None,
     );
     std::env::remove_var(crate::skills_sidecar::SIDECAR_ENV);
 
@@ -558,6 +562,8 @@ fn test_prompt_usage_reference_per_skill_lockstep() {
         #[cfg(feature = "desktop")]
         None,
         Some(&["github".to_string()]),
+        None,
+        None,
     );
     std::env::remove_var(crate::skills_sidecar::SIDECAR_ENV);
 

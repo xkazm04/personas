@@ -1,12 +1,12 @@
 {
-  "keyword_match_label": "出力品質",
-  "keyword_match_description": "エージェントの出力で期待される行動の用語を確認",
-  "tool_accuracy_label": "ツール精度",
-  "tool_accuracy_description": "期待されるツール呼び出しと実際のツール呼び出しを比較",
-  "protocol_compliance_label": "プロトコルコンプライアンス",
-  "protocol_compliance_description": "期待されるプロトコルメッセージパターンを確認",
-  "confusion_detect_label": "混乱検出",
-  "confusion_detect_description": "既知の混乱・失敗フレーズを確認",
+  "composite_description": "すべての戦略の加重組み合わせ",
   "composite_label": "コンポジット",
-  "composite_description": "すべての戦略の加重組み合わせ"
+  "confusion_detect_description": "既知の混乱・失敗フレーズを確認",
+  "confusion_detect_label": "混乱検出",
+  "keyword_match_description": "エージェントの出力で期待される行動の用語を確認",
+  "keyword_match_label": "出力品質",
+  "protocol_compliance_description": "期待されるプロトコルメッセージパターンを確認",
+  "protocol_compliance_label": "プロトコルコンプライアンス",
+  "tool_accuracy_description": "期待されるツール呼び出しと実際のツール呼び出しを比較",
+  "tool_accuracy_label": "ツール精度"
 }

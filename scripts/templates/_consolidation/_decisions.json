@@ -1,0 +1,555 @@
+{
+ "decisions": {
+  "scripts/templates/marketing/website-conversion-audit.json": {
+   "status": "Recipe",
+   "csv_name": "Website conversion audit",
+   "responsibilities": "- Web marketing auditor: Achieve highest possible ranking\n- Competitor analysis: Compare feature and memorize progress",
+   "area": "Marketing",
+   "agent": "Web marketer"
+  },
+  "scripts/templates/finance/budget-spending-monitor.json": {
+   "status": "Recipe",
+   "csv_name": "Budget spending monitor",
+   "responsibilities": "- Cost measurement: Time trigger\n- Cost optimizations: Research code or claude products and offer better paths if exist",
+   "area": "Development",
+   "agent": "DevOps Guardian"
+  },
+  "scripts/templates/content/demo-recorder.json": {
+   "status": "Recipe",
+   "csv_name": "Demo recorder",
+   "responsibilities": "Review current possibility of Claude in Chrome to use",
+   "area": "Development",
+   "agent": "Any"
+  },
+  "scripts/templates/project-management/technical-decision-tracker.json": {
+   "status": "Recipe",
+   "csv_name": "Technical decision tracker",
+   "responsibilities": "Redesign into ai-registry structure (C:\\Users\\kazda\\kiro\\ai-registry)",
+   "area": "Development",
+   "agent": "Librarian"
+  },
+  "scripts/templates/support/knowledge-base-review-cycle-manager.json": {
+   "status": "Delete",
+   "csv_name": "Knowledge Base Review Cycle Manager",
+   "responsibilities": "Consolidate into Technical decision tracker responsibilities (Librarian)",
+   "area": "Development",
+   "agent": "Librarian"
+  },
+  "scripts/templates/research/database-performance-monitor.json": {
+   "status": "Recipe",
+   "csv_name": "Database performance monitor",
+   "responsibilities": "- Monitor log for anomalies: Time trigger",
+   "area": "Development",
+   "agent": "Database owner"
+  },
+  "scripts/templates/productivity/digital-clone.json": {
+   "status": "Template",
+   "csv_name": "Digital Clone",
+   "responsibilities": "",
+   "area": "Communication",
+   "agent": "Digital Clone"
+  },
+  "scripts/templates/project-management/deadline-synchronizer.json": {
+   "status": "Delete",
+   "csv_name": "Deadline synchronizer",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/research/conversational-database-analyst.json": {
+   "status": "Recipe",
+   "csv_name": "Conversational database analyst",
+   "responsibilities": "- Tests chatbot solutions. Analyze test/prod data to improve quality of prompt/code",
+   "area": "Development",
+   "agent": "Database owner"
+  },
+  "scripts/templates/productivity/daily-standup-compiler.json": {
+   "status": "Recipe",
+   "csv_name": "Daily personal briefer",
+   "responsibilities": "- Cross project progress analysis and brief, goal review, decision reminder",
+   "area": "Cross-areas",
+   "agent": "Director"
+  },
+  "scripts/templates/productivity/idea-harvester.json": {
+   "status": "Template",
+   "csv_name": "Idea harvester",
+   "responsibilities": "- Generate backlog ideas. Requirement analysis into recommended format of idea backlog\n- Responsibility per type of way how to generate backlog",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/finance/financial-stocks-signaller.json": {
+   "status": "Recipe",
+   "csv_name": "Financial stocks signaller",
+   "responsibilities": "- Periodic digets\n- Gem discovery\n- Congressioinal disclosure",
+   "area": "Finance",
+   "agent": "Investor"
+  },
+  "scripts/templates/productivity/vault-grounded-journal-coach.json": {
+   "status": "Delete",
+   "csv_name": "Vault grounded journal coach",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/content/ai-document-intelligence-hub.json": {
+   "status": "Delete",
+   "csv_name": "AI Document Intelligence Hub",
+   "responsibilities": "Consolidate into Technical decision tracker responsibilities (Librarian)",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/autonomous-issue-resolver.json": {
+   "status": "Recipe",
+   "csv_name": "Autonomous issue resolver",
+   "responsibilities": "- Responsibility per issue resource to track and add into backlog\n- Review of issue status to escalate or close",
+   "area": "Development",
+   "agent": "App Master"
+  },
+  "scripts/templates/devops/devops-guardian.json": {
+   "status": "Template",
+   "csv_name": "DevOps Guardian",
+   "responsibilities": "- Responsibilities per types of check: DB health, Deployment regression, Infra logs, App logs",
+   "area": "Development",
+   "agent": "DevOps Guardian"
+  },
+  "scripts/templates/devops/incident-logger.json": {
+   "status": "Recipe",
+   "csv_name": "Incident logger",
+   "responsibilities": "- Maintaining incident log. Analysis and backlog item proposal if future prevention possible",
+   "area": "Development",
+   "agent": "DevOps Guardian"
+  },
+  "scripts/templates/productivity/email-morning-digest.json": {
+   "status": "Recipe",
+   "csv_name": "Email morning digest",
+   "responsibilities": "- Read emails and prepare report",
+   "area": "Cross-areas",
+   "agent": "Any"
+  },
+  "scripts/templates/finance/revenue-intelligence-copilot.json": {
+   "status": "Recipe",
+   "csv_name": "Revenue Intelligence Copilot",
+   "responsibilities": "- Analyze payments and prepare report",
+   "area": "Marketing",
+   "agent": "Web marketer"
+  },
+  "scripts/templates/productivity/personal-capture-bot.json": {
+   "status": "Delete",
+   "csv_name": "Personal capture bot",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/productivity/router.json": {
+   "status": "Template",
+   "csv_name": "Router",
+   "responsibilities": "",
+   "area": "Cross-areas",
+   "agent": "Router"
+  },
+  "scripts/templates/research/product-scout.json": {
+   "status": "Recipe",
+   "csv_name": "Product Scout",
+   "responsibilities": "Consolidate into Idea harvester responsibilities (web research, code analysis, create idea and learn from triage)",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/content/content-performance-reporter.json": {
+   "status": "Recipe",
+   "csv_name": "Content Performance Reporter",
+   "responsibilities": "- Responsibility per data source: Google Analytics, Database. To research and propose next steps, measure after implementation.",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/development/codebase-health-scanner.json": {
+   "status": "Delete",
+   "csv_name": "Codebase health scanner",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/dev-clone.json": {
+   "status": "Recipe",
+   "csv_name": "Dev Clone",
+   "responsibilities": "- Take items from accepted idea backlog and execute",
+   "area": "Development",
+   "agent": "App Master"
+  },
+  "scripts/templates/development/qa-guardian.json": {
+   "status": "Recipe",
+   "csv_name": "QA Guardian",
+   "responsibilities": "- Responsibility per type of test (large scans for code quality and bugs)",
+   "area": "Development",
+   "agent": "App Master"
+  },
+  "scripts/templates/development/real-time-database-watcher.json": {
+   "status": "Recipe",
+   "csv_name": "Realtime db watcher",
+   "responsibilities": "- Responsibility to analyze specific db connector and report or create backlog item",
+   "area": "Development",
+   "agent": "Database owner"
+  },
+  "scripts/templates/development/self-evolving-codebase-memory.json": {
+   "status": "Delete",
+   "csv_name": "Self-evolving codebase memory",
+   "responsibilities": "Consolidate into Technical decision tracker responsibilities (Librarian)",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/finance/personal-finance-use-case.json": {
+   "status": "Delete",
+   "csv_name": "Personal finance use case",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/productivity/survey-insights-analyzer.json": {
+   "status": "Recipe",
+   "csv_name": "Survey insights analyzer",
+   "responsibilities": "- Survey method of backlog generation as responsibility",
+   "area": "Cross-areas",
+   "agent": "Any"
+  },
+  "scripts/templates/productivity/survey-processor.json": {
+   "status": "Delete",
+   "csv_name": "Survey processor",
+   "responsibilities": "Consolidate into survey responsibility above",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/research/ai-research-report-generator.json": {
+   "status": "Delete",
+   "csv_name": "AI research report generation",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/research/ai-weekly-research.json": {
+   "status": "Delete",
+   "csv_name": "AI weekly research",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/code-reviewer.json": {
+   "status": "Delete",
+   "csv_name": "Code reviewer",
+   "responsibilities": "Should be part of any development process",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/docs-steward.json": {
+   "status": "Delete",
+   "csv_name": "Docs steward",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/solution-architect.json": {
+   "status": "Recipe",
+   "csv_name": "Solution architect",
+   "responsibilities": "- Backlog idea generation from code analysis",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/devops/release-manager.json": {
+   "status": "Recipe",
+   "csv_name": "Release manager",
+   "responsibilities": "- Maintaining release discipline",
+   "area": "Development",
+   "agent": "App Master"
+  },
+  "scripts/templates/security/security-sentinel.json": {
+   "status": "Template",
+   "csv_name": "Security sentinel",
+   "responsibilities": "- Scan types as responsibilities including pen tests of the implemented findings",
+   "area": "Development",
+   "agent": "Sentinel"
+  },
+  "scripts/templates/project-management/product-strategist.json": {
+   "status": "Recipe",
+   "csv_name": "Product Strategist",
+   "responsibilities": "- Idea backlog enrichment based on expertize in SW Product disciplines",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/content/autonomous-art-director.json": {
+   "status": "Recipe",
+   "csv_name": "Autonomous art director",
+   "responsibilities": "- 2D image generation",
+   "area": "Cross-areas",
+   "agent": "Artist"
+  },
+  "scripts/templates/devops/telegram-ops-command-center.json": {
+   "status": "Delete",
+   "csv_name": "Telegram Ops Command Center",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/support/support-escalation-engine.json": {
+   "status": "Recipe",
+   "csv_name": "Support escalation engine",
+   "responsibilities": "- Customer support escalation",
+   "area": "Communication",
+   "agent": "Digital Clone"
+  },
+  "scripts/templates/finance/freelancer-invoice-autopilot.json": {
+   "status": "Delete",
+   "csv_name": "Freelancer invoice autopilot",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/marketing/web-marketing.json": {
+   "status": "Recipe",
+   "csv_name": "Web Marketing",
+   "responsibilities": "Consolidate into responsibility pack with Website conversion audit",
+   "area": "Marketing",
+   "agent": "Web marketer"
+  },
+  "scripts/templates/marketing/visual-brand-asset-factory.json": {
+   "status": "Recipe",
+   "csv_name": "Asset factory",
+   "responsibilities": "- Generate components and assets into dev projects to improve visual impression",
+   "area": "Cross-areas",
+   "agent": "Artist"
+  },
+  "scripts/templates/development/lean-codebase-sentinel.json": {
+   "status": "Recipe",
+   "csv_name": "Lean Codebase Sentinel",
+   "responsibilities": "- Scan type should be standalone responsibility",
+   "area": "Development",
+   "agent": "App Master"
+  },
+  "scripts/templates/research/linkedin-watchlist-scout.json": {
+   "status": "Delete",
+   "csv_name": "Linkedin watchlist scout",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/sales/sheets-e-commerce-command-center.json": {
+   "status": "Delete",
+   "csv_name": "Sheets E-Commerce command center",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/support/customer-feedback-router.json": {
+   "status": "Delete",
+   "csv_name": "Customer feedback router",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/content/game-character-animator.json": {
+   "status": "Delete",
+   "csv_name": "Game character animator",
+   "responsibilities": "",
+   "area": "Cross-areas",
+   "agent": "Artist"
+  },
+  "scripts/templates/content/newsletter-curator.json": {
+   "status": "Recipe",
+   "csv_name": "Newsletter curator",
+   "responsibilities": "- Responsibility is type of ingest leading into backlog items (RSS, scraping, smtp)",
+   "area": "Development",
+   "agent": "Harvester"
+  },
+  "scripts/templates/finance/market-intelligence-scout.json": {
+   "status": "Delete",
+   "csv_name": "Market intelligence scout",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/marketing/content-cascade.json": {
+   "status": "Recipe",
+   "csv_name": "Content Cascade",
+   "responsibilities": "",
+   "area": "Marketing",
+   "agent": "Content"
+  },
+  "scripts/templates/research/product-analytics-briefer.json": {
+   "status": "Delete",
+   "csv_name": "Product Analytics briefer",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/content/youtube-content-pipeline.json": {
+   "status": "Delete",
+   "csv_name": "YouTube content pipeline",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/build-intelligence-use-case.json": {
+   "status": "Delete",
+   "csv_name": "Build Intelligence Use case",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/design-handoff-coordinator.json": {
+   "status": "Delete",
+   "csv_name": "Design handoff coordinator",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/dev-lifecycle-manager.json": {
+   "status": "Delete",
+   "csv_name": "Dev lifecycle manager",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/feature-flag-experiment-analyst.json": {
+   "status": "Delete",
+   "csv_name": "Feature Flag & Experiment Analyst",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/feature-flag-governance-use-case.json": {
+   "status": "Delete",
+   "csv_name": "Feature Flag Governance Use case",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/development/user-lifecycle-manager.json": {
+   "status": "Delete",
+   "csv_name": "User Lifecycle manager",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/hr/recruiting-pipeline-use-case.json": {
+   "status": "Delete",
+   "csv_name": "Recruiting pipeline use case",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/legal/contract-lifecycle-use-case.json": {
+   "status": "Recipe",
+   "csv_name": "Contract lifecycle use case",
+   "responsibilities": "- Contract tracking (review, status change) and reporting",
+   "area": "Legal",
+   "agent": "Contractor"
+  },
+  "scripts/templates/sales/lead-capture-pipeline.json": {
+   "status": "Recipe",
+   "csv_name": "Lead capture pipeline",
+   "responsibilities": "- Responsibility per lead source type",
+   "area": "Marketing",
+   "agent": "Digital Clone"
+  },
+  "scripts/templates/security/security-vulnerability-pipeline.json": {
+   "status": "Delete",
+   "csv_name": "Security vulnerability pipeline",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  },
+  "scripts/templates/security/brand-protection-sentinel.json": {
+   "status": "Delete",
+   "csv_name": "Brand protection sentinel",
+   "responsibilities": "",
+   "area": "",
+   "agent": ""
+  }
+ },
+ "exclusive_to_delete": [
+  "0090e32b-60f3-5e80-aaee-4ce3f21361f7",
+  "01c9ef1e-e182-5507-9071-a571f1aea0bc",
+  "02ca2e3f-0d4d-568c-9d3e-f6d18cfe74b6",
+  "064f4f72-8bad-5c40-9d22-a84b114064d2",
+  "09c107a0-b84d-57af-85c8-dddb063d1595",
+  "0dafb086-19bf-5d0c-88ea-da782f5c9b00",
+  "1094568c-06f3-59fe-9561-0b491f5680b5",
+  "171b983b-e643-5af2-bd57-989a84fa5283",
+  "194648fe-5f11-5e3a-940f-4ecbc9799dc4",
+  "19da46d7-03f3-5082-b228-8a665dbf9fbc",
+  "1c822cb8-55ce-5b52-a4c6-c5e43671d6c0",
+  "1d099bb7-fc9a-5e1a-832b-e7f808beefa1",
+  "1e7811b0-c04a-5c2f-a9d4-fda47856cd09",
+  "1f52c9ff-639a-5e0d-813e-262d83d77960",
+  "29115c99-de65-5219-839a-5657fd52c39b",
+  "2975ba49-79d7-5cb4-9e76-a70ddf60774e",
+  "2dca09fb-1146-5617-8932-e3200967f31e",
+  "2e575c2d-e918-5743-b7ba-bd186916302a",
+  "2e703e9a-39ce-53fc-8291-63b078b5bb6a",
+  "2e709a14-5c11-5478-9e1c-37989a3dbd8e",
+  "36e446ab-23cb-5087-a83c-17daaa964f64",
+  "38427a7d-6e94-529b-8493-b89a758553a1",
+  "3a821ac2-9c71-5583-a860-8c254df191f2",
+  "3f4a0c32-57e0-5c36-8f73-84c9cec8bd82",
+  "4595040a-3353-54e0-8ede-e0224c005e5a",
+  "4786985d-9b83-57a8-a536-8ca8f3f4451b",
+  "5220dac2-4efa-5035-afb9-724e8b76e4d4",
+  "554bb37e-8b55-5ed4-9249-4def9cf33486",
+  "5789b2b7-638e-5747-861d-27445ef3bd1b",
+  "5bb6b6b6-5c62-5401-a309-28a15122ccf9",
+  "5c43d914-56b5-55bd-b824-8aa15b060f37",
+  "5ca4c73a-35d9-5fe2-82cd-61f47e2575e6",
+  "5d8deb6b-722b-5077-813f-4b684138c8a4",
+  "5dc1a003-a5c0-4a03-9e03-5dc1a0030003",
+  "5dc1a006-a5c0-4a06-9e06-5dc1a0060006",
+  "62c97322-835a-5782-a3f2-d7af8ba0b2a8",
+  "6a2bf81d-047f-59cf-b7af-dc6bf210a975",
+  "6b1cf829-3578-5444-a930-bb450b06ef5e",
+  "6be233cb-8072-5fb1-acdd-69a5be3a40e6",
+  "7be5a3ac-a3a2-5f32-bb12-65c7583d6d16",
+  "8257237e-c784-5b6d-b79b-53506c208a09",
+  "82e93705-0730-5712-9d4d-a36f0b7d85e9",
+  "841f8f1b-cf8e-578b-8624-de2446ae559a",
+  "8591dfd3-fb0a-5bd1-9b6f-5255927e2344",
+  "8ddb7f51-3346-51df-a23a-d781a554d3c3",
+  "8f3c3f7a-8973-5773-8056-55e3ff59bf29",
+  "8fe557a7-eeca-5e0c-b057-744adda03356",
+  "92b1856b-e8b8-5a20-84a9-5ca453704779",
+  "9732a26d-735c-55dd-a477-57e437ea6b7b",
+  "983df3be-5a0e-5b92-b8d3-ca1ac87df901",
+  "9e027497-a2d9-5c54-bc10-5700c6486ce9",
+  "a3375a9b-bbdd-5570-aa0e-5e113b8ffd5d",
+  "a3e4bb69-0833-59a9-8f3e-115a1782fb82",
+  "a5d1cd82-ef99-575c-b6ce-70623fd8bda3",
+  "ab3127cc-fb73-5ed1-9b58-0759373fe5ef",
+  "acdf652b-4876-5fb1-afd2-07515bb78e65",
+  "aec1d257-421e-5281-ad40-268b713e7620",
+  "aec61d93-6c55-5902-a084-e46b75ebcc60",
+  "b0bf1b02-f635-5a35-b766-1f7381f19724",
+  "b1ad906c-e348-5b78-8de2-e36711317a1e",
+  "b362fec9-50d5-5133-90dc-21b34507f652",
+  "b78cbca1-0855-5fa0-9bd1-157cc0b08acc",
+  "b92807b8-61ec-5f23-a9f1-d34ed86d0a00",
+  "b9f8043b-d127-5ee4-b249-3500f697876c",
+  "bacdcdd7-dfbc-53ca-afd2-4ec5ed1af5ed",
+  "bf57241c-c97c-5a8d-b200-1e96e6a811db",
+  "c30aea9f-1584-5db0-be3b-792abacba11f",
+  "c62bbf82-5e82-5001-bea3-5e4f9d07f77d",
+  "c7f5f6bf-7bae-5232-853d-025fdc3a35e8",
+  "c8e1cffe-150a-5d1c-8e16-5497881b9262",
+  "c914eb39-a506-58d5-bf1a-adefa1bd73e7",
+  "cbdd0d9a-5661-5525-9abb-7ebc5c91bb7d",
+  "ce7e3575-0844-51c5-9dd2-5a4c93df0eaf",
+  "cf5b451c-b5d5-5944-aaa4-9091241ea0a4",
+  "d04d937f-c43f-54bb-af22-94a509f819d0",
+  "d21717d3-d637-5a25-aa7f-973e68a4b4b8",
+  "d2c1953f-5589-50ea-9372-daa96a6d6f32",
+  "d43905c2-ede5-5d18-9f23-1bdb345de4fd",
+  "e632c344-787b-56ec-ba20-b1714ff72544",
+  "e71be662-3bfc-5a42-9869-fbf3a8381e7e",
+  "ec453445-1d7b-5148-98d5-d3e662980ba1",
+  "ed25d219-8a77-57a3-81d2-e9a01eed114e",
+  "ef3400dc-08ae-5ede-a04d-67a5fb664a9b",
+  "ef482e96-44e5-50d2-85f3-76cdbd5eae27",
+  "f52ff647-1db4-5031-8e3f-44574dec70c8",
+  "f895592e-2eff-50fe-9b02-cf75b51fe222"
+ ],
+ "shared_with_survivor": []
+}

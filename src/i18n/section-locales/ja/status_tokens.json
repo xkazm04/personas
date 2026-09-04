@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "キュー待ち",
-    "running": "実行中",
-    "completed": "完了",
-    "failed": "失敗",
-    "cancelled": "キャンセル済み",
-    "incomplete": "未完了",
-    "error": "エラー",
-    "unknown": "不明"
-  },
-  "simple": {
-    "good": "良好",
-    "warning": "要注意",
-    "problem": "異常"
-  },
-  "event": {
-    "pending": "保留中",
-    "processing": "処理中",
-    "processed": "処理済み",
-    "failed": "失敗",
-    "retrying": "再試行中"
-  },
   "automation": {
-    "pending": "保留中",
-    "running": "実行中",
     "completed": "完了",
     "failed": "失敗",
+    "pending": "保留中",
+    "running": "実行中",
     "timeout": "タイムアウト"
-  },
-  "severity": {
-    "info": "情報",
-    "low": "低",
-    "medium": "中",
-    "high": "高",
-    "critical": "重大"
-  },
-  "priority": {
-    "low": "低",
-    "normal": "通常",
-    "high": "高",
-    "urgent": "緊急"
-  },
-  "healing_status": {
-    "open": "オープン",
-    "auto_fixed": "自動修正済み",
-    "acknowledged": "確認済み",
-    "resolved": "解決済み"
-  },
-  "healing_category": {
-    "config": "設定",
-    "auth": "認証",
-    "network": "ネットワーク",
-    "timeout": "タイムアウト",
-    "quota": "クォータ"
-  },
-  "connector_status": {
-    "ready": "準備完了",
-    "untested": "未テスト",
-    "failed": "失敗",
-    "no_credential": "認証情報なし",
-    "testing": "テスト中"
-  },
-  "task_phase": {
-    "analyzing": "分析中",
-    "planning": "計画中",
-    "implementing": "実装中",
-    "committing": "コミット中",
-    "validating": "検証中",
-    "complete": "完了"
-  },
-  "goal_state": {
-    "pending": "保留中",
-    "review": "レビュー",
-    "blocked": "ブロック中",
-    "in_progress": "進行中",
-    "running": "実行中",
-    "completed": "完了",
-    "done": "完了"
-  },
-  "test": {
-    "generating": "生成中",
-    "running": "実行中",
-    "completed": "完了",
-    "failed": "失敗",
-    "pending": "保留中"
-  },
-  "dev": {
-    "open": "オープン",
-    "in_progress": "進行中",
-    "completed": "完了",
-    "blocked": "ブロック中",
-    "queued": "キュー待ち",
-    "running": "実行中",
-    "failed": "失敗"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "全体"
-  },
-  "forage_confidence": {
-    "high": "高",
-    "medium": "中",
-    "low": "低"
-  },
-  "capability_risk": {
-    "low": "低",
-    "medium": "中",
-    "high": "高"
-  },
-  "verdict": {
-    "production": "本番",
-    "promising": "有望",
-    "not_ready": "未対応",
-    "broken": "障害"
-  },
-  "deployment": {
-    "active": "有効",
-    "paused": "一時停止",
-    "failed": "失敗",
-    "unknown": "不明",
-    "file-based": "ファイルベース"
-  },
-  "delivery": {
-    "delivered": "配信済み",
-    "failed": "失敗",
-    "pending": "保留中",
-    "queued": "キュー中"
-  },
-  "rotation": {
-    "anomaly": "異常",
-    "paused": "一時停止",
-    "disabled": "無効",
-    "perm_errors": "永続エラー",
-    "degrading": "劣化中",
-    "backoff": "バックオフ",
-    "fresh": "新鮮",
-    "active": "アクティブ"
-  },
-  "thinking": {
-    "high": "高",
-    "low": "低",
-    "medium": "中"
-  },
-  "error_category": {
-    "api_error": "APIエラー",
-    "credential_error": "認証情報エラー",
-    "network": "ネットワーク",
-    "provider_not_found": "プロバイダーが見つかりません",
-    "rate_limit": "レート制限",
-    "session_limit": "セッション制限",
-    "timeout": "タイムアウト",
-    "tool_error": "ツールエラー",
-    "transient_process_failure": "一時的なプロセス障害",
-    "unknown": "不明",
-    "validation": "検証"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "ファンアウト上限に到達",
-    "budget_exceeded": "コスト上限に到達",
-    "cas_lost": "別の実行が取得済み",
-    "cycle_detected": "循環を検出",
-    "depth_limit": "深さ上限",
-    "handoff_suppressed": "ハンドオフを抑制",
-    "malformed_config": "無効な設定",
-    "outside_window": "有効期間外",
-    "predicate_unmet": "条件を満たさない",
-    "publish_failed": "発行に失敗",
-    "quarantined": "トリガーを隔離",
-    "healing_abandoned": "自己修復を中止",
-    "healing_capped": "修復リトライ上限",
-    "lookup_failed": "トリガーの検索に失敗",
-    "cost_ceiling_corrupt": "コスト上限が読み取れません"
   },
   "build": {
     "analyzing": "分析中",
@@ -186,6 +19,232 @@
     "test_complete": "テスト完了",
     "testing": "テスト中"
   },
+  "capability_risk": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "ファンアウト上限に到達",
+    "budget_exceeded": "コスト上限に到達",
+    "cas_lost": "別の実行が取得済み",
+    "cost_ceiling_corrupt": "コスト上限が読み取れません",
+    "cycle_detected": "循環を検出",
+    "depth_limit": "深さ上限",
+    "handoff_suppressed": "ハンドオフを抑制",
+    "healing_abandoned": "自己修復を中止",
+    "healing_capped": "修復リトライ上限",
+    "lookup_failed": "トリガーの検索に失敗",
+    "malformed_config": "無効な設定",
+    "outside_window": "有効期間外",
+    "predicate_unmet": "条件を満たさない",
+    "publish_failed": "発行に失敗",
+    "quarantined": "トリガーを隔離"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "全体"
+  },
+  "competition": {
+    "awaiting_review": "レビュー待ち",
+    "cancelled": "キャンセル済み",
+    "resolved": "解決済み",
+    "running": "実行中"
+  },
+  "connector_status": {
+    "failed": "失敗",
+    "no_credential": "認証情報なし",
+    "ready": "準備完了",
+    "testing": "テスト中",
+    "untested": "未テスト"
+  },
+  "delivery": {
+    "delivered": "配信済み",
+    "failed": "失敗",
+    "pending": "保留中",
+    "queued": "キュー中"
+  },
+  "deployment": {
+    "active": "有効",
+    "failed": "失敗",
+    "file-based": "ファイルベース",
+    "paused": "一時停止",
+    "unknown": "不明"
+  },
+  "dev": {
+    "blocked": "ブロック中",
+    "completed": "完了",
+    "failed": "失敗",
+    "in_progress": "進行中",
+    "open": "オープン",
+    "queued": "キュー待ち",
+    "running": "実行中"
+  },
+  "error_category": {
+    "api_error": "APIエラー",
+    "credential_error": "認証情報エラー",
+    "network": "ネットワーク",
+    "provider_not_found": "プロバイダーが見つかりません",
+    "rate_limit": "レート制限",
+    "session_limit": "セッション制限",
+    "timeout": "タイムアウト",
+    "tool_error": "ツールエラー",
+    "transient_process_failure": "一時的なプロセス障害",
+    "unknown": "不明",
+    "validation": "検証"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "承認待ち",
+    "cascade_guard": "すでに実行中",
+    "cross_team_blocked": "チーム間でブロック",
+    "dry_run": "ドライラン（シミュレーション）",
+    "handoff_target_disabled": "引き継ぎ先がオフです",
+    "no_subscriber": "一致する購読者なし",
+    "persona_disabled": "エージェントがオフです",
+    "stuck_reclaimed": "再取得してキューに戻しました",
+    "stuck_retry_exhausted": "再取得しましたが、再試行の上限に達しました"
+  },
+  "event": {
+    "failed": "失敗",
+    "pending": "保留中",
+    "processed": "処理済み",
+    "processing": "処理中",
+    "retrying": "再試行中"
+  },
+  "execution": {
+    "cancelled": "キャンセル済み",
+    "completed": "完了",
+    "error": "エラー",
+    "failed": "失敗",
+    "incomplete": "未完了",
+    "queued": "キュー待ち",
+    "running": "実行中",
+    "unknown": "不明"
+  },
+  "forage_confidence": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
+  "goal_state": {
+    "blocked": "ブロック中",
+    "completed": "完了",
+    "done": "完了",
+    "in_progress": "進行中",
+    "pending": "保留中",
+    "review": "レビュー",
+    "running": "実行中"
+  },
+  "healing_category": {
+    "auth": "認証",
+    "config": "設定",
+    "network": "ネットワーク",
+    "quota": "クォータ",
+    "timeout": "タイムアウト"
+  },
+  "healing_status": {
+    "acknowledged": "確認済み",
+    "auto_fixed": "自動修正済み",
+    "open": "オープン",
+    "resolved": "解決済み"
+  },
+  "kb_document": {
+    "indexing": "インデックス作成中",
+    "pending": "保留中"
+  },
+  "memory_action": {
+    "deleted": "削除済み",
+    "error": "エラー",
+    "kept": "保持",
+    "proposed_archive": "アーカイブの提案",
+    "proposed_delete": "削除の提案",
+    "proposed_synthesize": "統合の提案",
+    "proposed_update_importance": "重要度見直しの提案"
+  },
+  "memory_category": {
+    "context": "文脈",
+    "decision": "決定",
+    "learning": "学び",
+    "observation": "観察"
+  },
+  "memory_tier": {
+    "active": "アクティブ",
+    "archive": "アーカイブ済み",
+    "core": "コア",
+    "working": "作業中"
+  },
+  "priority": {
+    "high": "高",
+    "low": "低",
+    "normal": "通常",
+    "urgent": "緊急"
+  },
+  "remote_job": {
+    "cancelled": "キャンセル済み",
+    "completed": "完了",
+    "failed": "失敗",
+    "pending": "保留中",
+    "refused": "拒否済み",
+    "running": "実行中"
+  },
+  "rotation": {
+    "active": "アクティブ",
+    "anomaly": "異常",
+    "backoff": "バックオフ",
+    "degrading": "劣化中",
+    "disabled": "無効",
+    "fresh": "新鮮",
+    "paused": "一時停止",
+    "perm_errors": "永続エラー"
+  },
+  "severity": {
+    "critical": "重大",
+    "high": "高",
+    "info": "情報",
+    "low": "低",
+    "medium": "中"
+  },
+  "simple": {
+    "good": "良好",
+    "problem": "異常",
+    "warning": "要注意"
+  },
+  "span_type": {
+    "chain_evaluation": "チェーン評価",
+    "cli_spawn": "CLI 起動",
+    "credential_resolution": "認証情報",
+    "execution": "実行",
+    "healing_analysis": "自己修復",
+    "outcome_assessment": "結果",
+    "pipeline_stage": "パイプライン段階",
+    "prompt_assembly": "プロンプト",
+    "protocol_dispatch": "プロトコル",
+    "stream_processing": "ストリーム",
+    "tool_call": "ツール呼び出し",
+    "unknown": "不明"
+  },
+  "task_phase": {
+    "analyzing": "分析中",
+    "committing": "コミット中",
+    "complete": "完了",
+    "implementing": "実装中",
+    "planning": "計画中",
+    "validating": "検証中"
+  },
+  "test": {
+    "completed": "完了",
+    "failed": "失敗",
+    "generating": "生成中",
+    "pending": "保留中",
+    "running": "実行中"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
   "tool_error_kind": {
     "auth": "認証",
     "http": "HTTP エラー",
@@ -197,69 +256,10 @@
     "unknown": "不明なエラー",
     "unsupported": "ここでは実行できません"
   },
-  "remote_job": {
-    "completed": "完了",
-    "failed": "失敗",
-    "cancelled": "キャンセル済み",
-    "refused": "拒否済み",
-    "pending": "保留中",
-    "running": "実行中"
-  },
-  "event_reason": {
-    "approval_held": "承認待ち",
-    "cascade_guard": "すでに実行中",
-    "cross_team_blocked": "チーム間でブロック",
-    "dry_run": "ドライラン（シミュレーション）",
-    "handoff_target_disabled": "引き継ぎ先がオフです",
-    "no_subscriber": "一致する購読者なし",
-    "persona_disabled": "エージェントがオフです",
-    "stuck_reclaimed": "再取得してキューに戻しました",
-    "stuck_retry_exhausted": "再取得しましたが、再試行の上限に達しました",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "実行中",
-    "awaiting_review": "レビュー待ち",
-    "resolved": "解決済み",
-    "cancelled": "キャンセル済み"
-  },
-  "kb_document": {
-    "pending": "保留中",
-    "indexing": "インデックス作成中"
-  },
-  "memory_tier": {
-    "core": "コア",
-    "active": "アクティブ",
-    "working": "作業中",
-    "archive": "アーカイブ済み"
-  },
-  "span_type": {
-    "execution": "実行",
-    "prompt_assembly": "プロンプト",
-    "credential_resolution": "認証情報",
-    "cli_spawn": "CLI 起動",
-    "tool_call": "ツール呼び出し",
-    "protocol_dispatch": "プロトコル",
-    "chain_evaluation": "チェーン評価",
-    "stream_processing": "ストリーム",
-    "outcome_assessment": "結果",
-    "healing_analysis": "自己修復",
-    "pipeline_stage": "パイプライン段階",
-    "unknown": "不明"
-  },
-  "memory_action": {
-    "kept": "保持",
-    "deleted": "削除済み",
-    "error": "エラー",
-    "proposed_delete": "削除の提案",
-    "proposed_update_importance": "重要度見直しの提案",
-    "proposed_synthesize": "統合の提案",
-    "proposed_archive": "アーカイブの提案"
-  },
-  "memory_category": {
-    "observation": "観察",
-    "decision": "決定",
-    "context": "文脈",
-    "learning": "学び"
+  "verdict": {
+    "broken": "障害",
+    "not_ready": "未対応",
+    "production": "本番",
+    "promising": "有望"
   }
 }

@@ -1734,6 +1734,21 @@
     "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
     "ask_athena_focus_general": "Please look into this and recommend what to change."
   },
+  "attention_loop": {
+    "title": "Attention Loop",
+    "subtitle": "autonomous passes over persona charters",
+    "on": "On",
+    "off": "Off",
+    "toggle_label": "Toggle the autonomous attention loop",
+    "toggle_failed": "The attention-loop setting could not be updated",
+    "unavailable": "Loop status unavailable.",
+    "last_activity": "Last activity",
+    "none_yet": "No passes recorded yet.",
+    "today_label": "Today",
+    "today_dispatched": "dispatched",
+    "today_refused": "refused",
+    "today_consolidations": "consolidations"
+  },
   "upcoming_routines": {
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",

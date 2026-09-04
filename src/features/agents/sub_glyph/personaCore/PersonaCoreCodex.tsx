@@ -11,8 +11,7 @@ import { SectionHeader, FieldLabel } from "./SectionLabels";
 import { SnapshotColumn } from "./SnapshotColumn";
 import { AxisTraitGrid } from "./TraitGrid";
 import { ConflictTiles, ModelTiles, EffortMeter } from "./ConfigTiles";
-import { PolaritySlider } from "./PolaritySlider";
-import { ACCENT, DISPOSITION_ACCENT } from "./catalog";
+import { ACCENT } from "./catalog";
 import type { PersonaCore } from "./types";
 
 export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
@@ -26,8 +25,8 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
   // refuse to shrink, so it would never overflow and never scroll.
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto lg:overflow-hidden scrollbar-thin pr-1">
-      {/* Mentality FIRST — a card seeds disposition, conflict style and five
-          dominant traits in one click (applyPreset). It used to sit third, so
+      {/* Mentality FIRST — a card seeds the conflict style and five dominant
+          traits in one click (applyPreset). It used to sit third, so
           the reading order taught the modal backwards: a first-timer worked
           through 20 trait toggles and three tile groups by hand and only then
           met the shortcut that would have done it. Expanded to an equal column
@@ -72,16 +71,6 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
       {/* Configuration — icon tiles + meter */}
       <div className="flex-1 min-w-0 flex flex-col gap-4 lg:pl-6 lg:border-l border-card-border/50 min-h-0 lg:overflow-y-auto scrollbar-thin lg:pr-2">
         <SectionHeader>{t.agents.core_col_configuration}</SectionHeader>
-        <div className="rounded-card border border-card-border bg-secondary/20 p-3">
-          <PolaritySlider
-            label={t.agents.core_disposition}
-            lowLabel={t.agents.core_disposition_low}
-            highLabel={t.agents.core_disposition_high}
-            value={state.disposition}
-            color={DISPOSITION_ACCENT}
-            onChange={core.setDisposition}
-          />
-        </div>
         <div className="flex flex-col gap-2"><FieldLabel>{t.agents.core_conflict_label}</FieldLabel><ConflictTiles core={core} /></div>
         <div className="flex flex-col gap-2"><FieldLabel>{t.agents.core_model_label}</FieldLabel><ModelTiles core={core} /></div>
         <div className="flex flex-col gap-2"><FieldLabel>{t.agents.core_effort_label}</FieldLabel><EffortMeter core={core} /></div>

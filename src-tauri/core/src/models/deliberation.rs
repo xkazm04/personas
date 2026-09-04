@@ -96,19 +96,59 @@ pub struct DeliberationAgendaItem {
 #[serde(rename_all = "camelCase")]
 pub struct PersonaCore {
     /// Authored prose: why this persona cares.
+    #[serde(default)]
     pub motivation: String,
     /// Authored prose: its distinctive point of view.
+    #[serde(default)]
     pub stance: String,
     /// How IT believes the team reaches #1 — the route, not the shared goal.
+    #[serde(default)]
     pub north_star_commitment: String,
+    /// The four dial fields below no longer reach any prompt — the band table
+    /// that turned them into prose was deleted with the manifest rebase
+    /// (spark `agent-manifest-rebase`, WP2), and the codex stopped authoring
+    /// them. They stay on the struct so historical `core_profile` JSON and
+    /// `persona_prompt_versions` snapshots keep round-tripping.
+    ///
+    /// EVERY field defaults deliberately. This type is only ever reached by
+    /// deserializing a legacy blob, and a `required` field here means a
+    /// prose-only blob fails to parse — which does not surface as an error,
+    /// it silently SKIPS the whole `## Manifest` section for that persona
+    /// (`prompt::assemble` logs and moves on). A tolerant parse renders the
+    /// prose it did find; a strict one renders nothing at all.
+    ///
     /// 0 = risk-averse, 1 = risk-seeking.
+    #[serde(default)]
     pub risk_tolerance: f64,
     /// 0 = quality-max, 1 = speed-max.
+    #[serde(default)]
     pub speed_vs_quality: f64,
     /// 'challenger' | 'harmonizer' | 'analyst' | 'pragmatist'
+    #[serde(default)]
     pub conflict_style: String,
     /// 0 = holds its ground, 1 = yields readily to stronger arguments.
+    #[serde(default)]
     pub deference: f64,
+    /// Living-agent additive fields (spark `living-agent-core`). All default
+    /// so pre-existing `core_profile` JSON keeps parsing unchanged.
+    ///
+    /// WHO the persona is — authored prose identity beyond the dials.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub identity: Option<String>,
+    /// HOW it speaks — authored voice/tone prose.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub voice: Option<String>,
+    /// Standing principles it works by.
+    #[serde(default)]
+    pub principles: Vec<String>,
+    /// Hard constraints it must not cross.
+    #[serde(default)]
+    pub constraints: Vec<String>,
+    /// How it decides when principles conflict.
+    #[serde(default)]
+    pub decision_principles: Vec<String>,
 }
 
 /// Typed shape of the `persona_teams.north_star` JSON column — the shared

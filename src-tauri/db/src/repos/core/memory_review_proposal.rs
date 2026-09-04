@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
+use crate::models::CreatePersonaResponsibilityInput;
 use crate::DbPool;
 use crate::PoolExt;
 use personas_core::error::AppError;
@@ -90,6 +91,22 @@ pub struct MemoryReviewProposal {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub team_id: Option<String>,
+    /// Proposal family: `memory_curation` (default, the original review
+    /// pipeline) — the living-agent consolidation adds further kinds.
+    #[serde(default = "default_proposal_kind")]
+    pub kind: String,
+    /// `responsibility_draft` only: the charter the agent proposes minting.
+    /// `entries` is empty for this kind (the payload is an object, not a
+    /// `ProposalEntry` array), so without this field the inbox has nothing
+    /// to render. Parsed leniently — a payload that no longer deserializes
+    /// leaves `None` and the row still lists with its `summary`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub draft: Option<CreatePersonaResponsibilityInput>,
+}
+
+fn default_proposal_kind() -> String {
+    "memory_curation".to_string()
 }
 
 /// Input to `create` — the proposal data without timestamps/status,
@@ -102,6 +119,8 @@ pub struct CreateProposalInput<'a> {
     pub summary: Option<&'a str>,
     /// Team reflection only; `None` everywhere else.
     pub team_id: Option<&'a str>,
+    /// Proposal family; `None` = 'memory_curation' (the column default).
+    pub kind: Option<&'a str>,
 }
 
 pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, AppError> {
@@ -115,9 +134,9 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
     conn.execute(
         "INSERT INTO persona_memory_review_proposal
             (id, persona_id, threshold, instructions, proposal_json,
-             summary, reviewed_count, proposed_changes, status, created_at, team_id)
+             summary, reviewed_count, proposed_changes, status, created_at, team_id, kind)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending_review',
-                 datetime('now'), ?9)",
+                 datetime('now'), ?9, COALESCE(?10, 'memory_curation'))",
         params![
             id,
             input.persona_id,
@@ -128,9 +147,91 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
             reviewed_count,
             proposed_changes,
             input.team_id,
+            input.kind,
         ],
     )?;
     Ok(id)
+}
+
+/// Input to [`create_raw`] — living-agent proposal families whose
+/// `proposal_json` is NOT a `ProposalEntry` array (today: `self_model_diff`,
+/// whose payload is `{"diffs":[...],"rationale":"..."}`). `threshold` is a
+/// curation concept and is stored as 0; `reviewed_count` mirrors
+/// `proposed_changes` (each diff is one reviewable change).
+pub struct CreateRawProposalInput<'a> {
+    pub persona_id: &'a str,
+    /// Must satisfy the column CHECK ('memory_curation' | 'self_model_diff').
+    pub kind: &'a str,
+    pub proposal_json: &'a str,
+    pub summary: Option<&'a str>,
+    pub proposed_changes: i32,
+}
+
+pub fn create_raw(pool: &DbPool, input: CreateRawProposalInput<'_>) -> Result<String, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::create_raw",
+        {
+            let id = format!("memprop_{}", Uuid::new_v4().simple());
+            let conn = pool.conn("memory_review_proposal::create_raw")?;
+            conn.execute(
+                "INSERT INTO persona_memory_review_proposal
+                    (id, persona_id, threshold, instructions, proposal_json,
+                     summary, reviewed_count, proposed_changes, status, created_at, team_id, kind)
+                 VALUES (?1, ?2, 0, NULL, ?3, ?4, ?5, ?5, 'pending_review',
+                         datetime('now'), NULL, ?6)",
+                params![
+                    id,
+                    input.persona_id,
+                    input.proposal_json,
+                    input.summary,
+                    input.proposed_changes,
+                    input.kind,
+                ],
+            )?;
+            Ok(id)
+        }
+    )
+}
+
+/// The raw row for families whose payload is not a `ProposalEntry` array —
+/// [`get`]'s `map_row` would silently parse such a payload to `[]` (its
+/// `unwrap_or_default`), which is exactly right for LIST surfaces and exactly
+/// wrong for the apply path, which needs the payload bytes.
+#[derive(Debug, Clone)]
+pub struct RawProposal {
+    pub id: String,
+    pub persona_id: Option<String>,
+    pub kind: String,
+    pub status: String,
+    pub proposal_json: String,
+}
+
+pub fn get_raw(pool: &DbPool, id: &str) -> Result<Option<RawProposal>, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::get_raw",
+        {
+            let conn = pool.conn("memory_review_proposal::get_raw")?;
+            let row = conn
+                .query_row(
+                    "SELECT id, persona_id, kind, status, proposal_json
+                     FROM persona_memory_review_proposal WHERE id = ?1",
+                    params![id],
+                    |r| {
+                        Ok(RawProposal {
+                            id: r.get("id")?,
+                            persona_id: r.get("persona_id")?,
+                            kind: r.get("kind")?,
+                            status: r.get("status")?,
+                            proposal_json: r.get("proposal_json")?,
+                        })
+                    },
+                )
+                .optional()?;
+            Ok(row)
+        }
+    )
 }
 
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<MemoryReviewProposal>, AppError> {
@@ -139,7 +240,7 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<MemoryReviewProposal>, AppE
         .query_row(
             "SELECT id, persona_id, threshold, instructions, proposal_json,
                     summary, reviewed_count, proposed_changes, status,
-                    created_at, decided_at, team_id
+                    created_at, decided_at, team_id, kind
              FROM persona_memory_review_proposal WHERE id = ?1",
             params![id],
             map_row,
@@ -171,7 +272,7 @@ pub fn list(
     let sql = format!(
         "SELECT id, persona_id, threshold, instructions, proposal_json,
                 summary, reviewed_count, proposed_changes, status,
-                created_at, decided_at, team_id
+                created_at, decided_at, team_id, kind
          FROM persona_memory_review_proposal
          {where_clause}
          ORDER BY created_at DESC
@@ -186,6 +287,54 @@ pub fn list(
             .collect::<Result<Vec<_>, _>>()?
     };
     Ok(rows)
+}
+
+/// Proposals of one `kind` still awaiting a decision for one persona — the
+/// manifest view's `pending_proposals` badge.
+pub fn count_pending_for_persona(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_pending_for_persona",
+        {
+            let conn = pool.conn("memory_review_proposal::count_pending_for_persona")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND kind = ?2 AND status = 'pending_review'",
+                params![persona_id, kind],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
+}
+
+/// Proposals (any kind) a human DISCARDED since `since` (RFC-3339 / SQLite
+/// datetime text, compared on `decided_at`) — the dashboard's rejected-drafts
+/// signal: how often the agent's proposals are being thrown out.
+pub fn count_discarded_since(
+    pool: &DbPool,
+    persona_id: &str,
+    since: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_discarded_since",
+        {
+            let conn = pool.conn("memory_review_proposal::count_discarded_since")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND status = 'discarded'
+                   AND decided_at IS NOT NULL AND decided_at >= ?2",
+                params![persona_id, since],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 /// Mark a proposal as `applied`. Caller is responsible for executing
@@ -220,6 +369,15 @@ pub fn mark_discarded(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
     let entries_json: String = row.get(4)?;
     let entries: Vec<ProposalEntry> = serde_json::from_str(&entries_json).unwrap_or_default();
+    let kind: String = row.get("kind")?;
+    // The payload column carries a `ProposalEntry` array for the curation
+    // kinds and a single object for `responsibility_draft`; decode the
+    // object only for the kind that writes one.
+    let draft: Option<CreatePersonaResponsibilityInput> = if kind == "responsibility_draft" {
+        serde_json::from_str(&entries_json).ok()
+    } else {
+        None
+    };
     Ok(MemoryReviewProposal {
         id: row.get(0)?,
         persona_id: row.get(1)?,
@@ -233,5 +391,9 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
         created_at: row.get(9)?,
         decided_at: row.get(10)?,
         team_id: row.get(11)?,
+        // By name, not position — this column joined the projection late
+        // (e16) and a named read cannot shift under a future ALTER.
+        kind,
+        draft,
     })
 }

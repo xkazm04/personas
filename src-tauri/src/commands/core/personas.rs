@@ -152,6 +152,9 @@ fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
     if let Some(ref channels) = input.notification_channels {
         errors.extend(pv::validate_notification_channels(channels));
     }
+    if let Some(Some(ref core)) = input.core_profile {
+        errors.extend(pv::validate_core_profile(core));
+    }
     check(errors)
 }
 
@@ -198,6 +201,8 @@ pub fn update_persona(
                 Ok(t) => t,
                 Err(_) => return,
             };
+        // v1: living-agent sections not exported (responsibilities/episodes
+        // stay None — `## Core` still renders from the persona snapshot).
         let prompt = engine::prompt::assemble_prompt(
             &sync_persona,
             &tools_list,
@@ -224,6 +229,7 @@ pub fn update_persona(
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
             "homeTeamId": sync_persona.home_team_id,
+            "coreProfile": sync_persona.core_profile,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
@@ -313,6 +319,8 @@ pub fn update_persona_parameters(
                 Ok(t) => t,
                 Err(_) => return,
             };
+        // v1: living-agent sections not exported (responsibilities/episodes
+        // stay None — `## Core` still renders from the persona snapshot).
         let prompt = engine::prompt::assemble_prompt(
             &sync_persona,
             &tools_list,
@@ -339,6 +347,7 @@ pub fn update_persona_parameters(
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
             "homeTeamId": sync_persona.home_team_id,
+            "coreProfile": sync_persona.core_profile,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
@@ -1051,7 +1060,11 @@ mod drain_tests {
         engine.mark_deleting(&p.id).await;
         assert!(engine.is_deleting(&p.id).await);
         let exec_id = insert_execution(&pool, &p.id, "running");
-        engine.tracker().lock().await.add_running(&p.id, &exec_id);
+        engine
+            .tracker()
+            .lock()
+            .await
+            .add_running(&p.id, &exec_id, None);
         assert!(
             !engine.all_slots_cleared(&p.id).await,
             "a tracked running slot must keep the drain waiting"
@@ -1074,8 +1087,8 @@ mod drain_tests {
         let e2 = insert_execution(&pool, &p.id, "running");
         {
             let mut t = engine.tracker().lock().await;
-            t.add_running(&p.id, &e1);
-            t.add_running(&p.id, &e2);
+            t.add_running(&p.id, &e1, None);
+            t.add_running(&p.id, &e2, None);
         }
         assert!(!engine.all_slots_cleared(&p.id).await);
 

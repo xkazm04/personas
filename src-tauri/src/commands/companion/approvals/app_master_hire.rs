@@ -52,6 +52,10 @@ pub(crate) struct BindingOutcome {
     pub kpi_ids: Vec<String>,
     pub trigger_ids: Vec<String>,
     pub unsupported_triggers: Vec<String>,
+    /// `persona_responsibilities.id` of the charter row [`persist_mandate`]
+    /// created — `None` when the mandate did not persist, so the stamped link
+    /// points at a row that exists or points at nothing, never at a guess.
+    pub responsibility_id: Option<String>,
     pub notes: Vec<String>,
 }
 
@@ -833,19 +837,28 @@ fn set_probation_autopilot(db: &crate::db::DbPool, project_id: &str, notes: &mut
 
 /// Persist the enforceable mandate + tenure for `project_id`.
 ///
-/// A project holds at most ONE mandate (`app_master_mandate:<project_id>` is a
-/// single settings key), so a new hire on a project that already had one
-/// **replaces** it: the record is built from scratch here, which is what resets
+/// Since WP3 the storage is a `persona_responsibilities` row
+/// (`domain = 'software_engineering'`, `source = 'kp-hire'`), written through
+/// `personas_engine::responsibility::record_hire` — the accessor that also
+/// serves every mandate read. A project holds at most ONE mandate, so a new
+/// hire on a project that already had one **replaces** it (the old charter is
+/// retired, the record is built from scratch here) — which is what resets
 /// `headless_incomplete_streak`, `probation_decided_at` and the tenure start.
 /// Inheriting any of those would let a fresh hire be retired on its first
 /// `incomplete` because its predecessor had already been extended once.
+///
+/// Returns the created `persona_responsibilities` row id (`resp_…`) — the
+/// value [`stamp_app_master_link`] writes into
+/// [`crate::db::models::AppMasterLink::mandate_key`] — or `None` when the
+/// charter row could not be persisted.
 fn persist_mandate(
     db: &crate::db::DbPool,
     project_id: &str,
     persona_id: &str,
+    app_name: &str,
     am: &serde_json::Value,
     notes: &mut Vec<String>,
-) -> Option<MandateRecord> {
+) -> Option<String> {
     let scope_rung = am
         .pointer("/mandate/scopeRung")
         .and_then(|v| v.as_u64())
@@ -926,8 +939,9 @@ fn persist_mandate(
         probation_review_id: None,
         headless_incomplete_streak: 0,
     };
-    match personas_engine::app_master::set_mandate(db, &record) {
-        Ok(()) => Some(record),
+    let title = format!("App master for {app_name}");
+    match personas_engine::responsibility::record_hire(db, &record, &title) {
+        Ok(row) => Some(row.id),
         Err(e) => {
             // This one matters more than the others: without the record, the
             // mandate is not enforced and no probation review will ever fire.
@@ -1133,14 +1147,15 @@ pub(crate) fn bind_app_master(
     out.trigger_ids = trigger_ids;
     out.unsupported_triggers = unsupported;
     set_probation_autopilot(db, &project_id, &mut out.notes);
-    let mandate = persist_mandate(db, &project_id, persona_id, am, &mut out.notes);
+    out.responsibility_id =
+        persist_mandate(db, &project_id, persona_id, &app_name, am, &mut out.notes);
 
     // (h) LAST, and only once the mandate is durable. The core identity memory
     // states the rung, the owner and the budget as facts about this hire; if
     // the mandate did not persist, none of those are being enforced, and a
     // memory the holder recalls forever would be describing a contract that
     // does not exist. Better to have no memory than a confident wrong one.
-    if mandate.is_some() {
+    if out.responsibility_id.is_some() {
         seed_memory(
             db,
             persona_id,
@@ -1182,9 +1197,10 @@ pub(crate) fn stamp_app_master_link(
 ) -> Result<(), AppError> {
     let persona = crate::db::repos::core::personas::get_by_id(db, persona_id)?;
     let mut dc = persona.parsed_design_context();
-    let probation_ends_at = personas_engine::app_master::get_mandate(db, &outcome.project_id)
-        .map(|r| r.probation_ends_at)
-        .unwrap_or_default();
+    let probation_ends_at =
+        personas_engine::responsibility::mandate_for_project_or_none(db, &outcome.project_id)
+            .map(|r| r.probation_ends_at)
+            .unwrap_or_default();
     // Pin the persona to the project it owns, so the `codebase` connector
     // resolves THIS repo (the `dev_project_id` precedent).
     if !outcome.project_id.is_empty() {
@@ -1197,7 +1213,13 @@ pub(crate) fn stamp_app_master_link(
         trigger_ids: outcome.trigger_ids.clone(),
         unsupported_triggers: outcome.unsupported_triggers.clone(),
         probation_ends_at,
-        mandate_key: personas_engine::app_master::mandate_setting_key(&outcome.project_id),
+        // The `persona_responsibilities` row id `persist_mandate` created —
+        // carried through the outcome rather than re-queried, so the stamp
+        // names the exact row this hire wrote. Empty when the charter did not
+        // persist: a blank pointer is honest, a rebuilt legacy key would not
+        // be (the `app_master_mandate:<project_id>` app_settings row it named
+        // is migrated into the table and deleted at boot).
+        mandate_key: outcome.responsibility_id.clone().unwrap_or_default(),
         setup_notes: outcome.notes.clone(),
         spec: Some(am.clone()),
     });
@@ -1415,5 +1437,110 @@ mod tests {
         // not be mistaken for one that was.
         assert_eq!(measure_config_kpi_key("{\"tool\":\"eslint\"}"), None);
         assert_eq!(measure_config_kpi_key("not json"), None);
+    }
+
+    // ── the persisted charter and the stamped link ──────────────────────────
+    //
+    // DB-backed, against `init_test_db()` (the real migrated schema): what
+    // these assert is a REAL `persona_responsibilities` row id round-tripping
+    // `persist_mandate` → `BindingOutcome` → the stamped `AppMasterLink` —
+    // and the FK failure the empty-pointer path depends on only exists in the
+    // real schema.
+
+    fn insert_persona(pool: &crate::db::DbPool, id: &str) {
+        use crate::db::PoolExt;
+        pool.conn("app-master hire test")
+            .expect("pooled connection")
+            .execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+                rusqlite::params![id],
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn the_stamped_link_carries_the_charter_row_id_and_the_row_exists() {
+        let pool = crate::db::init_test_db().unwrap();
+        insert_persona(&pool, "p-am");
+
+        let am = spec();
+        let mut notes = Vec::new();
+        let resp_id = persist_mandate(&pool, "proj-am", "p-am", "kp", &am, &mut notes)
+            .expect("the charter row persists");
+        assert!(resp_id.starts_with("resp_"), "{resp_id}");
+
+        let outcome = BindingOutcome {
+            project_id: "proj-am".into(),
+            responsibility_id: Some(resp_id.clone()),
+            notes,
+            ..Default::default()
+        };
+        stamp_app_master_link(&pool, "p-am", &am, &outcome).unwrap();
+
+        let persona = crate::db::repos::core::personas::get_by_id(&pool, "p-am").unwrap();
+        let link = persona
+            .parsed_design_context()
+            .app_master
+            .expect("the link is stamped");
+        // The link points at the charter row — not at the retired
+        // `app_master_mandate:<project_id>` settings key.
+        assert_eq!(link.mandate_key, resp_id);
+
+        // And the id resolves to the row this hire wrote, in the hire's shape.
+        let row = crate::db::repos::core::responsibilities::get_by_id(&pool, &resp_id)
+            .unwrap()
+            .expect("the stamped id resolves to a real row");
+        assert_eq!(row.persona_id, "p-am");
+        assert_eq!(row.project_id.as_deref(), Some("proj-am"));
+        assert_eq!(
+            row.domain,
+            personas_engine::responsibility::DOMAIN_SOFTWARE_ENGINEERING
+        );
+        assert_eq!(row.source, "kp-hire");
+        assert_eq!(row.status, "active");
+        // KEEP false (operator-confirmed): hiring must not silently enrol the
+        // persona in the attention loop.
+        assert!(!row.cadence.attention_enabled);
+        // The link's probation deadline is the same row's, read back through
+        // the accessor the stamp uses.
+        assert_eq!(
+            link.probation_ends_at,
+            row.tenure.probation_ends_at.clone().unwrap_or_default()
+        );
+    }
+
+    #[test]
+    fn a_hire_whose_charter_did_not_persist_stamps_an_empty_pointer() {
+        let pool = crate::db::init_test_db().unwrap();
+        insert_persona(&pool, "p-real");
+
+        let am = spec();
+        let mut notes = Vec::new();
+        // `p-ghost` was never inserted: the charter INSERT fails its persona
+        // FK — the "MANDATE NOT PERSISTED" path.
+        let resp_id = persist_mandate(&pool, "proj-am", "p-ghost", "kp", &am, &mut notes);
+        assert_eq!(resp_id, None);
+        assert!(
+            notes.iter().any(|n| n.contains("MANDATE NOT PERSISTED")),
+            "{notes:?}"
+        );
+
+        let outcome = BindingOutcome {
+            project_id: "proj-am".into(),
+            responsibility_id: None,
+            notes,
+            ..Default::default()
+        };
+        stamp_app_master_link(&pool, "p-real", &am, &outcome).unwrap();
+
+        let persona = crate::db::repos::core::personas::get_by_id(&pool, "p-real").unwrap();
+        let link = persona
+            .parsed_design_context()
+            .app_master
+            .expect("the link is stamped even when the charter is not");
+        // A pointer to nothing is stamped as nothing — never rebuilt as the
+        // legacy `app_master_mandate:` key, which names a deleted row.
+        assert_eq!(link.mandate_key, "");
     }
 }

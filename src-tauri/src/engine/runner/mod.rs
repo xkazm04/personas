@@ -7,6 +7,7 @@
 mod credentials;
 mod env;
 mod globals;
+pub(crate) mod hooks;
 mod stages;
 mod team_context;
 
@@ -29,9 +30,11 @@ use tokio::sync::Mutex;
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
 
-use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::models::{EpisodeExcerpt, Persona, PersonaResponsibility, PersonaToolDefinition};
 use crate::db::repos::communication::manual_reviews as manual_review_repo;
+use crate::db::repos::core::episodes as episode_repo;
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::core::responsibilities as resp_repo;
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
@@ -57,6 +60,48 @@ use self::stages::RunnerStage;
 /// personas' generic "timed out after 600s" fires. See
 /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
+
+/// Load the living-agent prompt inputs (spark `living-agent-core`, WP2): the
+/// persona's ACTIVE standing charters and the last 8 rows of its episodic
+/// record, mapped to [`EpisodeExcerpt`] and reversed to OLDEST-FIRST (the
+/// order `## Recent Episodes (oldest first)` renders in).
+///
+/// Best-effort by contract: a failed read logs a `tracing::warn!` and
+/// degrades to empty — the living-agent tables being unhappy must never fail
+/// an execution, a preview, or a dry run. Shared by the runner main path,
+/// `preview_execution` / `prepare_persona_execution`, `preview_prompt`, and
+/// `dry_run_persona` so all five surfaces assemble the same prompt.
+pub fn load_living_prompt_inputs(
+    pool: &DbPool,
+    persona_id: &str,
+) -> (Vec<PersonaResponsibility>, Vec<EpisodeExcerpt>) {
+    let responsibilities = match resp_repo::list_by_persona(pool, persona_id, false) {
+        Ok(list) => list.into_iter().filter(|r| r.status == "active").collect(),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "living-agent: responsibilities load failed (non-fatal)");
+            Vec::new()
+        }
+    };
+    // `list_recent` returns newest-first; the prompt section reads oldest-first.
+    let recent_episodes = match episode_repo::list_recent(pool, persona_id, 8) {
+        Ok(eps) => eps
+            .into_iter()
+            .rev()
+            .map(|e| EpisodeExcerpt {
+                id: e.id,
+                role: e.role,
+                source: e.source,
+                body_excerpt: e.body_excerpt,
+                created_at: e.created_at,
+            })
+            .collect(),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "living-agent: episodes load failed (non-fatal)");
+            Vec::new()
+        }
+    };
+    (responsibilities, recent_episodes)
+}
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
@@ -96,6 +141,19 @@ pub async fn run_execution(
             "boundary": RunnerStage::Validate.boundary(),
         })),
     );
+
+    // Hook emit site — `hooks::ObservationPoint::TaskStart`. Observers only:
+    // nothing registered here can refuse the run or change an argument, so
+    // this sits wherever it reads best rather than at a position defended by
+    // an ordering invariant. The payload closure is not called when nothing is
+    // registered.
+    hooks::emit(hooks::ObservationPoint::TaskStart, || {
+        hooks::RunEvent::starting(
+            hooks::ObservationPoint::TaskStart,
+            &execution_id,
+            &persona.id,
+        )
+    });
 
     // Set up logger
     let mut logger = match ExecutionLogger::new(&log_dir, &execution_id) {
@@ -227,17 +285,22 @@ pub async fn run_execution(
         .and_then(|f| f.as_bool())
         .unwrap_or(false);
 
-    // Phase C5 — capability attribution. The execution's use_case_id is
-    // expanded into `input_data._use_case` by `execute_persona` (see
-    // commands/execution/executions.rs §1b). Recover the bare id here so
-    // every dispatch context (and the memory injection below) can scope
-    // by capability.
-    let mut execution_use_case_id: Option<String> = input_data
+    // Phase C5 — capability attribution. The dispatched charter's id is
+    // expanded into `input_data._responsibility` by `execute_persona` (see
+    // commands/execution/executions.rs §1b; WP2 — replaces `_use_case`).
+    // Resolve the charter row here (ownership-checked — the key is
+    // payload-reachable) and recover the legacy use-case id it was minted
+    // from: memory scoping, the dim gates and the per-UC model override all
+    // still key on `use_case_id` until the WP4 cutover.
+    let focused_charter: Option<PersonaResponsibility> = input_data
         .as_ref()
-        .and_then(|d| d.get("_use_case"))
-        .and_then(|uc| uc.get("id"))
-        .and_then(|id| id.as_str())
-        .map(|s| s.to_string());
+        .and_then(|d| d.get("_responsibility"))
+        .and_then(|v| v.as_str())
+        .and_then(|id| resp_repo::get_by_id(&pool, id).ok().flatten())
+        .filter(|c| c.persona_id == persona.id);
+    let mut execution_use_case_id: Option<String> = focused_charter
+        .as_ref()
+        .and_then(|c| c.spec.migrated_from_use_case_id.clone());
 
     // 2026-05-05 — fallback to the execution row's `use_case_id` column.
     // Trigger-fired executions (event_listener cascade, schedule wakeup,
@@ -327,6 +390,16 @@ pub async fn run_execution(
                 model_profile = Some(merged);
             }
         }
+    }
+
+    // Charter-direct dispatch (WP2): no design-context row to read
+    // engine_mode from — fall back to the charter spec's engineMode.
+    if engine_mode.is_none() {
+        engine_mode = focused_charter
+            .as_ref()
+            .and_then(|c| c.spec.engine_mode.as_deref())
+            .map(|m| m.to_ascii_lowercase())
+            .filter(|m| m == "mixed" || m == "local_first");
     }
 
     // Capability-tier floor — the single authoritative chokepoint for EVERY
@@ -538,6 +611,11 @@ pub async fn run_execution(
         }
     };
 
+    // The persona's positively-declared tool roster, resolved ONCE and shared
+    // by the config snapshot and the HTTP dispatch below. `None` = undeclared,
+    // which is every persona until an operator sets the parameter.
+    let declared_roster = personas_engine::prompt::resolve_allowed_tools(&persona);
+
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
     let execution_config = ExecutionConfig {
@@ -566,6 +644,18 @@ pub async fn run_execution(
         has_workspace_instructions: workspace_instructions.is_some(),
         workspace_id: persona.home_team_id.clone(),
         tool_names: tools.iter().map(|t| t.name.clone()).collect(),
+        // Roster measurement. `None` is the honest CLI default: with no
+        // `--allowedTools` the roster belongs to Claude Code and personas
+        // cannot count it. A declared roster makes the size a recorded fact on
+        // the same row as duration_ms/cost_usd. The HTTP branch below
+        // overwrites both with the exact assembled array.
+        tool_roster_size: declared_roster.as_ref().map(|r| r.len()),
+        tool_roster_bytes: None,
+        tool_roster_source: if declared_roster.is_some() {
+            "cli_allowlist".to_string()
+        } else {
+            "cli_default".to_string()
+        },
         credential_connectors: cred_hints.to_vec(),
         routing_rule: None, // Set after BYOM policy evaluation in spawn stage
         compliance_rule: None,
@@ -639,7 +729,7 @@ pub async fn run_execution(
                             logger.log(&format!(
                                 "[WORKTREE] isolated execution in {} on branch personas/exec/{}",
                                 ws.path().display(),
-                                &execution_id
+                                execution_id
                             ));
                             Some(ws)
                         }
@@ -674,7 +764,7 @@ pub async fn run_execution(
             if std::fs::create_dir_all(&stable_dir).is_ok() {
                 stable_dir
             } else {
-                std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+                std::env::temp_dir().join(format!("personas-exec-{}", execution_id))
             }
         }
     };
@@ -746,6 +836,37 @@ pub async fn run_execution(
         } else {
             Some(&connector_usage_hints)
         };
+    // Living-agent inputs (WP2): active charters + the episodic tail, loaded
+    // once for BOTH assembly branches below and for the prepared-run cache
+    // key. Skipped on session resume — the resume prompt carries no persona
+    // sections. Best-effort: failures degrade to empty inside the loader.
+    let (mut responsibilities, recent_episodes) = if is_session_resume {
+        (Vec::new(), Vec::new())
+    } else {
+        load_living_prompt_inputs(&pool, &persona.id)
+    };
+    // The dispatched charter may be non-active (a simulation of a disabled
+    // capability) and so absent from the active-only load above — append it
+    // so `## Current Focus` still resolves; the roster renderer skips
+    // non-active rows.
+    if !is_session_resume {
+        if let Some(ch) = focused_charter.as_ref() {
+            if !responsibilities.iter().any(|r| r.id == ch.id) {
+                responsibilities.push(ch.clone());
+            }
+        }
+    }
+    if !responsibilities.is_empty() || !recent_episodes.is_empty() {
+        logger.log(&format!(
+            "[living] {} active charter(s), {} episode excerpt(s) in prompt",
+            responsibilities.len(),
+            recent_episodes.len()
+        ));
+    }
+    let responsibilities_opt: Option<&[PersonaResponsibility]> =
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice());
+    let recent_episodes_opt: Option<&[EpisodeExcerpt]> =
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice());
     let prepared_run_key = if !is_session_resume
         && hint_refs.is_empty()
         && connector_hints_opt.is_none()
@@ -753,7 +874,11 @@ pub async fn run_execution(
         && workspace_instructions.is_none()
     {
         Some(super::prepared_run_cache::cache_key(
-            &persona, &tools, None, None,
+            &persona,
+            &tools,
+            None,
+            None,
+            &responsibilities,
         ))
     } else {
         None
@@ -776,7 +901,12 @@ pub async fn run_execution(
             prepared_memory_ids = Some(blob.memory_ids);
             blob.prompt_text
         } else {
-            prompt::assemble_prompt(
+            // Cache miss on the prepared path: assemble the same base prompt
+            // `prepare_persona_execution` would have cached — including the
+            // living-agent sections, so a miss and a hit produce the same
+            // prompt shape. (No connector hints on this path, so the
+            // written-skills set is irrelevant — None mirrors the wrapper.)
+            prompt::assemble_prompt_with_skills(
                 &persona,
                 &tools,
                 None,
@@ -785,6 +915,9 @@ pub async fn run_execution(
                 None,
                 #[cfg(feature = "desktop")]
                 None,
+                None,
+                responsibilities_opt,
+                recent_episodes_opt,
             )
         }
     } else {
@@ -804,6 +937,8 @@ pub async fn run_execution(
             // Per-skill lockstep: shrink to a pointer only for connectors whose
             // SKILL.md was actually written just above.
             Some(&written_connector_skills),
+            responsibilities_opt,
+            recent_episodes_opt,
         )
     };
 
@@ -1012,26 +1147,31 @@ pub async fn run_execution(
         match root {
             None => prompt_text,
             Some(root) => {
-                let uc = input_data.as_ref().and_then(|d| d.get("_use_case"));
-                let field = |key: &str| {
-                    uc.and_then(|u| u.get(key))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or_default()
-                        .to_string()
-                };
+                // Focused-charter signals (WP2): `_responsibility` carries the
+                // charter id; the charter travels in `responsibilities` above.
+                // Title + first outcome statement are the matching text (the
+                // procedure can be pages — the outcome names the job).
+                let focused = input_data
+                    .as_ref()
+                    .and_then(|d| d.get("_responsibility"))
+                    .and_then(|v| v.as_str())
+                    .and_then(|id| responsibilities.iter().find(|r| r.id == id));
                 let signals = kc::Signals {
                     persona_name: persona.name.clone(),
                     persona_description: persona.description.clone().unwrap_or_default(),
                     template_category: persona.template_category.clone().unwrap_or_default(),
-                    use_case_title: field("title"),
-                    use_case_description: {
-                        let s = field("capability_summary");
-                        if s.is_empty() {
-                            field("description")
-                        } else {
-                            s
-                        }
-                    },
+                    use_case_title: focused.map(|r| r.title.clone()).unwrap_or_default(),
+                    use_case_description: focused
+                        .and_then(|r| {
+                            r.outcomes
+                                .first()
+                                .map(|o| o.statement.clone())
+                                .filter(|s| !s.trim().is_empty())
+                                .or_else(|| {
+                                    Some(r.procedure.clone()).filter(|p| !p.trim().is_empty())
+                                })
+                        })
+                        .unwrap_or_default(),
                 };
                 match kc::consult(&root, &signals) {
                     Some((section, log)) => {
@@ -1536,6 +1676,12 @@ pub async fn run_execution(
             .flatten()
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
+            // The HTTP path assembles the tool array itself, so unlike the CLI
+            // path it knows the roster exactly — count AND serialized bytes.
+            // `execution_config` is handed in so those two numbers land on the
+            // run row: before this, the HTTP branch returned above the only
+            // site that persisted a config snapshot, so a remote run stored
+            // NO config at all (`execution_config` was NULL for every one).
             return super::http_engine::run_http_execution(
                 &*emitter,
                 &execution_id,
@@ -1543,6 +1689,8 @@ pub async fn run_execution(
                 model_profile.as_ref().unwrap(),
                 &prompt_text,
                 !tools.is_empty() || connectors_on,
+                declared_roster.clone(),
+                execution_config.clone(),
                 &cancelled,
                 start_time,
             )
@@ -1554,6 +1702,13 @@ pub async fn run_execution(
     let mut last_spawn_error: Option<String> = None;
     #[allow(unused_assignments)]
     let mut active_engine_kind = primary_engine; // overwritten per-candidate in failover loop
+
+    // Which rung of the failover chain actually served. `active_engine_kind`
+    // cannot answer this: `EngineKind` has one variant today, so comparing it
+    // to `primary_engine` is a constant `false`, and the within-provider model
+    // ladder (`CLAUDE_MODEL_CHAIN`, opus -> sonnet -> haiku) is invisible to it.
+    // The audit trail's `was_failover` must observe the substitution it reports.
+    let mut active_candidate_idx: usize = 0;
     #[allow(unused_assignments)]
     let mut cli_provider: Box<dyn provider::CliProvider> =
         provider::resolve_provider(primary_engine); // overwritten per-candidate
@@ -1578,6 +1733,7 @@ pub async fn run_execution(
             }
 
             active_engine_kind = candidate.engine_kind;
+            active_candidate_idx = candidate_idx;
             cli_provider = provider::resolve_provider(candidate.engine_kind);
 
             // Build model profile override for this candidate
@@ -2922,6 +3078,21 @@ pub async fn run_execution(
     };
     let mut error = error;
 
+    // The failure's class, minted HERE from what this function structurally
+    // knows -- the deadline it armed, the parser's typed usage-limit verdict,
+    // an exit code with no diagnostic stderr. No branch reads `error`'s text.
+    //
+    // `None` for a non-zero exit that DID write stderr is deliberate: telling a
+    // transient process failure from a provider 5xx there is a content
+    // judgment, and a raise site that makes one has reinvented the ladder. Those
+    // rows keep a NULL class and `classify_error` handles them exactly as today.
+    let error_category = crate::engine::error_taxonomy::mint_runner_class(
+        timed_out,
+        exit_code,
+        &stderr_text,
+        usage_limit.is_some(),
+    );
+
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
     let mut final_status = if success {
         ExecutionState::Completed
@@ -3019,7 +3190,10 @@ pub async fn run_execution(
         persona_name: persona.name.clone(),
         engine_kind: active_engine_kind.as_setting().to_string(),
         model_used: metrics.model_used.clone(),
-        was_failover: active_engine_kind != primary_engine,
+        // True when ANY rung below the configured candidate served — a provider
+        // change or a within-provider model downgrade. Chain index is the only
+        // signal that sees both; see `active_candidate_idx` above.
+        was_failover: active_engine_kind != primary_engine || active_candidate_idx > 0,
         routing_rule_name: policy_decision.routing_rule_name.clone(),
         compliance_rule_name: policy_decision.compliance_rule_name.clone(),
         cost_usd: Some(metrics.cost_usd),
@@ -3219,8 +3393,40 @@ pub async fn run_execution(
                 execution_config: execution_config_json.clone(),
                 log_truncated,
                 business_outcome: parsed_business_outcome.clone(),
+                // The class rides the SAME write as the message, so a row can
+                // never carry one without the other.
+                error_category: error_category.map(crate::engine::error_taxonomy::category_token),
             },
         );
+    }
+
+    // Hook emit sites — `hooks::ObservationPoint::TaskSuccess` /
+    // `hooks::ObservationPoint::TaskFailure` on the two terminal branches, then
+    // `hooks::ObservationPoint::SessionEnd` once the run's identity is done
+    // being written. Three sites, one per declared point; the pairing test in
+    // `hooks::tests` fails the build if any declared point loses its site.
+    //
+    // Cancellation deliberately does NOT emit — see `hooks::registry::NON_FIRE`.
+    {
+        let terminal_event = |point: hooks::ObservationPoint| hooks::RunEvent {
+            point,
+            execution_id: execution_id.clone(),
+            persona_id: persona.id.clone(),
+            duration_ms: Some(duration_ms),
+            input_tokens: Some(metrics.input_tokens),
+            output_tokens: Some(metrics.output_tokens),
+            cost_usd: Some(metrics.cost_usd),
+            error: error.clone(),
+        };
+        let terminal_point = if success {
+            hooks::ObservationPoint::TaskSuccess
+        } else {
+            hooks::ObservationPoint::TaskFailure
+        };
+        hooks::emit(terminal_point, || terminal_event(terminal_point));
+        hooks::emit(hooks::ObservationPoint::SessionEnd, || {
+            terminal_event(hooks::ObservationPoint::SessionEnd)
+        });
     }
 
     ExecutionResult {
@@ -3246,6 +3452,7 @@ pub async fn run_execution(
         execution_config: execution_config_json,
         log_truncated,
         business_outcome: parsed_business_outcome,
+        error_category,
     }
 }
 

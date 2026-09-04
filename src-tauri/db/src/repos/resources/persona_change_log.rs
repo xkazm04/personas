@@ -178,6 +178,15 @@ fn compute_changes(existing: &Persona, input: &UpdatePersonaInput) -> Vec<Change
             ));
         }
     }
+    if let Some(ref v) = input.core_profile {
+        if *v != existing.core_profile {
+            changes.push((
+                "core_profile",
+                disp_opt(&existing.core_profile),
+                disp_opt(v),
+            ));
+        }
+    }
     // --- Secret-bearing fields: values redacted, never stored raw. ---
     if let Some(ref v) = input.model_profile {
         // `existing.model_profile` is decrypted on read; comparing the raw JSON

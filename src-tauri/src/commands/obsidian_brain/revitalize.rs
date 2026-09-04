@@ -398,6 +398,10 @@ pub async fn obsidian_revitalize_start(
                 lines: Vec::new(),
                 cancel_token: Some(cancel_token.clone()),
                 created_at: std::time::Instant::now(),
+                // Filled in by `spawn_job`, which registers the worker's
+                // handle on this entry immediately after the insert.
+                abort: None,
+                cancel_outcome: None,
                 extra: RevitalizeExtra {
                     vault_path: config.vault_path.clone(),
                     vault_name: config.vault_name.clone(),

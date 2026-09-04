@@ -14,7 +14,7 @@ import { AutomationStatusBadge } from './AutomationStatusBadge';
 import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -34,7 +34,7 @@ export function AutomationCard({
 }: AutomationCardProps) {
   const { t } = useTranslation();
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
-  const useCases = useSelectedUseCases();
+  const useCases = useSelectedPersonaCapabilities();
   const capabilityTitle = automation.useCaseId
     ? useCases.find(u => u.id === automation.useCaseId)?.title ?? automation.useCaseId
     : null;

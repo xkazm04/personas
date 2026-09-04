@@ -16,8 +16,8 @@ import { GlyphAnswerCard } from '@/features/agents/sub_glyph/GlyphAnswerCard';
 import { TestReportModal } from '../chronology/TestReportModal';
 import { useUseCaseChronology } from '../chronology/useUseCaseChronology';
 import {
-  type DisplayUseCase,
-} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+  type PersonaCapability,
+} from '@/lib/personas/capabilities';
 
 interface PersonaLayoutBuildProps {
   buildPhase: BuildPhase | null;
@@ -49,12 +49,12 @@ interface PersonaLayoutBuildProps {
 
 /**
  * Bridge a `GlyphRow` (the canonical build-time row shape from
- * useUseCaseChronology) onto the `DisplayUseCase` shape `PersonaLayout`
+ * useUseCaseChronology) onto the `PersonaCapability` shape `PersonaLayout`
  * wants. The post-seed surface doesn't need `raw` for execution — the
  * persona isn't yet wired to a runnable backend — so we synthesize the
  * minimum shape.
  */
-function glyphRowToDisplay(row: GlyphRow): DisplayUseCase {
+function glyphRowToDisplay(row: GlyphRow): PersonaCapability {
   const dimensions: GlyphDimension[] = GLYPH_DIMENSIONS.filter(
     (d) => row.presence[d] !== 'none',
   );
@@ -76,7 +76,11 @@ function glyphRowToDisplay(row: GlyphRow): DisplayUseCase {
     // `raw` is required by the type but unused post-seed (the row
     // doesn't drive execution from this surface). Cast through unknown
     // so consumers that don't introspect raw stay happy.
-    raw: { id: row.id } as DisplayUseCase['raw'],
+    // A build-time glyph row has no persisted charter and no design-context
+    // use case yet — it is the pre-persistence shape, so it reads as the
+    // legacy origin with a stub `raw` carrying only the id the UI keys on.
+    origin: 'design-use-case',
+    raw: { id: row.id } as PersonaCapability['raw'],
   };
 }
 
@@ -133,7 +137,7 @@ export function PersonaLayoutBuild({
   // after a test_complete phase.
   const [reportOpen, setReportOpen] = useState(false);
 
-  const items = useMemo<DisplayUseCase[]>(
+  const items = useMemo<PersonaCapability[]>(
     () => rows.map(glyphRowToDisplay),
     [rows],
   );

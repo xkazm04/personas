@@ -128,10 +128,13 @@ vi.mock('@/stores/themeStore', () => ({
 vi.mock('@/features/shared/glyph/CapabilitySigil', () => ({
   CapabilitySigil: () => <div data-testid="sigil" />,
 }));
-vi.mock(
-  '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase',
-  () => ({ getHealthMeta: () => ({ healthy: { label: 'healthy' } }) }),
-);
+// `getHealthMeta` moved to `@/lib/personas/capabilities` when the peer
+// checkout retired the recipes-prototype helpers. Partial mock: the component
+// also imports `specParameterValues` from here and needs the real one.
+vi.mock('@/lib/personas/capabilities', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/personas/capabilities')>()),
+  getHealthMeta: () => ({ healthy: { label: 'healthy' } }),
+}));
 vi.mock('@/hooks/utility/interaction/useMotion', () => ({ useReducedMotion: () => true }));
 
 import { useMonitorData } from './useMonitorData';

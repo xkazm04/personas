@@ -9,6 +9,8 @@ use crate::db::repos::core::memory_claims::{self as claims_repo, DisputedMemoryR
 use crate::db::repos::core::memory_review_proposal::{
     self as proposal_repo, CreateProposalInput, MemoryReviewProposal, ProposalEntry,
 };
+use crate::engine::persona_brain::growth as charter_growth;
+use crate::engine::persona_brain::manifest as manifest_apply;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -760,6 +762,7 @@ pub async fn review_memories_with_cli(
                 entries: &entries,
                 summary: Some(&summary),
                 team_id: None,
+                kind: None,
             },
         )?;
         // Refresh details to surface the proposal action so the UI
@@ -877,6 +880,65 @@ pub fn apply_persona_memory_review_proposal(
                 "proposal already in status `{}` — no action taken",
                 proposal.status
             )],
+        });
+    }
+
+    // Living-agent self-model proposals (kind='self_model_diff') carry
+    // anchored manifest diffs, not memory entries — route them to the one
+    // manifest-apply door (which does its own law-refusal → validate → CAS →
+    // backed-up write → core_profile mirror) and map its outcome onto this
+    // command's result shape so the frontend's proposal surface needs no
+    // second command.
+    if proposal.kind == manifest_apply::KIND_SELF_MODEL_DIFF {
+        // The apply door derives the persona from the proposal ROW itself
+        // (ownership-verification golden path) — this command supplies only
+        // the proposal id and reads the routed persona back off the outcome.
+        let outcome = manifest_apply::apply_approved(&state.db, &proposal_id)?;
+        tracing::info!(
+            persona_id = %outcome.persona_id,
+            proposal_id = %proposal_id,
+            applied = outcome.applied.len(),
+            skipped = outcome.skipped.len(),
+            backup = %outcome.backup,
+            "self-model diffs applied to manifest.md"
+        );
+        // The mirror changed `core_profile`: drop the cached engine session
+        // so the next run assembles against the new text (same invalidation
+        // `update_persona` performs). Through the ONE invalidation door, which
+        // owns the detached task's panic boundary — a second inline spawn here
+        // would be a second place that can die silently.
+        super::persona_brain::invalidate_session(&state, &outcome.persona_id);
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: outcome.applied.len(),
+            synthesized: 0,
+            archived: 0,
+            errors: outcome.skipped,
+        });
+    }
+
+    // Agent-proposed charters (kind='responsibility_draft', WP3) route to the
+    // growth apply door, which derives the owner persona from the proposal
+    // ROW and mints with `source='agent-proposed'` + `status='draft'` FORCED
+    // server-side (whatever the payload claims is ignored), CAS-guarded like
+    // the branch above. No session invalidation: a draft charter is inert
+    // until the operator activates it, so no prompt changed.
+    if proposal.kind == charter_growth::KIND_RESPONSIBILITY_DRAFT {
+        let created = charter_growth::apply_responsibility_draft(&state.db, &proposal_id)?;
+        tracing::info!(
+            persona_id = %created.persona_id,
+            proposal_id = %proposal_id,
+            responsibility_id = %created.id,
+            "responsibility draft minted as a draft charter"
+        );
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: 1,
+            synthesized: 0,
+            archived: 0,
+            errors: vec![],
         });
     }
 

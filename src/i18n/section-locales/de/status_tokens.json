@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "Warteschlange",
-    "running": "Läuft",
-    "completed": "Abgeschlossen",
-    "failed": "Fehlgeschlagen",
-    "cancelled": "Abgebrochen",
-    "incomplete": "Unvollständig",
-    "error": "Fehler",
-    "unknown": "Unbekannt"
-  },
-  "simple": {
-    "good": "In Ordnung",
-    "warning": "Achtung",
-    "problem": "Störung"
-  },
-  "event": {
-    "pending": "Ausstehend",
-    "processing": "Verarbeitung",
-    "processed": "Verarbeitet",
-    "failed": "Fehlgeschlagen",
-    "retrying": "Wird wiederholt"
-  },
   "automation": {
-    "pending": "Ausstehend",
-    "running": "Läuft",
     "completed": "Abgeschlossen",
     "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "running": "Läuft",
     "timeout": "Zeitüberschreitung"
-  },
-  "severity": {
-    "info": "Info",
-    "low": "Niedrig",
-    "medium": "Mittel",
-    "high": "Hoch",
-    "critical": "Kritisch"
-  },
-  "priority": {
-    "low": "Niedrig",
-    "normal": "Normal",
-    "high": "Hoch",
-    "urgent": "Dringend"
-  },
-  "healing_status": {
-    "open": "Offen",
-    "auto_fixed": "Automatisch behoben",
-    "acknowledged": "Bestätigt",
-    "resolved": "Gelöst"
-  },
-  "healing_category": {
-    "config": "Konfiguration",
-    "auth": "Authentifizierung",
-    "network": "Netzwerk",
-    "timeout": "Zeitüberschreitung",
-    "quota": "Kontingent"
-  },
-  "connector_status": {
-    "ready": "Bereit",
-    "untested": "Ungetestet",
-    "failed": "Fehlgeschlagen",
-    "no_credential": "Keine Zugangsdaten",
-    "testing": "Teste"
-  },
-  "task_phase": {
-    "analyzing": "Analyse",
-    "planning": "Planung",
-    "implementing": "Umsetzung",
-    "committing": "Commit läuft",
-    "validating": "Validierung",
-    "complete": "Abgeschlossen"
-  },
-  "goal_state": {
-    "pending": "Ausstehend",
-    "review": "Prüfung",
-    "blocked": "Blockiert",
-    "in_progress": "In Bearbeitung",
-    "running": "Läuft",
-    "completed": "Abgeschlossen",
-    "done": "Abgeschlossen"
-  },
-  "test": {
-    "generating": "Generierung",
-    "running": "Läuft",
-    "completed": "Abgeschlossen",
-    "failed": "Fehlgeschlagen",
-    "pending": "Ausstehend"
-  },
-  "dev": {
-    "open": "Offen",
-    "in_progress": "In Bearbeitung",
-    "completed": "Abgeschlossen",
-    "blocked": "Blockiert",
-    "queued": "Warteschlange",
-    "running": "Läuft",
-    "failed": "Fehlgeschlagen"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Global"
-  },
-  "forage_confidence": {
-    "high": "Hoch",
-    "medium": "Mittel",
-    "low": "Niedrig"
-  },
-  "capability_risk": {
-    "low": "Niedrig",
-    "medium": "Mittel",
-    "high": "Hoch"
-  },
-  "verdict": {
-    "production": "Produktion",
-    "promising": "Vielversprechend",
-    "not_ready": "Nicht bereit",
-    "broken": "Defekt"
-  },
-  "deployment": {
-    "active": "Aktiv",
-    "paused": "Pausiert",
-    "failed": "Fehlgeschlagen",
-    "unknown": "Unbekannt",
-    "file-based": "Dateibasiert"
-  },
-  "delivery": {
-    "delivered": "Zugestellt",
-    "failed": "Fehlgeschlagen",
-    "pending": "Ausstehend",
-    "queued": "Warteschlange"
-  },
-  "rotation": {
-    "anomaly": "Anomalie",
-    "paused": "Pausiert",
-    "disabled": "Deaktiviert",
-    "perm_errors": "Dauerhafte Fehler",
-    "degrading": "Verschlechternd",
-    "backoff": "Backoff",
-    "fresh": "Frisch",
-    "active": "Aktiv"
-  },
-  "thinking": {
-    "high": "Hoch",
-    "low": "Niedrig",
-    "medium": "Mittel"
-  },
-  "error_category": {
-    "api_error": "API-Fehler",
-    "credential_error": "Anmeldedatenfehler",
-    "network": "Netzwerk",
-    "provider_not_found": "Anbieter nicht gefunden",
-    "rate_limit": "Ratenlimit",
-    "session_limit": "Sitzungslimit",
-    "timeout": "Zeitüberschreitung",
-    "tool_error": "Werkzeugfehler",
-    "transient_process_failure": "Vorübergehender Prozessfehler",
-    "unknown": "Unbekannt",
-    "validation": "Validierung"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Fan-out-Limit erreicht",
-    "budget_exceeded": "Kostenobergrenze erreicht",
-    "cas_lost": "Von anderem Lauf beansprucht",
-    "cycle_detected": "Zyklus erkannt",
-    "depth_limit": "Tiefenlimit",
-    "handoff_suppressed": "Übergabe unterdrückt",
-    "malformed_config": "Ungültige Konfiguration",
-    "outside_window": "Außerhalb des Zeitfensters",
-    "predicate_unmet": "Bedingung nicht erfüllt",
-    "publish_failed": "Veröffentlichung fehlgeschlagen",
-    "quarantined": "Trigger in Quarantäne",
-    "healing_abandoned": "Heilung aufgegeben",
-    "healing_capped": "Heilungsversuche erschöpft",
-    "lookup_failed": "Trigger-Suche fehlgeschlagen",
-    "cost_ceiling_corrupt": "Kostenlimit nicht lesbar"
   },
   "build": {
     "analyzing": "Analysiere",
@@ -186,6 +19,232 @@
     "test_complete": "Test abgeschlossen",
     "testing": "Wird getestet"
   },
+  "capability_risk": {
+    "high": "Hoch",
+    "low": "Niedrig",
+    "medium": "Mittel"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Fan-out-Limit erreicht",
+    "budget_exceeded": "Kostenobergrenze erreicht",
+    "cas_lost": "Von anderem Lauf beansprucht",
+    "cost_ceiling_corrupt": "Kostenlimit nicht lesbar",
+    "cycle_detected": "Zyklus erkannt",
+    "depth_limit": "Tiefenlimit",
+    "handoff_suppressed": "Übergabe unterdrückt",
+    "healing_abandoned": "Heilung aufgegeben",
+    "healing_capped": "Heilungsversuche erschöpft",
+    "lookup_failed": "Trigger-Suche fehlgeschlagen",
+    "malformed_config": "Ungültige Konfiguration",
+    "outside_window": "Außerhalb des Zeitfensters",
+    "predicate_unmet": "Bedingung nicht erfüllt",
+    "publish_failed": "Veröffentlichung fehlgeschlagen",
+    "quarantined": "Trigger in Quarantäne"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  },
+  "competition": {
+    "awaiting_review": "Wartet auf Prüfung",
+    "cancelled": "Abgebrochen",
+    "resolved": "Gelöst",
+    "running": "Läuft"
+  },
+  "connector_status": {
+    "failed": "Fehlgeschlagen",
+    "no_credential": "Keine Zugangsdaten",
+    "ready": "Bereit",
+    "testing": "Teste",
+    "untested": "Ungetestet"
+  },
+  "delivery": {
+    "delivered": "Zugestellt",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "queued": "Warteschlange"
+  },
+  "deployment": {
+    "active": "Aktiv",
+    "failed": "Fehlgeschlagen",
+    "file-based": "Dateibasiert",
+    "paused": "Pausiert",
+    "unknown": "Unbekannt"
+  },
+  "dev": {
+    "blocked": "Blockiert",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "in_progress": "In Bearbeitung",
+    "open": "Offen",
+    "queued": "Warteschlange",
+    "running": "Läuft"
+  },
+  "error_category": {
+    "api_error": "API-Fehler",
+    "credential_error": "Anmeldedatenfehler",
+    "network": "Netzwerk",
+    "provider_not_found": "Anbieter nicht gefunden",
+    "rate_limit": "Ratenlimit",
+    "session_limit": "Sitzungslimit",
+    "timeout": "Zeitüberschreitung",
+    "tool_error": "Werkzeugfehler",
+    "transient_process_failure": "Vorübergehender Prozessfehler",
+    "unknown": "Unbekannt",
+    "validation": "Validierung"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "Wartet auf Freigabe",
+    "cascade_guard": "Läuft bereits",
+    "cross_team_blocked": "Teamübergreifend blockiert",
+    "dry_run": "Testlauf (simuliert)",
+    "handoff_target_disabled": "Übergabeziel ist aus",
+    "no_subscriber": "Kein Abonnent passt",
+    "persona_disabled": "Agent ist aus",
+    "stuck_reclaimed": "Zurückgeholt und neu eingereiht",
+    "stuck_retry_exhausted": "Zurückgeholt, Versuche erschöpft"
+  },
+  "event": {
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "processed": "Verarbeitet",
+    "processing": "Verarbeitung",
+    "retrying": "Wird wiederholt"
+  },
+  "execution": {
+    "cancelled": "Abgebrochen",
+    "completed": "Abgeschlossen",
+    "error": "Fehler",
+    "failed": "Fehlgeschlagen",
+    "incomplete": "Unvollständig",
+    "queued": "Warteschlange",
+    "running": "Läuft",
+    "unknown": "Unbekannt"
+  },
+  "forage_confidence": {
+    "high": "Hoch",
+    "low": "Niedrig",
+    "medium": "Mittel"
+  },
+  "goal_state": {
+    "blocked": "Blockiert",
+    "completed": "Abgeschlossen",
+    "done": "Abgeschlossen",
+    "in_progress": "In Bearbeitung",
+    "pending": "Ausstehend",
+    "review": "Prüfung",
+    "running": "Läuft"
+  },
+  "healing_category": {
+    "auth": "Authentifizierung",
+    "config": "Konfiguration",
+    "network": "Netzwerk",
+    "quota": "Kontingent",
+    "timeout": "Zeitüberschreitung"
+  },
+  "healing_status": {
+    "acknowledged": "Bestätigt",
+    "auto_fixed": "Automatisch behoben",
+    "open": "Offen",
+    "resolved": "Gelöst"
+  },
+  "kb_document": {
+    "indexing": "wird indiziert",
+    "pending": "ausstehend"
+  },
+  "memory_action": {
+    "deleted": "Gelöscht",
+    "error": "Fehler",
+    "kept": "Behalten",
+    "proposed_archive": "Archivieren vorgeschlagen",
+    "proposed_delete": "Löschen vorgeschlagen",
+    "proposed_synthesize": "Zusammenführen vorgeschlagen",
+    "proposed_update_importance": "Neubewertung vorgeschlagen"
+  },
+  "memory_category": {
+    "context": "Kontext",
+    "decision": "Entscheidung",
+    "learning": "Erkenntnis",
+    "observation": "Beobachtung"
+  },
+  "memory_tier": {
+    "active": "Aktiv",
+    "archive": "Archiviert",
+    "core": "Kern",
+    "working": "In Arbeit"
+  },
+  "priority": {
+    "high": "Hoch",
+    "low": "Niedrig",
+    "normal": "Normal",
+    "urgent": "Dringend"
+  },
+  "remote_job": {
+    "cancelled": "Abgebrochen",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "refused": "Abgelehnt",
+    "running": "Läuft"
+  },
+  "rotation": {
+    "active": "Aktiv",
+    "anomaly": "Anomalie",
+    "backoff": "Backoff",
+    "degrading": "Verschlechternd",
+    "disabled": "Deaktiviert",
+    "fresh": "Frisch",
+    "paused": "Pausiert",
+    "perm_errors": "Dauerhafte Fehler"
+  },
+  "severity": {
+    "critical": "Kritisch",
+    "high": "Hoch",
+    "info": "Info",
+    "low": "Niedrig",
+    "medium": "Mittel"
+  },
+  "simple": {
+    "good": "In Ordnung",
+    "problem": "Störung",
+    "warning": "Achtung"
+  },
+  "span_type": {
+    "chain_evaluation": "Kettenauswertung",
+    "cli_spawn": "CLI-Start",
+    "credential_resolution": "Zugangsdaten",
+    "execution": "Ausführung",
+    "healing_analysis": "Selbstheilung",
+    "outcome_assessment": "Ergebnis",
+    "pipeline_stage": "Pipeline-Phase",
+    "prompt_assembly": "Prompt-Aufbau",
+    "protocol_dispatch": "Protokoll",
+    "stream_processing": "Streaming",
+    "tool_call": "Werkzeugaufruf",
+    "unknown": "Unbekannt"
+  },
+  "task_phase": {
+    "analyzing": "Analyse",
+    "committing": "Commit läuft",
+    "complete": "Abgeschlossen",
+    "implementing": "Umsetzung",
+    "planning": "Planung",
+    "validating": "Validierung"
+  },
+  "test": {
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "generating": "Generierung",
+    "pending": "Ausstehend",
+    "running": "Läuft"
+  },
+  "thinking": {
+    "high": "Hoch",
+    "low": "Niedrig",
+    "medium": "Mittel"
+  },
   "tool_error_kind": {
     "auth": "Authentifizierung",
     "http": "HTTP-Fehler",
@@ -197,69 +256,10 @@
     "unknown": "Unbekannter Fehler",
     "unsupported": "Hier nicht ausführbar"
   },
-  "remote_job": {
-    "completed": "Abgeschlossen",
-    "failed": "Fehlgeschlagen",
-    "cancelled": "Abgebrochen",
-    "refused": "Abgelehnt",
-    "pending": "Ausstehend",
-    "running": "Läuft"
-  },
-  "event_reason": {
-    "approval_held": "Wartet auf Freigabe",
-    "cascade_guard": "Läuft bereits",
-    "cross_team_blocked": "Teamübergreifend blockiert",
-    "dry_run": "Testlauf (simuliert)",
-    "handoff_target_disabled": "Übergabeziel ist aus",
-    "no_subscriber": "Kein Abonnent passt",
-    "persona_disabled": "Agent ist aus",
-    "stuck_reclaimed": "Zurückgeholt und neu eingereiht",
-    "stuck_retry_exhausted": "Zurückgeholt, Versuche erschöpft",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "Läuft",
-    "awaiting_review": "Wartet auf Prüfung",
-    "resolved": "Gelöst",
-    "cancelled": "Abgebrochen"
-  },
-  "kb_document": {
-    "pending": "ausstehend",
-    "indexing": "wird indiziert"
-  },
-  "memory_tier": {
-    "core": "Kern",
-    "active": "Aktiv",
-    "working": "In Arbeit",
-    "archive": "Archiviert"
-  },
-  "span_type": {
-    "execution": "Ausführung",
-    "prompt_assembly": "Prompt-Aufbau",
-    "credential_resolution": "Zugangsdaten",
-    "cli_spawn": "CLI-Start",
-    "tool_call": "Werkzeugaufruf",
-    "protocol_dispatch": "Protokoll",
-    "chain_evaluation": "Kettenauswertung",
-    "stream_processing": "Streaming",
-    "outcome_assessment": "Ergebnis",
-    "healing_analysis": "Selbstheilung",
-    "pipeline_stage": "Pipeline-Phase",
-    "unknown": "Unbekannt"
-  },
-  "memory_action": {
-    "kept": "Behalten",
-    "deleted": "Gelöscht",
-    "error": "Fehler",
-    "proposed_delete": "Löschen vorgeschlagen",
-    "proposed_update_importance": "Neubewertung vorgeschlagen",
-    "proposed_synthesize": "Zusammenführen vorgeschlagen",
-    "proposed_archive": "Archivieren vorgeschlagen"
-  },
-  "memory_category": {
-    "observation": "Beobachtung",
-    "decision": "Entscheidung",
-    "context": "Kontext",
-    "learning": "Erkenntnis"
+  "verdict": {
+    "broken": "Defekt",
+    "not_ready": "Nicht bereit",
+    "production": "Produktion",
+    "promising": "Vielversprechend"
   }
 }

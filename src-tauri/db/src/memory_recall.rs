@@ -496,6 +496,7 @@ mod tests {
             home_team_id: None,
             derived_from: None,
             open_claim_count: 0,
+            fact_key: None,
         }
     }
 

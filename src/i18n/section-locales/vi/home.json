@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "Chọn vai trò của bạn",
-    "choose_role_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
-    "pick_tool": "Chọn công cụ yêu thích",
-    "pick_tool_hint": "Đây sẽ là kết nối dịch vụ đầu tiên của bạn.",
-    "describe_goal": "Bạn muốn tự động hóa điều gì?",
-    "describe_goal_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
-    "goal_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
-    "ready_to_save": "Sẵn sàng lưu",
-    "step_role": "Vai trò của bạn",
-    "step_role_hint": "Cho chúng tôi biết vai trò của bạn để tùy chỉnh trải nghiệm.",
-    "step_tool": "Công cụ yêu thích",
-    "step_tool_hint": "Chọn dịch vụ đầu tiên bạn muốn kết nối.",
-    "step_goal": "Mục tiêu tự động hóa",
-    "step_goal_hint": "Mô tả điều bạn muốn tự động hóa đầu tiên.",
-    "select_role_first": "Chọn vai trò trước để mở khóa tùy chọn công cụ.",
-    "select_tool_first": "Chọn công cụ trước để đặt mục tiêu.",
-    "get_started": "Bắt đầu",
-    "role_office_rat": "Nhân viên văn phòng",
-    "role_office_rat_hint": "Người dùng không kỹ thuật",
-    "role_developer": "Nhà phát triển",
-    "role_developer_hint": "Người dùng kỹ thuật",
-    "role_manager": "Quản lý",
-    "role_manager_hint": "Lập kế hoạch & điều phối",
-    "role": "Vai trò",
-    "tool": "Công cụ",
-    "goal": "Mục tiêu"
-  },
-  "learning": {
-    "title": "Trung tâm học tập",
-    "subtitle": "Hướng dẫn và mẹo để làm chủ Personas",
-    "guided_tours": "Tham quan hướng dẫn",
-    "tours_completed": "{completed}/{total} đã hoàn thành",
-    "done": "Xong",
-    "restart": "Bắt đầu lại",
-    "start_tour": "Bắt đầu tham quan",
-    "steps_count": "{count} bước",
-    "tour_steps_label": "Những gì bạn sẽ học được",
-    "power_moves": "Thao tác nâng cao",
-    "moves_used": "{used}/{total} đã dùng",
-    "try_it": "Thử ngay",
-    "used_badge": "Đã dùng",
-    "group_save_time": "Tiết kiệm thời gian",
-    "group_prevent_failures": "Ngăn ngừa lỗi",
-    "group_level_up": "Nâng cấp agent",
-    "group_orchestrate": "Điều phối",
-    "pm_monitor_triage_title": "Phân loại toàn bộ fleet từ thanh tiêu đề",
-    "pm_schedule_delay_title": "Bỏ qua hoặc trì hoãn lịch chạy",
-    "pm_bulk_rerun_title": "Chạy lại hàng loạt lần thực thi thất bại",
-    "pm_dead_letter_title": "Khôi phục sự kiện từ hàng đợi dead-letter",
-    "pm_annotate_golden_title": "Đánh dấu lần chạy tốt, gắn thẻ lỗi hồi quy",
-    "pm_credential_health_title": "Để AI tự phục hồi thông tin xác thực lỗi",
-    "pm_lab_measure_title": "Đo hiệu suất prompt trên nhiều mô hình",
-    "pm_prompt_rollback_title": "Khôi phục prompt lỗi chỉ một cú nhấp",
-    "pm_director_coaching_title": "Nhận tư vấn danh mục từ Director",
-    "pm_event_chain_title": "Kết nối agent bằng trình lắng nghe sự kiện",
-    "pm_live_stream_title": "Xem chuỗi cascade theo thời gian thực",
-    "pm_athena_fleet_title": "Nhờ Athena phân tích fleet của bạn",
-    "composed_tours": "Do Athena soạn",
-    "composed_badge": "Athena soạn",
-    "composed_stale": "Có thể đã lỗi thời — ứng dụng đã thay đổi kể từ khi soạn",
-    "composed_failed": "Không thể tải các hướng dẫn Athena đã soạn cho bạn.",
-    "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây.",
-    "composed_dismiss": "Bỏ hướng dẫn đã lỗi thời này",
-    "composed_all_dismissed": "Bạn đã dọn hết các hướng dẫn lỗi thời. Hướng dẫn mới sẽ xuất hiện ở đây khi Athena soạn xong."
-  },
-  "setup_stepper": {
-    "your_profile": "Hồ sơ của bạn",
-    "choose_role": "Chọn vai trò của bạn",
-    "tailor_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
-    "simple_hint": "Chúng tôi đã thiết lập ứng dụng cho công việc văn phòng hàng ngày.",
-    "pick_tool": "Chọn công cụ yêu thích",
-    "tool_hint": "Đây sẽ là tích hợp trình kết nối đầu tiên của bạn.",
-    "automate_title": "Bạn muốn tự động hóa điều gì?",
-    "automate_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
-    "automate_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
-    "min_chars": "Tối thiểu 10 ký tự ({current}/10)",
-    "ready_to_save": "Sẵn sàng lưu",
-    "back": "Quay lại",
-    "next": "Tiếp theo",
-    "finish": "Hoàn tất"
-  },
-  "welcome_layout": {
-    "get_started": "Bắt đầu",
-    "language": "Ngôn ngữ"
-  },
-  "resume": {
-    "failure": "Lỗi chưa đọc trong {personaName} — hãy điều tra",
-    "tour": "Tiếp tục {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
-    "edit": "Tiếp tục chỉnh sửa {personaName}"
-  },
-  "nav_status": {
-    "incidents": "{count} sự cố đang mở",
-    "incidents_other": "{count} sự cố đang mở",
-    "reviews": "{count} yêu cầu xét duyệt",
-    "reviews_other": "{count} yêu cầu xét duyệt",
-    "teams": "{count} nhóm",
-    "teams_other": "{count} nhóm",
-    "agents_active": "{count} agent hoạt động trong 24h qua",
-    "agents_active_other": "{count} agent hoạt động trong 24h qua",
-    "events_today": "{count} sự kiện trong 24h qua",
-    "events_today_other": "{count} sự kiện trong 24h qua",
-    "connections_external": "{count} kết nối bên ngoài",
-    "connections_external_other": "{count} kết nối bên ngoài",
-    "connections_builtin": "{count} connector tích hợp sẵn",
-    "connections_builtin_other": "{count} connector tích hợp sẵn",
-    "trend_up": "tăng {pct}% so với 24h trước",
-    "trend_down": "giảm {pct}% so với 24h trước",
-    "trend_flat": "không đổi so với 24h trước",
-    "agents_enabled": "{count} agent đang hoạt động",
-    "agents_enabled_other": "{count} agent đang hoạt động",
-    "reports": "{count} báo cáo chưa đọc",
-    "reports_other": "{count} báo cáo chưa đọc"
+  "commander": "Chỉ huy",
+  "fleet": {
+    "active_agents": "Tác nhân hoạt động",
+    "credentials": "Thông tin xác thực",
+    "executions_today": "Lượt chạy hôm nay",
+    "success_rate": "Tỷ lệ thành công"
   },
   "get_started": {
     "ask_cta": "Hỏi trợ lý",
@@ -119,84 +12,184 @@
     "subtitle": "Mô tả công việc bằng ngôn ngữ thông thường và chúng tôi sẽ thiết lập một agent hoạt động — hoặc nhờ trợ lý thực hiện cho bạn.",
     "title": "Tạo agent đầu tiên"
   },
-  "welcome": "Chào mừng",
-  "greeting_morning": "Chào buổi sáng",
   "greeting_afternoon": "Chào buổi chiều",
   "greeting_evening": "Chào buổi tối",
+  "greeting_morning": "Chào buổi sáng",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
+    "lucide_tab": "Lucide (Thư viện)",
+    "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề",
+    "personas_tab": "Personas (Hoạt hình)"
+  },
+  "learning": {
+    "composed_all_dismissed": "Bạn đã dọn hết các hướng dẫn lỗi thời. Hướng dẫn mới sẽ xuất hiện ở đây khi Athena soạn xong.",
+    "composed_badge": "Athena soạn",
+    "composed_dismiss": "Bỏ hướng dẫn đã lỗi thời này",
+    "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây.",
+    "composed_failed": "Không thể tải các hướng dẫn Athena đã soạn cho bạn.",
+    "composed_stale": "Có thể đã lỗi thời — ứng dụng đã thay đổi kể từ khi soạn",
+    "composed_tours": "Do Athena soạn",
+    "done": "Xong",
+    "group_level_up": "Nâng cấp agent",
+    "group_orchestrate": "Điều phối",
+    "group_prevent_failures": "Ngăn ngừa lỗi",
+    "group_save_time": "Tiết kiệm thời gian",
+    "guided_tours": "Tham quan hướng dẫn",
+    "moves_used": "{used}/{total} đã dùng",
+    "pm_annotate_golden_title": "Đánh dấu lần chạy tốt, gắn thẻ lỗi hồi quy",
+    "pm_athena_fleet_title": "Nhờ Athena phân tích fleet của bạn",
+    "pm_bulk_rerun_title": "Chạy lại hàng loạt lần thực thi thất bại",
+    "pm_credential_health_title": "Để AI tự phục hồi thông tin xác thực lỗi",
+    "pm_dead_letter_title": "Khôi phục sự kiện từ hàng đợi dead-letter",
+    "pm_director_coaching_title": "Nhận tư vấn danh mục từ Director",
+    "pm_event_chain_title": "Kết nối agent bằng trình lắng nghe sự kiện",
+    "pm_lab_measure_title": "Đo hiệu suất prompt trên nhiều mô hình",
+    "pm_live_stream_title": "Xem chuỗi cascade theo thời gian thực",
+    "pm_monitor_triage_title": "Phân loại toàn bộ fleet từ thanh tiêu đề",
+    "pm_prompt_rollback_title": "Khôi phục prompt lỗi chỉ một cú nhấp",
+    "pm_schedule_delay_title": "Bỏ qua hoặc trì hoãn lịch chạy",
+    "power_moves": "Thao tác nâng cao",
+    "restart": "Bắt đầu lại",
+    "start_tour": "Bắt đầu tham quan",
+    "steps_count": "{count} bước",
+    "subtitle": "Hướng dẫn và mẹo để làm chủ Personas",
+    "title": "Trung tâm học tập",
+    "tour_steps_label": "Những gì bạn sẽ học được",
+    "tours_completed": "{completed}/{total} đã hoàn thành",
+    "try_it": "Thử ngay",
+    "used_badge": "Đã dùng"
+  },
+  "nav_status": {
+    "agents_active": "{count} agent hoạt động trong 24h qua",
+    "agents_active_other": "{count} agent hoạt động trong 24h qua",
+    "agents_enabled": "{count} agent đang hoạt động",
+    "agents_enabled_other": "{count} agent đang hoạt động",
+    "connections_builtin": "{count} connector tích hợp sẵn",
+    "connections_builtin_other": "{count} connector tích hợp sẵn",
+    "connections_external": "{count} kết nối bên ngoài",
+    "connections_external_other": "{count} kết nối bên ngoài",
+    "events_today": "{count} sự kiện trong 24h qua",
+    "events_today_other": "{count} sự kiện trong 24h qua",
+    "incidents": "{count} sự cố đang mở",
+    "incidents_other": "{count} sự cố đang mở",
+    "reports": "{count} báo cáo chưa đọc",
+    "reports_other": "{count} báo cáo chưa đọc",
+    "reviews": "{count} yêu cầu xét duyệt",
+    "reviews_other": "{count} yêu cầu xét duyệt",
+    "teams": "{count} nhóm",
+    "teams_other": "{count} nhóm",
+    "trend_down": "giảm {pct}% so với 24h trước",
+    "trend_flat": "không đổi so với 24h trước",
+    "trend_up": "tăng {pct}% so với 24h trước"
+  },
+  "nav": {
+    "cloud": {
+      "description": "Chạy tác nhân của bạn trên đám mây để chúng vẫn hoạt động ngay cả khi máy tính của bạn tắt",
+      "label": "Đám mây"
+    },
+    "credentials": {
+      "description": "Quản lý thông tin đăng nhập dịch vụ, kết nối cơ sở dữ liệu và mật khẩu cho phép tác nhân truy cập công cụ của bạn",
+      "label": "Khóa"
+    },
+    "design-reviews": {
+      "description": "Duyệt các bản thiết kế tác nhân dựng sẵn, nhập quy trình làm việc và tạo thiết kế tác nhân mới",
+      "label": "Mẫu"
+    },
+    "events": {
+      "description": "Thiết lập điều gì kích hoạt tác nhân của bạn chạy — lịch trình, thông báo đến, hoặc thay đổi bạn xác định",
+      "label": "Sự kiện"
+    },
+    "overview": {
+      "description": "Xem hiệu suất của các tác nhân, những gì họ đã làm gần đây, và giám sát mọi thứ ở một nơi",
+      "label": "Tổng quan"
+    },
+    "personas": {
+      "description": "Tạo, thiết lập và quản lý tác nhân AI của bạn — cho chúng hành vi tùy chỉnh và kết nối chúng với công cụ của bạn.",
+      "label": "Tác nhân"
+    },
+    "plugins": {
+      "description": "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh",
+      "label": "Plugin"
+    },
+    "settings": {
+      "description": "Tài khoản của bạn, giao diện ứng dụng, tùy chọn thông báo và các tùy chọn nâng cao",
+      "label": "Cài đặt"
+    },
+    "team": {
+      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước",
+      "label": "Nhóm"
+    },
+    "teams": {
+      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước",
+      "label": "Nhóm"
+    }
+  },
   "operator": "Người dùng",
-  "commander": "Chỉ huy",
-  "summary_empty": "Bắt đầu bằng cách tạo tác nhân đầu tiên hoặc khám phá nền tảng.",
-  "summary_stats": "Bạn có {personasCount} tác nhân{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
-  "quick_navigation": "Điều hướng nhanh",
   "platform_label": "nền tảng Personas",
+  "quick_navigation": "Điều hướng nhanh",
+  "resume": {
+    "edit": "Tiếp tục chỉnh sửa {personaName}",
+    "failure": "Lỗi chưa đọc trong {personaName} — hãy điều tra",
+    "tour": "Tiếp tục {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}"
+  },
   "roadmap": {
-    "title": "Lộ trình sản phẩm",
-    "subtitle": "Những gì chúng tôi đang xây dựng và tiếp theo.",
-    "unavailable": "Lộ trình không khả dụng",
-    "unavailable_hint": "Không thể tải lộ trình sản phẩm. Kiểm tra kết nối và thử lại.",
+    "in_progress_count": "{count} Đang thực hiện",
+    "next_count": "{count} Tiếp theo",
+    "priority_later": "Sau này",
+    "priority_next": "Tiếp theo",
+    "priority_now": "Bây giờ",
+    "status_completed": "Đã hoàn thành",
     "status_in_progress": "Đang thực hiện",
     "status_next": "Tiếp theo",
     "status_planned": "Đã lên kế hoạch",
-    "status_completed": "Đã hoàn thành",
-    "priority_now": "Bây giờ",
-    "priority_next": "Tiếp theo",
-    "priority_later": "Sau này",
-    "in_progress_count": "{count} Đang thực hiện",
-    "next_count": "{count} Tiếp theo"
+    "subtitle": "Những gì chúng tôi đang xây dựng và tiếp theo.",
+    "title": "Lộ trình sản phẩm",
+    "unavailable": "Lộ trình không khả dụng",
+    "unavailable_hint": "Không thể tải lộ trình sản phẩm. Kiểm tra kết nối và thử lại."
   },
-  "fleet": {
-    "executions_today": "Lượt chạy hôm nay",
-    "success_rate": "Tỷ lệ thành công",
-    "active_agents": "Tác nhân hoạt động",
-    "credentials": "Thông tin xác thực"
+  "setup_stepper": {
+    "automate_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
+    "automate_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
+    "automate_title": "Bạn muốn tự động hóa điều gì?",
+    "back": "Quay lại",
+    "choose_role": "Chọn vai trò của bạn",
+    "finish": "Hoàn tất",
+    "min_chars": "Tối thiểu 10 ký tự ({current}/10)",
+    "next": "Tiếp theo",
+    "pick_tool": "Chọn công cụ yêu thích",
+    "ready_to_save": "Sẵn sàng lưu",
+    "simple_hint": "Chúng tôi đã thiết lập ứng dụng cho công việc văn phòng hàng ngày.",
+    "tailor_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
+    "tool_hint": "Đây sẽ là tích hợp trình kết nối đầu tiên của bạn.",
+    "your_profile": "Hồ sơ của bạn"
   },
-  "nav": {
-    "overview": {
-      "label": "Tổng quan",
-      "description": "Xem hiệu suất của các tác nhân, những gì họ đã làm gần đây, và giám sát mọi thứ ở một nơi"
-    },
-    "personas": {
-      "label": "Tác nhân",
-      "description": "Tạo, thiết lập và quản lý tác nhân AI của bạn — cho chúng hành vi tùy chỉnh và kết nối chúng với công cụ của bạn."
-    },
-    "events": {
-      "label": "Sự kiện",
-      "description": "Thiết lập điều gì kích hoạt tác nhân của bạn chạy — lịch trình, thông báo đến, hoặc thay đổi bạn xác định"
-    },
-    "credentials": {
-      "label": "Khóa",
-      "description": "Quản lý thông tin đăng nhập dịch vụ, kết nối cơ sở dữ liệu và mật khẩu cho phép tác nhân truy cập công cụ của bạn"
-    },
-    "design-reviews": {
-      "label": "Mẫu",
-      "description": "Duyệt các bản thiết kế tác nhân dựng sẵn, nhập quy trình làm việc và tạo thiết kế tác nhân mới"
-    },
-    "team": {
-      "label": "Nhóm",
-      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
-    },
-    "teams": {
-      "label": "Nhóm",
-      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
-    },
-    "cloud": {
-      "label": "Đám mây",
-      "description": "Chạy tác nhân của bạn trên đám mây để chúng vẫn hoạt động ngay cả khi máy tính của bạn tắt"
-    },
-    "settings": {
-      "label": "Cài đặt",
-      "description": "Tài khoản của bạn, giao diện ứng dụng, tùy chọn thông báo và các tùy chọn nâng cao"
-    },
-    "plugins": {
-      "label": "Plugin",
-      "description": "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Thư viện)",
-    "personas_tab": "Personas (Hoạt hình)",
-    "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
-    "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
+  "setup": {
+    "choose_role": "Chọn vai trò của bạn",
+    "choose_role_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
+    "describe_goal": "Bạn muốn tự động hóa điều gì?",
+    "describe_goal_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
+    "get_started": "Bắt đầu",
+    "goal": "Mục tiêu",
+    "goal_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
+    "pick_tool": "Chọn công cụ yêu thích",
+    "pick_tool_hint": "Đây sẽ là kết nối dịch vụ đầu tiên của bạn.",
+    "ready_to_save": "Sẵn sàng lưu",
+    "role": "Vai trò",
+    "role_developer": "Nhà phát triển",
+    "role_developer_hint": "Người dùng kỹ thuật",
+    "role_manager": "Quản lý",
+    "role_manager_hint": "Lập kế hoạch & điều phối",
+    "role_office_rat": "Nhân viên văn phòng",
+    "role_office_rat_hint": "Người dùng không kỹ thuật",
+    "select_role_first": "Chọn vai trò trước để mở khóa tùy chọn công cụ.",
+    "select_tool_first": "Chọn công cụ trước để đặt mục tiêu.",
+    "step_goal": "Mục tiêu tự động hóa",
+    "step_goal_hint": "Mô tả điều bạn muốn tự động hóa đầu tiên.",
+    "step_role": "Vai trò của bạn",
+    "step_role_hint": "Cho chúng tôi biết vai trò của bạn để tùy chỉnh trải nghiệm.",
+    "step_tool": "Công cụ yêu thích",
+    "step_tool_hint": "Chọn dịch vụ đầu tiên bạn muốn kết nối.",
+    "tool": "Công cụ"
   },
   "since_left": {
     "alerts": "{count} cảnh báo được kích hoạt",
@@ -209,5 +202,12 @@
     "runs": "{count} lần chạy",
     "runs_other": "{count} lần chạy",
     "title": "Kể từ khi bạn rời đi"
+  },
+  "summary_empty": "Bắt đầu bằng cách tạo tác nhân đầu tiên hoặc khám phá nền tảng.",
+  "summary_stats": "Bạn có {personasCount} tác nhân{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
+  "welcome": "Chào mừng",
+  "welcome_layout": {
+    "get_started": "Bắt đầu",
+    "language": "Ngôn ngữ"
   }
 }

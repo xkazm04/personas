@@ -1,13 +1,13 @@
 {
-  "title": "Demande d’exécution à distance",
-  "body": "Votre tableau de bord a demandé une exécution de {persona} sur cet appareil.",
-  "safety_note": "L’exécution se fait localement sur cet appareil avec ses propres identifiants. Rien ne s’exécute avant votre approbation.",
   "approve": "Approuver et exécuter",
   "approving": "Démarrage…",
-  "reject": "Rejeter",
-  "queue_count": "{index} sur {total} en attente",
-  "prompt_label": "Invite",
-  "no_prompt": "Aucune invite fournie.",
+  "body": "Votre tableau de bord a demandé une exécution de {persona} sur cet appareil.",
   "from_dashboard": "Demandé depuis le tableau de bord web",
-  "later": "Décider plus tard"
+  "later": "Décider plus tard",
+  "no_prompt": "Aucune invite fournie.",
+  "prompt_label": "Invite",
+  "queue_count": "{index} sur {total} en attente",
+  "reject": "Rejeter",
+  "safety_note": "L’exécution se fait localement sur cet appareil avec ses propres identifiants. Rien ne s’exécute avant votre approbation.",
+  "title": "Demande d’exécution à distance"
 }

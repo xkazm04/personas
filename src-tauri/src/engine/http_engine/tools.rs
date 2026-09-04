@@ -16,8 +16,8 @@ use crate::engine::types::{ExecutionResult, ExecutionState};
 use crate::mcp_server;
 
 use super::config::{
-    cost_of, tool_allowed, HTTP_GET_MAX_BYTES, HTTP_GET_TIMEOUT_SECS, HTTP_TIMEOUT_SECS,
-    MAX_TOOL_ITERS,
+    cost_of, stamp_roster, tool_allowed_for_roster, HTTP_GET_MAX_BYTES, HTTP_GET_TIMEOUT_SECS,
+    HTTP_TIMEOUT_SECS, MAX_TOOL_ITERS,
 };
 use super::events::{emit_output, emit_status, fail};
 
@@ -34,6 +34,8 @@ pub(super) async fn run_tool_loop(
     base_url: &str,
     api_key: &str,
     prompt_text: &str,
+    declared_roster: Option<Vec<String>>,
+    execution_config: personas_core::types::ExecutionConfig,
     cancelled: &Arc<AtomicBool>,
     start_time: Instant,
 ) -> ExecutionResult {
@@ -80,11 +82,12 @@ pub(super) async fn run_tool_loop(
         .as_ref()
         .map(connector_tools_enabled)
         .unwrap_or(false);
+    let roster_slice = declared_roster.as_deref();
     let mut schemas = builtin_tool_schemas();
     if let Some(mcp_pool) = mcp_pool.as_ref() {
         for t in mcp_server::tools::list_tools(mcp_pool) {
             let name = t.get("name").and_then(Value::as_str).unwrap_or("");
-            if tool_allowed(name, connectors_on) {
+            if tool_allowed_for_roster(name, connectors_on, roster_slice) {
                 schemas.push(json!({
                     "type": "function",
                     "function": {
@@ -97,6 +100,36 @@ pub(super) async fn run_tool_loop(
         }
     }
     let tools_value = Value::Array(schemas);
+
+    // §T2's measurable, recorded rather than benchmarked. This is the one place
+    // in personas that knows a roster exactly — it built the array it is about
+    // to post — so count and serialized size are facts here, not estimates.
+    // They ride the run's frozen config snapshot onto `persona_executions`,
+    // beside `duration_ms` / `cost_usd` / `input_tokens`, which is what turns
+    // "a 20-tool roster costs wall clock" from a belief into a query.
+    let roster_size = tools_value.as_array().map(Vec::len).unwrap_or(0);
+    let roster_bytes = serde_json::to_string(&tools_value)
+        .map(|s| s.len())
+        .unwrap_or(0);
+    let roster_source = if declared_roster.is_some() {
+        "http_engine_allowlist"
+    } else {
+        "http_engine"
+    };
+    tracing::info!(
+        execution_id,
+        roster_size,
+        roster_bytes,
+        roster_source,
+        "[http_engine] tool roster assembled"
+    );
+    let roster_config = stamp_roster(
+        execution_config,
+        Some(roster_size),
+        Some(roster_bytes),
+        roster_source,
+    );
+
     let mut messages: Vec<Value> = vec![json!({ "role": "user", "content": prompt_text })];
     let mut in_tok: u64 = 0;
     let mut out_tok: u64 = 0;
@@ -117,6 +150,7 @@ pub(super) async fn run_tool_loop(
                 error: Some("Cancelled".into()),
                 duration_ms,
                 model_used: Some(model.to_string()),
+                execution_config: roster_config.clone(),
                 ..Default::default()
             };
         }
@@ -133,33 +167,42 @@ pub(super) async fn run_tool_loop(
             Ok(r) => {
                 let status = r.status();
                 let text = r.text().await.unwrap_or_default();
-                return fail(
-                    emitter,
-                    execution_id,
-                    &format!(
-                        "{provider} API error ({status}): {}",
-                        crate::utils::text::truncate_on_char_boundary(&text, 300)
+                return with_config(
+                    fail(
+                        emitter,
+                        execution_id,
+                        &format!(
+                            "{provider} API error ({status}): {}",
+                            crate::utils::text::truncate_on_char_boundary(&text, 300)
+                        ),
+                        start_time,
                     ),
-                    start_time,
+                    &roster_config,
                 );
             }
             Err(e) => {
-                return fail(
-                    emitter,
-                    execution_id,
-                    &format!("Cannot reach {provider}: {e}"),
-                    start_time,
+                return with_config(
+                    fail(
+                        emitter,
+                        execution_id,
+                        &format!("Cannot reach {provider}: {e}"),
+                        start_time,
+                    ),
+                    &roster_config,
                 )
             }
         };
         let data: Value = match resp.json().await {
             Ok(v) => v,
             Err(e) => {
-                return fail(
-                    emitter,
-                    execution_id,
-                    &format!("Invalid JSON from {provider}: {e}"),
-                    start_time,
+                return with_config(
+                    fail(
+                        emitter,
+                        execution_id,
+                        &format!("Invalid JSON from {provider}: {e}"),
+                        start_time,
+                    ),
+                    &roster_config,
                 )
             }
         };
@@ -215,6 +258,7 @@ pub(super) async fn run_tool_loop(
                 input_tokens: in_tok,
                 output_tokens: out_tok,
                 cost_usd,
+                execution_config: roster_config.clone(),
                 ..Default::default()
             };
         }
@@ -241,7 +285,7 @@ pub(super) async fn run_tool_loop(
             );
             let result = if name == "get_current_time" || name == "http_get" {
                 execute_builtin_tool(&tool_client, &name, &args).await
-            } else if tool_allowed(&name, connectors_on) {
+            } else if tool_allowed_for_roster(&name, connectors_on, roster_slice) {
                 match &mcp_pool {
                     Some(pool) => mcp_call_text(&name, &args, pool),
                     None => format!("error: tool '{name}' backend unavailable"),
@@ -258,12 +302,23 @@ pub(super) async fn run_tool_loop(
         }
     }
 
-    fail(
-        emitter,
-        execution_id,
-        &format!("Tool loop exceeded {MAX_TOOL_ITERS} iterations without a final answer"),
-        start_time,
+    with_config(
+        fail(
+            emitter,
+            execution_id,
+            &format!("Tool loop exceeded {MAX_TOOL_ITERS} iterations without a final answer"),
+            start_time,
+        ),
+        &roster_config,
     )
+}
+
+/// Attach the run's frozen config snapshot (carrying the roster measurement) to
+/// a terminal result. A run that FAILED is exactly the one whose roster you
+/// most want recorded, so the failure paths carry it too.
+fn with_config(mut result: ExecutionResult, config: &Option<String>) -> ExecutionResult {
+    result.execution_config = config.clone();
+    result
 }
 
 /// Read the connector opt-in (default false) from app_settings via the MCP pool.

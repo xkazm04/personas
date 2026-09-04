@@ -94,103 +94,13 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
     serde_json::from_str::<ModelProfile>(json_str).ok()
 }
 
-/// Render the "## Active Capabilities" section for the runtime prompt.
-///
-/// Reads the persona's `design_context` JSON, filters use cases by
-/// `enabled != Some(false)` (missing or `true` both count as active), and
-/// renders each with `capability_summary` (falling back to `description`).
-/// Trigger hint and `tool_hints` are appended when present.
-///
-/// Returns empty when `design_context` is missing, unparseable, or contains
-/// no enabled use cases — callers push the result unconditionally.
-///
-/// Phase C1 runtime foundation. See `docs/concepts/persona-capabilities/03-runtime.md`.
-pub fn render_active_capabilities(design_context: Option<&str>) -> String {
-    let Some(dc_json) = design_context else {
-        return String::new();
-    };
-    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else {
-        return String::new();
-    };
-    let Some(use_cases) = crate::design_context::pick_use_cases_array(&dc) else {
-        return String::new();
-    };
-    if use_cases.is_empty() {
-        return String::new();
-    }
-
-    let mut out = String::new();
-    let mut rendered = 0usize;
-
-    for uc in use_cases {
-        // Disabled only when explicitly `enabled == false`. Missing or true → active.
-        if uc.get("enabled").and_then(|v| v.as_bool()) == Some(false) {
-            continue;
-        }
-
-        let title = uc
-            .get("title")
-            .and_then(|v| v.as_str())
-            .unwrap_or("Untitled");
-        let summary = uc
-            .get("capability_summary")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .or_else(|| uc.get("description").and_then(|v| v.as_str()))
-            .unwrap_or("");
-
-        if rendered == 0 {
-            out.push_str("## Active Capabilities\n");
-            out.push_str(
-                "You have these active capabilities. Choose the right one for each request; each capability has its own trigger, inputs, and delivery channels.\n\n",
-            );
-        }
-
-        out.push_str(&format!("- **{}**: {}", title, summary));
-
-        if let Some(st) = uc.get("suggested_trigger") {
-            if let Some(desc) = st.get("description").and_then(|v| v.as_str()) {
-                if !desc.is_empty() {
-                    out.push_str(&format!(" _(trigger: {})_", desc));
-                }
-            } else if let Some(t) = st.get("type").and_then(|v| v.as_str()) {
-                out.push_str(&format!(" _(trigger: {})_", t));
-            }
-        }
-
-        if let Some(hints) = uc.get("tool_hints").and_then(|v| v.as_array()) {
-            let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
-            if !names.is_empty() {
-                out.push_str(&format!(" _(tools: {})_", names.join(", ")));
-            }
-        }
-
-        out.push('\n');
-
-        // v3.1 — per-UC error-handling subsection. Authors frequently write
-        // capability-specific failure recipes ("GitHub 422 branch-exists →
-        // suffix counter; max 3 test-fix iters then abort") that the
-        // persona-wide errorHandling section can't capture. Render indented
-        // under the bullet so the LLM sees them attached to the capability
-        // they apply to.
-        if let Some(eh) = uc.get("error_handling").and_then(|v| v.as_str()) {
-            let trimmed = eh.trim();
-            if !trimmed.is_empty() {
-                out.push_str("  _Error handling:_ ");
-                out.push_str(trimmed);
-                out.push('\n');
-            }
-        }
-
-        rendered += 1;
-    }
-
-    if rendered > 0 {
-        out.push('\n');
-    }
-
-    out
-}
+// `render_active_capabilities` (Phase C1's `## Active Capabilities` roster
+// over design_context.useCases) was RETIRED in spark `agent-manifest-rebase`
+// WP2: the `## Responsibilities` roster in `core_section.rs` renders every
+// active charter — e19 minted one per legacy use case — so the design-context
+// menu would only duplicate it. The fingerprint below still reads
+// design_context: the use-case rows remain the toggle surface until the WP4
+// adoption cutover.
 
 /// Fingerprint of the persona's currently-enabled capabilities.
 ///
@@ -222,6 +132,24 @@ pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
         .collect();
     entries.sort();
     entries.join("|")
+}
+
+/// Fingerprint of the persona's living-agent Core (`personas.core_profile`).
+///
+/// Sibling of [`active_capabilities_fingerprint`] for the session-pool config
+/// hash: combine BOTH at the `session_pool::compute_config_hash` call sites
+/// (e.g. `format!("{}|{}", active_capabilities_fingerprint(..),
+/// core_fingerprint(..))`) so a dial edit invalidates warm sessions the same
+/// way a capability toggle does. Returns `""` for an absent/blank core so
+/// personas without a Core contribute exactly the hash input they do today.
+///
+/// Content-hash (FNV-1a-64) rather than the raw JSON: the fingerprint lands
+/// in log lines and cache keys, and the core can be multiple KB of prose.
+pub fn core_fingerprint(core_profile: Option<&str>) -> String {
+    match core_profile.map(str::trim) {
+        None | Some("") => String::new(),
+        Some(cp) => format!("core:{:016x}", super::budget::fnv1a_64(cp.as_bytes())),
+    }
 }
 
 /// Phase C5b — render the per-capability generation policy as natural-language

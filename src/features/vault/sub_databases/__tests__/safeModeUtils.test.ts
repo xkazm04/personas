@@ -69,6 +69,24 @@ describe('isMutationQuery', () => {
     expect(isMutationQuery("WITH c AS (SELECT 1) SELECT * FROM t WHERE msg = 'please delete this'")).toBe(false);
   });
 
+  it('classifies read-shaped writes as mutations, as the engine\'s READ ONLY mode does', () => {
+    // First token SELECT, but the engine's own read-only transaction refuses
+    // every one of these. Measured before the scan: 8 of 9 passed as reads.
+    expect(isMutationQuery('SELECT * INTO users_backup FROM users')).toBe(true);
+    expect(isMutationQuery("SELECT * FROM users INTO OUTFILE '/tmp/u.csv'")).toBe(true);
+    expect(isMutationQuery('SELECT * FROM users WHERE id = 1 FOR UPDATE')).toBe(true);
+    expect(isMutationQuery('SELECT * FROM users FOR SHARE')).toBe(true);
+    expect(isMutationQuery("SELECT nextval('users_id_seq')")).toBe(true);
+    expect(isMutationQuery("SELECT setval('users_id_seq', 1000)")).toBe(true);
+    expect(isMutationQuery("VALUES (nextval('users_id_seq'))")).toBe(true);
+    expect(isMutationQuery('SELECT pg_terminate_backend(1234)')).toBe(true);
+    // Near misses stay reads: token-exact, and literals/comments are stripped.
+    expect(isMutationQuery('SELECT updated_at, deleted, inserted_by FROM users')).toBe(false);
+    expect(isMutationQuery('SELECT shares FROM cap_table JOIN inventory USING (id)')).toBe(false);
+    expect(isMutationQuery("SELECT * FROM t WHERE note = 'SELECT * INTO x FROM y'")).toBe(false);
+    expect(isMutationQuery('SELECT * FROM t /* was: SELECT ... FOR UPDATE */')).toBe(false);
+  });
+
   it('fails closed on a Convex statement, which has no leading keyword', () => {
     // Regression guard: this returned false (a "read"), so a Convex remove was
     // dispatched with allowMutation:false and never raised the confirm banner.

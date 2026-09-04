@@ -13,8 +13,8 @@ import type { OAuthSessionStatus } from "./OAuthSessionStatus";
  * only whether a token exists, and `oauth_session_ref` is a one-time handle
  * the backend redeems server-side.
  */
-export type OAuthStatusResult = { status: OAuthSessionStatus, provider_id: string | null, has_access_token: boolean, has_refresh_token: boolean, 
+export type OAuthStatusResult = { status: OAuthSessionStatus, providerId: string | null, hasAccessToken: boolean, hasRefreshToken: boolean, 
 /**
  * Present only once `status == Success`.
  */
-oauth_session_ref: string | null, scope: string | null, token_type: string | null, expires_in: number | null, error: string | null, };
+oauthSessionRef: string | null, scope: string | null, tokenType: string | null, expiresIn: number | null, error: string | null, };

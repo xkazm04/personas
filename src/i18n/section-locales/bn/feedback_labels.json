@@ -1,13 +1,13 @@
 {
   "accurate_prompt": "নির্ভুল প্রম্পট",
-  "good_tool_selection": "ভালো টুল নির্বাচন",
-  "reliable": "নির্ভরযোগ্য",
   "cost_efficient": "সাশ্রয়ী",
-  "wrong_tools": "ভুল টুল",
-  "poor_instructions": "দুর্বল নির্দেশনা",
+  "credential_issues": "ক্রেডেনশিয়াল সমস্যা",
+  "good_tool_selection": "ভালো টুল নির্বাচন",
   "missing_context": "প্রসঙ্গের ঘাটতি",
   "over_engineered": "অতিরিক্ত জটিল",
+  "poor_instructions": "দুর্বল নির্দেশনা",
+  "reliable": "নির্ভরযোগ্য",
   "under_specified": "অপর্যাপ্ত বিবরণ",
-  "wrong_triggers": "ভুল ট্রিগার",
-  "credential_issues": "ক্রেডেনশিয়াল সমস্যা"
+  "wrong_tools": "ভুল টুল",
+  "wrong_triggers": "ভুল ট্রিগার"
 }

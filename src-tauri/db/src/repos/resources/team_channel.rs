@@ -428,3 +428,187 @@ pub fn create_persona_channel_message(
         Ok((id, at))
     })
 }
+
+/// The OLDEST user message in a persona's channel that never got an answer —
+/// the attention loop's arrivals-recovery probe (living-agent WP5).
+///
+/// "Unanswered" is structural, matching the follow-up machinery in
+/// `commands::communication::persona_channel`:
+/// - no non-user row replies to it (`reply_to = message.id` — the reply
+///   writer and the failure writer both stamp `reply_to`, so a recorded
+///   failure counts as answered), AND
+/// - no queued/running execution holds its idempotency key
+///   (`channel:{persona_id}:{message_id}`) — a live run's own reply-waiter
+///   still owns the answer.
+///
+/// `min_age_minutes` keeps the loop off messages the live post path is still
+/// serving; `lookback_days` bounds how far back a recovery can resurrect.
+/// `datetime()` normalizes the mixed 'T'/' ' timestamp formats (the quota-gate
+/// lesson: a raw string compare misorders RFC-3339 against SQLite datetimes).
+pub fn oldest_unanswered_persona_message(
+    pool: &DbPool,
+    persona_id: &str,
+    min_age_minutes: i64,
+    lookback_days: i64,
+) -> Result<Option<(String, String)>, AppError> {
+    timed_query!("team_channel", "team_channel::oldest_unanswered", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT m.id AS id, m.body AS body FROM team_channel_messages m
+             WHERE m.persona_id = ?1
+               AND m.author_kind = 'user'
+               AND datetime(m.created_at) <= datetime('now', ?2)
+               AND datetime(m.created_at) >= datetime('now', ?3)
+               AND NOT EXISTS (
+                 SELECT 1 FROM team_channel_messages r
+                 WHERE r.persona_id = m.persona_id
+                   AND r.reply_to = m.id
+                   AND r.author_kind != 'user')
+               AND NOT EXISTS (
+                 SELECT 1 FROM persona_executions e
+                 WHERE e.idempotency_key = 'channel:' || m.persona_id || ':' || m.id
+                   AND e.status IN ('queued', 'running'))
+             ORDER BY m.created_at ASC, m.id ASC
+             LIMIT 1",
+        )?;
+        stmt.query_row(
+            params![
+                persona_id,
+                format!("-{min_age_minutes} minutes"),
+                format!("-{lookback_days} days"),
+            ],
+            |r| Ok((r.get::<_, String>("id")?, r.get::<_, String>("body")?)),
+        )
+        .optional()
+        .map_err(AppError::Database)
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    fn post_user(pool: &DbPool, persona_id: &str, body: &str) -> String {
+        let (id, _) = create_persona_channel_message(
+            pool,
+            CreatePersonaChannelMessageInput {
+                id: None,
+                persona_id: persona_id.into(),
+                author_kind: "user".into(),
+                author_id: None,
+                author_label: None,
+                body: body.into(),
+                reply_to: None,
+                failed: false,
+            },
+        )
+        .unwrap();
+        id
+    }
+
+    fn backdate(pool: &DbPool, message_id: &str, modifier: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "UPDATE team_channel_messages
+             SET created_at = datetime('now', ?1) WHERE id = ?2",
+            params![modifier, message_id],
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn oldest_unanswered_applies_all_four_filters() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+
+        // Too fresh: inside the min-age window → invisible.
+        post_user(&pool, "p1", "just arrived");
+        assert_eq!(
+            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
+            None
+        );
+
+        // Old enough and unanswered → found; oldest wins over a newer one.
+        let older = post_user(&pool, "p1", "lost message");
+        backdate(&pool, &older, "-2 hours")?;
+        let newer = post_user(&pool, "p1", "also lost");
+        backdate(&pool, &newer, "-1 hours")?;
+        let hit = oldest_unanswered_persona_message(&pool, "p1", 10, 7)
+            .unwrap()
+            .expect("older row");
+        assert_eq!(hit, (older.clone(), "lost message".into()));
+
+        // A persona reply (even a FAILURE record) answers it.
+        create_persona_channel_message(
+            &pool,
+            CreatePersonaChannelMessageInput {
+                id: None,
+                persona_id: "p1".into(),
+                author_kind: "persona".into(),
+                author_id: Some("p1".into()),
+                author_label: Some("P1".into()),
+                body: "_(persona run failed to start: boom)_".into(),
+                reply_to: Some(older.clone()),
+                failed: true,
+            },
+        )
+        .unwrap();
+        let hit = oldest_unanswered_persona_message(&pool, "p1", 10, 7)
+            .unwrap()
+            .expect("newer row now oldest unanswered");
+        assert_eq!(hit.0, newer);
+
+        // A queued/running execution holding the idempotency key hides it...
+        pool.get()?.execute(
+            "INSERT INTO persona_executions
+                (id, persona_id, status, idempotency_key, created_at)
+             VALUES ('ex1', 'p1', 'running', 'channel:p1:' || ?1, datetime('now'))",
+            params![newer],
+        )?;
+        assert_eq!(
+            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
+            None
+        );
+        // ...and a TERMINAL one does not (recovery may re-dispatch: the
+        // idempotency key dedupes to this row instead of double-running).
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'failed' WHERE id = 'ex1'",
+            [],
+        )?;
+        assert_eq!(
+            oldest_unanswered_persona_message(&pool, "p1", 10, 7)
+                .unwrap()
+                .unwrap()
+                .0,
+            newer
+        );
+
+        // The lookback bound: ancient messages stay buried.
+        backdate(&pool, &newer, "-8 days")?;
+        pool.get()?
+            .execute("DELETE FROM persona_executions WHERE id = 'ex1'", [])?;
+        assert_eq!(
+            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
+            None
+        );
+
+        // Scoped per persona: another persona's silence is not ours.
+        seed_persona(&pool, "p2")?;
+        let other = post_user(&pool, "p2", "someone else");
+        backdate(&pool, &other, "-1 hours")?;
+        assert_eq!(
+            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
+            None
+        );
+        Ok(())
+    }
+}

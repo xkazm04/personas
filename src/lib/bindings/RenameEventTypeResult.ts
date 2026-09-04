@@ -4,4 +4,4 @@
  * Counts for UI feedback after a rename. Every field is the number of rows
  * whose stored event_type value was actually changed from `old` to `new`.
  */
-export type RenameEventTypeResult = { events_updated: number, subscriptions_updated: number, trigger_publishers_updated: number, trigger_listeners_updated: number, handler_keys_updated: number, persona_handlers_updated: number, };
+export type RenameEventTypeResult = { eventsUpdated: number, subscriptionsUpdated: number, triggerPublishersUpdated: number, triggerListenersUpdated: number, handlerKeysUpdated: number, personaHandlersUpdated: number, };

@@ -582,7 +582,7 @@ pub async fn artist_export_composition(
     let app_handle_for_panic = app_handle.clone();
     let job_id_for_panic = job_id_clone.clone();
 
-    spawn_guarded(
+    let export_handle = spawn_guarded(
         "media export",
         job_id_for_panic.clone(),
         async move {
@@ -640,6 +640,9 @@ pub async fn artist_export_composition(
             let _ = MEDIA_EXPORT_JOBS.remove(&job_id_for_panic);
         },
     );
+    // Make the export reclaimable: `artist_cancel_export` otherwise fired a
+    // token at a task holding an ffmpeg child and a half-written output file.
+    MEDIA_EXPORT_JOBS.register_abortable(&job_id, export_handle);
 
     Ok(json!({ "job_id": job_id }))
 }
@@ -925,7 +928,13 @@ pub async fn artist_cancel_export(
     state: State<'_, Arc<AppState>>,
     job_id: String,
 ) -> Result<bool, AppError> {
-    MEDIA_EXPORT_JOBS.cancel(&app, &job_id)?;
+    // Reclaim, not just signal: an ffmpeg export holds a child process and a
+    // partially written output file. The token gets `run_ffmpeg_export`'s
+    // `select!` arm a grace window to unwind cleanly; a task that misses it is
+    // aborted rather than left encoding behind a job the UI shows as over.
+    MEDIA_EXPORT_JOBS
+        .cancel_and_reclaim(&app, &job_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await?;
     Ok(true)
 }
 

@@ -14,4 +14,4 @@ surface: string,
 /**
  * Number of times the surface actually woke (skipped ticks are not logged).
  */
-wakes: number, signals: number, cli_calls: number, actions: number, };
+wakes: number, signals: number, cliCalls: number, actions: number, };

@@ -87,6 +87,7 @@ mod integration_tests {
     fn make_persona(system_prompt: &str) -> personas_db::models::Persona {
         personas_db::models::Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "CLI E2E".into(),

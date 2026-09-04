@@ -43,6 +43,7 @@ export function ActivityFilters({
       <div className="flex gap-1">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
+          const label = tab.id === 'attention' ? t.agents.life.activity_filter_attention : tab.label;
           return (
             <button
               type="button"
@@ -54,7 +55,7 @@ export function ActivityFilters({
                   : 'text-foreground hover:text-foreground hover:bg-primary/5'
               }`}
             >
-              {tab.label}
+              {label}
               {counts[tab.id] > 0 && (
                 <span className="ml-1.5 text-foreground">({counts[tab.id]})</span>
               )}

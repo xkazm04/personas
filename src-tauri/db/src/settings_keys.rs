@@ -395,6 +395,19 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Living-agent attention loop (WP5): whether the per-persona attention tick
+/// may, unattended, dispatch ONE lane of work per tick (arrivals recovery >
+/// sleep-consolidation maintenance > daily self-review > charter advancement)
+/// for personas holding an active, attention-enabled responsibility charter.
+/// Every decision — dispatch, enqueue, refusal — lands in
+/// `persona_attention_ledger`. Default OFF — nothing spends tokens
+/// autonomously until the user opts in. Read by
+/// `engine::subscription::AttentionSubscription` via
+/// `engine::autonomy::Action::AttentionLoop`. Stored `"true"` / `"false"`.
+pub const AUTONOMOUS_ATTENTION_LOOP: &str = "autonomous_attention_loop";
+/// Default for [`AUTONOMOUS_ATTENTION_LOOP`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ATTENTION_LOOP_DEFAULT: bool = false;
+
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -759,8 +772,21 @@ pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
 /// `commands::fleet::pairing`.
 pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
 
+/// Durable "the executions search index is detached" marker, written by
+/// [`crate::damage::detach_derived_index`] when a derived-damage verdict drops
+/// the `executions_fts` sync triggers so canonical writes can continue.
+///
+/// `"1"` means detached: the index is not being kept current and search over
+/// `persona_executions` is degraded until a boot-time rebuild reattaches it.
+/// A surface that answers search queries reads this so a smaller result set is
+/// labelled as degraded rather than returned as a quiet success.
+///
+/// Engine-managed, never user-set — hence its place in [`AUDIT_EXCLUDED_KEYS`].
+pub const EXECUTIONS_FTS_STALE: &str = "executions_fts_stale";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
+    EXECUTIONS_FTS_STALE,
     OLLAMA_API_KEY,
     DELEGATE_MODEL,
     ATHENA_WAKE_WINDOW_MINUTES,
@@ -814,6 +840,7 @@ const ALLOWED_KEYS: &[&str] = &[
     DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    AUTONOMOUS_ATTENTION_LOOP,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -988,6 +1015,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
+        | AUTONOMOUS_ATTENTION_LOOP
         | COMPANION_DAILY_ROLLUP
         | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
@@ -1193,6 +1221,10 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // Ship readiness snapshot: republished on every Ship-tab derive. Same
     // reason as the scene — it is what the tab COMPUTED, not what anyone set.
     SHIP_READINESS,
+    // Search-index damage state, written by the corruption-class response, not
+    // by anyone changing a setting. It belongs in a data-integrity incident
+    // surface, not in the settings History tab.
+    EXECUTIONS_FTS_STALE,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,

@@ -197,6 +197,33 @@ pub fn derive_capability_params_from_values(
     out
 }
 
+/// Derive tunable params from a persona's standing charters (spark
+/// `agent-manifest-rebase`, WP2): each ACTIVE charter's `spec.inputSchema`
+/// (the array e19 folded out of the legacy use case), grouped by charter
+/// title. This is the runtime-prompt derivation for manifest personas, whose
+/// `structured_prompt` (and with it the adopt-time-injected parameters block)
+/// no longer renders — the `{{param.<key>}}` trusted-variable contract and
+/// the `## Capability Parameters` section name are unchanged.
+pub fn derive_capability_params_from_charters(
+    charters: &[personas_db::models::PersonaResponsibility],
+) -> Vec<CapabilityParams> {
+    let mut out = Vec::new();
+    for r in charters.iter().filter(|r| r.status == "active") {
+        let Some(schema) = r.spec.input_schema.as_ref().and_then(|v| v.as_array()) else {
+            continue;
+        };
+        let (params, skipped) = params_from_schema(schema);
+        if !params.is_empty() || !skipped.is_empty() {
+            out.push(CapabilityParams {
+                capability_title: r.title.clone(),
+                params,
+                skipped,
+            });
+        }
+    }
+    out
+}
+
 /// Roll a derived capability set up into a coverage summary: how many
 /// `input_schema` fields were declared in total, how many became editable
 /// knobs, and which were dropped (deduped by key, declaration order preserved).

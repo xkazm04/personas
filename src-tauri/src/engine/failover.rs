@@ -637,9 +637,9 @@ pub struct FailoverCandidate {
 /// ids are the same ones `engine::prompt::capabilities::tier_slug_to_model_id`
 /// bakes into recipes/templates (opus→`claude-opus-4-8`, sonnet→`claude-sonnet-4-6`).
 const CLAUDE_MODEL_CHAIN: &[&str] = &[
-    "claude-opus-4-8",
-    "claude-sonnet-4-6",
-    "claude-haiku-4-5-20251001",
+    personas_core::model_ids::OPUS_CURRENT,
+    personas_core::model_ids::SONNET_CURRENT,
+    personas_core::model_ids::HAIKU_CURRENT,
 ];
 
 /// Build the complete failover chain given a primary engine and model profile.
@@ -1004,7 +1004,7 @@ mod tests {
     #[test]
     fn test_failover_chain_never_reaches_retired_ids() {
         let profile = ModelProfile {
-            model: Some("claude-opus-4-8".into()),
+            model: Some(personas_core::model_ids::OPUS_CURRENT.into()),
             ..Default::default()
         };
         let chain = build_failover_chain(EngineKind::ClaudeCode, Some(&profile));
@@ -1020,6 +1020,46 @@ mod tests {
         assert!(chain
             .iter()
             .any(|c| c.model.as_deref() == Some("claude-sonnet-4-6")));
+    }
+
+    /// The audit trail's `was_failover` must observe the substitution it
+    /// reports (`runner::mod`, provider audit entry). Paired assertion over the
+    /// real chain: the engine-kind predicate the field used to be computed from
+    /// cannot see a within-provider model downgrade, because every rung of the
+    /// ladder carries the SAME `engine_kind`. Chain index can.
+    #[test]
+    fn test_engine_kind_cannot_detect_a_model_downgrade() {
+        let profile = ModelProfile {
+            model: Some(personas_core::model_ids::OPUS_CURRENT.into()),
+            ..Default::default()
+        };
+        let primary = EngineKind::ClaudeCode;
+        let chain = build_failover_chain(primary, Some(&profile));
+
+        // The ladder must actually offer a downgrade, or the test proves nothing.
+        assert!(
+            chain.len() > 1,
+            "chain has no downgrade rung; the premise is gone"
+        );
+        assert_ne!(
+            chain[1].model, chain[0].model,
+            "rung 1 must be a different model than the configured one"
+        );
+
+        for (idx, candidate) in chain.iter().enumerate() {
+            let arm_a = candidate.engine_kind != primary; // former predicate
+            let arm_b = candidate.engine_kind != primary || idx > 0; // current
+            if idx > 0 {
+                assert!(
+                    !arm_a,
+                    "rung {idx} substitutes the model but the engine-kind \
+                     predicate reports no failover"
+                );
+                assert!(arm_b, "rung {idx} is a substitution and must be flagged");
+            } else {
+                assert!(!arm_a && !arm_b, "rung 0 is not a substitution");
+            }
+        }
     }
 
     #[test]

@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "已排队",
-    "running": "运行中",
-    "completed": "已完成",
-    "failed": "失败",
-    "cancelled": "已取消",
-    "incomplete": "未完成",
-    "error": "错误",
-    "unknown": "未知"
-  },
-  "simple": {
-    "good": "良好",
-    "warning": "注意",
-    "problem": "异常"
-  },
-  "event": {
-    "pending": "待处理",
-    "processing": "处理中",
-    "processed": "已处理",
-    "failed": "失败",
-    "retrying": "重试中"
-  },
   "automation": {
-    "pending": "待处理",
-    "running": "运行中",
     "completed": "已完成",
     "failed": "失败",
+    "pending": "待处理",
+    "running": "运行中",
     "timeout": "已超时"
-  },
-  "severity": {
-    "info": "信息",
-    "low": "低",
-    "medium": "中",
-    "high": "高",
-    "critical": "严重"
-  },
-  "priority": {
-    "low": "低",
-    "normal": "正常",
-    "high": "高",
-    "urgent": "紧急"
-  },
-  "healing_status": {
-    "open": "未处理",
-    "auto_fixed": "已自动修复",
-    "acknowledged": "已确认",
-    "resolved": "已解决"
-  },
-  "healing_category": {
-    "config": "配置",
-    "auth": "认证",
-    "network": "网络",
-    "timeout": "超时",
-    "quota": "配额"
-  },
-  "connector_status": {
-    "ready": "就绪",
-    "untested": "未测试",
-    "failed": "失败",
-    "no_credential": "无凭据",
-    "testing": "测试中"
-  },
-  "task_phase": {
-    "analyzing": "分析中",
-    "planning": "规划中",
-    "implementing": "实现中",
-    "committing": "提交中",
-    "validating": "验证中",
-    "complete": "已完成"
-  },
-  "goal_state": {
-    "pending": "待处理",
-    "review": "审核中",
-    "blocked": "受阻",
-    "in_progress": "进行中",
-    "running": "运行中",
-    "completed": "已完成",
-    "done": "已完成"
-  },
-  "test": {
-    "generating": "生成中",
-    "running": "运行中",
-    "completed": "已完成",
-    "failed": "失败",
-    "pending": "待处理"
-  },
-  "dev": {
-    "open": "未处理",
-    "in_progress": "进行中",
-    "completed": "已完成",
-    "blocked": "已阻止",
-    "queued": "已排队",
-    "running": "运行中",
-    "failed": "失败"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "全局"
-  },
-  "forage_confidence": {
-    "high": "高",
-    "medium": "中",
-    "low": "低"
-  },
-  "capability_risk": {
-    "low": "低",
-    "medium": "中",
-    "high": "高"
-  },
-  "verdict": {
-    "production": "生产就绪",
-    "promising": "有潜力",
-    "not_ready": "未就绪",
-    "broken": "已损坏"
-  },
-  "deployment": {
-    "active": "活跃",
-    "paused": "已暂停",
-    "failed": "失败",
-    "unknown": "未知",
-    "file-based": "基于文件"
-  },
-  "delivery": {
-    "delivered": "已送达",
-    "failed": "失败",
-    "pending": "待处理",
-    "queued": "排队中"
-  },
-  "rotation": {
-    "anomaly": "异常",
-    "paused": "已暂停",
-    "disabled": "已禁用",
-    "perm_errors": "永久错误",
-    "degrading": "正在降级",
-    "backoff": "退避中",
-    "fresh": "全新",
-    "active": "活跃"
-  },
-  "thinking": {
-    "high": "高",
-    "low": "低",
-    "medium": "中"
-  },
-  "error_category": {
-    "api_error": "API 错误",
-    "credential_error": "凭据错误",
-    "network": "网络",
-    "provider_not_found": "未找到提供方",
-    "rate_limit": "速率限制",
-    "session_limit": "会话上限",
-    "timeout": "超时",
-    "tool_error": "工具错误",
-    "transient_process_failure": "临时进程故障",
-    "unknown": "未知",
-    "validation": "校验"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "已达扇出上限",
-    "budget_exceeded": "已达成本上限",
-    "cas_lost": "已被其他运行占用",
-    "cycle_detected": "检测到循环",
-    "depth_limit": "深度上限",
-    "handoff_suppressed": "交接已抑制",
-    "malformed_config": "配置无效",
-    "outside_window": "不在活动时段内",
-    "predicate_unmet": "条件未满足",
-    "publish_failed": "发布失败",
-    "quarantined": "触发器已隔离",
-    "healing_abandoned": "已放弃修复",
-    "healing_capped": "修复重试已用尽",
-    "lookup_failed": "触发器查找失败",
-    "cost_ceiling_corrupt": "成本上限无法读取"
   },
   "build": {
     "analyzing": "分析中",
@@ -186,6 +19,232 @@
     "test_complete": "测试完成",
     "testing": "测试中"
   },
+  "capability_risk": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "已达扇出上限",
+    "budget_exceeded": "已达成本上限",
+    "cas_lost": "已被其他运行占用",
+    "cost_ceiling_corrupt": "成本上限无法读取",
+    "cycle_detected": "检测到循环",
+    "depth_limit": "深度上限",
+    "handoff_suppressed": "交接已抑制",
+    "healing_abandoned": "已放弃修复",
+    "healing_capped": "修复重试已用尽",
+    "lookup_failed": "触发器查找失败",
+    "malformed_config": "配置无效",
+    "outside_window": "不在活动时段内",
+    "predicate_unmet": "条件未满足",
+    "publish_failed": "发布失败",
+    "quarantined": "触发器已隔离"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "全局"
+  },
+  "competition": {
+    "awaiting_review": "待审核",
+    "cancelled": "已取消",
+    "resolved": "已解决",
+    "running": "运行中"
+  },
+  "connector_status": {
+    "failed": "失败",
+    "no_credential": "无凭据",
+    "ready": "就绪",
+    "testing": "测试中",
+    "untested": "未测试"
+  },
+  "delivery": {
+    "delivered": "已送达",
+    "failed": "失败",
+    "pending": "待处理",
+    "queued": "排队中"
+  },
+  "deployment": {
+    "active": "活跃",
+    "failed": "失败",
+    "file-based": "基于文件",
+    "paused": "已暂停",
+    "unknown": "未知"
+  },
+  "dev": {
+    "blocked": "已阻止",
+    "completed": "已完成",
+    "failed": "失败",
+    "in_progress": "进行中",
+    "open": "未处理",
+    "queued": "已排队",
+    "running": "运行中"
+  },
+  "error_category": {
+    "api_error": "API 错误",
+    "credential_error": "凭据错误",
+    "network": "网络",
+    "provider_not_found": "未找到提供方",
+    "rate_limit": "速率限制",
+    "session_limit": "会话上限",
+    "timeout": "超时",
+    "tool_error": "工具错误",
+    "transient_process_failure": "临时进程故障",
+    "unknown": "未知",
+    "validation": "校验"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "等待审批",
+    "cascade_guard": "已在运行",
+    "cross_team_blocked": "跨团队被阻止",
+    "dry_run": "试运行（模拟）",
+    "handoff_target_disabled": "交接目标已关闭",
+    "no_subscriber": "没有匹配的订阅者",
+    "persona_disabled": "智能体已关闭",
+    "stuck_reclaimed": "已回收并重新排队",
+    "stuck_retry_exhausted": "已回收，重试次数用尽"
+  },
+  "event": {
+    "failed": "失败",
+    "pending": "待处理",
+    "processed": "已处理",
+    "processing": "处理中",
+    "retrying": "重试中"
+  },
+  "execution": {
+    "cancelled": "已取消",
+    "completed": "已完成",
+    "error": "错误",
+    "failed": "失败",
+    "incomplete": "未完成",
+    "queued": "已排队",
+    "running": "运行中",
+    "unknown": "未知"
+  },
+  "forage_confidence": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
+  "goal_state": {
+    "blocked": "受阻",
+    "completed": "已完成",
+    "done": "已完成",
+    "in_progress": "进行中",
+    "pending": "待处理",
+    "review": "审核中",
+    "running": "运行中"
+  },
+  "healing_category": {
+    "auth": "认证",
+    "config": "配置",
+    "network": "网络",
+    "quota": "配额",
+    "timeout": "超时"
+  },
+  "healing_status": {
+    "acknowledged": "已确认",
+    "auto_fixed": "已自动修复",
+    "open": "未处理",
+    "resolved": "已解决"
+  },
+  "kb_document": {
+    "indexing": "索引中",
+    "pending": "待处理"
+  },
+  "memory_action": {
+    "deleted": "已删除",
+    "error": "错误",
+    "kept": "保留",
+    "proposed_archive": "建议归档",
+    "proposed_delete": "建议删除",
+    "proposed_synthesize": "建议合并",
+    "proposed_update_importance": "建议重新评分"
+  },
+  "memory_category": {
+    "context": "上下文",
+    "decision": "决策",
+    "learning": "经验",
+    "observation": "观察"
+  },
+  "memory_tier": {
+    "active": "活跃",
+    "archive": "已归档",
+    "core": "核心",
+    "working": "工作中"
+  },
+  "priority": {
+    "high": "高",
+    "low": "低",
+    "normal": "正常",
+    "urgent": "紧急"
+  },
+  "remote_job": {
+    "cancelled": "已取消",
+    "completed": "已完成",
+    "failed": "失败",
+    "pending": "待处理",
+    "refused": "已拒绝",
+    "running": "运行中"
+  },
+  "rotation": {
+    "active": "活跃",
+    "anomaly": "异常",
+    "backoff": "退避中",
+    "degrading": "正在降级",
+    "disabled": "已禁用",
+    "fresh": "全新",
+    "paused": "已暂停",
+    "perm_errors": "永久错误"
+  },
+  "severity": {
+    "critical": "严重",
+    "high": "高",
+    "info": "信息",
+    "low": "低",
+    "medium": "中"
+  },
+  "simple": {
+    "good": "良好",
+    "problem": "异常",
+    "warning": "注意"
+  },
+  "span_type": {
+    "chain_evaluation": "链路评估",
+    "cli_spawn": "启动 CLI",
+    "credential_resolution": "凭据",
+    "execution": "执行",
+    "healing_analysis": "自愈",
+    "outcome_assessment": "结果",
+    "pipeline_stage": "流水线阶段",
+    "prompt_assembly": "提示词",
+    "protocol_dispatch": "协议",
+    "stream_processing": "流式处理",
+    "tool_call": "工具调用",
+    "unknown": "未知"
+  },
+  "task_phase": {
+    "analyzing": "分析中",
+    "committing": "提交中",
+    "complete": "已完成",
+    "implementing": "实现中",
+    "planning": "规划中",
+    "validating": "验证中"
+  },
+  "test": {
+    "completed": "已完成",
+    "failed": "失败",
+    "generating": "生成中",
+    "pending": "待处理",
+    "running": "运行中"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
+  },
   "tool_error_kind": {
     "auth": "身份验证",
     "http": "HTTP 错误",
@@ -197,69 +256,10 @@
     "unknown": "未知错误",
     "unsupported": "此处无法运行"
   },
-  "remote_job": {
-    "completed": "已完成",
-    "failed": "失败",
-    "cancelled": "已取消",
-    "refused": "已拒绝",
-    "pending": "待处理",
-    "running": "运行中"
-  },
-  "event_reason": {
-    "approval_held": "等待审批",
-    "cascade_guard": "已在运行",
-    "cross_team_blocked": "跨团队被阻止",
-    "dry_run": "试运行（模拟）",
-    "handoff_target_disabled": "交接目标已关闭",
-    "no_subscriber": "没有匹配的订阅者",
-    "persona_disabled": "智能体已关闭",
-    "stuck_reclaimed": "已回收并重新排队",
-    "stuck_retry_exhausted": "已回收，重试次数用尽",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "运行中",
-    "awaiting_review": "待审核",
-    "resolved": "已解决",
-    "cancelled": "已取消"
-  },
-  "kb_document": {
-    "pending": "待处理",
-    "indexing": "索引中"
-  },
-  "memory_tier": {
-    "core": "核心",
-    "active": "活跃",
-    "working": "工作中",
-    "archive": "已归档"
-  },
-  "span_type": {
-    "execution": "执行",
-    "prompt_assembly": "提示词",
-    "credential_resolution": "凭据",
-    "cli_spawn": "启动 CLI",
-    "tool_call": "工具调用",
-    "protocol_dispatch": "协议",
-    "chain_evaluation": "链路评估",
-    "stream_processing": "流式处理",
-    "outcome_assessment": "结果",
-    "healing_analysis": "自愈",
-    "pipeline_stage": "流水线阶段",
-    "unknown": "未知"
-  },
-  "memory_action": {
-    "kept": "保留",
-    "deleted": "已删除",
-    "error": "错误",
-    "proposed_delete": "建议删除",
-    "proposed_update_importance": "建议重新评分",
-    "proposed_synthesize": "建议合并",
-    "proposed_archive": "建议归档"
-  },
-  "memory_category": {
-    "observation": "观察",
-    "decision": "决策",
-    "context": "上下文",
-    "learning": "经验"
+  "verdict": {
+    "broken": "已损坏",
+    "not_ready": "未就绪",
+    "production": "生产就绪",
+    "promising": "有潜力"
   }
 }

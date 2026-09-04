@@ -1,0 +1,20 @@
+[
+ "scripts/templates/content/analytics-content-distribution-use-case.json",
+ "scripts/templates/content/scientific-writing-editor.json",
+ "scripts/templates/content/social-media-designer.json",
+ "scripts/templates/email/intake-processor.json",
+ "scripts/templates/finance/expense-receipt-processor.json",
+ "scripts/templates/finance/invoice-tracker.json",
+ "scripts/templates/finance/revenue-operations-hub.json",
+ "scripts/templates/finance/subscription-billing-use-case.json",
+ "scripts/templates/productivity/email-intelligence-operator.json",
+ "scripts/templates/productivity/meeting-lifecycle-manager.json",
+ "scripts/templates/research/bi-dashboard-digest.json",
+ "scripts/templates/research/industry-intelligence-aggregator.json",
+ "scripts/templates/research/product-signal-detector.json",
+ "scripts/templates/research/research-paper-indexer.json",
+ "scripts/templates/research/website-market-intelligence-profiler.json",
+ "scripts/templates/sales/contact-enrichment-agent.json",
+ "scripts/templates/sales/sales-proposal-generator.json",
+ "scripts/templates/support/email-support-operator.json"
+]

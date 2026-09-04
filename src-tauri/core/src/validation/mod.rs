@@ -89,6 +89,16 @@ pub fn require_optional_max_len(
     Ok(())
 }
 
+/// Validate that a collection names at least one item. The shared refusal for
+/// "registered against nothing": a hook, a rule set or a selection that is
+/// empty is a contract violation the caller must hear about by name.
+pub fn require_at_least_one<T>(field: &str, items: &[T]) -> Result<(), AppError> {
+    if items.is_empty() {
+        return Err(AppError::Validation(format!("{field} names no items")));
+    }
+    Ok(())
+}
+
 /// Validate that a collection does not exceed a maximum number of items.
 pub fn require_max_count<T>(field: &str, items: &[T], max: usize) -> Result<(), AppError> {
     if items.len() > max {

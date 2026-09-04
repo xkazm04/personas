@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "_comment": "core-bench industry mapping. `roleFamilies` is kp's closed 16-family vocabulary (contract copied from the WP7 brief; do NOT re-derive from the kp repo). `categoryToFamily` maps every scripts/templates/<category> folder to one family. `focusDomains` are the matrix rows: 6 non-software industries + the software control row. A focus domain draws its template pool from `categories` (folders under scripts/templates/), which may declare a family different from categoryToFamily's default (ops draws operations-shaped templates from the productivity folder).",
+  "roleFamilies": [
+    "software_engineering",
+    "data_ai",
+    "product_project",
+    "healthcare_clinical",
+    "life_sciences_research",
+    "skilled_trades",
+    "operations_logistics",
+    "frontline_service",
+    "sales_marketing",
+    "finance_accounting",
+    "legal_compliance",
+    "hr_people",
+    "education_academic",
+    "creative_design",
+    "customer_support",
+    "general_professional"
+  ],
+  "categoryToFamily": {
+    "development": "software_engineering",
+    "devops": "software_engineering",
+    "security": "software_engineering",
+    "research": "data_ai",
+    "content": "creative_design",
+    "marketing": "sales_marketing",
+    "sales": "sales_marketing",
+    "support": "customer_support",
+    "finance": "finance_accounting",
+    "hr": "hr_people",
+    "legal": "legal_compliance",
+    "productivity": "general_professional",
+    "project-management": "product_project",
+    "email": "general_professional"
+  },
+  "focusDomains": [
+    {
+      "id": "software",
+      "family": "software_engineering",
+      "categories": ["development"],
+      "control": true,
+      "descriptor": "The control row: SDLC personas (builders, reviewers, QA, release) — the industry the Core model was first authored against. If a Core fails here, the failure is the Core, not the industry transfer."
+    },
+    {
+      "id": "recruiting",
+      "family": "hr_people",
+      "categories": ["hr"],
+      "control": false,
+      "descriptor": "People operations: recruiting pipelines and onboarding. High-stakes on privacy and tone; escalation honesty matters more than throughput."
+    },
+    {
+      "id": "marketing",
+      "family": "sales_marketing",
+      "categories": ["marketing"],
+      "control": false,
+      "descriptor": "Brand, campaigns, CRO, editorial calendars. Output is externally visible, so approval gates and brand fidelity dominate."
+    },
+    {
+      "id": "customer_support",
+      "family": "customer_support",
+      "categories": ["support", "sales"],
+      "control": false,
+      "descriptor": "Front-line customer work: support routing/escalation plus sales-pipeline hygiene. Every action touches a real customer relationship — never-send-twice, never-drop-a-ticket."
+    },
+    {
+      "id": "finance",
+      "family": "finance_accounting",
+      "categories": ["finance"],
+      "control": false,
+      "descriptor": "Money-adjacent workflows: invoices, reconciliation, budgets, revenue intelligence. Provenance and no-directive-advice constraints bind hard here."
+    },
+    {
+      "id": "ops",
+      "family": "operations_logistics",
+      "categories": ["productivity"],
+      "control": false,
+      "descriptor": "Operations and logistics of daily work: routing, scheduling, intake, digests. Drawn from the productivity folder — the operations-shaped templates (router, appointment orchestration, survey processing) live there."
+    },
+    {
+      "id": "content",
+      "family": "creative_design",
+      "categories": ["content"],
+      "control": false,
+      "descriptor": "Creative production: writing, video, design pipelines. Craft quality and iterate-on-feedback loops matter more than raw speed."
+    }
+  ]
+}

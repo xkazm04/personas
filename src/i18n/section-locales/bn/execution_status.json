@@ -1,8 +1,8 @@
 {
+  "cancelled": "বাতিল",
   "completed": "সম্পন্ন",
+  "error": "ত্রুটি",
   "failed": "ব্যর্থ",
   "queued": "কিউতে",
-  "running": "চলছে",
-  "cancelled": "বাতিল",
-  "error": "ত্রুটি"
+  "running": "চলছে"
 }

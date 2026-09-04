@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "Выберите роль",
-    "choose_role_hint": "Мы адаптируем интерфейс под ваш стиль работы.",
-    "pick_tool": "Выберите любимый инструмент",
-    "pick_tool_hint": "Это будет ваше первое подключение к сервису.",
-    "describe_goal": "Что вы хотите автоматизировать?",
-    "describe_goal_hint": "Опишите свою первую цель автоматизации — мы поможем её настроить.",
-    "goal_placeholder": "например, Автоматически синхронизировать новые задачи Jira в Slack…",
-    "ready_to_save": "Готово к сохранению",
-    "step_role": "Ваша роль",
-    "step_role_hint": "Укажите роль, чтобы мы адаптировали интерфейс.",
-    "step_tool": "Любимый инструмент",
-    "step_tool_hint": "Выберите первый сервис для подключения.",
-    "step_goal": "Цель автоматизации",
-    "step_goal_hint": "Опишите, что вы хотите автоматизировать первым.",
-    "select_role_first": "Сначала выберите роль для выбора инструментов.",
-    "select_tool_first": "Сначала выберите инструмент для постановки цели.",
-    "get_started": "Начать",
-    "role_office_rat": "Офисный работник",
-    "role_office_rat_hint": "Нетехнический пользователь",
-    "role_developer": "Разработчик",
-    "role_developer_hint": "Технический пользователь",
-    "role_manager": "Менеджер",
-    "role_manager_hint": "Планирование и координация",
-    "role": "Роль",
-    "tool": "Инструмент",
-    "goal": "Цель"
-  },
-  "learning": {
-    "title": "Учебный центр",
-    "subtitle": "Обзорные туры и советы для освоения Personas",
-    "guided_tours": "Обзорные туры",
-    "tours_completed": "{completed}/{total} завершено",
-    "done": "Готово",
-    "restart": "Начать заново",
-    "start_tour": "Начать тур",
-    "steps_count": "{count} шагов",
-    "tour_steps_label": "Что вы узнаете",
-    "power_moves": "Ключевые приёмы",
-    "moves_used": "{used}/{total} использовано",
-    "try_it": "Попробовать",
-    "used_badge": "Использовано",
-    "group_save_time": "Экономия времени",
-    "group_prevent_failures": "Предотвращение сбоев",
-    "group_level_up": "Прокачка агентов",
-    "group_orchestrate": "Оркестрация",
-    "pm_monitor_triage_title": "Мониторинг всего флота из строки заголовка",
-    "pm_schedule_delay_title": "Пропустить или отложить запланированный запуск",
-    "pm_bulk_rerun_title": "Массовый перезапуск неудачных выполнений",
-    "pm_dead_letter_title": "Восстановление событий из очереди мёртвых писем",
-    "pm_annotate_golden_title": "Отмечать лучшие запуски, помечать регрессии",
-    "pm_credential_health_title": "Разрешить ИИ восстанавливать сломанные учётные данные",
-    "pm_lab_measure_title": "Измерять промпты на разных моделях",
-    "pm_prompt_rollback_title": "Откатить неудачный промпт в один клик",
-    "pm_director_coaching_title": "Получить советы по портфолио от Director",
-    "pm_event_chain_title": "Связывать агентов через прослушиватели событий",
-    "pm_live_stream_title": "Наблюдать за каскадом цепочек в реальном времени",
-    "pm_athena_fleet_title": "Попросить Athena проанализировать ваш флот",
-    "composed_tours": "Составила Athena",
-    "composed_badge": "Составлено Athena",
-    "composed_stale": "Возможно, устарело — приложение изменилось с момента составления",
-    "composed_failed": "Не удалось загрузить руководства, составленные Athena.",
-    "composed_empty": "Когда вы просите Athena показать, как что-то работает, составленные ею руководства появляются здесь.",
-    "composed_dismiss": "Убрать это устаревшее руководство",
-    "composed_all_dismissed": "Вы убрали все устаревшие руководства. Новые появятся здесь, как только Athena их составит."
-  },
-  "setup_stepper": {
-    "your_profile": "Ваш профиль",
-    "choose_role": "Выберите роль",
-    "tailor_hint": "Мы адаптируем интерфейс под ваш стиль работы.",
-    "simple_hint": "Приложение настроено для повседневной офисной работы.",
-    "pick_tool": "Выберите любимый инструмент",
-    "tool_hint": "Это будет ваша первая интеграция с коннектором.",
-    "automate_title": "Что вы хотите автоматизировать?",
-    "automate_hint": "Опишите первую цель автоматизации — мы поможем её настроить.",
-    "automate_placeholder": "например, Автоматически синхронизировать задачи Jira в Slack…",
-    "min_chars": "Минимум 10 символов ({current}/10)",
-    "ready_to_save": "Готово к сохранению",
-    "back": "Назад",
-    "next": "Далее",
-    "finish": "Завершить"
-  },
-  "welcome_layout": {
-    "get_started": "Начать",
-    "language": "Язык"
-  },
-  "resume": {
-    "failure": "Непрочитанный сбой в «{personaName}» — требует изучения",
-    "tour": "Продолжить {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
-    "edit": "Продолжить редактирование «{personaName}»"
-  },
-  "nav_status": {
-    "incidents": "{count} открытый инцидент",
-    "incidents_other": "Открытых инцидентов: {count}",
-    "reviews": "{count} ожидающая проверка",
-    "reviews_other": "Ожидающих проверок: {count}",
-    "teams": "{count} команда",
-    "teams_other": "Команд: {count}",
-    "agents_active": "{count} агент активен за последние 24 ч",
-    "agents_active_other": "Активных агентов за последние 24 ч: {count}",
-    "events_today": "{count} событие за последние 24 ч",
-    "events_today_other": "Событий за последние 24 ч: {count}",
-    "connections_external": "{count} внешнее подключение",
-    "connections_external_other": "Внешних подключений: {count}",
-    "connections_builtin": "{count} встроенный коннектор",
-    "connections_builtin_other": "Встроенных коннекторов: {count}",
-    "trend_up": "+{pct}% по сравнению с предыдущими 24 ч",
-    "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
-    "trend_flat": "без изменений по сравнению с предыдущими 24 ч",
-    "agents_enabled": "{count} активный агент",
-    "agents_enabled_other": "Активных агентов: {count}",
-    "reports": "{count} непрочитанный отчёт",
-    "reports_other": "{count} непрочитанных отчётов"
+  "commander": "Командир",
+  "fleet": {
+    "active_agents": "Активные агенты",
+    "credentials": "Учётные данные",
+    "executions_today": "Запуски сегодня",
+    "success_rate": "Успешность"
   },
   "get_started": {
     "ask_cta": "Спросить ассистента",
@@ -119,84 +12,184 @@
     "subtitle": "Опишите задачу простым языком, и мы настроим рабочего агента — или попросите ассистента сделать это за вас.",
     "title": "Создайте первого агента"
   },
-  "welcome": "Добро пожаловать",
-  "greeting_morning": "Доброе утро",
   "greeting_afternoon": "Добрый день",
   "greeting_evening": "Добрый вечер",
+  "greeting_morning": "Доброе утро",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
+    "lucide_tab": "Lucide (библиотека)",
+    "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема",
+    "personas_tab": "Personas (анимированные)"
+  },
+  "learning": {
+    "composed_all_dismissed": "Вы убрали все устаревшие руководства. Новые появятся здесь, как только Athena их составит.",
+    "composed_badge": "Составлено Athena",
+    "composed_dismiss": "Убрать это устаревшее руководство",
+    "composed_empty": "Когда вы просите Athena показать, как что-то работает, составленные ею руководства появляются здесь.",
+    "composed_failed": "Не удалось загрузить руководства, составленные Athena.",
+    "composed_stale": "Возможно, устарело — приложение изменилось с момента составления",
+    "composed_tours": "Составила Athena",
+    "done": "Готово",
+    "group_level_up": "Прокачка агентов",
+    "group_orchestrate": "Оркестрация",
+    "group_prevent_failures": "Предотвращение сбоев",
+    "group_save_time": "Экономия времени",
+    "guided_tours": "Обзорные туры",
+    "moves_used": "{used}/{total} использовано",
+    "pm_annotate_golden_title": "Отмечать лучшие запуски, помечать регрессии",
+    "pm_athena_fleet_title": "Попросить Athena проанализировать ваш флот",
+    "pm_bulk_rerun_title": "Массовый перезапуск неудачных выполнений",
+    "pm_credential_health_title": "Разрешить ИИ восстанавливать сломанные учётные данные",
+    "pm_dead_letter_title": "Восстановление событий из очереди мёртвых писем",
+    "pm_director_coaching_title": "Получить советы по портфолио от Director",
+    "pm_event_chain_title": "Связывать агентов через прослушиватели событий",
+    "pm_lab_measure_title": "Измерять промпты на разных моделях",
+    "pm_live_stream_title": "Наблюдать за каскадом цепочек в реальном времени",
+    "pm_monitor_triage_title": "Мониторинг всего флота из строки заголовка",
+    "pm_prompt_rollback_title": "Откатить неудачный промпт в один клик",
+    "pm_schedule_delay_title": "Пропустить или отложить запланированный запуск",
+    "power_moves": "Ключевые приёмы",
+    "restart": "Начать заново",
+    "start_tour": "Начать тур",
+    "steps_count": "{count} шагов",
+    "subtitle": "Обзорные туры и советы для освоения Personas",
+    "title": "Учебный центр",
+    "tour_steps_label": "Что вы узнаете",
+    "tours_completed": "{completed}/{total} завершено",
+    "try_it": "Попробовать",
+    "used_badge": "Использовано"
+  },
+  "nav_status": {
+    "agents_active": "{count} агент активен за последние 24 ч",
+    "agents_active_other": "Активных агентов за последние 24 ч: {count}",
+    "agents_enabled": "{count} активный агент",
+    "agents_enabled_other": "Активных агентов: {count}",
+    "connections_builtin": "{count} встроенный коннектор",
+    "connections_builtin_other": "Встроенных коннекторов: {count}",
+    "connections_external": "{count} внешнее подключение",
+    "connections_external_other": "Внешних подключений: {count}",
+    "events_today": "{count} событие за последние 24 ч",
+    "events_today_other": "Событий за последние 24 ч: {count}",
+    "incidents": "{count} открытый инцидент",
+    "incidents_other": "Открытых инцидентов: {count}",
+    "reports": "{count} непрочитанный отчёт",
+    "reports_other": "{count} непрочитанных отчётов",
+    "reviews": "{count} ожидающая проверка",
+    "reviews_other": "Ожидающих проверок: {count}",
+    "teams": "{count} команда",
+    "teams_other": "Команд: {count}",
+    "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
+    "trend_flat": "без изменений по сравнению с предыдущими 24 ч",
+    "trend_up": "+{pct}% по сравнению с предыдущими 24 ч"
+  },
+  "nav": {
+    "cloud": {
+      "description": "Развёртывание агентов в облаке, управление расписаниями и интеграция с GitLab CI",
+      "label": "Облако"
+    },
+    "credentials": {
+      "description": "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами",
+      "label": "Подключения"
+    },
+    "design-reviews": {
+      "description": "Импорт рабочих процессов n8n, галерея шаблонов и генерация схем агентов",
+      "label": "Шаблоны"
+    },
+    "events": {
+      "description": "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию",
+      "label": "События"
+    },
+    "overview": {
+      "description": "Аналитика, история выполнений и мониторинг системы в реальном времени по всем агентам",
+      "label": "Обзор"
+    },
+    "personas": {
+      "description": "Создание, настройка и управление агентами с пользовательским поведением и возможностями",
+      "label": "Агенты"
+    },
+    "plugins": {
+      "description": "Расширяйте агентов плагинами и пользовательскими расширениями",
+      "label": "Плагины"
+    },
+    "settings": {
+      "description": "Настройки аккаунта, темы оформления, правила уведомлений и конфигурация движка",
+      "label": "Настройки"
+    },
+    "team": {
+      "description": "Создание мультиагентных командных конвейеров с визуальной оркестрацией и маршрутизацией",
+      "label": "Команды"
+    },
+    "teams": {
+      "description": "Объединяйте несколько агентов в команду для совместной работы над многоэтапными рабочими процессами",
+      "label": "Команды"
+    }
+  },
   "operator": "Оператор",
-  "commander": "Командир",
-  "summary_empty": "Начните с создания первого агента или изучите платформу.",
-  "summary_stats": "У вас настроено {personasCount} агент{personasPlural} и {credentialsCount} учётных данных{credentialsPlural}.",
-  "quick_navigation": "Быстрая навигация",
   "platform_label": "платформа Personas",
+  "quick_navigation": "Быстрая навигация",
+  "resume": {
+    "edit": "Продолжить редактирование «{personaName}»",
+    "failure": "Непрочитанный сбой в «{personaName}» — требует изучения",
+    "tour": "Продолжить {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}"
+  },
   "roadmap": {
-    "title": "Дорожная карта",
-    "subtitle": "Что мы строим сейчас и что будет дальше.",
-    "unavailable": "Дорожная карта недоступна",
-    "unavailable_hint": "Не удалось загрузить дорожную карту. Проверьте соединение и повторите попытку.",
+    "in_progress_count": "{count} в процессе",
+    "next_count": "{count} следующих",
+    "priority_later": "Позже",
+    "priority_next": "Далее",
+    "priority_now": "Сейчас",
+    "status_completed": "Завершено",
     "status_in_progress": "В процессе",
     "status_next": "Следующее",
     "status_planned": "Запланировано",
-    "status_completed": "Завершено",
-    "priority_now": "Сейчас",
-    "priority_next": "Далее",
-    "priority_later": "Позже",
-    "in_progress_count": "{count} в процессе",
-    "next_count": "{count} следующих"
+    "subtitle": "Что мы строим сейчас и что будет дальше.",
+    "title": "Дорожная карта",
+    "unavailable": "Дорожная карта недоступна",
+    "unavailable_hint": "Не удалось загрузить дорожную карту. Проверьте соединение и повторите попытку."
   },
-  "fleet": {
-    "executions_today": "Запуски сегодня",
-    "success_rate": "Успешность",
-    "active_agents": "Активные агенты",
-    "credentials": "Учётные данные"
+  "setup_stepper": {
+    "automate_hint": "Опишите первую цель автоматизации — мы поможем её настроить.",
+    "automate_placeholder": "например, Автоматически синхронизировать задачи Jira в Slack…",
+    "automate_title": "Что вы хотите автоматизировать?",
+    "back": "Назад",
+    "choose_role": "Выберите роль",
+    "finish": "Завершить",
+    "min_chars": "Минимум 10 символов ({current}/10)",
+    "next": "Далее",
+    "pick_tool": "Выберите любимый инструмент",
+    "ready_to_save": "Готово к сохранению",
+    "simple_hint": "Приложение настроено для повседневной офисной работы.",
+    "tailor_hint": "Мы адаптируем интерфейс под ваш стиль работы.",
+    "tool_hint": "Это будет ваша первая интеграция с коннектором.",
+    "your_profile": "Ваш профиль"
   },
-  "nav": {
-    "overview": {
-      "label": "Обзор",
-      "description": "Аналитика, история выполнений и мониторинг системы в реальном времени по всем агентам"
-    },
-    "personas": {
-      "label": "Агенты",
-      "description": "Создание, настройка и управление агентами с пользовательским поведением и возможностями"
-    },
-    "events": {
-      "label": "События",
-      "description": "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию"
-    },
-    "credentials": {
-      "label": "Подключения",
-      "description": "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами"
-    },
-    "design-reviews": {
-      "label": "Шаблоны",
-      "description": "Импорт рабочих процессов n8n, галерея шаблонов и генерация схем агентов"
-    },
-    "team": {
-      "label": "Команды",
-      "description": "Создание мультиагентных командных конвейеров с визуальной оркестрацией и маршрутизацией"
-    },
-    "teams": {
-      "label": "Команды",
-      "description": "Объединяйте несколько агентов в команду для совместной работы над многоэтапными рабочими процессами"
-    },
-    "cloud": {
-      "label": "Облако",
-      "description": "Развёртывание агентов в облаке, управление расписаниями и интеграция с GitLab CI"
-    },
-    "settings": {
-      "label": "Настройки",
-      "description": "Настройки аккаунта, темы оформления, правила уведомлений и конфигурация движка"
-    },
-    "plugins": {
-      "label": "Плагины",
-      "description": "Расширяйте агентов плагинами и пользовательскими расширениями"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (библиотека)",
-    "personas_tab": "Personas (анимированные)",
-    "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
-    "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
+  "setup": {
+    "choose_role": "Выберите роль",
+    "choose_role_hint": "Мы адаптируем интерфейс под ваш стиль работы.",
+    "describe_goal": "Что вы хотите автоматизировать?",
+    "describe_goal_hint": "Опишите свою первую цель автоматизации — мы поможем её настроить.",
+    "get_started": "Начать",
+    "goal": "Цель",
+    "goal_placeholder": "например, Автоматически синхронизировать новые задачи Jira в Slack…",
+    "pick_tool": "Выберите любимый инструмент",
+    "pick_tool_hint": "Это будет ваше первое подключение к сервису.",
+    "ready_to_save": "Готово к сохранению",
+    "role": "Роль",
+    "role_developer": "Разработчик",
+    "role_developer_hint": "Технический пользователь",
+    "role_manager": "Менеджер",
+    "role_manager_hint": "Планирование и координация",
+    "role_office_rat": "Офисный работник",
+    "role_office_rat_hint": "Нетехнический пользователь",
+    "select_role_first": "Сначала выберите роль для выбора инструментов.",
+    "select_tool_first": "Сначала выберите инструмент для постановки цели.",
+    "step_goal": "Цель автоматизации",
+    "step_goal_hint": "Опишите, что вы хотите автоматизировать первым.",
+    "step_role": "Ваша роль",
+    "step_role_hint": "Укажите роль, чтобы мы адаптировали интерфейс.",
+    "step_tool": "Любимый инструмент",
+    "step_tool_hint": "Выберите первый сервис для подключения.",
+    "tool": "Инструмент"
   },
   "since_left": {
     "alerts": "{count} оповещение",
@@ -209,5 +202,12 @@
     "runs": "{count} запуск",
     "runs_other": "{count} запусков",
     "title": "С момента вашего ухода"
+  },
+  "summary_empty": "Начните с создания первого агента или изучите платформу.",
+  "summary_stats": "У вас настроено {personasCount} агент{personasPlural} и {credentialsCount} учётных данных{credentialsPlural}.",
+  "welcome": "Добро пожаловать",
+  "welcome_layout": {
+    "get_started": "Начать",
+    "language": "Язык"
   }
 }

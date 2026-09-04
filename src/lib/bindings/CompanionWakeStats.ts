@@ -9,4 +9,4 @@ export type CompanionWakeStats = {
  * The configured wake-window length, so the UI can render cadence next to
  * the counts instead of hardcoding it.
  */
-window_minutes: number, surfaces: Array<CompanionWakeSurfaceStats>, };
+windowMinutes: number, surfaces: Array<CompanionWakeSurfaceStats>, };

@@ -1,46 +1,25 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Plug, Bell } from 'lucide-react';
+import { Plug } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorsSection } from '@/features/templates/sub_generated/design-preview/ConnectorsSection';
-import { EventsSection } from '@/features/templates/sub_generated/design-preview/EventsSection';
-import { MessagesSection } from '@/features/templates/sub_generated/design-preview/MessagesSection';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSavedDesignResult } from '../libs/designStateHelpers';
-import { allIndices } from '../DesignTabHelpers';
-import { PersonaParametersCard } from './PersonaParametersCard';
-import { TriggerConfig } from '@/features/triggers/sub_triggers/TriggerConfig';
 import { ConnectorVerificationPanel } from '@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel';
 import { useConnectorStatuses } from '@/features/agents/sub_connectors/libs/useConnectorStatuses';
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { toastCatch } from '@/lib/silentCatch';
 
 /**
- * The Design hub's section sub-tabs. Each renders the same read-only
- * design-result section the Properties (Prompt) sub-tab used to stack inline,
- * driven by the persona's saved design (`useSavedDesignResult`). When the
- * relevant dimension is empty (most commonly: the agent hasn't been designed
- * yet) a quiet empty state stands in instead of a blank panel.
+ * The Design hub's Connectors sub-tab — the one section panel that survived
+ * the agent-manifest collapse (2026-09-04). Its four former siblings
+ * (Parameters, Events & Triggers, Notifications, and the read-only Properties
+ * recap) were views onto a saved BUILD RESULT rather than onto the agent, and
+ * the four-tab hub keeps only surfaces the agent itself owns.
  */
 
 const NOOP = () => {};
-
-function SectionEmpty({ icon, title }: { icon: typeof Plug; title: string }) {
-  return (
-    <div className="py-12">
-      <EmptyState icon={icon} title={title} />
-    </div>
-  );
-}
-
-/** Parameters — the live, tunable persona parameters (no design needed).
- *  The A/B layout switcher + the no-parameters empty state both live inside
- *  PersonaParametersCard, so the switcher is always visible on this subtab
- *  (it used to be hidden whole when the persona declared no parameters). */
-export function DesignParametersPanel() {
-  return <PersonaParametersCard />;
-}
 
 /**
  * Connectors & Tools. Live connector verification (test / link / swap) via
@@ -50,8 +29,7 @@ export function DesignParametersPanel() {
  * The read-only design section was previously the whole panel, which meant the
  * sub-tab a user opens to check their connectors could only ever report what
  * the *build* suggested — never whether a linked credential actually works, and
- * nothing at all for a persona that was never designed. Mirrors the shape
- * `DesignEventsPanel` already uses (live manager first, design recap below).
+ * nothing at all for a persona that was never designed.
  */
 export function DesignConnectorsPanel() {
   const { t } = useTranslation();
@@ -140,63 +118,10 @@ export function DesignConnectorsPanel() {
   );
 }
 
-/**
- * Events & Triggers. Live trigger management (create / arm / disarm / delete)
- * via `TriggerConfig`, plus a read-only view of any event subscriptions the
- * original build proposed.
- *
- * Was previously read-only only (`onTriggerToggle={NOOP}`), so this — the sub-tab
- * a user opens to manage triggers — offered no way to create one; the only
- * self-service create path in the whole app was the type-locked Studio commit
- * modal (UAT 2026-07-20, CM-STA-02). The Design tab is ungated, so mounting the
- * manager here also gives Starter users (who can't reach the TEAM-gated Events
- * section) a trigger surface at last.
- */
-export function DesignEventsPanel() {
-  const selectedPersona = useAgentStore((s) => s.selectedPersona);
-  const saved = useSavedDesignResult(selectedPersona);
-
-  // Show the design's proposed subscriptions read-only (TriggerConfig doesn't
-  // manage bus subscriptions). Suggested *triggers* are intentionally not shown
-  // here — once promoted they are live triggers, already listed+editable by
-  // TriggerConfig above, so surfacing them again would duplicate the list.
-  const hasSubscriptions = (saved?.suggested_event_subscriptions?.length ?? 0) > 0;
-
+function SectionEmpty({ icon, title }: { icon: typeof Plug; title: string }) {
   return (
-    <div className="space-y-6">
-      <TriggerConfig />
-      {saved && hasSubscriptions && (
-        <EventsSection
-          result={{ ...saved, suggested_triggers: [] }}
-          selectedTriggerIndices={allIndices([])}
-          onTriggerToggle={NOOP}
-          suggestedSubscriptions={saved.suggested_event_subscriptions}
-          selectedSubscriptionIndices={allIndices(saved.suggested_event_subscriptions)}
-          readOnly
-          actualTriggers={[]}
-        />
-      )}
+    <div className="py-12">
+      <EmptyState icon={icon} title={title} />
     </div>
-  );
-}
-
-/** Notifications — read-only view of the saved design's message channels. */
-export function DesignNotificationsPanel() {
-  const { t } = useTranslation();
-  const selectedPersona = useAgentStore((s) => s.selectedPersona);
-  const saved = useSavedDesignResult(selectedPersona);
-  const channels = useMemo(
-    () => (Array.isArray(saved?.suggested_notification_channels) ? saved.suggested_notification_channels : []),
-    [saved],
-  );
-
-  if (channels.length === 0) return <SectionEmpty icon={Bell} title={t.agents.design_subtabs.messaging} />;
-
-  return (
-    <MessagesSection
-      channels={channels}
-      selectedChannelIndices={allIndices(channels)}
-      readOnly
-    />
   );
 }

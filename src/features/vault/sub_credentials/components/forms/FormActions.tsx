@@ -43,7 +43,7 @@ export function FormActions({
               <div className="flex items-center gap-1.5 typo-body text-emerald-400/70 cursor-help">
                 <Lock className="w-3 h-3" />
                 <span>
-                  {vault.key_source === 'keychain'
+                  {vault.keySource === 'keychain'
                     ? t.vault.credential_forms.encrypted_keychain
                     : t.vault.credential_forms.encrypted_at_rest}
                 </span>

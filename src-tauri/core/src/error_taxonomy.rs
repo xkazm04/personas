@@ -104,6 +104,82 @@ pub enum ErrorSeverity {
 }
 
 // =============================================================================
+// Minting — the class stated where the failure is RAISED
+// =============================================================================
+//
+// Everything below `classify_error` recovers a class from a sentence, and the
+// tree has already measured what that costs: the app minted its own deadline
+// message, knew exactly what class it was, and the only channel it had to say
+// so was prose — so 40 of 43 `Unknown` healing issues (93%) were that one
+// string, reaching a recovery that never retries. The fix that shipped was a
+// fifth substring, and the next string the app mints has the same defect
+// waiting for it.
+//
+// These two items are the other direction: a class declared from STRUCTURAL
+// facts at the raise site, with no branch reading any message. They are the
+// same posture `db::damage` takes on SQLite's extended result code — "no branch
+// here reads the error text, so a SQLite version that rewords a message cannot
+// silently change the policy".
+//
+// `classify_error` stays exactly as it is, as the fallback for the 2,188-row
+// history and for any failure whose origin genuinely IS a foreign string.
+
+/// The class of the engine's own safety ceiling (`ENGINE_MAX_EXECUTION_SECS`).
+///
+/// The app's own timer fired; there is nothing to infer. Stated here rather
+/// than at the raise site so the declaration and the ladder's matching arm sit
+/// in one file and cannot drift apart unnoticed.
+pub const ENGINE_CEILING_CLASS: ErrorCategory = ErrorCategory::Timeout;
+
+/// Mint the class of a CLI run's failure from the facts the runner already
+/// holds, or `None` when it genuinely does not know.
+///
+/// Reads no message. The three inputs are structural:
+///
+/// * `timed_out` — the per-run deadline the engine itself armed.
+/// * `usage_limit_parsed` — `parser::parse_usage_limit` produced a
+///   `UsageLimitInfo`, so the provider stated a usage cap in a shape the parser
+///   recognises structurally. The window/weekly split it carries drives the
+///   recovery separately; both scopes are the same class here.
+/// * `exit_code` / `stderr` — a non-zero exit whose stderr carries no
+///   diagnostic output is the transient signature (OOM kill, signal, a hiccup
+///   inside the provider's own retry loop).
+///
+/// `None` for a non-zero exit WITH stderr content is deliberate and is the
+/// proposal's own falsifier honoured: deciding between `TransientProcessFailure`
+/// and `ApiError` there is a content judgment, which is exactly what a raise
+/// site must not make. Those rows keep `NULL` and the ladder classifies them.
+pub fn mint_runner_class(
+    timed_out: bool,
+    exit_code: i32,
+    stderr: &str,
+    usage_limit_parsed: bool,
+) -> Option<ErrorCategory> {
+    if timed_out {
+        return Some(ErrorCategory::Timeout);
+    }
+    if usage_limit_parsed {
+        return Some(ErrorCategory::SessionLimit);
+    }
+    if exit_code != 0 && stderr.trim().is_empty() {
+        return Some(ErrorCategory::TransientProcessFailure);
+    }
+    None
+}
+
+/// The `snake_case` token an [`ErrorCategory`] is stored and transported as.
+///
+/// One string for the wire, the DB column and the frontend: the enum already
+/// derives `Serialize` + `TS` with `rename_all = "snake_case"`, so this adds no
+/// second definition to keep in step.
+pub fn category_token(category: ErrorCategory) -> String {
+    serde_json::to_value(category)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+// =============================================================================
 // Classification
 // =============================================================================
 
@@ -859,5 +935,95 @@ mod tests {
                 "parity fixture {input:?} classified wrong"
             );
         }
+    }
+
+    // =====================================================================
+    // Minting — the class stated at the raise site
+    // =====================================================================
+
+    /// The measurable, at the unit level: each of the three raise sites that
+    /// KNOW their class produces a real one, and none of them produces
+    /// `Unknown`. `Unknown` is a classifier's admission that a message matched
+    /// nothing; it is not something a raise site may declare.
+    #[test]
+    fn every_minted_raise_site_produces_a_non_unknown_class() {
+        // Site 1 — the engine's own safety ceiling. The app armed the timer, so
+        // there is nothing to infer. This is the site that produced the measured
+        // cost: 40 of 43 `Unknown` healing issues (93%) were its one string.
+        assert_eq!(ENGINE_CEILING_CLASS, ErrorCategory::Timeout);
+        assert_ne!(ENGINE_CEILING_CLASS, ErrorCategory::Unknown);
+
+        // Site 2 — the runner's process-exit path: a non-zero exit that wrote no
+        // diagnostic stderr is the transient signature.
+        let transient = mint_runner_class(false, 137, "   \n", false);
+        assert_eq!(transient, Some(ErrorCategory::TransientProcessFailure));
+        assert_ne!(transient, Some(ErrorCategory::Unknown));
+
+        // Site 3 — the provider parse path: `parse_usage_limit` produced a typed
+        // `UsageLimitInfo`, so the class is structural, whatever the wording.
+        let usage = mint_runner_class(false, 1, "any wording at all", true);
+        assert_eq!(usage, Some(ErrorCategory::SessionLimit));
+        assert_ne!(usage, Some(ErrorCategory::Unknown));
+
+        // The per-run deadline the engine armed, on the same footing.
+        assert_eq!(
+            mint_runner_class(true, 0, "", false),
+            Some(ErrorCategory::Timeout)
+        );
+    }
+
+    #[test]
+    fn the_mint_reads_no_message() {
+        // The same structural facts mint the same class no matter what the
+        // stderr says, and an empty-stderr exit is transient whether the wording
+        // would have said "rate limit" or nothing at all. What the mint reads of
+        // stderr is only whether it is EMPTY.
+        assert_eq!(
+            mint_runner_class(true, 0, "rate limit exceeded", false),
+            Some(ErrorCategory::Timeout),
+            "a timeout is a timeout even when the stream carried other prose"
+        );
+        assert_eq!(
+            mint_runner_class(false, 1, "", true),
+            Some(ErrorCategory::SessionLimit),
+        );
+    }
+
+    #[test]
+    fn a_diagnostic_exit_mints_nothing_and_falls_back_to_the_ladder() {
+        // The proposal's own falsifier, honoured: splitting
+        // `TransientProcessFailure` from `ApiError` on stderr CONTENT is a
+        // content judgment, and a raise site that makes one has reinvented the
+        // ladder. So this site declines, the column stays NULL, and
+        // `classify_error` answers exactly as it does today.
+        let stderr = "API Error: 529 overloaded_error";
+        assert_eq!(mint_runner_class(false, 1, stderr, false), None);
+        assert_eq!(
+            classify_error_str(&format!("Execution failed (exit code 1): {stderr}")),
+            ErrorCategory::ApiError,
+            "the fallback still classifies what the mint declined"
+        );
+    }
+
+    #[test]
+    fn a_clean_exit_mints_nothing() {
+        assert_eq!(mint_runner_class(false, 0, "", false), None);
+        assert_eq!(
+            mint_runner_class(false, 0, "some warning noise", false),
+            None
+        );
+    }
+
+    #[test]
+    fn the_stored_token_is_the_enum_s_own_serde_token() {
+        // One string for the wire, the DB column and the frontend. If this ever
+        // needs a second definition, the column has drifted from the enum.
+        assert_eq!(category_token(ErrorCategory::Timeout), "timeout");
+        assert_eq!(
+            category_token(ErrorCategory::TransientProcessFailure),
+            "transient_process_failure"
+        );
+        assert_eq!(category_token(ErrorCategory::SessionLimit), "session_limit");
+        assert_eq!(category_token(ErrorCategory::Unknown), "unknown");
     }
 }

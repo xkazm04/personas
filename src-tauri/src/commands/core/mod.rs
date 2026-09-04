@@ -6,6 +6,7 @@ pub mod gallery;
 pub mod import_export;
 pub mod memories;
 pub mod memory_compile;
+pub mod persona_brain;
 /// AI generation of custom persona icons via a vault image-gen connector.
 /// Gated on `desktop` — depends on `persona_icons::store_icon_bytes`.
 #[cfg(feature = "desktop")]
@@ -16,5 +17,6 @@ pub mod persona_icon_gen;
 pub mod persona_icons;
 pub mod persona_jobs;
 pub mod personas;
+pub mod responsibilities;
 pub mod saved_views;
 pub mod use_cases;

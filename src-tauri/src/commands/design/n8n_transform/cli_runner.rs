@@ -103,6 +103,12 @@ pub async fn start_n8n_transform_background(
                 lines: Vec::new(),
                 cancel_token: Some(cancel_token.clone()),
                 created_at: std::time::Instant::now(),
+                // Signal-only by design: this job's worker is a bare
+                // `tokio::spawn` streaming a CLI it must drain, and its cancel
+                // surface is `cancel_or_preempt` (which fires before a task
+                // may even exist). It reports `Requested`, truthfully.
+                abort: None,
+                cancel_outcome: None,
                 extra: N8nTransformExtra {
                     session_id: session_id.clone(),
                     ..Default::default()

@@ -25,6 +25,23 @@ use crate::error::AppError;
 
 use super::connector_strategy;
 use super::healthcheck::{validate_field_values, validate_healthcheck_url};
+use super::runner::hooks;
+
+/// Join a resolved base URL with a request path.
+///
+/// Extracted because the interceptor surface can rewrite the path: the URL has
+/// to be built once from the *effective* value, and once inside the gate so
+/// SSRF validation sees that same value. Two hand-inlined copies of this would
+/// be two chances for them to diverge.
+fn build_full_url(base_url: &str, path: &str) -> String {
+    let trimmed_base = base_url.trim_end_matches('/');
+    let trimmed_path = path.trim_start_matches('/');
+    if trimmed_path.is_empty() {
+        trimmed_base.to_string()
+    } else {
+        format!("{trimmed_base}/{trimmed_path}")
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Connector list cache (avoids hitting DB on every proxied request)
@@ -693,15 +710,6 @@ pub async fn execute_api_request(
     };
     let base_url = &base_url_resolved;
 
-    // Build full URL
-    let trimmed_base = base_url.trim_end_matches('/');
-    let trimmed_path = path.trim_start_matches('/');
-    let full_url = if trimmed_path.is_empty() {
-        trimmed_base.to_string()
-    } else {
-        format!("{trimmed_base}/{trimmed_path}")
-    };
-
     // Resolve the connector definition up front — its metadata decides both the
     // auth strategy (below) and whether this connector may target a private /
     // loopback address (self-hosted tools). Uses a short-lived cache to avoid a
@@ -713,65 +721,124 @@ pub async fn execute_api_request(
     let connector_metadata = connector.and_then(|c| c.metadata.as_deref());
     let allow_private = connector_allows_private_network(connector_metadata);
 
-    // SSRF protection (reuse healthcheck infrastructure). Skipped ONLY for
-    // connectors that explicitly opted into private-network access; those route
-    // through `HTTP_ALLOW_PRIVATE` below (no connect-time private-IP filter) so
-    // they can reach a self-hosted instance on localhost/LAN. Every other
-    // connector stays fully SSRF-guarded (field values + resolved URL + the
-    // connect-time DNS/redirect filters in SSRF_SAFE_HTTP).
-    if !allow_private {
-        validate_field_values(&fields)?;
-        validate_healthcheck_url(&full_url)?;
-    }
-
-    // §5 — runtime scope enforcement. Block (or warn) if the request operates
-    // on a resource the user did not pick during scoping. Pure pass-through
-    // when the credential is broad-scoped or the connector declares no
-    // `enforce` rules. Mode comes from the credential's metadata
-    // (`scope_enforcement: "block"` flips warn-only to hard reject).
+    // -- Hook emit site: `hooks::MutationPoint::ApiRequest` ------------------
+    //
+    // This is the runner's one mutating extension point, and its position is
+    // the contract. The whole policy path below — SSRF validation and §5 scope
+    // enforcement — runs INSIDE the continuation that an interceptor calls, so
+    // a frame's rewrite is necessarily the value the gates judge. Putting the
+    // rewrite after the gates would mean the system approved one path and
+    // requested another, with nothing erroring: the gate ran, said yes, and its
+    // yes was about a string that no longer exists.
+    //
+    // That ordering is structural rather than remembered — `gate_path` is
+    // unreachable except through `Continuation::call` — which is what makes the
+    // invariant testable (`hooks::tests::the_gate_judges_the_rewritten_value_
+    // not_the_original` fails if the two are swapped).
+    //
+    // With no interceptor registered (today's state — the surface ships with a
+    // real observer consumer and deliberately no mutating one) this is the
+    // original code plus one branch.
     let enforcement_mode =
         super::scope_enforcement::EnforcementMode::from_metadata(credential.metadata.as_deref());
     let connector_resources = connector.and_then(|c| c.resources.as_deref());
-    let outcome = super::scope_enforcement::evaluate(
-        connector_resources,
-        credential.scoped_resources.as_deref(),
-        path,
-        enforcement_mode,
+
+    let gate_path = |c: &hooks::ApiCall| -> Result<hooks::GateVerdict, AppError> {
+        // Build full URL from the EFFECTIVE path.
+        let full = build_full_url(base_url, &c.path);
+
+        // SSRF protection (reuse healthcheck infrastructure). Skipped ONLY for
+        // connectors that explicitly opted into private-network access; those
+        // route through `HTTP_ALLOW_PRIVATE` below (no connect-time private-IP
+        // filter) so they can reach a self-hosted instance on localhost/LAN.
+        // Every other connector stays fully SSRF-guarded (field values +
+        // resolved URL + the connect-time DNS/redirect filters in
+        // SSRF_SAFE_HTTP).
+        if !allow_private {
+            validate_field_values(&fields)?;
+            validate_healthcheck_url(&full)?;
+        }
+
+        // §5 — runtime scope enforcement. Block (or warn) if the request
+        // operates on a resource the user did not pick during scoping. Pure
+        // pass-through when the credential is broad-scoped or the connector
+        // declares no `enforce` rules. Mode comes from the credential's
+        // metadata (`scope_enforcement: "block"` flips warn-only to hard
+        // reject).
+        let outcome = super::scope_enforcement::evaluate(
+            connector_resources,
+            credential.scoped_resources.as_deref(),
+            &c.path,
+            enforcement_mode,
+        )?;
+        use super::scope_enforcement::EnforcementOutcome;
+        match outcome {
+            EnforcementOutcome::Allow => Ok(hooks::GateVerdict::Allowed),
+            EnforcementOutcome::WarnOnly {
+                resource,
+                attempted_id,
+            } => {
+                tracing::warn!(
+                    credential_id = %credential.id,
+                    service_type = %credential.service_type,
+                    resource = %resource,
+                    attempted_id = %attempted_id,
+                    path = %c.path,
+                    // The original travels beside the effective value: a
+                    // refusal that names only the rewritten string makes the
+                    // frame that produced it invisible in every channel.
+                    original_path = %c.original_path,
+                    "scope_enforcement: out-of-scope request (warn-only mode)"
+                );
+                Ok(hooks::GateVerdict::Allowed)
+            }
+            EnforcementOutcome::Block {
+                resource,
+                attempted_id,
+            } => {
+                tracing::warn!(
+                    credential_id = %credential.id,
+                    service_type = %credential.service_type,
+                    resource = %resource,
+                    attempted_id = %attempted_id,
+                    path = %c.path,
+                    original_path = %c.original_path,
+                    "scope_enforcement: blocked out-of-scope request"
+                );
+                Ok(hooks::GateVerdict::Blocked { reason: format!(
+                    "Credential is scoped to a subset of {resource}; request targets '{attempted_id}' which is not in scope. \
+                     Add it via the credential's Scope picker, or set scope_enforcement=warn to allow with a log entry."
+                )})
+            }
+        }
+    };
+
+    let chain = hooks::run_api_request_chain(
+        hooks::MutationPoint::ApiRequest,
+        hooks::ApiCall::new(credential_id, &credential.service_type, method, path),
+        &gate_path,
     )?;
-    use super::scope_enforcement::EnforcementOutcome;
-    match outcome {
-        EnforcementOutcome::Allow => {}
-        EnforcementOutcome::WarnOnly {
-            resource,
-            attempted_id,
-        } => {
-            tracing::warn!(
-                credential_id = %credential.id,
-                service_type = %credential.service_type,
-                resource = %resource,
-                attempted_id = %attempted_id,
-                path = %path,
-                "scope_enforcement: out-of-scope request (warn-only mode)"
-            );
+    let effective = match chain {
+        hooks::ChainOutcome::Allowed { effective } => effective,
+        // A denial is a typed value at the seam and only becomes an error
+        // here, at the boundary that acts on it — so `frame` distinguishes
+        // "the host's gate said no" from "a contribution said no", which a
+        // veto-by-error surface could not.
+        hooks::ChainOutcome::Refused { frame, reason } => {
+            if let Some(frame) = frame {
+                tracing::warn!(
+                    credential_id = %credential.id,
+                    hook = %frame,
+                    "api_proxy: request refused by a registered interceptor"
+                );
+            }
+            return Err(AppError::Forbidden(reason));
         }
-        EnforcementOutcome::Block {
-            resource,
-            attempted_id,
-        } => {
-            tracing::warn!(
-                credential_id = %credential.id,
-                service_type = %credential.service_type,
-                resource = %resource,
-                attempted_id = %attempted_id,
-                path = %path,
-                "scope_enforcement: blocked out-of-scope request"
-            );
-            return Err(AppError::Forbidden(format!(
-                "Credential is scoped to a subset of {resource}; request targets '{attempted_id}' which is not in scope. \
-                 Add it via the credential's Scope picker, or set scope_enforcement=warn to allow with a log entry."
-            )));
-        }
-    }
+    };
+
+    // Everything downstream uses the effective path — the same value the gates
+    // above judged, never the pre-rewrite one.
+    let full_url = build_full_url(base_url, &effective.path);
 
     // Per-credential rate limiting (token-bucket, default 60 req/min)
     check_rate_limit(credential_id, connector_metadata).await?;

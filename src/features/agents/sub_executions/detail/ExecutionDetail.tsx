@@ -7,6 +7,7 @@ import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/Pipel
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
 import { hasRenderableJsonBlob } from '@/lib/utils/parseJson';
 import { ExecutionDetailTabs, tabButtonId, tabPanelId, type DetailTab } from './ExecutionDetailTabs';
+import { AttentionProvenance } from './AttentionProvenance';
 import { ExecutionDetailContent } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { ChainTraceView } from './chain/ChainTraceView';
 import { useChainTrace } from '../libs/useChainTrace';
@@ -102,6 +103,9 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
         </div>
       </div>
       <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />
+
+      {/* Attention provenance — renders only for attention-dispatched runs. */}
+      <AttentionProvenance inputData={execution.input_data} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <div

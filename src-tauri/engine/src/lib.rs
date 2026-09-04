@@ -146,6 +146,7 @@ pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
 pub mod recipe_parameters;
+pub mod responsibility;
 pub mod safe_json;
 pub mod scope_enforcement;
 #[cfg(feature = "scraper")]

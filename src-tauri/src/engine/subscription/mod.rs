@@ -31,11 +31,14 @@
 //! - `autonomy_*` — the opt-in autonomous spend loops, grouped by what they
 //!   steer: [`autonomy_goals`], [`autonomy_reviews`], [`autonomy_backlog`],
 //!   [`autonomy_coaching`], [`autonomy_kpi`].
+//! - [`attention`] — the living-agent attention loop (WP5): one dispatched
+//!   lane per tick for personas holding attention-enabled charters.
 //! - [`watchdogs`] — the always-on, spend-free stall detectors.
 //!
 //! Everything stays reachable as `crate::engine::subscription::X`; the glob
 //! re-exports below preserve the pre-split surface exactly.
 
+mod attention;
 mod autonomy_backlog;
 mod autonomy_coaching;
 mod autonomy_goals;
@@ -51,6 +54,7 @@ mod watchdogs;
 #[cfg(test)]
 mod tests;
 
+pub use attention::*;
 pub use autonomy_backlog::*;
 pub use autonomy_coaching::*;
 pub use autonomy_goals::*;

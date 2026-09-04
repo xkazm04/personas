@@ -48,19 +48,19 @@ export default function DataPortabilitySettings() {
 
           {dp.stats && (
             <div className="flex flex-wrap gap-2">
-              <StatBadge icon={Bot} label={s.personas} value={dp.stats.persona_count} accent="text-emerald-400" />
-              <StatBadge icon={Users} label={s.teams} value={dp.stats.team_count} accent="text-blue-400" />
-              <StatBadge icon={Wrench} label={s.tools} value={dp.stats.tool_count} accent="text-amber-400" />
-              <StatBadge icon={KeyRound} label={s.credentials} value={dp.stats.credential_count} accent="text-violet-400" />
-              <StatBadge icon={Brain} label={s.memories} value={dp.stats.memory_count} accent="text-cyan-400" />
-              <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.team_memory_count} accent="text-teal-400" />
-              <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.test_suite_count} accent="text-rose-400" />
-              <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpi_count} accent="text-pink-400" />
-              <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.dev_project_count} accent="text-lime-400" />
-              <StatBadge icon={BookOpen} label={s.workspace_knowledge} value={dp.stats.workspace_knowledge_count} accent="text-indigo-400" />
-              <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twin_count} accent="text-rose-300" />
-              <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athena_core_count} accent="text-fuchsia-400" />
-              <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athena_learned_count} accent="text-fuchsia-300" />
+              <StatBadge icon={Bot} label={s.personas} value={dp.stats.personaCount} accent="text-emerald-400" />
+              <StatBadge icon={Users} label={s.teams} value={dp.stats.teamCount} accent="text-blue-400" />
+              <StatBadge icon={Wrench} label={s.tools} value={dp.stats.toolCount} accent="text-amber-400" />
+              <StatBadge icon={KeyRound} label={s.credentials} value={dp.stats.credentialCount} accent="text-violet-400" />
+              <StatBadge icon={Brain} label={s.memories} value={dp.stats.memoryCount} accent="text-cyan-400" />
+              <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.teamMemoryCount} accent="text-teal-400" />
+              <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.testSuiteCount} accent="text-rose-400" />
+              <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpiCount} accent="text-pink-400" />
+              <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.devProjectCount} accent="text-lime-400" />
+              <StatBadge icon={BookOpen} label={s.workspace_knowledge} value={dp.stats.workspaceKnowledgeCount} accent="text-indigo-400" />
+              <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twinCount} accent="text-rose-300" />
+              <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athenaCoreCount} accent="text-fuchsia-400" />
+              <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athenaLearnedCount} accent="text-fuchsia-300" />
             </div>
           )}
 

@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "अपनी भूमिका चुनें",
-    "choose_role_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
-    "pick_tool": "अपना पसंदीदा टूल चुनें",
-    "pick_tool_hint": "यह आपका पहला सेवा कनेक्शन होगा।",
-    "describe_goal": "आप क्या ऑटोमेट करना चाहते हैं?",
-    "describe_goal_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
-    "goal_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें…",
-    "ready_to_save": "सहेजने के लिए तैयार",
-    "step_role": "आपकी भूमिका",
-    "step_role_hint": "अनुभव तैयार करने के लिए हमें अपनी भूमिका बताएं।",
-    "step_tool": "पसंदीदा टूल",
-    "step_tool_hint": "पहली सेवा चुनें जिसे आप कनेक्ट करना चाहते हैं।",
-    "step_goal": "ऑटोमेशन लक्ष्य",
-    "step_goal_hint": "बताएं कि आप पहले क्या ऑटोमेट करना चाहेंगे।",
-    "select_role_first": "टूल विकल्प अनलॉक करने के लिए पहले एक भूमिका चुनें।",
-    "select_tool_first": "अपना लक्ष्य निर्धारित करने के लिए पहले एक टूल चुनें।",
-    "get_started": "शुरू करें",
-    "role_office_rat": "सामान्य उपयोगकर्ता",
-    "role_office_rat_hint": "गैर-तकनीकी उपयोगकर्ता",
-    "role_developer": "डेवलपर",
-    "role_developer_hint": "तकनीकी उपयोगकर्ता",
-    "role_manager": "मैनेजर",
-    "role_manager_hint": "योजना और समन्वय",
-    "role": "भूमिका",
-    "tool": "टूल",
-    "goal": "लक्ष्य"
-  },
-  "learning": {
-    "title": "लर्निंग सेंटर",
-    "subtitle": "Personas में माहिर होने के लिए गाइडेड टूर और त्वरित ट्रिक्स",
-    "guided_tours": "गाइडेड टूर",
-    "tours_completed": "{completed}/{total} पूर्ण",
-    "done": "हो गया",
-    "restart": "पुनः प्रारंभ",
-    "start_tour": "टूर शुरू करें",
-    "steps_count": "{count} चरण",
-    "tour_steps_label": "आप क्या सीखेंगे",
-    "power_moves": "पावर मूव्स",
-    "moves_used": "{used}/{total} उपयोग किए",
-    "try_it": "आज़माएँ",
-    "used_badge": "उपयोग किया",
-    "group_save_time": "समय बचाएँ",
-    "group_prevent_failures": "विफलताएँ रोकें",
-    "group_level_up": "एजेंट को अपग्रेड करें",
-    "group_orchestrate": "ऑर्केस्ट्रेट करें",
-    "pm_monitor_triage_title": "टाइटलबार से पूरे फ्लीट को ट्रिएज करें",
-    "pm_schedule_delay_title": "शेड्यूल्ड रन को छोड़ें या विलंबित करें",
-    "pm_bulk_rerun_title": "विफल एक्ज़ीक्यूशन को बल्क में फिर चलाएँ",
-    "pm_dead_letter_title": "डेड-लेटर कतार से ईवेंट्स बचाएँ",
-    "pm_annotate_golden_title": "गोल्डन रन को स्टार करें, रिग्रेशन टैग करें",
-    "pm_credential_health_title": "AI को विफल क्रेडेंशियल ठीक करने दें",
-    "pm_lab_measure_title": "मॉडलों में प्रॉम्प्ट को मापें",
-    "pm_prompt_rollback_title": "एक क्लिक में खराब प्रॉम्प्ट वापस करें",
-    "pm_director_coaching_title": "Director से पोर्टफोलियो कोचिंग लें",
-    "pm_event_chain_title": "इवेंट लिस्नर्स से एजेंट्स को चेन करें",
-    "pm_live_stream_title": "चेन कैस्केड को रीयल टाइम में देखें",
-    "pm_athena_fleet_title": "Athena से अपना फ्लीट विश्लेषण करवाएँ",
-    "composed_tours": "Athena द्वारा तैयार टूर",
-    "composed_badge": "Athena द्वारा तैयार",
-    "composed_stale": "पुराना हो सकता है — इसे तैयार करने के बाद ऐप बदल चुका है",
-    "composed_failed": "Athena के तैयार किए वॉकथ्रू लोड नहीं हो सके।",
-    "composed_empty": "जब आप Athena से कुछ काम करने का तरीका दिखाने को कहते हैं, तो उसके तैयार किए वॉकथ्रू यहाँ दिखते हैं।",
-    "composed_dismiss": "इस पुराने वॉकथ्रू को हटाएँ",
-    "composed_all_dismissed": "आपने सभी पुराने वॉकथ्रू हटा दिए हैं। Athena जो नए बनाएगी, वे यहाँ दिखाई देंगे।"
-  },
-  "setup_stepper": {
-    "your_profile": "आपकी प्रोफ़ाइल",
-    "choose_role": "अपनी भूमिका चुनें",
-    "tailor_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
-    "simple_hint": "हमने ऐप को रोजमर्रा के ऑफिस उपयोग के लिए सेट किया है।",
-    "pick_tool": "अपना पसंदीदा टूल चुनें",
-    "tool_hint": "यह आपका पहला कनेक्टर इंटीग्रेशन होगा।",
-    "automate_title": "आप क्या ऑटोमेट करना चाहते हैं?",
-    "automate_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
-    "automate_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें…",
-    "min_chars": "न्यूनतम 10 अक्षर ({current}/10)",
-    "ready_to_save": "सहेजने के लिए तैयार",
-    "back": "वापस",
-    "next": "अगला",
-    "finish": "समाप्त"
-  },
-  "welcome_layout": {
-    "get_started": "शुरू करें",
-    "language": "भाषा"
-  },
-  "resume": {
-    "failure": "{personaName} में अपठित विफलता — जाँच करें",
-    "tour": "{tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle} जारी रखें",
-    "edit": "{personaName} को संपादित करना जारी रखें"
-  },
-  "nav_status": {
-    "incidents": "{count} खुली घटना",
-    "incidents_other": "{count} खुली घटनाएँ",
-    "reviews": "{count} लंबित समीक्षा",
-    "reviews_other": "{count} लंबित समीक्षाएँ",
-    "teams": "{count} टीम",
-    "teams_other": "{count} टीमें",
-    "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
-    "agents_active_other": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
-    "events_today": "पिछले 24 घंटों में {count} ईवेंट",
-    "events_today_other": "पिछले 24 घंटों में {count} इवेंट",
-    "connections_external": "{count} बाहरी कनेक्शन",
-    "connections_external_other": "{count} बाहरी कनेक्शन",
-    "connections_builtin": "{count} बिल्ट-इन कनेक्टर",
-    "connections_builtin_other": "{count} बिल्ट-इन कनेक्टर",
-    "trend_up": "पिछले 24 घंटों की तुलना में {pct}% ऊपर",
-    "trend_down": "पिछले 24 घंटों की तुलना में {pct}% नीचे",
-    "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं",
-    "agents_enabled": "{count} सक्रिय एजेंट",
-    "agents_enabled_other": "{count} सक्रिय एजेंट",
-    "reports": "{count} अपठित रिपोर्ट",
-    "reports_other": "{count} अपठित रिपोर्टें"
+  "commander": "कमांडर",
+  "fleet": {
+    "active_agents": "सक्रिय एजेंट",
+    "credentials": "क्रेडेंशियल",
+    "executions_today": "आज के रन",
+    "success_rate": "सफलता दर"
   },
   "get_started": {
     "ask_cta": "असिस्टेंट से पूछें",
@@ -119,84 +12,184 @@
     "subtitle": "सरल भाषा में कोई काम बताएं और हम एक काम करने वाला एजेंट तैयार करेंगे — या असिस्टेंट को यह करने के लिए कहें।",
     "title": "अपना पहला एजेंट बनाएं"
   },
-  "welcome": "स्वागत है",
-  "greeting_morning": "शुभ प्रभात",
   "greeting_afternoon": "शुभ अपराह्न",
   "greeting_evening": "शुभ संध्या",
+  "greeting_morning": "शुभ प्रभात",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
+    "lucide_tab": "Lucide (लाइब्रेरी)",
+    "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली",
+    "personas_tab": "Personas (एनिमेटेड)"
+  },
+  "learning": {
+    "composed_all_dismissed": "आपने सभी पुराने वॉकथ्रू हटा दिए हैं। Athena जो नए बनाएगी, वे यहाँ दिखाई देंगे।",
+    "composed_badge": "Athena द्वारा तैयार",
+    "composed_dismiss": "इस पुराने वॉकथ्रू को हटाएँ",
+    "composed_empty": "जब आप Athena से कुछ काम करने का तरीका दिखाने को कहते हैं, तो उसके तैयार किए वॉकथ्रू यहाँ दिखते हैं।",
+    "composed_failed": "Athena के तैयार किए वॉकथ्रू लोड नहीं हो सके।",
+    "composed_stale": "पुराना हो सकता है — इसे तैयार करने के बाद ऐप बदल चुका है",
+    "composed_tours": "Athena द्वारा तैयार टूर",
+    "done": "हो गया",
+    "group_level_up": "एजेंट को अपग्रेड करें",
+    "group_orchestrate": "ऑर्केस्ट्रेट करें",
+    "group_prevent_failures": "विफलताएँ रोकें",
+    "group_save_time": "समय बचाएँ",
+    "guided_tours": "गाइडेड टूर",
+    "moves_used": "{used}/{total} उपयोग किए",
+    "pm_annotate_golden_title": "गोल्डन रन को स्टार करें, रिग्रेशन टैग करें",
+    "pm_athena_fleet_title": "Athena से अपना फ्लीट विश्लेषण करवाएँ",
+    "pm_bulk_rerun_title": "विफल एक्ज़ीक्यूशन को बल्क में फिर चलाएँ",
+    "pm_credential_health_title": "AI को विफल क्रेडेंशियल ठीक करने दें",
+    "pm_dead_letter_title": "डेड-लेटर कतार से ईवेंट्स बचाएँ",
+    "pm_director_coaching_title": "Director से पोर्टफोलियो कोचिंग लें",
+    "pm_event_chain_title": "इवेंट लिस्नर्स से एजेंट्स को चेन करें",
+    "pm_lab_measure_title": "मॉडलों में प्रॉम्प्ट को मापें",
+    "pm_live_stream_title": "चेन कैस्केड को रीयल टाइम में देखें",
+    "pm_monitor_triage_title": "टाइटलबार से पूरे फ्लीट को ट्रिएज करें",
+    "pm_prompt_rollback_title": "एक क्लिक में खराब प्रॉम्प्ट वापस करें",
+    "pm_schedule_delay_title": "शेड्यूल्ड रन को छोड़ें या विलंबित करें",
+    "power_moves": "पावर मूव्स",
+    "restart": "पुनः प्रारंभ",
+    "start_tour": "टूर शुरू करें",
+    "steps_count": "{count} चरण",
+    "subtitle": "Personas में माहिर होने के लिए गाइडेड टूर और त्वरित ट्रिक्स",
+    "title": "लर्निंग सेंटर",
+    "tour_steps_label": "आप क्या सीखेंगे",
+    "tours_completed": "{completed}/{total} पूर्ण",
+    "try_it": "आज़माएँ",
+    "used_badge": "उपयोग किया"
+  },
+  "nav_status": {
+    "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
+    "agents_active_other": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
+    "agents_enabled": "{count} सक्रिय एजेंट",
+    "agents_enabled_other": "{count} सक्रिय एजेंट",
+    "connections_builtin": "{count} बिल्ट-इन कनेक्टर",
+    "connections_builtin_other": "{count} बिल्ट-इन कनेक्टर",
+    "connections_external": "{count} बाहरी कनेक्शन",
+    "connections_external_other": "{count} बाहरी कनेक्शन",
+    "events_today": "पिछले 24 घंटों में {count} ईवेंट",
+    "events_today_other": "पिछले 24 घंटों में {count} इवेंट",
+    "incidents": "{count} खुली घटना",
+    "incidents_other": "{count} खुली घटनाएँ",
+    "reports": "{count} अपठित रिपोर्ट",
+    "reports_other": "{count} अपठित रिपोर्टें",
+    "reviews": "{count} लंबित समीक्षा",
+    "reviews_other": "{count} लंबित समीक्षाएँ",
+    "teams": "{count} टीम",
+    "teams_other": "{count} टीमें",
+    "trend_down": "पिछले 24 घंटों की तुलना में {pct}% नीचे",
+    "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं",
+    "trend_up": "पिछले 24 घंटों की तुलना में {pct}% ऊपर"
+  },
+  "nav": {
+    "cloud": {
+      "description": "एजेंट क्लाउड इंफ़्रास्ट्रक्चर पर डिप्लॉय करें, शेड्यूल प्रबंधित करें और GitLab CI इंटीग्रेट करें",
+      "label": "क्लाउड"
+    },
+    "credentials": {
+      "description": "API क्रेडेंशियल, डेटाबेस कनेक्शन, OAuth टोकन और एन्क्रिप्टेड सीक्रेट प्रबंधित करें",
+      "label": "क्रेडेंशियल"
+    },
+    "design-reviews": {
+      "description": "n8n वर्कफ़्लो आयात करें, टेम्पलेट गैलरी ब्राउज़ करें और एजेंट ब्लूप्रिंट जनरेट करें",
+      "label": "टेम्पलेट"
+    },
+    "events": {
+      "description": "इवेंट ट्रिगर, webhook लिसनर और शेड्यूल-आधारित ऑटोमेशन कॉन्फ़िगर करें",
+      "label": "इवेंट"
+    },
+    "overview": {
+      "description": "सभी एजेंटों का डैशबोर्ड एनालिटिक्स, निष्पादन इतिहास और रीयल-टाइम सिस्टम मॉनिटरिंग",
+      "label": "अवलोकन"
+    },
+    "personas": {
+      "description": "कस्टम व्यवहार और क्षमताओं के साथ AI एजेंट बनाएँ, कॉन्फ़िगर करें और प्रबंधित करें",
+      "label": "एजेंट"
+    },
+    "plugins": {
+      "description": "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं",
+      "label": "प्लगइन"
+    },
+    "settings": {
+      "description": "खाता प्राथमिकताएँ, दिखावट थीम, सूचना नियम और इंजन कॉन्फ़िगरेशन",
+      "label": "सेटिंग्स"
+    },
+    "team": {
+      "description": "कई एजेंट्स को एक टीम में जोड़ें जो मल्टी-स्टेप वर्कफ़्लो पर मिलकर काम करे",
+      "label": "टीमें"
+    },
+    "teams": {
+      "description": "कई एजेंट्स को एक टीम में जोड़ें जो मल्टी-स्टेप वर्कफ़्लो पर मिलकर काम करे",
+      "label": "टीमें"
+    }
+  },
   "operator": "उपयोगकर्ता",
-  "commander": "कमांडर",
-  "summary_empty": "अपना पहला एजेंट बनाकर या प्लेटफ़ॉर्म एक्सप्लोर करके शुरू करें।",
-  "summary_stats": "आपके पास {personasCount} एजेंट{personasPlural} और {credentialsCount} क्रेडेंशियल{credentialsPlural} कॉन्फ़िगर हैं।",
-  "quick_navigation": "त्वरित नेविगेशन",
   "platform_label": "Personas प्लेटफ़ॉर्म",
+  "quick_navigation": "त्वरित नेविगेशन",
+  "resume": {
+    "edit": "{personaName} को संपादित करना जारी रखें",
+    "failure": "{personaName} में अपठित विफलता — जाँच करें",
+    "tour": "{tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle} जारी रखें"
+  },
   "roadmap": {
-    "title": "उत्पाद रोडमैप",
-    "subtitle": "हम अभी क्या बना रहे हैं और आगे क्या आएगा।",
-    "unavailable": "रोडमैप उपलब्ध नहीं",
-    "unavailable_hint": "उत्पाद रोडमैप लोड नहीं हो सका। अपना कनेक्शन जाँचें और पुनः प्रयास करें।",
+    "in_progress_count": "{count} प्रगति में",
+    "next_count": "{count} अगला",
+    "priority_later": "बाद में",
+    "priority_next": "अगला",
+    "priority_now": "अभी",
+    "status_completed": "पूर्ण",
     "status_in_progress": "प्रगति में",
     "status_next": "अगला",
     "status_planned": "योजनाबद्ध",
-    "status_completed": "पूर्ण",
-    "priority_now": "अभी",
-    "priority_next": "अगला",
-    "priority_later": "बाद में",
-    "in_progress_count": "{count} प्रगति में",
-    "next_count": "{count} अगला"
+    "subtitle": "हम अभी क्या बना रहे हैं और आगे क्या आएगा।",
+    "title": "उत्पाद रोडमैप",
+    "unavailable": "रोडमैप उपलब्ध नहीं",
+    "unavailable_hint": "उत्पाद रोडमैप लोड नहीं हो सका। अपना कनेक्शन जाँचें और पुनः प्रयास करें।"
   },
-  "fleet": {
-    "executions_today": "आज के रन",
-    "success_rate": "सफलता दर",
-    "active_agents": "सक्रिय एजेंट",
-    "credentials": "क्रेडेंशियल"
+  "setup_stepper": {
+    "automate_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
+    "automate_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें…",
+    "automate_title": "आप क्या ऑटोमेट करना चाहते हैं?",
+    "back": "वापस",
+    "choose_role": "अपनी भूमिका चुनें",
+    "finish": "समाप्त",
+    "min_chars": "न्यूनतम 10 अक्षर ({current}/10)",
+    "next": "अगला",
+    "pick_tool": "अपना पसंदीदा टूल चुनें",
+    "ready_to_save": "सहेजने के लिए तैयार",
+    "simple_hint": "हमने ऐप को रोजमर्रा के ऑफिस उपयोग के लिए सेट किया है।",
+    "tailor_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
+    "tool_hint": "यह आपका पहला कनेक्टर इंटीग्रेशन होगा।",
+    "your_profile": "आपकी प्रोफ़ाइल"
   },
-  "nav": {
-    "overview": {
-      "label": "अवलोकन",
-      "description": "सभी एजेंटों का डैशबोर्ड एनालिटिक्स, निष्पादन इतिहास और रीयल-टाइम सिस्टम मॉनिटरिंग"
-    },
-    "personas": {
-      "label": "एजेंट",
-      "description": "कस्टम व्यवहार और क्षमताओं के साथ AI एजेंट बनाएँ, कॉन्फ़िगर करें और प्रबंधित करें"
-    },
-    "events": {
-      "label": "इवेंट",
-      "description": "इवेंट ट्रिगर, webhook लिसनर और शेड्यूल-आधारित ऑटोमेशन कॉन्फ़िगर करें"
-    },
-    "credentials": {
-      "label": "क्रेडेंशियल",
-      "description": "API क्रेडेंशियल, डेटाबेस कनेक्शन, OAuth टोकन और एन्क्रिप्टेड सीक्रेट प्रबंधित करें"
-    },
-    "design-reviews": {
-      "label": "टेम्पलेट",
-      "description": "n8n वर्कफ़्लो आयात करें, टेम्पलेट गैलरी ब्राउज़ करें और एजेंट ब्लूप्रिंट जनरेट करें"
-    },
-    "team": {
-      "label": "टीमें",
-      "description": "कई एजेंट्स को एक टीम में जोड़ें जो मल्टी-स्टेप वर्कफ़्लो पर मिलकर काम करे"
-    },
-    "teams": {
-      "label": "टीमें",
-      "description": "कई एजेंट्स को एक टीम में जोड़ें जो मल्टी-स्टेप वर्कफ़्लो पर मिलकर काम करे"
-    },
-    "cloud": {
-      "label": "क्लाउड",
-      "description": "एजेंट क्लाउड इंफ़्रास्ट्रक्चर पर डिप्लॉय करें, शेड्यूल प्रबंधित करें और GitLab CI इंटीग्रेट करें"
-    },
-    "settings": {
-      "label": "सेटिंग्स",
-      "description": "खाता प्राथमिकताएँ, दिखावट थीम, सूचना नियम और इंजन कॉन्फ़िगरेशन"
-    },
-    "plugins": {
-      "label": "प्लगइन",
-      "description": "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (लाइब्रेरी)",
-    "personas_tab": "Personas (एनिमेटेड)",
-    "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
-    "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
+  "setup": {
+    "choose_role": "अपनी भूमिका चुनें",
+    "choose_role_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
+    "describe_goal": "आप क्या ऑटोमेट करना चाहते हैं?",
+    "describe_goal_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
+    "get_started": "शुरू करें",
+    "goal": "लक्ष्य",
+    "goal_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें…",
+    "pick_tool": "अपना पसंदीदा टूल चुनें",
+    "pick_tool_hint": "यह आपका पहला सेवा कनेक्शन होगा।",
+    "ready_to_save": "सहेजने के लिए तैयार",
+    "role": "भूमिका",
+    "role_developer": "डेवलपर",
+    "role_developer_hint": "तकनीकी उपयोगकर्ता",
+    "role_manager": "मैनेजर",
+    "role_manager_hint": "योजना और समन्वय",
+    "role_office_rat": "सामान्य उपयोगकर्ता",
+    "role_office_rat_hint": "गैर-तकनीकी उपयोगकर्ता",
+    "select_role_first": "टूल विकल्प अनलॉक करने के लिए पहले एक भूमिका चुनें।",
+    "select_tool_first": "अपना लक्ष्य निर्धारित करने के लिए पहले एक टूल चुनें।",
+    "step_goal": "ऑटोमेशन लक्ष्य",
+    "step_goal_hint": "बताएं कि आप पहले क्या ऑटोमेट करना चाहेंगे।",
+    "step_role": "आपकी भूमिका",
+    "step_role_hint": "अनुभव तैयार करने के लिए हमें अपनी भूमिका बताएं।",
+    "step_tool": "पसंदीदा टूल",
+    "step_tool_hint": "पहली सेवा चुनें जिसे आप कनेक्ट करना चाहते हैं।",
+    "tool": "टूल"
   },
   "since_left": {
     "alerts": "{count} अलर्ट जारी",
@@ -209,5 +202,12 @@
     "runs": "{count} रन",
     "runs_other": "{count} रन",
     "title": "जब से आप गए"
+  },
+  "summary_empty": "अपना पहला एजेंट बनाकर या प्लेटफ़ॉर्म एक्सप्लोर करके शुरू करें।",
+  "summary_stats": "आपके पास {personasCount} एजेंट{personasPlural} और {credentialsCount} क्रेडेंशियल{credentialsPlural} कॉन्फ़िगर हैं।",
+  "welcome": "स्वागत है",
+  "welcome_layout": {
+    "get_started": "शुरू करें",
+    "language": "भाषा"
   }
 }

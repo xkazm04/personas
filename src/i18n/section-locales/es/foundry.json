@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "Compuesto por {count} capacidades",
-  "xray_tooltip": "Esta plantilla es una mentalidad más capacidades del catálogo de recetas — las mismas piezas que puedes componer a mano en el Foundry.",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "Esta plantilla es una mentalidad más capacidades del catálogo de recetas — las mismas piezas que puedes componer a mano en el Foundry."
 }

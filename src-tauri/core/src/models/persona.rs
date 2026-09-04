@@ -512,11 +512,12 @@ pub struct KpLink {
 ///
 /// This is the **provenance** record: what kp sent and what Personas did with
 /// it. It is deliberately NOT the enforcement authority. The mandate the
-/// autonomy gate and the diff chokepoint read lives in an `app_settings` row
-/// keyed by [`Self::mandate_key`], because enforcement happens per *project*
-/// and only the project id is in scope at those call sites. Two copies of a
-/// rung that could disagree is exactly the bug a single authority prevents —
-/// so the rung is not repeated here, only the key that finds it.
+/// autonomy gate and the diff chokepoint read lives in a
+/// `persona_responsibilities` row (the hire's charter, [`Self::mandate_key`]
+/// holds its id), resolved per *project* because only the project id is in
+/// scope at those call sites. Two copies of a rung that could disagree is
+/// exactly the bug a single authority prevents — so the rung is not repeated
+/// here, only the pointer that finds it.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -542,8 +543,13 @@ pub struct AppMasterLink {
     pub unsupported_triggers: Vec<String>,
     /// RFC-3339 probation end — approval time + `tenure.probationDays`.
     pub probation_ends_at: String,
-    /// The `app_settings` key holding the enforceable mandate record
-    /// (`app_master_mandate:<project_id>`).
+    /// The `persona_responsibilities` row id (`resp_…`) holding this hire's
+    /// charter — the enforceable mandate record. Formerly the `app_settings`
+    /// mandate key (`app_master_mandate:<project_id>`), which the boot
+    /// migration retired; links stamped before that carry the legacy key
+    /// string, and nothing parses either shape — enforcement resolves the
+    /// charter by project, not through this pointer. Empty when the hire's
+    /// charter row could not be persisted.
     pub mandate_key: String,
     /// What the binding pass did and did not manage, in order. Duplicated from
     /// `setup_detail` on purpose: `promote_build_draft` OVERWRITES
@@ -758,6 +764,12 @@ pub struct Persona {
     /// move to/from `archived`. Stored as the lowercase string.
     #[serde(default = "default_lifecycle")]
     pub lifecycle: String,
+    /// Serialized `PersonaCore` JSON — the persona's Character (living-agent
+    /// spine). Seeded by build/adopt (seed-if-absent), owned by the operator
+    /// thereafter. `None` for personas without an authored Core.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub core_profile: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -1025,6 +1037,10 @@ pub struct UpdatePersonaInput {
     /// `None` = leave unchanged. Promote/archive/restore drive this; the repo
     /// validates the value against `PersonaLifecycle`.
     pub lifecycle: Option<String>,
+    /// Serialized `PersonaCore` JSON (the persona's Character). Partial-update:
+    /// key omitted = leave unchanged; `null` = clear; value = set.
+    #[serde(default, deserialize_with = "double_option")]
+    pub core_profile: Option<Option<String>>,
     /// Change-log attribution only — NOT a persisted persona column. Tags each
     /// `update_persona` with its origin (`"editor" | "header" | "fanout" |
     /// "other"`) so the persona change history can say where an edit came from.

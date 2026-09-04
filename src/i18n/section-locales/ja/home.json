@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "役割を選択",
-    "choose_role_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
-    "pick_tool": "お気に入りツールを選択",
-    "pick_tool_hint": "これが最初のサービス接続になります。",
-    "describe_goal": "何を自動化したいですか？",
-    "describe_goal_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
-    "goal_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
-    "ready_to_save": "保存準備完了",
-    "step_role": "あなたの役割",
-    "step_role_hint": "体験をカスタマイズするために役割を教えてください。",
-    "step_tool": "お気に入りツール",
-    "step_tool_hint": "最初に接続したいサービスを選択してください。",
-    "step_goal": "自動化目標",
-    "step_goal_hint": "最初に自動化したいことを説明してください。",
-    "select_role_first": "ツールオプションを解除するには先に役割を選択してください。",
-    "select_tool_first": "目標を設定するには先にツールを選択してください。",
-    "get_started": "はじめる",
-    "role_office_rat": "オフィスワーカー",
-    "role_office_rat_hint": "非技術系ユーザー",
-    "role_developer": "開発者",
-    "role_developer_hint": "技術系ユーザー",
-    "role_manager": "マネージャー",
-    "role_manager_hint": "計画・調整",
-    "role": "役割",
-    "tool": "ツール",
-    "goal": "目標"
-  },
-  "learning": {
-    "title": "ラーニングセンター",
-    "subtitle": "Personasをマスターするためのガイドツアーとクイックヒント",
-    "guided_tours": "ガイドツアー",
-    "tours_completed": "{completed}/{total} 完了",
-    "done": "完了",
-    "restart": "再スタート",
-    "start_tour": "ツアーを開始",
-    "steps_count": "{count} ステップ",
-    "tour_steps_label": "学べること",
-    "power_moves": "パワームーブ",
-    "moves_used": "{used}/{total} 使用済み",
-    "try_it": "試してみる",
-    "used_badge": "使用済み",
-    "group_save_time": "時間を節約",
-    "group_prevent_failures": "障害を防止",
-    "group_level_up": "エージェントをレベルアップ",
-    "group_orchestrate": "オーケストレート",
-    "pm_monitor_triage_title": "タイトルバーからフリート全体をトリアージ",
-    "pm_schedule_delay_title": "スケジュール実行をスキップまたは遅延",
-    "pm_bulk_rerun_title": "失敗した実行を一括再実行",
-    "pm_dead_letter_title": "デッドレターキューからイベントを救出",
-    "pm_annotate_golden_title": "ゴールデン実行をスター、リグレッションにタグ付け",
-    "pm_credential_health_title": "AIに失敗した認証情報を修復させる",
-    "pm_lab_measure_title": "複数モデルでプロンプトを計測",
-    "pm_prompt_rollback_title": "ワンクリックで不正なプロンプトをロールバック",
-    "pm_director_coaching_title": "Directorからポートフォリオコーチングを受ける",
-    "pm_event_chain_title": "イベントリスナーでエージェントをチェーン",
-    "pm_live_stream_title": "チェーンのカスケードをリアルタイムで監視",
-    "pm_athena_fleet_title": "Athenaにフリートを分析させる",
-    "composed_tours": "Athena が作成したツアー",
-    "composed_badge": "Athena 作成",
-    "composed_stale": "古い可能性があります — 作成後にアプリが変更されています",
-    "composed_failed": "Athena が作成したウォークスルーを読み込めませんでした。",
-    "composed_empty": "Athena に使い方を見せてもらうと、作成されたウォークスルーがここに表示されます。",
-    "composed_dismiss": "この古いガイドを閉じる",
-    "composed_all_dismissed": "古いガイドはすべて片付きました。Athena が新しく作成すると、ここに表示されます。"
-  },
-  "setup_stepper": {
-    "your_profile": "プロフィール",
-    "choose_role": "役割を選択",
-    "tailor_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
-    "simple_hint": "日常的なオフィス利用向けにアプリをセットアップしました。",
-    "pick_tool": "お気に入りツールを選択",
-    "tool_hint": "これが最初のコネクタ統合になります。",
-    "automate_title": "何を自動化したいですか？",
-    "automate_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
-    "automate_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
-    "min_chars": "最低10文字 ({current}/10)",
-    "ready_to_save": "保存準備完了",
-    "back": "戻る",
-    "next": "次へ",
-    "finish": "完了"
-  },
-  "welcome_layout": {
-    "get_started": "はじめる",
-    "language": "言語"
-  },
-  "resume": {
-    "failure": "{personaName} で未読のエラーあり — 調査してください",
-    "tour": "{tourTitle} を再開（{stepIndex}/{totalSteps}）— {stepTitle}",
-    "edit": "{personaName}の編集を続ける"
-  },
-  "nav_status": {
-    "incidents": "{count}件のオープンインシデント",
-    "incidents_other": "{count}件のオープンインシデント",
-    "reviews": "{count}件の保留中レビュー",
-    "reviews_other": "{count}件の保留中レビュー",
-    "teams": "{count}チーム",
-    "teams_other": "{count}チーム",
-    "agents_active": "過去24時間で{count}件のエージェントがアクティブ",
-    "agents_active_other": "過去24時間で{count}件のエージェントがアクティブ",
-    "events_today": "過去24時間で{count}件のイベント",
-    "events_today_other": "過去24時間で{count}件のイベント",
-    "connections_external": "{count}件の外部接続",
-    "connections_external_other": "{count}件の外部接続",
-    "connections_builtin": "{count}件の組み込みコネクタ",
-    "connections_builtin_other": "{count}件の組み込みコネクタ",
-    "trend_up": "前の24時間比で{pct}%増",
-    "trend_down": "前の24時間比で{pct}%減",
-    "trend_flat": "前の24時間比で変化なし",
-    "agents_enabled": "有効なエージェント {count} 件",
-    "agents_enabled_other": "有効なエージェント {count} 件",
-    "reports": "未読レポート {count} 件",
-    "reports_other": "未読レポート {count} 件"
+  "commander": "指揮官",
+  "fleet": {
+    "active_agents": "アクティブエージェント",
+    "credentials": "認証情報",
+    "executions_today": "本日の実行",
+    "success_rate": "成功率"
   },
   "get_started": {
     "ask_cta": "アシスタントに聞く",
@@ -119,84 +12,184 @@
     "subtitle": "やりたいことを普通の言葉で説明すれば、動作するエージェントをセットアップします — またはアシスタントに任せることもできます。",
     "title": "最初のエージェントを作る"
   },
-  "welcome": "ようこそ",
-  "greeting_morning": "おはようございます",
   "greeting_afternoon": "こんにちは",
   "greeting_evening": "こんばんは",
+  "greeting_morning": "おはようございます",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react — 汎用アイコンライブラリ — 静的",
+    "lucide_tab": "Lucide（ライブラリ）",
+    "personas_footer": "9つのカスタムアイコン — ニューラル/サーキットモチーフ — CSSアニメーション — テーマ適応",
+    "personas_tab": "Personas（アニメーション）"
+  },
+  "learning": {
+    "composed_all_dismissed": "古いガイドはすべて片付きました。Athena が新しく作成すると、ここに表示されます。",
+    "composed_badge": "Athena 作成",
+    "composed_dismiss": "この古いガイドを閉じる",
+    "composed_empty": "Athena に使い方を見せてもらうと、作成されたウォークスルーがここに表示されます。",
+    "composed_failed": "Athena が作成したウォークスルーを読み込めませんでした。",
+    "composed_stale": "古い可能性があります — 作成後にアプリが変更されています",
+    "composed_tours": "Athena が作成したツアー",
+    "done": "完了",
+    "group_level_up": "エージェントをレベルアップ",
+    "group_orchestrate": "オーケストレート",
+    "group_prevent_failures": "障害を防止",
+    "group_save_time": "時間を節約",
+    "guided_tours": "ガイドツアー",
+    "moves_used": "{used}/{total} 使用済み",
+    "pm_annotate_golden_title": "ゴールデン実行をスター、リグレッションにタグ付け",
+    "pm_athena_fleet_title": "Athenaにフリートを分析させる",
+    "pm_bulk_rerun_title": "失敗した実行を一括再実行",
+    "pm_credential_health_title": "AIに失敗した認証情報を修復させる",
+    "pm_dead_letter_title": "デッドレターキューからイベントを救出",
+    "pm_director_coaching_title": "Directorからポートフォリオコーチングを受ける",
+    "pm_event_chain_title": "イベントリスナーでエージェントをチェーン",
+    "pm_lab_measure_title": "複数モデルでプロンプトを計測",
+    "pm_live_stream_title": "チェーンのカスケードをリアルタイムで監視",
+    "pm_monitor_triage_title": "タイトルバーからフリート全体をトリアージ",
+    "pm_prompt_rollback_title": "ワンクリックで不正なプロンプトをロールバック",
+    "pm_schedule_delay_title": "スケジュール実行をスキップまたは遅延",
+    "power_moves": "パワームーブ",
+    "restart": "再スタート",
+    "start_tour": "ツアーを開始",
+    "steps_count": "{count} ステップ",
+    "subtitle": "Personasをマスターするためのガイドツアーとクイックヒント",
+    "title": "ラーニングセンター",
+    "tour_steps_label": "学べること",
+    "tours_completed": "{completed}/{total} 完了",
+    "try_it": "試してみる",
+    "used_badge": "使用済み"
+  },
+  "nav_status": {
+    "agents_active": "過去24時間で{count}件のエージェントがアクティブ",
+    "agents_active_other": "過去24時間で{count}件のエージェントがアクティブ",
+    "agents_enabled": "有効なエージェント {count} 件",
+    "agents_enabled_other": "有効なエージェント {count} 件",
+    "connections_builtin": "{count}件の組み込みコネクタ",
+    "connections_builtin_other": "{count}件の組み込みコネクタ",
+    "connections_external": "{count}件の外部接続",
+    "connections_external_other": "{count}件の外部接続",
+    "events_today": "過去24時間で{count}件のイベント",
+    "events_today_other": "過去24時間で{count}件のイベント",
+    "incidents": "{count}件のオープンインシデント",
+    "incidents_other": "{count}件のオープンインシデント",
+    "reports": "未読レポート {count} 件",
+    "reports_other": "未読レポート {count} 件",
+    "reviews": "{count}件の保留中レビュー",
+    "reviews_other": "{count}件の保留中レビュー",
+    "teams": "{count}チーム",
+    "teams_other": "{count}チーム",
+    "trend_down": "前の24時間比で{pct}%減",
+    "trend_flat": "前の24時間比で変化なし",
+    "trend_up": "前の24時間比で{pct}%増"
+  },
+  "nav": {
+    "cloud": {
+      "description": "クラウドへのデプロイ、スケジュール管理、GitLab CI連携",
+      "label": "クラウド"
+    },
+    "credentials": {
+      "description": "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理",
+      "label": "キー"
+    },
+    "design-reviews": {
+      "description": "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成",
+      "label": "テンプレート"
+    },
+    "events": {
+      "description": "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定",
+      "label": "イベント"
+    },
+    "overview": {
+      "description": "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視",
+      "label": "概要"
+    },
+    "personas": {
+      "description": "カスタム動作と機能を備えたAIエージェントの作成・設定・管理",
+      "label": "エージェント"
+    },
+    "plugins": {
+      "description": "サードパーティプラグインとカスタム拡張機能でエージェントを拡張",
+      "label": "プラグイン"
+    },
+    "settings": {
+      "description": "アカウント設定、外観テーマ、通知ルール、エンジン構成",
+      "label": "設定"
+    },
+    "team": {
+      "description": "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築",
+      "label": "チーム"
+    },
+    "teams": {
+      "description": "複数のエージェントをチームにまとめ、複数ステップのワークフローで協調して作業させる",
+      "label": "チーム"
+    }
+  },
   "operator": "ユーザー",
-  "commander": "指揮官",
-  "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
-  "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
-  "quick_navigation": "クイックナビゲーション",
   "platform_label": "Personasプラットフォーム",
+  "quick_navigation": "クイックナビゲーション",
+  "resume": {
+    "edit": "{personaName}の編集を続ける",
+    "failure": "{personaName} で未読のエラーあり — 調査してください",
+    "tour": "{tourTitle} を再開（{stepIndex}/{totalSteps}）— {stepTitle}"
+  },
   "roadmap": {
-    "title": "プロダクトロードマップ",
-    "subtitle": "現在構築中と次に予定していること。",
-    "unavailable": "ロードマップ利用不可",
-    "unavailable_hint": "プロダクトロードマップを読み込めませんでした。接続を確認して再試行してください。",
+    "in_progress_count": "{count} 件進行中",
+    "next_count": "{count} 件次予定",
+    "priority_later": "後で",
+    "priority_next": "次",
+    "priority_now": "今",
+    "status_completed": "完了",
     "status_in_progress": "進行中",
     "status_next": "次",
     "status_planned": "計画済み",
-    "status_completed": "完了",
-    "priority_now": "今",
-    "priority_next": "次",
-    "priority_later": "後で",
-    "in_progress_count": "{count} 件進行中",
-    "next_count": "{count} 件次予定"
+    "subtitle": "現在構築中と次に予定していること。",
+    "title": "プロダクトロードマップ",
+    "unavailable": "ロードマップ利用不可",
+    "unavailable_hint": "プロダクトロードマップを読み込めませんでした。接続を確認して再試行してください。"
   },
-  "fleet": {
-    "executions_today": "本日の実行",
-    "success_rate": "成功率",
-    "active_agents": "アクティブエージェント",
-    "credentials": "認証情報"
+  "setup_stepper": {
+    "automate_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
+    "automate_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
+    "automate_title": "何を自動化したいですか？",
+    "back": "戻る",
+    "choose_role": "役割を選択",
+    "finish": "完了",
+    "min_chars": "最低10文字 ({current}/10)",
+    "next": "次へ",
+    "pick_tool": "お気に入りツールを選択",
+    "ready_to_save": "保存準備完了",
+    "simple_hint": "日常的なオフィス利用向けにアプリをセットアップしました。",
+    "tailor_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
+    "tool_hint": "これが最初のコネクタ統合になります。",
+    "your_profile": "プロフィール"
   },
-  "nav": {
-    "overview": {
-      "label": "概要",
-      "description": "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視"
-    },
-    "personas": {
-      "label": "エージェント",
-      "description": "カスタム動作と機能を備えたAIエージェントの作成・設定・管理"
-    },
-    "events": {
-      "label": "イベント",
-      "description": "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定"
-    },
-    "credentials": {
-      "label": "キー",
-      "description": "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理"
-    },
-    "design-reviews": {
-      "label": "テンプレート",
-      "description": "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成"
-    },
-    "team": {
-      "label": "チーム",
-      "description": "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築"
-    },
-    "teams": {
-      "label": "チーム",
-      "description": "複数のエージェントをチームにまとめ、複数ステップのワークフローで協調して作業させる"
-    },
-    "cloud": {
-      "label": "クラウド",
-      "description": "クラウドへのデプロイ、スケジュール管理、GitLab CI連携"
-    },
-    "settings": {
-      "label": "設定",
-      "description": "アカウント設定、外観テーマ、通知ルール、エンジン構成"
-    },
-    "plugins": {
-      "label": "プラグイン",
-      "description": "サードパーティプラグインとカスタム拡張機能でエージェントを拡張"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide（ライブラリ）",
-    "personas_tab": "Personas（アニメーション）",
-    "lucide_footer": "lucide-react — 汎用アイコンライブラリ — 静的",
-    "personas_footer": "9つのカスタムアイコン — ニューラル/サーキットモチーフ — CSSアニメーション — テーマ適応"
+  "setup": {
+    "choose_role": "役割を選択",
+    "choose_role_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
+    "describe_goal": "何を自動化したいですか？",
+    "describe_goal_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
+    "get_started": "はじめる",
+    "goal": "目標",
+    "goal_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
+    "pick_tool": "お気に入りツールを選択",
+    "pick_tool_hint": "これが最初のサービス接続になります。",
+    "ready_to_save": "保存準備完了",
+    "role": "役割",
+    "role_developer": "開発者",
+    "role_developer_hint": "技術系ユーザー",
+    "role_manager": "マネージャー",
+    "role_manager_hint": "計画・調整",
+    "role_office_rat": "オフィスワーカー",
+    "role_office_rat_hint": "非技術系ユーザー",
+    "select_role_first": "ツールオプションを解除するには先に役割を選択してください。",
+    "select_tool_first": "目標を設定するには先にツールを選択してください。",
+    "step_goal": "自動化目標",
+    "step_goal_hint": "最初に自動化したいことを説明してください。",
+    "step_role": "あなたの役割",
+    "step_role_hint": "体験をカスタマイズするために役割を教えてください。",
+    "step_tool": "お気に入りツール",
+    "step_tool_hint": "最初に接続したいサービスを選択してください。",
+    "tool": "ツール"
   },
   "since_left": {
     "alerts": "{count} 件のアラート",
@@ -209,5 +202,12 @@
     "runs": "{count} 件の実行",
     "runs_other": "{count} 件の実行",
     "title": "前回からの更新"
+  },
+  "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
+  "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
+  "welcome": "ようこそ",
+  "welcome_layout": {
+    "get_started": "はじめる",
+    "language": "言語"
   }
 }

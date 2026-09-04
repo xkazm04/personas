@@ -171,6 +171,10 @@ pub struct SyncedPersonaRow {
     pub design_context: Option<String>,
     pub home_team_id: Option<String>,
     pub template_category: Option<String>,
+    /// Living-agent Core (`PersonaCore` JSON) — operator-owned deliberation
+    /// law. Plaintext by design (no secrets; unlike `model_profile` it is not
+    /// encrypted at rest), so the mirror carries it 1:1.
+    pub core_profile: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -352,8 +356,9 @@ fn row_to_persona(row: &Row) -> rusqlite::Result<SyncedPersonaRow> {
         design_context: row.get(13)?,
         home_team_id: row.get(14)?,
         template_category: row.get(15)?,
-        created_at: row.get(16)?,
-        updated_at: row.get(17)?,
+        core_profile: row.get(16)?,
+        created_at: row.get(17)?,
+        updated_at: row.get(18)?,
     })
 }
 
@@ -476,7 +481,7 @@ fn row_to_tool_usage(row: &Row) -> rusqlite::Result<SyncedToolUsageRow> {
 
 const PERSONA_COLS: &str = "id, project_id, name, description, system_prompt, structured_prompt, \
     icon, color, enabled, max_concurrent, timeout_ms, max_budget_usd, max_turns, design_context, \
-    home_team_id, template_category, created_at, updated_at";
+    home_team_id, template_category, core_profile, created_at, updated_at";
 
 const EXECUTION_COLS: &str = "id, persona_id, trigger_id, status, input_data, output_data, \
     claude_session_id, model_used, input_tokens, output_tokens, cost_usd, error_message, \
@@ -1006,6 +1011,7 @@ mod tests {
             design_context: None,
             home_team_id: None,
             template_category: None,
+            core_profile: None,
             created_at: "t".into(),
             updated_at: "t".into(),
         };
@@ -1055,6 +1061,51 @@ mod tests {
             !k.contains(&"payload_iv".to_string()),
             "event row must never carry payload_iv"
         );
+    }
+
+    /// Living-agent mirror contract: `personas.core_profile` (the operator-owned
+    /// Core) round-trips through the SELECT column list, the positional row
+    /// mapper, and the serde projection — so the cloud row carries the Core
+    /// under the exact `core_profile` key the Supabase column expects.
+    #[test]
+    fn persona_row_round_trips_core_profile() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        let core = r#"{"riskTolerance":0.2,"identity":"steward"}"#;
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, core_profile, created_at, updated_at) \
+                 VALUES ('p-core', 'core-bearer', 'sp', ?1, '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z')",
+                params![core],
+            )
+            .unwrap();
+        }
+        let (rows, max_cursor) =
+            fetch_personas(&pool, "1970-01-01T00:00:00Z".into(), None, "dev-1".into()).unwrap();
+        let row = rows
+            .iter()
+            .find(|r| r.id == "p-core")
+            .expect("inserted persona is fetched");
+        assert_eq!(
+            row.core_profile.as_deref(),
+            Some(core),
+            "core survives the mapper"
+        );
+        assert_eq!(
+            row.updated_at, "2026-01-02T00:00:00Z",
+            "columns after core stay aligned"
+        );
+        assert!(
+            max_cursor.is_some(),
+            "cursor advances to an observed watermark"
+        );
+        let json = serde_json::to_value(row).unwrap();
+        assert_eq!(
+            json.get("core_profile").and_then(|v| v.as_str()),
+            Some(core),
+            "wire key matches the Supabase column"
+        );
+        Ok(())
     }
 
     /// user_id is never sent on the wire — Supabase fills it from auth.uid()

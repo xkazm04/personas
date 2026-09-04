@@ -23,19 +23,19 @@ const twinA = {
 const twinB = { ...twinA, id: 'twin-b', name: 'Community Twin', slug: 'community-twin', is_active: false, knowledge_base_id: null };
 
 const mockStats = {
-  persona_count: 1,
-  tool_count: 0,
-  team_count: 0,
-  credential_count: 0,
-  memory_count: 0,
-  team_memory_count: 0,
-  test_suite_count: 0,
-  kpi_count: 0,
-  dev_project_count: 0,
-  workspace_knowledge_count: 0,
-  twin_count: 2,
-  athena_core_count: 12,
-  athena_learned_count: 34,
+  personaCount: 1,
+  toolCount: 0,
+  teamCount: 0,
+  credentialCount: 0,
+  memoryCount: 0,
+  teamMemoryCount: 0,
+  testSuiteCount: 0,
+  kpiCount: 0,
+  devProjectCount: 0,
+  workspaceKnowledgeCount: 0,
+  twinCount: 2,
+  athenaCoreCount: 12,
+  athenaLearnedCount: 34,
   warnings: [] as string[],
 };
 
@@ -195,14 +195,14 @@ describe('useExportPicker — twins + Athena scopes', () => {
 
 describe('useExportPicker — empty Athena memory', () => {
   it('drops zero-count tiers so "export everything" stays reachable', async () => {
-    getExportStats.mockResolvedValueOnce({ ...mockStats, athena_core_count: 0, athena_learned_count: 0 });
+    getExportStats.mockResolvedValueOnce({ ...mockStats, athenaCoreCount: 0, athenaLearnedCount: 0 });
     const { hook } = await mountPicker();
     expect(hook.result.current.inv.athenaTiers).toEqual([]);
     expect(hook.result.current.counts.athena.total).toBe(0);
   });
 
   it('keeps only the tier that has data', async () => {
-    getExportStats.mockResolvedValueOnce({ ...mockStats, athena_core_count: 0, athena_learned_count: 7 });
+    getExportStats.mockResolvedValueOnce({ ...mockStats, athenaCoreCount: 0, athenaLearnedCount: 7 });
     const { hook } = await mountPicker();
     expect(hook.result.current.inv.athenaTiers).toEqual([{ id: 'learned', count: 7 }]);
   });

@@ -1,0 +1,899 @@
+{
+  "slice": "development",
+  "reviewed": 48,
+  "recipes": [
+    {
+      "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+      "old_title": "Support Digest",
+      "title": "Support Digest",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "eng-alerts-channel-informed",
+          "statement": "Engineering leadership always has a same-day view of how the last 24 hours of reported issues were handled.",
+          "success_criteria": [
+            "A digest posts to the configured channel every day with counts for auto-resolved, escalated, auto-closed, and still-stale issues.",
+            "Every notable issue linked in the digest resolves to a real, currently valid ticket."
+          ]
+        }
+      ],
+      "procedure": "Own a trustworthy daily snapshot of issue-handling health for engineering leadership. Read the prior day's triage activity and turn it into a digest people can act on without opening Jira. When source data is incomplete, say so plainly rather than presenting confident numbers. Keep the digest short enough that people actually read it, and link out to notable tickets instead of restating detail.",
+      "verdict": "keep"
+    },
+    {
+      "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
+      "old_title": "Stale Issue Triage & Resolution",
+      "title": "Stale Issue Triage & Resolution",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "stale-issues-dont-linger",
+          "statement": "No reported issue sits stale without either being resolved with a known-good fix, escalated to a human, or explicitly closed as abandoned.",
+          "success_criteria": [
+            "Issues idle past the stale threshold receive a classification and action within one polling cycle.",
+            "Angry or high-priority reporters are always routed to a human, never auto-closed silently."
+          ]
+        },
+        {
+          "id": "kb-grows-from-real-resolutions",
+          "statement": "The solutions knowledge base becomes a more reliable source of fixes over time.",
+          "success_criteria": [
+            "Each confirmed resolution adds or reinforces a KB entry with its confidence score.",
+            "Rejected solutions lose confidence so they stop being suggested."
+          ]
+        }
+      ],
+      "procedure": "Hold the line on stale issues in Jira so nothing sits inactive without a decision. Search for a matching known solution before proposing anything, and only auto-post when confidence is genuinely high. Read reporter tone and priority together, not priority alone, when deciding whether to escalate to engineering management versus resolve automatically. Auto-closing abandoned issues is a last resort, not a default, and should read as considerate, not dismissive.",
+      "verdict": "keep"
+    },
+    {
+      "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+      "old_title": "Issue Health Report",
+      "title": "Issue Health Report",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "trend-visible-week-over-week",
+          "statement": "Anyone can see whether issue-triage health is improving or degrading without digging through raw ticket history.",
+          "success_criteria": [
+            "Each weekly report states resolution rate, time-to-resolution, and stale trends compared against the prior week.",
+            "A gap in underlying data is called out in the report rather than silently omitted."
+          ]
+        }
+      ],
+      "procedure": "Turn the week's triage activity into a comparison, not just a count. Pull live numbers where the connector is healthy, fall back to state-file counts when it is not, and always be explicit about which source backed which figure. Highlight what changed since last week over restating totals people have already seen. Archive every report so the trend line survives even if a single post fails to deliver.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8f3c3f7a-8973-5773-8056-55e3ff59bf29",
+      "old_title": "Failure Analysis",
+      "title": "Failure Analysis",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "failures-explained-not-just-flagged",
+          "statement": "Every CI failure arrives with enough context, such as file, line, and cause, that a developer can start fixing it without re-reading logs.",
+          "success_criteria": [
+            "Each failure notification names a failure_type and, where determinable, a file and line.",
+            "A failure previously flagged as flaky is labeled as such rather than treated as a fresh incident."
+          ]
+        }
+      ],
+      "procedure": "Turn a raw CI failure into something a developer can act on immediately: what broke, where, and whether history says it is flaky. Weigh flaky-test memory before declaring a build broken, since crying wolf erodes trust in the signal. When the log cannot be parsed cleanly, still surface the failure with a link rather than staying silent. Detecting recovery matters as much as detecting failure.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8257237e-c784-5b6d-b79b-53506c208a09",
+      "old_title": "Flaky Test Digest",
+      "title": "Flaky Test Digest",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "flaky-tests-surfaced-not-buried",
+          "statement": "The team always knows which tests are unreliable enough to need attention, ranked by how bad they actually are.",
+          "success_criteria": [
+            "A weekly digest ranks the top flaky offenders by score with enough context to prioritize a fix.",
+            "Old flakiness data does not accumulate forever; entries past 30 days are pruned."
+          ]
+        }
+      ],
+      "procedure": "Keep the flaky-test signal legible over time instead of letting it rot into noise. Rank by actual flakiness, not just fail count, and say plainly when nothing is flaky rather than posting a hollow digest. Prune what is no longer relevant so the ledger reflects current reality, not test history from months ago.",
+      "verdict": "keep"
+    },
+    {
+      "id": "841f8f1b-cf8e-578b-8624-de2446ae559a",
+      "old_title": "PR Comment Lifecycle",
+      "title": "PR Comment Lifecycle",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "one-comment-per-pr-stays-current",
+          "statement": "A PR's CI-failure analysis is always visible on the PR itself, and never duplicated.",
+          "success_criteria": [
+            "Each PR carries at most one bot analysis comment, updated in place as new failures arrive.",
+            "If a human deletes the bot's comment, the next analysis creates a fresh one instead of erroring."
+          ]
+        }
+      ],
+      "procedure": "Keep exactly one analysis comment per PR in sync with the latest failure data, editing in place rather than piling up duplicates. Track the PR-to-comment mapping carefully enough to survive a human deleting the comment. When a commit has no associated PR, that is expected and not an error to chase.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ab3127cc-fb73-5ed1-9b58-0759373fe5ef",
+      "old_title": "Context Map Refresh",
+      "title": "Context Map Refresh",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "context-map-reflects-real-code",
+          "statement": "The context map used for scoring always matches what is actually in the codebase.",
+          "success_criteria": [
+            "Files referenced by the map that no longer exist are flagged, not silently trusted.",
+            "Newly discovered files that fit no existing context are surfaced as orphaned rather than dropped."
+          ]
+        }
+      ],
+      "procedure": "Keep the codebase's context grouping honest before anything downstream trusts it. Verify referenced files still exist, catch orphaned files that belong to no context, and flag descriptions that no longer match the code they describe. When the connector is offline, halt rather than let a scan run against a map that might be stale.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ef482e96-44e5-50d2-85f3-76cdbd5eae27",
+      "old_title": "Dimension Scan",
+      "title": "Dimension Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "every-context-scored-and-actionable",
+          "statement": "Every context group has a current security, quality, coverage, and debt score, each backed by concrete backlog ideas.",
+          "success_criteria": [
+            "Every scanned context group has a 0-100 score for each requested dimension.",
+            "Every score below a healthy range is backed by at least one specific backlog idea with effort, impact, and risk stated."
+          ]
+        }
+      ],
+      "procedure": "Score each context group honestly across the requested dimensions and translate every real issue into a specific, actionable backlog idea rather than a vague warning. When coverage cannot be determined because of a non-standard test layout, say so instead of guessing a number. Avoid creating duplicate ideas for issues already tracked.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d43905c2-ede5-5d18-9f23-1bdb345de4fd",
+      "old_title": "Health Report",
+      "title": "Codebase Health Report",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "leadership-sees-codebase-trend",
+          "statement": "Anyone can see how the codebase's overall health is trending month over month, not just its current snapshot.",
+          "success_criteria": [
+            "Each report states the overall score, per-group and per-dimension breakdown, and the delta from the prior month.",
+            "A first-ever report clearly states that no baseline existed before, rather than showing a misleading null comparison."
+          ]
+        }
+      ],
+      "procedure": "Turn per-group dimension scores into one coherent monthly story: what is healthy, what got worse, and what the top three priorities are. Preserve history by appending every report as its own snapshot rather than overwriting the record. When the archive fails, still get the report in front of people and log the failure separately.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Health Report' for distinctiveness against sibling recipes in this slice ('Issue Health Report', 'Weekly Memory Health Check'); no exact collision existed but the bare name invited confusion."
+    },
+    {
+      "id": "2e703e9a-39ce-53fc-8291-63b078b5bb6a",
+      "old_title": "Linear Ticket Sync",
+      "title": "Linear Ticket Sync",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "every-design-change-has-a-ticket",
+          "statement": "Every meaningful component change in Figma has a corresponding, current engineering ticket, with duplicates never created.",
+          "success_criteria": [
+            "A changed component maps to exactly one Linear ticket, updated in place on repeat changes rather than duplicated.",
+            "A removed component never files a ticket without a human confirming the breaking change first."
+          ]
+        }
+      ],
+      "procedure": "Translate detected design changes into the right engineering ticket action: update an existing ticket when one already tracks the component, create one when it does not. Map priority to how disruptive the change actually is, and always pause on removed components for human confirmation since that is the change most likely to break something downstream.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d2c1953f-5589-50ea-9372-daa96a6d6f32",
+      "old_title": "messaging Handoff Summary",
+      "title": "Design Handoff Summary",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "team-never-misses-a-handoff",
+          "statement": "The team learns about every design handoff batch in one readable place, with a path to every ticket that came out of it.",
+          "success_criteria": [
+            "Each file-version handoff produces exactly one summary post with links to its Linear tickets.",
+            "A batch larger than 10 components stays readable by moving detail into a thread instead of flooding the channel."
+          ]
+        }
+      ],
+      "procedure": "Compose a summary a design or engineering lead can scan in seconds: what changed, and where to go for detail. Keep the parent message short regardless of batch size, pushing detail into a thread once a batch gets large. Fall back gracefully when the configured channel is missing rather than losing the notification.",
+      "verdict": "keep",
+      "notes": "Renamed from 'messaging Handoff Summary' (a leftover artifact from a Slack-to-'messaging' connector generalization pass) to a clean, distinctive title."
+    },
+    {
+      "id": "9732a26d-735c-55dd-a477-57e437ea6b7b",
+      "old_title": "Figma Version Detection",
+      "title": "Figma Version Detection",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "no-design-change-goes-unnoticed",
+          "statement": "Every tracked Figma file's component changes are detected and classified before anyone downstream needs to ask.",
+          "success_criteria": [
+            "Every new version of a tracked file is diffed against the prior snapshot and classified as added, modified, or removed.",
+            "The very first run establishes a baseline without firing spurious change tickets."
+          ]
+        }
+      ],
+      "procedure": "Watch tracked Figma files closely enough that no component change slips past unnoticed, while staying quiet about noise like renames or hidden drafts when configured to. Treat the first run as baseline-setting, not a change event. Keep the saved snapshot state consistent even under a crash, since a corrupted state file would cause every future run to misreport.",
+      "verdict": "keep"
+    },
+    {
+      "id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
+      "old_title": "Backlog Scan",
+      "title": "Backlog Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "real-improvement-opportunities-surface",
+          "statement": "Genuinely worthwhile improvement candidates, from tech debt to TODOs to architectural gaps to deprecated dependencies, reach a human for a real accept or reject decision.",
+          "success_criteria": [
+            "Each candidate names affected files, a proposed approach, and a priority score a human can judge quickly.",
+            "Categories the human has rejected three or more times stop being resurfaced."
+          ]
+        }
+      ],
+      "procedure": "Find what is actually worth fixing in the codebase and describe it well enough that a human can decide in seconds, not minutes. Never implement anything here; that decision belongs to the human at triage. Learn from what gets rejected so the same low-value category does not keep resurfacing. When a scan finds nothing worth surfacing, say so once rather than staying silent or manufacturing filler.",
+      "verdict": "keep"
+    },
+    {
+      "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
+      "old_title": "Implementation & PR Lifecycle",
+      "title": "Implementation & PR Lifecycle",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "accepted-work-ships-safely",
+          "statement": "Every accepted backlog item becomes a working, tested change on GitHub, with review feedback actually addressed.",
+          "success_criteria": [
+            "An accepted item results in a PR with passing tests, or an explicit blocked status a human can see.",
+            "A review comment about an architectural concern is escalated to a human, never auto-resolved."
+          ]
+        }
+      ],
+      "procedure": "Turn accepted backlog decisions into real, working code changes: understand the affected area, make the change, prove it with tests, and open a PR. React to review feedback the same way a careful engineer would, fixing what is fixable and escalating what requires judgment about direction rather than mechanics. Respect the autonomy level set at adoption for how much merges without human sign-off, and never let a stuck test loop retry forever.",
+      "verdict": "keep"
+    },
+    {
+      "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
+      "old_title": "Release Management",
+      "title": "Weekly Release Candidate Review",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "releases-are-deliberate-and-tested",
+          "statement": "Every tagged release has been through the full test suite and been explicitly approved by a human before it ships.",
+          "success_criteria": [
+            "A release candidate is proposed with grouped release notes and a full test run, and is tagged only after explicit approval.",
+            "A rejected candidate results in a recorded reason and follow-up backlog items, not a silent drop."
+          ]
+        }
+      ],
+      "procedure": "Turn a batch of merged work into a release a human can approve with confidence: grouped notes, a full test run, nothing hidden. Never tag without that explicit approval. When there is nothing new to release, say so briefly rather than posting an empty ceremony. When a candidate is rejected, capture why so the same issue does not recur in the next cycle.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Release Management' to resolve an exact name collision with d21717d3, which is also named 'Release Management' but does a different job (see that recipe). Also overlaps substantially with 5dc1a004 'Release Automation', which cuts a version bump automatically on every merge with no test run and no approval gate. Kept separate from it because the review posture (mandatory human approval plus full suite here vs fully automatic there) is a real difference in what each agent is accountable for, but flagged in slice_findings since an adopter should not run both against the same repo without deciding which one owns the tag."
+    },
+    {
+      "id": "2e575c2d-e918-5743-b7ba-bd186916302a",
+      "old_title": "Issue Synchronization",
+      "title": "Issue Synchronization",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "jira-mirrors-source-control-issues",
+          "statement": "Every source-control issue has a current, correctly labeled mirror in Jira, and urgent ones get immediate visibility.",
+          "success_criteria": [
+            "Each synced issue keeps its Jira ticket updated in place across polling cycles rather than creating duplicates.",
+            "An issue carrying an urgent, critical, or security label triggers a channel mention within one polling cycle."
+          ]
+        }
+      ],
+      "procedure": "Keep Jira an accurate mirror of source-control issues without human babysitting: map labels to type and priority, update state as issues close, and make sure urgent ones get seen immediately. When a label has no defined mapping, carry it through rather than dropping information. Respect message-length limits by linking back to the source rather than truncating silently.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c8e1cffe-150a-5d1c-8e16-5497881b9262",
+      "old_title": "Pull Request Lifecycle",
+      "title": "Pull Request Lifecycle",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "prs-tracked-and-oversized-ones-flagged",
+          "statement": "Every PR is linked to its Jira ticket with current status, and an oversized PR always gets a reviewer's attention before it merges unnoticed.",
+          "success_criteria": [
+            "Every PR classified Large or Extra-Large triggers the configured oversized-PR policy every time, regardless of author.",
+            "PR-to-Jira-to-notification mapping stays update-in-place, never producing duplicate notifications across cycles."
+          ]
+        }
+      ],
+      "procedure": "Keep Jira and the team's messaging channel honest about PR state without manual updates, and treat an oversized PR as a real risk signal rather than routine size variation. Respect whichever oversized policy was chosen at adoption, whether that just tags a reviewer or actually gates the Jira transition. Never let a Jira status regression get overwritten if Jira is already further ahead than the PR event suggests.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d21717d3-d637-5a25-aa7f-973e68a4b4b8",
+      "old_title": "Release Management",
+      "title": "Release Changelog & Ticket Sync",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "releases-are-traceable-in-ticketing",
+          "statement": "Every published release is reflected in Jira with the right version and every referenced ticket stamped, and the team hears about it.",
+          "success_criteria": [
+            "Every new source-control release produces or updates a matching Jira version with its referenced tickets stamped.",
+            "A changelog announcement reaches the releases channel for every processed release, without duplicate versions on reruns."
+          ]
+        }
+      ],
+      "procedure": "Make sure a release that already happened is fully reflected everywhere else it needs to be: a Jira version exists, referenced tickets carry the right fixVersion, and the team hears the changelog. Treat an already-existing Jira version as something to update, not duplicate. When a release body references no tickets, still record the version rather than skipping it.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Release Management' to resolve an exact name collision with 95f66218 (also 'Release Management'). Distinct job from both 95f66218 (renamed Weekly Release Candidate Review) and 5dc1a004 (Release Automation): this recipe never cuts or tags a release itself, only reacts to one already published elsewhere and syncs it into ticketing and messaging."
+    },
+    {
+      "id": "4eaacf80-5eea-510f-bdfb-1ac737466283",
+      "old_title": "Owner Notification + Commitment Tracking",
+      "title": "Owner Notification + Commitment Tracking",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "stale-docs-get-a-real-owner-response",
+          "statement": "Every stale doc reaches its owner with an appropriately urgent tone, and a stated commitment to fix it is actually tracked to completion.",
+          "success_criteria": [
+            "Every owner of a flagged page receives a notification with tone matched to its staleness tier.",
+            "A commitment that passes its stated deadline plus the follow-up buffer triggers a tracked follow-up, not silence."
+          ]
+        }
+      ],
+      "procedure": "Get the right message to the right owner in the right tone, then hold that commitment accountable rather than treating the email as the end of the job. Escalate to manual review when an owner bounces or ignores repeated notices, since silence from a Critical-tier owner is itself a signal. Match urgency to tier: do not send a Critical-tone email over a page that only just crossed the Warning threshold.",
+      "verdict": "keep"
+    },
+    {
+      "id": "e0d5d81d-6bb1-59e6-813f-bb49217a7b4a",
+      "old_title": "Weekly messaging Digest",
+      "title": "Documentation Freshness Digest",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "freshness-state-visible-to-team",
+          "statement": "The team has a weekly, single-glance view of documentation health: what is stale, what broke, and what is overdue.",
+          "success_criteria": [
+            "A digest posts weekly summarizing total scanned, per-tier counts, broken links, and overdue commitments.",
+            "A messaging failure still leaves the digest recoverable rather than lost."
+          ]
+        }
+      ],
+      "procedure": "Turn the week's staleness scan and owner-notification results into one digest people actually read: totals, top spaces, broken links, overdue promises, and any notification failures worth knowing about. If the configured channel is unreachable, fall back sensibly rather than losing the update.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Weekly messaging Digest' (a leftover Slack-to-'messaging' artifact) and to distinguish it from other digests in this slice."
+    },
+    {
+      "id": "7ace1a42-fdda-5ff3-b67e-c413d78e16ed",
+      "old_title": "Staleness Scan",
+      "title": "Staleness Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "stale-docs-detected-before-they-mislead",
+          "statement": "No page in scope goes stale, broken, or wrong without being detected and tiered for follow-up.",
+          "success_criteria": [
+            "Every space in scope is paginated and every page classified into a staleness tier by age.",
+            "Flagged pages have their external links validated so broken references are known, not assumed fine."
+          ]
+        }
+      ],
+      "procedure": "Find documentation that has quietly gone stale or broken before someone relies on it and gets burned. Scope the scan to what actually matters, skipping personal or archived spaces by default, and classify by real inactivity, not guesswork. Persist enough per-run state that trend analysis over weeks is possible, and degrade gracefully when a space or page is unreachable rather than halting the whole scan.",
+      "verdict": "keep"
+    },
+    {
+      "id": "1094568c-06f3-59fe-9561-0b491f5680b5",
+      "old_title": "Experiment Results Analysis",
+      "title": "Experiment Results Analysis",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "winners-become-shipped-decisions",
+          "statement": "No statistically significant experiment winner sits unrecognized; the team hears about it and a rollout decision gets made.",
+          "success_criteria": [
+            "A resolved experiment produces a summary naming the winning variant, lift, and confidence within one scheduled run.",
+            "A configured ticket-gate decision, whether auto-create, approval-first, or always-gated, is honored exactly as set, never bypassed."
+          ]
+        }
+      ],
+      "procedure": "Recognize a real experiment winner as soon as it clears the confidence bar and turn that recognition into a concrete next step: a rollout ticket sized to how big the win actually is. Respect the configured ticket gate rather than defaulting to auto-creation. Skip anything tagged sensitive or embargoed entirely. Avoid re-reporting an experiment or filing a duplicate ticket across runs.",
+      "verdict": "keep"
+    },
+    {
+      "id": "f52ff647-1db4-5031-8e3f-44574dec70c8",
+      "old_title": "Flag Change Monitoring",
+      "title": "Flag Change Monitoring",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "flag-changes-visible-in-real-time",
+          "statement": "Nobody is surprised by a feature-flag change; every meaningful change is visible within minutes.",
+          "success_criteria": [
+            "Every created, modified, activated, deactivated, or deleted flag produces a notification within one polling cycle.",
+            "The first sync after adoption establishes a silent baseline, not a flood of false 'changed' alerts."
+          ]
+        }
+      ],
+      "procedure": "Give the team a fast, low-noise view of what changed in feature flags. Diff against the last known state rather than reporting raw snapshots, and stay quiet on infrastructure or killswitch flags that were explicitly excluded. Treat the very first sync as baseline-setting, never as a wave of changes, since none of it is actually new.",
+      "verdict": "keep"
+    },
+    {
+      "id": "3f4a0c32-57e0-5c36-8f73-84c9cec8bd82",
+      "old_title": "Stale Flag Digest",
+      "title": "Stale Flag Digest",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "stale-flags-surfaced-for-cleanup",
+          "statement": "Flags that have outlived their usefulness get surfaced for cleanup before they become permanent tech debt.",
+          "success_criteria": [
+            "A flag past the staleness threshold, not tied to a running experiment, and not deny-listed appears in the digest with a recommended action.",
+            "A flag already reported stale in a prior run is escalated rather than re-listed as new."
+          ]
+        }
+      ],
+      "procedure": "Find flags nobody has touched in a while and give the team a clear, low-noise nudge to clean them up, distinguishing a first-time notice from one that has been ignored long enough to escalate. Exclude anything still tied to a running experiment or explicitly deny-listed. Skip the digest entirely when there is nothing stale rather than posting an empty ceremony.",
+      "verdict": "keep",
+      "notes": "Near-duplicate in spirit with 6be233cb 'Stale Flag Cleanup' (both surface aging feature flags on a similar cadence) but operates on a different flagging system (PostHog here vs LaunchDarkly there) and stops at an advisory digest rather than creating tickets or touching a registry. Kept separate; see slice_findings."
+    },
+    {
+      "id": "d04d937f-c43f-54bb-af22-94a509f819d0",
+      "old_title": "Flag Change Audit",
+      "title": "Flag Change Audit",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "flag-governance-enforced-in-real-time",
+          "statement": "Every flag lifecycle event is checked against naming convention and collision risk the moment it happens, with the registry always current.",
+          "success_criteria": [
+            "Every flag creation is checked for naming-convention compliance and near-match collisions before the audit card posts.",
+            "A deletion always shows as Archived in the registry, never silently vanishing."
+          ]
+        }
+      ],
+      "procedure": "Catch naming and collision problems in feature flags at the moment of creation, when fixing them is cheap, and keep the flag registry an honest record of every flag that ever existed. Respect the configured autonomy level for how hard a collision blocks. Never let a registry write fail silently: if it cannot be recorded, say so loudly rather than pretending the audit succeeded.",
+      "verdict": "keep"
+    },
+    {
+      "id": "62c97322-835a-5782-a3f2-d7af8ba0b2a8",
+      "old_title": "Registry Reconciliation",
+      "title": "Registry Reconciliation",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "registry-matches-reality",
+          "statement": "The flag registry never silently drifts from what actually exists in LaunchDarkly.",
+          "success_criteria": [
+            "Every LaunchDarkly flag with no registry entry gets one created.",
+            "Every registry entry for a flag no longer in LaunchDarkly is marked Archived, not left implying the flag is live."
+          ]
+        }
+      ],
+      "procedure": "Reconcile the full flag list against the registry on a predictable cadence so drift never accumulates unnoticed. Treat this as a read-heavy, high-integrity job: if either source is unreachable, abort cleanly and say so rather than writing a half-finished reconciliation that would be worse than no reconciliation at all.",
+      "verdict": "keep"
+    },
+    {
+      "id": "6be233cb-8072-5fb1-acdd-69a5be3a40e6",
+      "old_title": "Stale Flag Cleanup",
+      "title": "Stale Flag Cleanup",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "stale-flags-get-a-tracked-cleanup-path",
+          "statement": "Every genuinely stale flag has an open, non-duplicate cleanup ticket and a registry entry that reflects its pending-cleanup state.",
+          "success_criteria": [
+            "A flag past the staleness threshold with no activity produces exactly one open cleanup ticket, reused rather than duplicated on repeat scans.",
+            "A weekly digest reports how many tickets were created versus already existing versus archived."
+          ]
+        }
+      ],
+      "procedure": "Turn genuinely stale flags into a tracked cleanup obligation, not just a notice. Check for an existing open ticket before creating a new one. Keep the registry's cleanup-pending state in sync with ticketing even when one side is temporarily unreachable, trusting the next reconciliation pass to close any gap rather than blocking on it.",
+      "verdict": "keep",
+      "notes": "Near-duplicate in spirit with 3f4a0c32 'Stale Flag Digest' (see that recipe's note); this one operates on LaunchDarkly and goes further, filing Linear tickets and updating a governance registry rather than just posting a digest."
+    },
+    {
+      "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
+      "old_title": "Lean Sweep",
+      "title": "Lean Sweep",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "static-findings-become-backlog-without-noise",
+          "statement": "Every real static-analysis finding becomes a backlog idea exactly once, with no duplicate created across sweeps.",
+          "success_criteria": [
+            "Every finding in the tool's report becomes a backlog idea with file:line evidence.",
+            "The same finding across two sweeps produces one idea, not two."
+          ]
+        }
+      ],
+      "procedure": "Run the configured static-analysis tool faithfully and translate its findings into backlog ideas without editorializing on top of them; the tool's own output is the source of truth here. Deduplicate carefully so a finding does not resurface as new every sweep. When the tool is missing or its output cannot be parsed, say exactly that instead of quietly producing zero findings.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
+      "old_title": "Baseline Refresh",
+      "title": "Baseline Refresh",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "anomaly-thresholds-stay-current",
+          "statement": "Anomaly detection is always judged against a baseline that reflects the business's actual recent behavior, not a stale snapshot.",
+          "success_criteria": [
+            "Baselines are recalculated from the last 30 days on every scheduled refresh.",
+            "A failed refresh leaves the previous baseline intact rather than corrupting detection with a bad recalculation."
+          ]
+        }
+      ],
+      "procedure": "Keep anomaly-detection thresholds honest as the business's real patterns shift, recalculating from a rolling recent window rather than a fixed one. Never let a failed refresh silently degrade detection; retain the last good baseline and say plainly that the refresh failed. Recover from a corrupted baseline file by reinitializing rather than propagating bad numbers forward.",
+      "verdict": "keep"
+    },
+    {
+      "id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
+      "old_title": "Event Routing & Anomaly Detection",
+      "title": "Event Routing & Anomaly Detection",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "real-events-reach-the-right-audience",
+          "statement": "Every meaningful database event reaches the right channel with the right amount of detail, and genuine anomalies get flagged, not buried.",
+          "success_criteria": [
+            "Every user, order, or flag event is routed to its configured channel exactly once, with duplicates suppressed via the webhook-id ledger.",
+            "An anomaly at or above the configured severity is flagged with a concrete recommendation, and routed to review when severity warrants it."
+          ]
+        }
+      ],
+      "procedure": "Route each database event to the audience that actually needs it, at a level of detail that matches how routine or unusual it is. Treat anomaly detection as a judgment call informed by learned patterns, such as peak hours, known VIPs, and recurring false positives, not a rigid rule. Never let a duplicate webhook delivery produce a duplicate notification, and never let a malformed payload crash silently instead of being logged and skipped.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
+      "old_title": "Weekly Digest",
+      "title": "Database Activity Digest",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "weekly-activity-visible-with-trend",
+          "statement": "The team gets one weekly read on database activity across signups, orders, flags, and anomalies, with week-over-week context.",
+          "success_criteria": [
+            "A digest posts weekly covering signups, orders, flag changes, and anomalies by severity, with deltas from the prior week.",
+            "Missing anomaly logs still produce a digest reporting zero, rather than failing to post."
+          ]
+        }
+      ],
+      "procedure": "Compile the week's activity across every monitored table into one digest that shows not just totals but direction of change. Treat a missing or empty log as a zero, not a reason to skip the digest. If the post itself fails, retry with backoff before giving up and logging the miss.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Weekly Digest' for distinctiveness against the several other digest recipes in this slice (Support Digest, Flaky Test Digest, Stale Flag Digest, Documentation Freshness Digest)."
+    },
+    {
+      "id": "6a2bf81d-047f-59cf-b7af-dc6bf210a975",
+      "old_title": "Daily Memory Flush",
+      "title": "Daily Memory Flush",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "raw-memories-become-durable-knowledge",
+          "statement": "Raw session memories do not just accumulate; they get synthesized into durable, readable articles backed by real source material.",
+          "success_criteria": [
+            "Every compiled article is backed by at least two source memories, never fabricated from one or none.",
+            "The flush runs at most once per day per persona, with a concurrent run skipping rather than racing."
+          ]
+        }
+      ],
+      "procedure": "Turn the day's accumulated raw memories into something genuinely useful to read later, never synthesizing an article from thin evidence. When there is not enough source material for a real article, stay quiet rather than manufacturing one. Guard against a concurrent flush corrupting the compile pass by skipping cleanly when one is already in progress.",
+      "verdict": "keep"
+    },
+    {
+      "id": "b92807b8-61ec-5f23-a9f1-d34ed86d0a00",
+      "old_title": "Session Capture",
+      "title": "Session Capture",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "nothing-useful-from-a-session-is-lost",
+          "statement": "Decisions, gotchas, and follow-ups that came up during an execution are captured before the transcript is gone, without inventing signal where there was not any.",
+          "success_criteria": [
+            "Every completed execution's transcript is drained from the queue and its real extractions stored as tagged memories.",
+            "A low-signal session produces zero extractions rather than padded, invented ones."
+          ]
+        }
+      ],
+      "procedure": "Extract what is actually worth remembering from each completed execution: real decisions, real gotchas, real follow-ups, real file references. An empty or unreadable transcript is a normal outcome, not a failure to chase. Tag everything clearly as raw so the later compile step knows it has not been synthesized yet.",
+      "verdict": "keep"
+    },
+    {
+      "id": "bf57241c-c97c-5a8d-b200-1e96e6a811db",
+      "old_title": "Weekly Memory Health Check",
+      "title": "Weekly Memory Health Check",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "memory-layer-stays-trustworthy",
+          "statement": "Stale articles, contradictions, and coverage gaps in the memory layer are caught and surfaced to a human, never silently auto-corrected.",
+          "success_criteria": [
+            "Every weekly audit reports stale-article count, contradiction count, and coverage-gap count.",
+            "Every issue found routes to manual review; nothing is auto-deleted or auto-merged."
+          ]
+        }
+      ],
+      "procedure": "Audit the memory layer honestly and surface what is wrong, such as staleness, contradictions, or gaps, without ever taking the deletion decision out of a human's hands. When everything checks out, say so briefly rather than manufacturing findings. Extend into the Obsidian vault only when that integration is actually configured, and skip it silently otherwise.",
+      "verdict": "keep"
+    },
+    {
+      "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
+      "old_title": "Skill-Update Issue Writer",
+      "title": "Skill-Update Issue Writer",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "approved-skill-edits-become-tracked-work",
+          "statement": "Every approved skill-maintenance decision becomes a real, findable issue on the right platform, never a decision that evaporates after approval.",
+          "success_criteria": [
+            "Every review_decision.approved event for this persona's own reviews produces an issue with a diff, labels, and a Skill-Ref footer.",
+            "A rejected proposal is recorded as a rejected pattern instead of silently disappearing."
+          ]
+        }
+      ],
+      "procedure": "Turn an approved skill-maintenance decision into a real issue on the configured platform, carrying the diff and context a maintainer needs to act. Respect the issue_platform setting, including the choice to keep approvals memory-only. On a rejection, record why so the same pattern is not proposed again blindly. Never let a fetch or API failure lose the decision; fall back to manual review instead.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
+      "old_title": "Skill Audit & Proposal",
+      "title": "Skill Audit & Proposal",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "skill-library-stays-current-and-lean",
+          "statement": "The skill library reflects reality: skills that no longer match the code get proposed for an edit, and skills nobody uses get proposed for retirement.",
+          "success_criteria": [
+            "Every audit run surfaces at most max_proposals_per_run proposals, each carrying a full diff a human can judge quickly.",
+            "A skill with usage at or below the weak-skill threshold across the strength window becomes a retirement candidate, never a silent deletion."
+          ]
+        }
+      ],
+      "procedure": "Read what actually changed in the codebase and how often each skill gets referenced in real commits, and turn genuine drift or disuse into a proposal a human can approve or reject. Never exceed the proposal cap in one run; flooding the review queue defeats the purpose. Respect a 30-day cooldown on proposals the user has already declined so the same rejected idea does not keep resurfacing.",
+      "verdict": "keep"
+    },
+    {
+      "id": "bacdcdd7-dfbc-53ca-afd2-4ec5ed1af5ed",
+      "old_title": "User Deletion & Offboarding",
+      "title": "User Deletion & Offboarding",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "deletions-are-graceful-and-reversible",
+          "statement": "A user who deletes their account is offboarded with dignity, soft-deleted rather than destroyed, and the team knows about the churn without seeing anything identifying.",
+          "success_criteria": [
+            "Every deletion event soft-deletes the user record; no deletion event hard-deletes data.",
+            "A masked-PII churn alert posts to the configured channel for every processed deletion."
+          ]
+        }
+      ],
+      "procedure": "Process account deletions carefully: verify the request is genuine, soft-delete rather than destroy, and close the loop with a farewell message where an email is known. Post churn visibility to the team without exposing personal information. When approval is required, hold every side effect until a human confirms. A user who was never fully provisioned is a normal case, not an error.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a5d1cd82-ef99-575c-b6ce-70623fd8bda3",
+      "old_title": "Email Change Propagation",
+      "title": "Email Change Propagation",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "email-changes-stay-in-sync",
+          "statement": "A user's email change is reflected in the product's database promptly and confirmed to the new address, never left half-applied.",
+          "success_criteria": [
+            "Every verified email-change event updates the corresponding Supabase record.",
+            "A confirmation email reaches the new address for every processed change."
+          ]
+        }
+      ],
+      "procedure": "Keep the product's record of a user's email current the moment the identity provider confirms a change, treating the database update as the authoritative side effect and the confirmation email as a courtesy that should not block it. When the user record does not exist yet, provision it first rather than failing the update outright.",
+      "verdict": "keep"
+    },
+    {
+      "id": "2e709a14-5c11-5478-9e1c-37989a3dbd8e",
+      "old_title": "Onboarding Drip Sequence",
+      "title": "Onboarding Drip Sequence",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "every-new-user-gets-a-timely-sequence",
+          "statement": "Every new user receives the right onboarding email at the right point in their journey, with nobody skipped or double-sent.",
+          "success_criteria": [
+            "Each user's drip stage advances only when its time threshold since signup is actually reached.",
+            "A failed send leaves the stage unchanged so the next run retries rather than skipping ahead."
+          ]
+        }
+      ],
+      "procedure": "Advance each user through the configured onboarding sequence at the right cadence and tone, never sending a stage out of order or twice. Treat a send failure as something to retry on the next run rather than silently drop. Track drop-off and timing effectiveness over time so the sequence's structure can be judged by real outcomes, not assumption.",
+      "verdict": "keep"
+    },
+    {
+      "id": "4786985d-9b83-57a8-a536-8ca8f3f4451b",
+      "old_title": "User Signup",
+      "title": "User Signup",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "every-signup-provisioned-cleanly",
+          "statement": "Every new signup is fully provisioned exactly once, welcomed appropriately, and set up for the onboarding sequence that follows.",
+          "success_criteria": [
+            "A signup event results in exactly one Supabase record, idempotent even on a replayed webhook.",
+            "An internal or test signup still provisions correctly even when it is excluded from the public celebration."
+          ]
+        }
+      ],
+      "procedure": "Provision a new user reliably the moment the identity provider confirms them, treating idempotency as non-negotiable since webhooks can and do replay. Celebrate real signups appropriately while keeping internal or test accounts from cluttering the public channel. Initialize the onboarding state so the drip sequence has something correct to build on. A signup failure should retry once and then queue, never silently vanish.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
+      "old_title": "Codebase Coverage Scan",
+      "title": "Codebase Coverage Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "coverage-climbs-every-run",
+          "statement": "Test coverage moves forward every run toward the target, never repeating already-covered ground.",
+          "success_criteria": [
+            "Each run picks genuinely uncovered modules based on memory of prior progress, not a cold re-scan.",
+            "Every newly written test is validated by the test runner or explicitly marked unvalidated, never presented as proven without checking."
+          ]
+        }
+      ],
+      "procedure": "Chase coverage forward incrementally, always reading prior progress from memory first so each run targets fresh ground instead of repeating work. Validate every test actually written rather than assuming it passes. When the target is already met, report that clearly since a well-covered codebase is a real outcome, not nothing happening. Stop cleanly when the codebase itself is not accessible instead of guessing.",
+      "verdict": "keep"
+    },
+    {
+      "id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
+      "old_title": "Codebase Bug Hunt",
+      "title": "Codebase Bug Hunt",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "real-defects-get-a-human-look",
+          "statement": "Genuine defects, such as null derefs, unhandled edges, resource leaks, and security gaps, reach a human for confirmation before they become backlog noise.",
+          "success_criteria": [
+            "Every finding above the severity floor is filed as a human-review item with file, line, and a suggested fix.",
+            "The same defect is never re-reported across runs once it has been seen before."
+          ]
+        }
+      ],
+      "procedure": "Hunt for real, specific defects rather than stylistic nitpicks, and always route findings through human confirmation since a false positive that becomes a backlog task wastes real time. Remember what has already been reported so the same bug does not resurface run after run. A clean scan with nothing new to report is a genuine, worth-stating result, not a failure to find something.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
+      "old_title": "Scheduled Architecture Review",
+      "title": "Scheduled Architecture Review",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "architecture-record-stays-current",
+          "statement": "The codebase's architectural health and its decision history are kept current, with each review building on the last instead of restating it.",
+          "success_criteria": [
+            "Each review produces an ADR (context, decision, consequences) plus a story-pointed task breakdown.",
+            "A prior ADR's settled decisions are referenced, not re-derived, in the next review."
+          ]
+        }
+      ],
+      "procedure": "Assess the codebase's architectural health with an eye on trend, not just a fresh read every time; prior ADRs are the starting point, not a formality to skip. Trace cross-module impact honestly and turn findings into a concise ADR plus tasks a team can actually pick up. When only partial file access is available, proceed with what is there and note the limitation rather than blocking the whole review.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
+      "old_title": "Idea Architecture Analysis",
+      "title": "Idea Architecture Analysis",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "every-proposed-idea-gets-a-real-verdict",
+          "statement": "Every proposed idea gets an honest feasibility read against the real architecture, with risks and trade-offs named, before anyone commits engineering time.",
+          "success_criteria": [
+            "Every accepted idea produces an ADR plus scoped, story-pointed tasks ready for a delivery agent to pick up.",
+            "When the codebase cannot be inspected, the plan clearly marks its assumptions as unverified rather than presenting guesses as fact."
+          ]
+        }
+      ],
+      "procedure": "Evaluate a proposed idea against the real architecture, not just the idea's own description, surfacing genuine risks and trade-offs rather than rubber-stamping. Always produce a usable plan, even a best-effort one, instead of reporting blocked when the codebase cannot be reached. Check prior evaluations in memory so a repeat or related proposal is judged consistently with what came before.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5dc1a003-a5c0-4a03-9e03-5dc1a0030003",
+      "old_title": "Code Review",
+      "title": "Code Review",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "no-unreviewed-change-reaches-main",
+          "statement": "No change reaches main without an actual review verdict behind it, and that verdict is never a rubber stamp.",
+          "success_criteria": [
+            "Every reviewed file or changeset closes with an APPROVE or REQUEST_CHANGES verdict, and every finding cites file:line with a concrete fix.",
+            "A review that could not fully run is marked INCOMPLETE and returns REQUEST_CHANGES, never a false APPROVE."
+          ]
+        }
+      ],
+      "procedure": "Review for security, correctness, and quality with enough specificity that every finding cites a real location and a concrete fix, not vague advice. Never approve when the analysis itself was incomplete, since an unreviewed change dressed up as an approved one is worse than an honest block. Track resolved findings in memory so accepted issues are not re-flagged, and watch for recurring patterns worth calling out.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
+      "old_title": "Release Automation",
+      "title": "Release Automation",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "every-merge-gets-a-correct-version",
+          "statement": "Every merged change is reflected in a correctly bumped version, a categorized changelog entry, and drafted release notes, without waiting on a human.",
+          "success_criteria": [
+            "A merge produces a semantic version bump consistent with the scale of the change, recorded with its rationale.",
+            "The version file and changelog update together or neither does; docs never end up half-updated."
+          ]
+        }
+      ],
+      "procedure": "Apply semantic-versioning judgment to each merged change and keep the version file, changelog, and release notes consistent with it automatically. Never let one tool failure block the whole pipeline; run best-effort and still emit the version-bumped and published events. Record the rationale behind every version decision so the history is auditable, not just a sequence of numbers.",
+      "verdict": "keep",
+      "notes": "Overlaps with 95f66218 (renamed Weekly Release Candidate Review) in end goal, a tagged and documented release from merged work, but differs in review posture: this recipe runs continuously per merge with no test suite and no human gate, while 95f66218 batches weekly with a mandatory test run and approval. See slice_findings."
+    },
+    {
+      "id": "5dc1a006-a5c0-4a06-9e06-5dc1a0060006",
+      "old_title": "Sync Documentation",
+      "title": "Sync Documentation",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "docs-never-drift-from-shipped-code",
+          "statement": "README and changelog content stays true to what actually shipped, without drifting behind real commits.",
+          "success_criteria": [
+            "Each run updates docs to reflect functional changes only since the last processed commit, ignoring formatting or test-only diffs.",
+            "README and changelog update together in the same run or neither does."
+          ]
+        }
+      ],
+      "procedure": "Keep documentation honest about what the code actually does now, reading only genuinely functional changes since the last sync and ignoring cosmetic or test-only diffs. Update the README and changelog together, never one without the other, and back up before writing so a bad update is recoverable. Report clearly, and never fabricate a doc change, when git access itself fails.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+      "old_title": "PR Test + Merge",
+      "title": "PR Test + Merge",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "nothing-merges-on-an-unproven-suite",
+          "statement": "No PR is merged, approved, or auto-merge-enabled on a test suite that did not actually run and pass.",
+          "success_criteria": [
+            "Every new PR is tested in an isolated worktree before any merge action is taken.",
+            "A failing or unrun suite always results in changes-requested, never a merge or approval."
+          ]
+        }
+      ],
+      "procedure": "Test each new PR in isolation from the team's own working tree, and let the real test result, not assumption, decide whether it merges, gets approved, or gets sent back for changes. Follow the team's stated branching policy for how far automation goes, whether that is auto-merge or approve-only. Clean up every scratch worktree afterward so nothing orphaned is left behind, even when the run fails.",
+      "verdict": "keep"
+    }
+  ],
+  "slice_findings": [
+    "Two recipes were both titled 'Release Management' (95f66218, d21717d3) despite doing different jobs: one cuts and tags a weekly release candidate with mandatory test run and human approval, the other only reacts to an already-published source-control release and syncs it into Jira and messaging. Renamed both (to 'Weekly Release Candidate Review' and 'Release Changelog & Ticket Sync') per the spec's name-collision rule.",
+    "A near-duplicate exists between 95f66218 (renamed 'Weekly Release Candidate Review') and 5dc1a004 'Release Automation': both ultimately tag a version and produce release notes from merged work, but with opposite review postures, a gated weekly batch with a full test run versus a fully automatic continuous per-merge bump. Kept separate under the spec's conservatism rule since the review gate is a real behavioral difference, not just a schedule choice, but an adopter should not enable both against the same repository without deciding which one owns the tag. Worth Director attention.",
+    "A second, weaker near-duplicate pattern: 3f4a0c32 'Stale Flag Digest' (PostHog) and 6be233cb 'Stale Flag Cleanup' (LaunchDarkly) both surface aging feature flags on a similar weekly cadence, but operate on different flagging systems and different remediation depth (digest-only versus ticket creation plus registry state). Kept separate; noted mutually in each recipe.",
+    "Renamed four recipes for distinctiveness even though none technically collided by exact title within this slice: 'Health Report' to 'Codebase Health Report', 'Weekly Digest' to 'Database Activity Digest', 'messaging Handoff Summary' to 'Design Handoff Summary', and 'Weekly messaging Digest' to 'Documentation Freshness Digest'. The last two carried a lowercase 'messaging' mid-title, an apparent leftover from a mechanical Slack-to-'messaging' connector-generalization pass that did not respect capitalization or grammar; the same artifact shows up inside body text elsewhere (e.g. 'posts a rich messaging summary') and is likely corpus-wide, not slice-specific, and worth a dedicated sweep outside this review.",
+    "Four recipes in this slice independently 'scan a codebase and create backlog items': Backlog Scan, Dimension Scan, Codebase Bug Hunt, and Lean Sweep, spanning three different personas and pipelines with different scope (broad tech-debt sweep vs four fixed quality dimensions vs defect-only vs external-tool-only) and different downstream review models. None were merged since the scope, mechanism, and review model genuinely differ, but an adopter enabling several at once will get overlapping, differently-shaped backlog entries from the same codebase with no cross-reference between them. Worth Director attention on whether the recipes should at least name each other in their descriptions to set adopter expectations.",
+    "No dependency-update recipes exist in this slice (checked explicitly by text search), and no additional near-identical code-review pair was found beyond the release-management overlap already noted. The corpus-wide 'several near-identical code-review and dependency-update recipes' the task brief anticipated must be concentrated in other slices or categories.",
+    "Reclassified three Jira-based issue-triage recipes (Support Digest, Stale Issue Triage & Resolution, Issue Health Report) from a default software_engineering read into customer_support: their accountability, sentiment-aware triage, angry-reporter escalation, KB-backed resolution, matches support work even though the tool happens to be Jira rather than a dedicated helpdesk.",
+    "Reclassified the Figma-to-Linear design-handoff trio (Figma Version Detection, Linear Ticket Sync, Design Handoff Summary) into creative_design rather than software_engineering: the accountable judgment is interpreting design changes, not writing or reviewing code, even though the output is an engineering ticket.",
+    "Reclassified the persona memory-hygiene trio (Daily Memory Flush, Session Capture, Weekly Memory Health Check) into general_professional: these are generic assistant self-maintenance capabilities available to any persona type, not software-engineering-specific work, despite living in the 'development' seed category.",
+    "Classified Experiment Results Analysis into product_project rather than data_ai: the accountable judgment is a product rollout decision informed by a statistical test, not a data pipeline or model evaluation."
+  ]
+}

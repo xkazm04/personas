@@ -37,7 +37,7 @@ export function useOAuthConsent(): OAuthConsentState {
         ...prev,
         // Tokens stay server-side: the ref is redeemed by the backend at
         // credential save / preview-healthcheck time.
-        [OAUTH_FIELD.SESSION_REF]: poll.oauth_session_ref ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
+        [OAUTH_FIELD.SESSION_REF]: poll.oauthSessionRef ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
         scopes: effectiveScope,
         [OAUTH_FIELD.SCOPE]: effectiveScope,
         [OAUTH_FIELD.COMPLETED_AT]: new Date().toISOString(),

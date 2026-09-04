@@ -129,7 +129,8 @@ fn enforce_app_master_mandate(
 ) -> Result<(), AppError> {
     use personas_engine::app_master;
 
-    let Some(record) = app_master::get_mandate(db, project_id) else {
+    let Some(record) = personas_engine::responsibility::mandate_for_project_or_none(db, project_id)
+    else {
         return Ok(());
     };
     let violations = app_master::scan_diff(
@@ -301,6 +302,7 @@ fn parse_test_counts(output: &str) -> (i32, i32, i32, i32) {
 /// snake_case (no `rename_all`) — the call site in `api/devTools` already
 /// declared this exact shape inline, down to `changed_files_count`.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct GitStatusSummary {
     pub project_id: String,

@@ -362,9 +362,9 @@ fn build_environment_section(db: &crate::db::DbPool) -> HealthCheckSection {
     // 3. Opt-in engine gates. These are read from the HOST process environment
     //    (not per-execution env), so they can only be set before Personas
     //    launches — there is no in-app toggle, and nothing in the app sets
-    //    them. That makes them invisible: the shipped
-    //    `self-evolving-codebase-memory` template's whole session-capture
-    //    capability depends on the hooks sidecar, and with the gate unset it
+    //    them. That makes them invisible: a persona whose whole session-capture
+    //    capability depends on the hooks sidecar (the retired
+    //    `self-evolving-codebase-memory` template was the shipped example)
     //    adopts cleanly and then does nothing, forever. Surfacing them as Info
     //    rather than Warn — off is a legitimate default, silence is not.
     for (id, label, var, effect) in [

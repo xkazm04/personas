@@ -28,6 +28,7 @@ fn make_persona(system_prompt: &str) -> personas_db::models::Persona {
     // are filled with sensible defaults so the struct compiles.
     personas_db::models::Persona {
         lifecycle: "active".to_string(),
+        core_profile: None,
         id: "p_test".into(),
         project_id: "proj_test".into(),
         name: "Test".into(),

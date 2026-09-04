@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "प्रतीक्षा में",
-    "running": "चल रहा है",
-    "completed": "पूर्ण",
-    "failed": "विफल",
-    "cancelled": "रद्द",
-    "incomplete": "अपूर्ण",
-    "error": "त्रुटि",
-    "unknown": "अज्ञात"
-  },
-  "simple": {
-    "good": "ठीक है",
-    "warning": "ध्यान दें",
-    "problem": "समस्या"
-  },
-  "event": {
-    "pending": "लंबित",
-    "processing": "प्रक्रियाधीन",
-    "processed": "प्रसंस्कृत",
-    "failed": "विफल",
-    "retrying": "पुनः प्रयास"
-  },
   "automation": {
-    "pending": "लंबित",
-    "running": "चल रहा है",
     "completed": "पूर्ण",
     "failed": "विफल",
+    "pending": "लंबित",
+    "running": "चल रहा है",
     "timeout": "समय समाप्त"
-  },
-  "severity": {
-    "info": "जानकारी",
-    "low": "कम",
-    "medium": "मध्यम",
-    "high": "उच्च",
-    "critical": "गंभीर"
-  },
-  "priority": {
-    "low": "कम",
-    "normal": "सामान्य",
-    "high": "उच्च",
-    "urgent": "अत्यावश्यक"
-  },
-  "healing_status": {
-    "open": "खुला",
-    "auto_fixed": "स्वतः ठीक",
-    "acknowledged": "स्वीकृत",
-    "resolved": "हल"
-  },
-  "healing_category": {
-    "config": "कॉन्फ़िगरेशन",
-    "auth": "प्रमाणीकरण",
-    "network": "नेटवर्क",
-    "timeout": "टाइमआउट",
-    "quota": "कोटा"
-  },
-  "connector_status": {
-    "ready": "तैयार",
-    "untested": "अपरीक्षित",
-    "failed": "विफल",
-    "no_credential": "क्रेडेंशियल नहीं",
-    "testing": "परीक्षण हो रहा है"
-  },
-  "task_phase": {
-    "analyzing": "विश्लेषण हो रहा है",
-    "planning": "योजना बन रही है",
-    "implementing": "कार्यान्वयन हो रहा है",
-    "committing": "कमिट हो रहा है",
-    "validating": "सत्यापन हो रहा है",
-    "complete": "पूर्ण"
-  },
-  "goal_state": {
-    "pending": "लंबित",
-    "review": "समीक्षा",
-    "blocked": "अवरुद्ध",
-    "in_progress": "प्रगति में",
-    "running": "चल रहा है",
-    "completed": "पूर्ण",
-    "done": "पूर्ण"
-  },
-  "test": {
-    "generating": "जेनरेट हो रहा है",
-    "running": "चल रहा है",
-    "completed": "पूर्ण",
-    "failed": "विफल",
-    "pending": "लंबित"
-  },
-  "dev": {
-    "open": "खुला",
-    "in_progress": "प्रगति में",
-    "completed": "पूर्ण",
-    "blocked": "अवरुद्ध",
-    "queued": "प्रतीक्षा में",
-    "running": "चल रहा है",
-    "failed": "विफल"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "वैश्विक"
-  },
-  "forage_confidence": {
-    "high": "उच्च",
-    "medium": "मध्यम",
-    "low": "कम"
-  },
-  "capability_risk": {
-    "low": "कम",
-    "medium": "मध्यम",
-    "high": "उच्च"
-  },
-  "verdict": {
-    "production": "प्रोडक्शन",
-    "promising": "आशाजनक",
-    "not_ready": "तैयार नहीं",
-    "broken": "टूटा हुआ"
-  },
-  "deployment": {
-    "active": "सक्रिय",
-    "paused": "रुका हुआ",
-    "failed": "विफल",
-    "unknown": "अज्ञात",
-    "file-based": "फ़ाइल-आधारित"
-  },
-  "delivery": {
-    "delivered": "डिलीवर हुआ",
-    "failed": "विफल",
-    "pending": "लंबित",
-    "queued": "कतारबद्ध"
-  },
-  "rotation": {
-    "anomaly": "विसंगति",
-    "paused": "रुका हुआ",
-    "disabled": "अक्षम",
-    "perm_errors": "स्थायी त्रुटियां",
-    "degrading": "घटता हुआ",
-    "backoff": "बैकऑफ़",
-    "fresh": "नया",
-    "active": "सक्रिय"
-  },
-  "thinking": {
-    "high": "उच्च",
-    "low": "निम्न",
-    "medium": "मध्यम"
-  },
-  "error_category": {
-    "api_error": "API त्रुटि",
-    "credential_error": "क्रेडेंशियल त्रुटि",
-    "network": "नेटवर्क",
-    "provider_not_found": "प्रदाता नहीं मिला",
-    "rate_limit": "दर सीमा",
-    "session_limit": "सत्र सीमा",
-    "timeout": "समय समाप्त",
-    "tool_error": "टूल त्रुटि",
-    "transient_process_failure": "अस्थायी प्रक्रिया विफलता",
-    "unknown": "अज्ञात",
-    "validation": "सत्यापन"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "फैन-आउट सीमा पूरी",
-    "budget_exceeded": "लागत सीमा पूरी",
-    "cas_lost": "अन्य रन द्वारा लिया गया",
-    "cycle_detected": "चक्र पाया गया",
-    "depth_limit": "गहराई सीमा",
-    "handoff_suppressed": "हैंडऑफ़ रोका गया",
-    "malformed_config": "अमान्य कॉन्फ़िग",
-    "outside_window": "सक्रिय विंडो के बाहर",
-    "predicate_unmet": "शर्त पूरी नहीं हुई",
-    "publish_failed": "प्रकाशन विफल",
-    "quarantined": "ट्रिगर क्वारंटीन किया गया",
-    "healing_abandoned": "स्व-सुधार रुक गया",
-    "healing_capped": "सुधार के प्रयास समाप्त",
-    "lookup_failed": "ट्रिगर लुकअप विफल",
-    "cost_ceiling_corrupt": "लागत सीमा अपठनीय"
   },
   "build": {
     "analyzing": "विश्लेषण हो रहा है",
@@ -186,6 +19,232 @@
     "test_complete": "परीक्षण पूर्ण",
     "testing": "परीक्षण चल रहा है"
   },
+  "capability_risk": {
+    "high": "उच्च",
+    "low": "कम",
+    "medium": "मध्यम"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "फैन-आउट सीमा पूरी",
+    "budget_exceeded": "लागत सीमा पूरी",
+    "cas_lost": "अन्य रन द्वारा लिया गया",
+    "cost_ceiling_corrupt": "लागत सीमा अपठनीय",
+    "cycle_detected": "चक्र पाया गया",
+    "depth_limit": "गहराई सीमा",
+    "handoff_suppressed": "हैंडऑफ़ रोका गया",
+    "healing_abandoned": "स्व-सुधार रुक गया",
+    "healing_capped": "सुधार के प्रयास समाप्त",
+    "lookup_failed": "ट्रिगर लुकअप विफल",
+    "malformed_config": "अमान्य कॉन्फ़िग",
+    "outside_window": "सक्रिय विंडो के बाहर",
+    "predicate_unmet": "शर्त पूरी नहीं हुई",
+    "publish_failed": "प्रकाशन विफल",
+    "quarantined": "ट्रिगर क्वारंटीन किया गया"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "वैश्विक"
+  },
+  "competition": {
+    "awaiting_review": "समीक्षा की प्रतीक्षा",
+    "cancelled": "रद्द",
+    "resolved": "हल",
+    "running": "चल रहा है"
+  },
+  "connector_status": {
+    "failed": "विफल",
+    "no_credential": "क्रेडेंशियल नहीं",
+    "ready": "तैयार",
+    "testing": "परीक्षण हो रहा है",
+    "untested": "अपरीक्षित"
+  },
+  "delivery": {
+    "delivered": "डिलीवर हुआ",
+    "failed": "विफल",
+    "pending": "लंबित",
+    "queued": "कतारबद्ध"
+  },
+  "deployment": {
+    "active": "सक्रिय",
+    "failed": "विफल",
+    "file-based": "फ़ाइल-आधारित",
+    "paused": "रुका हुआ",
+    "unknown": "अज्ञात"
+  },
+  "dev": {
+    "blocked": "अवरुद्ध",
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "in_progress": "प्रगति में",
+    "open": "खुला",
+    "queued": "प्रतीक्षा में",
+    "running": "चल रहा है"
+  },
+  "error_category": {
+    "api_error": "API त्रुटि",
+    "credential_error": "क्रेडेंशियल त्रुटि",
+    "network": "नेटवर्क",
+    "provider_not_found": "प्रदाता नहीं मिला",
+    "rate_limit": "दर सीमा",
+    "session_limit": "सत्र सीमा",
+    "timeout": "समय समाप्त",
+    "tool_error": "टूल त्रुटि",
+    "transient_process_failure": "अस्थायी प्रक्रिया विफलता",
+    "unknown": "अज्ञात",
+    "validation": "सत्यापन"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "अनुमोदन की प्रतीक्षा में",
+    "cascade_guard": "पहले से चल रहा है",
+    "cross_team_blocked": "टीमों के बीच अवरुद्ध",
+    "dry_run": "ड्राई रन (सिम्युलेटेड)",
+    "handoff_target_disabled": "हैंडऑफ़ लक्ष्य बंद है",
+    "no_subscriber": "कोई सब्सक्राइबर मेल नहीं खाया",
+    "persona_disabled": "एजेंट बंद है",
+    "stuck_reclaimed": "वापस लेकर फिर से कतार में डाला गया",
+    "stuck_retry_exhausted": "वापस लिया गया, पुनः प्रयास समाप्त"
+  },
+  "event": {
+    "failed": "विफल",
+    "pending": "लंबित",
+    "processed": "प्रसंस्कृत",
+    "processing": "प्रक्रियाधीन",
+    "retrying": "पुनः प्रयास"
+  },
+  "execution": {
+    "cancelled": "रद्द",
+    "completed": "पूर्ण",
+    "error": "त्रुटि",
+    "failed": "विफल",
+    "incomplete": "अपूर्ण",
+    "queued": "प्रतीक्षा में",
+    "running": "चल रहा है",
+    "unknown": "अज्ञात"
+  },
+  "forage_confidence": {
+    "high": "उच्च",
+    "low": "कम",
+    "medium": "मध्यम"
+  },
+  "goal_state": {
+    "blocked": "अवरुद्ध",
+    "completed": "पूर्ण",
+    "done": "पूर्ण",
+    "in_progress": "प्रगति में",
+    "pending": "लंबित",
+    "review": "समीक्षा",
+    "running": "चल रहा है"
+  },
+  "healing_category": {
+    "auth": "प्रमाणीकरण",
+    "config": "कॉन्फ़िगरेशन",
+    "network": "नेटवर्क",
+    "quota": "कोटा",
+    "timeout": "टाइमआउट"
+  },
+  "healing_status": {
+    "acknowledged": "स्वीकृत",
+    "auto_fixed": "स्वतः ठीक",
+    "open": "खुला",
+    "resolved": "हल"
+  },
+  "kb_document": {
+    "indexing": "इंडेक्स हो रहा है",
+    "pending": "लंबित"
+  },
+  "memory_action": {
+    "deleted": "हटाया गया",
+    "error": "त्रुटि",
+    "kept": "रखा गया",
+    "proposed_archive": "संग्रह का प्रस्ताव",
+    "proposed_delete": "हटाने का प्रस्ताव",
+    "proposed_synthesize": "विलय का प्रस्ताव",
+    "proposed_update_importance": "पुनर्मूल्यांकन का प्रस्ताव"
+  },
+  "memory_category": {
+    "context": "संदर्भ",
+    "decision": "निर्णय",
+    "learning": "सीख",
+    "observation": "अवलोकन"
+  },
+  "memory_tier": {
+    "active": "सक्रिय",
+    "archive": "संग्रहीत",
+    "core": "मुख्य",
+    "working": "कार्यशील"
+  },
+  "priority": {
+    "high": "उच्च",
+    "low": "कम",
+    "normal": "सामान्य",
+    "urgent": "अत्यावश्यक"
+  },
+  "remote_job": {
+    "cancelled": "रद्द किया गया",
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "pending": "लंबित",
+    "refused": "अस्वीकृत",
+    "running": "चल रहा है"
+  },
+  "rotation": {
+    "active": "सक्रिय",
+    "anomaly": "विसंगति",
+    "backoff": "बैकऑफ़",
+    "degrading": "घटता हुआ",
+    "disabled": "अक्षम",
+    "fresh": "नया",
+    "paused": "रुका हुआ",
+    "perm_errors": "स्थायी त्रुटियां"
+  },
+  "severity": {
+    "critical": "गंभीर",
+    "high": "उच्च",
+    "info": "जानकारी",
+    "low": "कम",
+    "medium": "मध्यम"
+  },
+  "simple": {
+    "good": "ठीक है",
+    "problem": "समस्या",
+    "warning": "ध्यान दें"
+  },
+  "span_type": {
+    "chain_evaluation": "चेन मूल्यांकन",
+    "cli_spawn": "CLI आरंभ",
+    "credential_resolution": "क्रेडेंशियल",
+    "execution": "निष्पादन",
+    "healing_analysis": "सुधार",
+    "outcome_assessment": "परिणाम",
+    "pipeline_stage": "पाइपलाइन चरण",
+    "prompt_assembly": "प्रॉम्प्ट",
+    "protocol_dispatch": "प्रोटोकॉल",
+    "stream_processing": "स्ट्रीम",
+    "tool_call": "टूल कॉल",
+    "unknown": "अज्ञात"
+  },
+  "task_phase": {
+    "analyzing": "विश्लेषण हो रहा है",
+    "committing": "कमिट हो रहा है",
+    "complete": "पूर्ण",
+    "implementing": "कार्यान्वयन हो रहा है",
+    "planning": "योजना बन रही है",
+    "validating": "सत्यापन हो रहा है"
+  },
+  "test": {
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "generating": "जेनरेट हो रहा है",
+    "pending": "लंबित",
+    "running": "चल रहा है"
+  },
+  "thinking": {
+    "high": "उच्च",
+    "low": "निम्न",
+    "medium": "मध्यम"
+  },
   "tool_error_kind": {
     "auth": "प्रमाणीकरण",
     "http": "HTTP त्रुटि",
@@ -197,69 +256,10 @@
     "unknown": "अज्ञात त्रुटि",
     "unsupported": "यहाँ चलाने योग्य नहीं"
   },
-  "remote_job": {
-    "completed": "पूर्ण",
-    "failed": "विफल",
-    "cancelled": "रद्द किया गया",
-    "refused": "अस्वीकृत",
-    "pending": "लंबित",
-    "running": "चल रहा है"
-  },
-  "event_reason": {
-    "approval_held": "अनुमोदन की प्रतीक्षा में",
-    "cascade_guard": "पहले से चल रहा है",
-    "cross_team_blocked": "टीमों के बीच अवरुद्ध",
-    "dry_run": "ड्राई रन (सिम्युलेटेड)",
-    "handoff_target_disabled": "हैंडऑफ़ लक्ष्य बंद है",
-    "no_subscriber": "कोई सब्सक्राइबर मेल नहीं खाया",
-    "persona_disabled": "एजेंट बंद है",
-    "stuck_reclaimed": "वापस लेकर फिर से कतार में डाला गया",
-    "stuck_retry_exhausted": "वापस लिया गया, पुनः प्रयास समाप्त",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "चल रहा है",
-    "awaiting_review": "समीक्षा की प्रतीक्षा",
-    "resolved": "हल",
-    "cancelled": "रद्द"
-  },
-  "kb_document": {
-    "pending": "लंबित",
-    "indexing": "इंडेक्स हो रहा है"
-  },
-  "memory_tier": {
-    "core": "मुख्य",
-    "active": "सक्रिय",
-    "working": "कार्यशील",
-    "archive": "संग्रहीत"
-  },
-  "span_type": {
-    "execution": "निष्पादन",
-    "prompt_assembly": "प्रॉम्प्ट",
-    "credential_resolution": "क्रेडेंशियल",
-    "cli_spawn": "CLI आरंभ",
-    "tool_call": "टूल कॉल",
-    "protocol_dispatch": "प्रोटोकॉल",
-    "chain_evaluation": "चेन मूल्यांकन",
-    "stream_processing": "स्ट्रीम",
-    "outcome_assessment": "परिणाम",
-    "healing_analysis": "सुधार",
-    "pipeline_stage": "पाइपलाइन चरण",
-    "unknown": "अज्ञात"
-  },
-  "memory_action": {
-    "kept": "रखा गया",
-    "deleted": "हटाया गया",
-    "error": "त्रुटि",
-    "proposed_delete": "हटाने का प्रस्ताव",
-    "proposed_update_importance": "पुनर्मूल्यांकन का प्रस्ताव",
-    "proposed_synthesize": "विलय का प्रस्ताव",
-    "proposed_archive": "संग्रह का प्रस्ताव"
-  },
-  "memory_category": {
-    "observation": "अवलोकन",
-    "decision": "निर्णय",
-    "context": "संदर्भ",
-    "learning": "सीख"
+  "verdict": {
+    "broken": "टूटा हुआ",
+    "not_ready": "तैयार नहीं",
+    "production": "प्रोडक्शन",
+    "promising": "आशाजनक"
   }
 }

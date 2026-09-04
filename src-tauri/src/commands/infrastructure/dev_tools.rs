@@ -1139,47 +1139,49 @@ fn compose_unattended_recall(
 
     // The persona lane is App-master-only: an ordinary autopilot project has no
     // holder, and there is no persona whose memory it would be.
-    let persona_block =
-        personas_engine::app_master::get_mandate(db, project_id).and_then(|record| {
-            let tiered = match crate::db::repos::core::memories::get_for_injection_v2(
-                db,
-                crate::db::repos::core::memories::InjectionScope::for_persona(&record.persona_id),
-                amm::PERSONA_CORE_ROWS,
-                amm::PERSONA_ACTIVE_ROWS,
-            ) {
-                Ok(t) => t,
-                Err(e) => {
-                    tracing::warn!(project_id, persona_id = %record.persona_id, error = %e,
+    let persona_block = personas_engine::responsibility::mandate_for_project_or_none(
+        db, project_id,
+    )
+    .and_then(|record| {
+        let tiered = match crate::db::repos::core::memories::get_for_injection_v2(
+            db,
+            crate::db::repos::core::memories::InjectionScope::for_persona(&record.persona_id),
+            amm::PERSONA_CORE_ROWS,
+            amm::PERSONA_ACTIVE_ROWS,
+        ) {
+            Ok(t) => t,
+            Err(e) => {
+                tracing::warn!(project_id, persona_id = %record.persona_id, error = %e,
                     "unattended recall: persona memory unreadable; dispatching without it");
-                    return None;
-                }
-            };
-            let packed = personas_db::memory_recall::pack_by_budget(
-                tiered.active,
-                amm::PERSONA_ACTIVE_BUDGET_CHARS,
-                chrono::Utc::now(),
-            );
-            let block = amm::persona_memory_block(&tiered.core, &packed.selected, packed.omitted)?;
-
-            // The access counters ARE the decay signal: `decay_score` anchors a
-            // memory's age at `last_accessed_at` and boosts on `access_count`.
-            // Injecting without this write starves decay — every memory the App
-            // master actually uses would age as though it had never been read.
-            let ids = amm::injected_ids(&tiered.core, &packed.selected);
-            if let Err(e) = crate::db::repos::core::memories::increment_access_batch(db, &ids) {
-                tracing::warn!(persona_id = %record.persona_id, error = %e,
-                "unattended recall: could not record memory access; decay will under-count");
+                return None;
             }
-            tracing::debug!(
-                project_id,
-                persona_id = %record.persona_id,
-                core = tiered.core.len(),
-                active = packed.selected.len(),
-                omitted = packed.omitted,
-                "unattended recall: App master memory injected"
-            );
-            Some(block)
-        });
+        };
+        let packed = personas_db::memory_recall::pack_by_budget(
+            tiered.active,
+            amm::PERSONA_ACTIVE_BUDGET_CHARS,
+            chrono::Utc::now(),
+        );
+        let block = amm::persona_memory_block(&tiered.core, &packed.selected, packed.omitted)?;
+
+        // The access counters ARE the decay signal: `decay_score` anchors a
+        // memory's age at `last_accessed_at` and boosts on `access_count`.
+        // Injecting without this write starves decay — every memory the App
+        // master actually uses would age as though it had never been read.
+        let ids = amm::injected_ids(&tiered.core, &packed.selected);
+        if let Err(e) = crate::db::repos::core::memories::increment_access_batch(db, &ids) {
+            tracing::warn!(persona_id = %record.persona_id, error = %e,
+                "unattended recall: could not record memory access; decay will under-count");
+        }
+        tracing::debug!(
+            project_id,
+            persona_id = %record.persona_id,
+            core = tiered.core.len(),
+            active = packed.selected.len(),
+            omitted = packed.omitted,
+            "unattended recall: App master memory injected"
+        );
+        Some(block)
+    });
 
     amm::compose_dispatch_prompt(prompt, project_block.as_deref(), persona_block.as_deref())
 }

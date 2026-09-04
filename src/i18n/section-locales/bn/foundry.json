@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "{count}টি সক্ষমতা দিয়ে গঠিত",
-  "xray_tooltip": "এই টেমপ্লেটটি একটি মানসিকতা এবং রেসিপি ক্যাটালগ থেকে নেওয়া সক্ষমতার সমন্বয় — একই উপাদান যা আপনি Foundry-তে হাতে কম্পোজ করতে পারেন।",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "এই টেমপ্লেটটি একটি মানসিকতা এবং রেসিপি ক্যাটালগ থেকে নেওয়া সক্ষমতার সমন্বয় — একই উপাদান যা আপনি Foundry-তে হাতে কম্পোজ করতে পারেন।"
 }

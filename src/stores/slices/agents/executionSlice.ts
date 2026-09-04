@@ -22,6 +22,7 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
 import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
 import { cancelExecution, executePersona, getExecution, listExecutionsSummary } from "@/api/agents/executions";
+import { deriveExecutionOrigin } from "@/features/agents/sub_executions/libs/executionOrigin";
 import { InvokeTimeoutError } from "@/lib/tauriInvoke";
 
 import { executionSink } from "@/lib/execution/executionSink";
@@ -327,24 +328,32 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   // the list renders. Lets finishExecution patch the one completed run in place
   // instead of re-fetching the whole list (which, on a cache hit, would return a
   // stale page missing the just-finished run's final status/cost).
-  const toListItem = (e: Awaited<ReturnType<typeof getExecution>>): ExecutionListItem => ({
-    id: e.id,
-    persona_id: e.persona_id,
-    use_case_id: e.use_case_id,
-    status: e.status,
-    input_tokens: e.input_tokens,
-    output_tokens: e.output_tokens,
-    cost_usd: e.cost_usd,
-    error_message: e.error_message,
-    duration_ms: e.duration_ms,
-    retry_of_execution_id: e.retry_of_execution_id,
-    retry_count: e.retry_count,
-    started_at: e.started_at,
-    completed_at: e.completed_at,
-    created_at: e.created_at,
-    is_simulation: e.is_simulation,
-    business_outcome: e.business_outcome,
-  });
+  const toListItem = (e: Awaited<ReturnType<typeof getExecution>>): ExecutionListItem => {
+    // The list projection derives origin/origin_lane in SQL; a row patched in
+    // from a full PersonaExecution re-derives them from the same raw fields
+    // (identical precedence — see executionOrigin.ts).
+    const { origin, lane } = deriveExecutionOrigin(e);
+    return {
+      id: e.id,
+      persona_id: e.persona_id,
+      use_case_id: e.use_case_id,
+      status: e.status,
+      input_tokens: e.input_tokens,
+      output_tokens: e.output_tokens,
+      cost_usd: e.cost_usd,
+      error_message: e.error_message,
+      duration_ms: e.duration_ms,
+      retry_of_execution_id: e.retry_of_execution_id,
+      retry_count: e.retry_count,
+      started_at: e.started_at,
+      completed_at: e.completed_at,
+      created_at: e.created_at,
+      is_simulation: e.is_simulation,
+      business_outcome: e.business_outcome,
+      origin,
+      origin_lane: lane,
+    };
+  };
 
   // Upsert a single finished run into the visible list + per-persona cache,
   // replacing an existing row (queued→completed) or prepending a brand-new one.

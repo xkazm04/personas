@@ -1,8 +1,8 @@
 {
+  "cancelled": "キャンセル済",
   "completed": "完了",
+  "error": "エラー",
   "failed": "失敗",
   "queued": "キュー待ち",
-  "running": "実行中",
-  "cancelled": "キャンセル済",
-  "error": "エラー"
+  "running": "実行中"
 }

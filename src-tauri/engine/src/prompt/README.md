@@ -12,7 +12,9 @@ CLI arg builders).
 | File | Responsibility | Public to |
 |---|---|---|
 | [`mod.rs`](./mod.rs) | `ResolvedConnectorHint` + `DisciplineMode` + `assemble_prompt` (~580 lines) + tests. Calls every helper below. | External callers use `engine::prompt::assemble_prompt`. |
-| [`capabilities.rs`](./capabilities.rs) | `parse_model_profile`, `render_active_capabilities`, `active_capabilities_fingerprint`, `render_generation_policy_lines`, `build_tool_documentation`. Small derivation helpers shared with non-execution callers. | All `pub`, re-exported at `mod.rs`. |
+| [`capabilities.rs`](./capabilities.rs) | `parse_model_profile`, `render_active_capabilities`, `active_capabilities_fingerprint`, `core_fingerprint`, `render_generation_policy_lines`, `build_tool_documentation`. Small derivation helpers shared with non-execution callers. | All `pub`, re-exported at `mod.rs`. |
+| [`core_section.rs`](./core_section.rs) | `render_core` (`## Core` from `persona.core_profile`'s `PersonaCore` — dials as calibrated prose bands) + `render_responsibilities` (`## Responsibilities`, capped at `MAX_RESPONSIBILITIES_RENDERED`). Living-agent spine (spark `living-agent-core`). | `pub`, re-exported. |
+| [`budget.rs`](./budget.rs) | `PromptBlockSizes` + `warn_over_budget` (size tripwires — one warn per assembly, never truncates) + `fnv1a_64`. | `pub`, re-exported. |
 | [`variables.rs`](./variables.rs) | `replace_variables` — interpolate `{{var}}` placeholders with runtime-sanitised values. | `pub`, re-exported. |
 | [`runtime_safety.rs`](./runtime_safety.rs) | `sanitize_runtime_variable`, `wrap_runtime_xml_boundary`, `generate_runtime_nonce`, `is_invisible_runtime_char`, `RUNTIME_CANARY_INSTRUCTION`, `DANGEROUS_TAGS`, `MAX_RUNTIME_VAR_LENGTH`, `RUNTIME_NONCE_COUNTER`. The structural prompt-injection defence. | `pub(super)` only — never call from outside `engine::prompt`. |
 | [`cli_args.rs`](./cli_args.rs) | `build_cli_args*`, `build_resume_cli_args*`, `apply_provider_env`, `base_cli_setup`, `resolve_effort`, `DEFAULT_EFFORT`. | `pub`, re-exported. |
@@ -33,8 +35,11 @@ in order. Grep for the section header strings (each `prompt.push_str("##
 | Correction Required | `fix_loop::FIX_INSTRUCTION_FRAMING` (trusted) + `input_data._fix_failures` (boundary-wrapped) — see `render_correction_required` | fix-loop re-entry only |
 | Triggering event | `input_data._event` | present only on event-driven executions |
 | Description | `persona.description` (variable-substituted) | non-empty |
-| Identity / Instructions | `persona.structured_prompt` OR `persona.system_prompt` | present |
+| Core | `render_core` over `persona.core_profile` (parsed `PersonaCore`; parse-fail → warn + skip) | core_profile non-empty + parseable |
+| Responsibilities | `render_responsibilities(responsibilities)` — the `assemble_prompt_with_skills` param | param `Some` + non-empty |
+| Identity / Instructions | `persona.structured_prompt` OR `persona.system_prompt` — the `## Identity` half is SKIPPED when the parsed core carries a non-empty `identity` (`## Core` is the identity then) | present |
 | Active Capabilities | `render_active_capabilities(persona.design_context)` | design_context non-null |
+| Recent Episodes (oldest first) | `recent_episodes` param, ≤8 rows, whole body nonce-fenced (derived-untrusted) | param `Some` + non-empty |
 | Tools | `build_tool_documentation(tool)` per tool | tools non-empty |
 | Credentials | `credential_hints` | non-empty |
 | Connector Usage Reference | `connector_usage_hints` | at least one hint has `overview` |

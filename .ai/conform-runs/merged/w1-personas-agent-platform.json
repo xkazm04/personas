@@ -1,0 +1,128 @@
+{
+  "worker": "w1-personas-agent-platform",
+  "evaluatedAt": "2026-08-31",
+  "pairs": [
+    {
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:15-23,67-74 asserts deriveAxes/full-lifecycle coverage over only 7 of the 8 closed FleetSessionState values, omitting 'finished' — the exact state whose omission from production code was already a recorded fleet-orchestration deviation on fleet-session-grid (67c91bb4); the switch it is testing (FleetStatusDots.tsx:32-41) already handles 'finished' correctly, so this suite would not catch a regression that dropped it again.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:16-23 (deriveAxes cases) and :68 (the 'full lifecycle' states array) both hard-code a 7-member list, missing 'finished' from FleetSessionState; sibling sub_grid/__tests__/fleetGridGroupOrder.test.ts (not in this context) shows the project's own fix pattern — assert against the shared authority (FLEET_STATE_META / a type-level exhaustiveness check) instead of a literal array." }
+      ]
+    },
+    {
+      "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/companion/DevOpLedger.tsx:89-109 hand-maintains a second copy of the five-token dev-op status vocabulary (dispatched|completed|merged|closed|interrupted) that src/api/companion.ts:388-395 only documents in a comment on a bare `status: string` field (not a generated closed union, unlike FleetSessionState); statusLabel falls back to the raw token and statusTone falls back to a plain grey dot for anything unrecognized, so a sixth backend status introduced later renders silently instead of failing loud.",
+      "techniques": [
+        { "technique": "action-catalog-single-source", "verdict": "deviation",
+          "evidence": "src/features/plugins/companion/DevOpLedger.tsx:89-109 duplicates a backend-defined closed vocabulary in hand-written frontend logic with a silent fallback for unknown values — the same one-authority-per-vocabulary failure already flagged for the action catalog at companion-core-store (d77a22ee, athenaLabels.ts) and commands-companion (3effd422, approval_lifecycle.rs), here applied to the dev-op cycle's outcome vocabulary rather than the action-kind vocabulary." }
+      ],
+      "registryProposal": "The five-copy-vocabulary antipattern this project keeps re-triggering (action kinds in athenaLabels.ts, dev-op status in DevOpLedger.tsx, approval executors in approval_lifecycle.rs) is one structural cause appearing at 3+ independent sites across this project; worth checking whether action-catalog-single-source's guidance should explicitly generalize beyond the action-execution catalog to 'any backend-closed vocabulary a companion surface renders', since this project keeps re-deriving the same defect for vocabularies that aren't literally the action catalog."
+    },
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "conversation-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/plugins/companion/QuickReplies.tsx:1-9,40-61 sends the picked chip text through the same pipeline as typed text (send-never-execute) with numbered 1-9 keyboard access, and companionStore.ts:318 clears quickReplies on next send/reset (chip-set staleness); src/features/plugins/companion/QueuedMessages.tsx never silently drops a mid-turn message — every queued item stays visible, cancelable, and FIFO-drained.",
+      "techniques": [
+        { "technique": "model-proposed-quick-replies", "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/QuickReplies.tsx:12-19,46 (onPick routes to the normal send pipeline, never a direct action) and companionStore.ts:318 (cleared on next send)." }
+      ]
+    },
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/companion/ApprovalCard.tsx:13,83 renders every proposed action's label via athenaLabels.ts's actionLabel() — the same hand-maintained per-slug switch (documented as a manual 3-step 'add a key, add a case, no-op the caller' procedure at athenaLabels.ts:12-15) already recorded as a companion-runtime deviation at companion-core-store (d77a22ee) and plugins-companion-decision (3f38546e); this is a third site consuming the identical uncompared action vocabulary, not a new root cause.",
+      "techniques": [
+        { "technique": "action-catalog-single-source", "verdict": "deviation",
+          "evidence": "src/features/plugins/companion/ApprovalCard.tsx:13,83 + athenaLabels.ts:29-40 (switch-per-slug with a title-cased synthetic fallback, never checked against the backend's actual action table)." }
+      ]
+    },
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/plugins/companion/BrainViewer.tsx:106-118 (KINDS) keeps 'identity' (self-model) and 'constitution' as two separately-listed kinds; the edit affordance at :565-566 and :671-710 is gated to isIdentity only — the human freely rewrites identity.md through a plain textarea + companionSaveIdentity (a full-content human correction, sanctioned by disk-truth-db-index's 'the person...corrects it by typing') while the constitution has no editing path in this UI at all.",
+      "techniques": [
+        { "technique": "constitution-self-model-split", "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/BrainViewer.tsx:106-118 lists identity and constitution as distinct kinds with different affordances." },
+        { "technique": "disk-truth-db-index", "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/BrainViewer.tsx:565-566,605-622,671 gates the raw full-content save path to the human-authored identity kind only." }
+      ]
+    },
+    {
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "subject": "companion-identity",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "decision/parseSpokenDecision.ts, resolveDecision.ts, types.ts, useDecisionQueue.ts, sub_decisions/* and orb/* aggregate pending approvals/incidents/reviews into a decision queue and render a retrospective, immutable design-decision log; none references a constitution, self-model, profile, memory substrate, brain probe or capability inventory — the same precondition failure already recorded for companion-identity at the structurally identical plugins-companion-inbox context (11fe7642)."
+    },
+    {
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "decision/resolveDecision.ts:39-57 keeps a decision pending and surfaces the error in place on a write failure instead of clearing it as resolved (failure spelled as failure, never an empty/false success); decision/useDecisionQueue.ts:359-390 unifies approvals, blocking incidents and human reviews into one FIFO review surface with per-source error isolation; sub_decisions/DecisionsPanel.tsx:26-28 keeps decision rows immutable as an audit trail rather than editable.",
+      "techniques": [
+        { "technique": "decision-records", "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/sub_decisions/DecisionsPanel.tsx:26-28 — rows are immutable; a correction re-emits a new logged entry rather than editing the old one." },
+        { "technique": "review-queues", "verdict": "conformant",
+          "evidence": "src/features/plugins/companion/decision/useDecisionQueue.ts:359-390 (buildQueue merges 3 sources into one FIFO, each source's fetch failure isolated by its own try/catch)." }
+      ]
+    },
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/core/src/models/build_session.rs:263-292 models exactly ONE persona's build progress through a BuildPhase lifecycle (Initializing...Promoted) with a single cli_pid — never a registry of many concurrent sessions, a dispatcher, or a harvest phase; the recipe/genome/persona models in this context are single-persona authoring data, not fleet state. Same single-session precondition failure already recorded against this subject for agents-design (8650ca36), the sibling subject the golden path explicitly excludes."
+    },
+    {
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-216 realizes parallel-dispatch (bounded mapWithConcurrency, not Promise.all, so one wedged PTY cannot stall the batch) and result-harvest (all-sent/partial/none accounting with an exact 'N of M' outcome and a retry that narrows to precisely the sessions that failed) almost to the letter of the golden path's own 'seven of nine produced results; two failed, named' example; :86-97 also honors hibernation-and-resume by excluding hibernated sessions from write targets because hibernation frees the process.",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-166 (BROADCAST_CONCURRENCY-bounded pool, per-session failure isolation)." },
+        { "technique": "result-harvest", "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:167-216 (three explicit outcomes, failed-id-scoped retry)." },
+        { "technique": "hibernation-and-resume", "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:86-97 (hibernated sessions excluded as broadcast targets, with the reason stated)." }
+      ]
+    },
+    {
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/quick-answer/triage/** is a human-review triage deck over already-produced build questions and practice suggestions; every 'session'/'dispatch'/'registry' occurrence in this context's files (TriageDeckVariant.tsx:14, DeckTopBar.tsx:189-192, useDeckControls.tsx:483-491) refers to the browsing/keyboard session or the app's UI keyboard registry, not a fleet of spawned agent processes — no session-registry, dispatch, or harvest site exists here, the same precondition failure already recorded for this exact subject's sibling agents-design (8650ca36), and consistent with the sibling conversation-orchestration verdict already recorded on this same context."
+    },
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "diff-comparison",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:162-170 (JsonDiffSection) and :74-81,105-106 (OutputDiffSection) catch a failed off-thread diff computation and set the result to an empty array, which then renders as 'identical'/'no_differences' or 'no_log_data' — exactly the conflation diff-honesty forbids ('failure is spelled as failure... never as an empty diff'), and comparisonHelpers.ts:53-71's diffLines aligns lines by Set membership rather than sequence, so a duplicate line removed from one side (present twice in A, once in B) renders every occurrence as unchanged instead of showing the removal.",
+      "techniques": [
+        { "technique": "diff-honesty", "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:166-170,198-199 (catch -> diffs=[] -> 'identical'); src/features/agents/sub_executions/libs/comparisonHelpers.ts:53-71 (Set-membership diffLines silently absorbs a removed duplicate)." },
+        { "technique": "computation-offload", "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/libs/comparisonDiffWorkerClient.ts:175-265 — worker offload, cancel-by-request-id (pendingLine.delete on cancel), bounded LRU cache with an eviction counter, synchronous fallback when Worker is unavailable." },
+        { "technique": "pair-and-baseline-selection", "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionComparison.tsx:60-84 — left/right explicitly labeled with role, id, status badge and timestamp side by side, not positional-only." }
+      ]
+    }
+  ]
+}

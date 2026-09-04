@@ -15,4 +15,4 @@ valid: boolean, found: Array<string>, missing: Array<string>,
 /**
  * Every table the introspection query returned, not just the expected ones.
  */
-all_tables: Array<string>, };
+allTables: Array<string>, };

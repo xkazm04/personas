@@ -3,8 +3,8 @@
 /**
  * Handle for a freshly opened universal-gateway consent flow.
  */
-export type OAuthStartResult = { session_id: string, auth_url: string, redirect_uri: string, provider_id: string, 
+export type OAuthStartResult = { sessionId: string, authUrl: string, redirectUri: string, providerId: string, 
 /**
  * Whether the authorize URL carried a PKCE S256 challenge.
  */
-pkce_used: boolean, };
+pkceUsed: boolean, };

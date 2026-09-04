@@ -102,9 +102,27 @@ const COLUMNS: &str = "id, persona_id, trigger_id, use_case_id, status, input_da
 /// on purpose: the list page does not need input_data / output_data / the log
 /// paths, and this is the shape whose sixteenth column went missing for three
 /// months (see `list_items_projection_covers_every_field_the_mapper_reads`).
+///
+/// The two derived columns at the end (`origin`, `origin_lane`) classify the
+/// run's provenance in SQL — attention / channel / scheduled / simulation /
+/// manual, in that precedence — so the list UI can badge + filter by origin
+/// without shipping every row's `input_data` blob. `json_valid` guards every
+/// `json_extract` because `input_data` is caller-supplied and not guaranteed
+/// to be JSON (a malformed blob must classify as manual, not fail the query).
 const LIST_ITEM_COLUMNS: &str = "id, persona_id, use_case_id, status, input_tokens, \
      output_tokens, cost_usd, error_message, duration_ms, retry_of_execution_id, \
-     retry_count, started_at, completed_at, created_at, is_simulation, business_outcome";
+     retry_count, started_at, completed_at, created_at, is_simulation, business_outcome, \
+     CASE \
+       WHEN json_valid(input_data) AND (json_extract(input_data, '$.source') = 'attention' \
+            OR json_extract(input_data, '$._attention') IS NOT NULL) THEN 'attention' \
+       WHEN json_valid(input_data) AND json_extract(input_data, '$.source') \
+            IN ('channel', 'slack', 'discord', 'team_deliberation') THEN 'channel' \
+       WHEN trigger_id IS NOT NULL AND trigger_id != '' THEN 'scheduled' \
+       WHEN COALESCE(is_simulation, 0) = 1 THEN 'simulation' \
+       ELSE 'manual' \
+     END AS origin, \
+     CASE WHEN json_valid(input_data) \
+          THEN json_extract(input_data, '$._attention.lane') END AS origin_lane";
 
 /// `COLUMNS` with every name qualified by a table alias, for the joins that
 /// used to project `e.*`. Derived from the one const rather than duplicated,
@@ -308,6 +326,13 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
+        // The CASE in LIST_ITEM_COLUMNS always yields a value ('manual' is the
+        // ELSE arm); the Option read is belt-and-suspenders against a future
+        // projection that forgets the derived column.
+        origin: row
+            .get::<_, Option<String>>("origin")?
+            .unwrap_or_else(|| "manual".to_string()),
+        origin_lane: row.get("origin_lane")?,
     })
 }
 
@@ -831,25 +856,39 @@ pub fn create_with_idempotency_reporting(
                 // recipe behind the run.
                 let (source_recipe_id, source_recipe_version) =
                     resolve_recipe_provenance(&conn, persona_id, use_case_id.as_deref());
-                let mut stmt = conn.prepare_cached(
-                "INSERT INTO persona_executions
-                 (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at, source_recipe_id, source_recipe_version)
-                 VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9, ?10, ?11)
-                 ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
-                )?;
-                stmt.execute(params![
-                    id,
-                    persona_id,
-                    trigger_id,
-                    input_data,
-                    model_used,
-                    use_case_id,
-                    idempotency_key,
-                    is_simulation as i64,
-                    now,
-                    source_recipe_id,
-                    source_recipe_version
-                ])?
+                // The execution row is canonical and irreplaceable;
+                // `executions_fts` hangs off it through three sync triggers and
+                // is rebuildable from it. Those are opposite corruption
+                // classes, so the write goes through the class policy: a
+                // damaged index detaches and this insert still lands, while
+                // structural damage quarantines the store and is never
+                // retried. `ON CONFLICT … DO NOTHING` makes the one retry safe.
+                crate::damage::guarded_write(
+                    &conn,
+                    crate::damage::Provenance::Ambiguous,
+                    "executions::create_with_idempotency",
+                    |c| {
+                        let mut stmt = c.prepare_cached(
+                        "INSERT INTO persona_executions
+                         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at, source_recipe_id, source_recipe_version)
+                         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9, ?10, ?11)
+                         ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
+                        )?;
+                        stmt.execute(params![
+                            id,
+                            persona_id,
+                            trigger_id,
+                            input_data,
+                            model_used,
+                            use_case_id,
+                            idempotency_key,
+                            is_simulation as i64,
+                            now,
+                            source_recipe_id,
+                            source_recipe_version
+                        ])
+                    },
+                )?
             };
 
             // rows_changed == 0 means the INSERT hit ON CONFLICT DO NOTHING:
@@ -1114,7 +1153,7 @@ fn redact_json_value(value: &mut serde_json::Value) {
     }
 }
 
-/// Shared 18-column execution-status `UPDATE`, parameterized only by the
+/// Shared 20-column execution-status `UPDATE`, parameterized only by the
 /// trailing `WHERE` predicate. `update_status`, `update_status_if_running`,
 /// and `update_status_if_not_final` differ *only* in which rows they're
 /// allowed to touch (unguarded / CAS-if-running / CAS-if-not-final) — this
@@ -1160,7 +1199,22 @@ fn exec_status_update(
             claude_session_id = COALESCE(?14, claude_session_id),
             execution_config = COALESCE(?15, execution_config),
             log_truncated = ?16,
-            business_outcome = COALESCE(?17, business_outcome)
+            business_outcome = COALESCE(?17, business_outcome),
+            -- The class the RAISE SITE minted, never a re-derivation. COALESCE,
+            -- so a later confirming write that knows nothing cannot erase a
+            -- class an earlier write measured -- and so nothing here can invent
+            -- one for a row that never had it.
+            error_category = COALESCE(?18, error_category),
+            -- Restart recovery: the mark rides through the re-admission and is
+            -- cleared ONLY by a turn that completes. Clearing it when a resume
+            -- BEGINS is the mistake that costs the whole mechanism -- every
+            -- crash would look like the first crash and the escalation in
+            -- `restart_recovery` could never fire. See that module's header
+            -- and registry technique `session-continuation/stuck-loop-detection`.
+            -- A `failed` turn deliberately clears nothing: an observed failure
+            -- is the OTHER key (failure identity) and must not reset this one.
+            recovery_state = CASE WHEN ?1 = 'completed' THEN NULL ELSE recovery_state END,
+            restart_count = CASE WHEN ?1 = 'completed' THEN 0 ELSE restart_count END
          {where_clause}"
     );
     let mut stmt = conn.prepare_cached(&sql)?;
@@ -1182,6 +1236,7 @@ fn exec_status_update(
         input.execution_config,
         input.log_truncated,
         input.business_outcome,
+        input.error_category,
     ])?;
     Ok(rows_changed)
 }
@@ -1640,9 +1695,10 @@ pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
 }
 
 /// Only executions whose process was mid-RUN at shutdown (`status='running'`).
-/// Used by startup recovery to fail orphaned runs WITHOUT touching durable
+/// Used by startup recovery to CLASSIFY orphaned runs WITHOUT touching durable
 /// `queued` rows (which are re-admitted instead). See
-/// `ExecutionEngine::recover_stale_executions`.
+/// `restart_recovery::classify_running_rows`, which reads the same partition
+/// and replaced the sweep that marked every one of these rows failed.
 pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!(
         "persona_executions",
@@ -2496,6 +2552,106 @@ mod tests {
         assert_eq!(item.id, created.id);
         assert_eq!(item.persona_id, persona_id);
         assert_eq!(item.business_outcome, "unknown");
+        assert_eq!(item.origin, "manual", "bare run classifies as manual");
+        assert!(item.origin_lane.is_none());
+    }
+
+    /// The derived `origin` column classifies every provenance shape the app
+    /// writes into `input_data` / `trigger_id` / `is_simulation` — all five
+    /// origins, plus the precedence order (attention > channel > scheduled >
+    /// simulation > manual) and the malformed-JSON fallback.
+    #[test]
+    fn list_items_origin_covers_all_five_origins_and_precedence() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Origin Agent");
+
+        // A real trigger row so trigger_id survives the FK.
+        let trigger_id = "trg-origin-test";
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO persona_triggers
+                    (id, persona_id, trigger_type, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'schedule', 1, datetime('now'), datetime('now'))",
+                params![trigger_id, persona_id],
+            )
+            .unwrap();
+        }
+
+        let mk = |trigger: Option<&str>,
+                  input: Option<&str>,
+                  simulation: bool|
+         -> Result<String, AppError> {
+            let row = create(
+                &pool,
+                &persona_id,
+                trigger.map(String::from),
+                input.map(String::from),
+                None,
+                None,
+            )
+            .unwrap();
+            if simulation {
+                let conn = pool.get()?;
+                conn.execute(
+                    "UPDATE persona_executions SET is_simulation = 1 WHERE id = ?1",
+                    params![row.id],
+                )
+                .unwrap();
+            }
+            Ok(row.id)
+        };
+
+        let attention = mk(
+            None,
+            Some(
+                r#"{"source":"attention","_attention":{"ledgerId":"att_1","responsibilityId":null,"lane":"scan"},"task":"look around"}"#,
+            ),
+            false,
+        )?;
+        let channel = mk(None, Some(r#"{"source":"slack","text":"hi"}"#), false)?;
+        let scheduled = mk(Some(trigger_id), Some(r#"{"foo":1}"#), false)?;
+        let simulation = mk(None, Some(r#"{"foo":1}"#), true)?;
+        let manual = mk(None, Some(r#"{"foo":1}"#), false)?;
+        // Precedence: an attention envelope outranks a set trigger_id AND the
+        // simulation flag; a channel source outranks trigger_id.
+        let attention_wins = mk(
+            Some(trigger_id),
+            Some(r#"{"source":"attention","_attention":{"lane":"improve"}}"#),
+            true,
+        )?;
+        let channel_wins = mk(
+            Some(trigger_id),
+            Some(r#"{"source":"team_deliberation"}"#),
+            false,
+        )?;
+        // trigger_id outranks the simulation flag.
+        let scheduled_wins = mk(Some(trigger_id), None, true)?;
+        // Malformed input_data must fall through, never fail the query.
+        let malformed = mk(None, Some("not json at all"), false)?;
+
+        let items = list_items_by_persona_id(&pool, &persona_id, None, None).unwrap();
+        let origin_of = |id: &str| {
+            let item = items.iter().find(|i| i.id == id).unwrap();
+            (item.origin.clone(), item.origin_lane.clone())
+        };
+
+        assert_eq!(
+            origin_of(&attention),
+            ("attention".into(), Some("scan".into()))
+        );
+        assert_eq!(origin_of(&channel), ("channel".into(), None));
+        assert_eq!(origin_of(&scheduled), ("scheduled".into(), None));
+        assert_eq!(origin_of(&simulation), ("simulation".into(), None));
+        assert_eq!(origin_of(&manual), ("manual".into(), None));
+        assert_eq!(
+            origin_of(&attention_wins),
+            ("attention".into(), Some("improve".into()))
+        );
+        assert_eq!(origin_of(&channel_wins), ("channel".into(), None));
+        assert_eq!(origin_of(&scheduled_wins), ("scheduled".into(), None));
+        assert_eq!(origin_of(&malformed), ("manual".into(), None));
+        Ok(())
     }
 
     /// SQLite stores `'mock'` verbatim in a column declared
@@ -2820,7 +2976,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             index_exists, 1,
-            "e16_persona_run_paging_index must have created idx_pe_persona_created_id"
+            "e20_persona_run_paging_index must have created idx_pe_persona_created_id"
         );
 
         let sql = format!(

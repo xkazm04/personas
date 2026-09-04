@@ -1,9 +1,9 @@
 {
-  "haiku": "Haiku",
-  "sonnet": "Sonnet",
-  "opus": "Opus",
+  "effort_high": "উচ্চ",
   "effort_low": "Low",
   "effort_medium": "মাঝারি",
-  "effort_high": "উচ্চ",
-  "effort_xhigh": "অতি উচ্চ"
+  "effort_xhigh": "অতি উচ্চ",
+  "haiku": "Haiku",
+  "opus": "Opus",
+  "sonnet": "Sonnet"
 }

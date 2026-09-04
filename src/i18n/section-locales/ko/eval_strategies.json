@@ -1,12 +1,12 @@
 {
-  "keyword_match_label": "출력 품질",
-  "keyword_match_description": "에이전트 출력에서 예상 동작 용어를 확인합니다.",
-  "tool_accuracy_label": "도구 정확도",
-  "tool_accuracy_description": "예상 도구 호출과 실제 도구 호출을 비교합니다.",
-  "protocol_compliance_label": "프로토콜 준수",
-  "protocol_compliance_description": "예상되는 프로토콜 메시지 패턴을 확인합니다.",
-  "confusion_detect_label": "혼란 감지",
-  "confusion_detect_description": "알려진 혼란/실패 문구를 확인합니다.",
+  "composite_description": "모든 전략의 가중 조합입니다.",
   "composite_label": "복합",
-  "composite_description": "모든 전략의 가중 조합입니다."
+  "confusion_detect_description": "알려진 혼란/실패 문구를 확인합니다.",
+  "confusion_detect_label": "혼란 감지",
+  "keyword_match_description": "에이전트 출력에서 예상 동작 용어를 확인합니다.",
+  "keyword_match_label": "출력 품질",
+  "protocol_compliance_description": "예상되는 프로토콜 메시지 패턴을 확인합니다.",
+  "protocol_compliance_label": "프로토콜 준수",
+  "tool_accuracy_description": "예상 도구 호출과 실제 도구 호출을 비교합니다.",
+  "tool_accuracy_label": "도구 정확도"
 }

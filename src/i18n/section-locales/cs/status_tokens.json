@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "Ve frontě",
-    "running": "Běží",
-    "completed": "Dokončeno",
-    "failed": "Selhalo",
-    "cancelled": "Zrušeno",
-    "incomplete": "Nedokončeno",
-    "error": "Chyba",
-    "unknown": "Neznámé"
-  },
-  "simple": {
-    "good": "V pořádku",
-    "warning": "Pozor",
-    "problem": "Závada"
-  },
-  "event": {
-    "pending": "Čeká",
-    "processing": "Zpracování",
-    "processed": "Zpracováno",
-    "failed": "Selhalo",
-    "retrying": "Opakování"
-  },
   "automation": {
-    "pending": "Čeká",
-    "running": "Běží",
     "completed": "Dokončeno",
     "failed": "Selhalo",
+    "pending": "Čeká",
+    "running": "Běží",
     "timeout": "Vypršelo"
-  },
-  "severity": {
-    "info": "Info",
-    "low": "Nízká",
-    "medium": "Střední",
-    "high": "Vysoká",
-    "critical": "Kritická"
-  },
-  "priority": {
-    "low": "Nízká",
-    "normal": "Normální",
-    "high": "Vysoká",
-    "urgent": "Urgentní"
-  },
-  "healing_status": {
-    "open": "Otevřeno",
-    "auto_fixed": "Automaticky opraveno",
-    "acknowledged": "Potvrzeno",
-    "resolved": "Vyřešeno"
-  },
-  "healing_category": {
-    "config": "Konfigurace",
-    "auth": "Autentizace",
-    "network": "Síť",
-    "timeout": "Časový limit",
-    "quota": "Kvóta"
-  },
-  "connector_status": {
-    "ready": "Připraveno",
-    "untested": "Neotestováno",
-    "failed": "Selhalo",
-    "no_credential": "Bez přihlašovacího údaje",
-    "testing": "Testování"
-  },
-  "task_phase": {
-    "analyzing": "Analýza",
-    "planning": "Plánování",
-    "implementing": "Implementace",
-    "committing": "Commitování",
-    "validating": "Ověřování",
-    "complete": "Dokončeno"
-  },
-  "goal_state": {
-    "pending": "Čeká",
-    "review": "Kontrola",
-    "blocked": "Blokováno",
-    "in_progress": "Probíhá",
-    "running": "Běží",
-    "completed": "Dokončeno",
-    "done": "Dokončeno"
-  },
-  "test": {
-    "generating": "Generování",
-    "running": "Běží",
-    "completed": "Dokončeno",
-    "failed": "Selhalo",
-    "pending": "Čeká"
-  },
-  "dev": {
-    "open": "Otevřeno",
-    "in_progress": "Probíhá",
-    "completed": "Dokončeno",
-    "blocked": "Blokováno",
-    "queued": "Ve frontě",
-    "running": "Běží",
-    "failed": "Selhalo"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Globální"
-  },
-  "forage_confidence": {
-    "high": "Vysoká",
-    "medium": "Střední",
-    "low": "Nízká"
-  },
-  "capability_risk": {
-    "low": "nízké",
-    "medium": "střední",
-    "high": "vysoké"
-  },
-  "verdict": {
-    "production": "Produkce",
-    "promising": "Slibné",
-    "not_ready": "Není připraveno",
-    "broken": "Nefunkční"
-  },
-  "deployment": {
-    "active": "Aktivní",
-    "paused": "Pozastaveno",
-    "failed": "Selhalo",
-    "unknown": "Neznámé",
-    "file-based": "Založené na souboru"
-  },
-  "delivery": {
-    "delivered": "Doručeno",
-    "failed": "Selhalo",
-    "pending": "Čeká",
-    "queued": "Ve frontě"
-  },
-  "rotation": {
-    "anomaly": "Anomálie",
-    "paused": "Pozastaveno",
-    "disabled": "Zakázáno",
-    "perm_errors": "Trvalé chyby",
-    "degrading": "Degraduje",
-    "backoff": "Prodleva",
-    "fresh": "Čerstvý",
-    "active": "Aktivní"
-  },
-  "thinking": {
-    "high": "Vysoká",
-    "low": "Nízká",
-    "medium": "Střední"
-  },
-  "error_category": {
-    "api_error": "Chyba API",
-    "credential_error": "Chyba přihlašovacích údajů",
-    "network": "Síť",
-    "provider_not_found": "Poskytovatel nenalezen",
-    "rate_limit": "Limit požadavků",
-    "session_limit": "Limit relace",
-    "timeout": "Vypršení času",
-    "tool_error": "Chyba nástroje",
-    "transient_process_failure": "Dočasné selhání procesu",
-    "unknown": "Neznámé",
-    "validation": "Validace"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Dosažen limit větvení",
-    "budget_exceeded": "Dosažen strop nákladů",
-    "cas_lost": "Převzato jiným během",
-    "cycle_detected": "Zjištěn cyklus",
-    "depth_limit": "Limit hloubky",
-    "handoff_suppressed": "Předání potlačeno",
-    "malformed_config": "Neplatná konfigurace",
-    "outside_window": "Mimo aktivní okno",
-    "predicate_unmet": "Podmínka nesplněna",
-    "publish_failed": "Publikování selhalo",
-    "quarantined": "Spouštěč v karanténě",
-    "healing_abandoned": "Opravy se vzdaly",
-    "healing_capped": "Pokusy o opravu vyčerpány",
-    "lookup_failed": "Načtení triggeru selhalo",
-    "cost_ceiling_corrupt": "Nečitelný cenový strop"
   },
   "build": {
     "analyzing": "Analyzuje se",
@@ -186,6 +19,232 @@
     "test_complete": "Test dokončen",
     "testing": "Testování"
   },
+  "capability_risk": {
+    "high": "vysoké",
+    "low": "nízké",
+    "medium": "střední"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Dosažen limit větvení",
+    "budget_exceeded": "Dosažen strop nákladů",
+    "cas_lost": "Převzato jiným během",
+    "cost_ceiling_corrupt": "Nečitelný cenový strop",
+    "cycle_detected": "Zjištěn cyklus",
+    "depth_limit": "Limit hloubky",
+    "handoff_suppressed": "Předání potlačeno",
+    "healing_abandoned": "Opravy se vzdaly",
+    "healing_capped": "Pokusy o opravu vyčerpány",
+    "lookup_failed": "Načtení triggeru selhalo",
+    "malformed_config": "Neplatná konfigurace",
+    "outside_window": "Mimo aktivní okno",
+    "predicate_unmet": "Podmínka nesplněna",
+    "publish_failed": "Publikování selhalo",
+    "quarantined": "Spouštěč v karanténě"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Globální"
+  },
+  "competition": {
+    "awaiting_review": "Čeká na kontrolu",
+    "cancelled": "Zrušeno",
+    "resolved": "Vyřešeno",
+    "running": "Běží"
+  },
+  "connector_status": {
+    "failed": "Selhalo",
+    "no_credential": "Bez přihlašovacího údaje",
+    "ready": "Připraveno",
+    "testing": "Testování",
+    "untested": "Neotestováno"
+  },
+  "delivery": {
+    "delivered": "Doručeno",
+    "failed": "Selhalo",
+    "pending": "Čeká",
+    "queued": "Ve frontě"
+  },
+  "deployment": {
+    "active": "Aktivní",
+    "failed": "Selhalo",
+    "file-based": "Založené na souboru",
+    "paused": "Pozastaveno",
+    "unknown": "Neznámé"
+  },
+  "dev": {
+    "blocked": "Blokováno",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "in_progress": "Probíhá",
+    "open": "Otevřeno",
+    "queued": "Ve frontě",
+    "running": "Běží"
+  },
+  "error_category": {
+    "api_error": "Chyba API",
+    "credential_error": "Chyba přihlašovacích údajů",
+    "network": "Síť",
+    "provider_not_found": "Poskytovatel nenalezen",
+    "rate_limit": "Limit požadavků",
+    "session_limit": "Limit relace",
+    "timeout": "Vypršení času",
+    "tool_error": "Chyba nástroje",
+    "transient_process_failure": "Dočasné selhání procesu",
+    "unknown": "Neznámé",
+    "validation": "Validace"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "Čeká na schválení",
+    "cascade_guard": "Už běží",
+    "cross_team_blocked": "Blokováno mezi týmy",
+    "dry_run": "Zkušební běh (simulace)",
+    "handoff_target_disabled": "Cíl předání je vypnutý",
+    "no_subscriber": "Neodpovídá žádný odběratel",
+    "persona_disabled": "Agent je vypnutý",
+    "stuck_reclaimed": "Znovu převzato a zařazeno",
+    "stuck_retry_exhausted": "Znovu převzato, pokusy vyčerpány"
+  },
+  "event": {
+    "failed": "Selhalo",
+    "pending": "Čeká",
+    "processed": "Zpracováno",
+    "processing": "Zpracování",
+    "retrying": "Opakování"
+  },
+  "execution": {
+    "cancelled": "Zrušeno",
+    "completed": "Dokončeno",
+    "error": "Chyba",
+    "failed": "Selhalo",
+    "incomplete": "Nedokončeno",
+    "queued": "Ve frontě",
+    "running": "Běží",
+    "unknown": "Neznámé"
+  },
+  "forage_confidence": {
+    "high": "Vysoká",
+    "low": "Nízká",
+    "medium": "Střední"
+  },
+  "goal_state": {
+    "blocked": "Blokováno",
+    "completed": "Dokončeno",
+    "done": "Dokončeno",
+    "in_progress": "Probíhá",
+    "pending": "Čeká",
+    "review": "Kontrola",
+    "running": "Běží"
+  },
+  "healing_category": {
+    "auth": "Autentizace",
+    "config": "Konfigurace",
+    "network": "Síť",
+    "quota": "Kvóta",
+    "timeout": "Časový limit"
+  },
+  "healing_status": {
+    "acknowledged": "Potvrzeno",
+    "auto_fixed": "Automaticky opraveno",
+    "open": "Otevřeno",
+    "resolved": "Vyřešeno"
+  },
+  "kb_document": {
+    "indexing": "indexuje se",
+    "pending": "čeká"
+  },
+  "memory_action": {
+    "deleted": "Smazáno",
+    "error": "Chyba",
+    "kept": "Ponecháno",
+    "proposed_archive": "Návrh na archivaci",
+    "proposed_delete": "Návrh na smazání",
+    "proposed_synthesize": "Návrh na sloučení",
+    "proposed_update_importance": "Návrh na přehodnocení"
+  },
+  "memory_category": {
+    "context": "Kontext",
+    "decision": "Rozhodnutí",
+    "learning": "Poučení",
+    "observation": "Pozorování"
+  },
+  "memory_tier": {
+    "active": "Aktivní",
+    "archive": "Archivovaná",
+    "core": "Základní",
+    "working": "Pracovní"
+  },
+  "priority": {
+    "high": "Vysoká",
+    "low": "Nízká",
+    "normal": "Normální",
+    "urgent": "Urgentní"
+  },
+  "remote_job": {
+    "cancelled": "Zrušeno",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "pending": "Čeká",
+    "refused": "Odmítnuto",
+    "running": "Probíhá"
+  },
+  "rotation": {
+    "active": "Aktivní",
+    "anomaly": "Anomálie",
+    "backoff": "Prodleva",
+    "degrading": "Degraduje",
+    "disabled": "Zakázáno",
+    "fresh": "Čerstvý",
+    "paused": "Pozastaveno",
+    "perm_errors": "Trvalé chyby"
+  },
+  "severity": {
+    "critical": "Kritická",
+    "high": "Vysoká",
+    "info": "Info",
+    "low": "Nízká",
+    "medium": "Střední"
+  },
+  "simple": {
+    "good": "V pořádku",
+    "problem": "Závada",
+    "warning": "Pozor"
+  },
+  "span_type": {
+    "chain_evaluation": "Vyhodnocení řetězce",
+    "cli_spawn": "Spuštění CLI",
+    "credential_resolution": "Přihlašovací údaje",
+    "execution": "Spuštění",
+    "healing_analysis": "Náprava",
+    "outcome_assessment": "Výsledek",
+    "pipeline_stage": "Fáze pipeline",
+    "prompt_assembly": "Příprava promptu",
+    "protocol_dispatch": "Protokol",
+    "stream_processing": "Streamování",
+    "tool_call": "Volání nástroje",
+    "unknown": "Neznámé"
+  },
+  "task_phase": {
+    "analyzing": "Analýza",
+    "committing": "Commitování",
+    "complete": "Dokončeno",
+    "implementing": "Implementace",
+    "planning": "Plánování",
+    "validating": "Ověřování"
+  },
+  "test": {
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "generating": "Generování",
+    "pending": "Čeká",
+    "running": "Běží"
+  },
+  "thinking": {
+    "high": "Vysoká",
+    "low": "Nízká",
+    "medium": "Střední"
+  },
   "tool_error_kind": {
     "auth": "Ověření",
     "http": "Chyba HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Neznámá chyba",
     "unsupported": "Zde nelze spustit"
   },
-  "remote_job": {
-    "completed": "Dokončeno",
-    "failed": "Selhalo",
-    "cancelled": "Zrušeno",
-    "refused": "Odmítnuto",
-    "pending": "Čeká",
-    "running": "Probíhá"
-  },
-  "event_reason": {
-    "approval_held": "Čeká na schválení",
-    "cascade_guard": "Už běží",
-    "cross_team_blocked": "Blokováno mezi týmy",
-    "dry_run": "Zkušební běh (simulace)",
-    "handoff_target_disabled": "Cíl předání je vypnutý",
-    "no_subscriber": "Neodpovídá žádný odběratel",
-    "persona_disabled": "Agent je vypnutý",
-    "stuck_reclaimed": "Znovu převzato a zařazeno",
-    "stuck_retry_exhausted": "Znovu převzato, pokusy vyčerpány",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "Běží",
-    "awaiting_review": "Čeká na kontrolu",
-    "resolved": "Vyřešeno",
-    "cancelled": "Zrušeno"
-  },
-  "kb_document": {
-    "pending": "čeká",
-    "indexing": "indexuje se"
-  },
-  "memory_tier": {
-    "core": "Základní",
-    "active": "Aktivní",
-    "working": "Pracovní",
-    "archive": "Archivovaná"
-  },
-  "span_type": {
-    "execution": "Spuštění",
-    "prompt_assembly": "Příprava promptu",
-    "credential_resolution": "Přihlašovací údaje",
-    "cli_spawn": "Spuštění CLI",
-    "tool_call": "Volání nástroje",
-    "protocol_dispatch": "Protokol",
-    "chain_evaluation": "Vyhodnocení řetězce",
-    "stream_processing": "Streamování",
-    "outcome_assessment": "Výsledek",
-    "healing_analysis": "Náprava",
-    "pipeline_stage": "Fáze pipeline",
-    "unknown": "Neznámé"
-  },
-  "memory_action": {
-    "kept": "Ponecháno",
-    "deleted": "Smazáno",
-    "error": "Chyba",
-    "proposed_delete": "Návrh na smazání",
-    "proposed_update_importance": "Návrh na přehodnocení",
-    "proposed_synthesize": "Návrh na sloučení",
-    "proposed_archive": "Návrh na archivaci"
-  },
-  "memory_category": {
-    "observation": "Pozorování",
-    "decision": "Rozhodnutí",
-    "context": "Kontext",
-    "learning": "Poučení"
+  "verdict": {
+    "broken": "Nefunkční",
+    "not_ready": "Není připraveno",
+    "production": "Produkce",
+    "promising": "Slibné"
   }
 }

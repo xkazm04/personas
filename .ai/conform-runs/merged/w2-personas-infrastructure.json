@@ -1,0 +1,181 @@
+{
+  "worker": "w2-personas-infrastructure",
+  "evaluatedAt": "2026-08-31",
+  "pairs": [
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:1-13 and introspectionQueries.ts:8-9 are a SQL database browser/editor for connected external databases (postgres/mysql/redis/notion/airtable), not a directory of markdown notes; every markdown-vault technique's precondition (a filesystem of markdown records with frontmatter) fails, exactly as already recorded for sibling contexts vault-databases-tabs and vault-database-tests over the same sub_databases directory.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "not-applicable", "evidence": "no markdown record store; records here are SQL rows in external databases, not files with frontmatter" },
+        { "technique": "link-graph-extraction", "verdict": "not-applicable", "evidence": "no inter-note links to extract; SQL foreign keys are not this technique's target" },
+        { "technique": "knowledge-integrity-lint", "verdict": "not-applicable", "evidence": "no notes to go stale, orphan, or broken-link" },
+        { "technique": "vault-walking", "verdict": "not-applicable", "evidence": "introspectionQueries.ts walks SQL schemas via backend commands, not a directory tree of notes" },
+        { "technique": "mirror-indexes", "verdict": "not-applicable", "evidence": "no vault to mirror; the SQL connection is the primary store, not a derivation of a markdown corpus" },
+        { "technique": "editor-interop", "verdict": "not-applicable", "evidence": "no human text editor peer writing markdown files here" },
+        { "technique": "replicated-substrate", "verdict": "not-applicable", "evidence": "no replicated markdown corpus; the underlying data lives in the connected SQL/Redis/Notion service" }
+      ]
+    },
+    {
+      "context": "14c7d145-2166-454b-aee5-d69d9d527d79",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "Every component under src/features/settings/sub_appearance/components/ reads and writes only src/stores/themeStore.ts (zustand `persist` middleware to localStorage) — grep found zero references to src/api/system/settings.ts or get_app_setting/set_app_setting anywhere in the directory. The settings golden path's own Boundaries section draws this exact line ('client-side persistence mechanics... belong to client-state. This subject owns the durable, backend-held key space'), so no technique's precondition holds for this context.",
+      "techniques": [
+        { "technique": "key-registry", "verdict": "not-applicable", "evidence": "theme/density/timezone/brightness keys live in themeStore's zustand shape, not the app_settings allow-listed key space" },
+        { "technique": "typed-accessors", "verdict": "not-applicable", "evidence": "zustand store fields are already typed at the store; no stringly app_settings read boundary is involved" },
+        { "technique": "read-batching", "verdict": "not-applicable", "evidence": "no backend round trip at all — themeStore hydrates from localStorage synchronously" },
+        { "technique": "setting-kinds", "verdict": "not-applicable", "evidence": "no registry entry, so no kind classification exists to apply" },
+        { "technique": "settings-audit-and-history", "verdict": "not-applicable", "evidence": "writes never reach settings_audit_log::insert (src-tauri/db/src/repos/core/settings.rs:55) because they never reach app_settings at all" },
+        { "technique": "save-experience", "verdict": "not-applicable", "evidence": "the UI is pure immediate/auto-save against client state with no explicit-save form to guard" }
+      ]
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:11-22 calls useSystemStore actions (setDisplayName, exportIdentityCard, importTrustedPeer, revokePeerTrust) that route through src-tauri/src/commands/network/identity.rs:20 (set_display_name) into a dedicated db/repos/resources/identity.rs peer-identity table — a separate device-identity/trust domain, never the app_settings key-value store or settings_audit_log this subject governs. Same boundary failure as appearance-settings, different underlying domain (peer identity, not client state).",
+      "techniques": [
+        { "technique": "key-registry", "verdict": "not-applicable", "evidence": "peer identity/trust fields live in a dedicated identity table, not the app_settings key space" },
+        { "technique": "typed-accessors", "verdict": "not-applicable", "evidence": "identity.rs commands are typed Tauri commands over their own table, not app_settings string accessors" },
+        { "technique": "read-batching", "verdict": "not-applicable", "evidence": "get_local_identity/fetchTrustedPeers are dedicated endpoints, not app_settings bulk reads" },
+        { "technique": "setting-kinds", "verdict": "not-applicable", "evidence": "no registry entry exists for these values to classify" },
+        { "technique": "settings-audit-and-history", "verdict": "not-applicable", "evidence": "identity/trust mutations never call settings_audit_log::insert" },
+        { "technique": "save-experience", "verdict": "not-applicable", "evidence": "network dashboard/bundle export-import and identity edits are their own device-pairing/sharing UX, not a settings save form" }
+      ],
+      "registryProposal": "The matcher scored settings-network at 698 on lexical overlap ('settings', 'history', 'change') alone (grounding: lexical-only) despite the context's real governance being peer-identity/device-trust and bundle export/import — a domain that already has a 'device-pairing' subject referenced elsewhere in this repo's docs (docs/concepts/paths/device-pairing/applications/rust--pairing-ceremony.md). Same over-match pattern hit appearance-settings (grounding: use_when, but code shows pure client-state). Worth checking whether device-pairing is the better subject for both settings-network and appearance-settings's theming half, or whether appearance belongs under client-state/design-tokens instead."
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "accessibility",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useMotion.ts:1-107 realizes preference-respect: one derived signal (useReducedMotion) combining the OS prefers-reduced-motion media query AND the app's own Appearance 'Reduce Motion' toggle (read via the `data-motion` DOM attribute themeStore projects), consumed identically by both CSS and Framer-motion JS paths — exactly the 'one signal per preference, every surface derives' contract, and the file's own comment documents fixing the prior bug where the JS half missed the app-level toggle. useRovingTabIndex.ts:9-50 realizes keyboard-navigation-models' roving-focus model for composite widgets (Arrow/Home/End with wraparound, moves focus + selection together).",
+      "techniques": [
+        { "technique": "preference-respect", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useMotion.ts:1-58 (dual-signal useReducedMotion), :101-107 (useMotion), :209-215 (useMotionVariants strips transform/timing keys, preserves opacity)" },
+        { "technique": "keyboard-navigation-models", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9-50 — ArrowLeft/Right/Home/End roving focus with wraparound for tablists/toolbars/menubars" },
+        { "technique": "primitive-level-a11y", "verdict": "not-applicable", "evidence": "this is a hooks-only directory with no shared button/dialog/table primitive catalog to audit" },
+        { "technique": "live-region-architecture", "verdict": "not-applicable", "evidence": "no announcer/provider code in this directory" },
+        { "technique": "name-and-description-wiring", "verdict": "not-applicable", "evidence": "no label/name computation code here" },
+        { "technique": "a11y-verification", "verdict": "not-applicable", "evidence": "no test-gate or audit-harness code in this directory (tests present are unit tests for the hooks themselves, not a11y gates)" },
+        { "technique": "assistive-tech-divergence", "verdict": "not-applicable", "evidence": "no screen-reader-pairing-specific code at this layer" }
+      ]
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "draft-editing",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:39-152 realizes navigation-guards: one interceptor covers sidebar-section navigation, opt-in settings-tab navigation, and window close (beforeunload), offering save/discard/stay and reverting the in-flight navigation until resolved — matching 'one interceptor over all exit paths.' This hooks context owns no draft buffer itself, so draft-model/dirty-tracking/debounced-save-groups/field-defaults-and-bounds/completeness-derivation are not-applicable here; notably the two contexts that DO own a buffer (agents-editor, templates-draft-editor) are both already recorded as draft-model deviations, so the shared guard hook is sound even though the buffers it guards are not.",
+      "techniques": [
+        { "technique": "navigation-guards", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:39-152 — single interceptor, save/discard/stay resolve(), dirty observed via caller-supplied isDirty plus in-flight nav interception" },
+        { "technique": "draft-model", "verdict": "not-applicable", "evidence": "no entity buffer is constructed in this hooks directory" },
+        { "technique": "dirty-tracking", "verdict": "not-applicable", "evidence": "isDirty is a caller-supplied boolean; this hook does not own dirtiness derivation" },
+        { "technique": "debounced-save-groups", "verdict": "not-applicable", "evidence": "no per-group save scheduling lives here" },
+        { "technique": "field-defaults-and-bounds", "verdict": "not-applicable", "evidence": "no field definitions live in this directory" },
+        { "technique": "completeness-derivation", "verdict": "not-applicable", "evidence": "no readiness/publish-gate logic lives here" }
+      ]
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22 (checkmark via useSaveFeedback.ts:8-25 plus a success toast) gives settings panels save-experience's 'confirm quietly' feedback, and useUnsavedGuard.ts's guardSettingsTab option (:92-112) guards settings-tab navigation specifically — the save-experience technique's realized half. The other five settings techniques are not-applicable to this hooks-only context (no key space, no store logic; that lives in src-tauri/db/src/settings_keys.rs and repos/core/settings.rs).",
+      "techniques": [
+        { "technique": "save-experience", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22, useSaveFeedback.ts:8-25 (confirm quietly), useUnsavedGuard.ts:92-112 (guardSettingsTab)" },
+        { "technique": "key-registry", "verdict": "not-applicable", "evidence": "no key space owned by this hooks directory" },
+        { "technique": "typed-accessors", "verdict": "not-applicable", "evidence": "no settings read/write accessor code here" },
+        { "technique": "read-batching", "verdict": "not-applicable", "evidence": "no settings fetch code here" },
+        { "technique": "setting-kinds", "verdict": "not-applicable", "evidence": "no registry classification code here" },
+        { "technique": "settings-audit-and-history", "verdict": "not-applicable", "evidence": "no audit-write code here" }
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/slices/system/fleetSlice.ts:101-107 documents itself as a thin client cache ('The Rust side owns the source-of-truth registry; this slice is a thin client cache') and :247-291 drives all state transitions purely from Rust-typed FleetSessionState events (FLEET_SESSION_STATE / FLEET_SESSION_EXITED / FLEET_REGISTRY_CHANGED) rather than inventing a parallel vocabulary or polling processes — the conformant exception in a domain where every other judged fleet-orchestration context (commands-fleet, engine-build-session, fleet-monitor-channels, fleet-monitor-shell, fleet-session-grid) is already recorded as a deviation, two of them for exactly the second-vocabulary failure this slice avoids.",
+      "techniques": [
+        { "technique": "lifecycle-signals", "verdict": "conformant", "evidence": "src/stores/slices/system/fleetSlice.ts:247-291 — event-driven primary channel (FLEET_SESSION_STATE/FLEET_SESSION_EXITED/FLEET_REGISTRY_CHANGED), no process polling" },
+        { "technique": "session-registry", "verdict": "not-applicable", "evidence": "fleetSlice.ts:101-107 explicitly delegates the authoritative registry to Rust; this slice is a cache by design, not a second registry" },
+        { "technique": "durable-fleet-state", "verdict": "not-applicable", "evidence": "durability/restart-recovery is the Rust engine's concern, no footprint in this zustand slice" },
+        { "technique": "hibernation-and-resume", "verdict": "not-applicable", "evidence": "hibernate/wake semantics are backend; this slice only surfaces toggles (fleetAutoHibernate) that call fleetApi" },
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "dispatch/collision-domain logic is backend, not this store" },
+        { "technique": "result-harvest", "verdict": "not-applicable", "evidence": "no harvest-phase aggregation logic in this slice" },
+        { "technique": "heterogeneous-model-panels", "verdict": "not-applicable", "evidence": "no panel-convening logic here" },
+        { "technique": "outbound-compute-plane", "verdict": "not-applicable", "evidence": "no executor-plane topology code here" },
+        { "technique": "substrate-reconciliation", "verdict": "not-applicable", "evidence": "no container/volume reconciliation code here" },
+        { "technique": "brief-carries-the-session", "verdict": "not-applicable", "evidence": "worker-briefing is a dispatch-time backend concern" },
+        { "technique": "coordination-failure-triage", "verdict": "not-applicable", "evidence": "no failure-taxonomy classification code here" },
+        { "technique": "worker-trajectory-anatomy", "verdict": "not-applicable", "evidence": "no per-worker trajectory analysis code here" }
+      ]
+    },
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "companion-runtime",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev_memories.rs:108 (get_for_injection) and :155 (render_for_prompt) are called directly via `crate::db::repos::dev_memories::...` from src-tauri/src/companion/jobs/night_plan.rs:67-69, src-tauri/src/companion/night_shift/unattended.rs:294-298, and src-tauri/src/companion/proactive/backlog_triage.rs:32; likewise dev_tools.rs is reached directly from companion/athena_reaction.rs, canvas.rs, dev_mode.rs, dispatcher/read_ops.rs and more — a raw repo-module import into the companion runtime rather than the injected 'Store' capability host-seam-contracts requires, so the runtime has one host forever and cannot be constructed against a test double. This is the other side of the exact violation already recorded on the companion side (context 'companion', src-tauri/src/companion/disk.rs:22-26).",
+      "techniques": [
+        { "technique": "host-seam-contracts", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/dev_memories.rs:108,155 and dev_tools.rs consumed directly by src-tauri/src/companion/*.rs via crate::db::repos::* rather than an injected Store seam" },
+        { "technique": "metered-llm-seam", "verdict": "not-applicable", "evidence": "db-repos is pure persistence; no model-call door lives in these files" },
+        { "technique": "headless-turn-stream", "verdict": "not-applicable", "evidence": "no turn/stream logic in the repo layer" },
+        { "technique": "action-catalog-single-source", "verdict": "not-applicable", "evidence": "no action-vocabulary code in the repo layer" },
+        { "technique": "autonomous-cycle-hosting", "verdict": "not-applicable", "evidence": "cycle admission/ceilings are hosted in companion/*, not in these repos" },
+        { "technique": "operative-working-set", "verdict": "not-applicable", "evidence": "these are durable-store repos (dev_memories, twin, research_lab, fleet_sessions, etc.), not a process-lifetime working set" },
+        { "technique": "signal-economy-contract", "verdict": "not-applicable", "evidence": "report-or-absorb logic lives in companion/*, not in the repo layer" }
+      ]
+    },
+    {
+      "context": "f71df7d8-fb1c-4151-bba3-00fe164a537b",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evidence": "Only 1 of the 12 files in this context's paths (resources/mcp_gateways.rs — a credential-grouping table for aggregating multiple MCP-speaking credentials under one persona) touches MCP at all; the rest (teams.rs, team_memories.rs, team_channel.rs, notification_subscriptions.rs, orchestration/team_assignments.rs, n8n_sessions.rs, owned_devices.rs, playwright_procedures.rs, ocr.rs, artist.rs) are team-collaboration and unrelated-integration repos with no wire-protocol footprint (no transport, schema, dispatch door, or untrusted-result handling visible anywhere in these paths). mcp_gateways.rs itself is DB-CRUD only (add/remove/list/toggle member, health-state columns) with no authorization or scoping enforcement — that logic, per the sibling verdicts, lives in src-tauri/src/mcp_server/auth.rs (already recorded as a deviation) and the persona-credentials scope minting (already recorded conformant). Left unjudged rather than forcing a verdict off this thin, mostly-unrelated evidence base.",
+      "techniques": []
+    },
+    {
+      "context": "63edaec0-367e-4553-a6ee-bfd4144be305",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/src/commands/infrastructure/static_scan.rs:122-154 gives findings a stable dedup_key and a log-and-continue insert discipline that always drives the scan to a terminal status rather than aborting on one bad insert; standards_scan.rs:165-210 reports honest complete/error terminal status (with a panic handler at :206) rather than ever presenting a broken run as a clean zero; workspace_verify.rs:41-56,123-181,556 runs verification as an explicit separate pass with a guarded parser (won't trust a model's own 'SUMMARY: N verified' claim over matched per-item verdicts) and marks unmatched practices 'unverified' rather than silently dropping them; incremental_scan.rs:1-70 computes an honest SHA256 delta cache against the last full scan rather than presenting a partial rescan as a full-population statement.",
+      "techniques": [
+        { "technique": "finding-lifecycle", "verdict": "conformant", "evidence": "static_scan.rs:122-154 (stable dedup_key, log-and-continue, terminal status); workspace_verify.rs:41-56,123-181,556 (separate verify pass, honest 'unverified' fallback)" },
+        { "technique": "sensor-pipeline", "verdict": "conformant", "evidence": "standards_scan.rs:165-210 — honest complete/error terminal status with a panic handler, never silently empty" },
+        { "technique": "incremental-scanning", "verdict": "conformant", "evidence": "incremental_scan.rs:1-70 — SHA256 per-file delta cache vs the last successful scan, explicitly incremental" },
+        { "technique": "rule-precision-discipline", "verdict": "unknown", "evidence": "did not check whether rules were hand-verified against a sample population before shipping" },
+        { "technique": "llm-assisted-scanning", "verdict": "unknown", "evidence": "did not check context_generation.rs/use_case_scan.rs for the model-as-unreliable-sensor containment discipline" },
+        { "technique": "dead-code-detection", "verdict": "unknown", "evidence": "not checked in this pass" },
+        { "technique": "ingestion-budget", "verdict": "unknown", "evidence": "not checked in this pass" },
+        { "technique": "evidence-scoping", "verdict": "unknown", "evidence": "not checked in this pass" },
+        { "technique": "verify-after-generate", "verdict": "unknown", "evidence": "context_map_export.rs/context_audit.rs not examined for post-generation invariant checks" }
+      ]
+    },
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/cloud/sync/mod.rs:1-14 is a desktop-to-Supabase database row sync pipeline (SQLite -> cloud, RLS-scoped, fault-isolated per table) with no microphone capture, transcription, synthesis, or engine adapter anywhere in cursor.rs/client.rs/rows.rs; every voice-io technique's precondition (an audio capture or playback pipeline) fails. Same lexical-resonance pattern already recorded as not-applicable for sibling contexts engine-build-session and webhook-ingestion in this same subject ('cloud'/'device'/'pipeline' matched vocabulary, no audio path).",
+      "techniques": [
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "no microphone capture anywhere in cloud/sync/*" },
+        { "technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "no synthesis/playback queue in this context" },
+        { "technique": "engine-abstraction", "verdict": "not-applicable", "evidence": "no transcription/synthesis engine seam here" },
+        { "technique": "spoken-intent-parsing", "verdict": "not-applicable", "evidence": "no transcript-to-command crossing here" },
+        { "technique": "voice-ux-integration", "verdict": "not-applicable", "evidence": "no voice affordances in this backend sync module" },
+        { "technique": "on-device-vs-cloud", "verdict": "not-applicable", "evidence": "the 'cloud' here is database row sync, not audio residency" },
+        { "technique": "duplex-agent-sessions", "verdict": "not-applicable", "evidence": "no live conversational session vendor involved" },
+        { "technique": "portable-provider-package", "verdict": "not-applicable", "evidence": "no engine-package seam here" },
+        { "technique": "speech-ready-text", "verdict": "not-applicable", "evidence": "no text-to-speech door here" },
+        { "technique": "transcript-normalization", "verdict": "not-applicable", "evidence": "no transcripts exist in this context" }
+      ]
+    }
+  ]
+}

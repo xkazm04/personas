@@ -151,10 +151,9 @@ fn patch_layout(src: &str) -> Option<String> {
         let end = idx + "\"./globals.css\";".len();
         let nl = out[end..].find('\n').map(|n| end + n + 1).unwrap_or(end);
         out.insert_str(nl, import_line);
-    } else if let Some(idx) = out.find("\nexport ") {
-        out.insert_str(idx + 1, import_line);
     } else {
-        return None;
+        let idx = out.find("\nexport ")?;
+        out.insert_str(idx + 1, import_line);
     }
 
     // Render: right after the opening <body ...> tag.

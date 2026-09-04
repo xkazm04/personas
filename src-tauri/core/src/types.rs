@@ -343,6 +343,15 @@ pub struct ExecutionResult {
     /// (scope + reset time). Lets healing schedule a retry at the actual
     /// reset instead of giving up or blind-backoff.
     pub usage_limit: Option<super::error_taxonomy::UsageLimitInfo>,
+    /// The failure's class, MINTED at the raise site from structural facts —
+    /// never recovered from `error`'s text. `None` means the raise site did not
+    /// know (the common case for a CLI failure with diagnostic stderr), and the
+    /// readers fall back to `error_taxonomy::classify_error` exactly as before.
+    ///
+    /// This is the field the whole "class is lost at the DB round-trip" defect
+    /// turns on: see `error_taxonomy::mint_runner_class` and
+    /// `ENGINE_CEILING_CLASS`.
+    pub error_category: Option<super::error_taxonomy::ErrorCategory>,
     pub log_file_path: Option<String>,
     pub claude_session_id: Option<String>,
     pub duration_ms: u64,
@@ -397,6 +406,36 @@ pub struct ExecutionConfig {
     pub workspace_id: Option<String>,
     /// Names of tools available to the execution.
     pub tool_names: Vec<String>,
+    /// Number of tool DEFINITIONS presented to the model this run — the roster
+    /// whose grammar the model generates against, which is not the same thing
+    /// as [`Self::tool_names`] (the persona's use-case tools).
+    ///
+    /// `None` means UNBOUNDED/UNKNOWN and is the honest default on the CLI
+    /// path: with no `--allowedTools`, the roster is Claude Code's, personas
+    /// does not assemble it and must not guess its size. `Some(n)` is a
+    /// measured fact — the length of the persona's declared roster on the CLI
+    /// path, or the exact count of schemas posted on the HTTP path.
+    ///
+    /// Persisted in `persona_executions.execution_config`, i.e. on the same row
+    /// as `duration_ms`, `cost_usd` and `input_tokens`, so roster size vs. wall
+    /// clock is one SELECT rather than a benchmark harness.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_roster_size: Option<usize>,
+    /// Serialized byte size of the tool-schema array actually sent to the
+    /// model. Recorded because the count alone does not price the roster — five
+    /// verbose schemas can outweigh twenty terse ones, and it is the bytes that
+    /// enter the prompt prefix. `None` wherever personas does not assemble the
+    /// array (the CLI path).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_roster_bytes: Option<usize>,
+    /// Which surface produced the roster, so a later correlation can separate
+    /// the two populations instead of averaging across them:
+    /// `cli_default` (no roster control), `cli_allowlist` (persona declared
+    /// one), `http_engine` (personas assembles and posts the array), or
+    /// `http_engine_allowlist` (assembled and then narrowed by the persona's
+    /// declaration).
+    #[serde(default)]
+    pub tool_roster_source: String,
     /// Credential connector names that were resolved (no secret values).
     pub credential_connectors: Vec<String>,
     /// BYOM routing rule that was applied, if any.
@@ -663,6 +702,7 @@ impl EphemeralPersona {
             setup_detail: None,
             disabled_dims_json: None,
             lifecycle: "draft".to_string(),
+            core_profile: None,
             created_at: now.clone(),
             updated_at: now,
         };

@@ -1,8 +1,8 @@
 {
+  "cancelled": "Dibatalkan",
   "completed": "Selesai",
+  "error": "Kesalahan",
   "failed": "Gagal",
   "queued": "Dalam antrean",
-  "running": "Berjalan",
-  "cancelled": "Dibatalkan",
-  "error": "Kesalahan"
+  "running": "Berjalan"
 }

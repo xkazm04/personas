@@ -12,7 +12,9 @@ export type DirectorCategory =
   | 'triggers'
   | 'credentials'
   | 'memory'
-  | 'usefulness';
+  | 'usefulness'
+  | 'core_fidelity'
+  | 'charter_health';
 
 export interface DirectorReport {
   evaluatedPersonas: number;

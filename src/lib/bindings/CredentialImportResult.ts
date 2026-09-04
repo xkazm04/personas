@@ -9,4 +9,4 @@ conflicts: Array<CredentialConflict>,
 /**
  * Path of the selected file — returned so the frontend can pass it back for resolution
  */
-file_path: string | null, };
+filePath: string | null, };

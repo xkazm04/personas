@@ -321,10 +321,9 @@ pub fn strip_code_fence(s: &str) -> Option<&str> {
     let mut s = s;
     if let Some(rest) = s.strip_prefix("```json") {
         s = rest;
-    } else if let Some(rest) = s.strip_prefix("```") {
-        s = rest;
     } else {
-        return None;
+        let rest = s.strip_prefix("```")?;
+        s = rest;
     }
     let s = s.trim_start_matches('\n');
     if let Some(end) = s.rfind("```") {

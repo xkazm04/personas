@@ -521,6 +521,7 @@ async fn the_supersede_cap_binds_and_bad_ids_are_refused() {
             confidence: 0.8,
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
         },
     )
     .unwrap();
@@ -535,6 +536,7 @@ async fn the_supersede_cap_binds_and_bad_ids_are_refused() {
             confidence: 0.9,
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
         },
     )
     .unwrap();
@@ -1259,6 +1261,7 @@ fn untrusted_evidence_is_fenced_with_the_rules_outside_it() {
         value: "v".into(),
         importance: 3,
         confidence: 0.8,
+        expires_at: None,
         sources: vec!["ep_1".into()],
         supersedes_id: None,
         contradicts_id: None,
@@ -1367,6 +1370,7 @@ async fn a_cycle_refuses_to_relearn_a_fact_the_user_forgot() {
             sources: &eps[..1],
             importance: 3,
             confidence: 0.9,
+            expires_at: None,
             supersedes_id: None,
             contradicts_id: None,
         },

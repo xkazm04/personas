@@ -1,0 +1,43 @@
+{
+ "A": [
+  "scripts/templates/marketing/website-conversion-audit.json",
+  "scripts/templates/finance/budget-spending-monitor.json",
+  "scripts/templates/content/demo-recorder.json",
+  "scripts/templates/project-management/technical-decision-tracker.json",
+  "scripts/templates/research/database-performance-monitor.json",
+  "scripts/templates/research/conversational-database-analyst.json",
+  "scripts/templates/productivity/daily-standup-compiler.json",
+  "scripts/templates/finance/financial-stocks-signaller.json",
+  "scripts/templates/development/autonomous-issue-resolver.json",
+  "scripts/templates/devops/incident-logger.json",
+  "scripts/templates/productivity/email-morning-digest.json",
+  "scripts/templates/finance/revenue-intelligence-copilot.json",
+  "scripts/templates/research/product-scout.json",
+  "scripts/templates/content/content-performance-reporter.json",
+  "scripts/templates/development/dev-clone.json"
+ ],
+ "B": [
+  "scripts/templates/development/qa-guardian.json",
+  "scripts/templates/development/real-time-database-watcher.json",
+  "scripts/templates/productivity/survey-insights-analyzer.json",
+  "scripts/templates/development/solution-architect.json",
+  "scripts/templates/devops/release-manager.json",
+  "scripts/templates/project-management/product-strategist.json",
+  "scripts/templates/content/autonomous-art-director.json",
+  "scripts/templates/support/support-escalation-engine.json",
+  "scripts/templates/marketing/web-marketing.json",
+  "scripts/templates/marketing/visual-brand-asset-factory.json",
+  "scripts/templates/development/lean-codebase-sentinel.json",
+  "scripts/templates/content/newsletter-curator.json",
+  "scripts/templates/marketing/content-cascade.json",
+  "scripts/templates/legal/contract-lifecycle-use-case.json",
+  "scripts/templates/sales/lead-capture-pipeline.json"
+ ],
+ "T": [
+  "scripts/templates/productivity/digital-clone.json",
+  "scripts/templates/productivity/idea-harvester.json",
+  "scripts/templates/devops/devops-guardian.json",
+  "scripts/templates/productivity/router.json",
+  "scripts/templates/security/security-sentinel.json"
+ ]
+}

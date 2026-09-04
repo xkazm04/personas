@@ -20,6 +20,11 @@ disabled_dims_json: string | null | null,
  */
 lifecycle: string | null, 
 /**
+ * Serialized `PersonaCore` JSON (the persona's Character). Partial-update:
+ * key omitted = leave unchanged; `null` = clear; value = set.
+ */
+core_profile: string | null | null, 
+/**
  * Change-log attribution only — NOT a persisted persona column. Tags each
  * `update_persona` with its origin (`"editor" | "header" | "fanout" |
  * "other"`) so the persona change history can say where an edit came from.

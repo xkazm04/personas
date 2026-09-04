@@ -1,17 +1,17 @@
 {
-  "metric_error_rate": "ত্রুটির হার",
-  "metric_success_rate": "সাফল্যের হার",
+  "error_clear_history": "সতর্কতার ইতিহাস মুছতে ব্যর্থ:",
+  "error_create_rule": "সতর্কতা নিয়ম তৈরি করতে ব্যর্থ:",
+  "error_delete_rule": "সতর্কতা নিয়ম মুছতে ব্যর্থ:",
+  "error_dismiss": "সতর্কতা খারিজ করতে ব্যর্থ:",
+  "error_load_rules": "সতর্কতা নিয়ম লোড করতে ব্যর্থ:",
+  "error_toggle_rule": "সতর্কতা নিয়ম টগল করতে ব্যর্থ:",
+  "error_update_rule": "সতর্কতা নিয়ম আপডেট করতে ব্যর্থ:",
   "metric_cost": "মোট খরচ",
   "metric_cost_spike": "খরচ বনাম গড়",
+  "metric_error_rate": "ত্রুটির হার",
   "metric_executions": "এক্সিকিউশন",
-  "severity_info": "তথ্য",
-  "severity_warning": "সতর্কতা",
+  "metric_success_rate": "সাফল্যের হার",
   "severity_critical": "গুরুতর",
-  "error_create_rule": "সতর্কতা নিয়ম তৈরি করতে ব্যর্থ:",
-  "error_update_rule": "সতর্কতা নিয়ম আপডেট করতে ব্যর্থ:",
-  "error_delete_rule": "সতর্কতা নিয়ম মুছতে ব্যর্থ:",
-  "error_toggle_rule": "সতর্কতা নিয়ম টগল করতে ব্যর্থ:",
-  "error_dismiss": "সতর্কতা খারিজ করতে ব্যর্থ:",
-  "error_clear_history": "সতর্কতার ইতিহাস মুছতে ব্যর্থ:",
-  "error_load_rules": "সতর্কতা নিয়ম লোড করতে ব্যর্থ:"
+  "severity_info": "তথ্য",
+  "severity_warning": "সতর্কতা"
 }

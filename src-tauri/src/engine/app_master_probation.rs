@@ -444,9 +444,9 @@ pub(crate) fn probation_tick_summary_with(
     scope: ProbationScope<'_>,
 ) -> ProbationSummary {
     let mut summary = ProbationSummary::default();
-    let mandates = personas_engine::app_master::load_mandates(pool);
+    let mandates = personas_engine::responsibility::load_mandate_map(pool);
     if mandates.is_empty() {
-        return summary; // one prefix query and out — the common case.
+        return summary; // one indexed query and out — the common case.
     }
     summary.mandates = mandates.len();
     let now = chrono::Utc::now();
@@ -535,7 +535,8 @@ pub(crate) fn probation_tick_summary_with(
         ) {
             Ok(review_id) => {
                 record.probation_review_id = Some(review_id.clone());
-                if let Err(e) = personas_engine::app_master::set_mandate(pool, &record) {
+                if let Err(e) = personas_engine::responsibility::store_mandate_record(pool, &record)
+                {
                     // The review exists but the record does not know it. Next
                     // tick would raise a duplicate, so say so loudly.
                     tracing::error!(
@@ -635,7 +636,7 @@ pub(crate) fn headless_probation_sweep(
     use personas_engine::headless;
 
     let mut out = Vec::new();
-    for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
+    for (project_id, record) in personas_engine::responsibility::load_mandate_map(pool) {
         if record.probation_decided_at.is_some() {
             continue;
         }
@@ -778,7 +779,7 @@ fn anchorless_probation_sweep(
 
     let mut out = Vec::new();
     let now = chrono::Utc::now();
-    for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
+    for (project_id, record) in personas_engine::responsibility::load_mandate_map(pool) {
         if record.probation_decided_at.is_some() {
             continue;
         }
@@ -923,6 +924,71 @@ mod tests {
     use super::*;
     use crate::engine::kp_reporter::{KpAppMasterRollup, KpKpiDelta};
     use personas_engine::app_master::{Mandate, MandateRecord};
+
+    /// WP3 regression: the probation tick moved from the legacy
+    /// `app_settings` mandate storage to the `persona_responsibilities` table.
+    /// Seed the LEGACY storage, migrate, and assert (a) the accessor serves
+    /// the identical record the legacy reader did and (b) the tick produces
+    /// the same summary counts on the same fixtures.
+    #[test]
+    fn probation_tick_counts_are_unchanged_across_the_mandate_migration(
+    ) -> Result<(), crate::error::AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        for id in ["p-due", "p-decided"] {
+            pool.get()?.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES (?1, ?1, 'sp', datetime('now'), datetime('now'))",
+                [id],
+            )?;
+        }
+
+        // A window that closed with no decision: the tick must count it due,
+        // and DEFER it (the persona has never executed, so no review row can
+        // be anchored) — exactly what the legacy-backed tick did.
+        let mut due = record();
+        due.persona_id = "p-due".into();
+        due.project_id = "proj-due".into();
+        due.probation_ends_at = "2020-01-01T00:00:00+00:00".into();
+        personas_engine::app_master::set_mandate(&pool, &due).unwrap();
+        // Already decided: counted as a mandate, never re-raised.
+        let mut decided = record();
+        decided.persona_id = "p-decided".into();
+        decided.project_id = "proj-decided".into();
+        decided.probation_ends_at = "2020-01-01T00:00:00+00:00".into();
+        decided.probation_decided_at = Some("2020-02-01T00:00:00+00:00".into());
+        decided.probation_decision = Some("activated".into());
+        personas_engine::app_master::set_mandate(&pool, &decided).unwrap();
+
+        let legacy_view = personas_engine::app_master::load_mandates(&pool);
+        assert_eq!(legacy_view.len(), 2);
+
+        assert_eq!(
+            personas_engine::responsibility::migrate_legacy_mandates(&pool).unwrap(),
+            2
+        );
+        let table_view = personas_engine::responsibility::load_mandate_map(&pool);
+        assert_eq!(
+            table_view, legacy_view,
+            "the table must serve the records the settings keys used to, verbatim"
+        );
+        assert!(
+            personas_engine::app_master::load_mandates(&pool).is_empty(),
+            "the legacy rows are consumed by the migration"
+        );
+
+        let summary = probation_tick_summary_with(&pool, false, ProbationScope::default());
+        assert_eq!(summary.mandates, 2);
+        assert_eq!(summary.due, 1, "only the undecided window is due");
+        assert_eq!(summary.raised, 0, "no execution to anchor a review to");
+        assert_eq!(summary.deferred, 1);
+        // The deferral must not have invented a decision: the record is
+        // untouched and a second tick counts identically.
+        let again = probation_tick_summary_with(&pool, false, ProbationScope::default());
+        assert_eq!(again.mandates, 2);
+        assert_eq!(again.due, 1);
+        assert_eq!(again.deferred, 1);
+        Ok(())
+    }
 
     fn record() -> MandateRecord {
         MandateRecord {

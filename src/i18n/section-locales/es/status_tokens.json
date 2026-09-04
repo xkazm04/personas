@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "En cola",
-    "running": "En ejecución",
-    "completed": "Completado",
-    "failed": "Fallido",
-    "cancelled": "Cancelado",
-    "incomplete": "Incompleto",
-    "error": "Error",
-    "unknown": "Desconocido"
-  },
-  "simple": {
-    "good": "Correcto",
-    "warning": "Atención",
-    "problem": "Problema"
-  },
-  "event": {
-    "pending": "Pendiente",
-    "processing": "Procesando",
-    "processed": "Procesado",
-    "failed": "Fallido",
-    "retrying": "Reintentando"
-  },
   "automation": {
-    "pending": "Pendiente",
-    "running": "En ejecución",
     "completed": "Completado",
     "failed": "Fallido",
+    "pending": "Pendiente",
+    "running": "En ejecución",
     "timeout": "Tiempo agotado"
-  },
-  "severity": {
-    "info": "Info",
-    "low": "Bajo",
-    "medium": "Medio",
-    "high": "Alto",
-    "critical": "Crítico"
-  },
-  "priority": {
-    "low": "Bajo",
-    "normal": "Normal",
-    "high": "Alto",
-    "urgent": "Urgente"
-  },
-  "healing_status": {
-    "open": "Abierto",
-    "auto_fixed": "Corregido automáticamente",
-    "acknowledged": "Reconocido",
-    "resolved": "Resuelto"
-  },
-  "healing_category": {
-    "config": "Configuración",
-    "auth": "Autenticación",
-    "network": "Red",
-    "timeout": "Tiempo agotado",
-    "quota": "Cuota"
-  },
-  "connector_status": {
-    "ready": "Listo",
-    "untested": "Sin probar",
-    "failed": "Fallido",
-    "no_credential": "Sin credencial",
-    "testing": "Probando"
-  },
-  "task_phase": {
-    "analyzing": "Analizando",
-    "planning": "Planificando",
-    "implementing": "Implementando",
-    "committing": "Confirmando cambios",
-    "validating": "Validando",
-    "complete": "Completo"
-  },
-  "goal_state": {
-    "pending": "Pendiente",
-    "review": "En revisión",
-    "blocked": "Bloqueado",
-    "in_progress": "En curso",
-    "running": "En ejecución",
-    "completed": "Completado",
-    "done": "Completado"
-  },
-  "test": {
-    "generating": "Generando",
-    "running": "En ejecución",
-    "completed": "Completado",
-    "failed": "Fallido",
-    "pending": "Pendiente"
-  },
-  "dev": {
-    "open": "Abierto",
-    "in_progress": "En progreso",
-    "completed": "Completado",
-    "blocked": "Bloqueado",
-    "queued": "En cola",
-    "running": "En ejecución",
-    "failed": "Fallido"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Global"
-  },
-  "forage_confidence": {
-    "high": "Alta",
-    "medium": "Media",
-    "low": "Baja"
-  },
-  "capability_risk": {
-    "low": "bajo",
-    "medium": "medio",
-    "high": "alto"
-  },
-  "verdict": {
-    "production": "Producción",
-    "promising": "Prometedor",
-    "not_ready": "No listo",
-    "broken": "Roto"
-  },
-  "deployment": {
-    "active": "Activo",
-    "paused": "En pausa",
-    "failed": "Fallido",
-    "unknown": "Desconocido",
-    "file-based": "Basado en archivo"
-  },
-  "delivery": {
-    "delivered": "Entregado",
-    "failed": "Fallido",
-    "pending": "Pendiente",
-    "queued": "En cola"
-  },
-  "rotation": {
-    "anomaly": "Anomalía",
-    "paused": "En pausa",
-    "disabled": "Desactivado",
-    "perm_errors": "Errores permanentes",
-    "degrading": "Degradando",
-    "backoff": "Retroceso",
-    "fresh": "Reciente",
-    "active": "Activo"
-  },
-  "thinking": {
-    "high": "Alto",
-    "low": "Bajo",
-    "medium": "Medio"
-  },
-  "error_category": {
-    "api_error": "Error de API",
-    "credential_error": "Error de credencial",
-    "network": "Red",
-    "provider_not_found": "Proveedor no encontrado",
-    "rate_limit": "Límite de tasa",
-    "session_limit": "Límite de sesión",
-    "timeout": "Tiempo agotado",
-    "tool_error": "Error de herramienta",
-    "transient_process_failure": "Fallo transitorio del proceso",
-    "unknown": "Desconocido",
-    "validation": "Validación"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Límite de ramificación alcanzado",
-    "budget_exceeded": "Límite de costo alcanzado",
-    "cas_lost": "Reclamado por otra ejecución",
-    "cycle_detected": "Ciclo detectado",
-    "depth_limit": "Límite de profundidad",
-    "handoff_suppressed": "Transferencia suprimida",
-    "malformed_config": "Configuración inválida",
-    "outside_window": "Fuera de la ventana activa",
-    "predicate_unmet": "Condición no cumplida",
-    "publish_failed": "Error al publicar",
-    "quarantined": "Activador en cuarentena",
-    "healing_abandoned": "Reparación abandonada",
-    "healing_capped": "Reintentos de reparación agotados",
-    "lookup_failed": "Fallo al buscar el disparador",
-    "cost_ceiling_corrupt": "Límite de coste ilegible"
   },
   "build": {
     "analyzing": "Analizando",
@@ -186,6 +19,232 @@
     "test_complete": "Prueba completada",
     "testing": "Probando"
   },
+  "capability_risk": {
+    "high": "alto",
+    "low": "bajo",
+    "medium": "medio"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Límite de ramificación alcanzado",
+    "budget_exceeded": "Límite de costo alcanzado",
+    "cas_lost": "Reclamado por otra ejecución",
+    "cost_ceiling_corrupt": "Límite de coste ilegible",
+    "cycle_detected": "Ciclo detectado",
+    "depth_limit": "Límite de profundidad",
+    "handoff_suppressed": "Transferencia suprimida",
+    "healing_abandoned": "Reparación abandonada",
+    "healing_capped": "Reintentos de reparación agotados",
+    "lookup_failed": "Fallo al buscar el disparador",
+    "malformed_config": "Configuración inválida",
+    "outside_window": "Fuera de la ventana activa",
+    "predicate_unmet": "Condición no cumplida",
+    "publish_failed": "Error al publicar",
+    "quarantined": "Activador en cuarentena"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  },
+  "competition": {
+    "awaiting_review": "Pendiente de revisión",
+    "cancelled": "Cancelado",
+    "resolved": "Resuelto",
+    "running": "En ejecución"
+  },
+  "connector_status": {
+    "failed": "Fallido",
+    "no_credential": "Sin credencial",
+    "ready": "Listo",
+    "testing": "Probando",
+    "untested": "Sin probar"
+  },
+  "delivery": {
+    "delivered": "Entregado",
+    "failed": "Fallido",
+    "pending": "Pendiente",
+    "queued": "En cola"
+  },
+  "deployment": {
+    "active": "Activo",
+    "failed": "Fallido",
+    "file-based": "Basado en archivo",
+    "paused": "En pausa",
+    "unknown": "Desconocido"
+  },
+  "dev": {
+    "blocked": "Bloqueado",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "in_progress": "En progreso",
+    "open": "Abierto",
+    "queued": "En cola",
+    "running": "En ejecución"
+  },
+  "error_category": {
+    "api_error": "Error de API",
+    "credential_error": "Error de credencial",
+    "network": "Red",
+    "provider_not_found": "Proveedor no encontrado",
+    "rate_limit": "Límite de tasa",
+    "session_limit": "Límite de sesión",
+    "timeout": "Tiempo agotado",
+    "tool_error": "Error de herramienta",
+    "transient_process_failure": "Fallo transitorio del proceso",
+    "unknown": "Desconocido",
+    "validation": "Validación"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "En espera de aprobación",
+    "cascade_guard": "Ya está en ejecución",
+    "cross_team_blocked": "Bloqueado entre equipos",
+    "dry_run": "Ejecución de prueba (simulada)",
+    "handoff_target_disabled": "El destino del traspaso está apagado",
+    "no_subscriber": "Ningún suscriptor coincide",
+    "persona_disabled": "El agente está apagado",
+    "stuck_reclaimed": "Recuperado y vuelto a encolar",
+    "stuck_retry_exhausted": "Recuperado, reintentos agotados"
+  },
+  "event": {
+    "failed": "Fallido",
+    "pending": "Pendiente",
+    "processed": "Procesado",
+    "processing": "Procesando",
+    "retrying": "Reintentando"
+  },
+  "execution": {
+    "cancelled": "Cancelado",
+    "completed": "Completado",
+    "error": "Error",
+    "failed": "Fallido",
+    "incomplete": "Incompleto",
+    "queued": "En cola",
+    "running": "En ejecución",
+    "unknown": "Desconocido"
+  },
+  "forage_confidence": {
+    "high": "Alta",
+    "low": "Baja",
+    "medium": "Media"
+  },
+  "goal_state": {
+    "blocked": "Bloqueado",
+    "completed": "Completado",
+    "done": "Completado",
+    "in_progress": "En curso",
+    "pending": "Pendiente",
+    "review": "En revisión",
+    "running": "En ejecución"
+  },
+  "healing_category": {
+    "auth": "Autenticación",
+    "config": "Configuración",
+    "network": "Red",
+    "quota": "Cuota",
+    "timeout": "Tiempo agotado"
+  },
+  "healing_status": {
+    "acknowledged": "Reconocido",
+    "auto_fixed": "Corregido automáticamente",
+    "open": "Abierto",
+    "resolved": "Resuelto"
+  },
+  "kb_document": {
+    "indexing": "indexando",
+    "pending": "pendiente"
+  },
+  "memory_action": {
+    "deleted": "Eliminada",
+    "error": "Error",
+    "kept": "Conservada",
+    "proposed_archive": "Archivado propuesto",
+    "proposed_delete": "Eliminación propuesta",
+    "proposed_synthesize": "Fusión propuesta",
+    "proposed_update_importance": "Reevaluación propuesta"
+  },
+  "memory_category": {
+    "context": "Contexto",
+    "decision": "Decisión",
+    "learning": "Aprendizaje",
+    "observation": "Observación"
+  },
+  "memory_tier": {
+    "active": "Activa",
+    "archive": "Archivada",
+    "core": "Esencial",
+    "working": "En curso"
+  },
+  "priority": {
+    "high": "Alto",
+    "low": "Bajo",
+    "normal": "Normal",
+    "urgent": "Urgente"
+  },
+  "remote_job": {
+    "cancelled": "Cancelado",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "pending": "Pendiente",
+    "refused": "Rechazado",
+    "running": "En curso"
+  },
+  "rotation": {
+    "active": "Activo",
+    "anomaly": "Anomalía",
+    "backoff": "Retroceso",
+    "degrading": "Degradando",
+    "disabled": "Desactivado",
+    "fresh": "Reciente",
+    "paused": "En pausa",
+    "perm_errors": "Errores permanentes"
+  },
+  "severity": {
+    "critical": "Crítico",
+    "high": "Alto",
+    "info": "Info",
+    "low": "Bajo",
+    "medium": "Medio"
+  },
+  "simple": {
+    "good": "Correcto",
+    "problem": "Problema",
+    "warning": "Atención"
+  },
+  "span_type": {
+    "chain_evaluation": "Evaluación de cadena",
+    "cli_spawn": "Inicio de CLI",
+    "credential_resolution": "Credenciales",
+    "execution": "Ejecución",
+    "healing_analysis": "Reparación",
+    "outcome_assessment": "Resultado",
+    "pipeline_stage": "Etapa del proceso",
+    "prompt_assembly": "Preparar prompt",
+    "protocol_dispatch": "Protocolo",
+    "stream_processing": "Flujo",
+    "tool_call": "Llamada a herramienta",
+    "unknown": "Desconocido"
+  },
+  "task_phase": {
+    "analyzing": "Analizando",
+    "committing": "Confirmando cambios",
+    "complete": "Completo",
+    "implementing": "Implementando",
+    "planning": "Planificando",
+    "validating": "Validando"
+  },
+  "test": {
+    "completed": "Completado",
+    "failed": "Fallido",
+    "generating": "Generando",
+    "pending": "Pendiente",
+    "running": "En ejecución"
+  },
+  "thinking": {
+    "high": "Alto",
+    "low": "Bajo",
+    "medium": "Medio"
+  },
   "tool_error_kind": {
     "auth": "Autenticación",
     "http": "Error HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Error desconocido",
     "unsupported": "No ejecutable aquí"
   },
-  "remote_job": {
-    "completed": "Completado",
-    "failed": "Fallido",
-    "cancelled": "Cancelado",
-    "refused": "Rechazado",
-    "pending": "Pendiente",
-    "running": "En curso"
-  },
-  "event_reason": {
-    "approval_held": "En espera de aprobación",
-    "cascade_guard": "Ya está en ejecución",
-    "cross_team_blocked": "Bloqueado entre equipos",
-    "dry_run": "Ejecución de prueba (simulada)",
-    "handoff_target_disabled": "El destino del traspaso está apagado",
-    "no_subscriber": "Ningún suscriptor coincide",
-    "persona_disabled": "El agente está apagado",
-    "stuck_reclaimed": "Recuperado y vuelto a encolar",
-    "stuck_retry_exhausted": "Recuperado, reintentos agotados",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "En ejecución",
-    "awaiting_review": "Pendiente de revisión",
-    "resolved": "Resuelto",
-    "cancelled": "Cancelado"
-  },
-  "kb_document": {
-    "pending": "pendiente",
-    "indexing": "indexando"
-  },
-  "memory_tier": {
-    "core": "Esencial",
-    "active": "Activa",
-    "working": "En curso",
-    "archive": "Archivada"
-  },
-  "span_type": {
-    "execution": "Ejecución",
-    "prompt_assembly": "Preparar prompt",
-    "credential_resolution": "Credenciales",
-    "cli_spawn": "Inicio de CLI",
-    "tool_call": "Llamada a herramienta",
-    "protocol_dispatch": "Protocolo",
-    "chain_evaluation": "Evaluación de cadena",
-    "stream_processing": "Flujo",
-    "outcome_assessment": "Resultado",
-    "healing_analysis": "Reparación",
-    "pipeline_stage": "Etapa del proceso",
-    "unknown": "Desconocido"
-  },
-  "memory_action": {
-    "kept": "Conservada",
-    "deleted": "Eliminada",
-    "error": "Error",
-    "proposed_delete": "Eliminación propuesta",
-    "proposed_update_importance": "Reevaluación propuesta",
-    "proposed_synthesize": "Fusión propuesta",
-    "proposed_archive": "Archivado propuesto"
-  },
-  "memory_category": {
-    "observation": "Observación",
-    "decision": "Decisión",
-    "context": "Contexto",
-    "learning": "Aprendizaje"
+  "verdict": {
+    "broken": "Roto",
+    "not_ready": "No listo",
+    "production": "Producción",
+    "promising": "Prometedor"
   }
 }

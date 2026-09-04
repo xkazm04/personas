@@ -36,30 +36,30 @@ function mergeImportResults(
 ): PortabilityImportResult {
   return {
     ...second,
-    personas_created: first.personas_created + second.personas_created,
-    teams_created: first.teams_created + second.teams_created,
-    tools_created: first.tools_created + second.tools_created,
-    credentials_created: first.credentials_created + second.credentials_created,
-    team_memories_created: first.team_memories_created + second.team_memories_created,
-    kpis_created: first.kpis_created + second.kpis_created,
-    projects_imported: first.projects_imported + second.projects_imported,
-    projects_skipped: first.projects_skipped + second.projects_skipped,
-    knowledge_imported: first.knowledge_imported + second.knowledge_imported,
-    knowledge_skipped_duplicates: first.knowledge_skipped_duplicates + second.knowledge_skipped_duplicates,
-    skills_written: first.skills_written + second.skills_written,
-    skills_deferred: first.skills_deferred + second.skills_deferred,
-    twins_imported: first.twins_imported + second.twins_imported,
-    twins_skipped: first.twins_skipped + second.twins_skipped,
-    twin_kb_chunks_imported: first.twin_kb_chunks_imported + second.twin_kb_chunks_imported,
-    athena_memory_imported: first.athena_memory_imported + second.athena_memory_imported,
+    personasCreated: first.personasCreated + second.personasCreated,
+    teamsCreated: first.teamsCreated + second.teamsCreated,
+    toolsCreated: first.toolsCreated + second.toolsCreated,
+    credentialsCreated: first.credentialsCreated + second.credentialsCreated,
+    teamMemoriesCreated: first.teamMemoriesCreated + second.teamMemoriesCreated,
+    kpisCreated: first.kpisCreated + second.kpisCreated,
+    projectsImported: first.projectsImported + second.projectsImported,
+    projectsSkipped: first.projectsSkipped + second.projectsSkipped,
+    knowledgeImported: first.knowledgeImported + second.knowledgeImported,
+    knowledgeSkippedDuplicates: first.knowledgeSkippedDuplicates + second.knowledgeSkippedDuplicates,
+    skillsWritten: first.skillsWritten + second.skillsWritten,
+    skillsDeferred: first.skillsDeferred + second.skillsDeferred,
+    twinsImported: first.twinsImported + second.twinsImported,
+    twinsSkipped: first.twinsSkipped + second.twinsSkipped,
+    twinKbChunksImported: first.twinKbChunksImported + second.twinKbChunksImported,
+    athenaMemoryImported: first.athenaMemoryImported + second.athenaMemoryImported,
     // Identity replacement is a one-shot event, not a counter — either pass
     // having done it means the local identity was overwritten.
-    athena_identity_replaced: first.athena_identity_replaced || second.athena_identity_replaced,
-    reembed_queued: first.reembed_queued + second.reembed_queued,
+    athenaIdentityReplaced: first.athenaIdentityReplaced || second.athenaIdentityReplaced,
+    reembedQueued: first.reembedQueued + second.reembedQueued,
     warnings: [...first.warnings, ...second.warnings],
-    id_mapping: { ...first.id_mapping, ...second.id_mapping },
-    import_conflicts: [],
-    bundle_file_path: null,
+    idMapping: { ...first.idMapping, ...second.idMapping },
+    importConflicts: [],
+    bundleFilePath: null,
   };
 }
 
@@ -162,10 +162,10 @@ export function useDataPortability() {
       const result = await importPortabilityBundle(passphrase);
       if (result) {
         setImportResult(result);
-        if (result.import_conflicts.length > 0 && result.bundle_file_path) {
+        if (result.importConflicts.length > 0 && result.bundleFilePath) {
           // Conflicts detected — pass 1 imported everything else; hold the
           // bundle path + passphrase for the resolution pass.
-          setConflictImportFilePath(result.bundle_file_path);
+          setConflictImportFilePath(result.bundleFilePath);
           setPendingImportPassphrase(passphrase);
           setImportStatus('idle');
         } else {
@@ -263,9 +263,9 @@ export function useDataPortability() {
       const result = await importCredentials(credImportPassphrase);
       if (result) {
         setCredImportResult(result);
-        if (result.conflicts.length > 0 && result.file_path) {
+        if (result.conflicts.length > 0 && result.filePath) {
           // Conflicts detected — keep passphrase and store file path for resolution pass
-          setCredImportFilePath(result.file_path);
+          setCredImportFilePath(result.filePath);
           setCredImportStatus('idle');
         } else {
           setCredImportStatus('success');

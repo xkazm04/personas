@@ -4,10 +4,17 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 
-/** Result returned by the generic start function. */
+/**
+ * Minimum shape the generic start function must return.
+ *
+ * Kept structural rather than importing the generated `OAuthStartResult`:
+ * three different start commands feed this hook and they agree only on these
+ * two fields. The names track the binding (camelCase), so a start result from
+ * any of them satisfies it without a cast.
+ */
 export interface OAuthStartResult {
-  auth_url: string;
-  session_id: string;
+  authUrl: string;
+  sessionId: string;
 }
 
 import type { OAuthSessionStatus } from '@/lib/bindings/OAuthSessionStatus';
@@ -209,7 +216,7 @@ export function useOAuthPolling<
     withTimeout
       .then(async (oauthStart) => {
         clearStartTimeout();
-        const safeAuthUrl = sanitizeExternalUrl(oauthStart.auth_url);
+        const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
           throw new Error(`Blocked unsafe ${configRef.current.label} authorization URL.`);
         }
@@ -235,7 +242,7 @@ export function useOAuthPolling<
           success: false,
           message: `${configRef.current.label} consent page opened. Complete authorization in your browser.`,
         });
-        setSessionId(oauthStart.session_id);
+        setSessionId(oauthStart.sessionId);
       })
       .catch((err) => {
         silentCatch("hooks/design/oauth/useOAuthPolling:catch3")(err);

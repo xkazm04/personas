@@ -25,7 +25,15 @@ use proptest::prelude::*;
 // ---------------------------------------------------------------------------
 
 fn arb_fps() -> impl Strategy<Value = u32> {
-    prop_oneof![Just(24u32), Just(30u32), Just(60u32)]
+    // compile() accepts any fps > 0 (compile.rs: the only check is `fps == 0`),
+    // and snaps every stage boundary to 1/fps. Drawing only from {24,30,60}
+    // tested the snapping at three friendly divisors and left every other rate
+    // the product accepts — PAL's 25, the 23/29 neighbours of the pulldown
+    // rates, and anything a user types — unreachable by this suite.
+    prop_oneof![
+        4 => prop_oneof![Just(24u32), Just(30u32), Just(60u32)],
+        1 => 1u32..=240u32,
+    ]
 }
 
 fn arb_transition() -> impl Strategy<Value = String> {

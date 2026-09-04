@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "Tersusun dari {count} kapabilitas",
-  "xray_tooltip": "Templat ini adalah gabungan mentalitas dan kapabilitas dari katalog resep — bagian yang sama yang bisa Anda susun sendiri di Foundry.",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "Templat ini adalah gabungan mentalitas dan kapabilitas dari katalog resep — bagian yang sama yang bisa Anda susun sendiri di Foundry."
 }

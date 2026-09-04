@@ -49,12 +49,12 @@ export function VaultTrustBadge() {
   // The only status detail this calm display uses: which master-key path is
   // active (OS keychain vs the machine-derived fallback). Both keep credentials
   // encrypted; the keychain path is preferred, so the fallback gets a soft note.
-  const fallbackKey = status.key_source !== 'keychain';
+  const fallbackKey = status.keySource !== 'keychain';
   // Failed audit-log writes this session (mirrors the legacy-IPC counter
   // surfaced on vault_status). Decrypts are never blocked by audit failures,
   // but a non-zero count means some access events are missing from the audit
   // trail — an honesty signal this badge must not hide behind a green shield.
-  const auditGaps = status.credential_audit_write_failures ?? 0;
+  const auditGaps = status.credentialAuditWriteFailures ?? 0;
   const attention = auditGaps > 0;
 
   return (

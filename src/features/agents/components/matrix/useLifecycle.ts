@@ -24,6 +24,15 @@ import {
   buildUpdateInput,
 } from "@/api/agents/personas";
 import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes";
+// Deep module import ON PURPOSE: the personaCore barrel also exports the codex
+// React components + the archetype API hook; this pure module keeps the promote
+// path's import graph free of them.
+import {
+  composeManifestSeed,
+  extractDesignSeed,
+  type PersonaCoreLaunchSnapshot,
+} from "@/features/agents/sub_glyph/personaCore/composeCoreProfile";
+import { getPersonaManifest } from "@/api/agents/personaBrain";
 import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
@@ -37,6 +46,12 @@ interface UseLifecycleOptions {
   personaId: string | null;
   /** Callback to start a new build session (from useBuild.handleGenerate). */
   handleGenerate?: (intent: string, overridePersonaId?: string) => Promise<void>;
+  /** Persona Core Codex → typed runtime Core (seam b). Read-and-clear accessor
+   *  for the codex snapshot the dialogue-cinema layout captured at Launch;
+   *  `handlePromote` consumes it once and composes it into
+   *  `personas.core_profile`. Absent (cinema layout, template adoption) means
+   *  the Rust promote stamp's own source stands unchanged. */
+  consumeCoreSnapshot?: () => PersonaCoreLaunchSnapshot | null;
 }
 
 interface ToolTestEventPayload {
@@ -65,6 +80,7 @@ export interface PromoteResult {
 
 export function useLifecycle({
   personaId,
+  consumeCoreSnapshot,
 }: UseLifecycleOptions) {
   // -- Read build slice state from Zustand selectors -------------------------
 
@@ -266,6 +282,41 @@ export function useLifecycle({
           excluded.length > 0 ? excluded : undefined,
         );
 
+        // Persona Core Codex → MANIFEST SEED PROSE (seam b). This is
+        // deterministic ordering, not a race: `promote_build_draft` runs its
+        // seed-if-absent `core_profile` stamp (build_sessions.rs "Design D",
+        // write-if-null) inside the command body BEFORE returning, so this
+        // explicit update always lands after the stamp and wins — and the
+        // stamp's guard can never resurrect the seeded value. When no snapshot
+        // exists (cinema layout has no codex; codex untouched; adoption flow),
+        // the stamp source stands unchanged. Best-effort: a failed update
+        // leaves the seeded core in place, so the persona is never core-less.
+        //
+        // The `getPersonaManifest` call that follows is NOT a read — it is the
+        // seeder's only door. `core_profile` is the manifest MIRROR now, and
+        // the codex's prose reaches the persona's `# Mandate` / `# Boundaries`
+        // only when `manifest::ensure` folds it in. Without this call the JSON
+        // sits in the column until someone opens the Manifest tab, and the
+        // prompt's `## Manifest` section skips it in the meantime (a
+        // prose-only blob no longer deserializes as the legacy `PersonaCore`,
+        // whose dial fields are still required). Best-effort, same as above.
+        const coreSnapshot = consumeCoreSnapshot?.() ?? null;
+        if (coreSnapshot) {
+          const composed = composeManifestSeed(
+            coreSnapshot.state,
+            coreSnapshot.archetype,
+            extractDesignSeed(agentIR),
+          );
+          if (composed) {
+            await updatePersona(
+              effectivePid,
+              buildUpdateInput({ core_profile: JSON.stringify(composed) }),
+            )
+              .then(() => getPersonaManifest(effectivePid))
+              .catch(silentCatch("lifecycle:codexManifestSeed"));
+          }
+        }
+
         // Transition to promoted
         useAgentStore.getState().handleBuildSessionStatus({
           type: "session_status",
@@ -341,7 +392,7 @@ export function useLifecycle({
       logger.error("handlePromote failed", { message });
       return emptyResult;
     }
-  }, [personaId]);
+  }, [personaId, consumeCoreSnapshot]);
 
   // -- handleRejectTest ------------------------------------------------------
   //

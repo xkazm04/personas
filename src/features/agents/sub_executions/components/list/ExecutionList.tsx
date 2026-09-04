@@ -16,6 +16,7 @@ import { useBulkRerun } from '../../libs/useBulkRerun';
 import { isFailedExecutionStatus } from '../../libs/executionStatus';
 import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
+import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
@@ -79,6 +80,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
   const [showSimulations, setShowSimulations] = useState(false);
+  const [originFilter, setOriginFilter] = useState<ExecutionOrigin | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   // count BEFORE de-duplication, because the offset is a server-side skip and
   // a row we happen to already hold still occupied a slot in that window.
   const [extraServerRows, setExtraServerRows] = useState(0);
-  useEffect(() => { setExtraRows([]); setReachedEnd(false); setExtraServerRows(0); }, [personaId]);
+  useEffect(() => { setExtraRows([]); setReachedEnd(false); setExtraServerRows(0); setOriginFilter(null); }, [personaId]);
 
   // The store's first page, as the SERVER returned it. NOT
   // `rawExecutions.length`: `upsertFinishedExecution` prepends a locally
@@ -160,10 +162,17 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
     () => rawRows.some((e) => e.is_simulation),
     [rawRows],
   );
-  const executions = useMemo(
-    () => (showSimulations ? rawRows : rawRows.filter((e) => !e.is_simulation)),
-    [rawRows, showSimulations],
-  );
+  const executions = useMemo(() => {
+    // Origin filter first (list rows carry the server-derived origin), then
+    // the simulation-visibility toggle. Filtering for origin 'simulation'
+    // implies wanting to see simulations, so it bypasses the toggle.
+    const originFiltered = originFilter
+      ? rawRows.filter((e) => deriveExecutionOrigin(e).origin === originFilter)
+      : rawRows;
+    return showSimulations || originFilter === 'simulation'
+      ? originFiltered
+      : originFiltered.filter((e) => !e.is_simulation);
+  }, [rawRows, showSimulations, originFilter]);
 
   // Row virtualization — only visible rows mount. estimateSize is an initial
   // guess; each row wraps its content with `virtualizer.measureElement` so the
@@ -446,6 +455,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
           showRaw={showRaw} setShowRaw={setShowRaw}
           showSimulations={showSimulations} setShowSimulations={setShowSimulations}
           hasSimulations={hasSimulations}
+          originFilter={originFilter} setOriginFilter={setOriginFilter}
           compareMode={compareMode} exitCompareMode={exitCompareMode} setCompareMode={setCompareMode}
           hasExecutions={executions.length > 0} hasEnoughToCompare={executions.length >= 2}
           compareLeft={compareLeft} compareRight={compareRight}

@@ -38,6 +38,7 @@ pub fn row_to_prompt_version(row: &Row) -> rusqlite::Result<PersonaPromptVersion
         resolved_cells: row.get("resolved_cells").unwrap_or(None),
         icon: row.get("icon").unwrap_or(None),
         color: row.get("color").unwrap_or(None),
+        core_profile: row.get("core_profile").unwrap_or(None),
     })
 }
 
@@ -53,6 +54,8 @@ pub struct VersionSnapshotFields {
     pub resolved_cells: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
+    /// Serialized `PersonaCore` (living-agent) captured with the version.
+    pub core_profile: Option<String>,
 }
 
 pub fn create_prompt_version(
@@ -110,11 +113,12 @@ pub fn create_prompt_version_with_snapshot(
                 conn.execute(
             "INSERT INTO persona_prompt_versions
              (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at,
-              design_context, last_design_result, resolved_cells, icon, color)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
+              design_context, last_design_result, resolved_cells, icon, color, core_profile)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
             params![
                 id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, now,
                 snapshot.design_context, snapshot.last_design_result, snapshot.resolved_cells, snapshot.icon, snapshot.color,
+                snapshot.core_profile,
             ],
         )?;
                 Ok((version_number,))
@@ -137,6 +141,7 @@ pub fn create_prompt_version_with_snapshot(
                         resolved_cells: snapshot.resolved_cells,
                         icon: snapshot.icon,
                         color: snapshot.color,
+                        core_profile: snapshot.core_profile,
                     })
                 }
                 Err(e) => {
@@ -150,11 +155,18 @@ pub fn create_prompt_version_with_snapshot(
 
 /// Creates a version only if the prompt actually changed from the latest version.
 /// Returns Some(version) if created, None if unchanged.
+///
+/// Living-agent: the diff covers `structured_prompt` OR `core_profile` — a
+/// Core (dial/prose) edit is a prompt-shaping change and must land in prompt
+/// history even when the structured prompt itself is untouched. Callers pass
+/// the persona's CURRENT core_profile (post-update), so an unchanged Core
+/// never false-positives the diff.
 pub fn create_prompt_version_if_changed(
     pool: &DbPool,
     persona_id: &str,
     structured_prompt: Option<String>,
     system_prompt: Option<String>,
+    core_profile: Option<String>,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
     timed_query!(
         "execution_metrics",
@@ -162,29 +174,37 @@ pub fn create_prompt_version_if_changed(
         {
             let conn = pool.conn("metrics::create_prompt_version_if_changed")?;
 
-            // Get latest version's prompt to diff
-            let latest: Option<(Option<String>,)> = conn
+            // Get latest version's prompt + core to diff. `core_profile` reads
+            // leniently (pre-e16 rows have no column value) — a missing value
+            // diffs as None, exactly like a version that never captured it.
+            let latest: Option<(Option<String>, Option<String>)> = conn
                 .query_row(
-                    "SELECT structured_prompt FROM persona_prompt_versions
+                    "SELECT structured_prompt, core_profile FROM persona_prompt_versions
              WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT 1",
                     params![persona_id],
-                    |row| Ok((row.get(0)?,)),
+                    |row| Ok((row.get(0)?, row.get("core_profile").unwrap_or(None))),
                 )
                 .ok();
 
-            let latest_prompt = latest.and_then(|r| r.0);
+            let (latest_prompt, latest_core) = latest.unwrap_or((None, None));
 
-            // Skip if prompts are identical
-            if latest_prompt.as_deref() == structured_prompt.as_deref() {
+            // Skip only when BOTH halves are identical
+            if latest_prompt.as_deref() == structured_prompt.as_deref()
+                && latest_core.as_deref() == core_profile.as_deref()
+            {
                 return Ok(None);
             }
 
-            let version = create_prompt_version(
+            let version = create_prompt_version_with_snapshot(
                 pool,
                 persona_id,
                 structured_prompt,
                 system_prompt,
                 Some("Auto-saved".into()),
+                VersionSnapshotFields {
+                    core_profile,
+                    ..Default::default()
+                },
             )?;
             Ok(Some(version))
         }
@@ -572,9 +592,19 @@ pub fn get_value_rollup_with_conn(
 /// window and the immediately-prior window of equal length, plus each persona's
 /// dominant failure category. Excludes simulations (their failures are stubbed).
 ///
-/// The classification is intentionally done in Rust at aggregation time — SQL
-/// can't run the taxonomy's substring heuristics — but the row set is kept small
-/// by selecting only `status = 'failed'` non-simulation rows in the 2×window.
+/// Two paths, and which one a row takes is the point. A row whose
+/// `error_category` was MINTED at the raise site is counted in SQL by a
+/// `GROUP BY` and its message is never read. A row without one — every
+/// execution from before the column existed, and every failure whose class
+/// genuinely is a foreign string — still has its `error_message` pulled and run
+/// through the taxonomy's substring ladder in Rust, because SQL cannot run
+/// those heuristics. The row set for that second pass is kept small by
+/// selecting only `status = 'failed'` non-simulation rows in the 2×window, and
+/// it shrinks on its own as classed rows accumulate.
+///
+/// The two paths must agree: they share one vocabulary (the `ErrorCategory`
+/// serde token) and one set of accumulators, and nothing here backfills a class
+/// onto a row that never had one.
 pub fn get_error_category_breakdown(
     pool: &DbPool,
     days: Option<i64>,
@@ -605,8 +635,29 @@ pub fn get_error_category_breakdown_with_conn(
     let cur_lower = format!("-{days} days");
     let prior_lower = format!("-{} days", days * 2);
 
-    // One pass over the 2×window pulls persona + message + a current-window flag.
-    // `is_current` splits current vs prior without a second query.
+    // Fast path: rows that carry a minted class are counted in SQL. One row
+    // out per (persona, category, window) instead of one row out per failure —
+    // no message crosses the boundary and no ladder runs.
+    let grouped_sql = format!(
+        "SELECT
+            e.persona_id AS persona_id,
+            COALESCE(p.name, e.persona_id) AS persona_name,
+            e.error_category AS error_category,
+            CASE WHEN e.created_at >= datetime('now', ?2) THEN 1 ELSE 0 END AS is_current,
+            COUNT(*) AS n
+         FROM persona_executions e
+         LEFT JOIN personas p ON p.id = e.persona_id
+         WHERE e.status = 'failed'
+           AND e.created_at >= datetime('now', ?1)
+           AND COALESCE(e.is_simulation, 0) = 0
+           AND e.error_category IS NOT NULL
+           AND e.error_category <> ''{pid_clause}
+         GROUP BY e.persona_id, persona_name, e.error_category, is_current"
+    );
+
+    // Fallback path: one pass over the UNCLASSED rows of the 2×window pulls
+    // persona + message + a current-window flag. `is_current` splits current vs
+    // prior without a second query.
     let sql = format!(
         "SELECT
             e.persona_id AS persona_id,
@@ -617,7 +668,8 @@ pub fn get_error_category_breakdown_with_conn(
          LEFT JOIN personas p ON p.id = e.persona_id
          WHERE e.status = 'failed'
            AND e.created_at >= datetime('now', ?1)
-           AND COALESCE(e.is_simulation, 0) = 0{pid_clause}"
+           AND COALESCE(e.is_simulation, 0) = 0
+           AND (e.error_category IS NULL OR e.error_category = ''){pid_clause}"
     );
 
     let params_vec: Vec<String> = match persona_id {
@@ -634,6 +686,28 @@ pub fn get_error_category_breakdown_with_conn(
     let mut prior_counts: HashMap<String, i64> = HashMap::new();
     // persona_id → (persona_name, category → count) for the current window only.
     let mut per_persona: HashMap<String, (String, HashMap<String, i64>)> = HashMap::new();
+
+    {
+        let mut stmt = conn.prepare(&grouped_sql)?;
+        let mut rows = stmt.query(param_refs.as_slice())?;
+        while let Some(row) = rows.next()? {
+            let persona_id: String = row.get("persona_id")?;
+            let persona_name: String = row.get("persona_name")?;
+            let token: String = row.get("error_category")?;
+            let is_current: i64 = row.get("is_current")?;
+            let n: i64 = row.get("n")?;
+
+            if is_current == 1 {
+                *cur_counts.entry(token.clone()).or_insert(0) += n;
+                let entry = per_persona
+                    .entry(persona_id)
+                    .or_insert_with(|| (persona_name, HashMap::new()));
+                *entry.1.entry(token).or_insert(0) += n;
+            } else {
+                *prior_counts.entry(token).or_insert(0) += n;
+            }
+        }
+    }
 
     {
         let mut stmt = conn.prepare(&sql)?;
@@ -2368,6 +2442,78 @@ mod tests {
         assert_eq!(versions[1].version_number, 1);
     }
 
+    /// Living-agent versioning contract: `core_profile` is captured with the
+    /// snapshot, round-trips through the row mapper, and the auto-version
+    /// diff fires on a Core-only change (and stays quiet when neither half
+    /// changed).
+    #[test]
+    fn prompt_version_captures_and_diffs_core_profile() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "persona-core");
+        let core_a = r#"{"riskTolerance":0.2}"#.to_string();
+        let core_b = r#"{"riskTolerance":0.9}"#.to_string();
+
+        // v1: first call with a core creates and captures it.
+        let v1 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_a.clone()),
+        )
+        .unwrap()
+        .expect("first version created");
+        assert_eq!(v1.core_profile.as_deref(), Some(core_a.as_str()));
+
+        // Identical prompt AND core → no new version.
+        assert!(create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_a.clone()),
+        )
+        .unwrap()
+        .is_none());
+
+        // Core-only change (a dial edit) → versioned.
+        let v2 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-1".into()),
+            None,
+            Some(core_b.clone()),
+        )
+        .unwrap()
+        .expect("core-only change must version");
+        assert_eq!(v2.version_number, 2);
+        assert_eq!(v2.core_profile.as_deref(), Some(core_b.as_str()));
+
+        // Prompt-only change carries the (unchanged) core forward.
+        let v3 = create_prompt_version_if_changed(
+            &pool,
+            &persona,
+            Some("sp-2".into()),
+            None,
+            Some(core_b.clone()),
+        )
+        .unwrap()
+        .expect("prompt change must version");
+        assert_eq!(v3.core_profile.as_deref(), Some(core_b.as_str()));
+
+        // Round-trip through the row mapper (SELECT * read path).
+        let listed = get_prompt_versions(&pool, &persona, None).unwrap();
+        assert_eq!(listed.len(), 3);
+        assert_eq!(listed[0].core_profile.as_deref(), Some(core_b.as_str()));
+        assert_eq!(listed[2].core_profile.as_deref(), Some(core_a.as_str()));
+
+        // The plain (non-snapshot) constructor stays core-less — pre-living
+        // callers keep their exact behavior.
+        let plain =
+            create_prompt_version(&pool, &persona, Some("sp-3".into()), None, None).unwrap();
+        assert_eq!(plain.core_profile, None);
+    }
+
     #[test]
     fn test_summary() {
         let pool = init_test_db().unwrap();
@@ -2408,6 +2554,147 @@ mod tests {
                 .any(|e| e.event_type == "credential_rotation" && e.label.contains("GitHub token")),
             "the rotation event did not come back with its credential name: {:?}",
             data.correlated_events
+        );
+    }
+
+    // =====================================================================
+    // Error-category breakdown: the minted column and the string ladder
+    // =====================================================================
+
+    fn insert_failed_execution(
+        pool: &DbPool,
+        id: &str,
+        persona_id: &str,
+        error_message: &str,
+        error_category: Option<&str>,
+    ) {
+        let conn = pool
+            .conn("execution_metrics::test")
+            .expect("a pooled connection");
+        conn.execute(
+            "INSERT INTO persona_executions
+                (id, persona_id, status, error_message, error_category, created_at)
+             VALUES (?1, ?2, 'failed', ?3, ?4, datetime('now'))",
+            rusqlite::params![id, persona_id, error_message, error_category],
+        )
+        .unwrap();
+    }
+
+    /// The paired assertion the fast path lives or dies by: a classed row and an
+    /// unclassed row that mean the same thing are counted in the same bucket.
+    /// If the `GROUP BY` and the Rust ladder ever disagree, one of them is
+    /// wrong, and this is where it shows.
+    #[test]
+    fn breakdown_counts_minted_and_derived_rows_in_one_vocabulary() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "breakdown-persona");
+
+        // Unclassed, exactly as every row written before the column existed:
+        // the message is read and the ladder answers.
+        insert_failed_execution(
+            &pool,
+            "x-derived",
+            &persona,
+            "Execution timed out after 600s",
+            None,
+        );
+        // Minted at the raise site: the same class, and no message is consulted.
+        // The message here is deliberately the engine ceiling string, which is
+        // the one that used to land in `Unknown`.
+        insert_failed_execution(
+            &pool,
+            "x-minted",
+            &persona,
+            "Engine safety ceiling exceeded (20m). Execution forcibly terminated.",
+            Some("timeout"),
+        );
+
+        let breakdown = get_error_category_breakdown(&pool, Some(30), None).unwrap();
+        assert_eq!(breakdown.total_failures, 2);
+
+        let timeout = breakdown
+            .categories
+            .iter()
+            .find(|c| c.category == "timeout")
+            .expect("both rows are timeouts");
+        assert_eq!(
+            timeout.count, 2,
+            "the minted row and the derived row land in ONE bucket: {:?}",
+            breakdown.categories
+        );
+        assert!(
+            !breakdown.categories.iter().any(|c| c.category == "unknown"),
+            "nothing fell through: {:?}",
+            breakdown.categories
+        );
+
+        // The per-persona rollup sees both paths too.
+        let top = breakdown
+            .persona_top_categories
+            .iter()
+            .find(|p| p.persona_id == persona)
+            .expect("the persona has failures");
+        assert_eq!(top.category, "timeout");
+        assert_eq!(top.count, 2);
+    }
+
+    /// The minted class WINS over what the message would have said. This is the
+    /// whole direction in one assertion: the row's class is what the raise site
+    /// measured, not what a substring ladder can recover from prose.
+    #[test]
+    fn a_minted_class_is_not_re_derived_from_the_message() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "minted-persona");
+
+        // A message the ladder would call `Unknown` (it matches no pattern),
+        // carrying a class the raise site knew.
+        insert_failed_execution(
+            &pool,
+            "x-opaque",
+            &persona,
+            "qwrtz",
+            Some("transient_process_failure"),
+        );
+        assert_eq!(
+            personas_core::error_taxonomy::classify_error_str("qwrtz"),
+            personas_core::error_taxonomy::ErrorCategory::Unknown,
+            "precondition: the ladder cannot classify this message"
+        );
+
+        let breakdown = get_error_category_breakdown(&pool, Some(30), None).unwrap();
+        let categories: Vec<&str> = breakdown
+            .categories
+            .iter()
+            .map(|c| c.category.as_str())
+            .collect();
+        assert_eq!(categories, vec!["transient_process_failure"]);
+    }
+
+    /// A row that nothing classed keeps `NULL` and keeps the ladder. Nothing
+    /// backfills: the column's only value is that a class on a row was MEASURED,
+    /// and a guessed one written back would destroy that.
+    #[test]
+    fn an_unclassed_row_stays_unclassed_after_a_read() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool, "null-persona");
+        insert_failed_execution(&pool, "x-null", &persona, "HTTP 401 Unauthorized", None);
+
+        let breakdown = get_error_category_breakdown(&pool, Some(30), None).unwrap();
+        assert_eq!(breakdown.categories.len(), 1);
+        assert_eq!(breakdown.categories[0].category, "credential_error");
+
+        let still_null: Option<String> = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT error_category FROM persona_executions WHERE id = 'x-null'",
+                [],
+                |r| r.get("error_category"),
+            )
+            .unwrap();
+        assert!(
+            still_null.is_none(),
+            "reading the breakdown must never write a class back"
         );
     }
 }

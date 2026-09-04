@@ -6,9 +6,9 @@
  * snake_case to match what the polling hooks already read (`auth_url`,
  * `session_id`).
  */
-export type GoogleCredentialOAuthStartResult = { session_id: string, auth_url: string, redirect_uri: string, 
+export type GoogleCredentialOAuthStartResult = { sessionId: string, authUrl: string, redirectUri: string, 
 /**
  * `"user_provided"` when the operator supplied their own OAuth client,
  * `"app_managed"` when the bundled desktop client was used.
  */
-credential_source: string | null, };
+credentialSource: string | null, };

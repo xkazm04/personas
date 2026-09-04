@@ -529,7 +529,35 @@ pub async fn post_persona_channel_message(
         },
     );
 
-    // Conversation context: the last few chat rows BEFORE this one, oldest
+    dispatch_channel_followup(
+        state.inner().clone(),
+        app,
+        &persona_id,
+        &persona.name,
+        &message_id,
+        &content,
+    )?;
+
+    Ok(PostedPersonaChannelMessage { id: message_id, at })
+}
+
+/// Build the follow-up input envelope for one posted user message and spawn
+/// the guarded reply-waiter — the ONE dispatch door both the live post path
+/// above and the attention loop's arrivals-recovery lane
+/// (`engine::subscription::attention`) go through. Safe to call again for the
+/// same message: the `channel:{persona_id}:{message_id}` idempotency key makes
+/// `execute_persona_inner` return the existing execution instead of
+/// double-running, and the fresh waiter then writes the reply the dead one
+/// never did.
+pub(crate) fn dispatch_channel_followup(
+    state: Arc<AppState>,
+    app: tauri::AppHandle,
+    persona_id: &str,
+    persona_name: &str,
+    message_id: &str,
+    content: &str,
+) -> Result<(), AppError> {
+    // Conversation context: the last few chat rows around this one, oldest
     // first, as the {author, content} pairs the dispatch prompt renders.
     let prior_messages: Vec<serde_json::Value> = {
         let conn = state.db.get()?;
@@ -564,30 +592,32 @@ pub async fn post_persona_channel_message(
         "content": content,
         "priorMessages": prior_messages,
         "liveContext":
-            crate::engine::channel_live_context::build_live_context(&state.db, &persona_id, None),
+            crate::engine::channel_live_context::build_live_context(&state.db, persona_id, None),
     });
     // Mirrors Slack's `slack:{channel}:{ts}` key: one execution per posted
     // message, ever — a retry of the spawn dedupes instead of double-running.
     let idempotency_key = format!("channel:{persona_id}:{message_id}");
 
-    let state_arc: Arc<AppState> = state.inner().clone();
-    let persona_name = persona.name.clone();
+    let persona_id = persona_id.to_string();
+    let persona_name = persona_name.to_string();
+    let message_id = message_id.to_string();
     let task_persona_id = persona_id.clone();
     let task_message_id = message_id.clone();
-    let panic_pool = state_arc.db.clone();
+    let task_name = persona_name.clone();
+    let panic_pool = state.db.clone();
     let panic_app = app.clone();
     let panic_persona_id = persona_id.clone();
     let panic_message_id = message_id.clone();
-    let panic_name = persona_name.clone();
+    let panic_name = persona_name;
     spawn_guarded(
         "persona_channel_followup",
-        persona_id.clone(),
+        persona_id,
         async move {
             run_channel_followup(
-                state_arc,
+                state,
                 app,
                 task_persona_id,
-                persona_name,
+                task_name,
                 task_message_id,
                 input_data.to_string(),
                 idempotency_key,
@@ -607,8 +637,7 @@ pub async fn post_persona_channel_message(
             );
         },
     );
-
-    Ok(PostedPersonaChannelMessage { id: message_id, at })
+    Ok(())
 }
 
 /// The spawned half: execute, wait for the terminal state, write the reply
@@ -622,6 +651,17 @@ async fn run_channel_followup(
     input_data: String,
     idempotency_key: String,
 ) {
+    // Captured before `input_data` moves into the execution: the inbound
+    // message text, for the living-agent channel episode minted on reply.
+    let inbound_content: String = serde_json::from_str::<serde_json::Value>(&input_data)
+        .ok()
+        .and_then(|v| {
+            v.get("content")
+                .and_then(|c| c.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_default();
+
     let execution = crate::commands::execution::executions::execute_persona_inner(
         &state,
         app.clone(),
@@ -665,13 +705,28 @@ async fn run_channel_followup(
                 // wrote one — reaches the channel via the report lens; the
                 // chat row carries only the short reply text.)
                 let failed = execution_failed(&state.db, &execution.id);
+                // OP-grammar + episode + self-model filing (WP3): the helper
+                // strips any `propose_manifest_diff` line, mints the OPERATOR
+                // episode, files surviving diffs behind the human gate, and
+                // hands back the text the conversation should show. Log-only
+                // throughout — none of it may affect the conversation.
+                let visible = absorb_persona_reply(
+                    &state.db,
+                    &persona_id,
+                    &persona_name,
+                    &execution.id,
+                    &message_id,
+                    &inbound_content,
+                    &text,
+                    failed,
+                );
                 insert_persona_row(
                     &state.db,
                     &app,
                     &persona_id,
                     &persona_name,
                     &message_id,
-                    &text,
+                    &visible,
                     failed,
                 );
                 return;
@@ -703,6 +758,92 @@ async fn run_channel_followup(
             }
         }
     }
+}
+
+/// The living-agent half of one operator-chat exchange (WP3):
+///
+/// 1. strip any `{"op":"propose_manifest_diff",...}` line from the reply
+///    (Athena's OP-line pattern — the JSON is never shown to the operator);
+/// 2. mint ONE episode for the exchange with role **`operator`** — this file
+///    is the app's OWN operator chat (rows authored by the user from the
+///    Personas UI, `author_id` NULL); the external bridges (Slack/Discord
+///    pollers, team channels) have their own reply loops and stay `channel`;
+/// 3. file surviving diffs through the manifest propose door, motivation
+///    citing the conversation (the minted episode id + the message id).
+///    Propose-only, human-gated, and skipped entirely when the episode mint
+///    failed — a proposal without its grounding episode has no provenance.
+///
+/// Returns the text the chat row should carry. Best-effort throughout: an
+/// episode or filing failure warns and never affects the conversation.
+#[allow(clippy::too_many_arguments)]
+fn absorb_persona_reply(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    persona_name: &str,
+    execution_id: &str,
+    message_id: &str,
+    inbound_content: &str,
+    text: &str,
+    failed: bool,
+) -> String {
+    use crate::engine::persona_brain::growth;
+
+    // A failure marker is an error message, never a reply carrying ops.
+    let (visible, ops) = if failed {
+        (text.to_string(), Vec::new())
+    } else {
+        growth::extract_manifest_diff_ops(text)
+    };
+    // A reply that was ONLY the op line still needs a visible record.
+    let visible = if visible.trim().is_empty() && !ops.is_empty() {
+        "_(persona filed a self-model proposal for review)_".to_string()
+    } else {
+        visible
+    };
+
+    let episode_body = format!("## User\n{inbound_content}\n\n## {persona_name}\n{visible}");
+    match crate::engine::persona_brain::episodes::record(
+        pool,
+        persona_id,
+        crate::engine::persona_brain::episodes::EpisodeRole::Operator,
+        "channel",
+        Some(execution_id),
+        None,
+        &episode_body,
+    ) {
+        Ok(episode_id) => {
+            if !ops.is_empty() {
+                match growth::file_channel_manifest_diffs(
+                    pool,
+                    persona_id,
+                    &ops,
+                    &episode_id,
+                    message_id,
+                ) {
+                    Ok(Some(proposal_id)) => tracing::info!(
+                        persona_id = %persona_id,
+                        proposal_id = %proposal_id,
+                        "persona channel: self-model diffs filed for review"
+                    ),
+                    Ok(None) => {}
+                    Err(e) => tracing::warn!(
+                        persona_id = %persona_id,
+                        error = %e,
+                        "persona channel: self-model diff filing failed (best-effort)"
+                    ),
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!(
+                persona_id = %persona_id,
+                error = %e,
+                dropped_ops = ops.len(),
+                "persona channel: episode mint failed (best-effort); any reply ops dropped with it"
+            );
+        }
+    }
+    visible
 }
 
 fn execution_failed(pool: &crate::db::DbPool, execution_id: &str) -> bool {
@@ -787,6 +928,7 @@ fn record_failure(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+    use personas_db::PoolExt;
     use rusqlite::Connection;
 
     const PERSONA: &str = "persona-1";
@@ -1173,5 +1315,113 @@ mod tests {
         )
         .unwrap();
         assert!(team_items.is_empty());
+    }
+
+    /// WP3 — the operator-chat exchange: role `operator` on the minted
+    /// episode, OP line stripped from the visible reply, surviving self-model
+    /// diffs filed as ONE pending proposal grounded in that episode.
+    #[test]
+    fn absorb_reply_mints_operator_episode_strips_op_line_and_files_diffs() {
+        // PERSONAS_HOME is process-global — take the brain module's one
+        // sanctioned lock (companion::brain::test_home) rather than racing it.
+        let _home =
+            crate::companion::brain::test_home::TestHome::new("persona_channel_absorb_reply");
+        let pool = init_test_db().unwrap();
+        {
+            let conn = pool.conn("test:persona_channel").unwrap();
+            seed_persona(&conn, PERSONA);
+        }
+
+        let reply = "Good question — the digest is mine now.\n\
+             {\"op\":\"propose_manifest_diff\",\"diffs\":[{\"section\":\"My work / What I own\",\"op\":\"append\",\"new_text\":\"the weekly digest (pep_chat)\"}],\"motivation\":\"operator confirmed it in chat\"}\n\
+             I'll start Monday.";
+        let visible = absorb_persona_reply(
+            &pool,
+            PERSONA,
+            "P",
+            "exec-1",
+            "msg-1",
+            "who owns the digest?",
+            reply,
+            false,
+        );
+        assert!(visible.contains("Good question"));
+        assert!(visible.contains("I'll start Monday."));
+        assert!(
+            !visible.contains("propose_manifest_diff"),
+            "the OP line never reaches the conversation"
+        );
+
+        // The episode: role operator (this file IS the operator chat), body
+        // holds the STRIPPED exchange.
+        let episodes = crate::db::repos::core::episodes::list_recent(&pool, PERSONA, 10).unwrap();
+        assert_eq!(episodes.len(), 1);
+        assert_eq!(episodes[0].role, "operator");
+        assert_eq!(episodes[0].source, "channel");
+        assert!(episodes[0].body_excerpt.contains("who owns the digest?"));
+        assert!(!episodes[0].body_excerpt.contains("propose_manifest_diff"));
+
+        // The proposal: one pending self_model_diff batch citing the episode.
+        let raw_rows =
+            crate::db::repos::core::memory_review_proposal::list(&pool, Some(PERSONA), true, 10)
+                .unwrap();
+        assert_eq!(raw_rows.len(), 1);
+        assert_eq!(
+            raw_rows[0].kind,
+            crate::engine::persona_brain::manifest::KIND_SELF_MODEL_DIFF
+        );
+        let raw = crate::db::repos::core::memory_review_proposal::get_raw(&pool, &raw_rows[0].id)
+            .unwrap()
+            .unwrap();
+        let payload: serde_json::Value = serde_json::from_str(&raw.proposal_json).unwrap();
+        let rationale = payload["rationale"].as_str().unwrap();
+        assert!(rationale.contains("operator confirmed it in chat"));
+        assert!(
+            rationale.contains(&episodes[0].id),
+            "motivation cites the minted episode: {rationale}"
+        );
+        assert!(rationale.contains("msg-1"));
+        // Propose-only: the manifest itself is untouched (never even seeded).
+        assert!(crate::engine::persona_brain::manifest::read(PERSONA).is_none());
+    }
+
+    /// A failure marker is never parsed for ops, and a reply that was ONLY
+    /// an op line still leaves a visible record.
+    #[test]
+    fn absorb_reply_failure_and_op_only_edges() {
+        let _home =
+            crate::companion::brain::test_home::TestHome::new("persona_channel_absorb_edges");
+        let pool = init_test_db().unwrap();
+        {
+            let conn = pool.conn("test:persona_channel").unwrap();
+            seed_persona(&conn, PERSONA);
+        }
+
+        // failed=true: text passes through verbatim, nothing filed.
+        let marker = "_(persona run failed: {\"op\":\"propose_manifest_diff\"} boom)_";
+        let visible = absorb_persona_reply(&pool, PERSONA, "P", "exec-1", "m1", "in", marker, true);
+        assert_eq!(visible, marker);
+
+        // An op-only reply: the fallback line keeps the exchange visible.
+        let op_only = "{\"op\":\"propose_manifest_diff\",\"diffs\":[{\"section\":\"My self-reads / Open questions\",\"op\":\"append\",\"new_text\":\"why do builds flake? (pep_x)\"}],\"motivation\":\"chat surfaced it\"}";
+        let visible =
+            absorb_persona_reply(&pool, PERSONA, "P", "exec-2", "m2", "in", op_only, false);
+        assert_eq!(
+            visible,
+            "_(persona filed a self-model proposal for review)_"
+        );
+        assert_eq!(
+            crate::db::repos::core::memory_review_proposal::count_pending_for_persona(
+                &pool,
+                PERSONA,
+                crate::engine::persona_brain::manifest::KIND_SELF_MODEL_DIFF,
+            )
+            .unwrap(),
+            1
+        );
+        // Both exchanges minted operator episodes.
+        let episodes = crate::db::repos::core::episodes::list_recent(&pool, PERSONA, 10).unwrap();
+        assert_eq!(episodes.len(), 2);
+        assert!(episodes.iter().all(|e| e.role == "operator"));
     }
 }

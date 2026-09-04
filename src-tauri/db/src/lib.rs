@@ -44,6 +44,7 @@ mod backup;
 pub mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+pub mod damage;
 pub mod journal;
 // Relocated from `engine/` in crate-split step 4c. Each of these six is
 // data-layer code that happened to live in the engine directory: they depend
@@ -74,6 +75,7 @@ pub mod perf;
 pub mod query_builder;
 #[allow(dead_code)]
 pub mod repos;
+pub mod restore;
 pub mod settings_keys;
 
 use r2d2::{CustomizeConnection, Pool, PooledConnection};
@@ -244,8 +246,19 @@ pub(crate) const STANDARD_PRAGMAS: &str = "PRAGMA foreign_keys = ON;
 
 /// Apply [`STANDARD_PRAGMAS`] to `conn`. Shared by every connection customizer
 /// so the pragma set is maintained in exactly one place.
+///
+/// It is also where the quarantine posture is enforced. A store that
+/// [`damage`] has quarantined hands back `query_only` connections with the
+/// close-time checkpoint disabled, so **every** write fails at the engine
+/// rather than at the ~1,350 call sites somebody would otherwise have to
+/// remember to guard. Reads stay available: quarantine has to be a state the
+/// operator can read and export out of, not a dead end.
 pub(crate) fn apply_standard_pragmas(conn: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
-    conn.execute_batch(STANDARD_PRAGMAS)
+    conn.execute_batch(STANDARD_PRAGMAS)?;
+    if damage::is_connection_quarantined(conn) {
+        damage::harden_connection(conn)?;
+    }
+    Ok(())
 }
 
 /// Connection customizer that sets per-connection SQLite pragmas.
@@ -258,16 +271,51 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
     }
 }
 
+/// How many 300 s quiet-window passes between scheduled integrity checks.
+/// `quick_check` reads every page, so on a 331 MiB store it is seconds of I/O:
+/// cheap enough hourly, not cheap enough every pass. The checkpoint half of
+/// the pass keeps its 300 s cadence.
+const INTEGRITY_CHECK_EVERY_N_PASSES: u32 = 12;
+
 pub fn spawn_idle_maintenance_task(primary_pool: DbPool, user_pool: UserDbPool) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let mut pass: u32 = 0;
         loop {
             if personas_core::ipc_gauge::ipc_in_flight() == 0 {
+                let check_integrity = pass % INTEGRITY_CHECK_EVERY_N_PASSES == 0;
+                pass = pass.wrapping_add(1);
                 for (name, pool) in [
                     ("personas.db", &primary_pool),
                     ("personas_data.db", &user_pool),
                 ] {
                     if let Ok(conn) = pool.get() {
+                        // The cheap integrity check on a schedule. The quiet
+                        // window is already the right moment for it — the pass
+                        // only runs with zero IPC in flight — and it is the one
+                        // place a store that went bad mid-session is noticed
+                        // before the next boot.
+                        if check_integrity
+                            && damage::check_at_open(&conn) == damage::DamageClass::Canonical
+                        {
+                            if let Some(path) = conn.path().map(std::path::PathBuf::from) {
+                                damage::quarantine(&path, "PRAGMA quick_check failed while idle");
+                                let _ = damage::harden_connection(&conn);
+                            }
+                        }
+                        // A quarantined store gets NO checkpoint. Folding WAL
+                        // frames into a file with damaged canonical structure
+                        // is the single write with the widest blast radius,
+                        // and the intact sidecar is the recoverable half. This
+                        // skip is reachable only from the quarantine path, so
+                        // healthy installs still get their TRUNCATE.
+                        if damage::is_connection_quarantined(&conn) {
+                            tracing::warn!(
+                                db = name,
+                                "SQLite idle maintenance skipped — store is quarantined (no checkpoint)"
+                            );
+                            continue;
+                        }
                         match conn.execute_batch(
                             "PRAGMA optimize;
                              PRAGMA wal_checkpoint(TRUNCATE);",
@@ -330,6 +378,14 @@ pub fn init_db_with_journal(
     // (every-boot backup, keep newest 3 sets) is documented in db/backup.rs.
     backup::backup_before_migrations(app_data_dir, &db_path);
 
+    // The other half of that safety net: an operator who chose a backup set
+    // (`restore::request_restore`) gets the copy performed HERE — after the
+    // snapshot above, so the file being replaced is itself preserved, and
+    // before the pool below, so no handle is open on the file being
+    // overwritten. That precondition is why the restore is deferred to a boot
+    // instead of run from the surface that offers it.
+    let restored_from = restore::apply_pending_restore(&db_path);
+
     let manager = SqliteConnectionManager::file(&db_path);
     let customizer: Box<dyn CustomizeConnection<rusqlite::Connection, rusqlite::Error>> =
         match (cdc_sender, journal_sender) {
@@ -350,6 +406,52 @@ pub fn init_db_with_journal(
         .connection_timeout(POOL_ACQUIRE_TIMEOUT)
         .connection_customizer(customizer)
         .build(manager)?;
+
+    // The integrity check at open. Everything below this point WRITES —
+    // `journal_mode = WAL`, 124 migration steps, three seed functions, the
+    // orphan scrub — and writing to a file with damaged canonical structure is
+    // how a damaged-but-readable database becomes one that will not open at
+    // all. So the class is decided first, and a canonical verdict returns a
+    // read-only pool: the app boots, the operator can read and export, and
+    // `backup.rs` stops rotating good copies out from under them.
+    {
+        let conn = pool.get()?;
+        // A marker left by a previous session is itself a verdict: nothing has
+        // cleared it, so nothing has been repaired or restored. `quick_check`
+        // is not exhaustive, and a store that passes it after a structural
+        // incident is not thereby healthy — the process recovers on a repaired
+        // file, never in place.
+        let reason: Option<String> = if damage::previous_session_quarantined(&db_path) {
+            Some("a previous session quarantined this store and it has not been cleared".into())
+        } else if damage::check_at_open(&conn) == damage::DamageClass::Canonical {
+            // A restore that was just applied and still fails is a SECOND
+            // failure, and it has to read as one: the operator chose that set,
+            // and offering them the same list again without naming what their
+            // choice did is how a restore surface becomes a loop.
+            Some(match &restored_from {
+                Some(set) => format!(
+                    "PRAGMA quick_check failed at open — the store restored from {set} is not readable either"
+                ),
+                None => "PRAGMA quick_check failed at open".to_string(),
+            })
+        } else {
+            None
+        };
+        if let Some(reason) = reason {
+            let _ = damage::quarantine(&db_path, reason.clone());
+            damage::harden_connection(&conn)?;
+            drop(conn);
+            tracing::error!(
+                path = %db_path.display(),
+                reason = %reason,
+                "Database opened QUARANTINED — migrations, seeds and the FTS pass are all skipped"
+            );
+            // The boot that used to end here now ends in a choice: the backup
+            // sets, with a probed state each, in the log the operator has.
+            restore::log_offer(app_data_dir, &db_path);
+            return Ok(pool);
+        }
+    }
 
     // Set WAL journal mode (database-wide, only needs to run once)
     {
@@ -461,16 +563,50 @@ fn executions_fts_drift(conn: &rusqlite::Connection) -> Option<(i64, i64)> {
     (indexed_count != execution_count).then_some((execution_count, indexed_count))
 }
 
+/// Boot-time reconciliation of `executions_fts`.
+///
+/// This is the **only** sanctioned rebuild site in the tree. A rebuild is
+/// unbounded in the size of the history, so a live write or search must never
+/// start one — [`damage::guarded_write`] only ever drops the sinks, and this
+/// function is where they come back: `migrations::run` has already replayed the
+/// `CREATE TRIGGER IF NOT EXISTS` DDL by the time we get here, so a detached
+/// index reattaches through the ordinary idempotent replay.
+///
+/// The rebuild statement works entirely against a derived object, so any
+/// corruption it reports is derived damage by construction
+/// ([`damage::Provenance::DerivedOnly`]) — no message matching involved. When
+/// it cannot run, the correct steady state is *detached*: canonical writes
+/// available, the index absent and marked stale, boot continuing.
 fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
-    if let Some((execution_count, indexed_count)) = executions_fts_drift(conn) {
-        tracing::info!(
-            executions = execution_count,
-            indexed = indexed_count,
-            "Rebuilding executions_fts — the search index and persona_executions disagree",
-        );
-        conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');")?;
+    let Some((execution_count, indexed_count)) = executions_fts_drift(conn) else {
+        return Ok(());
+    };
+    tracing::info!(
+        executions = execution_count,
+        indexed = indexed_count,
+        "Rebuilding executions_fts — the search index and persona_executions disagree",
+    );
+    match conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');") {
+        Ok(()) => {
+            // The index is current again; drop the degraded-answer marker so
+            // search surfaces stop labelling their results as stale.
+            conn.execute(
+                "DELETE FROM app_settings WHERE key = ?1",
+                params![settings_keys::EXECUTIONS_FTS_STALE],
+            )?;
+            Ok(())
+        }
+        Err(e) => match damage::classify(&e, damage::Provenance::DerivedOnly) {
+            damage::DamageClass::Derived => {
+                // Detach and continue booting. Nothing here deletes canonical
+                // rows to make a derived-structure error go away.
+                damage::detach_derived_index(conn, &format!("boot rebuild: {e}"))
+                    .map_err(AppError::Database)?;
+                Ok(())
+            }
+            _ => Err(AppError::Database(e)),
+        },
     }
-    Ok(())
 }
 
 /// Scrub rows whose parent persona no longer exists. Runs once on init
@@ -679,6 +815,10 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // lane is the only retrieval lane the shipping build has — a tag
             // that lives solely in this column classifies nothing findable.
             "ALTER TABLE companion_node ADD COLUMN tags_json TEXT;",
+            // Self-dating facts. Pre-existing rows correctly backfill to NULL:
+            // nothing already in the store ever declared a boundary, so "no
+            // stated expiry" is the true value for every one of them.
+            "ALTER TABLE companion_fact ADD COLUMN expires_at TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -689,6 +829,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         let _ = conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_companion_node_session \
              ON companion_node(kind, session_id, created_at DESC);",
+        );
+        // Partial index: the expiry sweep only ever asks about rows that
+        // declared a boundary, and those are the rare ones. Runs after the
+        // expires_at ALTER above.
+        let _ = conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_companion_fact_expires              ON companion_fact(expires_at) WHERE expires_at IS NOT NULL;",
         );
         // Backfill: every pre-existing episode belongs to the migrated 'default'
         // conversation. Idempotent (only touches NULLs).
@@ -933,7 +1079,18 @@ CREATE TABLE IF NOT EXISTS companion_fact (
     supersedes_id   TEXT,                      -- prior fact this replaces
     contradicts_id  TEXT,                      -- fact this contradicts (if any)
     last_seen_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    last_decayed_at TEXT
+    last_decayed_at TEXT,
+    -- The last calendar date (YYYY-MM-DD) on which this claim still holds,
+    -- when the claim stated one itself ("on leave until October", "the freeze
+    -- runs through the 14th"). NULL is the normal case and means "no stated
+    -- boundary" -- never "expires today". Read by
+    -- `companion::brain::consolidation::retire_expired_facts`, the only exit
+    -- from this store that needs no judgment: decay asks whether an item still
+    -- matters and supersedence asks whether something replaced it, and a
+    -- self-dating fact answered both when it was written. Set only from
+    -- evidence that named a boundary; the parser refuses anything that is not
+    -- an exact YYYY-MM-DD rather than coercing a guess.
+    expires_at      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_companion_fact_scope ON companion_fact(scope, fact_key);
 CREATE INDEX IF NOT EXISTS idx_companion_fact_super ON companion_fact(supersedes_id);
@@ -1683,13 +1840,27 @@ pub fn seed_builtin_credentials(conn: &rusqlite::Connection) -> Result<(), AppEr
     Ok(())
 }
 
+/// Path of a SQLite sidecar (`-wal` / `-shm`) for `db_path`.
+///
+/// SQLite derives sidecar names by appending the suffix to the FULL file
+/// name — `store` → `store-wal`, `data.sqlite` → `data.sqlite-wal`. It is
+/// tempting to reach for `Path::with_extension("db-wal")`, which is only
+/// correct while the store happens to be named `*.db`; a store named without
+/// an extension, or with a different one, gets a name SQLite never wrote, and
+/// a delete or permission pass that uses it silently misses the real sidecar.
+pub(crate) fn sidecar_path(db_path: &Path, suffix: &str) -> std::path::PathBuf {
+    let mut name = db_path.as_os_str().to_os_string();
+    name.push(suffix);
+    std::path::PathBuf::from(name)
+}
+
 /// Set owner-only permissions on the database file and its WAL/SHM journal files.
 ///
 /// On Unix: chmod 0600 (owner read/write only).
 /// On Windows: icacls to remove inherited permissions and grant owner-only access.
 fn restrict_db_file_permissions(db_path: &Path) {
-    let wal_path = db_path.with_extension("db-wal");
-    let shm_path = db_path.with_extension("db-shm");
+    let wal_path = sidecar_path(db_path, "-wal");
+    let shm_path = sidecar_path(db_path, "-shm");
 
     for path in [db_path, wal_path.as_path(), shm_path.as_path()] {
         if path.exists() {
@@ -2454,7 +2625,7 @@ mod boot_tests {
         let db_path = data_dir.join("personas.db");
         std::fs::write(&db_path, b"stand-in db bytes").unwrap();
         // Sidecar present → every backup set gets a -wal sibling too.
-        std::fs::write(db_path.with_extension("db-wal"), b"wal bytes").unwrap();
+        std::fs::write(sidecar_path(&db_path, "-wal"), b"wal bytes").unwrap();
 
         let mut created: Vec<PathBuf> = Vec::new();
         for _ in 0..5 {
@@ -2481,19 +2652,50 @@ mod boot_tests {
         for old in &created[..2] {
             assert!(!old.exists(), "rotated-out backup still on disk: {old:?}");
             assert!(
-                !old.with_extension("db-wal").exists(),
+                !sidecar_path(old, "-wal").exists(),
                 "rotated-out backup left its WAL sibling behind: {old:?}"
             );
         }
         for kept in &created[2..] {
             assert!(kept.exists(), "surviving backup missing: {kept:?}");
             assert!(
-                kept.with_extension("db-wal").exists(),
+                sidecar_path(kept, "-wal").exists(),
                 "surviving backup missing its WAL sibling: {kept:?}"
             );
         }
 
         let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// The sidecar names come from SQLite's rule (append to the FULL file
+    /// name), not from the path library's extension swap. A store named
+    /// without the conventional `.db` is where the two diverge, so that is
+    /// the case this test pins: open under WAL, write, and assert the
+    /// constructed path is the file SQLite actually created.
+    #[test]
+    fn sidecar_path_matches_what_sqlite_writes() {
+        let dir =
+            std::env::temp_dir().join(format!("personas_sidecar_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in ["store", "data.sqlite", "personas.db"] {
+            let db_path = dir.join(name);
+            let conn = rusqlite::Connection::open(&db_path).unwrap();
+            conn.execute_batch(
+                "PRAGMA journal_mode = WAL; CREATE TABLE t(x INTEGER NOT NULL); INSERT INTO t VALUES (1);",
+            )
+            .unwrap();
+            let wal = sidecar_path(&db_path, "-wal");
+            assert!(
+                wal.exists(),
+                "SQLite wrote no sidecar at the constructed path {wal:?}"
+            );
+            assert_eq!(
+                wal.file_name().unwrap().to_str().unwrap(),
+                format!("{name}-wal")
+            );
+            drop(conn);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 

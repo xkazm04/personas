@@ -1,0 +1,939 @@
+{
+  "slice": "content",
+  "reviewed": 49,
+  "recipes": [
+    {
+      "id": "da49fd31-7746-593a-816b-9eb2c128d149",
+      "old_title": "Discrepancy Alerting",
+      "title": "Reconciliation Discrepancy Alerts",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "discrepancies-surfaced-promptly",
+          "statement": "Every reconciliation discrepancy reaches the right audience within one cycle, sized to its materiality.",
+          "success_criteria": [
+            "High-value discrepancies produce an individual alert, not just a line in a batch",
+            "Low-confidence partial matches carry a review request rather than a silent auto-accept",
+            "A daily total crossing the escalation threshold produces an @-mention, not just a log entry"
+          ]
+        },
+        {
+          "id": "no-duplicate-noise",
+          "statement": "The same discrepancy never re-alerts across retries of the same day.",
+          "success_criteria": [
+            "A dedupe log blocks re-sending an already-alerted discrepancy",
+            "A second breach of the escalation threshold on the same day does not re-@-mention"
+          ]
+        }
+      ],
+      "procedure": "Own timely, appropriately sized visibility into every reconciliation discrepancy the sync produces. Judge materiality: a single high-value miss deserves its own alert, a cluster of low-value noise deserves one grouped summary, and a day whose total unmatched amount crosses the escalation threshold deserves an explicit escalation rather than getting lost in routine traffic. Never re-alert a discrepancy already surfaced this cycle. Escalate ambiguous tiering calls or a broken discrepancy feed rather than guessing.",
+      "verdict": "keep"
+    },
+    {
+      "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
+      "old_title": "Deadline Reminder Sweep",
+      "title": "Contract Deadline Sweep (Renewal, Termination, Obligation, Warranty)",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "no-missed-contract-deadline",
+          "statement": "Nobody is surprised by a contract renewal, termination window, obligation, or warranty deadline arriving unannounced.",
+          "success_criteria": [
+            "Every tracked deadline receives a reminder at each configured tier before it lapses",
+            "A deadline already reminded at a given tier is never reminded again at that same tier"
+          ]
+        }
+      ],
+      "procedure": "Own visibility into every tracked contract deadline across renewal dates, termination notice windows, obligation due dates, and warranty expirations. Reminders should reach the submitter and the people who actually need to act, sized to urgency as the deadline nears, and never repeat once sent for a given tier. Treat a deadline nobody reminded as a miss regardless of whether the underlying send succeeded. Escalate a deadline pattern that consistently gets ignored rather than continuing to remind silently.",
+      "verdict": "keep",
+      "notes": "Renamed to disambiguate from Writer Submission Deadline Reminders (36708684, editorial deadlines), Unsigned Contract Signature Reminders (2d6945b7, signatures specifically) and Contract Renewal Window Alerts (55bf5308, renewal dates only). All four shared near-identical generic names in the source data but track different things."
+    },
+    {
+      "id": "b1ad906c-e348-5b78-8de2-e36711317a1e",
+      "old_title": "Drive Document Ingestion",
+      "title": "Drive Document Ingestion",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "kb-mirrors-drive",
+          "statement": "The knowledge base reflects what is actually in the monitored Drive folders, with structured metadata anyone can rely on.",
+          "success_criteria": [
+            "A new or edited document produces a create-or-update in the knowledge base, not a duplicate page",
+            "Every ingested page carries a summary, tags, category, and confidence score",
+            "Documents the analysis is unsure about are marked Needs Review rather than published with false confidence"
+          ]
+        }
+      ],
+      "procedure": "Keep the knowledge base an accurate, deduplicated mirror of the documents that matter, enriched enough that someone can find and trust a page without opening the source file. Judge analysis depth against the document rather than a fixed template, and mark low-confidence output for human review instead of publishing it as settled fact. Treat a rebuilt local index as a signal worth investigating, not a routine event. Escalate folders or file types the pipeline cannot handle.",
+      "verdict": "keep"
+    },
+    {
+      "id": "09c107a0-b84d-57af-85c8-dddb063d1595",
+      "old_title": "Natural-Language Search",
+      "title": "Natural-Language Search",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "search-answers-fast",
+          "statement": "Someone asking the knowledge base a question in plain language gets the right documents back, not a guess.",
+          "success_criteria": [
+            "Top results are ranked by real relevance (title, tags, entities, summary) plus recency, not just keyword match",
+            "Every result links back to the source document"
+          ]
+        }
+      ],
+      "procedure": "Own the chat-facing search experience over the knowledge base index: understand what someone is actually asking for across search, find, recent, stats, and category-style requests, and return results ranked by genuine relevance rather than the first partial match. Keep responses fast enough to feel conversational. Escalate if the local index looks stale or scoring quality degrades rather than returning weak matches silently.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5789b2b7-638e-5747-861d-27445ef3bd1b",
+      "old_title": "Weekly Growth Digest",
+      "title": "Knowledge Base Weekly Growth Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "team-sees-kb-growth",
+          "statement": "Anyone watching the knowledge base channel knows how the corpus grew this week without opening it.",
+          "success_criteria": [
+            "The digest reports docs added and updated, category breakdown, new tags, and top contributors",
+            "Low-confidence flags from the week are surfaced, not buried"
+          ]
+        }
+      ],
+      "procedure": "Compile a weekly read on how the knowledge base grew: volume, categories, new tags, who contributed, and which new documents are worth a look. Surface low-confidence items that need human triage rather than letting them age silently in the backlog. Keep the digest a genuine summary, not a raw activity dump.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Weekly Growth Digest' to name its actual subject (knowledge base corpus growth) since the corpus has several unrelated weekly digests with similarly generic names."
+    },
+    {
+      "id": "c390fe3a-d6a9-5f46-bcfb-d0f7ffcf8909",
+      "old_title": "Detect + Distribute",
+      "title": "CMS-to-Social Publish and Schedule",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "new-posts-reach-social",
+          "statement": "Every eligible new CMS post gets a platform-tuned caption and a scheduled slot without a human doing the copy-paste.",
+          "success_criteria": [
+            "Blocked categories are never scheduled",
+            "No post is scheduled inside a configured blackout window",
+            "Each platform's caption is tuned to that platform, not one generic blurb reused everywhere"
+          ]
+        }
+      ],
+      "procedure": "Catch newly published CMS content and get it in front of each platform's audience with copy tuned to that platform, on a schedule that respects blackout hours and category exclusions. Judgment calls on a borderline category or ambiguous tone should favor skipping over scheduling a bad post. Escalate a CMS or scheduling connector failure rather than silently dropping a post.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8ce82ac0-86e8-5f15-9a1b-9deda71dca93",
+      "old_title": "48-Hour Performance Review",
+      "title": "Social Post 48-Hour Performance Review",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "outliers-get-flagged",
+          "statement": "A post that goes viral or badly underperforms is flagged within a day of the 48-hour mark, not discovered weeks later in a retro.",
+          "success_criteria": [
+            "Every post 48+ hours old is checked against analytics once",
+            "Rolling baselines and platform weights update from the result"
+          ]
+        }
+      ],
+      "procedure": "Review how each post performed once it has had 48 hours to breathe, against the account's own rolling baseline rather than a fixed number. Flag genuine outliers in both directions, and let normal variance update the baseline quietly. Keep platform weighting current so the strategy digest it feeds is grounded in recent reality, not stale assumptions.",
+      "verdict": "keep"
+    },
+    {
+      "id": "3e54df29-6813-566a-8721-60a604efbb13",
+      "old_title": "Weekly Strategy Digest",
+      "title": "Social Content Weekly Strategy Digest",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "strategy-stays-current",
+          "statement": "Whoever owns the social strategy has a weekly, evidence-based read on what is working and what to change.",
+          "success_criteria": [
+            "Top and bottom performers are named with why",
+            "Platform rankings and caption-style scores are included",
+            "Any recommendation to drop a platform is held for human sign-off rather than acted on automatically"
+          ]
+        }
+      ],
+      "procedure": "Turn the week's post-performance data into a strategy-level readout: what worked, what did not, and what to adjust next. Recommendations should be concrete enough to act on, but changes with real cost, like pulling a platform, must wait for a human decision. Ground rankings in the account's own trend, not an arbitrary bar.",
+      "verdict": "keep",
+      "notes": "Renamed to distinguish from Blog Content Weekly Performance Report (7329af31): same 'weekly performance' shape, different channel, audience, and data source (social/Buffer vs blog/database)."
+    },
+    {
+      "id": "2969b6b1-5462-573c-970e-832844526258",
+      "old_title": "Audio Production",
+      "title": "Audio Production",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "clean-final-mp3",
+          "statement": "An approved script becomes a listenable, correctly paced final MP3 without manual editing.",
+          "success_criteria": [
+            "Segment audio stitches together with natural pacing, verified by duration check, not just a successful render",
+            "The delivered file is ready for review, not a rough cut"
+          ]
+        }
+      ],
+      "procedure": "Turn an approved script into a finished audio file: synthesize each segment, stitch it into one coherent track, and verify the result actually sounds and runs right before calling it done. Learn from what gets approved; voice, pacing, and hook preferences from approvals are worth remembering. Treat a failed duration check as a real defect, not a formality to pass.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
+      "old_title": "Script Drafting",
+      "title": "Script Drafting",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "source-becomes-script",
+          "statement": "Any source material becomes a structured, pacing-aware two-host script that survives human review before it costs anything to produce.",
+          "success_criteria": [
+            "The script captures headline finding, key facts, tensions, and open questions from the source, not just a paraphrase",
+            "Nothing goes to audio synthesis without human approval first"
+          ]
+        }
+      ],
+      "procedure": "Distill whatever source material comes in, pasted text, a file, a URL, another agent's output, into a two-host script that actually holds together: a real headline, the facts that matter, the tensions worth exploring, and turns that pace well when spoken aloud. This is a drafting job, not a summarizing one, the structure and pacing decisions are the value. Hold for human approval before anything moves to paid audio synthesis.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c3722109-62e6-52eb-b796-1a501121766a",
+      "old_title": "Generate + Curate",
+      "title": "AI Art Concept-to-Gallery Curation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "gallery-grows-with-taste",
+          "statement": "The gallery only fills with art the human actually wants, and the agent gets better at guessing that over time.",
+          "success_criteria": [
+            "Every generated piece is a genuinely new concept, not a near-repeat",
+            "Approved pieces update tag memory; rejected ones update rejection-pattern memory and get deleted"
+          ]
+        }
+      ],
+      "procedure": "Come up with a genuinely new art concept, generate it, and present it for approval rather than assuming taste. What gets approved and rejected is signal, let it shape future concepts and prompt choices instead of repeating the same misses. A rejected asset should not linger; clean it up. Escalate if the rejection rate climbs, that means the concept generation itself needs rethinking, not just more attempts.",
+      "verdict": "keep"
+    },
+    {
+      "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
+      "old_title": "Combined CRO Report",
+      "title": "CRO Experiments Weekly Digest",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "cro-status-always-visible",
+          "statement": "Whoever owns conversion optimization has a complete weekly view of every experiment, win, and proposal, whether or not anything got reviewed.",
+          "success_criteria": [
+            "The briefing goes out even when there is nothing significant to report",
+            "In-flight experiments, results, new proposals, and inconclusive archives are all represented"
+          ]
+        }
+      ],
+      "procedure": "Compose the weekly CRO status in one place: what is running, what came back significant, what is proposed next, and what got archived as inconclusive. Deliver it on schedule regardless of how eventful the week was, visibility is the job, not just news. Keep the executive summary honest about uncertainty rather than overselling early results.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+      "old_title": "Billing API Recovery Alerts",
+      "title": "Billing API Recovery Alerts",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "blind-spots-explained",
+          "statement": "When the billing check cannot see real data, the reason and the fix are in the alert, not a mystery.",
+          "success_criteria": [
+            "The alert names the specific cause: expired credentials, rate limit, partial data, or empty billing",
+            "Provider-specific troubleshooting steps are included, not a generic 'check your API key'"
+          ]
+        }
+      ],
+      "procedure": "When the weekly billing check comes back blind, make sure the reason is understood immediately rather than discovered next week when the numbers still look wrong. Diagnose the specific failure mode and give provider-specific next steps, not a generic error notice. This is a credential-health job as much as an alerting one; treat a recurring failure type as worth flagging for a permanent fix.",
+      "verdict": "keep"
+    },
+    {
+      "id": "97fd94fc-4473-5c29-8b0f-c85f2cb5a851",
+      "old_title": "Approval Resolution",
+      "title": "Content Review Approval Resolution",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "decisions-close-the-loop",
+          "statement": "A reviewer's approve or reject decision always reaches the author and updates the record, the same day it is made.",
+          "success_criteria": [
+            "Approved items move to Published in the knowledge base and the author is notified",
+            "Rejected items move to Needs Revision carrying the reviewer's actual feedback, not just a status flip"
+          ]
+        }
+      ],
+      "procedure": "Close the loop on every review decision: update the record to reflect what the reviewer actually decided, and make sure the author hears about it with enough context to act, especially on a rejection, where the feedback is the valuable part. Confirm the outcome where the team already watches for it. Treat a decision that never reaches the author as an incomplete job, not a completed one.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c34a5ae4-0556-5cce-866e-6d7a7430b1d3",
+      "old_title": "Review Initiation",
+      "title": "Content Review Initiation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "review-starts-promptly",
+          "statement": "Nothing sits unnoticed once it is marked ready for review; the assigned reviewer knows quickly and has what they need to decide.",
+          "success_criteria": [
+            "Items reaching Ready-for-Review are routed to their assigned reviewer without manual polling",
+            "The reviewer gets full context up front, not just a link"
+          ]
+        }
+      ],
+      "procedure": "Catch items the moment they are ready for review and get them in front of the right reviewer with enough context to actually decide, not just a notification to chase down. Keep a record of what is pending so nothing gets initiated twice. This is the front door of the review pipeline; a slow or context-free handoff here costs time downstream.",
+      "verdict": "keep"
+    },
+    {
+      "id": "7d32142c-5609-53a2-b382-ad2bba698f66",
+      "old_title": "SLA Escalation",
+      "title": "Content Review SLA Escalation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "nothing-rots-in-review",
+          "statement": "A review that has gone overdue gets acted on according to the team's own escalation policy, not left to age indefinitely.",
+          "success_criteria": [
+            "Every SLA-overdue item is caught within one scan cycle",
+            "The configured policy (reminder, backup escalation, author notice, or Blocked flag) is applied, not a default"
+          ]
+        }
+      ],
+      "procedure": "Watch the review queue for anything that has overstayed its SLA and apply the team's own escalation policy, whether that means a reminder, handing off to a backup reviewer, notifying the author, or flagging the item Blocked. The judgment is in matching the situation to the configured policy consistently, not inventing new escalation behavior.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5e07793e-c964-590f-95dc-f72631789f48",
+      "old_title": "Publish or Schedule Approved Draft",
+      "title": "Publish or Schedule Approved Draft",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "approved-work-actually-ships",
+          "statement": "An approved draft reaches its intended platform, published or scheduled, without someone having to manually copy it over.",
+          "success_criteria": [
+            "The correct platform connector is used for the draft's destination (LinkedIn, X, Notion, Buffer)",
+            "A confirmation with the published link or scheduled time always follows"
+          ]
+        }
+      ],
+      "procedure": "React to an approval decision by getting the draft to where it was approved to go, matching destination to platform rather than applying one dispatch path to everything. Always confirm what happened and where, so approval does not feel like it disappeared into a void. Remember what worked per platform so future dispatches need less correction.",
+      "verdict": "keep"
+    },
+    {
+      "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+      "old_title": "Source Artifact Repurposing",
+      "title": "Source Artifact Repurposing",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "one-source-many-drafts",
+          "statement": "One piece of source material becomes a full set of platform-tuned drafts in the creator's voice, ready for review.",
+          "success_criteria": [
+            "Every enabled target platform gets a draft grounded in that platform's voice doc",
+            "Nothing publishes without passing through manual review first"
+          ]
+        }
+      ],
+      "procedure": "Take a single source, video, blog, podcast, or pasted text, and turn it into drafts tuned for each enabled platform, grounded in that platform's own voice document rather than a generic rewrite. Use memory-driven refinements from past edits to keep improving fit. Every draft is a proposal, not a publish; route all of them through human review.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
+      "old_title": "Per-Platform Voice Profile Build",
+      "title": "Per-Platform Voice Profile Build",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "voice-doc-captures-real-style",
+          "statement": "Each platform's voice document actually captures how this creator writes there, not a generic style guide.",
+          "success_criteria": [
+            "The voice doc reflects hook patterns, sentence-length signature, and vocabulary from real sample posts",
+            "It is re-runnable on demand when style evolves, not frozen at build time"
+          ]
+        }
+      ],
+      "procedure": "Build a voice profile per platform from real example posts, capturing what actually makes them sound like this creator: hooks, sentence rhythm, vocabulary choices, structure. This runs once at build time but should stay current; re-run it when the creator's style visibly shifts rather than letting downstream drafts drift from a stale profile.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+      "old_title": "Mid-Week Anomaly Check",
+      "title": "Mid-Week Content Performance Anomaly Check",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "silent-when-normal",
+          "statement": "The team only hears from this check when something has actually moved off the expected trajectory.",
+          "success_criteria": [
+            "Partial-week metrics are compared against a baseline-derived expectation, not a raw threshold",
+            "No alert fires when the week is tracking normally"
+          ]
+        }
+      ],
+      "procedure": "Check mid-week whether content metrics are tracking where the baseline says they should be, and say nothing when they are. The value here is restraint: only surface a deviation worth acting on, not routine variance. Keep the baseline itself trustworthy so silence actually means normal.",
+      "verdict": "keep",
+      "notes": "Renamed to make clear this shares a baselining system with Blog Content Weekly Performance Report (7329af31, same 'database' connector and EWMA/baseline language) but is not a duplicate of it: this one is a silent-unless-anomalous mid-week check, the other is the full weekly report."
+    },
+    {
+      "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
+      "old_title": "Weekly Performance Report",
+      "title": "Blog Content Weekly Performance Report",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "weekly-editorial-read",
+          "statement": "The content owner gets a grounded weekly view of what is working, ranked and explained, not a raw metrics dump.",
+          "success_criteria": [
+            "Week-over-week deltas and composite rankings are included",
+            "Anomalies are flagged against a 4-week baseline, not an arbitrary cutoff",
+            "Editorial recommendations are concrete enough to act on"
+          ]
+        }
+      ],
+      "procedure": "Compile the week's content performance into a report someone can act on: what moved, what is ranked where, what looks anomalous against a rolling baseline, and what to do next editorially. The trend narrative matters as much as the numbers; a table without interpretation is not the job here.",
+      "verdict": "keep",
+      "notes": "Renamed to distinguish from Social Content Weekly Strategy Digest (3e54df29): same 'weekly performance' shape, different channel and data source (blog/database vs social/Buffer)."
+    },
+    {
+      "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+      "old_title": "Unsigned Contract Reminders",
+      "title": "Unsigned Contract Signature Reminders",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "signatures-get-chased-appropriately",
+          "statement": "An unsigned contract gets progressively firmer attention without harassing the signer or losing track of ownership.",
+          "success_criteria": [
+            "Signer reminders never exceed the configured cap",
+            "A contract still unsigned past 14 days reaches manual review, not silence"
+          ]
+        }
+      ],
+      "procedure": "Chase unsigned contracts through an escalation ladder that starts polite and gets firmer only as needed: a capped run of signer reminders, then direct outreach to the contract owner, then manual review once it is genuinely stuck. Respect the reminder cap; badgering a signer past it is worse than the delay. Escalate stuck contracts rather than looping reminders forever.",
+      "verdict": "keep"
+    },
+    {
+      "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
+      "old_title": "Renewal Monitoring",
+      "title": "Contract Renewal Window Alerts",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "renewals-never-surprise",
+          "statement": "Nobody discovers a contract auto-renewed or lapsed because the renewal window went unnoticed.",
+          "success_criteria": [
+            "Each contract inside the lookahead window gets its 60-day informational, 30-day reminder, and 14-day urgent notice",
+            "No contract gets the same tier notification twice"
+          ]
+        }
+      ],
+      "procedure": "Watch every contract's renewal date and escalate urgency as the window closes: an early heads-up, then a reminder, then an urgent notice as the date nears. Per-contract state must hold so nothing repeats. This is specifically about the renewal clock, distinct from the other contract obligations tracked in the broader deadline sweep.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ffaf65e0-0be9-51c4-b2de-82c576e2527f",
+      "old_title": "Weekly Report Distribution",
+      "title": "Content Audit Weekly Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "audit-status-reaches-team",
+          "statement": "The team sees the latest audit's score, what changed, and what is still pending review, every week, without opening the tool.",
+          "success_criteria": [
+            "The digest includes a score header, category breakdowns, and the top-10 impact-ranked fixes",
+            "Pending reviews are visible in the same digest, not a separate check"
+          ]
+        }
+      ],
+      "procedure": "Turn the latest audit into a weekly readout the team actually reads: overall score, where the categories stand, the highest-impact fixes still open, and what is waiting on review. Pair the summary with a deeper knowledge base page for anyone who wants to dig in, when that connector is available.",
+      "verdict": "keep",
+      "notes": "The underlying audit's subject (SEO, accessibility, content QA, or something else) is not identifiable from the seed data. Domain defaulted to general_professional as a safe choice; revisit if the source persona is known. See slice_findings."
+    },
+    {
+      "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
+      "old_title": "Code-Aware Demo Recording",
+      "title": "Code-Aware Demo Recording",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "demo-grounded-in-real-code",
+          "statement": "A feature demo is walked through and captured accurately, planned from the actual codebase rather than a guessed script.",
+          "success_criteria": [
+            "The walkthrough plan reflects the real UI or flow the codebase implements",
+            "Capture quality upgrades automatically to video when better tooling is available, without lowering quality when it is not"
+          ]
+        }
+      ],
+      "procedure": "Plan a walkthrough grounded in what the codebase actually does, then execute it live and capture the result, screenshots at minimum, video with commentary when better tooling is available. Let capture tier upgrade automatically rather than requiring reconfiguration. Keep the plan accurate to the real flow; a demo that shows a UI state the code does not actually produce is a defect.",
+      "verdict": "keep"
+    },
+    {
+      "id": "36708684-7720-531a-ac5c-3b39a69b85ae",
+      "old_title": "Deadline Reminders",
+      "title": "Writer Submission Deadline Reminders",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "writers-hit-deadlines",
+          "statement": "Every active piece gets tiered reminders that reach the right writer before the deadline, adjusted for that writer's own track record.",
+          "success_criteria": [
+            "Reminders never duplicate for the same deadline tier",
+            "Writers with a late-shipping history get reminded one tier earlier than the default"
+          ]
+        }
+      ],
+      "procedure": "Track every active piece's deadline and remind the assigned writer with escalating urgency as it nears. Learn from history: a writer who consistently ships late earns an earlier first reminder, not the same treatment as everyone else. A local state ledger must prevent the same tier from firing twice.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Deadline Reminders' to distinguish it from the legal contract-deadline recipes (f714c64f, 2d6945b7, 55bf5308) that shared very similar naming in the source data."
+    },
+    {
+      "id": "532e3e92-b844-5b2d-99b3-f72a763312a1",
+      "old_title": "Anomaly Alerts",
+      "title": "Expense Ledger Anomaly Alerts",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "expense-anomalies-caught",
+          "statement": "Unusual spending, likely duplicates, missing recurring charges, category spikes, and odd vendor frequency get flagged close to when they happen.",
+          "success_criteria": [
+            "Real-time ingest events trigger an alert for a qualifying entry",
+            "A daily sweep catches weekly-scope anomalies a single entry would not reveal",
+            "The same anomaly never alerts twice"
+          ]
+        }
+      ],
+      "procedure": "Watch the expense ledger for the anomalies that matter: amounts that stand out, likely duplicate charges, a recurring charge that did not show up, a category spending spike, a vendor showing up unusually often. Some are visible entry by entry, others only over a week; cover both without repeating an alert already sent. Dedupe against the alert history before posting.",
+      "verdict": "keep",
+      "notes": "Renamed to name the actual subject (expense ledger) since 'Anomaly Alerts' alone reads as generic."
+    },
+    {
+      "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
+      "old_title": "Feature Announcement Video",
+      "title": "Feature Announcement Video",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "announcement-ships-reviewed",
+          "statement": "A feature description becomes a finished announcement video, with the script and the final render each getting a real human check before moving on.",
+          "success_criteria": [
+            "The script is approved before voiceover synthesis spends anything",
+            "A rejection routes back to the specific stage it affects, not a full restart"
+          ]
+        }
+      ],
+      "procedure": "Turn a feature description into a short announcement video: work out the script and visual strategy, get it approved, then produce voiceover and compose the final render for approval. Keep rework scoped; if only the voiceover is wrong, redo the voiceover, not the whole pipeline. Treat the human approval gates as real checkpoints, not formalities to rubber-stamp.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ed25d219-8a77-57a3-81d2-e9a01eed114e",
+      "old_title": "AI Sprite-Sheet Generation",
+      "title": "AI Sprite-Sheet Generation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "sprite-sheet-game-ready",
+          "statement": "An anchor character and a list of animations become a normalized, game-engine-ready sprite sheet per animation, not a set of inconsistent frames.",
+          "success_criteria": [
+            "Frame spacing and body height stay invariant across the sheet",
+            "Output shows no visible anti-drift artifacts frame to frame"
+          ]
+        }
+      ],
+      "procedure": "Generate one normalized sprite sheet per requested animation from an anchor character image, holding frame spacing and body proportions consistent throughout so the result drops straight into a game engine. The normalization pass is not optional polish, it is what makes AI-generated frames usable; treat drift or spacing inconsistency as a failed generation, not a minor flaw.",
+      "verdict": "keep"
+    },
+    {
+      "id": "0090e32b-60f3-5e80-aaee-4ce3f21361f7",
+      "old_title": "Image → Animated Short",
+      "title": "Image to Animated Short",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "anchor-becomes-clip",
+          "statement": "One anchor image becomes a short animated clip saved where the rest of the game's assets live, not stranded on the local filesystem.",
+          "success_criteria": [
+            "Output lands in the user's configured storage connector",
+            "The video-generation backend used is whichever the active credential actually supports"
+          ]
+        }
+      ],
+      "procedure": "Turn a single anchor image into a short animated clip and deliver it to the same storage the rest of the asset pipeline uses, so it is immediately usable alongside everything else. Use whichever video-generation capability the active image-AI credential actually supports rather than assuming one specific backend.",
+      "verdict": "keep"
+    },
+    {
+      "id": "f895592e-2eff-50fe-9b02-cf75b51fe222",
+      "old_title": "Procedural Idle Breathing",
+      "title": "Procedural Idle Breathing",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "consistent-idle-with-no-ai-cost",
+          "statement": "Any character sprite gets a smooth, perfectly consistent breathing idle without an AI call or the variability that comes with one.",
+          "success_criteria": [
+            "The 4-frame result is produced by deterministic pixel shifting, not generation",
+            "It works standalone on sprite sets that never went through AI sprite generation"
+          ]
+        }
+      ],
+      "procedure": "Produce a breathing idle animation programmatically from any character sprite, no AI generation involved, so the result is perfectly consistent every time. This should work equally well as a bolt-on for sprite sets built elsewhere; do not assume it only runs after AI sprite generation.",
+      "verdict": "keep"
+    },
+    {
+      "id": "de4c0127-0738-5507-8600-b80ccc6abbce",
+      "old_title": "Payment Monitor",
+      "title": "Invoice Payment Aging Monitor",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "overdue-invoices-tracked",
+          "statement": "A pending invoice that goes past due gets caught the same day and reminders reach the right people without spamming them.",
+          "success_criteria": [
+            "Past-due invoices transition to overdue in the daily sweep",
+            "Aging-bucketed alerts respect the configured frequency cap",
+            "A monthly summary lands on the 1st with processed, paid, outstanding, and vendor breakdown"
+          ]
+        }
+      ],
+      "procedure": "Run the daily invoice sweep: catch anything that has gone past due, remind on upcoming payments inside the lead-time window, and surface aging-bucketed overdue alerts without exceeding the frequency cap. Add the monthly roll-up on the 1st so the vendor-level picture stays visible, not just the day-to-day churn.",
+      "verdict": "keep",
+      "notes": "Renamed to name the actual subject (invoice aging) and distinguish it from the subscription-billing dunning recipes (80257151, c22f9a28), which recover failed card payments rather than track A/R invoice aging."
+    },
+    {
+      "id": "136c0300-30bf-59af-a13d-4b55efb99489",
+      "old_title": "Sales Alert",
+      "title": "Hot Lead Sales Alert",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "hot-leads-reach-reps-fast",
+          "statement": "A lead scoring Hot or above gets in front of the right person immediately, with enough context to act on it.",
+          "success_criteria": [
+            "The channel notification includes score breakdown, buying signals, and a CRM deep-link",
+            "An On Fire lead additionally reaches the assigned rep directly, with a suggested talk track"
+          ]
+        }
+      ],
+      "procedure": "Catch a lead the moment it scores Hot or above and get it in front of whoever should act, with the context to act well: why it scored high, what the buying signals were, a link straight into the CRM. On Fire leads deserve more than a channel post; DM the assigned rep directly with a suggested approach.",
+      "verdict": "keep"
+    },
+    {
+      "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+      "old_title": "Personalized Welcome Email",
+      "title": "Tier-Matched Lead Welcome Email",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "welcome-matches-tier",
+          "statement": "A new lead's first email matches how ready they actually are to buy, not a single generic template.",
+          "success_criteria": [
+            "Cold and Warm leads get a low-pressure, resource-focused email",
+            "Hot leads get a value proposition with a soft call CTA",
+            "On Fire leads get a personal note from the assigned rep with a direct calendar link"
+          ]
+        }
+      ],
+      "procedure": "Draft and send a welcome email tuned to how hot the lead actually is: resource-focused for Cold and Warm, a value proposition with a soft ask for Hot, personal and direct for On Fire. Respect the approval gate where it applies; some tiers should hold for a human look before sending, not go out automatically.",
+      "verdict": "keep"
+    },
+    {
+      "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
+      "old_title": "Newsletter Issue Curation",
+      "title": "Newsletter Issue Curation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "issue-earns-the-send",
+          "statement": "Each newsletter issue is genuinely curated and deduplicated against past issues, and reads as edited content, not a raw feed dump, before it reaches subscribers.",
+          "success_criteria": [
+            "Articles are scored and selected, not included wholesale",
+            "Every issue passes human review before send",
+            "No article repeats one already covered in a past issue"
+          ]
+        }
+      ],
+      "procedure": "Pull from the configured sources, score and select what is actually worth including, group it into sections that make sense together, and write real editorial commentary rather than just linking out. Deduplicate rigorously against past issues. Nothing goes to the subscriber list without a human review pass first.",
+      "verdict": "keep"
+    },
+    {
+      "id": "22a3affc-2206-580b-8671-e24b66e1bba8",
+      "old_title": "Daily Summary",
+      "title": "Lead Enrichment Daily Summary",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "eod-visibility",
+          "statement": "Whoever owns lead enrichment knows how the day went without checking the spreadsheet themselves.",
+          "success_criteria": [
+            "The summary reports today's processing counts and the top-3 highest-scored prospects",
+            "Any API issue that occurred during the day is called out, not silently absorbed"
+          ]
+        }
+      ],
+      "procedure": "Close out each weekday with a genuine read on enrichment activity: how much ran, who the best new prospects were with enough profile to act on, and whether anything broke along the way. Link back to the spreadsheet for anyone who wants the full detail rather than trying to replicate it in the summary.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Daily Summary' to name its actual subject, since the corpus has other unrelated daily-summary-shaped recipes elsewhere."
+    },
+    {
+      "id": "325073de-6c2a-544d-a364-a00850948857",
+      "old_title": "Pre-Meeting Reminder",
+      "title": "Pre-Call Behavioral Brief",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "rep-walks-in-prepared",
+          "statement": "Whoever is about to take a prepped meeting gets a one-line behavioral brief in time to actually use it.",
+          "success_criteria": [
+            "The brief lands within one minute of T-30",
+            "It names primary style, lead action, and key avoidance, with a link to the fuller knowledge base entry"
+          ]
+        }
+      ],
+      "procedure": "Watch for meetings that have been prepped and deliver a tight, one-line behavioral brief shortly before they start, timed to actually be useful rather than arriving after the meeting has begun. Keep it to what matters in the moment, style, the one action to lead with, the one thing to avoid, and link to the fuller record for anyone who wants more.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Pre-Meeting Reminder' to avoid the pre/post-meeting naming collision the corpus is known to carry elsewhere (outside this slice) and to describe what it actually delivers. Domain (sales_marketing) is a best guess from 'lead action' phrasing; the recipe does not state who is meeting whom, so this could equally be a general relationship-prep tool. Flagged in slice_findings."
+    },
+    {
+      "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
+      "old_title": "Alert & Outreach",
+      "title": "Churn and Expansion Signal Outreach",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "signals-trigger-timely-outreach",
+          "statement": "A churn or expansion threshold crossing produces both an internal alert and a personalized outreach draft, without repeating for the same account within the suppression window.",
+          "success_criteria": [
+            "Threshold crossings post a contextual alert to the channel and the account owner's DM",
+            "Churn signals draft retention-focused email; expansion signals draft consultative-upgrade email",
+            "The same account does not re-trigger outreach inside the 14-day suppression window"
+          ]
+        }
+      ],
+      "procedure": "React to churn or expansion signals as they cross threshold: alert the team and the account owner, and draft outreach matched to the situation, retention-focused for churn risk, consultative for expansion opportunity. Respect the suppression window so the same account is not contacted repeatedly. Keep predictions and outreach in memory for the monthly reconciliation to check accuracy against.",
+      "verdict": "keep"
+    },
+    {
+      "id": "80257151-9304-500e-8952-560528229804",
+      "old_title": "Payment Recovery Sequence",
+      "title": "Payment Recovery Sequence",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "failed-payment-recovered",
+          "statement": "A failed payment gets a tier-appropriate, escalating email sequence that recovers it before the customer churns.",
+          "success_criteria": [
+            "Each failure produces the correct tier email based on the customer's failure history, friendly to urgent to final",
+            "A mid-sequence success reverses the dunning state instead of continuing to escalate",
+            "A cancellation stops the sequence immediately"
+          ]
+        }
+      ],
+      "procedure": "React to each payment failure by reading the customer's failure history and sending the escalation-appropriate email, friendly first, then urgent, then final. Keep the dunning state in sync: a payment that succeeds mid-sequence should reverse it immediately, and a cancellation should stop the sequence outright rather than continuing to escalate toward a customer who already left.",
+      "verdict": "merge_into",
+      "merge_into": "c22f9a28-f97a-5b1c-8d25-db15556baaff",
+      "merge_reason": "Genuinely the same job as Dunning Sequence (c22f9a28): recover a failed payment through a 3-tier escalating email sequence, update dunning state, reverse on mid-sequence success, stop immediately on cancellation. The evidence goes well past matching outcomes, the error-handling text is nearly identical clause for clause (same 'pending_airtable_ops.jsonl' queue file, same reset-to-tier-0-and-send-success-email logic, same immediate-stop-on-cancellation behavior) and both share a 'tone' input field with identical options. The only real differences are which payment event bus and connector each was wired to (Stripe events plus a stripe/spreadsheet/email connector set here, versus a generic billing.* event bus plus a finance/spreadsheet/email/messaging connector set on the survivor) and that the survivor additionally escalates tiers 2 and 3 into messaging with a 'Churn Imminent' flag. This looks like the same responsibility built twice for two different payment-processor wirings. The surviving recipe should be able to treat Stripe as one of its supported payment-failure sources alongside its current generic billing connector."
+    },
+    {
+      "id": "89f8b8dc-93c8-53e3-ba21-997fd98c0c55",
+      "old_title": "Stage Response",
+      "title": "CRM Stage-Transition Response",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "stage-moves-trigger-right-response",
+          "statement": "Every CRM stage transition gets the response that transition actually calls for, forward or backward.",
+          "success_criteria": [
+            "A forward move sends the stage-appropriate email exactly once, duplicate-checked, plus a team message",
+            "A backward move produces only a team message, no customer-facing email",
+            "A skipped stage still triggers the final-stage email, not a gap"
+          ]
+        }
+      ],
+      "procedure": "Detect where a deal actually moved in the CRM and respond to the transition, not just the destination stage: forward moves get a personalized email plus a team note, backward moves get only the team note, and a jump that skips stages still needs the final-stage email to fire. Duplicate-check before sending so a re-sync never double-emails a contact.",
+      "verdict": "keep"
+    },
+    {
+      "id": "58b47096-e109-5b73-9ae4-c29b59b5fb91",
+      "old_title": "Sainani-Rule Draft Edit",
+      "title": "Sainani-Rule Draft Edit",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "draft-improves-without-losing-voice",
+          "statement": "A scientific draft comes back tighter and clearer against the Sainani rules, with every change traceable and the author's own voice preserved over time.",
+          "success_criteria": [
+            "Each flagged sentence carries a citation to the specific rule and an explanation",
+            "The delivered output includes a diff, a clean rewrite, and a style report, not just one of the three",
+            "Author accept, reject, and counter-edit decisions feed back into that author's learned voice profile"
+          ]
+        }
+      ],
+      "procedure": "Apply the Sainani rule set to a scientific draft sentence by sentence, citing which rule and why for every flagged change, and deliver both the diff and a clean rewrite plus a style report. Track what the author accepts, rejects, or counter-edits, and let that shape future edits toward their voice, without ever compromising the underlying rules to do it.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8175b459-7cd6-558d-abe5-aacef9979308",
+      "old_title": "Branded Design Batch",
+      "title": "Branded Design Batch",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "on-brand-variations-ready-to-pick",
+          "statement": "A topic brief becomes a set of genuinely on-brand social variations the user can pick from, not a single guess.",
+          "success_criteria": [
+            "Every variation loads and applies the actual Canva brand kit",
+            "Copy is tuned per platform, not one caption reused everywhere",
+            "Which variation gets picked updates future generation choices"
+          ]
+        }
+      ],
+      "procedure": "Turn a topic brief into multiple on-brand, platform-tuned social variations using the loaded brand kit, autofilling a matching template when one exists and building from scratch when it does not. Deliver previews with edit links so the human can actually choose, and let their selection shape which approaches get generated next time.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8e06e944-dd39-536e-b758-fd66d65f4fe5",
+      "old_title": "Design Export",
+      "title": "Design Export",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "selected-designs-become-files",
+          "statement": "A selected Canva design reliably becomes a downloadable file, or at minimum an edit link if export stalls.",
+          "success_criteria": [
+            "Export produces a working download link for PNG or PDF",
+            "An export timeout falls back to an edit URL instead of failing silently"
+          ]
+        }
+      ],
+      "procedure": "Export whatever design got selected, either from the batch's selection event or on direct request, into a downloadable file and deliver the link. If the export itself times out, fall back to an edit URL rather than leaving the user with nothing. This is a small, mechanical job; the only judgment is handling the timeout gracefully.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c22f9a28-f97a-5b1c-8d25-db15556baaff",
+      "old_title": "Dunning Sequence",
+      "title": "Dunning Sequence",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "failed-payment-recovered-with-escalation",
+          "statement": "A failed payment moves through a 3-tier escalating recovery sequence, reaching messaging escalation and a churn flag only when it is genuinely stalled.",
+          "success_criteria": [
+            "Tier 1 sends a friendly reminder; tier 2 adds a messaging notice alongside the urgent email; tier 3 adds a 'Churn Imminent' flag and messaging escalation",
+            "A mid-sequence payment success resets the sequence state",
+            "A cancellation stops the sequence immediately with no further tier firing"
+          ]
+        }
+      ],
+      "procedure": "Run the failed-payment recovery ladder end to end: friendly reminder, then urgent warning with an internal heads-up, then a final warning that flags the account as at real churn risk and escalates internally. Reset cleanly on a mid-sequence success and stop hard on cancellation, continuing to email or flag a customer who already cancelled is a real defect, not a harmless extra send.",
+      "verdict": "keep",
+      "notes": "Proposed as the surviving recipe for the merge_into on Payment Recovery Sequence (80257151, see its entry for the evidence). On merge, this recipe should be understood to cover both its current generic billing connector and Stripe as an equally valid payment-failure source, since 80257151 was the same responsibility wired to Stripe specifically."
+    },
+    {
+      "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
+      "old_title": "Brand Asset Generation",
+      "title": "Brand Asset Generation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "asset-matches-brief-and-quality-bar",
+          "statement": "A generated brand asset actually matches the design brief and clears a real quality check before it reaches the human.",
+          "success_criteria": [
+            "The prompt is composed from the design brief and the memory layer, not generated blind",
+            "The quality loop runs up to 3 cycles rather than shipping the first output unconditionally",
+            "Human review can iterate up to 3 times without the brief itself being altered"
+          ]
+        }
+      ],
+      "procedure": "Generate each requested asset grounded in the existing design brief, not from scratch each time, and check it against a real quality bar before it reaches the human, iterating internally when it falls short. Human review is still the final gate; accumulate approved prompt phrasings in memory over time, but never let that accumulation quietly rewrite the brief itself.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
+      "old_title": "Design Brief Generation",
+      "title": "Design Brief Generation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "brief-is-usable-foundation",
+          "statement": "The design brief is a complete, five-section foundation other design work can build on, whether it was extracted, pasted, or written from scratch.",
+          "success_criteria": [
+            "design.md always has empathy, sensory aesthetic, color hierarchy, typography hierarchy, and layout metaphor sections",
+            "A user-pasted brief is stored verbatim when it already has the sections, normalized into them only when it does not"
+          ]
+        }
+      ],
+      "procedure": "Produce the structured design brief the rest of the design work depends on. When the source is a user-pasted brief, respect it: use it verbatim and only reshape it into the five-section structure if sections are actually missing, never re-extract over it. When the source is a codebase or other material, do the real extraction work. This runs once at build time but stays re-runnable on demand.",
+      "verdict": "keep"
+    },
+    {
+      "id": "7be5a3ac-a3a2-5f32-bb12-65c7583d6d16",
+      "old_title": "3-Pass Cut Edit",
+      "title": "3-Pass Cut Edit",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "raw-footage-becomes-tight-cut",
+          "statement": "Raw filmed footage matched against the approved script becomes a tight, retake-free, repeat-free cut without a human doing the scrubbing.",
+          "success_criteria": [
+            "Only the final take of each script sentence survives Pass 1",
+            "Repeated phrases the n-gram detection finds are removed in Pass 2",
+            "The final cut has silence polished out in Pass 3, not left choppy or over-trimmed"
+          ]
+        }
+      ],
+      "procedure": "Turn raw footage into a clean local cut against the approved script: keep only each sentence's final take, catch and remove repeated phrasing the transcript reveals, and polish silence so the result flows. This runs entirely local via FFmpeg; the judgment is in matching transcript to script accurately enough that the right take survives, not in the mechanics of the cut itself.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c7f5f6bf-7bae-5232-853d-025fdc3a35e8",
+      "old_title": "Publish Prep",
+      "title": "YouTube Publish-Ready Asset Generation",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "video-arrives-publish-ready",
+          "statement": "A finished video arrives with every YouTube asset it needs, title through community post, ready to publish without last-minute scrambling.",
+          "success_criteria": [
+            "The description leads with a hook and includes accurate chapter timestamps and links",
+            "10-15 tags and chapter markers are generated and mapped to the final video's actual timestamps",
+            "End-screen picks and the community post are included, not left for the creator to write"
+          ]
+        }
+      ],
+      "procedure": "Generate the full set of YouTube publishing assets from the outline and the final video: a hook-first description with real chapter timestamps, a tag set, chapter markers mapped to actual video time, end-screen picks drawn from past uploads, and a community post that primes the algorithm. Accuracy against the final video's real timestamps matters more than the volume of tags or markers.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Publish Prep' to name what it actually produces."
+    },
+    {
+      "id": "b9f8043b-d127-5ee4-b249-3500f697876c",
+      "old_title": "Teleprompter Script",
+      "title": "Teleprompter Script",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "script-sounds-like-the-creator",
+          "statement": "The teleprompter script reads in the creator's actual voice at the length a video needs, and gets more accurate with each correction.",
+          "success_criteria": [
+            "Length lands in the 1,800-2,500 word range from the approved outline",
+            "Open loops, loss aversion, micro-payoffs, and specificity are present, not a flat recitation of the outline",
+            "A flagged voice mismatch updates the voice profile, not just that one script"
+          ]
+        }
+      ],
+      "procedure": "Write the full teleprompter script from the approved outline in the creator's own voice, using open loops, loss aversion, micro-payoffs, and specificity to keep it engaging rather than a flat read-through. Mark pause, b-roll, and screen cues where they belong. When the creator flags a voice mismatch, treat it as a correction to the standing voice profile, not just a one-off fix.",
+      "verdict": "keep"
+    }
+  ],
+  "slice_findings": [
+    "Genuine duplicate found: Payment Recovery Sequence (80257151) and Dunning Sequence (c22f9a28) implement the identical 3-tier dunning outcome, down to matching error-handling clauses and queue filenames, differing only in which payment-processor event bus/connector each was wired to. Proposed merging the former into the latter; the survivor should absorb Stripe as a supported payment-failure source.",
+    "Four notification recipes carried near-identical generic 'deadline/reminder' names over four genuinely different subjects: Deadline Reminder Sweep (renamed Contract Deadline Sweep, covers renewal/termination/obligation/warranty dates), Deadline Reminders (renamed Writer Submission Deadline Reminders, editorial calendar), Unsigned Contract Reminders (renamed Unsigned Contract Signature Reminders, signature chasing), and Renewal Monitoring (renamed Contract Renewal Window Alerts, renewal clock only). None merged; all renamed to name their actual subject, per the spec's default-to-not-merge rule.",
+    "Five 'weekly digest/report'-shaped recipes cover five unrelated audiences and subjects: Weekly Growth Digest (KB corpus growth), Weekly Strategy Digest (social post strategy), Weekly Performance Report (blog content performance), Combined CRO Report (conversion-experiment status), and Weekly Report Distribution (a content/quality audit). All renamed to name their subject; none merged.",
+    "Daily Summary (lead enrichment) and Pre-Meeting Reminder were both renamed on suspicion of cross-slice name collisions the corpus is known to carry (daily digest/summary and pre/post-meeting are called out in the task brief as corpus-wide collision patterns); this slice only contains one side of each pair, so the rename is defensive rather than evidence of an in-slice duplicate.",
+    "The eight tiny one-off categories (notifications, communication, outreach, messaging, publishing, writing, editing, plus the oversized 'content' bucket) collapsed cleanly into six domains from the closed vocabulary: creative_design took the large majority (24 of 49) covering all authoring/production work (audio, video, script, design, sprite, editing, writing); sales_marketing took campaign/outreach/lead/CRM work (11); finance_accounting took reconciliation, expense, invoice, billing-credential, and dunning notifications (6, including the merge pair); legal_compliance took the three contract-deadline recipes (3); general_professional took internal knowledge-base ingestion/search/digest plus one unidentified audit digest (4); customer_support took the one churn/expansion signal recipe (1).",
+    "Two recipes have an underdetermined domain because the seed data does not name the underlying subject: Weekly Report Distribution/Content Audit Weekly Digest (ffaf65e0, audit subject unknown, defaulted to general_professional) and Pre-Meeting Reminder/Pre-Call Behavioral Brief (325073de, meeting context unknown, defaulted to sales_marketing on weak evidence from 'lead action' phrasing). Both flagged individually with a notes field; the Director may want to confirm against the source persona templates.",
+    "Per the spec, delivery mechanics already carried by connectors/cadence/notificationChannels were stripped from every rewritten procedure: e.g. Discrepancy Alerting's procedure no longer says 'post to the messaging channel', Deadline Reminder Sweep's no longer spells out 'via email... and messaging', Anomaly Alerts' no longer says 'formatted messaging layout alerts'. All 49 procedures were rewritten as outcome-and-judgment guidance with no numbered steps or fixed tool order, and none currently list connectors/cadence/spec (left untouched as instructed)."
+  ]
+}

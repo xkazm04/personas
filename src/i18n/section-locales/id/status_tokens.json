@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "Dalam antrean",
-    "running": "Berjalan",
-    "completed": "Selesai",
-    "failed": "Gagal",
-    "cancelled": "Dibatalkan",
-    "incomplete": "Tidak lengkap",
-    "error": "Kesalahan",
-    "unknown": "Tidak diketahui"
-  },
-  "simple": {
-    "good": "Baik",
-    "warning": "Perhatian",
-    "problem": "Masalah"
-  },
-  "event": {
-    "pending": "Tertunda",
-    "processing": "Memproses",
-    "processed": "Diproses",
-    "failed": "Gagal",
-    "retrying": "Mencoba ulang"
-  },
   "automation": {
-    "pending": "Tertunda",
-    "running": "Berjalan",
     "completed": "Selesai",
     "failed": "Gagal",
+    "pending": "Tertunda",
+    "running": "Berjalan",
     "timeout": "Waktu habis"
-  },
-  "severity": {
-    "info": "Info",
-    "low": "Rendah",
-    "medium": "Sedang",
-    "high": "Tinggi",
-    "critical": "Kritis"
-  },
-  "priority": {
-    "low": "Rendah",
-    "normal": "Normal",
-    "high": "Tinggi",
-    "urgent": "Mendesak"
-  },
-  "healing_status": {
-    "open": "Terbuka",
-    "auto_fixed": "Diperbaiki otomatis",
-    "acknowledged": "Diakui",
-    "resolved": "Terselesaikan"
-  },
-  "healing_category": {
-    "config": "Konfigurasi",
-    "auth": "Autentikasi",
-    "network": "Jaringan",
-    "timeout": "Waktu habis",
-    "quota": "Kuota"
-  },
-  "connector_status": {
-    "ready": "Siap",
-    "untested": "Belum diuji",
-    "failed": "Gagal",
-    "no_credential": "Tidak ada kredensial",
-    "testing": "Menguji"
-  },
-  "task_phase": {
-    "analyzing": "Menganalisis",
-    "planning": "Merencanakan",
-    "implementing": "Menerapkan",
-    "committing": "Melakukan commit",
-    "validating": "Memvalidasi",
-    "complete": "Selesai"
-  },
-  "goal_state": {
-    "pending": "Tertunda",
-    "review": "Tinjauan",
-    "blocked": "Diblokir",
-    "in_progress": "Sedang berlangsung",
-    "running": "Berjalan",
-    "completed": "Selesai",
-    "done": "Selesai"
-  },
-  "test": {
-    "generating": "Membuat",
-    "running": "Berjalan",
-    "completed": "Selesai",
-    "failed": "Gagal",
-    "pending": "Tertunda"
-  },
-  "dev": {
-    "open": "Terbuka",
-    "in_progress": "Sedang berlangsung",
-    "completed": "Selesai",
-    "blocked": "Diblokir",
-    "queued": "Dalam antrean",
-    "running": "Berjalan",
-    "failed": "Gagal"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Keseluruhan"
-  },
-  "forage_confidence": {
-    "high": "Tinggi",
-    "medium": "Sedang",
-    "low": "Rendah"
-  },
-  "capability_risk": {
-    "low": "rendah",
-    "medium": "sedang",
-    "high": "tinggi"
-  },
-  "verdict": {
-    "production": "Produksi",
-    "promising": "Menjanjikan",
-    "not_ready": "Belum siap",
-    "broken": "Rusak"
-  },
-  "deployment": {
-    "active": "Aktif",
-    "paused": "Dijeda",
-    "failed": "Gagal",
-    "unknown": "Tidak diketahui",
-    "file-based": "Berbasis file"
-  },
-  "delivery": {
-    "delivered": "Terkirim",
-    "failed": "Gagal",
-    "pending": "Tertunda",
-    "queued": "Diantrikan"
-  },
-  "rotation": {
-    "anomaly": "Anomali",
-    "paused": "Dijeda",
-    "disabled": "Dinonaktifkan",
-    "perm_errors": "Kesalahan permanen",
-    "degrading": "Menurun",
-    "backoff": "Mundur",
-    "fresh": "Baru",
-    "active": "Aktif"
-  },
-  "thinking": {
-    "high": "Tinggi",
-    "low": "Rendah",
-    "medium": "Sedang"
-  },
-  "error_category": {
-    "api_error": "Kesalahan API",
-    "credential_error": "Kesalahan kredensial",
-    "network": "Jaringan",
-    "provider_not_found": "Penyedia tidak ditemukan",
-    "rate_limit": "Batas laju",
-    "session_limit": "Batas sesi",
-    "timeout": "Waktu habis",
-    "tool_error": "Kesalahan alat",
-    "transient_process_failure": "Kegagalan proses sementara",
-    "unknown": "Tidak diketahui",
-    "validation": "Validasi"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Batas fan-out tercapai",
-    "budget_exceeded": "Batas biaya tercapai",
-    "cas_lost": "Diklaim oleh proses lain",
-    "cycle_detected": "Siklus terdeteksi",
-    "depth_limit": "Batas kedalaman",
-    "handoff_suppressed": "Penerusan ditahan",
-    "malformed_config": "Konfigurasi tidak valid",
-    "outside_window": "Di luar jendela aktif",
-    "predicate_unmet": "Kondisi tidak terpenuhi",
-    "publish_failed": "Publikasi gagal",
-    "quarantined": "Trigger dikarantina",
-    "healing_abandoned": "Pemulihan menyerah",
-    "healing_capped": "Percobaan pemulihan habis",
-    "lookup_failed": "Pencarian pemicu gagal",
-    "cost_ceiling_corrupt": "Batas biaya tidak terbaca"
   },
   "build": {
     "analyzing": "Menganalisis",
@@ -186,6 +19,232 @@
     "test_complete": "Pengujian selesai",
     "testing": "Menguji"
   },
+  "capability_risk": {
+    "high": "tinggi",
+    "low": "rendah",
+    "medium": "sedang"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Batas fan-out tercapai",
+    "budget_exceeded": "Batas biaya tercapai",
+    "cas_lost": "Diklaim oleh proses lain",
+    "cost_ceiling_corrupt": "Batas biaya tidak terbaca",
+    "cycle_detected": "Siklus terdeteksi",
+    "depth_limit": "Batas kedalaman",
+    "handoff_suppressed": "Penerusan ditahan",
+    "healing_abandoned": "Pemulihan menyerah",
+    "healing_capped": "Percobaan pemulihan habis",
+    "lookup_failed": "Pencarian pemicu gagal",
+    "malformed_config": "Konfigurasi tidak valid",
+    "outside_window": "Di luar jendela aktif",
+    "predicate_unmet": "Kondisi tidak terpenuhi",
+    "publish_failed": "Publikasi gagal",
+    "quarantined": "Trigger dikarantina"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Keseluruhan"
+  },
+  "competition": {
+    "awaiting_review": "Menunggu tinjauan",
+    "cancelled": "Dibatalkan",
+    "resolved": "Terselesaikan",
+    "running": "Berjalan"
+  },
+  "connector_status": {
+    "failed": "Gagal",
+    "no_credential": "Tidak ada kredensial",
+    "ready": "Siap",
+    "testing": "Menguji",
+    "untested": "Belum diuji"
+  },
+  "delivery": {
+    "delivered": "Terkirim",
+    "failed": "Gagal",
+    "pending": "Tertunda",
+    "queued": "Diantrikan"
+  },
+  "deployment": {
+    "active": "Aktif",
+    "failed": "Gagal",
+    "file-based": "Berbasis file",
+    "paused": "Dijeda",
+    "unknown": "Tidak diketahui"
+  },
+  "dev": {
+    "blocked": "Diblokir",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "in_progress": "Sedang berlangsung",
+    "open": "Terbuka",
+    "queued": "Dalam antrean",
+    "running": "Berjalan"
+  },
+  "error_category": {
+    "api_error": "Kesalahan API",
+    "credential_error": "Kesalahan kredensial",
+    "network": "Jaringan",
+    "provider_not_found": "Penyedia tidak ditemukan",
+    "rate_limit": "Batas laju",
+    "session_limit": "Batas sesi",
+    "timeout": "Waktu habis",
+    "tool_error": "Kesalahan alat",
+    "transient_process_failure": "Kegagalan proses sementara",
+    "unknown": "Tidak diketahui",
+    "validation": "Validasi"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "Menunggu persetujuan",
+    "cascade_guard": "Sudah berjalan",
+    "cross_team_blocked": "Diblokir antartim",
+    "dry_run": "Uji coba (simulasi)",
+    "handoff_target_disabled": "Tujuan serah terima nonaktif",
+    "no_subscriber": "Tidak ada pelanggan yang cocok",
+    "persona_disabled": "Agen nonaktif",
+    "stuck_reclaimed": "Diambil kembali dan diantrekan ulang",
+    "stuck_retry_exhausted": "Diambil kembali, percobaan ulang habis"
+  },
+  "event": {
+    "failed": "Gagal",
+    "pending": "Tertunda",
+    "processed": "Diproses",
+    "processing": "Memproses",
+    "retrying": "Mencoba ulang"
+  },
+  "execution": {
+    "cancelled": "Dibatalkan",
+    "completed": "Selesai",
+    "error": "Kesalahan",
+    "failed": "Gagal",
+    "incomplete": "Tidak lengkap",
+    "queued": "Dalam antrean",
+    "running": "Berjalan",
+    "unknown": "Tidak diketahui"
+  },
+  "forage_confidence": {
+    "high": "Tinggi",
+    "low": "Rendah",
+    "medium": "Sedang"
+  },
+  "goal_state": {
+    "blocked": "Diblokir",
+    "completed": "Selesai",
+    "done": "Selesai",
+    "in_progress": "Sedang berlangsung",
+    "pending": "Tertunda",
+    "review": "Tinjauan",
+    "running": "Berjalan"
+  },
+  "healing_category": {
+    "auth": "Autentikasi",
+    "config": "Konfigurasi",
+    "network": "Jaringan",
+    "quota": "Kuota",
+    "timeout": "Waktu habis"
+  },
+  "healing_status": {
+    "acknowledged": "Diakui",
+    "auto_fixed": "Diperbaiki otomatis",
+    "open": "Terbuka",
+    "resolved": "Terselesaikan"
+  },
+  "kb_document": {
+    "indexing": "mengindeks",
+    "pending": "menunggu"
+  },
+  "memory_action": {
+    "deleted": "Dihapus",
+    "error": "Kesalahan",
+    "kept": "Dipertahankan",
+    "proposed_archive": "Usulan pengarsipan",
+    "proposed_delete": "Usulan penghapusan",
+    "proposed_synthesize": "Usulan penggabungan",
+    "proposed_update_importance": "Usulan penilaian ulang"
+  },
+  "memory_category": {
+    "context": "Konteks",
+    "decision": "Keputusan",
+    "learning": "Pembelajaran",
+    "observation": "Observasi"
+  },
+  "memory_tier": {
+    "active": "Aktif",
+    "archive": "Diarsipkan",
+    "core": "Inti",
+    "working": "Sementara"
+  },
+  "priority": {
+    "high": "Tinggi",
+    "low": "Rendah",
+    "normal": "Normal",
+    "urgent": "Mendesak"
+  },
+  "remote_job": {
+    "cancelled": "Dibatalkan",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "pending": "Menunggu",
+    "refused": "Ditolak",
+    "running": "Berjalan"
+  },
+  "rotation": {
+    "active": "Aktif",
+    "anomaly": "Anomali",
+    "backoff": "Mundur",
+    "degrading": "Menurun",
+    "disabled": "Dinonaktifkan",
+    "fresh": "Baru",
+    "paused": "Dijeda",
+    "perm_errors": "Kesalahan permanen"
+  },
+  "severity": {
+    "critical": "Kritis",
+    "high": "Tinggi",
+    "info": "Info",
+    "low": "Rendah",
+    "medium": "Sedang"
+  },
+  "simple": {
+    "good": "Baik",
+    "problem": "Masalah",
+    "warning": "Perhatian"
+  },
+  "span_type": {
+    "chain_evaluation": "Evaluasi rantai",
+    "cli_spawn": "Jalankan CLI",
+    "credential_resolution": "Kredensial",
+    "execution": "Eksekusi",
+    "healing_analysis": "Pemulihan",
+    "outcome_assessment": "Hasil",
+    "pipeline_stage": "Tahap pipeline",
+    "prompt_assembly": "Siapkan prompt",
+    "protocol_dispatch": "Protokol",
+    "stream_processing": "Aliran",
+    "tool_call": "Panggilan alat",
+    "unknown": "Tidak diketahui"
+  },
+  "task_phase": {
+    "analyzing": "Menganalisis",
+    "committing": "Melakukan commit",
+    "complete": "Selesai",
+    "implementing": "Menerapkan",
+    "planning": "Merencanakan",
+    "validating": "Memvalidasi"
+  },
+  "test": {
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "generating": "Membuat",
+    "pending": "Tertunda",
+    "running": "Berjalan"
+  },
+  "thinking": {
+    "high": "Tinggi",
+    "low": "Rendah",
+    "medium": "Sedang"
+  },
   "tool_error_kind": {
     "auth": "Autentikasi",
     "http": "Kesalahan HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Kesalahan tidak dikenal",
     "unsupported": "Tidak dapat dijalankan di sini"
   },
-  "remote_job": {
-    "completed": "Selesai",
-    "failed": "Gagal",
-    "cancelled": "Dibatalkan",
-    "refused": "Ditolak",
-    "pending": "Menunggu",
-    "running": "Berjalan"
-  },
-  "event_reason": {
-    "approval_held": "Menunggu persetujuan",
-    "cascade_guard": "Sudah berjalan",
-    "cross_team_blocked": "Diblokir antartim",
-    "dry_run": "Uji coba (simulasi)",
-    "handoff_target_disabled": "Tujuan serah terima nonaktif",
-    "no_subscriber": "Tidak ada pelanggan yang cocok",
-    "persona_disabled": "Agen nonaktif",
-    "stuck_reclaimed": "Diambil kembali dan diantrekan ulang",
-    "stuck_retry_exhausted": "Diambil kembali, percobaan ulang habis",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "Berjalan",
-    "awaiting_review": "Menunggu tinjauan",
-    "resolved": "Terselesaikan",
-    "cancelled": "Dibatalkan"
-  },
-  "kb_document": {
-    "pending": "menunggu",
-    "indexing": "mengindeks"
-  },
-  "memory_tier": {
-    "core": "Inti",
-    "active": "Aktif",
-    "working": "Sementara",
-    "archive": "Diarsipkan"
-  },
-  "span_type": {
-    "execution": "Eksekusi",
-    "prompt_assembly": "Siapkan prompt",
-    "credential_resolution": "Kredensial",
-    "cli_spawn": "Jalankan CLI",
-    "tool_call": "Panggilan alat",
-    "protocol_dispatch": "Protokol",
-    "chain_evaluation": "Evaluasi rantai",
-    "stream_processing": "Aliran",
-    "outcome_assessment": "Hasil",
-    "healing_analysis": "Pemulihan",
-    "pipeline_stage": "Tahap pipeline",
-    "unknown": "Tidak diketahui"
-  },
-  "memory_action": {
-    "kept": "Dipertahankan",
-    "deleted": "Dihapus",
-    "error": "Kesalahan",
-    "proposed_delete": "Usulan penghapusan",
-    "proposed_update_importance": "Usulan penilaian ulang",
-    "proposed_synthesize": "Usulan penggabungan",
-    "proposed_archive": "Usulan pengarsipan"
-  },
-  "memory_category": {
-    "observation": "Observasi",
-    "decision": "Keputusan",
-    "context": "Konteks",
-    "learning": "Pembelajaran"
+  "verdict": {
+    "broken": "Rusak",
+    "not_ready": "Belum siap",
+    "production": "Produksi",
+    "promising": "Menjanjikan"
   }
 }

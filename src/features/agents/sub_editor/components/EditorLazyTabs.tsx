@@ -10,7 +10,8 @@ export const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/components/shared/LabTab').then((m) => ({ default: m.LabTab })),
 );
 /** DesignHub — tabbed container hosting Use Cases, Prompt, Connectors & Tools,
- *  Events & Triggers, Messaging, and Automations. */
+ *  Events & Triggers, Messaging, and the living-agent surfaces (Core,
+ *  Responsibilities, Brain — folded in from the former top-level Life tab). */
 export const DesignTab = lazy(() =>
   import('@/features/agents/sub_design').then((m) => ({ default: m.DesignHub })),
 );

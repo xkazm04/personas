@@ -99,4 +99,10 @@ disabled_dims_json: string | null,
  * creation path stamps `draft`, promote stamps `active`, archive/restore
  * move to/from `archived`. Stored as the lowercase string.
  */
-lifecycle: string, created_at: string, updated_at: string, };
+lifecycle: string, 
+/**
+ * Serialized `PersonaCore` JSON — the persona's Character (living-agent
+ * spine). Seeded by build/adopt (seed-if-absent), owned by the operator
+ * thereafter. `None` for personas without an authored Core.
+ */
+core_profile?: string, created_at: string, updated_at: string, };

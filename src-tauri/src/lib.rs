@@ -249,12 +249,29 @@ pub fn run() {
             commands::core::memories::list_persona_memory_review_proposals,
             commands::core::memories::get_persona_memory_review_proposal,
             commands::core::memories::update_memory_tier,
+            // Core -- Responsibilities (living-agent charters, WP3)
+            commands::core::responsibilities::list_persona_responsibilities,
+            commands::core::responsibilities::create_persona_responsibility,
+            commands::core::responsibilities::update_persona_responsibility,
+            commands::core::responsibilities::retire_persona_responsibility,
+            commands::core::responsibilities::set_persona_responsibility_status,
+            commands::core::responsibilities::list_attention_ledger,
             commands::core::memory_compile::compile_persona_memories,
             // Core -- Memory curation runs (persona_background_job framework)
             commands::core::persona_jobs::enqueue_persona_memory_reflection,
             commands::core::persona_jobs::enqueue_team_memory_reflection,
             commands::core::persona_jobs::set_persona_curation_schedule,
             commands::core::persona_jobs::get_persona_curation_schedule,
+            // Core -- Living-agent persona brain (WP4)
+            commands::core::persona_brain::run_persona_consolidation_now,
+            commands::core::persona_brain::list_persona_episodes,
+            commands::core::persona_brain::get_persona_identity,
+            commands::core::persona_brain::get_attention_loop_status,
+            commands::core::persona_brain::propose_persona_manifest_diffs,
+            // Core -- Agent manifest + Brain dashboard (agent-manifest-rebase WP1)
+            commands::core::persona_brain::get_persona_manifest,
+            commands::core::persona_brain::update_persona_manifest_law,
+            commands::core::persona_brain::get_persona_brain_dashboard,
             // Core -- Custom persona icons (desktop only — image decode pipeline)
             #[cfg(feature = "desktop")]
             commands::core::persona_icons::import_persona_icon,
@@ -1811,6 +1828,9 @@ pub fn run() {
             commands::infrastructure::task_executor::dev_tools_start_auto_run,
             commands::infrastructure::task_executor::dev_tools_cancel_auto_run,
             commands::infrastructure::task_executor::dev_tools_get_auto_run_status,
+            // Dev Tools -- run checkpoints (git rewind for an auto-run)
+            commands::infrastructure::run_checkpoints::dev_tools_list_run_checkpoints,
+            commands::infrastructure::run_checkpoints::dev_tools_rollback_run_checkpoint,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,
@@ -2162,6 +2182,17 @@ pub fn run() {
             if matches!(event, tauri::RunEvent::Exit) {
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.stop_all();
+
+                    // LAST, after the teardown above, and never optimistically:
+                    // absence of this marker is the crash signal the next boot
+                    // reads (`boot::recovery`), so writing it before the drain
+                    // completes would be a claim about a shutdown that had not
+                    // happened yet. `RunEvent::Exit` does not fire on SIGKILL,
+                    // power loss or a Windows force-quit — which is the point:
+                    // those are exactly the exits that must read as crashes.
+                    personas_core::shutdown_marker::record_clean_shutdown(
+                        state.leadership.app_data_dir(),
+                    );
                 }
             }
         });

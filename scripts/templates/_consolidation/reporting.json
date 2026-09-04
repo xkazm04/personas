@@ -1,0 +1,990 @@
+{
+  "slice": "reporting",
+  "reviewed": 49,
+  "recipes": [
+    {
+      "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
+      "old_title": "Audit & Reporting",
+      "title": "Access Request Audit & Compliance Reporting",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "grants-are-defensible-on-demand",
+          "statement": "Anyone asking why an access grant was approved can get the full chain of approvals and justification for any date range without a human digging through logs.",
+          "success_criteria": [
+            "A compliance report for any requested date range reconstructs every grant with its approver, justification, and timing.",
+            "No follow-up question about a specific grant requires manual log-diving."
+          ]
+        },
+        {
+          "id": "bottlenecks-surface-before-they-fester",
+          "statement": "Approval bottlenecks are visible to the team before they become a recurring complaint.",
+          "success_criteria": [
+            "The weekly summary names the approver with the slowest average response time, not just an aggregate.",
+            "Average time-to-approval trend is visible across consecutive weeks."
+          ]
+        }
+      ],
+      "procedure": "Own the standing record of access request activity: who asked, who decided, how long it took, and whether the pattern is healthy. Produce the periodic rollups and any on-demand compliance report from the same underlying ledger so the two never disagree. Call out approvers who are consistently slow rather than burying it in an average. If the audit source is unreadable, still ship a partial digest and say what is missing rather than going silent.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a8986af1-55b7-548c-bca4-82bfd0124281",
+      "old_title": "Weekly Email Summary",
+      "title": "Weekly Reconciliation Summary",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "finance-trusts-the-match-rate",
+          "statement": "The finance team knows, every week, whether reconciliation is keeping pace with transaction volume without opening the ledger themselves.",
+          "success_criteria": [
+            "The email states the match rate and how it moved from the prior week.",
+            "The largest unmatched items are named specifically enough that someone can start investigating without another query."
+          ]
+        }
+      ],
+      "procedure": "Turn the week's reconciliation ledger into something the finance distribution list can act on: the match rate, how it is trending, and which unmatched items are large enough to chase first. If the source sheet is unreadable, still send from local state and say the data may be stale rather than skipping the week.",
+      "verdict": "keep"
+    },
+    {
+      "id": "04756772-500e-5f72-a401-dd57b66f7251",
+      "old_title": "knowledge base Publish and Risk Alert",
+      "title": "Contract Review Publish & Risk Alert",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "submitter-gets-a-clear-verdict",
+          "statement": "The person who submitted a contract knows what was found and what happens next without chasing anyone.",
+          "success_criteria": [
+            "Every submitter receives a summary after their contract is reviewed.",
+            "The summary states the risk level and the specific flags behind it, not just a score."
+          ]
+        },
+        {
+          "id": "legal-notices-high-risk-fast",
+          "statement": "Legal is pulled in immediately when a contract is genuinely risky, and not for routine ones.",
+          "success_criteria": [
+            "Every contract crossing the high-risk threshold or carrying any critical flag reaches the legal channel.",
+            "Legal is not paged for contracts below the threshold."
+          ]
+        }
+      ],
+      "procedure": "Convert a completed contract review into the record of what was found and who needs to know. Publish the full analysis, tell the submitter what happened, and pull legal in when the red flag count or severity crosses the line the team has set. Treat knowledge base and messaging failures as recoverable: save the analysis locally and retry rather than losing the finding.",
+      "verdict": "keep"
+    },
+    {
+      "id": "983df3be-5a0e-5b92-b8d3-ca1ac87df901",
+      "old_title": "Domain Scan",
+      "title": "Lookalike Domain Detection",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "new-threats-found-before-they-launch",
+          "statement": "A newly registered lookalike domain is known to the brand protection pipeline before it is weaponized against customers.",
+          "success_criteria": [
+            "Every domain that newly resolves and matches a generated variant produces a new-detection event within the same scan cycle.",
+            "The known-domains ledger never re-flags a domain already seen."
+          ]
+        }
+      ],
+      "procedure": "Keep the brand's shadow footprint current: generate the plausible lookalikes of the brand's name and domain, check which ones now resolve, and hand anything new to the deeper threat-scoring step. The job is coverage and freshness, not judgment about severity. Resume cleanly from checkpoint if a scan is interrupted, and do not re-surface a domain the ledger already knows about.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a3e4bb69-0833-59a9-8f3e-115a1782fb82",
+      "old_title": "Weekly Brand Protection Report",
+      "title": "Weekly Brand Protection Digest",
+      "domain": "legal_compliance",
+      "outcomes": [
+        {
+          "id": "team-sees-the-landscape-not-just-alerts",
+          "statement": "The team understands how the threat landscape is moving week to week, not just today's individual alerts.",
+          "success_criteria": [
+            "The report compares this week's new-threat volume and categories against the prior week.",
+            "Resolved cases show a timeline, not just a closed status."
+          ]
+        }
+      ],
+      "procedure": "Roll up a week of individual brand protection findings into a picture the team can act on: what is new, what got resolved, and whether the shape of the threat is shifting. Recommend defensive registrations where the pattern warrants it. If the knowledge base is unreachable, build from local state and say so rather than skipping the week.",
+      "verdict": "keep",
+      "notes": "Paired with Lookalike Domain Detection (983df3be). No dedicated cybersecurity/brand-protection value exists in the closed domain vocabulary; legal_compliance was the closest fit given the trademark/defensive-registration framing. See slice_findings."
+    },
+    {
+      "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
+      "old_title": "Daily Threshold Tracker",
+      "title": "Cloud Spend Threshold Tracker",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "budget-breach-known-same-day",
+          "statement": "Whoever owns the cloud bill learns about a budget breach the day it happens, not at month-end reconciliation.",
+          "success_criteria": [
+            "A single alert fires the same day month-to-date or the projected total crosses the threshold.",
+            "No alert fires on a day already covered by an unresolved breach window."
+          ]
+        }
+      ],
+      "procedure": "Watch cloud spend against the configured threshold and stay quiet as long as the trajectory is fine. The job is judgment about trajectory, not just today's number: project the likely end-of-period total from the run rate before deciding whether to speak up. One alert per breach window is enough; repeating it trains people to ignore it.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ab17ac27-093b-5eb8-89e1-48a617575788",
+      "old_title": "Conflict Resolution",
+      "title": "Contact Enrichment Conflict Resolution",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "human-arbitrates-conflicting-contact-data",
+          "statement": "A contradictory field update to a contact record is decided by a human, not silently overwritten or dropped.",
+          "success_criteria": [
+            "Every conflict event produces a recorded decision against the contact.",
+            "The decision persists as training signal for future similar conflicts."
+          ]
+        }
+      ],
+      "procedure": "Give the human reviewer everything needed to decide a contradictory field update in one look: both values, their confidence and source counts, and a recommendation. Apply whatever they decide directly to the contact record, and remember the pattern so a repeat of the same kind of conflict can eventually be pre-classified rather than asked again.",
+      "verdict": "merge_into",
+      "merge_into": "ff3bdd83-f667-521c-a417-aef94d719359",
+      "merge_reason": "Same job as ff3bdd83: a human arbitrates a contradictory contact-field update surfaced by an enrichment pipeline, the decision is applied to the contact record, and the pattern is remembered for future auto-classification. payload.id is literally 'uc_conflict_resolution' on both recipes. The only real differences are which enrichment pipeline's conflict event triggers it and whether conflicts are grouped by contact before review, both of which are 'how' details the new recipe format is meant to leave to agent judgment, not a different accountability. The surviving recipe should absorb both trigger events (contact.enrichment.conflict_detected and contact.sync.conflict_detected) and support both a per-conflict and a grouped-by-contact presentation.",
+      "notes": "See ff3bdd83 for the surviving charter."
+    },
+    {
+      "id": "ff3bdd83-f667-521c-a417-aef94d719359",
+      "old_title": "Conflict Resolution",
+      "title": "Contact Data Conflict Resolution",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "contact-record-stays-trustworthy",
+          "statement": "A contact's record never carries a silently overwritten field; every contradiction a human is asked to settle gets settled, and the settlement is remembered.",
+          "success_criteria": [
+            "No conflict is auto-resolved without a human decision.",
+            "A contact with multiple simultaneous conflicts is reviewed once as a set, not as separate interruptions.",
+            "Three or more repeat accepts of the same pattern become a candidate the user can opt into auto-resolving."
+          ]
+        }
+      ],
+      "procedure": "When enrichment pipelines disagree with what is already on a contact record, group the contradictions by contact so the reviewer settles all of them for that person in one pass rather than being interrupted field by field. Apply the decision, log it, and use the accumulated decisions to make repeat patterns easier to pre-classify over time. Never resolve a conflict without a human; let it age in the queue instead.",
+      "verdict": "keep",
+      "notes": "Absorbs ab17ac27 on merge: must also listen for contact.enrichment.conflict_detected in addition to contact.sync.conflict_detected, and support a per-conflict presentation alongside the grouped-by-contact one."
+    },
+    {
+      "id": "11b980d2-65b3-5fbb-8f34-52181f543d50",
+      "old_title": "Manual Fix Review",
+      "title": "CRM Suggested-Fix Approval",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "no-crm-fix-applies-itself",
+          "statement": "A suggested CRM fix, whether a merge, an archive, or a correction, never changes a record without someone deciding it should.",
+          "success_criteria": [
+            "Every suggested fix reaches a human with enough context to decide without leaving the tool.",
+            "Every approved fix retains its before and after values so it can be rolled back."
+          ]
+        },
+        {
+          "id": "rejections-teach-the-detector",
+          "statement": "A rejected fix type stops resurfacing for the same record for a meaningful window instead of nagging the reviewer again.",
+          "success_criteria": [
+            "A rejected issue is dismissed for 90 days.",
+            "Approval patterns are visible enough to inform which fix types the detector should trust more."
+          ]
+        }
+      ],
+      "procedure": "Stand between an automated data-quality detector and the CRM: nothing it suggests, a duplicate merge, a stale-record archive, an association fix, changes a record until a human approves it with full context in view. Preserve the original values so an approved fix can be rolled back, and respect a rejection for a meaningful window rather than re-asking immediately.",
+      "verdict": "keep"
+    },
+    {
+      "id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
+      "old_title": "Anomaly Response",
+      "title": "Database Anomaly Incident Response",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "critical-breach-gets-a-hypothesis-fast",
+          "statement": "When a database metric crosses into critical territory, the on-call human gets a working root-cause hypothesis and evidence, not just a raw alert.",
+          "success_criteria": [
+            "Every critical breach produces a correlation analysis across the metrics that moved together.",
+            "The escalation includes remediation options, not just a description of the problem."
+          ]
+        },
+        {
+          "id": "triage-outcomes-sharpen-future-detection",
+          "statement": "What the human decided about an incident, true positive, false positive, or actual root cause, feeds back into how future anomalies are judged.",
+          "success_criteria": [
+            "Every incident's triage outcome is persisted.",
+            "A recurring root cause becomes visible across incidents rather than being re-diagnosed from scratch each time."
+          ]
+        }
+      ],
+      "procedure": "Turn a critical monitoring breach into something a human can act on immediately: capture the evidence while it is fresh, look for metrics that moved together, and propose a root-cause hypothesis with remediation options. Never remediate without human acknowledgment given the stakes. Record what the human decided so the next incident benefits from what this one taught.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
+      "old_title": "Continuous Monitoring",
+      "title": "Database Health Monitoring",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "real-problems-noticed-not-buried",
+          "statement": "A genuine database performance problem is caught while it still matters, without a flood of noise training the team to ignore alerts.",
+          "success_criteria": [
+            "A warning only fires after the learning period has established a real baseline for that metric.",
+            "A metric with naturally low variance does not false-alarm on tiny deviations."
+          ]
+        },
+        {
+          "id": "escalation-matches-severity",
+          "statement": "The difference between worth a look and needs someone now is real, not cosmetic.",
+          "success_criteria": [
+            "Critical-level breaches route to incident response; warning-level ones do not.",
+            "A sustained breach that outlives its baseline eventually suggests the baseline itself may be wrong, rather than alerting forever."
+          ]
+        }
+      ],
+      "procedure": "Learn what normal looks like for this database before ever raising an alarm, then watch for real departures from it. Distinguish a warning worth a glance from a critical breach worth waking someone for, and suppress patterns already known to be false positives. If a breach persists long enough, consider that the baseline itself may be stale rather than the system being broken.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+      "old_title": "Triage Pipeline",
+      "title": "Backlog Candidate Triage",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "nothing-enters-the-build-queue-unseen",
+          "statement": "No candidate work item, whether found by a backlog scan, an idea harvest, or an opportunity scout, starts implementation without a human deciding it is worth doing.",
+          "success_criteria": [
+            "Every candidate is presented with enough context to decide without more digging.",
+            "An accepted candidate reliably reaches the implementation step."
+          ]
+        },
+        {
+          "id": "rejection-reasons-stop-repeat-noise",
+          "statement": "The same kind of low-value candidate stops resurfacing once the human has said no to it a few times.",
+          "success_criteria": [
+            "Rejection reasons are recorded per category.",
+            "Three or more rejections of a category measurably reduce how often that category resurfaces."
+          ]
+        }
+      ],
+      "procedure": "Be the single gate a candidate work item passes through before anyone spends build effort on it, regardless of whether it came from a backlog scan, a harvested idea, or an opportunity scout. Give the human enough context to decide without extra digging, and let their accept, reject, or defer decisions teach the upstream source what to stop surfacing. Never auto-reject on silence; let it age and resurface.",
+      "verdict": "keep",
+      "notes": "Survivor of a three-way merge with bbace830 (Harvested Idea Triage) and d7d804cf (Scouted Opportunity Triage). All three share payload.id 'uc_triage'. Must absorb harvester.idea.new and scout.opportunity.discovered as additional listen events, plus their emit counterparts and their backlog_format / card_verbosity inputs."
+    },
+    {
+      "id": "1e3b8fa3-8146-510a-8294-21593e156389",
+      "old_title": "Draft and Review",
+      "title": "Correspondence Draft & Review",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "replies-sound-like-the-person",
+          "statement": "A reply sent on the user's behalf reads like something they would actually have written to that specific recipient.",
+          "success_criteria": [
+            "The style profile used for a draft reflects that recipient's own history, not a generic voice.",
+            "A human-edited draft updates the style profile so the next draft to that recipient needs fewer edits."
+          ]
+        },
+        {
+          "id": "trust-is-earned-not-assumed",
+          "statement": "Auto-send is only ever reached by a contact whose drafts have proven reliable, and never for the categories that should always have eyes on them.",
+          "success_criteria": [
+            "A contact only reaches auto-send after the configured run of unedited approvals.",
+            "Safety-excluded categories such as financial, legal, first contact, or emotionally sensitive always route to human review regardless of graduation status."
+          ]
+        }
+      ],
+      "procedure": "Compose each reply in the recipient's own voice using what has been learned about how the user actually writes to them, then route it through human review until that contact has earned enough consecutive unedited approvals to graduate. Some categories never graduate regardless of track record. Every edit the human makes should sharpen the style profile for next time.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+      "old_title": "Periodic Digest",
+      "title": "Correspondence Activity Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "operator-sees-the-whole-inbox-at-a-glance",
+          "statement": "The person running this does not have to open every channel to know whether replies are keeping pace and where attention is needed.",
+          "success_criteria": [
+            "The digest states pending approvals and contacts near graduation, not just volume counts.",
+            "Channel health is visible per channel, not only in aggregate."
+          ]
+        }
+      ],
+      "procedure": "Give a periodic, calm snapshot of how the correspondence pipeline is doing: volume, how much is still waiting on a human, who is about to graduate to auto-send, and whether any channel looks unhealthy. This is a status readout, not a decision point, so it should never require action to be useful.",
+      "verdict": "keep"
+    },
+    {
+      "id": "572b538c-83b3-5f6b-83fd-73656e2f9077",
+      "old_title": "Weekly Status Report",
+      "title": "Editorial Weekly Status Report",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "editor-sees-gaps-before-deadline",
+          "statement": "The editorial lead knows about a content gap or writer overload while there is still time to fix the schedule, not after it is missed.",
+          "success_criteria": [
+            "A critical gap such as an empty week, topic void, or deadline bunching is flagged the same week it is detected.",
+            "Writer workload imbalance is visible in the report, not just published and overdue counts."
+          ]
+        }
+      ],
+      "procedure": "Give the editorial team a weekly read on where content stands: what shipped, what is overdue, where the calendar has a hole, and whether any writer is overloaded. Be as assertive about a critical gap as the configured mode calls for, rather than just noting it and moving on. If the tracker is unreachable, still send a partial report rather than skipping the week.",
+      "verdict": "keep"
+    },
+    {
+      "id": "2d63dd2d-ba14-5935-b82d-53f0fe1fb01e",
+      "old_title": "Weekly Summary",
+      "title": "Weekly Expense Summary",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "spender-sees-mtd-trajectory",
+          "statement": "Whoever owns this budget knows, every week, whether the month is tracking to plan and which vendors are driving spend.",
+          "success_criteria": [
+            "The summary states month-to-date against the monthly budget with a projected month-end.",
+            "Top vendors and anomalies are named, not just aggregate totals."
+          ]
+        }
+      ],
+      "procedure": "Turn the week's expense ledger into a formatted summary that answers whether the month is on track without anyone opening the sheet: totals, category movement, top vendors, and anything that looks like an anomaly or still needs review. If the sheet is unreachable, build from the local log with a freshness warning rather than skipping.",
+      "verdict": "keep"
+    },
+    {
+      "id": "cfb66ef1-c3a5-533a-b924-6c2aa3c6adf6",
+      "old_title": "Weekly Cash Flow Summary",
+      "title": "Weekly Business Cash Flow Summary",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "finance-channel-sees-cash-position-weekly",
+          "statement": "The finance channel has a current read on cash position and receivables aging every week without pulling the P&L themselves.",
+          "success_criteria": [
+            "The summary states net cash flow and accounts-receivable aging, not just revenue.",
+            "Week-over-week deltas are present so a trend is visible, not just a snapshot."
+          ]
+        }
+      ],
+      "procedure": "Aggregate the week's P&L into a cash-position readout the finance channel can trust: net cash flow, who owes what and for how long, and where expenses concentrated. Compare against last week so a shift is visible as a trend, not a one-off number. Link back to the source dashboard for anyone who wants to dig deeper.",
+      "verdict": "keep"
+    },
+    {
+      "id": "bbace830-43f9-5583-b675-a71aa969127d",
+      "old_title": "Triage Pipeline",
+      "title": "Harvested Idea Triage",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "harvested-ideas-get-a-human-yes-no",
+          "statement": "A harvested improvement idea reaches a human decision before it consumes codebase-analysis effort.",
+          "success_criteria": [
+            "Every harvested idea is presented for accept or reject.",
+            "An accepted idea reliably reaches the codebase-analysis step."
+          ]
+        }
+      ],
+      "procedure": "Present each harvested idea to the human for accept or reject before it enters the codebase-analysis pipeline, and let repeated rejections in a category suppress future harvesting of that category. Functionally the same gate used elsewhere in this product family, just fed by a harvester instead of a backlog scan.",
+      "verdict": "merge_into",
+      "merge_into": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+      "merge_reason": "Identical job to uc_triage (8751850c): a human accepts or rejects a candidate before it proceeds toward implementation, and the decision trains future filtering. payload.id is literally 'uc_triage' on both. The only difference is the upstream source (harvester versus backlog scan) and a backlog_format input the survivor should absorb."
+    },
+    {
+      "id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
+      "old_title": "Post-Incident Review",
+      "title": "Post-Incident Review",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "postmortem-exists-for-every-major-incident",
+          "statement": "Every resolved S1 or S2 incident gets a structured record of what happened and why, not just a closed ticket.",
+          "success_criteria": [
+            "A post-mortem is generated for every resolved S1/S2 after the settling period.",
+            "The reviewer can edit findings before they become the permanent record."
+          ]
+        },
+        {
+          "id": "recurring-root-causes-get-flagged",
+          "statement": "A root cause that keeps coming back is visible as a pattern, not re-discovered fresh each time.",
+          "success_criteria": [
+            "The 90-day history is checked against the current root-cause category.",
+            "A systemic pattern is explicitly flagged when found, not left implicit."
+          ]
+        }
+      ],
+      "procedure": "After the settling period, turn a resolved S1 or S2 incident into a structured record: timeline, impact, root cause, response metrics, and action items. Check recent history for the same root-cause category before finalizing so a systemic pattern gets called out rather than treated as a one-off. Always route the finished draft through human approval before it becomes the permanent record.",
+      "verdict": "keep"
+    },
+    {
+      "id": "fb063483-e4fa-534d-878e-bef4195a0b2d",
+      "old_title": "knowledge base Databases Tracking",
+      "title": "Classified Email Intake Log",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "every-classified-item-is-findable-later",
+          "statement": "Anyone looking for a specific intake item later can find it in the tracking database instead of searching email.",
+          "success_criteria": [
+            "A tracking row exists for every classified email that is not a duplicate.",
+            "A duplicate is skipped rather than creating a second row for the same item."
+          ]
+        }
+      ],
+      "procedure": "Write one durable, structured record per classified intake item so the team has a searchable log outside the inbox. Check for an existing row before creating a new one so the same item never appears twice. This capability is entirely optional and should do nothing at all when the tracking connector is not configured.",
+      "verdict": "keep",
+      "notes": "Thin source context; classified as customer_support (inbox/intake tracking) but could plausibly sit under general_professional depending on the parent persona. Flagged for Director judgment."
+    },
+    {
+      "id": "36e446ab-23cb-5087-a83c-17daaa964f64",
+      "old_title": "Confidence Digest",
+      "title": "Market Confidence Digest",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "reader-trusts-the-ranking-not-just-the-list",
+          "statement": "The person reading the digest can tell which findings are worth their attention because the confidence score reflects what actually turned out useful before.",
+          "success_criteria": [
+            "Every finding's confidence score factors in calibration from past review outcomes.",
+            "A category with repeated noise tags is measurably deprioritized in the next digest."
+          ]
+        }
+      ],
+      "procedure": "Score every flagged market on a composite of signal quality, price, news, and orderbook, tempered by what past reviews said was actually useful, then deliver one digest a reader can trust. Ask the reader to tag findings useful or noise so tomorrow's filter gets sharper. Ship a quiet-day digest rather than going silent when nothing is flagged.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c30aea9f-1584-5db0-be3b-792abacba11f",
+      "old_title": "Anomaly Escalation",
+      "title": "Transaction Anomaly Escalation",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "real-fraud-gets-loud-noise-doesnt",
+          "statement": "A genuinely suspicious charge reaches the right channels fast, and a known-safe merchant never interrupts anyone again.",
+          "success_criteria": [
+            "High-severity anomalies reach both messaging and email with recommended actions.",
+            "A whitelisted merchant is never escalated."
+          ]
+        },
+        {
+          "id": "whitelist-grows-from-real-decisions",
+          "statement": "The whitelist reflects what the user has actually confirmed is legitimate, not a static seed list.",
+          "success_criteria": [
+            "A merchant marked known legitimate three or more times is auto-whitelisted.",
+            "Every escalation captures a human verdict, fraud or legitimate, that feeds this."
+          ]
+        }
+      ],
+      "procedure": "Score each flagged transaction and route it by severity: high severity gets every channel with recommended next steps, standard severity gets a lighter touch, and whitelisted merchants never interrupt anyone. Ask for a verdict on each escalation and let a repeated known-legitimate verdict grow the whitelist automatically so the same false alarm stops recurring.",
+      "verdict": "keep"
+    },
+    {
+      "id": "4595040a-3353-54e0-8ede-e0224c005e5a",
+      "old_title": "Weekly Spending Summary",
+      "title": "Weekly Personal Spending Summary",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "user-knows-budget-status-without-checking",
+          "statement": "The user knows every week whether they are on pace against their own budget without opening a spreadsheet.",
+          "success_criteria": [
+            "The summary states per-category budget utilization, not just total spend.",
+            "A week with zero transactions still produces a quiet-week message so the user knows the run happened."
+          ]
+        }
+      ],
+      "procedure": "Turn the week's transactions into a summary the user can absorb in seconds and a fuller report for anyone who wants detail: totals, category movement, top merchants, and how spend compares to budget. Ship even a quiet week's summary so silence never gets mistaken for a broken pipeline.",
+      "verdict": "keep"
+    },
+    {
+      "id": "b24d85f3-4ab7-5a01-8f1c-0f28cfcdd894",
+      "old_title": "Post-Meeting Feedback",
+      "title": "Post-Meeting Prep Feedback",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "prep-quality-is-measured-not-assumed",
+          "statement": "Whether meeting prep was actually useful is known from the person who used it, not assumed from whether it shipped.",
+          "success_criteria": [
+            "A rating request goes out after every prepped meeting ends.",
+            "A rating below the useful threshold, repeated on the same dimension, tightens that classifier's evidence bar."
+          ]
+        }
+      ],
+      "procedure": "Ask the person who just walked out of a prepped meeting whether the prep was actually useful, and use the answer to make the next prep better rather than just logging a score. Give one follow-up nudge if there is no reply, then move on rather than nagging indefinitely.",
+      "verdict": "keep"
+    },
+    {
+      "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
+      "old_title": "Triage",
+      "title": "Scouted Opportunity Triage",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "scouted-opportunities-get-a-human-yes-no",
+          "statement": "A discovered opportunity reaches a human decision before any implementation effort is spent on it.",
+          "success_criteria": [
+            "Every discovered candidate is presented for accept or reject with enough context to decide.",
+            "An accepted candidate reaches downstream implementation agents."
+          ]
+        }
+      ],
+      "procedure": "Present each scouted opportunity to the human for accept or reject before it becomes backlog work, and let rejection reasons train which topics stop surfacing. Same job as the other candidate-triage gates in this product family, just fed by an opportunity scout instead of a backlog scan or harvester.",
+      "verdict": "merge_into",
+      "merge_into": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+      "merge_reason": "Same job as uc_triage (8751850c) and the harvester triage (bbace830): a human accept/reject gate before a candidate proceeds to implementation, with rejection reasons training future filtering. payload.id is 'uc_triage' here too. Survivor should absorb the scout.opportunity.* events and the card_verbosity input."
+    },
+    {
+      "id": "5d8deb6b-722b-5077-813f-4b684138c8a4",
+      "old_title": "Weekly Funnel Report",
+      "title": "Weekly Recruiting Funnel Report",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "hiring-team-sees-conversion-not-just-counts",
+          "statement": "The hiring team knows where candidates are actually getting stuck in the funnel, not just how many applied.",
+          "success_criteria": [
+            "Stage conversion rates and time-in-stage are reported, not just raw counts.",
+            "Week-over-week deltas are visible so a worsening stage is caught early."
+          ]
+        }
+      ],
+      "procedure": "Compile the week's recruiting activity into a funnel view the hiring team can act on: how many moved through each stage, where conversion is weak, and how that compares to last week. If the platform API fails, still deliver from cached snapshots and mark the report incomplete rather than skipping it.",
+      "verdict": "keep"
+    },
+    {
+      "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+      "old_title": "Monthly Revenue Report & Calibration",
+      "title": "Monthly Revenue Report & Prediction Calibration",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "report-and-model-both-improve-monthly",
+          "statement": "The monthly revenue report is trustworthy, and the health or churn-prediction model that feeds it gets measurably better every month it runs.",
+          "success_criteria": [
+            "The report states MRR waterfall, health distribution, and prediction accuracy together.",
+            "Scoring weights are adjusted from precision and recall, and the adjustment is recorded, not silent."
+          ]
+        }
+      ],
+      "procedure": "Deliver the month's MRR movement alongside an honest read on how well last month's health predictions actually held up, then adjust the scoring model's weights based on that precision and recall. This is both a report and a feedback loop: the report without the calibration would just repeat the same prediction mistakes next month.",
+      "verdict": "keep",
+      "notes": "Near-duplicate in shape to Monthly MRR Report (8fec7960); kept separate because this one is load-bearing for a churn-prediction calibration loop the other does not have. See slice_findings."
+    },
+    {
+      "id": "ea6f518f-2af2-546d-96f0-fb667e8cc0ed",
+      "old_title": "Daily Revenue Summary",
+      "title": "Daily Revenue Summary",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "revenue-moves-are-explained-not-just-reported",
+          "statement": "A day's revenue number comes with enough trend context, against both a 7-day and a 30-day baseline, that a reader can tell if it is normal or worth a second look.",
+          "success_criteria": [
+            "The report states trend against both the 7-day and 30-day baselines.",
+            "A churn spike beyond the normal band is flagged as its own event, not buried in the narrative."
+          ]
+        }
+      ],
+      "procedure": "Turn yesterday's revenue activity into a readout with enough trend context to be self-explanatory, and call out a churn spike explicitly rather than leaving the reader to notice it in a table. If the revenue source or the enrichment source fails, still ship a partial summary with the gap named.",
+      "verdict": "keep"
+    },
+    {
+      "id": "be53e4e3-1f98-5e40-931c-6fa9ac21148a",
+      "old_title": "Stale Deal Watch",
+      "title": "Stale Deal Watch",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "stale-deals-get-escalating-not-repeating-attention",
+          "statement": "A deal that has gone quiet gets attention that escalates as it gets staler, without repeating the same nag at the same tier.",
+          "success_criteria": [
+            "A deal only re-alerts when it crosses into a new tier.",
+            "An owner DM only fires at the deeper tier, not on every check."
+          ]
+        }
+      ],
+      "procedure": "Notice when a deal stops moving and escalate proportionally: a channel alert first, an owner DM if it is still stuck well past that. Re-alert only when the deal crosses into a genuinely new tier of staleness, never on every poll, so the alert stays meaningful instead of becoming background noise.",
+      "verdict": "keep"
+    },
+    {
+      "id": "090d463e-c41a-5f13-b813-f698797b993b",
+      "old_title": "Weekly Pipeline Report",
+      "title": "Weekly Sales Pipeline Report",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "leadership-sees-pipeline-health-weekly",
+          "statement": "Sales leadership has a weekly, trustworthy read on pipeline health without pulling the CRM themselves.",
+          "success_criteria": [
+            "The report states weighted value and conversion rates, not just raw deal count.",
+            "Deals won, lost, and created this week are broken out explicitly."
+          ]
+        }
+      ],
+      "procedure": "Give sales leadership a Monday-morning read on pipeline health: total and weighted value, how deals are converting between stages, and what moved this week. If the CRM is unavailable, use the last good snapshot and flag it as stale rather than skipping the week.",
+      "verdict": "keep",
+      "notes": "Considered against Daily Sales Pipeline Snapshot (b344fab1); kept separate as a genuinely different accountability, a weekly conversion/won-lost accounting versus a daily operational snapshot, not a duplicate of the same data."
+    },
+    {
+      "id": "0419e838-2093-5027-9c82-bd257713b31f",
+      "old_title": "Review Learning",
+      "title": "Sales Proposal Review Learning",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "winning-patterns-compound",
+          "statement": "A proposal framing that wins keeps getting reinforced, and a reviewer complaint that recurs gets fixed at the pattern level instead of being re-litigated per proposal.",
+          "success_criteria": [
+            "An approval reinforces the winning pattern in memory and updates the record's status.",
+            "A revision regenerates only the flagged sections, not the whole proposal, and the revision reason is recorded."
+          ]
+        }
+      ],
+      "procedure": "Close the loop after a human reviews a proposal: on approval, reinforce what worked so future proposals lean into it; on a revision request, fix only what was flagged and remember the complaint so it does not recur. This is the learning step, not the review itself, and it never asks for more human input.",
+      "verdict": "keep"
+    },
+    {
+      "id": "2dca09fb-1146-5617-8932-e3200967f31e",
+      "old_title": "Regression Handling",
+      "title": "Vulnerability Regression Handling",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "reintroduced-vulns-reopen-loudly",
+          "statement": "A previously fixed vulnerability that comes back is impossible to miss, regardless of its severity score.",
+          "success_criteria": [
+            "The closed ticket is reopened with the re-introduction commit and the reverted fix named.",
+            "A security-alerts channel message fires for every regression, not just high-CVSS ones."
+          ]
+        }
+      ],
+      "procedure": "When a fixed vulnerability resurfaces, reopen the ticket with exactly what came back and why, the commit, the reverted fix, the current severity, and make noise about it regardless of severity score, because a regression is a worse signal than a first finding. Track the per-CVE regression count; a vulnerability that keeps regressing points at a brittle fix, not bad luck.",
+      "verdict": "keep"
+    },
+    {
+      "id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
+      "old_title": "Sentry Issue Scan",
+      "title": "Sentry Issue Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "only-real-signal-reaches-root-cause",
+          "statement": "The root-cause step only ever sees issues worth investigating, because known-noise patterns are filtered before they get there.",
+          "success_criteria": [
+            "An issue below the severity threshold or matching a known-noise pattern is not forwarded.",
+            "Three or more noise dismissals of a pattern measurably suppress it going forward."
+          ]
+        }
+      ],
+      "procedure": "Pull unresolved Sentry issues for the lookback window and hand only the ones worth investigating to root-cause analysis: apply the severity floor and let memory of past noise dismissals suppress patterns that keep turning out to be nothing. This is a filter, not a diagnosis, so it should never editorialize about cause.",
+      "verdict": "keep"
+    },
+    {
+      "id": "19da46d7-03f3-5082-b228-8a665dbf9fbc",
+      "old_title": "Daily Digest",
+      "title": "Ecommerce Daily Sales Digest",
+      "domain": "operations_logistics",
+      "outcomes": [
+        {
+          "id": "merchant-knows-if-today-was-normal",
+          "statement": "The merchant can tell at a glance whether today's numbers are on trend or worth investigating, without pulling last week's data themselves.",
+          "success_criteria": [
+            "Every headline metric carries a trend indicator against the 7-day rolling average.",
+            "Top products and refunds are named specifically, not just aggregate totals."
+          ]
+        }
+      ],
+      "procedure": "Compile the day's store performance, revenue, orders, refunds, top products, against the rolling 7-day average so the reader sees trend, not just a number in isolation. Ship even on a day with partial data from the store platform, noting the numbers are approximate rather than skipping the digest.",
+      "verdict": "keep"
+    },
+    {
+      "id": "e71be662-3bfc-5a42-9869-fbf3a8381e7e",
+      "old_title": "Inventory Watch",
+      "title": "Inventory Threshold Watch",
+      "domain": "operations_logistics",
+      "outcomes": [
+        {
+          "id": "stockouts-are-anticipated-not-discovered",
+          "statement": "A SKU heading toward stockout is flagged with enough lead time, using sell-through velocity, to reorder before it actually runs out.",
+          "success_criteria": [
+            "A critical-threshold breach includes an estimated stockout date, not just a stock count.",
+            "The same tier never re-alerts for the same SKU."
+          ]
+        }
+      ],
+      "procedure": "Watch stock levels against warn and critical thresholds and use recent sell-through velocity to estimate when a SKU will actually run out, not just that it is low. Alert once per new tier breached; deduplication keeps the same tier from repeating and training people to ignore it.",
+      "verdict": "keep"
+    },
+    {
+      "id": "a3375a9b-bbdd-5570-aa0e-5e113b8ffd5d",
+      "old_title": "Order Stream",
+      "title": "High-Value Order Stream",
+      "domain": "operations_logistics",
+      "outcomes": [
+        {
+          "id": "high-value-orders-get-immediate-eyes",
+          "statement": "A high-value order can be acted on, a fraud check or white-glove fulfillment, within minutes of coming in, not discovered in a later report.",
+          "success_criteria": [
+            "Every order above the high-value threshold triggers an immediate alert, not a batched one.",
+            "Every order is classified and logged even when it is not high-value."
+          ]
+        }
+      ],
+      "procedure": "Classify every new order as it arrives, high-value, international, bulk, or discounted, and log it, but only interrupt anyone immediately for the high-value ones. This is the fast lane for orders that need eyes now; everything else just needs to be captured accurately for later reporting.",
+      "verdict": "keep"
+    },
+    {
+      "id": "1f52c9ff-639a-5e0d-813e-262d83d77960",
+      "old_title": "Refund Watch",
+      "title": "Refund Quality Watch",
+      "domain": "operations_logistics",
+      "outcomes": [
+        {
+          "id": "quality-driven-refunds-surface-immediately",
+          "statement": "A refund caused by a product-quality problem reaches someone immediately, not buried in a later refunds report.",
+          "success_criteria": [
+            "A quality-issue refund alerts regardless of amount.",
+            "Every refund is logged to the tracking sheet even when it does not meet the alert bar."
+          ]
+        }
+      ],
+      "procedure": "Log every refund as it happens and alert immediately on the ones that matter now: anything above the dollar threshold, or any amount at all if the stated reason points to a product-quality problem. The quality signal should never wait for a size threshold to clear.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8fec7960-5455-5c70-96bf-298ace875784",
+      "old_title": "Monthly MRR Report",
+      "title": "Monthly MRR Report",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "mrr-movement-is-explained-and-defensible",
+          "statement": "Finance can see exactly why MRR moved the way it did this month, new, churned, expansion, and trust that the anomaly flags are not noise.",
+          "success_criteria": [
+            "The MRR waterfall breaks out new, churned, expansion, and net, not just a total.",
+            "An anomaly such as churn above 5% or an MRR drop above 10% is flagged explicitly rather than left for the reader to spot."
+          ]
+        }
+      ],
+      "procedure": "Compute the month's full MRR waterfall from active subscriptions, compare it to last month, and call out anomalies against fixed thresholds rather than leaving the reader to notice a churn spike buried in a table. Keep a backup snapshot so this month becomes next month's comparison baseline even if the source changes.",
+      "verdict": "keep",
+      "notes": "Near-duplicate in shape to Monthly Revenue Report & Prediction Calibration (06f8a9ba); kept separate, different source system and no calibration feedback loop here. See slice_findings."
+    },
+    {
+      "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+      "old_title": "Deliver Report",
+      "title": "Survey Insight Report Delivery",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "findings-reach-the-team-and-the-baseline",
+          "statement": "A completed survey analysis becomes both a report the team sees and an updated baseline the next analysis compares against.",
+          "success_criteria": [
+            "Every completed analysis produces a delivered report.",
+            "Baselines such as themes, sentiment, and NPS update after every report so the next comparison is against fresh data, not stale."
+          ]
+        }
+      ],
+      "procedure": "Turn analysis output into a report the team actually receives, escalating priority when a high-severity anomaly is present, and archive it if the knowledge base is configured. Update the rolling baselines afterward so next time's trend comparison reflects reality rather than a stale reference point. A first run should say plainly that it is establishing baseline, not comparing to nothing.",
+      "verdict": "keep"
+    },
+    {
+      "id": "1d099bb7-fc9a-5e1a-832b-e7f808beefa1",
+      "old_title": "Daily Ops Summary",
+      "title": "Daily Operations Summary",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "ops-lead-sees-the-day-without-digging",
+          "statement": "Whoever owns operations can see the day's command activity, service health, and deploys in one place without pulling three different logs.",
+          "success_criteria": [
+            "The summary states current service health, not just historical command counts.",
+            "Pending confirmations are called out explicitly, since the expectation is zero."
+          ]
+        }
+      ],
+      "procedure": "Roll up a day of operational activity into one place: what commands ran, how services are doing right now, what deployed, and whether anything is stuck waiting on a confirmation it should not be. Post to both channels so it does not depend on one person watching one feed, and archive it for later reference.",
+      "verdict": "keep"
+    },
+    {
+      "id": "bfae76f0-5997-5d7c-bea0-5a18028e4ee2",
+      "old_title": "Portfolio Re-audit",
+      "title": "Website Portfolio Re-audit",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "score-changes-are-caught-not-assumed",
+          "statement": "A meaningful improvement or regression in a tracked site's audit score is caught the week it happens, not discovered months later.",
+          "success_criteria": [
+            "A score delta at or above the configured threshold is explicitly flagged as improved or regressed.",
+            "A site that goes unreachable during re-audit is reported as down, not silently dropped from the summary."
+          ]
+        }
+      ],
+      "procedure": "Re-run a quick audit against every previously audited site on a schedule and compare the new score to the prior one, flagging anything that moved meaningfully in either direction. This is a delta report, not a fresh audit: depth stays quick so the whole portfolio can be swept regularly without becoming a full re-engagement each time.",
+      "verdict": "keep",
+      "notes": "Domain judgment call: classified as sales_marketing on the assumption this is an agency-style client-website audit tool, since it audits a portfolio of third-party sites. Could plausibly sit elsewhere depending on the parent persona; flagged for Director judgment."
+    },
+    {
+      "id": "228c0d05-6844-58e7-b815-97564ab21f53",
+      "old_title": "Error Event Ingestion",
+      "title": "Platform Error Event Ingestion",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "no-persona-failure-goes-unrecorded",
+          "statement": "Every persona failure, including a silent one no event ever announced, ends up in the same searchable error record.",
+          "success_criteria": [
+            "Both event-driven failures and API-polled silent failures land in the same index.",
+            "A duplicate within the dedup window does not create a second record."
+          ]
+        }
+      ],
+      "procedure": "Catch every persona failure two ways at once, by subscribing to error events and by polling for the silent failures that never emit one, then normalize both into the same structured record. Deduplicate close together in time so one incident does not look like several. This is the ingestion layer other capabilities build classification and reporting on top of.",
+      "verdict": "keep"
+    },
+    {
+      "id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
+      "old_title": "Daily Digest & Weekly Reliability Report",
+      "title": "Persona Reliability Digest & Report",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "reliability-trend-is-visible-not-anecdotal",
+          "statement": "Whether the platform's personas are getting more or less reliable is a number the team can see, not a feeling from recent incidents.",
+          "success_criteria": [
+            "The weekly report states error rate and mean-time-to-resolution per persona with a week-over-week delta.",
+            "Recommendations are ranked, not just a raw error list."
+          ]
+        }
+      ],
+      "procedure": "Give the team both a daily pulse, totals, trending categories, top remediation, and a weekly reliability verdict, error rate and mean-time-to-resolution per persona, week-over-week movement, ranked recommendations, built from the same error index. With under 24 hours of data, say so and ship an abbreviated version rather than a misleadingly confident one.",
+      "verdict": "keep"
+    },
+    {
+      "id": "4810f244-cfb6-53d4-98bb-1a710ddc39ea",
+      "old_title": "Scheduled Scan",
+      "title": "Email Follow-up Sweep",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "nothing-important-goes-unanswered-unnoticed",
+          "statement": "An unanswered email that matters gets progressively more visible the longer it sits, and a reply is caught immediately so the thread stops nagging.",
+          "success_criteria": [
+            "A thread's urgency tier only advances forward, never resets without a reply.",
+            "VIP threads escalate on a shorter clock than everyone else."
+          ]
+        }
+      ],
+      "procedure": "Sweep sent threads for replies and classify what is still waiting into urgency tiers that get louder the longer they sit, with VIP recipients on a shorter clock. Batch the reminder so it is one digest, not a stream of interruptions, and auto-resolve anything that got a reply since the last sweep.",
+      "verdict": "keep",
+      "notes": "Companion to On-Demand Follow-up Status (a90716fa). Considered merging the two since they read the same ledger, but kept separate: this one owns the mutating escalation loop, the other is an explicitly non-mutating, user-triggered read. See slice_findings."
+    },
+    {
+      "id": "a90716fa-f0c0-51d1-983f-25cc047032aa",
+      "old_title": "On-demand Status",
+      "title": "On-Demand Follow-up Status",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "user-can-check-without-disturbing-the-clock",
+          "statement": "The user can get a full picture of every tracked thread before a meeting or at day's end without accidentally advancing any escalation.",
+          "success_criteria": [
+            "Calling this never changes a thread's escalation tier.",
+            "The report includes overdue, within-threshold, and recently resolved threads together."
+          ]
+        }
+      ],
+      "procedure": "Answer where things stand right now, on demand, pulling the full ledger of tracked threads without touching the escalation state the scheduled sweep owns. This exists purely for a human who wants the picture before a meeting or at the end of the day, so it must never advance a tier as a side effect of being asked.",
+      "verdict": "keep"
+    },
+    {
+      "id": "3da43c82-0a28-58fd-bdad-fb03fb2e8872",
+      "old_title": "Human Review",
+      "title": "Sales Lead Human Review",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "every-risky-lead-decision-has-a-human-in-it",
+          "statement": "A hot lead, a possible duplicate, or a low-confidence extraction never proceeds on the system's own judgment alone.",
+          "success_criteria": [
+            "Every On Fire lead, fuzzy-duplicate candidate, and sub-threshold extraction is routed here before it is finalized.",
+            "A record is never silently auto-merged."
+          ]
+        }
+      ],
+      "procedure": "Be the one stop for every lead decision that should not be made automatically: a hot lead needing fast-track attention, a possible duplicate needing a merge call, or an extraction too uncertain to trust outright. Give the reviewer full context so they can act without leaving the tool, and never silently auto-merge a fuzzy duplicate.",
+      "verdict": "keep"
+    },
+    {
+      "id": "4db88e39-3874-5ac9-8e18-4546807ad016",
+      "old_title": "Change Monitor",
+      "title": "CRM Deal Change Monitor",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "deal-changes-reach-the-right-urgency",
+          "statement": "A meaningful deal change, a stage move, an at-risk signal, a new large deal, reaches someone with the right urgency, and a Closed Lost deal always gets a loss reason on record.",
+          "success_criteria": [
+            "Every stage, amount, or close-date change is classified for urgency before alerting.",
+            "Every Closed Lost deal prompts a manual loss-reason review."
+          ]
+        }
+      ],
+      "procedure": "Poll the CRM for what changed since last time, classify how urgent each change actually is, and alert with enough business context that the recipient knows what to do next. Treat a Closed Lost deal as needing a human loss-reason review every time, since that data compounds into loss-pattern analysis over time.",
+      "verdict": "keep"
+    },
+    {
+      "id": "b344fab1-9d2c-5554-9456-e84480f0e398",
+      "old_title": "Daily Summary",
+      "title": "Daily Sales Pipeline Snapshot",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "pipeline-health-visible-every-morning",
+          "statement": "Sales leadership starts the day knowing where the pipeline stands and which deals need attention, without pulling the CRM.",
+          "success_criteria": [
+            "At-risk deals and top deals to watch are named specifically, not just aggregate value.",
+            "Velocity metrics come from real transition history, not a guess."
+          ]
+        }
+      ],
+      "procedure": "Give a daily pipeline snapshot: distribution across stages, movement since yesterday, velocity from real transition history, and which deals are at risk or worth watching today. If the CRM is unavailable, use the last good snapshot and say the data is stale rather than skipping the day.",
+      "verdict": "keep",
+      "notes": "Considered against Weekly Sales Pipeline Report (090d463e); kept separate, a daily operational snapshot and a weekly conversion/won-lost accounting are different accountabilities over the same CRM even though both are called 'pipeline reporting'."
+    },
+    {
+      "id": "7f8db04b-5429-5f04-a46c-f2e4c8bd2b79",
+      "old_title": "Insight Documentation",
+      "title": "Sales Analysis Insight Documentation",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "findings-ranked-by-what-actually-matters",
+          "statement": "The report leads with what could move revenue most, not with whatever was easiest to compute.",
+          "success_criteria": [
+            "Recommendations are ranked by revenue impact times confidence, not by discovery order.",
+            "Each significant finding is persisted so next month's trend detection has real history to compare against."
+          ]
+        }
+      ],
+      "procedure": "Take a completed analysis and turn it into a durable knowledge-base record ranked by potential revenue impact: an executive summary, win and loss patterns, and trend context. Persist each significant finding as its own memory entry so next month's trend detection has real history instead of starting cold.",
+      "verdict": "keep"
+    }
+  ],
+  "slice_findings": [
+    "Three recipes (8751850c 'Triage Pipeline', bbace830 'Triage Pipeline', d7d804cf 'Triage') all share the internal payload.id 'uc_triage' and perform an identical job: present a candidate work item to a human for accept/reject/defer and use the decision to train future filtering. They differ only in which upstream pipeline feeds them (a backlog scan, an idea harvester, an opportunity scout) and a cosmetic input field name, both 'how' details the new recipe format explicitly leaves to agent judgment rather than a difference in accountability. Merged bbace830 and d7d804cf into 8751850c, renamed 'Backlog Candidate Triage'.",
+    "Two recipes (ab17ac27, ff3bdd83) are both titled 'Conflict Resolution', both carry payload.id 'uc_conflict_resolution', and both do the same job: a human arbitrates a contradictory contact-field update from an enrichment pipeline, applies the decision, and the pattern is remembered. The only difference is which enrichment pipeline triggers them and whether conflicts are grouped by contact first. Merged ab17ac27 into ff3bdd83, renamed 'Contact Data Conflict Resolution'.",
+    "These two merges are a different case from ordinary same-shaped-but-different-job pairs: the matching payload.id in the source data is direct evidence the corpus generated the same underlying capability twice for two sibling pipelines, not that two genuinely different jobs happen to look alike. Every other apparent near-duplicate in this slice was checked against the same test and kept separate because a real behavioral or governance difference survived the check.",
+    "Two independent monthly MRR reports exist: Monthly Revenue Report & Prediction Calibration (06f8a9ba, Stripe-sourced, feeds a churn-prediction scoring loop) and Monthly MRR Report (8fec7960, spreadsheet-sourced, standalone anomaly thresholds, no calibration). Not merged, the calibration loop is load-bearing for one and absent from the other, a real behavioral difference, not a schedule choice, but the near-identical shape (MRR waterfall, anomaly detection, multi-channel delivery) suggests two personas independently reinvented the same report. Worth Director attention on whether they should share a report primitive with an optional calibration hook.",
+    "Scheduled Scan (4810f244, renamed 'Email Follow-up Sweep') and On-demand Status (a90716fa, renamed 'On-Demand Follow-up Status') read the same tracking ledger for the same email follow-up persona. Kept separate and not merged: one owns the mutating escalation loop (advances tiers, sends reminders), the other is an explicitly non-mutating, user-triggered status read. This is the slice's central trap in miniature, same data, different accountability, and a case where a same-looking pair correctly stayed apart.",
+    "Weekly Sales Pipeline Report (090d463e) and Daily Sales Pipeline Snapshot (b344fab1) both report on the same CRM pipeline but were kept separate for the same reason: a daily operational snapshot (today's movement, at-risk deals to watch) is a different accountability from a weekly conversion and won/lost accounting, even though a careless pass could have merged them as 'the same dashboard, different cadence'.",
+    "Several titles in this slice carry a garbled 'knowledge base X' prefix, for example 'knowledge base Publish and Risk Alert' and 'knowledge base Databases Tracking', that reads as a mechanical replacement of a vendor name (most likely Notion) that did not respect grammar. Both were renamed here for clarity. This is very likely a corpus-wide artifact from the same generalization pass, not specific to this slice, and worth a dedicated sweep.",
+    "The closed domain vocabulary has no bucket for cybersecurity, threat-monitoring, or brand-protection work. Lookalike Domain Detection and Weekly Brand Protection Digest (domain-squat monitoring, defensive registration advice) were force-fit into legal_compliance on the trademark/IP angle; Vulnerability Regression Handling was force-fit into software_engineering on the CI/engineering-process angle. If security-shaped recipes recur in other slices, the vocabulary may be worth a dedicated value.",
+    "Two recipes (fb063483 'Classified Email Intake Log' and bfae76f0 'Website Portfolio Re-audit') had thin enough source context that their domain assignment (customer_support and sales_marketing respectively) is a judgment call rather than a confident read; flagged individually in their own notes for Director review.",
+    "The three-way split the task described (monitoring notices, reporting accounts, review judges) held up well in practice: the pairs that looked most temptingly mergeable in this slice, Scheduled Scan vs On-demand Status and the two pipeline reports, were exactly the ones where the split is real, and no monitoring recipe was merged with a reporting or review recipe that touched the same data."
+  ]
+}

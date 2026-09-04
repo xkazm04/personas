@@ -79,6 +79,84 @@ impl ToolErrorKind {
             ToolErrorKind::Unknown => "unknown",
         }
     }
+
+    /// Parse a machine token back into the taxonomy — the inverse of
+    /// [`Self::as_str`].
+    ///
+    /// Exists because the taxonomy is now reachable from OUTSIDE the executing
+    /// code: `athena.report_tool_defect` lets an agent classify a defect it
+    /// observed, and an agent-supplied string must be validated against the
+    /// closed set rather than stored as free text. Returns `None` for anything
+    /// that is not a member, so the caller can reject the call instead of
+    /// inventing a category.
+    pub fn from_token(token: &str) -> Option<Self> {
+        Some(match token.trim().to_ascii_lowercase().as_str() {
+            "auth" => ToolErrorKind::Auth,
+            "timeout" => ToolErrorKind::Timeout,
+            "http" => ToolErrorKind::Http,
+            "transport" => ToolErrorKind::Transport,
+            "tool_error" => ToolErrorKind::ToolError,
+            "rate_limited" => ToolErrorKind::RateLimited,
+            "misconfigured" => ToolErrorKind::Misconfigured,
+            "unsupported" => ToolErrorKind::Unsupported,
+            "unknown" => ToolErrorKind::Unknown,
+            _ => return None,
+        })
+    }
+
+    /// Every member, in `as_str` order. Used to build the MCP schema's enum so
+    /// the advertised vocabulary and the stored vocabulary cannot drift.
+    pub const ALL: &'static [ToolErrorKind] = &[
+        ToolErrorKind::Auth,
+        ToolErrorKind::Timeout,
+        ToolErrorKind::Http,
+        ToolErrorKind::Transport,
+        ToolErrorKind::ToolError,
+        ToolErrorKind::RateLimited,
+        ToolErrorKind::Misconfigured,
+        ToolErrorKind::Unsupported,
+        ToolErrorKind::Unknown,
+    ];
+}
+
+#[cfg(test)]
+mod error_kind_token_tests {
+    use super::ToolErrorKind;
+
+    #[test]
+    fn every_member_round_trips_through_its_token() {
+        for kind in ToolErrorKind::ALL {
+            assert_eq!(
+                ToolErrorKind::from_token(kind.as_str()),
+                Some(*kind),
+                "{} must round-trip",
+                kind.as_str()
+            );
+        }
+    }
+
+    #[test]
+    fn a_non_member_is_rejected_rather_than_coerced() {
+        for bad in ["", "definitely_not_a_kind", "tool-error", "error"] {
+            assert_eq!(
+                ToolErrorKind::from_token(bad),
+                None,
+                "should reject {bad:?}"
+            );
+        }
+    }
+
+    /// Deliberately lenient about case and surrounding space: the caller is a
+    /// language model choosing from a schema enum, and rejecting `"Auth "`
+    /// would trade a correct classification for a retry.
+    #[test]
+    fn case_and_padding_are_forgiven_but_membership_is_not() {
+        assert_eq!(
+            ToolErrorKind::from_token("  Auth "),
+            Some(ToolErrorKind::Auth)
+        );
+        assert_eq!(ToolErrorKind::from_token("  Authy "), None);
+    }
 }
 
 /// Cap raw tool output at [`DIRECT_TOOL_OUTPUT_CAP_BYTES`] on a UTF-8 char

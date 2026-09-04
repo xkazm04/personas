@@ -125,6 +125,10 @@ function mergeHeavyFields(prev: Persona[], incoming: Persona[]): Persona[] {
         last_test_report: before.last_test_report,
         notification_channels: before.notification_channels,
         parameters: before.parameters,
+        // Lean rows DO carry core_profile (it is small and the Life tab must
+        // not blink) — this is belt-and-suspenders: if a lean row ever comes
+        // back without it, keep the hydrated value instead of blanking.
+        core_profile: lean.core_profile ?? before.core_profile,
       };
     }
     return lean;

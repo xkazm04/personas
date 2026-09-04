@@ -5,13 +5,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   getHealthMeta,
-  type DisplayUseCase,
-} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+  type PersonaCapability,
+} from '@/lib/personas/capabilities';
 
 interface CapabilityTabBarProps {
   /** Capabilities to render as tabs. One per capability. Order matches
    *  the source array (caller decides ordering). */
-  items: DisplayUseCase[];
+  items: PersonaCapability[];
 
   /** Currently active capability id. The matching tab gets the active
    *  treatment (ring + raised brightness); others stay muted. */

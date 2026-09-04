@@ -7,17 +7,17 @@
  * snake_case (no `rename_all`) — the call site in `api/devTools` already
  * declared this exact shape inline, down to `changed_files_count`.
  */
-export type GitStatusSummary = { project_id: string, project_name: string, 
+export type GitStatusSummary = { projectId: string, projectName: string, 
 /**
  * Empty string on a detached HEAD (`git branch --show-current` prints
  * nothing), which the card renders as "no branch".
  */
-branch: string, is_clean: boolean, changed_files_count: number, 
+branch: string, isClean: boolean, changedFilesCount: number, 
 /**
  * Raw `git status --porcelain` lines, status prefix included.
  */
-changed_files: Array<string>, 
+changedFiles: Array<string>, 
 /**
  * Up to five `git log --oneline` lines.
  */
-recent_commits: Array<string>, };
+recentCommits: Array<string>, };

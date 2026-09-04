@@ -58,6 +58,10 @@ pub(super) fn default_result() -> ExecutionResult {
         error: None,
         session_limit_reached: false,
         usage_limit: None,
+        // An early-return failure (validation, credential decrypt, spawn) knows
+        // no structural class -- these paths carry a message the ladder was
+        // tuned for. Left None deliberately rather than guessed.
+        error_category: None,
         log_file_path: None,
         claude_session_id: None,
         duration_ms: 0,

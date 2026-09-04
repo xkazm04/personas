@@ -306,6 +306,7 @@ pub struct KpiMeasurementExport {
 // ============================================================================
 
 #[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct PortabilityImportResult {
     pub personas_created: u32,
@@ -419,6 +420,7 @@ pub(crate) fn conflict_key(kind: &str, bundle_id: &str) -> String {
 // ============================================================================
 
 #[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ExportStats {
     pub persona_count: u32,

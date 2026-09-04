@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "Zusammengesetzt aus {count} Fähigkeiten",
-  "xray_tooltip": "Diese Vorlage besteht aus einer Mentalität plus Fähigkeiten aus dem Rezeptkatalog — denselben Teilen, die du in der Foundry auch manuell zusammenstellen kannst.",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "Diese Vorlage besteht aus einer Mentalität plus Fähigkeiten aus dem Rezeptkatalog — denselben Teilen, die du in der Foundry auch manuell zusammenstellen kannst."
 }

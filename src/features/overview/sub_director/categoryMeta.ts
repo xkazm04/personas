@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { FileText, HeartPulse, Zap, KeyRound, Brain, Target, Tag } from 'lucide-react';
+import { FileText, HeartPulse, Zap, KeyRound, Brain, Target, Tag, Fingerprint, ScrollText } from 'lucide-react';
 import type { Translations } from '@/i18n/en';
 
 /**
@@ -18,7 +18,9 @@ export type DirectorCategory =
   | 'triggers'
   | 'credentials'
   | 'memory'
-  | 'usefulness';
+  | 'usefulness'
+  | 'core_fidelity'
+  | 'charter_health';
 
 export const CATEGORY_META: Record<DirectorCategory, { icon: LucideIcon; color: string }> = {
   prompt: { icon: FileText, color: 'var(--status-info)' },
@@ -27,6 +29,8 @@ export const CATEGORY_META: Record<DirectorCategory, { icon: LucideIcon; color: 
   credentials: { icon: KeyRound, color: 'var(--status-warning)' },
   memory: { icon: Brain, color: 'var(--primary)' },
   usefulness: { icon: Target, color: 'var(--status-success)' },
+  core_fidelity: { icon: Fingerprint, color: 'var(--accent)' },
+  charter_health: { icon: ScrollText, color: 'var(--status-warning)' },
 };
 
 const FALLBACK = { icon: Tag, color: 'var(--muted-foreground)' };
@@ -51,6 +55,10 @@ export function categoryLabel(t: Translations, category: string): string {
       return t.director.category_memory;
     case 'usefulness':
       return t.director.category_usefulness;
+    case 'core_fidelity':
+      return t.director.category_core_fidelity;
+    case 'charter_health':
+      return t.director.category_charter_health;
     default:
       return category;
   }

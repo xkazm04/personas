@@ -59,6 +59,8 @@
 //! - `engine::subscription` AthenaChannelReaction → [`Action::AthenaReactions`]
 //!   + review resolution opt-in → [`Action::AthenaReviewResolution`]
 //! - `engine::deliberation` tick → [`Action::Deliberation`]
+//! - `engine::subscription` Attention (living-agent WP5) →
+//!   [`Action::AttentionLoop`]
 //!
 //! The companion-side master toggle also has the convenience reader
 //! `commands::companion::chat::autonomous_mode_enabled` (used by the
@@ -75,7 +77,7 @@
 
 use std::collections::HashMap;
 
-use crate::app_master::{self, MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
+use crate::app_master::{MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
 use crate::autopilot::{self, AutopilotMode, Capability};
 use personas_db::settings_keys;
 use personas_db::DbPool;
@@ -118,6 +120,10 @@ pub enum Action {
     AthenaReviewResolution,
     /// Advance an open team deliberation unattended.
     Deliberation,
+    /// Run the living-agent attention loop: one dispatched lane per tick
+    /// (arrivals recovery / sleep consolidation / daily self-review /
+    /// charter advancement) for personas with an attention-enabled charter.
+    AttentionLoop,
 }
 
 impl Action {
@@ -137,6 +143,7 @@ impl Action {
             Self::AthenaReactions => settings_keys::AUTONOMOUS_ATHENA_REACTIONS,
             Self::AthenaReviewResolution => settings_keys::AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
             Self::Deliberation => settings_keys::AUTONOMOUS_DELIBERATION,
+            Self::AttentionLoop => settings_keys::AUTONOMOUS_ATTENTION_LOOP,
         }
     }
 
@@ -180,10 +187,19 @@ impl Action {
             // These author work: a derived goal, an advanced goal, a resolved
             // deliberation and a promoted backlog idea all end in a session
             // that edits the checkout.
+            //
+            // AttentionLoop sits here with GoalAdvancement, not with the
+            // rung-0 observers: its advance lane spawns a real persona
+            // execution against a charter's outcome — a session that can
+            // author work exactly the way an advanced goal does. (The
+            // arrivals/maintenance/improve lanes are cheaper, but the rung
+            // must cover the loop's strongest action, and a gate that
+            // under-declares its reach is not a gate.)
             Self::KpiGoalDerivation
             | Self::GoalAdvancement
             | Self::BacklogToGoal
-            | Self::Deliberation => RUNG_BRANCH,
+            | Self::Deliberation
+            | Self::AttentionLoop => RUNG_BRANCH,
         }
     }
 }
@@ -220,8 +236,11 @@ pub fn is_allowed(
 // ---------------------------------------------------------------------------
 
 /// Load every project's App master mandate for this tick. Mirrors
-/// [`load_modes`]: one prefix query, absent = unmandated.
-pub use crate::app_master::load_mandates;
+/// [`load_modes`]: one query, absent = unmandated. Since WP3 the storage is
+/// the `persona_responsibilities` table, read through
+/// [`crate::responsibility`] — the shape (project-keyed map, never fails)
+/// is unchanged.
+pub use crate::responsibility::load_mandate_map as load_mandates;
 
 /// Does this project's App master mandate permit `action`?
 ///
@@ -256,7 +275,7 @@ pub fn mandate_permits_for(
     project_id: &str,
     action: Action,
 ) -> Result<(), MandateRefusal> {
-    let Some(record) = app_master::get_mandate(pool, project_id) else {
+    let Some(record) = crate::responsibility::mandate_for_project_or_none(pool, project_id) else {
         return Ok(());
     };
     record
@@ -281,6 +300,7 @@ impl Action {
             Self::AthenaReactions => "post channel reactions",
             Self::AthenaReviewResolution => "resolve a parked review",
             Self::Deliberation => "advance a deliberation",
+            Self::AttentionLoop => "run a persona attention pass",
         }
     }
 }
@@ -330,7 +350,7 @@ mod tests {
 
     // -- App master mandate gate (P4) ----------------------------------------
 
-    fn all_actions() -> [Action; 13] {
+    fn all_actions() -> [Action; 14] {
         [
             Action::GoalAdvancement,
             Action::KpiGoalDerivation,
@@ -345,6 +365,7 @@ mod tests {
             Action::AthenaReactions,
             Action::AthenaReviewResolution,
             Action::Deliberation,
+            Action::AttentionLoop,
         ]
     }
 
@@ -437,26 +458,45 @@ mod tests {
 
     #[test]
     fn every_action_has_a_valid_global_key() {
-        for a in [
-            Action::GoalAdvancement,
-            Action::KpiGoalDerivation,
-            Action::KpiEvaluation,
-            Action::CompanionMaster,
-            Action::AssignmentRetry,
-            Action::ReviewTriageHigh,
-            Action::BacklogToGoal,
-            Action::IdeaScan,
-            Action::BacklogTriage,
-            Action::DirectorStorm,
-            Action::AthenaReactions,
-            Action::AthenaReviewResolution,
-            Action::Deliberation,
-        ] {
+        for a in all_actions() {
             // Each mapped key must be an accepted settings key.
             assert!(
                 settings_keys::validate_key(a.global_key()).is_ok(),
                 "global key for {a:?} is not allow-listed"
             );
         }
+    }
+
+    // -- AttentionLoop (living-agent WP5) ------------------------------------
+
+    #[test]
+    fn attention_loop_is_global_only_and_keyed() {
+        assert_eq!(
+            Action::AttentionLoop.global_key(),
+            settings_keys::AUTONOMOUS_ATTENTION_LOOP
+        );
+        // No per-project autopilot override is wired: the global flag is
+        // authoritative, a Full-autopilot project must not flip it on.
+        assert_eq!(Action::AttentionLoop.capability(), None);
+        let m = modes(&[("p", AutopilotMode::Full)]);
+        assert!(!is_allowed(&m, "p", false, Action::AttentionLoop));
+        assert!(is_allowed(&m, "p", true, Action::AttentionLoop));
+        // Its advance lane authors work, so it needs the authoring rung.
+        assert_eq!(Action::AttentionLoop.required_rung(), RUNG_BRANCH);
+    }
+
+    #[test]
+    fn attention_loop_defaults_off_when_the_key_is_absent() {
+        // The default-OFF contract: with no `autonomous_attention_loop` row at
+        // all, the front door answers false — the tick spends nothing.
+        let pool = personas_db::init_test_db().expect("test db");
+        assert!(!global_enabled(&pool, Action::AttentionLoop));
+        personas_db::repos::core::settings::set(
+            &pool,
+            settings_keys::AUTONOMOUS_ATTENTION_LOOP,
+            "true",
+        )
+        .expect("allow-listed key accepts 'true'");
+        assert!(global_enabled(&pool, Action::AttentionLoop));
     }
 }

@@ -318,6 +318,7 @@ mod tests {
         // daemon::runtime::inject_ambient_for_daemon does.
         let mut persona = personas_db::models::Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "E2E".into(),

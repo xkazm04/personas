@@ -41,7 +41,7 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
     pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),
     extractValues: (poll, prev) => ({
       ...prev,
-      [OAUTH_FIELD.SESSION_REF]: poll.oauth_session_ref ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
+      [OAUTH_FIELD.SESSION_REF]: poll.oauthSessionRef ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
       scopes: poll.scope ?? prev.scopes ?? '',
     }),
     label: 'Google',

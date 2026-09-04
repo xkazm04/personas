@@ -217,7 +217,7 @@ impl GateSource {
 /// code_quality}`), not commands, so reading a command out of it would mean
 /// inventing one.
 pub fn declared_gate_commands(pool: &DbPool, project_id: &str) -> (Vec<String>, GateSource) {
-    let Some(record) = crate::app_master::get_mandate(pool, project_id) else {
+    let Some(record) = crate::responsibility::mandate_for_project_or_none(pool, project_id) else {
         return (Vec::new(), GateSource::NotConfigured);
     };
     let cmds: Vec<String> = record
@@ -2354,7 +2354,22 @@ mod tests {
 
     // -- gate command sourcing ----------------------------------------------
 
+    fn seed_holder_persona(pool: &DbPool) -> Result<(), AppError> {
+        // Targeted conflict clause (upsert golden path): idempotent on the
+        // PK only, so any other constraint violation still raises.
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'p1', 'sp', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
+            [],
+        )?;
+        Ok(())
+    }
+
     fn seed_mandate(pool: &DbPool, project_id: &str, gates: &[&str]) {
+        // The charter table FK-references personas, so the holder must exist
+        // (the legacy app_settings storage never checked).
+        seed_holder_persona(pool).unwrap();
         let record = crate::app_master::MandateRecord {
             persona_id: "p1".into(),
             project_id: project_id.into(),
@@ -2374,7 +2389,7 @@ mod tests {
             probation_review_id: None,
             headless_incomplete_streak: 0,
         };
-        crate::app_master::set_mandate(pool, &record).unwrap();
+        crate::responsibility::store_mandate_record(pool, &record).unwrap();
     }
 
     #[test]

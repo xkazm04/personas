@@ -1,8 +1,8 @@
 {
+  "cancelled": "Abgebrochen",
   "completed": "Abgeschlossen",
+  "error": "Fehler",
   "failed": "Fehlgeschlagen",
   "queued": "Eingereiht",
-  "running": "Wird ausgeführt",
-  "cancelled": "Abgebrochen",
-  "error": "Fehler"
+  "running": "Wird ausgeführt"
 }

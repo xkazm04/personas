@@ -12,6 +12,7 @@ pub mod composite;
 pub mod connector_strategy;
 pub mod credential_broker;
 pub mod pattern_miner;
+pub mod persona_brain;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and
@@ -163,6 +164,7 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::audit_incidents as incidents_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
+use crate::db::repos::execution::restart_recovery as exec_repo_restart;
 use crate::db::repos::execution::scheduled_retries as scheduled_retries_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
@@ -175,7 +177,7 @@ use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueSta
 
 pub(crate) use self::execution_engine::persist::persist_status_update;
 use self::execution_engine::persist::{persist_status_if_not_final, persist_status_if_running};
-use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
+use self::queue::{admission_conflict_key, AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
 // ---------------------------------------------------------------------------
 // Host hooks

@@ -1,0 +1,129 @@
+{
+  "worker": "w3-personas-plugin-ecosystem",
+  "evaluatedAt": "2026-08-31",
+  "pairs": [
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx ingests arbitrary documents (.txt/.md/.html/.csv/.json — IngestDirectoryPicker.tsx:29) into a vector KB for RAG search; CorpusOverview.tsx:77 only renders an LLM-generated report as markdown text. No frontmatter schema, minted identity, or link graph exists — the vault-as-database precondition (a directory of markdown notes as records) never holds, same as the recorded not-applicable verdict on vault-catalog-autocred-ui.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "not-applicable",
+          "evidence": "no markdown record store — this is a document vector index, not a note database" },
+        { "technique": "link-graph-extraction", "verdict": "not-applicable",
+          "evidence": "no inter-note links exist to extract; the graph subject here (dependency graph) is a separate context" }
+      ]
+    },
+    {
+      "context": "77b8c703-0803-42bc-808a-f255725cc293",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:16-24 builds a credential/persona/event dependency graph keyed agent:<id>/evt:<id> — a data-model relationship graph, not a link graph extracted from markdown note bodies. No frontmatter record contract anywhere in the context; precondition fails as it does for every other 'vault'-lexical context that isn't a markdown store.",
+      "techniques": [
+        { "technique": "link-graph-extraction", "verdict": "not-applicable",
+          "evidence": "credentialGraph.ts:16-24 — edges are typed domain relationships (credential->persona->event), not markdown-link edges" }
+      ]
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx defines connector credential-type form schemas (MCP fields, env var mapping) rendered through React form components — configuration UI over the credential vault, not markdown files with frontmatter. No file-as-record contract exists here.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "not-applicable",
+          "evidence": "schemaConfigs.tsx defines in-memory form config objects, not a markdown record schema" }
+      ]
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:6-12 imports CredentialMetadata/ConnectorDefinition and drives a credential edit/healthcheck panel; every tab in this context (ApiExplorer, McpTools, Executions) operates on the credential vault's API surface, not a markdown note store — same conclusion as the recorded not-applicable verdicts on sibling vault-catalog contexts.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "not-applicable",
+          "evidence": "no markdown record store anywhere in shared/playground/tabs" }
+      ]
+    },
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:6-13 reads audit logs, usage stats, and dependents via @/api/vault/credentials — credential vault intelligence UI, not a markdown record store. No frontmatter, links, or file walk anywhere in the context.",
+      "techniques": [
+        { "technique": "knowledge-integrity-lint", "verdict": "not-applicable",
+          "evidence": "there is no markdown corpus here to lint for broken links/orphans/staleness" }
+      ]
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "credential-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:141-148 branches purely on effectiveHealthcheckResult.success (boolean) to render OK/FAIL, ignoring the typed HealthResult.state ('verified'|'unverifiable'|'failed', declared at useCredentialHealth.ts:36-40) — reproduces the exact could-not-verify/broken collapse the sibling deviation on vault-shared-hooks already names for this same hook.",
+      "techniques": [
+        { "technique": "health-probing", "verdict": "deviation",
+          "evidence": "OverviewTab.tsx:141-148 — a provider outage or offline probe renders identically to a rejected credential (red FAIL), teaching the operator to distrust red" }
+      ]
+    },
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 calls spawnSession(project.root_path, [prompt]) directly with no dispatch-key check against the registry for an already-running session on this idea/project, and no disjointness check against other sessions sharing the same root_path — the same missing-admission-door pattern the recorded deviation on commands-fleet names ('N sessions share one repo with no disjointness check').",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "deviation",
+          "evidence": "dispatch.ts:72-86 — no derived dispatch key is checked against the registry before spawnSession, so re-dispatching the same finding (e.g. a retried automation) can open a second fleet session in the same working directory unchecked" }
+      ]
+    },
+    {
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:128,135,165 sorts version aggregates by compositeScore (toolAccuracy*0.4 + outputQuality*0.4 + protocolCompliance*0.2, mirrored from Rust SCORE_WEIGHTS) and crowns winnerId as the top score — folding three metrics into one composite verdict with no declared single optimized metric and threshold gates, the same collapse already flagged one layer down in test-runner-lab's eval.rs:380.",
+      "techniques": [
+        { "technique": "metric-role-contract", "verdict": "deviation",
+          "evidence": "evalAggregation.ts:128-165 — winnerId is decided by a weighted composite of tool accuracy, output quality, and protocol compliance instead of one optimized metric with the others as thresholds" }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx and its siblings (AutoCredBrowser, AutoCredConsent, AutoCredReview) drive a Playwright browser-automation credential-capture flow (checkPlaywrightAvailable from @/api/vault/autoCredBrowser) — no SQL, no database connection, no schema browsing anywhere in the context. The subject's precondition ('the application manages connections to external databases') never holds.",
+      "techniques": [
+        { "technique": "safe-mode-guarding", "verdict": "not-applicable",
+          "evidence": "there is no query execution surface in this context to guard" }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "design-tokens",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 and :144 hardcode 'bg-orange-500/10 border-orange-500/20 text-orange-400' and 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' inline instead of consuming the app's own semantic status tokens (src/lib/design/statusTokens.ts:27-32 success, :92-98 timeout/caution — used correctly elsewhere, e.g. CredentialIntelligence.tsx's STATUS_COLORS); the inline emerald border has already drifted to /20 where the token defines /30 — the exact 'raw values... drifting a shade or two' failure mode the golden path names.",
+      "techniques": [
+        { "technique": "token-taxonomy", "verdict": "deviation",
+          "evidence": "ConnectorCard.tsx:127,144 — raw Tailwind color utilities duplicate (and have drifted from) the existing success/warning semantic tokens instead of referencing them" }
+      ]
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/harness/verifier.ts:13-32 PERSONAS_GATES only wires typecheck/lint/build commands — GateType declares a 'test' variant (types.ts:74) that the built-in gate set never realizes. The module is a Plan->Execute->Verify autonomous coding loop over quality goals (scenario-parser.ts), not machinery that owns, partitions, or runs a test suite; there are no lanes, fixtures, or isolation policy for this subject to govern.",
+      "techniques": [
+        { "technique": "suite-partitioning", "verdict": "not-applicable",
+          "evidence": "no test suite is owned or partitioned here — 'test' is a declared GateType with no realized gate in verifier.ts's PERSONAS_GATES" }
+      ]
+    }
+  ]
+}

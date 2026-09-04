@@ -207,6 +207,15 @@ pub(super) async fn run_execution_with_ceiling(
                     "Engine safety ceiling exceeded ({}m). Execution forcibly terminated.",
                     ENGINE_MAX_EXECUTION_SECS / 60,
                 )),
+                // The class, stated by the site that KNOWS it. This is the app's
+                // own timer, so nothing has to be inferred from the sentence
+                // above -- and it is the site that produced the measured cost:
+                // 40 of 43 `Unknown` healing issues (93%) were this one string,
+                // landing on a recovery that never retries, while the `Timeout`
+                // recovery it should have reached succeeded 72.7% of the time.
+                // The message is still written, for a human; the class no longer
+                // depends on it.
+                error_category: Some(error_taxonomy::ENGINE_CEILING_CLASS),
                 duration_ms: ENGINE_MAX_EXECUTION_SECS * 1000,
                 // Point at the partial log so the run stays auditable. cost_usd /
                 // input_tokens / output_tokens stay 0: the Claude CLI only emits
@@ -487,44 +496,53 @@ impl ExecutionEngine {
         tracker.running_count(persona_id) == 0 && tracker.queue_depth(persona_id) == 0
     }
 
-    /// Fail executions that were mid-RUN when the app last exited.
+    /// Classify executions that were mid-RUN when the app last exited.
     ///
-    /// After a restart, a `running` row's CLI subprocess is dead, so the row is
-    /// orphaned — mark it `failed` so the tracker stays in sync and the slot is
-    /// freed. **`queued` rows are intentionally left untouched** here: they
-    /// never started a process, so they are durable work to be re-admitted by
-    /// [`Self::requeue_persisted_executions`] once the engine is constructed.
-    /// (Previously this failed `queued` rows too, silently dropping any
-    /// scheduled / event-triggered execution that was waiting in the queue at
-    /// shutdown — the P1 "never lose a queued execution" gap.)
-    pub fn recover_stale_executions(pool: &DbPool) {
-        match exec_repo::get_running_only(pool) {
-            Ok(stale) if stale.is_empty() => {
-                tracing::debug!("No mid-run executions to recover");
+    /// **This used to declare a failure it never observed.** Every `running`
+    /// row was marked `failed` with `"App restarted while execution was
+    /// running"`; the golden path measured 74 of 2,188 executions carrying
+    /// that marker (`docs/concepts/golden-paths/os-process-reconciliation.md`
+    /// §7.2), and §2(c) of the same document gives the rule this now follows:
+    /// *"At boot, do not declare — classify. Rows whose process cannot be
+    /// proven alive are unproven, not failed."*
+    ///
+    /// The classification itself lives in
+    /// [`exec_repo_restart::classify_running_rows`] (data layer, unit-tested
+    /// against the backup's shape). Three outcomes:
+    ///
+    /// * **resume-pending** — the row goes back to `queued`, which is the
+    ///   durable queue [`Self::requeue_persisted_executions`] already drains,
+    ///   with a mark that survives the re-admission and a restart counter that
+    ///   only a *completed* turn resets.
+    /// * **unproven** — `incomplete`, awaiting a person. Not a failure.
+    /// * **suspended** — the escalation: three consecutive restarts with this
+    ///   execution still active is a run that cannot be run at all on this
+    ///   history, and it stops being re-admitted.
+    ///
+    /// **`queued` rows are still intentionally left untouched**: they never
+    /// started a process, so they are durable work re-admitted once the engine
+    /// is constructed (the P1 "never lose a queued execution" invariant).
+    ///
+    /// Nothing here asks whether a process is alive — no pid, no `sysinfo`, no
+    /// kill. That is `os-process-reconciliation`'s leaf. The only liveness
+    /// question this path needs ("is another instance running this work?") is
+    /// answered before it, by the leadership lease in `boot::recovery`.
+    pub fn classify_stale_executions(pool: &DbPool) {
+        match exec_repo_restart::classify_running_rows(pool) {
+            Ok(sweep) if sweep.total() == 0 => {
+                tracing::debug!("No mid-run executions to classify");
             }
-            Ok(stale) => {
-                let count = stale.len();
-                for exec in &stale {
-                    // Startup recovery uses a direct sync DB call -- no async retry
-                    // needed because there is no contention during app init.
-                    let _ = exec_repo::update_status(
-                        pool,
-                        &exec.id,
-                        UpdateExecutionStatus {
-                            status: ExecutionState::Failed,
-                            error_message: Some("App restarted while execution was running".into()),
-                            ..Default::default()
-                        },
-                    );
-                }
+            Ok(sweep) => {
                 tracing::info!(
-                    count = count,
-                    "Recovered mid-run executions: marked {} as failed",
-                    count
+                    resume_pending = sweep.resume_pending.len(),
+                    unproven = sweep.unproven.len(),
+                    suspended = sweep.suspended.len(),
+                    "Classified {} mid-run execution(s) after an unclean start",
+                    sweep.total()
                 );
             }
             Err(e) => {
-                tracing::warn!("Failed to query mid-run executions: {}", e);
+                tracing::warn!("Failed to classify mid-run executions: {}", e);
             }
         }
     }
@@ -540,7 +558,7 @@ impl ExecutionEngine {
     /// updates it in place), so a crash mid-recovery just leaves it `queued` for
     /// the next startup. Best-effort per row — a persona that was deleted, or a
     /// row whose persona can't be loaded, is failed with a clear reason rather
-    /// than blocking the rest. Runs AFTER [`Self::recover_stale_executions`] and
+    /// than blocking the rest. Runs AFTER [`Self::classify_stale_executions`] and
     /// AFTER the engine is constructed (needs `app` + the live engine to spawn).
     pub async fn requeue_persisted_executions(&self, app: AppHandle, pool: DbPool) {
         let queued = match exec_repo::get_queued_only(&pool) {
@@ -677,10 +695,19 @@ impl ExecutionEngine {
             )));
         }
 
-        // Atomically try to run or enqueue
+        // Atomically try to run or enqueue. The conflict key is formed here, at
+        // the one caller of `admit`, because this is the only place that holds
+        // the persona AND the wrapped input the trigger's identity travels in.
+        let conflict_key = admission_conflict_key(&persona.id, input_data.as_ref());
         let admit_result = {
             let mut tracker = self.tracker.lock().await;
-            tracker.admit(&persona.id, &execution_id, persona.max_concurrent, priority)
+            tracker.admit(
+                &persona.id,
+                &execution_id,
+                persona.max_concurrent,
+                priority,
+                conflict_key.as_deref(),
+            )
         };
 
         match admit_result {
@@ -780,6 +807,46 @@ impl ExecutionEngine {
                         input_data,
                         continuation,
                     },
+                );
+                Ok(())
+            }
+            AdmitResult::AlreadyAdmitted {
+                execution_id: holder,
+            } => {
+                // A normal, correct deduplication — NOT a failure. Folding this
+                // into the error path would surface it to the operator as a
+                // failed run, which is the defect the hook surface's own rule
+                // warns about: veto-by-error makes a denial and a contributor
+                // bug indistinguishable at every consumer downstream. So the
+                // duplicate row is closed the same way a displaced waiter is
+                // (terminal, with the reason naming what holds the slot) and
+                // the call returns Ok.
+                self.queued_contexts.lock().await.remove(&execution_id);
+                persist_status_update(
+                    &pool,
+                    None,
+                    &execution_id,
+                    UpdateExecutionStatus {
+                        status: ExecutionState::Cancelled,
+                        error_message: Some(format!(
+                            "Duplicate fire for the same trigger — execution {holder} is already in flight"
+                        )),
+                        ..Default::default()
+                    },
+                )
+                .await;
+                tracing::info!(
+                    persona_id = %persona.id,
+                    execution_id = %execution_id,
+                    in_flight_execution_id = %holder,
+                    "Duplicate admission refused: a run for this trigger is already in flight",
+                );
+                process_activity::emit_process_activity(
+                    &app,
+                    "execution",
+                    "cancelled",
+                    Some(&execution_id),
+                    Some(&persona.name),
                 );
                 Ok(())
             }
@@ -893,7 +960,11 @@ impl ExecutionEngine {
             persona.structured_prompt.as_deref(),
             persona.model_profile.as_deref(),
             tools.len(),
-            &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+            &format!(
+                "{}|{}",
+                prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                prompt::core_fingerprint(persona.core_profile.as_deref()),
+            ),
         );
 
         // Spawn background task.
@@ -1227,7 +1298,7 @@ impl ExecutionEngine {
         self.tracker
             .lock()
             .await
-            .add_running(persona_id, &execution_id);
+            .add_running(persona_id, &execution_id, None);
         self.cancelled_flags
             .lock()
             .await
@@ -1679,7 +1750,11 @@ fn drain_and_start_next(
                     persona.structured_prompt.as_deref(),
                     persona.model_profile.as_deref(),
                     ctx.tools.len(),
-                    &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                    &format!(
+                        "{}|{}",
+                        prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                        prompt::core_fingerprint(persona.core_profile.as_deref()),
+                    ),
                 );
 
                 let handle = tokio::spawn(async move {
@@ -2091,6 +2166,10 @@ async fn handle_execution_result(
             execution_config: result.execution_config.clone(),
             log_truncated: result.log_truncated,
             business_outcome: result.business_outcome.clone(),
+            // COALESCE on the DB side, so this confirming write cannot erase a
+            // class the runner's provisional write already recorded -- and
+            // cannot invent one either.
+            error_category: result.error_category.map(error_taxonomy::category_token),
         },
     )
     .await;
@@ -2265,6 +2344,67 @@ async fn handle_execution_result(
         .unwrap_or(false);
     if !is_simulation {
         notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    }
+
+    // Living-agent episodic record (WP4): mint one `run` episode after the
+    // status persist. Best-effort, spawned like the knowledge hook below —
+    // an episode failure must never touch the run (log-only); simulations
+    // leave no episodic trace.
+    if !is_simulation {
+        let mint_pool = pool.clone();
+        let mint_exec_id = exec_id.to_string();
+        let mint_persona_id = persona_id.to_string();
+        let mint_status = status.as_str().to_string();
+        let duration_ms = result.duration_ms;
+        let cost_usd = result.cost_usd;
+        // Output excerpt ≤2000 chars; input excerpt kept tighter (the output
+        // is the run's own voice, the input is context).
+        let output_excerpt =
+            crate::companion::brain::util::excerpt(result.output.as_deref().unwrap_or(""), 2_000);
+        crate::background_job::spawn_guarded(
+            "persona_episode_mint",
+            exec_id.to_string(),
+            async move {
+                let input_data = exec_repo::get_by_id(&mint_pool, &mint_exec_id)
+                    .ok()
+                    .and_then(|e| e.input_data);
+                let parsed: Option<serde_json::Value> = input_data
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str(s).ok());
+                let source = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("source"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let input_excerpt = crate::companion::brain::util::excerpt(
+                    input_data.as_deref().unwrap_or(""),
+                    1_000,
+                );
+                let content = format!(
+                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
+                );
+                if let Err(e) = crate::engine::persona_brain::episodes::record(
+                    &mint_pool,
+                    &mint_persona_id,
+                    crate::engine::persona_brain::episodes::EpisodeRole::Run,
+                    &source,
+                    Some(&mint_exec_id),
+                    None,
+                    &content,
+                ) {
+                    tracing::warn!(
+                        execution_id = %mint_exec_id,
+                        persona_id = %mint_persona_id,
+                        error = %e,
+                        "persona episode mint failed (best-effort; run unaffected)"
+                    );
+                }
+            },
+            // Recovery arm: the mint is best-effort and leaves no partial
+            // state — the panic is already logged by spawn_guarded.
+            |_msg| async {},
+        );
     }
 
     // Budget enforcement (only on success)

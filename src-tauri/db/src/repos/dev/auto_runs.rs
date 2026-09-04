@@ -26,6 +26,11 @@ pub struct DevAutoRun {
     pub finished_at: Option<String>,
 }
 
+/// The projection `row_to_auto_run` reads, spelled once. A wildcard would let the
+/// table's column set drift out from under the mapper silently; naming them means
+/// a removed column fails the query instead of the field.
+const AUTO_RUN_COLS: &str = "id, project_id, status, snapshot_size, completed, failed, skipped, iterations, termination_reason, started_at, finished_at";
+
 fn row_to_auto_run(row: &Row) -> rusqlite::Result<DevAutoRun> {
     let num = |v: Option<i64>| v.unwrap_or(0).max(0) as u32;
     Ok(DevAutoRun {
@@ -118,6 +123,28 @@ pub fn set_auto_run_status(pool: &DbPool, run_id: &str, status: &str) -> Result<
     })
 }
 
+/// One auto-run row by id.
+///
+/// Added for the checkpoint rollback path, which has to resolve a run's
+/// workspace from the run itself: the checkpoint index carries no repository
+/// column, so `run -> project -> root_path` is the only binding between a
+/// checkpoint SHA and the tree it means something in. `latest_auto_run` is not
+/// a substitute -- a rollback is usually offered for a run that has since been
+/// overtaken by a newer one.
+pub fn get_auto_run(pool: &DbPool, run_id: &str) -> Result<Option<DevAutoRun>, AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::get_auto_run", {
+        let conn = pool.get()?;
+        let row = conn
+            .query_row(
+                &format!("SELECT {AUTO_RUN_COLS} FROM dev_auto_runs WHERE id = ?1"),
+                params![run_id],
+                row_to_auto_run,
+            )
+            .optional()?;
+        Ok(row)
+    })
+}
+
 /// Most recent auto-run row, optionally scoped to a project.
 pub fn latest_auto_run(
     pool: &DbPool,
@@ -128,14 +155,16 @@ pub fn latest_auto_run(
         let row = match project_id {
             Some(pid) => conn
                 .query_row(
-                    "SELECT * FROM dev_auto_runs WHERE project_id = ?1 ORDER BY started_at DESC LIMIT 1",
+                    &format!(
+                        "SELECT {AUTO_RUN_COLS} FROM dev_auto_runs WHERE project_id = ?1 ORDER BY started_at DESC LIMIT 1"
+                    ),
                     params![pid],
                     row_to_auto_run,
                 )
                 .optional()?,
             None => conn
                 .query_row(
-                    "SELECT * FROM dev_auto_runs ORDER BY started_at DESC LIMIT 1",
+                    &format!("SELECT {AUTO_RUN_COLS} FROM dev_auto_runs ORDER BY started_at DESC LIMIT 1"),
                     [],
                     row_to_auto_run,
                 )

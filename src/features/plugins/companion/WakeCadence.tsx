@@ -41,7 +41,7 @@ export function WakeCadence() {
     (acc, s) => ({
       wakes: acc.wakes + s.wakes,
       signals: acc.signals + s.signals,
-      calls: acc.calls + s.cli_calls,
+      calls: acc.calls + s.cliCalls,
       actions: acc.actions + s.actions,
     }),
     { wakes: 0, signals: 0, calls: 0, actions: 0 },
@@ -67,10 +67,10 @@ export function WakeCadence() {
             key={m}
             type="button"
             role="radio"
-            aria-checked={stats?.window_minutes === m}
+            aria-checked={stats?.windowMinutes === m}
             onClick={() => setWindow(m)}
             className={`px-1.5 py-0.5 rounded-interactive typo-caption transition-colors focus-ring ${
-              stats?.window_minutes === m
+              stats?.windowMinutes === m
                 ? 'bg-primary/15 text-primary'
                 : 'text-foreground/70 hover:bg-secondary/40'
             }`}

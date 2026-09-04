@@ -353,6 +353,45 @@ pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<us
     )
 }
 
+/// Run the promote write set inside ONE transaction, committing when `f`
+/// returns `Ok` and rolling back when it returns `Err`.
+///
+/// Promotion is the app's widest single write — tools, triggers, event
+/// subscriptions, output assertions, the persona row, a prompt-version
+/// snapshot and the session's own phase flip all have to land together or not
+/// at all. That makes it the one place a caller genuinely needs a
+/// `&Transaction`, and this is where it gets one: the **pool checkout and the
+/// transaction lifetime live in the layer that owns persistence**, so the
+/// command module never holds a `PooledConnection` and cannot keep one alive
+/// past the commit while the post-commit steps ask the pool for another
+/// (which is exactly what the hand-rolled `state.db.get()` in
+/// `commands::design::build_sessions` did, for ~270 lines).
+///
+/// `Immediate`, not the default deferred behaviour: the snapshot step reads
+/// `MAX(version_number)` and then inserts against it, and a deferred
+/// transaction that upgrades to a write fails `SQLITE_BUSY_SNAPSHOT`
+/// immediately, ignoring `busy_timeout`.
+///
+/// Deliberately NOT a general `pool.write_tx(..)` primitive: this repo's
+/// standing lesson is that primitives built ahead of their callers rot
+/// (`run_lanes`, 0 callers; `acquire_logged`, `#[allow(dead_code)]`). It is
+/// named for the one write it serves, in the module that owns the table that
+/// write finishes on.
+pub fn with_promote_tx<T>(
+    pool: &DbPool,
+    f: impl FnOnce(&rusqlite::Transaction<'_>) -> Result<T, AppError>,
+) -> Result<T, AppError> {
+    timed_query!("build_sessions", "build_sessions::with_promote_tx", {
+        let mut conn = pool.conn("build_sessions::promote")?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+        let out = f(&tx)?;
+        tx.commit().map_err(AppError::Database)?;
+        Ok(out)
+    })
+}
+
 /// Delete a build session by ID.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::delete", {

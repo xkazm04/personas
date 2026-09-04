@@ -52,8 +52,8 @@ const EMPTY_INVENTORY: ExportInventory = {
 function athenaRowsFrom(stats: ExportStats | null): AthenaTierRow[] {
   if (!stats) return [];
   const rows: AthenaTierRow[] = [];
-  if (stats.athena_core_count > 0) rows.push({ id: 'core', count: stats.athena_core_count });
-  if (stats.athena_learned_count > 0) rows.push({ id: 'learned', count: stats.athena_learned_count });
+  if (stats.athenaCoreCount > 0) rows.push({ id: 'core', count: stats.athenaCoreCount });
+  if (stats.athenaLearnedCount > 0) rows.push({ id: 'learned', count: stats.athenaLearnedCount });
   return rows;
 }
 

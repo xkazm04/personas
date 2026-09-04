@@ -183,7 +183,7 @@ pub(crate) async fn reconcile_tick_summary(
     only_project: Option<&str>,
 ) -> ReconcileSummary {
     let mut summary = ReconcileSummary::default();
-    let mandates = personas_engine::app_master::load_mandates(pool);
+    let mandates = personas_engine::responsibility::load_mandate_map(pool);
     if mandates.is_empty() {
         return summary;
     }

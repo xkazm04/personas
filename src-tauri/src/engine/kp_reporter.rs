@@ -705,7 +705,7 @@ pub(crate) fn app_master_rollup(
     // the tenure bound applies only when it is this persona's own (a former
     // holder is separated from its successor by the persona filter, not by
     // being clipped to a start date that was never its own).
-    let record = personas_engine::app_master::get_mandate(pool, &project_id);
+    let record = personas_engine::responsibility::mandate_for_project_or_none(pool, &project_id);
     let window =
         personas_engine::app_master::tenure_window(&utc_month_start(), record.as_ref(), persona_id);
     let since = window.since.clone();

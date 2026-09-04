@@ -1,117 +1,10 @@
 {
-  "setup": {
-    "choose_role": "역할 선택",
-    "choose_role_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
-    "pick_tool": "선호 도구 선택",
-    "pick_tool_hint": "첫 번째 서비스 연결이 됩니다.",
-    "describe_goal": "자동화하려는 것은 무엇인가요?",
-    "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 — 설정을 도와드립니다.",
-    "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
-    "ready_to_save": "저장 준비 완료",
-    "step_role": "역할",
-    "step_role_hint": "경험을 맞춤화하기 위해 역할을 알려주세요.",
-    "step_tool": "선호 도구",
-    "step_tool_hint": "연결할 첫 번째 서비스를 선택하세요.",
-    "step_goal": "자동화 목표",
-    "step_goal_hint": "먼저 자동화하고 싶은 것을 설명하세요.",
-    "select_role_first": "도구 옵션을 보려면 먼저 역할을 선택하세요.",
-    "select_tool_first": "목표를 설정하려면 먼저 도구를 선택하세요.",
-    "get_started": "시작하기",
-    "role_office_rat": "일반 사용자",
-    "role_office_rat_hint": "비기술 사용자",
-    "role_developer": "개발자",
-    "role_developer_hint": "기술 사용자",
-    "role_manager": "매니저",
-    "role_manager_hint": "기획 및 조율",
-    "role": "역할",
-    "tool": "도구",
-    "goal": "목표"
-  },
-  "learning": {
-    "title": "학습 센터",
-    "subtitle": "Personas 마스터를 위한 가이드 투어 및 파워 무브",
-    "guided_tours": "가이드 투어",
-    "tours_completed": "{completed}/{total} 완료",
-    "done": "완료",
-    "restart": "재시작",
-    "start_tour": "투어 시작",
-    "steps_count": "{count}단계",
-    "tour_steps_label": "배우게 될 내용",
-    "power_moves": "파워 무브",
-    "moves_used": "{used}/{total} 사용됨",
-    "try_it": "시도해보기",
-    "used_badge": "사용됨",
-    "group_save_time": "시간 절약",
-    "group_prevent_failures": "장애 예방",
-    "group_level_up": "에이전트 레벨 업",
-    "group_orchestrate": "오케스트레이션",
-    "pm_monitor_triage_title": "타이틀바에서 전체 플리트 트리아지",
-    "pm_schedule_delay_title": "예약된 실행 건너뛰기 또는 지연",
-    "pm_bulk_rerun_title": "실패한 실행 일괄 재실행",
-    "pm_dead_letter_title": "데드 레터 큐에서 이벤트 복구",
-    "pm_annotate_golden_title": "골든 실행에 별표, 회귀에 태그",
-    "pm_credential_health_title": "AI로 실패한 자격 증명 자동 복구",
-    "pm_lab_measure_title": "여러 모델에서 프롬프트 측정",
-    "pm_prompt_rollback_title": "클릭 한 번으로 잘못된 프롬프트 롤백",
-    "pm_director_coaching_title": "Director에서 포트폴리오 코칭 받기",
-    "pm_event_chain_title": "이벤트 리스너로 에이전트 체이닝",
-    "pm_live_stream_title": "실시간으로 체인 연쇄 확인",
-    "pm_athena_fleet_title": "Athena에게 플리트 분석 요청",
-    "composed_tours": "Athena가 구성한 투어",
-    "composed_badge": "Athena 구성",
-    "composed_stale": "오래되었을 수 있습니다 — 구성 이후 앱이 변경되었습니다",
-    "composed_failed": "Athena가 구성한 워크스루를 불러오지 못했습니다.",
-    "composed_empty": "Athena에게 사용법을 보여 달라고 요청하면, Athena가 구성한 워크스루가 여기에 표시됩니다.",
-    "composed_dismiss": "오래된 둘러보기 지우기",
-    "composed_all_dismissed": "오래된 둘러보기를 모두 지웠습니다. Athena가 새로 만들면 여기에 표시됩니다."
-  },
-  "setup_stepper": {
-    "your_profile": "프로필",
-    "choose_role": "역할 선택",
-    "tailor_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
-    "simple_hint": "일상적인 사무 작업에 맞게 앱을 설정했습니다.",
-    "pick_tool": "선호 도구 선택",
-    "tool_hint": "첫 번째 커넥터 통합이 됩니다.",
-    "automate_title": "자동화하려는 것은 무엇인가요?",
-    "automate_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
-    "automate_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
-    "min_chars": "최소 10자 ({current}/10)",
-    "ready_to_save": "저장 준비 완료",
-    "back": "뒤로",
-    "next": "다음",
-    "finish": "완료"
-  },
-  "welcome_layout": {
-    "get_started": "시작하기",
-    "language": "언어"
-  },
-  "resume": {
-    "failure": "{personaName}에서 읽지 않은 실패 — 조사 필요",
-    "tour": "{tourTitle} 재개 ({stepIndex}/{totalSteps}) — {stepTitle}",
-    "edit": "{personaName} 계속 편집하기"
-  },
-  "nav_status": {
-    "incidents": "진행 중인 인시던트 {count}건",
-    "incidents_other": "진행 중인 인시던트 {count}건",
-    "reviews": "대기 중인 검토 {count}개",
-    "reviews_other": "대기 중인 검토 {count}개",
-    "teams": "팀 {count}개",
-    "teams_other": "팀 {count}개",
-    "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
-    "agents_active_other": "최근 24시간 동안 활성 에이전트 {count}개",
-    "events_today": "최근 24시간 동안 이벤트 {count}개",
-    "events_today_other": "최근 24시간 동안 이벤트 {count}개",
-    "connections_external": "외부 연결 {count}개",
-    "connections_external_other": "외부 연결 {count}개",
-    "connections_builtin": "내장 커넥터 {count}개",
-    "connections_builtin_other": "내장 커넥터 {count}개",
-    "trend_up": "이전 24시간 대비 {pct}% 증가",
-    "trend_down": "이전 24시간 대비 {pct}% 감소",
-    "trend_flat": "이전 24시간 대비 변화 없음",
-    "agents_enabled": "활성 에이전트 {count}개",
-    "agents_enabled_other": "활성 에이전트 {count}개",
-    "reports": "읽지 않은 보고서 {count}개",
-    "reports_other": "읽지 않은 보고서 {count}개"
+  "commander": "사령관",
+  "fleet": {
+    "active_agents": "활성 에이전트",
+    "credentials": "자격 증명",
+    "executions_today": "오늘 실행",
+    "success_rate": "성공률"
   },
   "get_started": {
     "ask_cta": "어시스턴트에게 묻기",
@@ -119,84 +12,184 @@
     "subtitle": "평범한 언어로 작업을 설명하면 작동하는 에이전트를 설정해 드립니다 — 또는 어시스턴트에게 대신 해달라고 요청하세요.",
     "title": "첫 번째 에이전트 만들기"
   },
-  "welcome": "환영합니다",
-  "greeting_morning": "좋은 아침입니다",
   "greeting_afternoon": "좋은 오후입니다",
   "greeting_evening": "좋은 저녁입니다",
+  "greeting_morning": "좋은 아침입니다",
+  "icon_showcase": {
+    "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
+    "lucide_tab": "Lucide (라이브러리)",
+    "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형",
+    "personas_tab": "Personas (애니메이션)"
+  },
+  "learning": {
+    "composed_all_dismissed": "오래된 둘러보기를 모두 지웠습니다. Athena가 새로 만들면 여기에 표시됩니다.",
+    "composed_badge": "Athena 구성",
+    "composed_dismiss": "오래된 둘러보기 지우기",
+    "composed_empty": "Athena에게 사용법을 보여 달라고 요청하면, Athena가 구성한 워크스루가 여기에 표시됩니다.",
+    "composed_failed": "Athena가 구성한 워크스루를 불러오지 못했습니다.",
+    "composed_stale": "오래되었을 수 있습니다 — 구성 이후 앱이 변경되었습니다",
+    "composed_tours": "Athena가 구성한 투어",
+    "done": "완료",
+    "group_level_up": "에이전트 레벨 업",
+    "group_orchestrate": "오케스트레이션",
+    "group_prevent_failures": "장애 예방",
+    "group_save_time": "시간 절약",
+    "guided_tours": "가이드 투어",
+    "moves_used": "{used}/{total} 사용됨",
+    "pm_annotate_golden_title": "골든 실행에 별표, 회귀에 태그",
+    "pm_athena_fleet_title": "Athena에게 플리트 분석 요청",
+    "pm_bulk_rerun_title": "실패한 실행 일괄 재실행",
+    "pm_credential_health_title": "AI로 실패한 자격 증명 자동 복구",
+    "pm_dead_letter_title": "데드 레터 큐에서 이벤트 복구",
+    "pm_director_coaching_title": "Director에서 포트폴리오 코칭 받기",
+    "pm_event_chain_title": "이벤트 리스너로 에이전트 체이닝",
+    "pm_lab_measure_title": "여러 모델에서 프롬프트 측정",
+    "pm_live_stream_title": "실시간으로 체인 연쇄 확인",
+    "pm_monitor_triage_title": "타이틀바에서 전체 플리트 트리아지",
+    "pm_prompt_rollback_title": "클릭 한 번으로 잘못된 프롬프트 롤백",
+    "pm_schedule_delay_title": "예약된 실행 건너뛰기 또는 지연",
+    "power_moves": "파워 무브",
+    "restart": "재시작",
+    "start_tour": "투어 시작",
+    "steps_count": "{count}단계",
+    "subtitle": "Personas 마스터를 위한 가이드 투어 및 파워 무브",
+    "title": "학습 센터",
+    "tour_steps_label": "배우게 될 내용",
+    "tours_completed": "{completed}/{total} 완료",
+    "try_it": "시도해보기",
+    "used_badge": "사용됨"
+  },
+  "nav_status": {
+    "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
+    "agents_active_other": "최근 24시간 동안 활성 에이전트 {count}개",
+    "agents_enabled": "활성 에이전트 {count}개",
+    "agents_enabled_other": "활성 에이전트 {count}개",
+    "connections_builtin": "내장 커넥터 {count}개",
+    "connections_builtin_other": "내장 커넥터 {count}개",
+    "connections_external": "외부 연결 {count}개",
+    "connections_external_other": "외부 연결 {count}개",
+    "events_today": "최근 24시간 동안 이벤트 {count}개",
+    "events_today_other": "최근 24시간 동안 이벤트 {count}개",
+    "incidents": "진행 중인 인시던트 {count}건",
+    "incidents_other": "진행 중인 인시던트 {count}건",
+    "reports": "읽지 않은 보고서 {count}개",
+    "reports_other": "읽지 않은 보고서 {count}개",
+    "reviews": "대기 중인 검토 {count}개",
+    "reviews_other": "대기 중인 검토 {count}개",
+    "teams": "팀 {count}개",
+    "teams_other": "팀 {count}개",
+    "trend_down": "이전 24시간 대비 {pct}% 감소",
+    "trend_flat": "이전 24시간 대비 변화 없음",
+    "trend_up": "이전 24시간 대비 {pct}% 증가"
+  },
+  "nav": {
+    "cloud": {
+      "description": "에이전트를 클라우드 인프라에 배포하고, 스케줄을 관리하고, GitLab CI를 통합합니다",
+      "label": "클라우드"
+    },
+    "credentials": {
+      "description": "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다",
+      "label": "연결"
+    },
+    "design-reviews": {
+      "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성을 지원합니다.",
+      "label": "템플릿"
+    },
+    "events": {
+      "description": "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다",
+      "label": "이벤트"
+    },
+    "overview": {
+      "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링을 제공합니다.",
+      "label": "개요"
+    },
+    "personas": {
+      "description": "사용자 지정 동작 및 기능을 갖춘 AI 에이전트를 생성, 설정, 관리합니다",
+      "label": "에이전트"
+    },
+    "plugins": {
+      "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능을 확장합니다.",
+      "label": "플러그인"
+    },
+    "settings": {
+      "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정을 관리합니다.",
+      "label": "설정"
+    },
+    "team": {
+      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다",
+      "label": "팀"
+    },
+    "teams": {
+      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다.",
+      "label": "팀"
+    }
+  },
   "operator": "사용자",
-  "commander": "사령관",
-  "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
-  "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
-  "quick_navigation": "빠른 탐색",
   "platform_label": "Personas 플랫폼",
+  "quick_navigation": "빠른 탐색",
+  "resume": {
+    "edit": "{personaName} 계속 편집하기",
+    "failure": "{personaName}에서 읽지 않은 실패 — 조사 필요",
+    "tour": "{tourTitle} 재개 ({stepIndex}/{totalSteps}) — {stepTitle}"
+  },
   "roadmap": {
-    "title": "제품 로드맵",
-    "subtitle": "지금 구축 중인 것과 다음에 올 것.",
-    "unavailable": "로드맵 이용 불가",
-    "unavailable_hint": "제품 로드맵을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.",
+    "in_progress_count": "{count}개 진행 중",
+    "next_count": "{count}개 다음",
+    "priority_later": "나중에",
+    "priority_next": "다음",
+    "priority_now": "지금",
+    "status_completed": "완료됨",
     "status_in_progress": "진행 중",
     "status_next": "다음",
     "status_planned": "계획됨",
-    "status_completed": "완료됨",
-    "priority_now": "지금",
-    "priority_next": "다음",
-    "priority_later": "나중에",
-    "in_progress_count": "{count}개 진행 중",
-    "next_count": "{count}개 다음"
+    "subtitle": "지금 구축 중인 것과 다음에 올 것.",
+    "title": "제품 로드맵",
+    "unavailable": "로드맵 이용 불가",
+    "unavailable_hint": "제품 로드맵을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요."
   },
-  "fleet": {
-    "executions_today": "오늘 실행",
-    "success_rate": "성공률",
-    "active_agents": "활성 에이전트",
-    "credentials": "자격 증명"
+  "setup_stepper": {
+    "automate_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
+    "automate_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
+    "automate_title": "자동화하려는 것은 무엇인가요?",
+    "back": "뒤로",
+    "choose_role": "역할 선택",
+    "finish": "완료",
+    "min_chars": "최소 10자 ({current}/10)",
+    "next": "다음",
+    "pick_tool": "선호 도구 선택",
+    "ready_to_save": "저장 준비 완료",
+    "simple_hint": "일상적인 사무 작업에 맞게 앱을 설정했습니다.",
+    "tailor_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
+    "tool_hint": "첫 번째 커넥터 통합이 됩니다.",
+    "your_profile": "프로필"
   },
-  "nav": {
-    "overview": {
-      "label": "개요",
-      "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링을 제공합니다."
-    },
-    "personas": {
-      "label": "에이전트",
-      "description": "사용자 지정 동작 및 기능을 갖춘 AI 에이전트를 생성, 설정, 관리합니다"
-    },
-    "events": {
-      "label": "이벤트",
-      "description": "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다"
-    },
-    "credentials": {
-      "label": "연결",
-      "description": "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다"
-    },
-    "design-reviews": {
-      "label": "템플릿",
-      "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성을 지원합니다."
-    },
-    "team": {
-      "label": "팀",
-      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다"
-    },
-    "teams": {
-      "label": "팀",
-      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다."
-    },
-    "cloud": {
-      "label": "클라우드",
-      "description": "에이전트를 클라우드 인프라에 배포하고, 스케줄을 관리하고, GitLab CI를 통합합니다"
-    },
-    "settings": {
-      "label": "설정",
-      "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정을 관리합니다."
-    },
-    "plugins": {
-      "label": "플러그인",
-      "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능을 확장합니다."
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (라이브러리)",
-    "personas_tab": "Personas (애니메이션)",
-    "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
-    "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
+  "setup": {
+    "choose_role": "역할 선택",
+    "choose_role_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
+    "describe_goal": "자동화하려는 것은 무엇인가요?",
+    "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 — 설정을 도와드립니다.",
+    "get_started": "시작하기",
+    "goal": "목표",
+    "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
+    "pick_tool": "선호 도구 선택",
+    "pick_tool_hint": "첫 번째 서비스 연결이 됩니다.",
+    "ready_to_save": "저장 준비 완료",
+    "role": "역할",
+    "role_developer": "개발자",
+    "role_developer_hint": "기술 사용자",
+    "role_manager": "매니저",
+    "role_manager_hint": "기획 및 조율",
+    "role_office_rat": "일반 사용자",
+    "role_office_rat_hint": "비기술 사용자",
+    "select_role_first": "도구 옵션을 보려면 먼저 역할을 선택하세요.",
+    "select_tool_first": "목표를 설정하려면 먼저 도구를 선택하세요.",
+    "step_goal": "자동화 목표",
+    "step_goal_hint": "먼저 자동화하고 싶은 것을 설명하세요.",
+    "step_role": "역할",
+    "step_role_hint": "경험을 맞춤화하기 위해 역할을 알려주세요.",
+    "step_tool": "선호 도구",
+    "step_tool_hint": "연결할 첫 번째 서비스를 선택하세요.",
+    "tool": "도구"
   },
   "since_left": {
     "alerts": "{count}개 알림 발생",
@@ -209,5 +202,12 @@
     "runs": "{count}회 실행",
     "runs_other": "{count}회 실행",
     "title": "떠난 이후"
+  },
+  "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
+  "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
+  "welcome": "환영합니다",
+  "welcome_layout": {
+    "get_started": "시작하기",
+    "language": "언어"
   }
 }

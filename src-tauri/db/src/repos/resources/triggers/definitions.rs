@@ -17,6 +17,7 @@ use crate::chain;
 use crate::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 use personas_core::validation::contract::check as validate_check;
 use personas_core::validation::trigger as tv;
@@ -493,6 +494,46 @@ fn record_invalid_timezone_issue(
 // ============================================================================
 // Orphan cleanup (Fix 1 + Fix 2 from docs/design/event-routing-proposal.md)
 // ============================================================================
+
+/// Point trigger rows at the charter minted from the use case they were
+/// authored against — `persona_triggers.responsibility_id`, matched by the
+/// legacy `use_case_id` the draft carried (e19's remap contract).
+///
+/// `pairs` is `(use_case_id, responsibility_id)`. Returns rows updated.
+///
+/// ONE transaction, deliberately: a half-remapped persona — some triggers
+/// pointing at charters, the rest still carrying only a `use_case_id` string
+/// no charter answers to — is worse than an un-remapped one, because the rows
+/// that were missed go quiet with the persona looking correctly wired.
+pub fn remap_use_cases_to_responsibilities(
+    pool: &DbPool,
+    persona_id: &str,
+    pairs: &[(String, String)],
+) -> Result<usize, AppError> {
+    if pairs.is_empty() {
+        return Ok(0);
+    }
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::remap_use_cases_to_responsibilities",
+        {
+            let mut conn = pool.conn("persona_triggers::remap_use_cases_to_responsibilities")?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            let mut updated = 0usize;
+            {
+                let mut stmt = tx.prepare(
+                    "UPDATE persona_triggers SET responsibility_id = ?1 \
+                     WHERE persona_id = ?2 AND use_case_id = ?3",
+                )?;
+                for (use_case_id, responsibility_id) in pairs {
+                    updated += stmt.execute(params![responsibility_id, persona_id, use_case_id])?;
+                }
+            }
+            tx.commit().map_err(AppError::Database)?;
+            Ok(updated)
+        }
+    )
+}
 
 /// Delete triggers whose `persona_id` no longer exists in the `personas` table.
 /// Returns the number of rows deleted. This is the self-healing sweep that

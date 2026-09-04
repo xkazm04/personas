@@ -145,63 +145,69 @@ pub async fn dry_run_persona(
         }
     };
 
-    // 1b. Auto-expand use_case_id into input_data._use_case (mirror runner).
+    // 1b. Resolve the dispatched charter into input_data._responsibility
+    // (mirror execute_persona §1b — spark `agent-manifest-rebase`, WP2). Soft
+    // posture throughout: a dry run reports what it can, it never aborts on a
+    // missing charter/use case.
     let mut input_data = input_data;
     if let Some(uc_id) = use_case_id.as_ref() {
-        let Some(dc_str) = persona.design_context.as_deref() else {
-            let msg = format!(
-                "Persona '{}' has no design_context but use_case_id='{}' was requested",
-                persona.name, uc_id
-            );
-            log(&mut logger, &format!("[ABORT] {msg}"));
-            if let Some(ref mut l) = logger {
-                l.close();
-            }
-            return Ok(DryRunReport {
-                dry_run_id,
-                success: false,
-                persona_id: persona.id.clone(),
-                persona_name: persona.name.clone(),
-                model: None,
-                provider: None,
-                prompt: String::new(),
-                prompt_chars: 0,
-                tools: Vec::new(),
-                resolved_credentials: Vec::new(),
-                credential_failures: Vec::new(),
-                contract_report: None,
-                warnings: Vec::new(),
-                error: Some(msg),
-                log_file_path,
-            });
-        };
-        if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_str) {
-            if let Some(use_case) = crate::engine::design_context::pick_use_cases_array(&dc)
-                .and_then(|arr| {
-                    arr.iter()
-                        .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id))
+        let charter = match crate::db::repos::core::responsibilities::list_by_persona(
+            &state.db,
+            &persona.id,
+            true,
+        ) {
+            Ok(rows) => rows
+                .iter()
+                .find(|r| r.id == *uc_id)
+                .or_else(|| {
+                    rows.iter().find(|r| {
+                        r.spec.migrated_from_use_case_id.as_deref() == Some(uc_id.as_str())
+                    })
                 })
-                .cloned()
-            {
-                let mut merged: serde_json::Map<String, serde_json::Value> = input_data
-                    .as_deref()
-                    .filter(|s| !s.trim().is_empty())
-                    .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-                    .and_then(|v| v.as_object().cloned())
-                    .unwrap_or_default();
+                .cloned(),
+            Err(e) => {
+                log(
+                    &mut logger,
+                    &format!("[WARN] charter resolution failed (non-fatal): {e}"),
+                );
+                None
+            }
+        };
+        let use_case = crate::engine::design_context::find_use_case_by_id(
+            persona.design_context.as_deref(),
+            uc_id,
+        );
+
+        if charter.is_some() || use_case.is_some() {
+            let mut merged: serde_json::Map<String, serde_json::Value> = input_data
+                .as_deref()
+                .filter(|s| !s.trim().is_empty())
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                .and_then(|v| v.as_object().cloned())
+                .unwrap_or_default();
+            if let Some(ch) = charter.as_ref() {
                 merged
-                    .entry("_use_case".to_string())
-                    .or_insert_with(|| use_case.clone());
-                if let Some(tf) = use_case.get("time_filter").cloned() {
-                    merged.entry("_time_filter".to_string()).or_insert(tf);
-                }
-                input_data = Some(serde_json::to_string(&merged).unwrap_or_default());
-                if let Some(mo) = use_case.get("model_override") {
-                    if !mo.is_null() {
-                        persona.model_profile = Some(mo.to_string());
-                    }
+                    .entry("_responsibility".to_string())
+                    .or_insert_with(|| serde_json::Value::String(ch.id.clone()));
+            }
+            let time_filter = use_case
+                .as_ref()
+                .and_then(|uc| uc.get("time_filter").cloned())
+                .or_else(|| charter.as_ref().and_then(|c| c.spec.time_filter.clone()));
+            if let Some(tf) = time_filter {
+                merged.entry("_time_filter".to_string()).or_insert(tf);
+            }
+            input_data = Some(serde_json::to_string(&merged).unwrap_or_default());
+            if let Some(mo) = use_case.as_ref().and_then(|uc| uc.get("model_override")) {
+                if !mo.is_null() {
+                    persona.model_profile = Some(mo.to_string());
                 }
             }
+        } else {
+            log(
+                &mut logger,
+                &format!("[WARN] '{uc_id}' matches neither a capability nor a charter"),
+            );
         }
     }
 
@@ -284,7 +290,32 @@ pub async fn dry_run_persona(
         });
 
     // -- Assemble prompt (same path as the real runner) -------------------
-    let prompt_text = prompt::assemble_prompt(
+    // Living-agent inputs mirror the runner main path: active charters +
+    // episodic tail (best-effort, degrade to empty), so the dry-run prompt is
+    // the prompt a real run would carry.
+    let (mut responsibilities, recent_episodes) =
+        super::runner::load_living_prompt_inputs(&state.db, &persona.id);
+    // Focused charter (WP2): `_responsibility` may name a non-active charter
+    // (a simulation of a disabled capability); the active-only loader misses
+    // it, so fetch and append it for the focused render — the roster skips
+    // non-active rows. Ownership-checked: the id is payload-reachable and
+    // must not select another persona's charter.
+    if let Some(resp_id) = input_json
+        .as_ref()
+        .and_then(|d| d.get("_responsibility"))
+        .and_then(|v| v.as_str())
+    {
+        if !responsibilities.iter().any(|r| r.id == resp_id) {
+            if let Ok(Some(ch)) =
+                crate::db::repos::core::responsibilities::get_by_id(&state.db, resp_id)
+            {
+                if ch.persona_id == persona.id {
+                    responsibilities.push(ch);
+                }
+            }
+        }
+    }
+    let prompt_text = prompt::assemble_prompt_with_skills(
         &persona,
         &tools,
         input_json.as_ref(),
@@ -293,6 +324,9 @@ pub async fn dry_run_persona(
         None, // connector usage hints
         #[cfg(feature = "desktop")]
         None,
+        None, // written-skills set: no connector hints on this surface
+        (!responsibilities.is_empty()).then_some(responsibilities.as_slice()),
+        (!recent_episodes.is_empty()).then_some(recent_episodes.as_slice()),
     );
     let prompt_chars = prompt_text.chars().count() as i64;
     log(

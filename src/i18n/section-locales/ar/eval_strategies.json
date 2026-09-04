@@ -1,12 +1,12 @@
 {
-  "keyword_match_label": "جودة الناتج",
-  "keyword_match_description": "يتحقق من مصطلحات السلوك المتوقعة في ناتج الوكيل",
-  "tool_accuracy_label": "دقة الأداة",
-  "tool_accuracy_description": "يقارن استدعاءات الأدوات المتوقعة مقابل الفعلية",
-  "protocol_compliance_label": "امتثال البروتوكول",
-  "protocol_compliance_description": "يتحقق من أنماط رسائل البروتوكول المتوقعة",
-  "confusion_detect_label": "اكتشاف الالتباس",
-  "confusion_detect_description": "يتحقق من عبارات الالتباس / الإخفاق المعروفة",
+  "composite_description": "مجموعة موزونة من جميع الاستراتيجيات",
   "composite_label": "مركّب",
-  "composite_description": "مجموعة موزونة من جميع الاستراتيجيات"
+  "confusion_detect_description": "يتحقق من عبارات الالتباس / الإخفاق المعروفة",
+  "confusion_detect_label": "اكتشاف الالتباس",
+  "keyword_match_description": "يتحقق من مصطلحات السلوك المتوقعة في ناتج الوكيل",
+  "keyword_match_label": "جودة الناتج",
+  "protocol_compliance_description": "يتحقق من أنماط رسائل البروتوكول المتوقعة",
+  "protocol_compliance_label": "امتثال البروتوكول",
+  "tool_accuracy_description": "يقارن استدعاءات الأدوات المتوقعة مقابل الفعلية",
+  "tool_accuracy_label": "دقة الأداة"
 }

@@ -1,5 +1,5 @@
 {
+  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it.",
   "xray_label": "Složeno z {count} schopností",
-  "xray_tooltip": "Tato šablona je mentalita plus schopnosti z katalogu receptů — stejné součásti, které lze ručně sestavit ve Foundry.",
-  "_comment": "Composition x-ray badge on adopted templates (templates/sub_generated/adoption/CompositionXray.tsx). The three-step Compose (Foundry) wizard this section was written for was retired 2026-07-07; only the x-ray strings survive. \"Foundry\" is a product name — do not translate it."
+  "xray_tooltip": "Tato šablona je mentalita plus schopnosti z katalogu receptů — stejné součásti, které lze ručně sestavit ve Foundry."
 }

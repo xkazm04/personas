@@ -14,11 +14,27 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  markdownDensity,
+  type MarkdownDensity,
+  type MarkdownVariant,
+} from './markdownVariants';
 
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  /**
+   * Reading density for the surface this markdown sits on — see
+   * `markdownVariants.ts`. Omitted means `default`, which is byte-for-byte the
+   * treatment this component has always emitted, so no existing call site
+   * changes. Prefer a variant over a `className` full of `[&_p]:…` overrides:
+   * a descendant-selector override CANNOT carry a `typo-*` token (they are
+   * plain CSS classes, not Tailwind utilities, so no arbitrary variant is ever
+   * generated for them) and the type half of such a class string is silently
+   * dropped.
+   */
+  variant?: MarkdownVariant;
   /**
    * Opt-in: render fenced code blocks with a header bar (language label +
    * copy button), the way Claude.ai / ChatGPT present code. Off by default
@@ -214,36 +230,27 @@ function filterMetaContent(content: string): string {
 
 function buildComponents(
   codeBlockActions: boolean,
+  d: MarkdownDensity,
   onLinkClick?: (href: string) => boolean,
 ): Components {
   return {
-  // Generous top spacing on headings — markdown bodies read better when
-  // each section is visually offset from the prior paragraph, not just
-  // stacked tightly. Bottom margin stays moderate so the heading still
-  // hugs its body.
-  h1: ({ children }) => (
-    <h1 className="typo-heading-lg text-primary mb-3 mt-10 first:mt-0 pb-1.5 border-b border-primary/20">{children}</h1>
-  ),
-  h2: ({ children }) => (
-    <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-8 first:mt-0">{children}</h2>
-  ),
-  h3: ({ children }) => (
-    <h3 className="typo-heading text-accent mb-2 mt-6 first:mt-0 tracking-wide">{children}</h3>
-  ),
-  p: ({ children }) => (
-    <p className="typo-body text-foreground mb-3 leading-relaxed">{children}</p>
-  ),
+  // Every class string below comes from the density spec (markdownVariants.ts)
+  // so a surface picks its treatment by name instead of by pasting descendant
+  // selectors over this component. `default` reproduces what this file used to
+  // hard-code, element for element.
+  h1: ({ children }) => <h1 className={d.h1}>{children}</h1>,
+  h2: ({ children }) => <h2 className={d.h2}>{children}</h2>,
+  h3: ({ children }) => <h3 className={d.h3}>{children}</h3>,
+  p: ({ children }) => <p className={d.p}>{children}</p>,
   // Forward the node's own className so remark-gfm's `contains-task-list` /
   // `task-list-item` markers survive (the chat scopes task-list styling off
   // them; the classes are inert on every other call site).
   ul: ({ className, children }) => (
-    <ul className={`list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground${className ? ` ${className}` : ''}`}>{children}</ul>
+    <ul className={`${d.ul}${className ? ` ${className}` : ''}`}>{children}</ul>
   ),
-  ol: ({ children }) => (
-    <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground">{children}</ol>
-  ),
+  ol: ({ children }) => <ol className={d.ol}>{children}</ol>,
   li: ({ className, children }) => (
-    <li className={`text-foreground${className ? ` ${className}` : ''}`}>{children}</li>
+    <li className={`${d.li}${className ? ` ${className}` : ''}`}>{children}</li>
   ),
   code: ({ className, children, ...props }) => {
     const isChart = className?.includes('language-chart');
@@ -255,13 +262,9 @@ function buildComponents(
       // With codeBlockActions the <pre> wrapper supplies the border/bg and
       // header bar, so the code element stays minimal; otherwise it carries
       // its own block chrome (unchanged for every non-chat call site).
-      return codeBlockActions ? (
-        <code className={`block p-4 typo-code ${className || ''}`} {...props}>
-          {children}
-        </code>
-      ) : (
+      return (
         <code
-          className={`block p-4 bg-background/60 border border-primary/10 rounded-xl typo-code overflow-x-auto ${className || ''}`}
+          className={`${codeBlockActions ? d.codeBlockBare : d.codeBlock} ${className || ''}`}
           {...props}
         >
           {children}
@@ -269,16 +272,13 @@ function buildComponents(
       );
     }
     return (
-      <code
-        className="px-1.5 py-0.5 bg-primary/8 border border-primary/12 rounded typo-code text-primary/70"
-        {...props}
-      >
+      <code className={d.code} {...props}>
         {children}
       </code>
     );
   },
   pre: ({ children }) => {
-    if (!codeBlockActions) return <pre className="mb-3">{children}</pre>;
+    if (!codeBlockActions) return <pre className={d.pre}>{children}</pre>;
     // Header bar: language label + wrap toggle + copy. Every fenced and
     // indented block is wrapped in <pre>, so owning the chrome here (not in
     // `code`) means even a no-language block still gets the header + a real
@@ -295,30 +295,10 @@ function buildComponents(
       </CodeBlockShell>
     );
   },
-  blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-violet-500/30 pl-4 pr-3 py-2 italic text-foreground/90 my-3 bg-violet-500/5 rounded-r-lg">
-      {children}
-    </blockquote>
-  ),
-  // Tables — visible-but-subtle borders and a faint surface tint so the
-  // grid reads as a discrete data block. `bg-foreground/[0.03]` is dark
-  // in dark mode and light in light mode (the foreground token inverts
-  // with the theme), so a single rule covers both.
-  table: ({ children }) => (
-    <table className="w-full typo-body my-4 border-separate border-spacing-0 overflow-hidden rounded-card border border-foreground/15 bg-foreground/[0.03]">
-      {children}
-    </table>
-  ),
-  th: ({ children }) => (
-    <th className="text-left typo-label text-foreground/85 px-3 py-2 border-b border-foreground/20 bg-foreground/[0.05]">
-      {children}
-    </th>
-  ),
-  td: ({ children }) => (
-    <td className="px-3 py-2 text-foreground/90 border-b border-foreground/10 last:border-b-0">
-      {children}
-    </td>
-  ),
+  blockquote: ({ children }) => <blockquote className={d.blockquote}>{children}</blockquote>,
+  table: ({ children }) => <table className={d.table}>{children}</table>,
+  th: ({ children }) => <th className={d.th}>{children}</th>,
+  td: ({ children }) => <td className={d.td}>{children}</td>,
   a: ({ href, children }) => {
     // Relative link + an interceptor: hand it over. Always preventDefault —
     // a repo-relative href must never actually navigate the webview.
@@ -326,7 +306,7 @@ function buildComponents(
       return (
         <a
           href={href}
-          className="text-primary hover:underline"
+          className={d.a}
           onClick={(e) => {
             e.preventDefault();
             onLinkClick(href);
@@ -339,21 +319,15 @@ function buildComponents(
     const safeHref = sanitizeExternalUrl(href);
     if (!safeHref) return <span className="text-primary">{children}</span>;
     return (
-      <a href={safeHref} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+      <a href={safeHref} className={d.a} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
     );
   },
-  hr: () => <hr className="border-border/30 my-4" />,
-  strong: ({ children }) => (
-    <strong className="font-bold text-foreground">{children}</strong>
-  ),
-  img: ({ src, alt }) => (
-    <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg my-2 border border-border/20" />
-  ),
-  em: ({ children }) => (
-    <em className="italic text-foreground">{children}</em>
-  ),
+  hr: () => <hr className={d.hr} />,
+  strong: ({ children }) => <strong className={d.strong}>{children}</strong>,
+  img: ({ src, alt }) => <img src={src} alt={alt || ''} className={d.img} />,
+  em: ({ children }) => <em className={d.em}>{children}</em>,
   };
 }
 
@@ -361,16 +335,22 @@ export function MarkdownRenderer({
   content,
   className,
   codeBlockActions = false,
+  variant,
   onLinkClick,
 }: MarkdownRendererProps) {
   const filtered = useMemo(() => filterMetaContent(content), [content]);
+  const density = useMemo(() => markdownDensity(variant), [variant]);
   const components = useMemo(
-    () => buildComponents(codeBlockActions, onLinkClick),
-    [codeBlockActions, onLinkClick],
+    () => buildComponents(codeBlockActions, density, onLinkClick),
+    [codeBlockActions, density, onLinkClick],
   );
 
+  // `|| undefined` keeps the no-variant, no-className case emitting a bare
+  // <div> with no class attribute at all, exactly as before variants existed.
+  const rootClass = [density.root, className].filter(Boolean).join(' ') || undefined;
+
   return (
-    <div className={className}>
+    <div className={rootClass}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}

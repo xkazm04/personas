@@ -112,6 +112,19 @@ pub struct ExecutionListItem {
     pub is_simulation: bool,
     #[serde(default = "default_business_outcome")]
     pub business_outcome: String,
+    /// Run origin, derived in the list SQL (see `LIST_ITEM_COLUMNS` in the
+    /// executions repo): 'attention' | 'channel' | 'scheduled' | 'simulation'
+    /// | 'manual'. Precedence in that order; 'manual' is the fallback.
+    #[serde(default = "default_origin")]
+    pub origin: String,
+    /// The attention lane (`$._attention.lane` in input_data) when the run was
+    /// dispatched by the attention loop; `None` otherwise.
+    #[serde(default)]
+    pub origin_lane: Option<String>,
+}
+
+fn default_origin() -> String {
+    "manual".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -276,6 +289,16 @@ pub struct UpdateExecutionStatus {
     /// keeps any previous write); the column itself defaults to `'unknown'`
     /// on row creation.
     pub business_outcome: Option<String>,
+    /// The failure's class as the raise site MINTED it — an `ErrorCategory`'s
+    /// `snake_case` serde token (see `error_taxonomy::category_token`), or
+    /// `None` when nothing knew it.
+    ///
+    /// `None` must stay `None` on the row: every execution written before this
+    /// column existed has no class and must not be given a fabricated one. A
+    /// backfill running `classify_error` over the history would destroy the only
+    /// honest signal the column has -- this row's class was measured, that one's
+    /// was guessed -- so the write is COALESCE and nothing anywhere backfills.
+    pub error_category: Option<String>,
 }
 
 impl Default for UpdateExecutionStatus {
@@ -295,6 +318,7 @@ impl Default for UpdateExecutionStatus {
             execution_config: None,
             log_truncated: false,
             business_outcome: None,
+            error_category: None,
         }
     }
 }

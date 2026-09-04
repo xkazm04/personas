@@ -12,13 +12,26 @@ parallel to single-template `.json` files but in a private folder
 skips them — they're a separate primitive, not a template variant.
 
 **Shipped presets today:** `backlog-execution` (capture → triage →
-backlog → decisions → resolution → reporting), `engineering-triage`,
-`sdlc-lifecycle` (architect → review → security → release → docs —
+backlog → decisions → resolution → reporting), `sdlc-lifecycle`
+(architect → review → security → release → docs —
 five codebase-grounded delivery agents wired into one end-to-end software
 lifecycle on a single registered codebase), and `web-development`
 (architect → design handoff → implement → review → QA-test/merge →
 deploy → conversion audit → docs — a best-practice web-delivery pod of
 eight templates on one codebase).
+
+> **The gallery is mid-consolidation and every remaining preset has
+> dangling members.** `daily-ops`, `engineering-triage` and
+> `reflective-journaling` were removed with the retired templates they
+> composed. The three above survive but still list members that no longer
+> exist as templates: `backlog-execution` → `personal-capture-bot`;
+> `sdlc-lifecycle` → `code-reviewer`, `docs-steward`; `web-development` →
+> `design-handoff-coordinator`, `code-reviewer`, `website-conversion-auditor`,
+> `docs-steward`. No gate catches this: the schema view silently skips an
+> unloadable member by design, and adoption fails at runtime with
+> "Template not found". Repairing a preset means editing its `connections`
+> graph, which is a product decision, not a mechanical one, and is still
+> open.
 
 ## Lifecycle at a glance
 
@@ -315,21 +328,41 @@ behind a "Customize first" toggle.
 
 The override channel lands answers via
 `populate_persona_parameters_from_design`, which applies them **only**
-to questions whose `maps_to` is `persona.parameters[KEY]`. As of this
-writing exactly **1 of 109** catalog templates uses that mapping
-(`vault-grounded-journal-coach`); the other 105 map to
-`use_cases[…].sample_input.*`, which the **instant-adopt path does
-not consume** (only the heavier build-session / Glyph flow runs
-`substitute_variables` + sample_input seeding).
+to questions whose `maps_to` is `persona.parameters[KEY]`. Re-measured
+2026-09-04 after the template consolidation: **2 of 61** catalog
+templates use that mapping (`devops/release-manager` →
+`changelog_style`, `release_note_length`; `security/security-sentinel` →
+`severity_threshold`); 54 map only to `use_cases[…].sample_input.*`,
+which the **instant-adopt path does not consume** (only the heavier
+build-session / Glyph flow runs `substitute_variables` + sample_input
+seeding), and 1 declares no `maps_to` at all.
+
+> The previous figure here read "1 of 109 (`vault-grounded-journal-coach`)"
+> and did not add up even then (1 + 105 ≠ 109). That template has since
+> been retired, so both the count and the named example were wrong.
 
 Concretely: for a preset whose members all use `use_cases`-mapped
 questions (e.g. `backlog-execution`), the questionnaire still renders
 and collects answers, but those answers have no observable effect on
-the adopted personas. The `reflective-journaling` preset exists partly
-as a working example of the supported path — its single member is the
-one parameter-mapped template, and
-`tests/playwright/preset-questionnaire.spec.ts` asserts an override
-lands as `persona.parameters[KEY].value`.
+the adopted personas.
+
+> **The worked example of the supported path is gone.** The
+> `reflective-journaling` preset existed partly to demonstrate it: its
+> single member `vault-grounded-journal-coach` was the one
+> parameter-mapped template, and
+> `tests/playwright/preset-questionnaire.spec.ts` asserted an override
+> lands as `persona.parameters[KEY].value`. Both the member and the
+> preset have since been retired, so **that spec is dead**. It is
+> Playwright, so it is not part of `npm run test` and nothing goes red.
+>
+> Re-pointing it is possible without authoring anything new: both
+> surviving parameter-mapped templates (`devops/release-manager` →
+> `changelog_style`, `release_note_length`; `security/security-sentinel`
+> → `severity_threshold`, see "Override scope" below) are members of
+> `sdlc-lifecycle`. That preset is 9 members rather than 1, so the spec
+> would have to drive the member-section expansion instead of relying on
+> a single-member shortcut, and it currently carries two dangling members
+> (`code-reviewer`, `docs-steward`) that would need resolving first.
 
 **Follow-up:** to make `use_cases`-mapped answers effective in preset
 adoption, the adopter would need to apply them into the persona's

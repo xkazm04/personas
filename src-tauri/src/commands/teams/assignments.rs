@@ -629,6 +629,7 @@ mod tests {
     ) -> Persona {
         Persona {
             lifecycle: "active".to_string(),
+            core_profile: None,
             id: "p-1".into(),
             project_id: "proj-1".into(),
             name: "Dev Clone".into(),

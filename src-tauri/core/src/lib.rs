@@ -39,6 +39,7 @@
 pub mod context_fingerprint;
 pub mod cron;
 pub mod crypto;
+pub mod cycle;
 pub mod digest_config;
 pub mod drive_root;
 pub mod engine_kind;
@@ -63,6 +64,7 @@ pub mod retrieval;
 pub mod run_budget;
 pub mod scheduler;
 pub mod score_weights;
+pub mod shutdown_marker;
 pub mod topology_graph;
 pub mod trace;
 pub mod types;

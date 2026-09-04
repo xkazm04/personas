@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "대기 중",
-    "running": "실행 중",
-    "completed": "완료",
-    "failed": "실패",
-    "cancelled": "취소됨",
-    "incomplete": "미완료",
-    "error": "오류",
-    "unknown": "알 수 없음"
-  },
-  "simple": {
-    "good": "양호",
-    "warning": "주의",
-    "problem": "문제"
-  },
-  "event": {
-    "pending": "대기 중",
-    "processing": "처리 중",
-    "processed": "처리됨",
-    "failed": "실패",
-    "retrying": "재시도 중"
-  },
   "automation": {
-    "pending": "대기 중",
-    "running": "실행 중",
     "completed": "완료",
     "failed": "실패",
+    "pending": "대기 중",
+    "running": "실행 중",
     "timeout": "시간 초과"
-  },
-  "severity": {
-    "info": "정보",
-    "low": "낮음",
-    "medium": "보통",
-    "high": "높음",
-    "critical": "심각"
-  },
-  "priority": {
-    "low": "낮음",
-    "normal": "보통",
-    "high": "높음",
-    "urgent": "긴급"
-  },
-  "healing_status": {
-    "open": "열림",
-    "auto_fixed": "자동 수정됨",
-    "acknowledged": "확인됨",
-    "resolved": "해결됨"
-  },
-  "healing_category": {
-    "config": "구성",
-    "auth": "인증",
-    "network": "네트워크",
-    "timeout": "시간 초과",
-    "quota": "할당량"
-  },
-  "connector_status": {
-    "ready": "준비됨",
-    "untested": "테스트 안 됨",
-    "failed": "실패",
-    "no_credential": "자격 증명 없음",
-    "testing": "테스트 중"
-  },
-  "task_phase": {
-    "analyzing": "분석 중",
-    "planning": "계획 중",
-    "implementing": "구현 중",
-    "committing": "커밋 중",
-    "validating": "검증 중",
-    "complete": "완료"
-  },
-  "goal_state": {
-    "pending": "대기 중",
-    "review": "검토",
-    "blocked": "차단됨",
-    "in_progress": "진행 중",
-    "running": "실행 중",
-    "completed": "완료",
-    "done": "완료"
-  },
-  "test": {
-    "generating": "생성 중",
-    "running": "실행 중",
-    "completed": "완료",
-    "failed": "실패",
-    "pending": "대기 중"
-  },
-  "dev": {
-    "open": "열림",
-    "in_progress": "진행 중",
-    "completed": "완료",
-    "blocked": "차단됨",
-    "queued": "대기 중",
-    "running": "실행 중",
-    "failed": "실패"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "글로벌"
-  },
-  "forage_confidence": {
-    "high": "높음",
-    "medium": "보통",
-    "low": "낮음"
-  },
-  "capability_risk": {
-    "low": "낮음",
-    "medium": "보통",
-    "high": "높음"
-  },
-  "verdict": {
-    "production": "프로덕션",
-    "promising": "유망",
-    "not_ready": "준비 안 됨",
-    "broken": "고장"
-  },
-  "deployment": {
-    "active": "활성",
-    "paused": "일시 중지",
-    "failed": "실패",
-    "unknown": "알 수 없음",
-    "file-based": "파일 기반"
-  },
-  "delivery": {
-    "delivered": "전달됨",
-    "failed": "실패",
-    "pending": "대기 중",
-    "queued": "대기 중"
-  },
-  "rotation": {
-    "anomaly": "이상 감지",
-    "paused": "일시 중지",
-    "disabled": "비활성화",
-    "perm_errors": "영구 오류",
-    "degrading": "저하 중",
-    "backoff": "백오프",
-    "fresh": "최신",
-    "active": "활성"
-  },
-  "thinking": {
-    "high": "높음",
-    "low": "낮음",
-    "medium": "중간"
-  },
-  "error_category": {
-    "api_error": "API 오류",
-    "credential_error": "자격 증명 오류",
-    "network": "네트워크",
-    "provider_not_found": "공급자를 찾을 수 없음",
-    "rate_limit": "속도 제한",
-    "session_limit": "세션 제한",
-    "timeout": "시간 초과",
-    "tool_error": "도구 오류",
-    "transient_process_failure": "일시적 프로세스 실패",
-    "unknown": "알 수 없음",
-    "validation": "유효성 검사"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "팬아웃 한도 도달",
-    "budget_exceeded": "비용 한도 도달",
-    "cas_lost": "다른 실행이 선점함",
-    "cycle_detected": "순환 감지됨",
-    "depth_limit": "깊이 한도",
-    "handoff_suppressed": "핸드오프 억제됨",
-    "malformed_config": "잘못된 구성",
-    "outside_window": "활성 창 범위 밖",
-    "predicate_unmet": "조건 미충족",
-    "publish_failed": "게시 실패",
-    "quarantined": "트리거 격리됨",
-    "healing_abandoned": "자가 복구 중단",
-    "healing_capped": "복구 재시도 소진",
-    "lookup_failed": "트리거 조회 실패",
-    "cost_ceiling_corrupt": "비용 상한을 읽을 수 없음"
   },
   "build": {
     "analyzing": "분석 중",
@@ -186,6 +19,232 @@
     "test_complete": "테스트 완료",
     "testing": "테스트 중"
   },
+  "capability_risk": {
+    "high": "높음",
+    "low": "낮음",
+    "medium": "보통"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "팬아웃 한도 도달",
+    "budget_exceeded": "비용 한도 도달",
+    "cas_lost": "다른 실행이 선점함",
+    "cost_ceiling_corrupt": "비용 상한을 읽을 수 없음",
+    "cycle_detected": "순환 감지됨",
+    "depth_limit": "깊이 한도",
+    "handoff_suppressed": "핸드오프 억제됨",
+    "healing_abandoned": "자가 복구 중단",
+    "healing_capped": "복구 재시도 소진",
+    "lookup_failed": "트리거 조회 실패",
+    "malformed_config": "잘못된 구성",
+    "outside_window": "활성 창 범위 밖",
+    "predicate_unmet": "조건 미충족",
+    "publish_failed": "게시 실패",
+    "quarantined": "트리거 격리됨"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "글로벌"
+  },
+  "competition": {
+    "awaiting_review": "검토 대기 중",
+    "cancelled": "취소됨",
+    "resolved": "해결됨",
+    "running": "실행 중"
+  },
+  "connector_status": {
+    "failed": "실패",
+    "no_credential": "자격 증명 없음",
+    "ready": "준비됨",
+    "testing": "테스트 중",
+    "untested": "테스트 안 됨"
+  },
+  "delivery": {
+    "delivered": "전달됨",
+    "failed": "실패",
+    "pending": "대기 중",
+    "queued": "대기 중"
+  },
+  "deployment": {
+    "active": "활성",
+    "failed": "실패",
+    "file-based": "파일 기반",
+    "paused": "일시 중지",
+    "unknown": "알 수 없음"
+  },
+  "dev": {
+    "blocked": "차단됨",
+    "completed": "완료",
+    "failed": "실패",
+    "in_progress": "진행 중",
+    "open": "열림",
+    "queued": "대기 중",
+    "running": "실행 중"
+  },
+  "error_category": {
+    "api_error": "API 오류",
+    "credential_error": "자격 증명 오류",
+    "network": "네트워크",
+    "provider_not_found": "공급자를 찾을 수 없음",
+    "rate_limit": "속도 제한",
+    "session_limit": "세션 제한",
+    "timeout": "시간 초과",
+    "tool_error": "도구 오류",
+    "transient_process_failure": "일시적 프로세스 실패",
+    "unknown": "알 수 없음",
+    "validation": "유효성 검사"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "승인 대기 중",
+    "cascade_guard": "이미 실행 중",
+    "cross_team_blocked": "팀 간 차단됨",
+    "dry_run": "시험 실행(시뮬레이션)",
+    "handoff_target_disabled": "인계 대상이 꺼져 있음",
+    "no_subscriber": "일치하는 구독자 없음",
+    "persona_disabled": "에이전트가 꺼져 있음",
+    "stuck_reclaimed": "회수하여 다시 대기열에 넣음",
+    "stuck_retry_exhausted": "회수했으나 재시도 횟수 소진"
+  },
+  "event": {
+    "failed": "실패",
+    "pending": "대기 중",
+    "processed": "처리됨",
+    "processing": "처리 중",
+    "retrying": "재시도 중"
+  },
+  "execution": {
+    "cancelled": "취소됨",
+    "completed": "완료",
+    "error": "오류",
+    "failed": "실패",
+    "incomplete": "미완료",
+    "queued": "대기 중",
+    "running": "실행 중",
+    "unknown": "알 수 없음"
+  },
+  "forage_confidence": {
+    "high": "높음",
+    "low": "낮음",
+    "medium": "보통"
+  },
+  "goal_state": {
+    "blocked": "차단됨",
+    "completed": "완료",
+    "done": "완료",
+    "in_progress": "진행 중",
+    "pending": "대기 중",
+    "review": "검토",
+    "running": "실행 중"
+  },
+  "healing_category": {
+    "auth": "인증",
+    "config": "구성",
+    "network": "네트워크",
+    "quota": "할당량",
+    "timeout": "시간 초과"
+  },
+  "healing_status": {
+    "acknowledged": "확인됨",
+    "auto_fixed": "자동 수정됨",
+    "open": "열림",
+    "resolved": "해결됨"
+  },
+  "kb_document": {
+    "indexing": "색인 중",
+    "pending": "대기 중"
+  },
+  "memory_action": {
+    "deleted": "삭제됨",
+    "error": "오류",
+    "kept": "유지됨",
+    "proposed_archive": "보관 제안",
+    "proposed_delete": "삭제 제안",
+    "proposed_synthesize": "병합 제안",
+    "proposed_update_importance": "중요도 재평가 제안"
+  },
+  "memory_category": {
+    "context": "맥락",
+    "decision": "결정",
+    "learning": "학습",
+    "observation": "관찰"
+  },
+  "memory_tier": {
+    "active": "활성",
+    "archive": "보관됨",
+    "core": "핵심",
+    "working": "작업 중"
+  },
+  "priority": {
+    "high": "높음",
+    "low": "낮음",
+    "normal": "보통",
+    "urgent": "긴급"
+  },
+  "remote_job": {
+    "cancelled": "취소됨",
+    "completed": "완료",
+    "failed": "실패",
+    "pending": "대기 중",
+    "refused": "거절됨",
+    "running": "실행 중"
+  },
+  "rotation": {
+    "active": "활성",
+    "anomaly": "이상 감지",
+    "backoff": "백오프",
+    "degrading": "저하 중",
+    "disabled": "비활성화",
+    "fresh": "최신",
+    "paused": "일시 중지",
+    "perm_errors": "영구 오류"
+  },
+  "severity": {
+    "critical": "심각",
+    "high": "높음",
+    "info": "정보",
+    "low": "낮음",
+    "medium": "보통"
+  },
+  "simple": {
+    "good": "양호",
+    "problem": "문제",
+    "warning": "주의"
+  },
+  "span_type": {
+    "chain_evaluation": "체인 평가",
+    "cli_spawn": "CLI 시작",
+    "credential_resolution": "자격 증명",
+    "execution": "실행",
+    "healing_analysis": "복구",
+    "outcome_assessment": "결과",
+    "pipeline_stage": "파이프라인 단계",
+    "prompt_assembly": "프롬프트",
+    "protocol_dispatch": "프로토콜",
+    "stream_processing": "스트림",
+    "tool_call": "도구 호출",
+    "unknown": "알 수 없음"
+  },
+  "task_phase": {
+    "analyzing": "분석 중",
+    "committing": "커밋 중",
+    "complete": "완료",
+    "implementing": "구현 중",
+    "planning": "계획 중",
+    "validating": "검증 중"
+  },
+  "test": {
+    "completed": "완료",
+    "failed": "실패",
+    "generating": "생성 중",
+    "pending": "대기 중",
+    "running": "실행 중"
+  },
+  "thinking": {
+    "high": "높음",
+    "low": "낮음",
+    "medium": "중간"
+  },
   "tool_error_kind": {
     "auth": "인증",
     "http": "HTTP 오류",
@@ -197,69 +256,10 @@
     "unknown": "알 수 없는 오류",
     "unsupported": "여기서 실행 불가"
   },
-  "remote_job": {
-    "completed": "완료",
-    "failed": "실패",
-    "cancelled": "취소됨",
-    "refused": "거절됨",
-    "pending": "대기 중",
-    "running": "실행 중"
-  },
-  "event_reason": {
-    "approval_held": "승인 대기 중",
-    "cascade_guard": "이미 실행 중",
-    "cross_team_blocked": "팀 간 차단됨",
-    "dry_run": "시험 실행(시뮬레이션)",
-    "handoff_target_disabled": "인계 대상이 꺼져 있음",
-    "no_subscriber": "일치하는 구독자 없음",
-    "persona_disabled": "에이전트가 꺼져 있음",
-    "stuck_reclaimed": "회수하여 다시 대기열에 넣음",
-    "stuck_retry_exhausted": "회수했으나 재시도 횟수 소진",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "실행 중",
-    "awaiting_review": "검토 대기 중",
-    "resolved": "해결됨",
-    "cancelled": "취소됨"
-  },
-  "kb_document": {
-    "pending": "대기 중",
-    "indexing": "색인 중"
-  },
-  "memory_tier": {
-    "core": "핵심",
-    "active": "활성",
-    "working": "작업 중",
-    "archive": "보관됨"
-  },
-  "span_type": {
-    "execution": "실행",
-    "prompt_assembly": "프롬프트",
-    "credential_resolution": "자격 증명",
-    "cli_spawn": "CLI 시작",
-    "tool_call": "도구 호출",
-    "protocol_dispatch": "프로토콜",
-    "chain_evaluation": "체인 평가",
-    "stream_processing": "스트림",
-    "outcome_assessment": "결과",
-    "healing_analysis": "복구",
-    "pipeline_stage": "파이프라인 단계",
-    "unknown": "알 수 없음"
-  },
-  "memory_action": {
-    "kept": "유지됨",
-    "deleted": "삭제됨",
-    "error": "오류",
-    "proposed_delete": "삭제 제안",
-    "proposed_update_importance": "중요도 재평가 제안",
-    "proposed_synthesize": "병합 제안",
-    "proposed_archive": "보관 제안"
-  },
-  "memory_category": {
-    "observation": "관찰",
-    "decision": "결정",
-    "context": "맥락",
-    "learning": "학습"
+  "verdict": {
+    "broken": "고장",
+    "not_ready": "준비 안 됨",
+    "production": "프로덕션",
+    "promising": "유망"
   }
 }

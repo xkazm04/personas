@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "কিউতে আছে",
-    "running": "চলছে",
-    "completed": "সম্পন্ন",
-    "failed": "ব্যর্থ",
-    "cancelled": "বাতিল",
-    "incomplete": "অসম্পূর্ণ",
-    "error": "ত্রুটি",
-    "unknown": "অজানা"
-  },
-  "simple": {
-    "good": "ভালো",
-    "warning": "মনোযোগ দিন",
-    "problem": "সমস্যা"
-  },
-  "event": {
-    "pending": "মুলতুবি",
-    "processing": "প্রক্রিয়াধীন",
-    "processed": "প্রক্রিয়াকৃত",
-    "failed": "ব্যর্থ",
-    "retrying": "পুনরায় চেষ্টা হচ্ছে"
-  },
   "automation": {
-    "pending": "মুলতুবি",
-    "running": "চলছে",
     "completed": "সম্পন্ন",
     "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "running": "চলছে",
     "timeout": "টাইমআউট হয়েছে"
-  },
-  "severity": {
-    "info": "তথ্য",
-    "low": "নিম্ন",
-    "medium": "মাঝারি",
-    "high": "উচ্চ",
-    "critical": "গুরুতর"
-  },
-  "priority": {
-    "low": "নিম্ন",
-    "normal": "স্বাভাবিক",
-    "high": "উচ্চ",
-    "urgent": "জরুরি"
-  },
-  "healing_status": {
-    "open": "খোলা",
-    "auto_fixed": "স্বয়ংক্রিয়ভাবে সমাধান হয়েছে",
-    "acknowledged": "স্বীকৃত",
-    "resolved": "সমাধান হয়েছে"
-  },
-  "healing_category": {
-    "config": "কনফিগারেশন",
-    "auth": "প্রমাণীকরণ",
-    "network": "নেটওয়ার্ক",
-    "timeout": "টাইমআউট",
-    "quota": "কোটা"
-  },
-  "connector_status": {
-    "ready": "প্রস্তুত",
-    "untested": "পরীক্ষিত নয়",
-    "failed": "ব্যর্থ",
-    "no_credential": "কোনো ক্রেডেনশিয়াল নেই",
-    "testing": "পরীক্ষা হচ্ছে"
-  },
-  "task_phase": {
-    "analyzing": "বিশ্লেষণ হচ্ছে",
-    "planning": "পরিকল্পনা করা হচ্ছে",
-    "implementing": "বাস্তবায়ন হচ্ছে",
-    "committing": "কমিট হচ্ছে",
-    "validating": "যাচাই হচ্ছে",
-    "complete": "সম্পন্ন"
-  },
-  "goal_state": {
-    "pending": "মুলতুবি",
-    "review": "পর্যালোচনা",
-    "blocked": "অবরুদ্ধ",
-    "in_progress": "চলমান",
-    "running": "চলছে",
-    "completed": "সম্পন্ন",
-    "done": "সম্পন্ন"
-  },
-  "test": {
-    "generating": "তৈরি হচ্ছে",
-    "running": "চলছে",
-    "completed": "সম্পন্ন",
-    "failed": "ব্যর্থ",
-    "pending": "মুলতুবি"
-  },
-  "dev": {
-    "open": "খোলা",
-    "in_progress": "চলমান",
-    "completed": "সম্পন্ন",
-    "blocked": "অবরুদ্ধ",
-    "queued": "কিউতে আছে",
-    "running": "চলছে",
-    "failed": "ব্যর্থ"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "গ্লোবাল"
-  },
-  "forage_confidence": {
-    "high": "উচ্চ",
-    "medium": "মাঝারি",
-    "low": "নিম্ন"
-  },
-  "capability_risk": {
-    "low": "নিম্ন",
-    "medium": "মাঝারি",
-    "high": "উচ্চ"
-  },
-  "verdict": {
-    "production": "প্রোডাকশন",
-    "promising": "আশাব্যঞ্জক",
-    "not_ready": "প্রস্তুত নয়",
-    "broken": "ভাঙা"
-  },
-  "deployment": {
-    "active": "সক্রিয়",
-    "paused": "বিরতিতে",
-    "failed": "ব্যর্থ",
-    "unknown": "অজানা",
-    "file-based": "ফাইল-ভিত্তিক"
-  },
-  "delivery": {
-    "delivered": "বিতরণ হয়েছে",
-    "failed": "ব্যর্থ",
-    "pending": "মুলতুবি",
-    "queued": "কিউতে আছে"
-  },
-  "rotation": {
-    "anomaly": "অস্বাভাবিকতা",
-    "paused": "বিরতিতে",
-    "disabled": "অক্ষম",
-    "perm_errors": "স্থায়ী ত্রুটি",
-    "degrading": "অবনমিত হচ্ছে",
-    "backoff": "ব্যাকঅফ",
-    "fresh": "তাজা",
-    "active": "সক্রিয়"
-  },
-  "thinking": {
-    "high": "উচ্চ",
-    "low": "নিম্ন",
-    "medium": "মাঝারি"
-  },
-  "error_category": {
-    "api_error": "API ত্রুটি",
-    "credential_error": "ক্রেডেনশিয়াল ত্রুটি",
-    "network": "নেটওয়ার্ক",
-    "provider_not_found": "প্রদানকারী পাওয়া যায়নি",
-    "rate_limit": "রেট সীমা",
-    "session_limit": "সেশন সীমা",
-    "timeout": "সময় শেষ",
-    "tool_error": "টুল ত্রুটি",
-    "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
-    "unknown": "অজানা",
-    "validation": "যাচাইকরণ"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "ফ্যান-আউট সীমা পৌঁছেছে",
-    "budget_exceeded": "খরচের সর্বোচ্চ সীমা পৌঁছেছে",
-    "cas_lost": "অন্য রান দাবি করেছে",
-    "cycle_detected": "চক্র শনাক্ত হয়েছে",
-    "depth_limit": "গভীরতার সীমা",
-    "handoff_suppressed": "হ্যান্ডঅফ দমন করা হয়েছে",
-    "malformed_config": "অবৈধ কনফিগ",
-    "outside_window": "সক্রিয় উইন্ডোর বাইরে",
-    "predicate_unmet": "শর্ত পূরণ হয়নি",
-    "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
-    "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
-    "healing_abandoned": "নিরাময় থেমে গেছে",
-    "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ",
-    "lookup_failed": "ট্রিগার অনুসন্ধান ব্যর্থ",
-    "cost_ceiling_corrupt": "খরচের সীমা পড়া যায়নি"
   },
   "build": {
     "analyzing": "বিশ্লেষণ চলছে",
@@ -186,6 +19,232 @@
     "test_complete": "পরীক্ষা সম্পন্ন",
     "testing": "পরীক্ষা চলছে"
   },
+  "capability_risk": {
+    "high": "উচ্চ",
+    "low": "নিম্ন",
+    "medium": "মাঝারি"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "ফ্যান-আউট সীমা পৌঁছেছে",
+    "budget_exceeded": "খরচের সর্বোচ্চ সীমা পৌঁছেছে",
+    "cas_lost": "অন্য রান দাবি করেছে",
+    "cost_ceiling_corrupt": "খরচের সীমা পড়া যায়নি",
+    "cycle_detected": "চক্র শনাক্ত হয়েছে",
+    "depth_limit": "গভীরতার সীমা",
+    "handoff_suppressed": "হ্যান্ডঅফ দমন করা হয়েছে",
+    "healing_abandoned": "নিরাময় থেমে গেছে",
+    "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ",
+    "lookup_failed": "ট্রিগার অনুসন্ধান ব্যর্থ",
+    "malformed_config": "অবৈধ কনফিগ",
+    "outside_window": "সক্রিয় উইন্ডোর বাইরে",
+    "predicate_unmet": "শর্ত পূরণ হয়নি",
+    "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
+    "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "গ্লোবাল"
+  },
+  "competition": {
+    "awaiting_review": "পর্যালোচনার অপেক্ষায়",
+    "cancelled": "বাতিল",
+    "resolved": "সমাধান হয়েছে",
+    "running": "চলছে"
+  },
+  "connector_status": {
+    "failed": "ব্যর্থ",
+    "no_credential": "কোনো ক্রেডেনশিয়াল নেই",
+    "ready": "প্রস্তুত",
+    "testing": "পরীক্ষা হচ্ছে",
+    "untested": "পরীক্ষিত নয়"
+  },
+  "delivery": {
+    "delivered": "বিতরণ হয়েছে",
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "queued": "কিউতে আছে"
+  },
+  "deployment": {
+    "active": "সক্রিয়",
+    "failed": "ব্যর্থ",
+    "file-based": "ফাইল-ভিত্তিক",
+    "paused": "বিরতিতে",
+    "unknown": "অজানা"
+  },
+  "dev": {
+    "blocked": "অবরুদ্ধ",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "in_progress": "চলমান",
+    "open": "খোলা",
+    "queued": "কিউতে আছে",
+    "running": "চলছে"
+  },
+  "error_category": {
+    "api_error": "API ত্রুটি",
+    "credential_error": "ক্রেডেনশিয়াল ত্রুটি",
+    "network": "নেটওয়ার্ক",
+    "provider_not_found": "প্রদানকারী পাওয়া যায়নি",
+    "rate_limit": "রেট সীমা",
+    "session_limit": "সেশন সীমা",
+    "timeout": "সময় শেষ",
+    "tool_error": "টুল ত্রুটি",
+    "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
+    "unknown": "অজানা",
+    "validation": "যাচাইকরণ"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "অনুমোদনের অপেক্ষায়",
+    "cascade_guard": "ইতিমধ্যে চলছে",
+    "cross_team_blocked": "দলগুলোর মধ্যে অবরুদ্ধ",
+    "dry_run": "ড্রাই রান (সিমুলেটেড)",
+    "handoff_target_disabled": "হ্যান্ডঅফ লক্ষ্য বন্ধ আছে",
+    "no_subscriber": "কোনো সাবস্ক্রাইবার মেলেনি",
+    "persona_disabled": "এজেন্ট বন্ধ আছে",
+    "stuck_reclaimed": "পুনরুদ্ধার করে আবার সারিতে রাখা হয়েছে",
+    "stuck_retry_exhausted": "পুনরুদ্ধার করা হয়েছে, পুনঃচেষ্টা শেষ"
+  },
+  "event": {
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "processed": "প্রক্রিয়াকৃত",
+    "processing": "প্রক্রিয়াধীন",
+    "retrying": "পুনরায় চেষ্টা হচ্ছে"
+  },
+  "execution": {
+    "cancelled": "বাতিল",
+    "completed": "সম্পন্ন",
+    "error": "ত্রুটি",
+    "failed": "ব্যর্থ",
+    "incomplete": "অসম্পূর্ণ",
+    "queued": "কিউতে আছে",
+    "running": "চলছে",
+    "unknown": "অজানা"
+  },
+  "forage_confidence": {
+    "high": "উচ্চ",
+    "low": "নিম্ন",
+    "medium": "মাঝারি"
+  },
+  "goal_state": {
+    "blocked": "অবরুদ্ধ",
+    "completed": "সম্পন্ন",
+    "done": "সম্পন্ন",
+    "in_progress": "চলমান",
+    "pending": "মুলতুবি",
+    "review": "পর্যালোচনা",
+    "running": "চলছে"
+  },
+  "healing_category": {
+    "auth": "প্রমাণীকরণ",
+    "config": "কনফিগারেশন",
+    "network": "নেটওয়ার্ক",
+    "quota": "কোটা",
+    "timeout": "টাইমআউট"
+  },
+  "healing_status": {
+    "acknowledged": "স্বীকৃত",
+    "auto_fixed": "স্বয়ংক্রিয়ভাবে সমাধান হয়েছে",
+    "open": "খোলা",
+    "resolved": "সমাধান হয়েছে"
+  },
+  "kb_document": {
+    "indexing": "ইনডেক্স হচ্ছে",
+    "pending": "অপেক্ষমাণ"
+  },
+  "memory_action": {
+    "deleted": "মুছে ফেলা হয়েছে",
+    "error": "ত্রুটি",
+    "kept": "রাখা হয়েছে",
+    "proposed_archive": "সংরক্ষণের প্রস্তাব",
+    "proposed_delete": "মুছে ফেলার প্রস্তাব",
+    "proposed_synthesize": "একত্র করার প্রস্তাব",
+    "proposed_update_importance": "গুরুত্ব পুনর্নির্ধারণের প্রস্তাব"
+  },
+  "memory_category": {
+    "context": "প্রসঙ্গ",
+    "decision": "সিদ্ধান্ত",
+    "learning": "শিক্ষা",
+    "observation": "পর্যবেক্ষণ"
+  },
+  "memory_tier": {
+    "active": "সক্রিয়",
+    "archive": "সংরক্ষিত",
+    "core": "মূল",
+    "working": "কার্যকরী"
+  },
+  "priority": {
+    "high": "উচ্চ",
+    "low": "নিম্ন",
+    "normal": "স্বাভাবিক",
+    "urgent": "জরুরি"
+  },
+  "remote_job": {
+    "cancelled": "বাতিল করা হয়েছে",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "refused": "প্রত্যাখ্যাত",
+    "running": "চলমান"
+  },
+  "rotation": {
+    "active": "সক্রিয়",
+    "anomaly": "অস্বাভাবিকতা",
+    "backoff": "ব্যাকঅফ",
+    "degrading": "অবনমিত হচ্ছে",
+    "disabled": "অক্ষম",
+    "fresh": "তাজা",
+    "paused": "বিরতিতে",
+    "perm_errors": "স্থায়ী ত্রুটি"
+  },
+  "severity": {
+    "critical": "গুরুতর",
+    "high": "উচ্চ",
+    "info": "তথ্য",
+    "low": "নিম্ন",
+    "medium": "মাঝারি"
+  },
+  "simple": {
+    "good": "ভালো",
+    "problem": "সমস্যা",
+    "warning": "মনোযোগ দিন"
+  },
+  "span_type": {
+    "chain_evaluation": "চেইন মূল্যায়ন",
+    "cli_spawn": "CLI চালু",
+    "credential_resolution": "ক্রেডেনশিয়াল",
+    "execution": "এক্সিকিউশন",
+    "healing_analysis": "নিরাময়",
+    "outcome_assessment": "ফলাফল",
+    "pipeline_stage": "পাইপলাইন ধাপ",
+    "prompt_assembly": "প্রম্পট",
+    "protocol_dispatch": "প্রোটোকল",
+    "stream_processing": "স্ট্রিম",
+    "tool_call": "টুল কল",
+    "unknown": "অজানা"
+  },
+  "task_phase": {
+    "analyzing": "বিশ্লেষণ হচ্ছে",
+    "committing": "কমিট হচ্ছে",
+    "complete": "সম্পন্ন",
+    "implementing": "বাস্তবায়ন হচ্ছে",
+    "planning": "পরিকল্পনা করা হচ্ছে",
+    "validating": "যাচাই হচ্ছে"
+  },
+  "test": {
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "generating": "তৈরি হচ্ছে",
+    "pending": "মুলতুবি",
+    "running": "চলছে"
+  },
+  "thinking": {
+    "high": "উচ্চ",
+    "low": "নিম্ন",
+    "medium": "মাঝারি"
+  },
   "tool_error_kind": {
     "auth": "প্রমাণীকরণ",
     "http": "HTTP ত্রুটি",
@@ -197,69 +256,10 @@
     "unknown": "অজানা ত্রুটি",
     "unsupported": "এখানে চালানো যাবে না"
   },
-  "remote_job": {
-    "completed": "সম্পন্ন",
-    "failed": "ব্যর্থ",
-    "cancelled": "বাতিল করা হয়েছে",
-    "refused": "প্রত্যাখ্যাত",
-    "pending": "মুলতুবি",
-    "running": "চলমান"
-  },
-  "event_reason": {
-    "approval_held": "অনুমোদনের অপেক্ষায়",
-    "cascade_guard": "ইতিমধ্যে চলছে",
-    "cross_team_blocked": "দলগুলোর মধ্যে অবরুদ্ধ",
-    "dry_run": "ড্রাই রান (সিমুলেটেড)",
-    "handoff_target_disabled": "হ্যান্ডঅফ লক্ষ্য বন্ধ আছে",
-    "no_subscriber": "কোনো সাবস্ক্রাইবার মেলেনি",
-    "persona_disabled": "এজেন্ট বন্ধ আছে",
-    "stuck_reclaimed": "পুনরুদ্ধার করে আবার সারিতে রাখা হয়েছে",
-    "stuck_retry_exhausted": "পুনরুদ্ধার করা হয়েছে, পুনঃচেষ্টা শেষ",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "চলছে",
-    "awaiting_review": "পর্যালোচনার অপেক্ষায়",
-    "resolved": "সমাধান হয়েছে",
-    "cancelled": "বাতিল"
-  },
-  "kb_document": {
-    "pending": "অপেক্ষমাণ",
-    "indexing": "ইনডেক্স হচ্ছে"
-  },
-  "memory_tier": {
-    "core": "মূল",
-    "active": "সক্রিয়",
-    "working": "কার্যকরী",
-    "archive": "সংরক্ষিত"
-  },
-  "span_type": {
-    "execution": "এক্সিকিউশন",
-    "prompt_assembly": "প্রম্পট",
-    "credential_resolution": "ক্রেডেনশিয়াল",
-    "cli_spawn": "CLI চালু",
-    "tool_call": "টুল কল",
-    "protocol_dispatch": "প্রোটোকল",
-    "chain_evaluation": "চেইন মূল্যায়ন",
-    "stream_processing": "স্ট্রিম",
-    "outcome_assessment": "ফলাফল",
-    "healing_analysis": "নিরাময়",
-    "pipeline_stage": "পাইপলাইন ধাপ",
-    "unknown": "অজানা"
-  },
-  "memory_action": {
-    "kept": "রাখা হয়েছে",
-    "deleted": "মুছে ফেলা হয়েছে",
-    "error": "ত্রুটি",
-    "proposed_delete": "মুছে ফেলার প্রস্তাব",
-    "proposed_update_importance": "গুরুত্ব পুনর্নির্ধারণের প্রস্তাব",
-    "proposed_synthesize": "একত্র করার প্রস্তাব",
-    "proposed_archive": "সংরক্ষণের প্রস্তাব"
-  },
-  "memory_category": {
-    "observation": "পর্যবেক্ষণ",
-    "decision": "সিদ্ধান্ত",
-    "context": "প্রসঙ্গ",
-    "learning": "শিক্ষা"
+  "verdict": {
+    "broken": "ভাঙা",
+    "not_ready": "প্রস্তুত নয়",
+    "production": "প্রোডাকশন",
+    "promising": "আশাব্যঞ্জক"
   }
 }

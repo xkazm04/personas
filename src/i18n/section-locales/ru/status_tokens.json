@@ -1,177 +1,10 @@
 {
-  "execution": {
-    "queued": "В очереди",
-    "running": "Выполняется",
-    "completed": "Завершено",
-    "failed": "Сбой",
-    "cancelled": "Отменено",
-    "incomplete": "Не завершено",
-    "error": "Ошибка",
-    "unknown": "Неизвестно"
-  },
-  "simple": {
-    "good": "Норма",
-    "warning": "Внимание",
-    "problem": "Сбой"
-  },
-  "event": {
-    "pending": "Ожидание",
-    "processing": "Обработка",
-    "processed": "Обработано",
-    "failed": "Сбой",
-    "retrying": "Повтор"
-  },
   "automation": {
-    "pending": "Ожидание",
-    "running": "Выполняется",
     "completed": "Завершено",
     "failed": "Сбой",
+    "pending": "Ожидание",
+    "running": "Выполняется",
     "timeout": "Истекло время"
-  },
-  "severity": {
-    "info": "Инфо",
-    "low": "Низкий",
-    "medium": "Средний",
-    "high": "Высокий",
-    "critical": "Критический"
-  },
-  "priority": {
-    "low": "Низкий",
-    "normal": "Нормальный",
-    "high": "Высокий",
-    "urgent": "Срочный"
-  },
-  "healing_status": {
-    "open": "Открыто",
-    "auto_fixed": "Авто-исправлено",
-    "acknowledged": "Принято",
-    "resolved": "Решено"
-  },
-  "healing_category": {
-    "config": "Конфигурация",
-    "auth": "Аутентификация",
-    "network": "Сеть",
-    "timeout": "Таймаут",
-    "quota": "Квота"
-  },
-  "connector_status": {
-    "ready": "Готов",
-    "untested": "Не проверен",
-    "failed": "Сбой",
-    "no_credential": "Нет учётных данных",
-    "testing": "Тестирование"
-  },
-  "task_phase": {
-    "analyzing": "Анализ",
-    "planning": "Планирование",
-    "implementing": "Реализация",
-    "committing": "Коммит",
-    "validating": "Проверка",
-    "complete": "Завершено"
-  },
-  "goal_state": {
-    "pending": "Ожидание",
-    "review": "Проверка",
-    "blocked": "Заблокировано",
-    "in_progress": "В процессе",
-    "running": "Выполняется",
-    "completed": "Завершено",
-    "done": "Завершено"
-  },
-  "test": {
-    "generating": "Генерация",
-    "running": "Выполняется",
-    "completed": "Завершено",
-    "failed": "Сбой",
-    "pending": "Ожидание"
-  },
-  "dev": {
-    "open": "Открыто",
-    "in_progress": "В работе",
-    "completed": "Завершено",
-    "blocked": "Заблокировано",
-    "queued": "В очереди",
-    "running": "Выполняется",
-    "failed": "Сбой"
-  },
-  "circuit_breaker": {
-    "provider_claude_code": "Claude",
-    "provider_codex_cli": "Codex",
-    "provider_global": "Глобальный"
-  },
-  "forage_confidence": {
-    "high": "Высокая",
-    "medium": "Средняя",
-    "low": "Низкая"
-  },
-  "capability_risk": {
-    "low": "низкий",
-    "medium": "средний",
-    "high": "высокий"
-  },
-  "verdict": {
-    "production": "Продакшен",
-    "promising": "Перспективный",
-    "not_ready": "Не готов",
-    "broken": "Сломан"
-  },
-  "deployment": {
-    "active": "Активно",
-    "paused": "Приостановлено",
-    "failed": "Ошибка",
-    "unknown": "Неизвестно",
-    "file-based": "На основе файлов"
-  },
-  "delivery": {
-    "delivered": "Доставлено",
-    "failed": "Ошибка",
-    "pending": "Ожидает",
-    "queued": "В очереди"
-  },
-  "rotation": {
-    "anomaly": "Аномалия",
-    "paused": "Приостановлена",
-    "disabled": "Отключена",
-    "perm_errors": "Постоянные ошибки",
-    "degrading": "Деградация",
-    "backoff": "Откат",
-    "fresh": "Свежий",
-    "active": "Активный"
-  },
-  "thinking": {
-    "high": "Высокий",
-    "low": "Низкий",
-    "medium": "Средний"
-  },
-  "error_category": {
-    "api_error": "Ошибка API",
-    "credential_error": "Ошибка учётных данных",
-    "network": "Сеть",
-    "provider_not_found": "Провайдер не найден",
-    "rate_limit": "Лимит запросов",
-    "session_limit": "Лимит сессии",
-    "timeout": "Тайм-аут",
-    "tool_error": "Ошибка инструмента",
-    "transient_process_failure": "Временный сбой процесса",
-    "unknown": "Неизвестно",
-    "validation": "Валидация"
-  },
-  "chain_stop": {
-    "breadth_exceeded": "Достигнут лимит ветвления",
-    "budget_exceeded": "Достигнут лимит стоимости",
-    "cas_lost": "Занято другим запуском",
-    "cycle_detected": "Обнаружен цикл",
-    "depth_limit": "Лимит глубины",
-    "handoff_suppressed": "Передача подавлена",
-    "malformed_config": "Неверная конфигурация",
-    "outside_window": "Вне активного окна",
-    "predicate_unmet": "Условие не выполнено",
-    "publish_failed": "Ошибка публикации",
-    "quarantined": "Триггер в карантине",
-    "healing_abandoned": "Восстановление прекращено",
-    "healing_capped": "Попытки восстановления исчерпаны",
-    "lookup_failed": "Не удалось найти триггер",
-    "cost_ceiling_corrupt": "Лимит расходов нечитаем"
   },
   "build": {
     "analyzing": "Анализ",
@@ -186,6 +19,232 @@
     "test_complete": "Тест завершён",
     "testing": "Тестирование"
   },
+  "capability_risk": {
+    "high": "высокий",
+    "low": "низкий",
+    "medium": "средний"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Достигнут лимит ветвления",
+    "budget_exceeded": "Достигнут лимит стоимости",
+    "cas_lost": "Занято другим запуском",
+    "cost_ceiling_corrupt": "Лимит расходов нечитаем",
+    "cycle_detected": "Обнаружен цикл",
+    "depth_limit": "Лимит глубины",
+    "handoff_suppressed": "Передача подавлена",
+    "healing_abandoned": "Восстановление прекращено",
+    "healing_capped": "Попытки восстановления исчерпаны",
+    "lookup_failed": "Не удалось найти триггер",
+    "malformed_config": "Неверная конфигурация",
+    "outside_window": "Вне активного окна",
+    "predicate_unmet": "Условие не выполнено",
+    "publish_failed": "Ошибка публикации",
+    "quarantined": "Триггер в карантине"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Глобальный"
+  },
+  "competition": {
+    "awaiting_review": "Ожидает проверки",
+    "cancelled": "Отменено",
+    "resolved": "Решено",
+    "running": "Выполняется"
+  },
+  "connector_status": {
+    "failed": "Сбой",
+    "no_credential": "Нет учётных данных",
+    "ready": "Готов",
+    "testing": "Тестирование",
+    "untested": "Не проверен"
+  },
+  "delivery": {
+    "delivered": "Доставлено",
+    "failed": "Ошибка",
+    "pending": "Ожидает",
+    "queued": "В очереди"
+  },
+  "deployment": {
+    "active": "Активно",
+    "failed": "Ошибка",
+    "file-based": "На основе файлов",
+    "paused": "Приостановлено",
+    "unknown": "Неизвестно"
+  },
+  "dev": {
+    "blocked": "Заблокировано",
+    "completed": "Завершено",
+    "failed": "Сбой",
+    "in_progress": "В работе",
+    "open": "Открыто",
+    "queued": "В очереди",
+    "running": "Выполняется"
+  },
+  "error_category": {
+    "api_error": "Ошибка API",
+    "credential_error": "Ошибка учётных данных",
+    "network": "Сеть",
+    "provider_not_found": "Провайдер не найден",
+    "rate_limit": "Лимит запросов",
+    "session_limit": "Лимит сессии",
+    "timeout": "Тайм-аут",
+    "tool_error": "Ошибка инструмента",
+    "transient_process_failure": "Временный сбой процесса",
+    "unknown": "Неизвестно",
+    "validation": "Валидация"
+  },
+  "event_reason": {
+    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion.",
+    "approval_held": "Ожидает подтверждения",
+    "cascade_guard": "Уже выполняется",
+    "cross_team_blocked": "Заблокировано между командами",
+    "dry_run": "Пробный запуск (симуляция)",
+    "handoff_target_disabled": "Цель передачи выключена",
+    "no_subscriber": "Нет подходящих подписчиков",
+    "persona_disabled": "Агент выключен",
+    "stuck_reclaimed": "Возвращено в очередь",
+    "stuck_retry_exhausted": "Возвращено, попытки исчерпаны"
+  },
+  "event": {
+    "failed": "Сбой",
+    "pending": "Ожидание",
+    "processed": "Обработано",
+    "processing": "Обработка",
+    "retrying": "Повтор"
+  },
+  "execution": {
+    "cancelled": "Отменено",
+    "completed": "Завершено",
+    "error": "Ошибка",
+    "failed": "Сбой",
+    "incomplete": "Не завершено",
+    "queued": "В очереди",
+    "running": "Выполняется",
+    "unknown": "Неизвестно"
+  },
+  "forage_confidence": {
+    "high": "Высокая",
+    "low": "Низкая",
+    "medium": "Средняя"
+  },
+  "goal_state": {
+    "blocked": "Заблокировано",
+    "completed": "Завершено",
+    "done": "Завершено",
+    "in_progress": "В процессе",
+    "pending": "Ожидание",
+    "review": "Проверка",
+    "running": "Выполняется"
+  },
+  "healing_category": {
+    "auth": "Аутентификация",
+    "config": "Конфигурация",
+    "network": "Сеть",
+    "quota": "Квота",
+    "timeout": "Таймаут"
+  },
+  "healing_status": {
+    "acknowledged": "Принято",
+    "auto_fixed": "Авто-исправлено",
+    "open": "Открыто",
+    "resolved": "Решено"
+  },
+  "kb_document": {
+    "indexing": "индексация",
+    "pending": "в очереди"
+  },
+  "memory_action": {
+    "deleted": "Удалена",
+    "error": "Ошибка",
+    "kept": "Сохранена",
+    "proposed_archive": "Предложено архивировать",
+    "proposed_delete": "Предложено удалить",
+    "proposed_synthesize": "Предложено объединить",
+    "proposed_update_importance": "Предложено переоценить"
+  },
+  "memory_category": {
+    "context": "Контекст",
+    "decision": "Решение",
+    "learning": "Вывод",
+    "observation": "Наблюдение"
+  },
+  "memory_tier": {
+    "active": "Активная",
+    "archive": "В архиве",
+    "core": "Основная",
+    "working": "Рабочая"
+  },
+  "priority": {
+    "high": "Высокий",
+    "low": "Низкий",
+    "normal": "Нормальный",
+    "urgent": "Срочный"
+  },
+  "remote_job": {
+    "cancelled": "Отменено",
+    "completed": "Завершено",
+    "failed": "Ошибка",
+    "pending": "Ожидание",
+    "refused": "Отклонено",
+    "running": "Выполняется"
+  },
+  "rotation": {
+    "active": "Активный",
+    "anomaly": "Аномалия",
+    "backoff": "Откат",
+    "degrading": "Деградация",
+    "disabled": "Отключена",
+    "fresh": "Свежий",
+    "paused": "Приостановлена",
+    "perm_errors": "Постоянные ошибки"
+  },
+  "severity": {
+    "critical": "Критический",
+    "high": "Высокий",
+    "info": "Инфо",
+    "low": "Низкий",
+    "medium": "Средний"
+  },
+  "simple": {
+    "good": "Норма",
+    "problem": "Сбой",
+    "warning": "Внимание"
+  },
+  "span_type": {
+    "chain_evaluation": "Оценка цепочки",
+    "cli_spawn": "Запуск CLI",
+    "credential_resolution": "Учётные данные",
+    "execution": "Выполнение",
+    "healing_analysis": "Восстановление",
+    "outcome_assessment": "Итог",
+    "pipeline_stage": "Этап конвейера",
+    "prompt_assembly": "Промпт",
+    "protocol_dispatch": "Протокол",
+    "stream_processing": "Поток",
+    "tool_call": "Вызов инструмента",
+    "unknown": "Неизвестно"
+  },
+  "task_phase": {
+    "analyzing": "Анализ",
+    "committing": "Коммит",
+    "complete": "Завершено",
+    "implementing": "Реализация",
+    "planning": "Планирование",
+    "validating": "Проверка"
+  },
+  "test": {
+    "completed": "Завершено",
+    "failed": "Сбой",
+    "generating": "Генерация",
+    "pending": "Ожидание",
+    "running": "Выполняется"
+  },
+  "thinking": {
+    "high": "Высокий",
+    "low": "Низкий",
+    "medium": "Средний"
+  },
   "tool_error_kind": {
     "auth": "Аутентификация",
     "http": "Ошибка HTTP",
@@ -197,69 +256,10 @@
     "unknown": "Неизвестная ошибка",
     "unsupported": "Здесь запуск невозможен"
   },
-  "remote_job": {
-    "completed": "Завершено",
-    "failed": "Ошибка",
-    "cancelled": "Отменено",
-    "refused": "Отклонено",
-    "pending": "Ожидание",
-    "running": "Выполняется"
-  },
-  "event_reason": {
-    "approval_held": "Ожидает подтверждения",
-    "cascade_guard": "Уже выполняется",
-    "cross_team_blocked": "Заблокировано между командами",
-    "dry_run": "Пробный запуск (симуляция)",
-    "handoff_target_disabled": "Цель передачи выключена",
-    "no_subscriber": "Нет подходящих подписчиков",
-    "persona_disabled": "Агент выключен",
-    "stuck_reclaimed": "Возвращено в очередь",
-    "stuck_retry_exhausted": "Возвращено, попытки исчерпаны",
-    "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
-  },
-  "competition": {
-    "running": "Выполняется",
-    "awaiting_review": "Ожидает проверки",
-    "resolved": "Решено",
-    "cancelled": "Отменено"
-  },
-  "kb_document": {
-    "pending": "в очереди",
-    "indexing": "индексация"
-  },
-  "memory_tier": {
-    "core": "Основная",
-    "active": "Активная",
-    "working": "Рабочая",
-    "archive": "В архиве"
-  },
-  "span_type": {
-    "execution": "Выполнение",
-    "prompt_assembly": "Промпт",
-    "credential_resolution": "Учётные данные",
-    "cli_spawn": "Запуск CLI",
-    "tool_call": "Вызов инструмента",
-    "protocol_dispatch": "Протокол",
-    "chain_evaluation": "Оценка цепочки",
-    "stream_processing": "Поток",
-    "outcome_assessment": "Итог",
-    "healing_analysis": "Восстановление",
-    "pipeline_stage": "Этап конвейера",
-    "unknown": "Неизвестно"
-  },
-  "memory_action": {
-    "kept": "Сохранена",
-    "deleted": "Удалена",
-    "error": "Ошибка",
-    "proposed_delete": "Предложено удалить",
-    "proposed_update_importance": "Предложено переоценить",
-    "proposed_synthesize": "Предложено объединить",
-    "proposed_archive": "Предложено архивировать"
-  },
-  "memory_category": {
-    "observation": "Наблюдение",
-    "decision": "Решение",
-    "context": "Контекст",
-    "learning": "Вывод"
+  "verdict": {
+    "broken": "Сломан",
+    "not_ready": "Не готов",
+    "production": "Продакшен",
+    "promising": "Перспективный"
   }
 }

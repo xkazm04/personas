@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::communication::reviews as reviews_repo;
+use crate::db::repos::resources::triggers as trigger_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -112,6 +113,11 @@ pub fn list_generate_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel an adopt job (non-command wrapper for workflows).
+///
+/// Deliberately signal-only. `ADOPT_JOBS` has no spawn site in this tree — the
+/// manager is polled and cancelled but nothing registers a worker against it —
+/// so there is no handle to reclaim and `cancel` reports `Requested`, which is
+/// the truth. Converting this would be a lie with an `.await` in it.
 pub fn cancel_adopt_job(
     app: &tauri::AppHandle,
     adopt_id: &str,
@@ -120,11 +126,16 @@ pub fn cancel_adopt_job(
 }
 
 /// Cancel a generate job (non-command wrapper for workflows).
-pub fn cancel_generate_job(
+///
+/// Async because it *reclaims* — `GEN_JOBS` spawns through `spawn_job`.
+pub async fn cancel_generate_job(
     app: &tauri::AppHandle,
     gen_id: &str,
 ) -> Result<(), crate::error::AppError> {
-    GEN_JOBS.cancel(app, gen_id)
+    GEN_JOBS
+        .cancel_and_reclaim(app, gen_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 // -- Payload validation ------------------------------------------
@@ -415,7 +426,11 @@ pub fn instant_adopt_template_inner(
                 .collect()
         });
 
-    // Build triggers from suggested_triggers
+    // Build triggers from suggested_triggers. `normalize_v3_to_flat` tags
+    // each hoisted per-UC trigger with its `use_case_id` — carried through so
+    // the post-create charter mint can remap the created trigger rows onto
+    // their charter ids (`responsibility_id`); it was discarded (`None`) here
+    // until the WP4 cutover, leaving adopt-born triggers unattributed.
     let triggers: Option<Vec<N8nTriggerDraft>> = design
         .get("suggested_triggers")
         .and_then(|v| v.as_array())
@@ -432,7 +447,10 @@ pub fn instant_adopt_template_inner(
                         .get("description")
                         .and_then(|v| v.as_str())
                         .map(|s| s.to_string()),
-                    use_case_id: None,
+                    use_case_id: t
+                        .get("use_case_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                 })
                 .collect()
         });
@@ -469,14 +487,14 @@ pub fn instant_adopt_template_inner(
         .get("suggested_notification_channels")
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
-    // Build proper DesignContextData-format design_context. After hydration +
-    // normalization the canonical use-case list lives at `design.use_cases`
-    // (each entry now inline-shaped with id/name/triggers/events/tools).
-    // `use_case_flows` is the v3-flattened mirror used by the runner; we
-    // prefer the richer `use_cases` shape for the frontend's Use Cases tab
-    // and the Design tab. Map each entry to the `DesignUseCase` shape the
-    // frontend expects (id, title, description, suggested_trigger,
-    // event_subscriptions, notification_channels, etc.).
+    // The canonical use-case list after hydration + normalization lives at
+    // `design.use_cases` (each entry inline-shaped, or a v2 responsibility
+    // payload for transformed recipe seeds); `use_case_flows` is the
+    // v3-flattened mirror. Stage B WP4: these entries are minted as
+    // `persona_responsibilities` charters post-create — `design_context`
+    // no longer carries a `useCases` array (the historical write asymmetry
+    // where adopt dropped review/memory/error fields that promote preserved
+    // dies with it; the full payload still lands in `last_design_result`).
     let raw_use_cases = design
         .get("use_cases")
         .and_then(|v| v.as_array())
@@ -488,10 +506,6 @@ pub fn instant_adopt_template_inner(
                 .cloned()
         })
         .unwrap_or_default();
-    let mapped_use_cases: Vec<serde_json::Value> = raw_use_cases
-        .iter()
-        .map(map_template_use_case_to_design_use_case)
-        .collect();
     let design_context_summary = design
         .get("summary")
         .and_then(|v| v.as_str())
@@ -508,7 +522,6 @@ pub fn instant_adopt_template_inner(
     // pull through if the template carried one.
     let service_flow_json = design.get("service_flow").cloned();
     let design_context_obj = serde_json::json!({
-        "useCases": mapped_use_cases,
         "summary": design_context_summary,
         "connectorPipeline": service_flow_json,
         "builderMeta": {
@@ -594,6 +607,68 @@ pub fn instant_adopt_template_inner(
         tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
     }
 
+    // Stage B WP4 — mint the adopted capabilities as charters
+    // (`persona_responsibilities`). This IS the adoption's capability write
+    // now that design_context.useCases is gone; a persona without charters
+    // is exactly the "structurally broken persona reported as adopted" this
+    // function refuses elsewhere, so a mint failure fails the adoption and
+    // removes the just-created persona instead of leaving a ghost.
+    if let Some(pid) = created_persona_id.as_deref() {
+        match mint_charters_from_use_cases(&state.db, pid, &raw_use_cases) {
+            Ok(minted) => {
+                // Remap the freshly created trigger rows onto their charter
+                // ids: the drafts carried the hoisted `use_case_id` tag and
+                // each charter remembers its source use case at
+                // `spec.migrated_from_use_case_id` (e19's remap contract).
+                // The row keeps its legacy `use_case_id` value — the INSERT
+                // lives in `create_persona_atomically`
+                // (n8n_transform::confirmation), which the raw n8n import
+                // path shares; see the WP4 report. The UPDATE itself belongs
+                // to the triggers repo, which owns `persona_triggers` and
+                // applies the whole remap in one transaction.
+                let remap: Vec<(String, String)> = minted
+                    .iter()
+                    .filter_map(|c| {
+                        c.spec
+                            .migrated_from_use_case_id
+                            .as_deref()
+                            .map(|uc| (uc.to_string(), c.id.clone()))
+                    })
+                    .collect();
+                if let Err(e) =
+                    trigger_repo::remap_use_cases_to_responsibilities(&state.db, pid, &remap)
+                {
+                    tracing::warn!(
+                        persona_id = %pid,
+                        charters = remap.len(),
+                        error = %e,
+                        "instant_adopt_template: trigger→charter remap failed (continuing)"
+                    );
+                }
+                tracing::info!(
+                    persona_id = %pid,
+                    charters = minted.len(),
+                    "instant_adopt_template: minted capability charters"
+                );
+            }
+            Err(e) => {
+                // Best-effort unwind: the persona row (and its tx-created
+                // tools/triggers) must not survive as a capability-less ghost.
+                if let Err(del_err) = crate::db::repos::core::personas::delete(&state.db, pid) {
+                    tracing::warn!(
+                        persona_id = %pid,
+                        error = %del_err,
+                        "instant_adopt_template: cleanup delete after failed charter mint also failed"
+                    );
+                }
+                return Err(AppError::Validation(format!(
+                    "Template '{template_name}' adoption failed while minting capability \
+                     charters: {e}. The partially-created persona was removed."
+                )));
+            }
+        }
+    }
+
     // Persist last_design_result so the Design tab has the AgentIR to render.
     // create_persona_atomically + N8nPersonaOutput don't carry this column;
     // we write it directly post-create. Best-effort — a failure here doesn't
@@ -633,12 +708,29 @@ pub fn instant_adopt_template_inner(
 
     // Design D: stamp the authored core into `core_profile` (the deliberation
     // moderator routes by it; persona turns speak from it). Best-effort.
+    // Seed-if-absent (living-agent): adoption never overwrites an operator-
+    // edited Core — the guard makes this a no-op on rows that already have one.
     if let (Some(pid), Some(core)) = (created_persona_id.as_deref(), &template_core) {
         if let Ok(conn) = state.db.get() {
-            let _ = conn.execute(
-                "UPDATE personas SET core_profile = ?1, updated_at = ?2 WHERE id = ?3",
+            match conn.execute(
+                "UPDATE personas SET core_profile = ?1, updated_at = ?2 \
+                 WHERE id = ?3 AND (core_profile IS NULL OR core_profile = '')",
                 rusqlite::params![core, chrono::Utc::now().to_rfc3339(), pid],
-            );
+            ) {
+                Ok(0) => tracing::info!(
+                    persona_id = %pid,
+                    "adopt: core_profile already present — seed skipped (operator-owned)",
+                ),
+                Ok(_) => tracing::info!(
+                    persona_id = %pid,
+                    "adopt: stamped persona core_profile (seed-if-absent)",
+                ),
+                Err(e) => tracing::warn!(
+                    persona_id = %pid,
+                    error = %e,
+                    "adopt: core_profile stamp failed (non-fatal)",
+                ),
+            }
         }
     }
 
@@ -1414,13 +1506,16 @@ pub fn clear_template_generate_snapshot(
 }
 
 #[tauri::command]
-pub fn cancel_template_generate(
+pub async fn cancel_template_generate(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     gen_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    GEN_JOBS.cancel(&app, &gen_id)
+    GEN_JOBS
+        .cancel_and_reclaim(&app, &gen_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 #[tauri::command]
@@ -2221,201 +2316,541 @@ fn synthesize_system_prompt_markdown(design: &serde_json::Value) -> Option<Strin
     }
 }
 
-/// Map a v3 template use_case (hydrated from a recipe_ref) into the frontend's
-/// `DesignUseCase` shape so the Design tab + Use Cases tab render meaningful
-/// content. Falls back to a minimal stub when keys are missing so personas
-/// with malformed templates still produce visible rows instead of silent
-/// empties.
+// ============================================================================
+// Charter mint — Stage B WP4 (agent-manifest rebase)
+// ============================================================================
+//
+// The adoption cutover: adopted/promoted capabilities become
+// `persona_responsibilities` rows (charters) minted through the ONE engine
+// door (`personas_engine::responsibility::create_from_input`, which stamps
+// `source = 'operator'` — instant adopt and Glyph promote are both
+// operator-initiated). `design_context.useCases` is no longer written by
+// either path; it survives only on pre-e19 rows (until their one-way
+// migration mint runs), on dry-run simulation snapshots
+// (`build_simulate::build_simulation_design_context`, restored after the
+// run), and on the catalog per-recipe adoption path
+// (`useAdoption.ts` → `mutateUseCases`) which a later UI WP re-anchors.
+
+/// Map one use-case-shaped JSON value into the charter create input.
 ///
-/// Mapped fields:
-/// - `id`, `title`, `description`
-/// - `category`, `enabled` (default true)
-/// - `capability_summary`, `tool_hints`
-/// - `suggested_trigger` (first entry of `suggested_triggers[]` or
-///   `trigger_composition.*` if present)
-/// - `event_subscriptions` (from `event_subscriptions[]`)
-/// - `notification_channels` (from `notification_channels[]` /
-///   `suggested_notification_channels[]`)
-/// - `sample_input` (from `sample_input`/`sample_inputs[0]` or
-///   `test_fixtures[0].input`)
-fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_json::Value {
-    let obj = match uc.as_object() {
-        Some(o) => o,
-        None => return uc.clone(),
-    };
-    let mut out = serde_json::Map::new();
+/// Two input shapes, detected structurally:
+/// - **v2 responsibility payload** (transformed recipe seeds — has a
+///   `procedure` string): deserialized directly; the camelCase keys mirror
+///   `CreatePersonaResponsibilityInput`.
+/// - **legacy use case** (LLM-built IR entries, v1 recipe rows on existing
+///   installs, hand-authored design contexts): mapped field-by-field with
+///   full preservation into the charter shape — including `review`-adjacent
+///   `memory_policy` and structured `error_policy`, which the old instant-
+///   adopt mapper dropped and only the promote path preserved (the write
+///   asymmetry this cutover kills).
+///
+/// `spec.migrated_from_use_case_id` is stamped with the use case's id in both
+/// shapes: it is the provenance pointer trigger/subscription rows resolve
+/// through (e19's remap contract), and the marker `retire_use_case_born_charters`
+/// keys on so a re-promote replaces its own prior mint without ever touching
+/// hand-authored charters.
+///
+/// Keys with no `ResponsibilitySpec` slot yet (`review_policy`,
+/// `generation_settings`, `model_rationale`, `tool_hints`, prose
+/// `error_handling`) do not survive the mint — they remain readable in
+/// `last_design_result` / the recipe row. See the WP4 report; adding slots is
+/// a `personas-core` change outside this file's walls.
+pub(crate) fn map_use_case_to_charter_input(
+    persona_id: &str,
+    uc: &serde_json::Value,
+) -> crate::db::models::CreatePersonaResponsibilityInput {
+    use crate::db::models::CreatePersonaResponsibilityInput;
 
-    // id — prefer existing, otherwise stable hash of title or random fallback.
-    let id = obj
-        .get("id")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| format!("uc-{}", uuid::Uuid::new_v4()));
-    out.insert("id".into(), serde_json::Value::String(id));
+    let uc_id = uc.get("id").and_then(|v| v.as_str()).map(str::to_string);
 
-    // title / name → title; description from any of several keys.
-    let title = obj
-        .get("title")
-        .or_else(|| obj.get("name"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("Untitled capability")
-        .to_string();
-    out.insert("title".into(), serde_json::Value::String(title));
-
-    let description = obj
-        .get("description")
-        .or_else(|| obj.get("summary"))
-        .or_else(|| obj.get("goal"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    out.insert("description".into(), serde_json::Value::String(description));
-
-    if let Some(cat) = obj.get("category").and_then(|v| v.as_str()) {
-        out.insert("category".into(), serde_json::Value::String(cat.into()));
-    }
-
-    let enabled = obj.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    out.insert("enabled".into(), serde_json::Value::Bool(enabled));
-
-    if let Some(cs) = obj.get("capability_summary").and_then(|v| v.as_str()) {
-        out.insert(
-            "capability_summary".into(),
-            serde_json::Value::String(cs.into()),
-        );
-    }
-    // Preserve input_schema so design_context.useCases carries the recipe's
-    // declared params — keeps the catalog `sync_capability_parameters` command
-    // consistent on instant-adopted personas.
-    if let Some(schema) = obj.get("input_schema") {
-        if !schema.is_null() {
-            out.insert("input_schema".into(), schema.clone());
+    // v2 payload: inject personaId and let serde do the field mapping.
+    // A v2 blob that fails to deserialize falls through to the legacy
+    // mapper, which still yields a valid (if sparser) charter.
+    if uc.get("procedure").map(|p| p.is_string()).unwrap_or(false) {
+        let mut with_pid = uc.clone();
+        if let Some(obj) = with_pid.as_object_mut() {
+            obj.insert(
+                "personaId".to_string(),
+                serde_json::Value::String(persona_id.to_string()),
+            );
         }
-    }
-    if let Some(arr) = obj.get("tool_hints").and_then(|v| v.as_array()) {
-        out.insert("tool_hints".into(), serde_json::Value::Array(arr.clone()));
-    } else if let Some(arr) = obj.get("suggested_tools").and_then(|v| v.as_array()) {
-        // Templates carry `suggested_tools` per use_case; treat them as tool_hints.
-        let hints: Vec<serde_json::Value> = arr
-            .iter()
-            .filter_map(|t| {
-                t.as_str()
-                    .map(|s| serde_json::Value::String(s.into()))
-                    .or_else(|| t.get("name").cloned())
-            })
-            .collect();
-        if !hints.is_empty() {
-            out.insert("tool_hints".into(), serde_json::Value::Array(hints));
+        match serde_json::from_value::<CreatePersonaResponsibilityInput>(with_pid) {
+            Ok(mut input) => {
+                if input.spec.migrated_from_use_case_id.is_none() {
+                    input.spec.migrated_from_use_case_id = uc_id;
+                }
+                // Blank connector entries fail charter validation; a seed
+                // must degrade to "whatever the persona holds", not refuse.
+                input.connectors.retain(|c| !c.trim().is_empty());
+                return input;
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "charter mint: v2 payload failed typed deserialization — using the legacy mapper"
+                );
+            }
         }
     }
 
-    // suggested_trigger — pick first available trigger source.
-    if let Some(t) = obj.get("suggested_trigger") {
-        out.insert("suggested_trigger".into(), t.clone());
-    } else if let Some(arr) = obj.get("suggested_triggers").and_then(|v| v.as_array()) {
-        if let Some(first) = arr.first() {
-            out.insert("suggested_trigger".into(), first.clone());
+    let str_of = |key: &str| uc.get(key).and_then(|v| v.as_str()).map(str::to_string);
+    let non_null = |key: &str| uc.get(key).filter(|v| !v.is_null()).cloned();
+
+    let title = str_of("title")
+        .or_else(|| str_of("name"))
+        .filter(|t| !t.trim().is_empty())
+        .unwrap_or_else(|| "Untitled capability".to_string());
+
+    // Procedure: the curated one-liner first, the long description appended,
+    // and the prose error-handling doctrine (structured `error_policy` maps
+    // to the typed spec field instead) folded in so it keeps steering runs.
+    let mut procedure_parts: Vec<String> = Vec::new();
+    if let Some(s) = str_of("capability_summary").filter(|s| !s.trim().is_empty()) {
+        procedure_parts.push(s);
+    }
+    if let Some(s) = str_of("description").filter(|s| !s.trim().is_empty()) {
+        procedure_parts.push(s);
+    }
+    if uc.get("error_policy").and_then(|v| v.as_object()).is_none() {
+        if let Some(s) = str_of("error_handling").filter(|s| !s.trim().is_empty()) {
+            procedure_parts.push(format!("Error handling: {s}"));
         }
     }
+    let procedure = procedure_parts.join("\n\n");
 
-    if let Some(arr) = obj.get("event_subscriptions").and_then(|v| v.as_array()) {
-        out.insert(
-            "event_subscriptions".into(),
-            serde_json::Value::Array(arr.clone()),
-        );
-    }
-
-    if let Some(arr) = obj
-        .get("notification_channels")
-        .or_else(|| obj.get("suggested_notification_channels"))
+    let connectors: Vec<String> = uc
+        .get("connectors")
         .and_then(|v| v.as_array())
-    {
-        out.insert(
-            "notification_channels".into(),
-            serde_json::Value::Array(arr.clone()),
-        );
-    }
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|c| {
+                    c.as_str()
+                        .map(str::to_string)
+                        .or_else(|| c.get("name").and_then(|n| n.as_str()).map(str::to_string))
+                })
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
 
-    if let Some(si) = obj.get("sample_input") {
-        out.insert("sample_input".into(), si.clone());
-    } else if let Some(arr) = obj.get("sample_inputs").and_then(|v| v.as_array()) {
-        if let Some(first) = arr.first() {
-            out.insert("sample_input".into(), first.clone());
+    // Runtime toggle parity: a capability shipped disabled becomes a
+    // suspended charter, not an active one.
+    let status = match uc.get("enabled").and_then(|v| v.as_bool()) {
+        Some(false) => Some("suspended".to_string()),
+        _ => None,
+    };
+
+    // model_override may be a plain tier string OR a ModelProfile object;
+    // the spec pin is a string, so an object contributes its `model` field
+    // (or its compact JSON as a last resort — provenance beats loss).
+    let model_override = uc.get("model_override").and_then(|v| match v {
+        serde_json::Value::String(s) if !s.trim().is_empty() => Some(s.clone()),
+        serde_json::Value::Object(o) => o
+            .get("model")
+            .and_then(|m| m.as_str())
+            .map(str::to_string)
+            .or_else(|| serde_json::to_string(v).ok()),
+        _ => None,
+    });
+
+    let notification_channels: Option<Vec<String>> = uc
+        .get("notification_channels")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|c| {
+                    c.as_str()
+                        .map(str::to_string)
+                        .or_else(|| c.get("type").and_then(|t| t.as_str()).map(str::to_string))
+                })
+                .filter(|s| !s.trim().is_empty())
+                .collect::<Vec<_>>()
+        })
+        .filter(|v| !v.is_empty());
+
+    // Structured error policy — lenient manual read: the frontend wire shape
+    // is snake_case (`escalate_after`), a v2 spec would be camelCase, and a
+    // typed serde parse would silently drop the mismatched casing.
+    let error_policy = uc.get("error_policy").and_then(|v| v.as_object()).map(|o| {
+        crate::db::models::ResponsibilityErrorPolicy {
+            incident: o.get("incident").and_then(|b| b.as_bool()),
+            lab: o.get("lab").and_then(|b| b.as_bool()),
+            escalate_after: o
+                .get("escalate_after")
+                .or_else(|| o.get("escalateAfter"))
+                .and_then(|n| n.as_i64()),
         }
-    } else if let Some(fixtures) = obj.get("test_fixtures").and_then(|v| v.as_array()) {
-        if let Some(input) = fixtures.first().and_then(|f| f.get("input")) {
-            out.insert("sample_input".into(), input.clone());
+    });
+
+    let spec = crate::db::models::ResponsibilitySpec {
+        input_schema: non_null("input_schema"),
+        sample_input: non_null("sample_input"),
+        model_override,
+        engine_mode: str_of("execution_mode"),
+        notification_channels,
+        event_subscriptions: non_null("event_subscriptions"),
+        error_policy,
+        time_filter: non_null("time_filter"),
+        test_fixtures: non_null("test_fixtures"),
+        source_recipe_id: str_of("source_recipe_id"),
+        source_recipe_version: str_of("source_recipe_version"),
+        migrated_from_use_case_id: uc_id,
+        memory_policy: non_null("memory_policy"),
+        suggested_trigger: non_null("suggested_trigger"),
+        // Carried, not dropped. A charter minted here has no use case behind
+        // it, so anything the prompt path cannot read off `spec` is simply
+        // gone — and `review_policy` decides whether outputs reach a human
+        // queue. Losing these silently is the defect the legacy
+        // `DesignUseCase` struct shipped for years; both key spellings are
+        // read because the seed corpus is camelCase and the frontend wire is
+        // snake_case.
+        review_policy: non_null("review_policy").or_else(|| non_null("reviewPolicy")),
+        generation_settings: non_null("generation_settings")
+            .or_else(|| non_null("generationSettings")),
+        error_handling: str_of("error_handling").or_else(|| str_of("errorHandling")),
+        tool_hints: uc
+            .get("tool_hints")
+            .or_else(|| uc.get("toolHints"))
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|t| t.as_str().map(str::to_string))
+                    .filter(|s| !s.trim().is_empty())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|v| !v.is_empty()),
+        model_rationale: str_of("model_rationale").or_else(|| str_of("modelRationale")),
+        use_case_flow: non_null("use_case_flow").or_else(|| non_null("useCaseFlow")),
+        enabled_by_default: uc
+            .get("enabled_by_default")
+            .or_else(|| uc.get("enabledByDefault"))
+            .and_then(|v| v.as_bool()),
+    };
+
+    CreatePersonaResponsibilityInput {
+        persona_id: persona_id.to_string(),
+        title,
+        domain: str_of("category").filter(|c| !c.trim().is_empty()),
+        outcomes: Vec::new(),
+        objectives: Vec::new(),
+        scope_rung: 0,
+        refusal_classes: Vec::new(),
+        approval_gates: Vec::new(),
+        owner: String::new(),
+        cadence: cadence_hint_from_trigger(uc.get("suggested_trigger")),
+        budget_monthly_usd: None,
+        tenure: Default::default(),
+        status,
+        project_id: None,
+        connectors,
+        procedure,
+        spec,
+    }
+}
+
+/// Best-effort cadence hint from a legacy `suggested_trigger`. Attention
+/// stays OFF — minting a charter must not silently enrol the persona in the
+/// attention loop (WP1 posture; the loop ships in WP5). `interval_minutes`
+/// is derived only from cron patterns whose meaning is unambiguous (every-N
+/// minutes / hourly / daily / weekly); everything else carries no interval —
+/// the verbatim trigger survives at `spec.suggested_trigger` regardless.
+/// Mirrors `deriveCadence` in
+/// `scripts/templates/transform-recipes-to-responsibilities.mjs`.
+fn cadence_hint_from_trigger(
+    trigger: Option<&serde_json::Value>,
+) -> crate::db::models::ResponsibilityCadence {
+    let mut cadence = crate::db::models::ResponsibilityCadence::default();
+    let Some(t) = trigger.filter(|v| v.is_object()) else {
+        return cadence;
+    };
+    let kind = t
+        .get("trigger_type")
+        .or_else(|| t.get("type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if kind != "schedule" && kind != "polling" {
+        return cadence;
+    }
+    let cron = t
+        .pointer("/config/cron")
+        .or_else(|| t.get("cron"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let parts: Vec<&str> = cron.split_whitespace().collect();
+    if parts.len() != 5 {
+        return cadence;
+    }
+    let is_num = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    let is_num_list = |s: &str| !s.is_empty() && s.split(',').all(is_num);
+    let (min, hour, dom, mon, dow) = (parts[0], parts[1], parts[2], parts[3], parts[4]);
+    let every_n = min
+        .strip_prefix("*/")
+        .filter(|n| is_num(n))
+        .and_then(|n| n.parse::<i64>().ok());
+    cadence.interval_minutes = match (every_n, hour, dom, mon, dow) {
+        (Some(n), "*", "*", "*", "*") => Some(n),
+        (None, "*", "*", "*", "*") if is_num(min) => Some(60),
+        (None, h, "*", "*", "*") if is_num(min) && is_num_list(h) => Some(1440),
+        (None, h, "*", "*", d) if is_num(min) && is_num_list(h) && is_num_list(d) => Some(10080),
+        _ => None,
+    };
+    cadence
+}
+
+/// Mint one charter per use-case-shaped entry through the engine's operator
+/// door, in order. All-or-nothing: a mid-list failure deletes the charters
+/// this call already minted (raw best-effort delete — the rows never existed
+/// publicly) and returns the error, so a caller never sees a half-minted
+/// roster reported as success.
+pub(crate) fn mint_charters_from_use_cases(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    use_cases: &[serde_json::Value],
+) -> Result<Vec<crate::db::models::PersonaResponsibility>, AppError> {
+    let mut minted: Vec<crate::db::models::PersonaResponsibility> = Vec::new();
+    for uc in use_cases {
+        let input = map_use_case_to_charter_input(persona_id, uc);
+        match personas_engine::responsibility::create_from_input(pool, &input) {
+            Ok(row) => minted.push(row),
+            Err(e) => {
+                let ids: Vec<String> = minted.iter().map(|r| r.id.clone()).collect();
+                delete_charter_rows(pool, &ids);
+                return Err(AppError::Validation(format!(
+                    "charter mint failed for capability '{}': {e}",
+                    input.title
+                )));
+            }
         }
     }
+    Ok(minted)
+}
 
-    if let Some(em) = obj.get("execution_mode").and_then(|v| v.as_str()) {
-        out.insert(
-            "execution_mode".into(),
-            serde_json::Value::String(em.into()),
-        );
+/// Best-effort hard delete of freshly minted charter rows — the rollback for
+/// `mint_charters_from_use_cases` / a failed promote transaction. Only ever
+/// called with ids minted moments earlier in the same operation; established
+/// charters are retired through the status door, never deleted.
+pub(crate) fn delete_charter_rows(pool: &crate::db::DbPool, ids: &[String]) {
+    if ids.is_empty() {
+        return;
     }
+    let Ok(conn) = pool.get() else {
+        tracing::warn!("charter rollback: pool checkout failed; rows left for manual cleanup");
+        return;
+    };
+    for id in ids {
+        if let Err(e) = conn.execute(
+            "DELETE FROM persona_responsibilities WHERE id = ?1",
+            rusqlite::params![id],
+        ) {
+            tracing::warn!(charter_id = %id, error = %e, "charter rollback delete failed");
+        }
+    }
+}
 
-    // Per-UC model tier — carry the capability's `model_override` (and its
-    // human-readable `model_rationale`) through to design_context so the
-    // runner's per-UC override resolution (runner/mod.rs §Phase 9) can
-    // right-size the model per capability. Without this, recipe-baked tiers
-    // (haiku for mechanical caps, opus for high-judgment caps) are silently
-    // dropped on the template instant-adopt path — they only survived the
-    // Glyph build→promote path (build_sessions.rs build_structured_use_cases).
-    if let Some(mo) = obj.get("model_override").filter(|v| !v.is_null()) {
-        out.insert("model_override".into(), mo.clone());
+/// Retire (never delete) the persona's ACTIVE use-case-born charters — the
+/// ones carrying `spec.migrated_from_use_case_id`, i.e. minted from a design
+/// use case by adopt/promote/e19-migration. A re-promote calls this after its
+/// new mint commits, mirroring the wholesale `design_context.useCases`
+/// overwrite the legacy path did — while hand-authored charters (Life tab,
+/// kp-hire) never carry the marker and are never touched. Best-effort: a
+/// failure leaves a superseded charter visibly active, which the operator can
+/// retire by hand; it must not unwind an otherwise-committed promote.
+pub(crate) fn retire_use_case_born_charters(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    keep_ids: &std::collections::HashSet<String>,
+) {
+    let rows =
+        match crate::db::repos::core::responsibilities::list_by_persona(pool, persona_id, false) {
+            Ok(rows) => rows,
+            Err(e) => {
+                tracing::warn!(persona_id, error = %e, "charter retire sweep: list failed");
+                return;
+            }
+        };
+    for row in rows {
+        if keep_ids.contains(&row.id) || row.spec.migrated_from_use_case_id.is_none() {
+            continue;
+        }
+        if let Err(e) = crate::db::repos::core::responsibilities::set_status(
+            pool,
+            &row.id,
+            crate::db::models::ResponsibilityStatus::Retired,
+        ) {
+            tracing::warn!(charter_id = %row.id, error = %e, "charter retire sweep: set_status failed");
+        }
     }
-    if let Some(mr) = obj.get("model_rationale").filter(|v| !v.is_null()) {
-        out.insert("model_rationale".into(), mr.clone());
-    }
-
-    serde_json::Value::Object(out)
 }
 
 #[cfg(test)]
-mod model_tier_mapping_tests {
-    use super::map_template_use_case_to_design_use_case;
+mod charter_mint_tests {
+    use super::{cadence_hint_from_trigger, map_use_case_to_charter_input};
     use serde_json::json;
 
     #[test]
-    fn carries_model_override_and_rationale_into_design_use_case() {
+    fn legacy_use_case_maps_with_full_field_preservation() {
         let uc = json!({
             "id": "uc_triage",
             "title": "Triage",
+            "description": "Sort the inbox.",
+            "capability_summary": "Label triage on new mail.",
+            "category": "workflow",
+            "execution_mode": "e2e",
+            "connectors": ["email", {"name": "slack"}, "  "],
+            "notification_channels": [{"type": "slack", "description": "alerts"}],
+            "event_subscriptions": [{"event_type": "mail.received", "direction": "listen"}],
+            "error_handling": "Retry once, then flag.",
+            "memory_policy": {"enabled": true, "context": "sender stats"},
             "model_override": "haiku",
-            "model_rationale": "mechanical label triage, fixed buckets",
+            "input_schema": [{"name": "window_hours", "type": "number"}],
+            "sample_input": {"window_hours": 24},
+            "test_fixtures": [{"input": {"window_hours": 2}}],
+            "source_recipe_id": "recipe-1",
+            "source_recipe_version": "1.0.0",
+            "suggested_trigger": {"trigger_type": "polling", "config": {"cron": "*/10 * * * *"}},
         });
-        let out = map_template_use_case_to_design_use_case(&uc);
-        assert_eq!(
-            out.get("model_override").and_then(|v| v.as_str()),
-            Some("haiku")
+        let input = map_use_case_to_charter_input("persona-1", &uc);
+        assert_eq!(input.persona_id, "persona-1");
+        assert_eq!(input.title, "Triage");
+        assert_eq!(input.domain.as_deref(), Some("workflow"));
+        assert_eq!(input.connectors, vec!["email", "slack"]);
+        assert!(input.procedure.starts_with("Label triage on new mail."));
+        assert!(input.procedure.contains("Sort the inbox."));
+        assert!(
+            input
+                .procedure
+                .contains("Error handling: Retry once, then flag."),
+            "prose error handling folds into the procedure"
         );
+        assert!(
+            !input.cadence.attention_enabled,
+            "attention stays OFF at mint"
+        );
+        assert_eq!(input.cadence.interval_minutes, Some(10));
+        assert_eq!(input.spec.engine_mode.as_deref(), Some("e2e"));
+        assert_eq!(input.spec.model_override.as_deref(), Some("haiku"));
         assert_eq!(
-            out.get("model_rationale").and_then(|v| v.as_str()),
-            Some("mechanical label triage, fixed buckets"),
+            input.spec.notification_channels.as_deref(),
+            Some(&["slack".to_string()][..])
+        );
+        assert_eq!(input.spec.source_recipe_id.as_deref(), Some("recipe-1"));
+        assert_eq!(
+            input.spec.migrated_from_use_case_id.as_deref(),
+            Some("uc_triage"),
+            "provenance pointer stamped for trigger remap + re-promote sweep"
+        );
+        assert!(
+            input.spec.memory_policy.is_some(),
+            "memory policy preserved"
+        );
+        assert!(input.spec.event_subscriptions.is_some());
+        assert!(input.spec.test_fixtures.is_some());
+        assert!(input.status.is_none(), "enabled-by-default → active");
+    }
+
+    #[test]
+    fn structured_error_policy_maps_typed_and_skips_the_prose_fold() {
+        let uc = json!({
+            "id": "uc_x",
+            "title": "X",
+            "description": "Do X.",
+            "error_policy": {"incident": true, "lab": false, "escalate_after": 3},
+            "error_handling": "legacy prose that must not double-land",
+        });
+        let input = map_use_case_to_charter_input("p", &uc);
+        let policy = input.spec.error_policy.expect("typed policy mapped");
+        assert_eq!(policy.incident, Some(true));
+        assert_eq!(policy.lab, Some(false));
+        assert_eq!(policy.escalate_after, Some(3));
+        assert!(
+            !input.procedure.contains("legacy prose"),
+            "structured policy wins; prose is not folded on top"
         );
     }
 
     #[test]
-    fn omits_tier_keys_when_absent_or_null() {
-        // Default (sonnet) tier: recipe stores model_override:null and no
-        // rationale → neither key should appear on the design use_case.
+    fn v2_payload_deserializes_directly() {
+        // The transformed recipe-seed shape (camelCase, procedure + spec).
         let uc = json!({
             "id": "uc_report",
             "title": "Weekly Report",
-            "model_override": serde_json::Value::Null,
+            "domain": "reporting",
+            "outcomes": [],
+            "procedure": "Screen the sector weekly.\n\nLong description.",
+            "connectors": ["spreadsheet"],
+            "cadence": {"attentionEnabled": false, "intervalMinutes": 1440},
+            "approvalGates": [],
+            "spec": {
+                "engineMode": "e2e",
+                "modelOverride": "haiku",
+                "sourceRecipeId": "recipe-9",
+                "sourceRecipeVersion": "1.0.0",
+                "errorHandling": "prose kept in the seed, no typed slot yet"
+            }
         });
-        let out = map_template_use_case_to_design_use_case(&uc);
-        assert!(
-            out.get("model_override").is_none(),
-            "null override is not propagated"
+        let input = map_use_case_to_charter_input("p2", &uc);
+        assert_eq!(input.persona_id, "p2");
+        assert_eq!(input.title, "Weekly Report");
+        assert_eq!(input.domain.as_deref(), Some("reporting"));
+        assert_eq!(
+            input.procedure,
+            "Screen the sector weekly.\n\nLong description."
         );
-        assert!(out.get("model_rationale").is_none());
+        assert_eq!(input.connectors, vec!["spreadsheet"]);
+        assert_eq!(input.cadence.interval_minutes, Some(1440));
+        assert_eq!(input.spec.model_override.as_deref(), Some("haiku"));
+        assert_eq!(input.spec.source_recipe_id.as_deref(), Some("recipe-9"));
+        assert_eq!(
+            input.spec.migrated_from_use_case_id.as_deref(),
+            Some("uc_report"),
+            "the mint stamps provenance even on v2 payloads"
+        );
+    }
 
-        let bare = json!({ "id": "uc_bare", "title": "Bare" });
-        let out2 = map_template_use_case_to_design_use_case(&bare);
-        assert!(out2.get("model_override").is_none());
-        assert!(out2.get("model_rationale").is_none());
+    #[test]
+    fn disabled_capability_mints_a_suspended_charter() {
+        let uc = json!({"id": "uc_off", "title": "Off", "description": "d", "enabled": false});
+        let input = map_use_case_to_charter_input("p", &uc);
+        assert_eq!(input.status.as_deref(), Some("suspended"));
+    }
+
+    #[test]
+    fn model_profile_object_contributes_its_model_string() {
+        // The id is deliberately NOT a real `claude-*` string: this asserts
+        // that the object's `model` FIELD is what reaches the spec, and
+        // pinning a dated vendor id in a fixture that does not care about it
+        // is how a test rots (census `bare-model-id-literal`).
+        let uc = json!({
+            "id": "uc_m", "title": "M", "description": "d",
+            "model_override": {"model": "tier-from-profile-object"}
+        });
+        let input = map_use_case_to_charter_input("p", &uc);
+        assert_eq!(
+            input.spec.model_override.as_deref(),
+            Some("tier-from-profile-object")
+        );
+    }
+
+    #[test]
+    fn cadence_hints_cover_the_unambiguous_cron_family() {
+        let hint = |cron: &str| {
+            cadence_hint_from_trigger(Some(&json!({
+                "trigger_type": "schedule", "config": {"cron": cron}
+            })))
+            .interval_minutes
+        };
+        assert_eq!(hint("*/10 * * * *"), Some(10));
+        assert_eq!(hint("15 * * * *"), Some(60));
+        assert_eq!(hint("0 18 * * *"), Some(1440));
+        assert_eq!(hint("0 9 * * 1"), Some(10080));
+        assert_eq!(hint("0 9 1 * *"), None, "monthly is not guessed");
+        assert_eq!(hint("bogus"), None);
+        assert!(
+            cadence_hint_from_trigger(Some(&json!({"trigger_type": "webhook"})))
+                .interval_minutes
+                .is_none()
+        );
     }
 }
 
