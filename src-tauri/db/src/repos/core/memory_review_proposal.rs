@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
+use crate::models::CreatePersonaResponsibilityInput;
 use crate::DbPool;
 use crate::PoolExt;
 use personas_core::error::AppError;
@@ -94,6 +95,14 @@ pub struct MemoryReviewProposal {
     /// pipeline) — the living-agent consolidation adds further kinds.
     #[serde(default = "default_proposal_kind")]
     pub kind: String,
+    /// `responsibility_draft` only: the charter the agent proposes minting.
+    /// `entries` is empty for this kind (the payload is an object, not a
+    /// `ProposalEntry` array), so without this field the inbox has nothing
+    /// to render. Parsed leniently — a payload that no longer deserializes
+    /// leaves `None` and the row still lists with its `summary`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub draft: Option<CreatePersonaResponsibilityInput>,
 }
 
 fn default_proposal_kind() -> String {
@@ -280,6 +289,54 @@ pub fn list(
     Ok(rows)
 }
 
+/// Proposals of one `kind` still awaiting a decision for one persona — the
+/// manifest view's `pending_proposals` badge.
+pub fn count_pending_for_persona(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_pending_for_persona",
+        {
+            let conn = pool.conn("memory_review_proposal::count_pending_for_persona")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND kind = ?2 AND status = 'pending_review'",
+                params![persona_id, kind],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
+}
+
+/// Proposals (any kind) a human DISCARDED since `since` (RFC-3339 / SQLite
+/// datetime text, compared on `decided_at`) — the dashboard's rejected-drafts
+/// signal: how often the agent's proposals are being thrown out.
+pub fn count_discarded_since(
+    pool: &DbPool,
+    persona_id: &str,
+    since: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_memory_review_proposal",
+        "memory_review_proposal::count_discarded_since",
+        {
+            let conn = pool.conn("memory_review_proposal::count_discarded_since")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_memory_review_proposal
+                 WHERE persona_id = ?1 AND status = 'discarded'
+                   AND decided_at IS NOT NULL AND decided_at >= ?2",
+                params![persona_id, since],
+                |r| r.get("n"),
+            )?;
+            Ok(n)
+        }
+    )
+}
+
 /// Mark a proposal as `applied`. Caller is responsible for executing
 /// the proposal's mutations against the live memory table — this
 /// function only flips the status so the proposal can't be re-applied.
@@ -312,6 +369,15 @@ pub fn mark_discarded(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
     let entries_json: String = row.get(4)?;
     let entries: Vec<ProposalEntry> = serde_json::from_str(&entries_json).unwrap_or_default();
+    let kind: String = row.get("kind")?;
+    // The payload column carries a `ProposalEntry` array for the curation
+    // kinds and a single object for `responsibility_draft`; decode the
+    // object only for the kind that writes one.
+    let draft: Option<CreatePersonaResponsibilityInput> = if kind == "responsibility_draft" {
+        serde_json::from_str(&entries_json).ok()
+    } else {
+        None
+    };
     Ok(MemoryReviewProposal {
         id: row.get(0)?,
         persona_id: row.get(1)?,
@@ -327,6 +393,7 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
         team_id: row.get(11)?,
         // By name, not position — this column joined the projection late
         // (e16) and a named read cannot shift under a future ALTER.
-        kind: row.get("kind")?,
+        kind,
+        draft,
     })
 }

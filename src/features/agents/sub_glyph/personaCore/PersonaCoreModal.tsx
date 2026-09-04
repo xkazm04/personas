@@ -1,7 +1,7 @@
 /** PersonaCoreModal — the persona-core configurator.
  *
  *  Rethought (2026-07-08) against the real corpus: model tier × reasoning effort,
- *  a disposition slider + conflict style + a clickable character-trait palette.
+ *  a conflict style + a clickable character-trait palette.
  *  Memory is NOT here — the build surface's memory dimension owns it. The layout
  *  is the "Codex" design (won the /prototype round): an ordered, icon-forward
  *  3-column grid — Character · Configuration · Mentality.

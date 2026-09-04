@@ -4,27 +4,28 @@ import type { TableImpact } from "./TableImpact";
 /**
  * Result of a prune (or a dry-run preview of one).
  */
-export type PruneResult = {
+export type PruneResult = { 
 /**
  * True when nothing was actually deleted (preview only).
  */
-dryRun: boolean,
+dryRun: boolean, 
 /**
  * Terminal rows older than the cutoff that were (or would be) removed.
  */
-prunedExecutions: bigint,
+prunedExecutions: bigint, 
 /**
  * The effective age floor applied (hours).
  */
-ageHours: bigint,
+ageHours: bigint, 
 /**
  * Every table that shrank when the DELETE executed — the cascade set,
  * tallied THROUGH THE ENFORCEMENT PATH (the real delete ran inside a
  * transaction; a dry-run rolls it back), so preview and act cannot
  * diverge by construction. Largest first.
  */
-casualties: Array<TableImpact>,
+casualties: Array<TableImpact>, 
 /**
  * Sum over `casualties` — the honest total the confirm copy shows.
+ * Same bound as [`TableImpact::rows`]; a JS number on the wire.
  */
 totalRows: number, };

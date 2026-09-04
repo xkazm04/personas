@@ -2,6 +2,7 @@
 import type { ResponsibilityCadence } from "./ResponsibilityCadence";
 import type { ResponsibilityObjective } from "./ResponsibilityObjective";
 import type { ResponsibilityOutcome } from "./ResponsibilityOutcome";
+import type { ResponsibilitySpec } from "./ResponsibilitySpec";
 import type { ResponsibilityTenure } from "./ResponsibilityTenure";
 
 /**
@@ -33,6 +34,21 @@ owner: string, cadence: ResponsibilityCadence, budgetMonthlyUsd?: number, tenure
  */
 status: string, projectId?: string, 
 /**
- * Who authored the charter ('operator' | 'template' | 'athena' | ...).
+ * Who authored the charter ('operator' | 'kp-hire' | 'migration' |
+ * 'agent-proposed'; DB CHECK-enforced).
  */
-source: string, createdAt: string, updatedAt: string, };
+source: string, 
+/**
+ * Connector ids the charter's runs may reach (the legacy use case's
+ * `connectors`); `[]` = whatever the persona holds.
+ */
+connectors: Array<string>, 
+/**
+ * How the persona carries the charter out — the operating procedure
+ * (legacy: capability summary + description).
+ */
+procedure: string, 
+/**
+ * Runtime envelope (input schema, engine mode, routing, provenance).
+ */
+spec: ResponsibilitySpec, createdAt: string, updatedAt: string, };

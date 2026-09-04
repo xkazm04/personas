@@ -7,9 +7,9 @@ import {
   downloadHtmlReport,
 } from '../../libs/reportGenerator';
 import { useAgentStore } from '@/stores/agentStore';
-import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 import { useTranslation } from '@/i18n/useTranslation';
-import { resolveEffectiveModel, profileToLabel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
+import { resolveEffectiveModel, profileToLabel } from '@/lib/personas/modelResolution';
 import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -72,7 +72,8 @@ export function LabVersionsTable() {
   const unpinBaseline = useAgentStore((s) => s.unpinBaseline);
   const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
   const seedAthena = useSeedAthenaComposer();
-  const useCases = useSelectedUseCases();
+  // Charters first, design-context use cases only pre-migration — one door.
+  const useCases = useSelectedPersonaCapabilities();
 
   const personaId = selectedPersona?.id;
   const [measuringVersionId, setMeasuringVersionId] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export function LabVersionsTable() {
         // silently keeps executing on its old pin. Let the user reconcile.
         const conflicts: OverrideConflict[] = useCases
           .filter((uc) => {
-            const o = uc.model_override;
+            const o = uc.modelOverride;
             if (!o) return false;
             const oProvider = o.provider || 'anthropic';
             return !(oProvider === promotedProvider && o.model === row.modelId);
@@ -153,7 +154,7 @@ export function LabVersionsTable() {
           .map((uc) => ({
             useCaseId: uc.id,
             title: uc.title,
-            pinnedLabel: profileToLabel(uc.model_override),
+            pinnedLabel: profileToLabel(uc.modelOverride),
           }));
         if (conflicts.length > 0) {
           setReconcile({ conflicts, promotedLabel: modelLabel(row.modelId) });

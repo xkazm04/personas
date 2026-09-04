@@ -77,6 +77,19 @@ vi.mock("@/api/system/system", () => ({
   sendAppNotification: vi.fn().mockResolvedValue(undefined),
 }));
 
+// `getPersonaManifest` is the manifest SEEDER's only door: promote calls it
+// straight after stamping the codex prose so `manifest::ensure` folds that
+// prose into `# Mandate` / `# Boundaries` instead of leaving it in the column.
+const mockGetPersonaManifest = vi.fn().mockResolvedValue({
+  content: "# Mandate\n\nseeded\n",
+  lawSections: ["Mandate"],
+  selfSections: [],
+  pendingProposals: 0,
+});
+vi.mock("@/api/agents/personaBrain", () => ({
+  getPersonaManifest: (...args: unknown[]) => mockGetPersonaManifest(...args),
+}));
+
 vi.mock("@/lib/silentCatch", () => ({
   silentCatch: () => () => {},
 }));
@@ -625,13 +638,13 @@ describe("useLifecycle", () => {
   // The dialogue-cinema layout captures the Persona Core Codex state at Launch;
   // handlePromote consumes it once AFTER promoteBuildDraft resolves (i.e. after
   // the Rust seed-if-absent stamp ran inside the command) and writes the
-  // composed typed Core through updatePersona({ core_profile }).
+  // composed MANIFEST SEED PROSE through updatePersona({ core_profile }), then
+  // opens the manifest so the seeder folds that prose into the law sections.
 
   describe("handlePromote codex core snapshot", () => {
     const codexSnapshot = (): PersonaCoreLaunchSnapshot => ({
       state: {
         archetypeId: "guardian",
-        disposition: 0.15,
         conflictStyle: "analyst",
         traits: [],
         model: "sonnet",
@@ -667,7 +680,7 @@ describe("useLifecycle", () => {
       });
     }
 
-    it("writes the composed typed Core through updatePersona after promote", async () => {
+    it("writes the composed manifest seed prose through updatePersona after promote", async () => {
       promotableState();
       const consume = vi.fn().mockReturnValue(codexSnapshot());
 
@@ -684,11 +697,16 @@ describe("useLifecycle", () => {
       expect(mockUpdatePersona).toHaveBeenCalledWith("persona-1", expect.anything());
       const partial = mockBuildUpdateInput.mock.calls[0]![0] as { core_profile?: string };
       const core = JSON.parse(partial.core_profile!) as Record<string, unknown>;
-      // Archetype base survives; the chosen conflict style overlays it.
+      // The archetype's authored PROSE survives.
       expect(core.motivation).toBe("Hold the line.");
-      expect(core.riskTolerance).toBe(0.15);
-      expect(core.speedVsQuality).toBe(0.2);
-      expect(core.conflictStyle).toBe("analyst");
+      expect(core.stance).toBe("Nothing ships unverified.");
+      // No dial is ever written: the prompt stopped rendering them in Stage B,
+      // and the Rust law seeder reads prose keys only.
+      for (const dial of ["riskTolerance", "speedVsQuality", "deference", "conflictStyle"]) {
+        expect(dial in core).toBe(false);
+      }
+      // The seeder door is opened straight after the stamp, for this persona.
+      expect(mockGetPersonaManifest).toHaveBeenCalledWith("persona-1");
       // Ordering: the explicit update lands strictly AFTER the promote (whose
       // Rust body already ran the seed-if-absent stamp before returning).
       expect(mockPromoteBuildDraft.mock.invocationCallOrder[0]!).toBeLessThan(
@@ -717,7 +735,6 @@ describe("useLifecycle", () => {
       const consume = vi.fn().mockReturnValue({
         state: {
           archetypeId: null,
-          disposition: 0.4,
           conflictStyle: null,
           traits: [],
           model: "opus",
@@ -757,12 +774,14 @@ describe("useLifecycle", () => {
         },
         buildSessionId: "session-123",
       });
+      // A trait is what makes an archetype-less codex compose at all now: the
+      // conflict style is carried as a build-intent directive, not a manifest
+      // field, so on its own it authors nothing.
       const consume = vi.fn().mockReturnValue({
         state: {
           archetypeId: null,
-          disposition: 0.4,
           conflictStyle: "challenger",
-          traits: [],
+          traits: ["terse"],
           model: "sonnet",
           effort: "medium",
         },
@@ -780,8 +799,9 @@ describe("useLifecycle", () => {
       const partial = mockBuildUpdateInput.mock.calls[0]![0] as { core_profile?: string };
       const core = JSON.parse(partial.core_profile!) as Record<string, unknown>;
       expect(core.motivation).toBe("LLM motivation.");
-      expect(core.riskTolerance).toBe(0.3);
-      expect(core.conflictStyle).toBe("challenger");
+      expect(core.stance).toBe("LLM stance.");
+      expect("riskTolerance" in core).toBe(false);
+      expect("conflictStyle" in core).toBe(false);
     });
 
     it("stays non-fatal: a failed core update does not fail the promote", async () => {

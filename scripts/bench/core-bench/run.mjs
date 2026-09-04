@@ -165,24 +165,14 @@ async function runL1Cell(base, cell, inputs, cellDir, keepPersonas) {
     personaId = await adoptCell(base, cell, designPayload);
     asserts.adopted = "pass";
 
-    // core_profile stamped with the archetype's dials?
+    // core_profile stamped at all? (Its CONTENT is no longer asserted here:
+    // WP2 made `core_profile` the rendered-markdown mirror of the manifest and
+    // deleted the numeric dials the old `core_dials_match` compared.)
     const persona = await invokeCommand(base, "get_persona", { id: personaId });
     const rawCore = persona?.core_profile;
     asserts.core_profile_stamped = rawCore ? "pass" : "fail";
     if (rawCore) {
-      try {
-        const stamped = JSON.parse(rawCore);
-        const d = cell.expected.dials;
-        const dialsMatch =
-          stamped.riskTolerance === d.riskTolerance &&
-          stamped.speedVsQuality === d.speedVsQuality &&
-          stamped.deference === d.deference &&
-          String(stamped.conflictStyle) === String(d.conflictStyle);
-        asserts.core_dials_match = dialsMatch ? "pass" : "fail";
-        writeFileSync(path.join(cellDir, "core_profile.json"), JSON.stringify(stamped, null, 2));
-      } catch {
-        asserts.core_dials_match = "fail";
-      }
+      writeFileSync(path.join(cellDir, "core_profile.txt"), String(rawCore));
     }
 
     // Create the responsibility charter through the operator door.
@@ -203,17 +193,15 @@ async function runL1Cell(base, cell, inputs, cellDir, keepPersonas) {
     const prompt = preview?.prompt_preview ?? "";
     writeFileSync(path.join(cellDir, "prompt.md"), prompt);
 
-    asserts.core_section_present = prompt.includes("## Core") ? "pass" : "fail";
+    // `## Manifest`, not `## Core`: WP2 renamed the heading, and BOTH render
+    // branches emit it — the mirror path (`core_section.rs:74`) and the
+    // `CoreSource::Legacy` path (`render_legacy_core_section`, `:147`), which
+    // is the one a bench persona takes. The assert id keeps its name so the
+    // baseline vocabulary does not churn.
+    asserts.core_section_present = prompt.includes("## Manifest") ? "pass" : "fail";
     asserts.responsibilities_section_present = prompt.includes("## Responsibilities")
       ? "pass"
       : "fail";
-    const dir = cell.expected.directives;
-    const dialProse =
-      prompt.includes(dir.riskTolerance) &&
-      prompt.includes(dir.speedVsQuality) &&
-      prompt.includes(dir.deference) &&
-      (dir.conflictStyle === null || prompt.includes(dir.conflictStyle));
-    asserts.dial_prose_matches_band = dialProse ? "pass" : "fail";
     asserts.responsibility_title_present = prompt.includes(
       `### ${cell.responsibilityTitle} (${cell.family})`,
     )

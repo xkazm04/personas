@@ -11,7 +11,7 @@
 use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
-use crate::models::{AttentionLedgerEntry, AttentionLoopSummary};
+use crate::models::{AttentionLedgerEntry, AttentionLoopSummary, ConsolidationPoint};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -343,10 +343,226 @@ pub fn summary_today(pool: &DbPool) -> Result<AttentionLoopSummary, AppError> {
     )
 }
 
+/// One persona's ledger rollup for the Brain dashboard (not on the wire —
+/// the command folds it into `PersonaBrainDashboard`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AttentionPersonaSummary {
+    /// Today's (UTC) attention lanes dispatched.
+    pub dispatched_today: i64,
+    /// Today's refusals (rate caps, quiet hours, budget, admission).
+    pub refused_today: i64,
+    /// Today's consolidation passes that ran (refusals excluded).
+    pub consolidations_today: i64,
+    /// Consecutive most-recent COMPLETED rows with `verdict = 'failed'`,
+    /// counted newest-first until the first non-failed verdict.
+    pub failed_streak: i64,
+    /// `completed_at` of the newest completed consolidation, `None` while
+    /// none has ever finished.
+    pub last_consolidation_at: Option<String>,
+}
+
+/// How many recent rows the failed-streak probe reads: a streak longer than
+/// this is reported as the cap, which is already past any threshold that
+/// matters to an operator.
+const FAILED_STREAK_WINDOW: u32 = 50;
+
+/// Per-persona rollup: today's dispatched / refused / consolidation counts,
+/// the current failed streak, and the last consolidation's completion.
+pub fn summary_for_persona(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<AttentionPersonaSummary, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::summary_for_persona",
+        {
+            let conn = pool.conn("attention_ledger::summary_for_persona")?;
+            // CASE-form conditional aggregates (not FILTER) — same reason as
+            // `summary_today`: portable across the SQLite versions we link.
+            let (dispatched, refused, consolidations) = conn.query_row(
+                "SELECT
+                    COALESCE(SUM(CASE WHEN verdict = 'dispatched' THEN 1 ELSE 0 END), 0) AS dispatched,
+                    COALESCE(SUM(CASE WHEN verdict = 'refused' THEN 1 ELSE 0 END), 0) AS refused,
+                    COALESCE(SUM(CASE WHEN kind = 'consolidation' AND verdict != 'refused' THEN 1 ELSE 0 END), 0) AS consolidations
+                 FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND date(started_at) = date('now')",
+                params![persona_id],
+                |r| {
+                    Ok((
+                        r.get::<_, i64>("dispatched")?,
+                        r.get::<_, i64>("refused")?,
+                        r.get::<_, i64>("consolidations")?,
+                    ))
+                },
+            )?;
+            // The streak: walk completed rows newest-first until one is not
+            // a failure. Refusals never ran, so they neither extend nor break it.
+            let mut stmt = conn.prepare_cached(
+                "SELECT verdict FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND completed_at IS NOT NULL AND verdict != 'refused'
+                 ORDER BY completed_at DESC, id DESC
+                 LIMIT ?2",
+            )?;
+            let verdicts = stmt.query_map(params![persona_id, FAILED_STREAK_WINDOW], |r| {
+                r.get::<_, String>("verdict")
+            })?;
+            let mut failed_streak = 0i64;
+            for v in collect_rows(verdicts, "attention_ledger::summary_for_persona/streak") {
+                if v == "failed" {
+                    failed_streak += 1;
+                } else {
+                    break;
+                }
+            }
+            let last_consolidation_at: Option<String> = conn
+                .query_row(
+                    "SELECT completed_at FROM persona_attention_ledger
+                     WHERE persona_id = ?1 AND kind = 'consolidation'
+                       AND completed_at IS NOT NULL AND verdict != 'refused'
+                     ORDER BY completed_at DESC, id DESC
+                     LIMIT 1",
+                    params![persona_id],
+                    |r| r.get("completed_at"),
+                )
+                .optional()?;
+            Ok(AttentionPersonaSummary {
+                dispatched_today: dispatched,
+                refused_today: refused,
+                consolidations_today: consolidations,
+                failed_streak,
+                last_consolidation_at,
+            })
+        }
+    )
+}
+
+/// The newest `limit` completed consolidation passes (refusals excluded),
+/// oldest first so they plot left-to-right, with the pass's `stats_json`
+/// decoded into typed counts. A row whose stats are missing or unparsable
+/// still appears (zeros + its verdict): a failed pass writes no stats and is
+/// exactly the point the series exists to show.
+pub fn consolidation_series(
+    pool: &DbPool,
+    persona_id: &str,
+    limit: u32,
+) -> Result<Vec<ConsolidationPoint>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::consolidation_series",
+        {
+            let conn = pool.conn("attention_ledger::consolidation_series")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT completed_at, verdict, stats_json, cost_usd
+                 FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND kind = 'consolidation'
+                   AND completed_at IS NOT NULL AND verdict != 'refused'
+                 ORDER BY completed_at DESC, id DESC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], |r| {
+                let stats_json: Option<String> = r.get("stats_json")?;
+                let stats: serde_json::Value = stats_json
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str(s).ok())
+                    .unwrap_or(serde_json::Value::Null);
+                let n = |key: &str| stats.get(key).and_then(|v| v.as_i64()).unwrap_or(0);
+                Ok(ConsolidationPoint {
+                    completed_at: r.get("completed_at")?,
+                    episodes_fed: n("episodes_fed"),
+                    created: n("created"),
+                    updated: n("updated"),
+                    rejected: n("rejected"),
+                    skipped_tombstoned: n("skipped_tombstoned"),
+                    self_model_diffs_proposed: n("selfModelDiffsProposed"),
+                    cost_usd: r.get("cost_usd")?,
+                    verdict: r.get("verdict")?,
+                })
+            })?;
+            let mut points = collect_rows(rows, "attention_ledger::consolidation_series");
+            points.reverse();
+            Ok(points)
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::init_test_db;
+
+    #[test]
+    fn per_persona_summary_and_series_read_the_ledger() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+
+        let empty = summary_for_persona(&pool, "p1")?;
+        assert_eq!(empty, AttentionPersonaSummary::default());
+        assert!(consolidation_series(&pool, "p1", 10)?.is_empty());
+
+        // An old successful consolidation with stats, then two failures.
+        let ok = insert_started(&pool, "p1", None, "consolidation", None)?;
+        complete(
+            &pool,
+            &ok,
+            "acted",
+            "",
+            Some("2026-01-01T00:00:00Z"),
+            Some(
+                r#"{"episodes_fed":4,"created":2,"updated":1,"rejected":0,"skipped_tombstoned":1}"#,
+            ),
+            Some(0.05),
+        )?;
+        // Backdate BOTH stamps: `consolidations_today` counts by started_at,
+        // the series and the streak order by completed_at.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+             SET started_at = '2026-01-01T00:00:00Z', completed_at = '2026-01-01T00:00:10Z'
+             WHERE id = ?1",
+            params![ok],
+        )?;
+        for _ in 0..2 {
+            let f = insert_started(&pool, "p1", None, "consolidation", None)?;
+            complete(&pool, &f, "failed", "boom", None, None, None)?;
+        }
+        // A refusal neither breaks nor extends the streak; a dispatched
+        // attention lane counts today; p2's rows are invisible.
+        insert_refusal(&pool, "p1", None, "consolidation", None, "cap")?;
+        let a = insert_started(&pool, "p1", None, "attention", Some("advance"))?;
+        complete(&pool, &a, "dispatched", "", None, None, None)?;
+        let other = insert_started(&pool, "p2", None, "consolidation", None)?;
+        complete(&pool, &other, "failed", "", None, None, None)?;
+
+        let s = summary_for_persona(&pool, "p1")?;
+        assert_eq!(s.dispatched_today, 1);
+        assert_eq!(s.refused_today, 1);
+        assert_eq!(s.consolidations_today, 2, "the backdated one is not today");
+        // Newest completed row is the dispatch (not failed) → streak 0.
+        assert_eq!(s.failed_streak, 0);
+        assert!(s.last_consolidation_at.is_some());
+
+        // Backdate the dispatch so the two failures are the newest rows.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET completed_at = '2025-01-01T00:00:00Z' WHERE id = ?1",
+            params![a],
+        )?;
+        assert_eq!(summary_for_persona(&pool, "p1")?.failed_streak, 2);
+
+        let series = consolidation_series(&pool, "p1", 10)?;
+        assert_eq!(series.len(), 3, "refusal excluded, failures included");
+        assert_eq!(
+            series[0].completed_at, "2026-01-01T00:00:10Z",
+            "oldest first"
+        );
+        assert_eq!(series[0].episodes_fed, 4);
+        assert_eq!(series[0].created, 2);
+        assert_eq!(series[0].skipped_tombstoned, 1);
+        assert_eq!(series[0].cost_usd, Some(0.05));
+        assert_eq!(series[2].verdict, "failed");
+        assert_eq!(series[2].episodes_fed, 0, "no stats → zeros, row kept");
+        assert_eq!(consolidation_series(&pool, "p1", 1)?.len(), 1);
+        Ok(())
+    }
 
     fn insert_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
         let conn = pool.get()?;

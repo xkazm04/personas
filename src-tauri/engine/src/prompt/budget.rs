@@ -10,10 +10,18 @@
 //! Also home to the crate's FNV-1a-64 content-hash helper, shared by
 //! `capabilities::core_fingerprint`.
 
-/// Generous tripwire for the rendered `## Core` section (chars).
-pub const CORE_BUDGET_CHARS: usize = 8_000;
-/// Generous tripwire for the rendered `## Responsibilities` section (chars).
-pub const RESPONSIBILITIES_BUDGET_CHARS: usize = 8_000;
+/// Generous tripwire for the rendered `## Manifest` section (chars). The
+/// manifest carries three law sections plus the growing self-model, so it
+/// gets twice the old Core allowance.
+pub const MANIFEST_BUDGET_CHARS: usize = 16_000;
+/// Generous tripwire for the rendered `## Responsibilities` roster (chars).
+/// Uncapped roster-of-N (WP2): ~5 compact lines per charter, so this trips
+/// around the ~40-charter mark — a flare that the roster shape needs
+/// revisiting, not a bound.
+pub const RESPONSIBILITIES_BUDGET_CHARS: usize = 12_000;
+/// Generous tripwire for the rendered `## Current Focus` charter detail
+/// (chars) — the procedure is prompt-shaped text and can be long.
+pub const FOCUSED_BUDGET_CHARS: usize = 8_000;
 /// Generous tripwire for the rendered `## Recent Episodes` section (chars).
 pub const EPISODES_BUDGET_CHARS: usize = 12_000;
 /// Generous tripwire for the whole assembled prompt (chars).
@@ -25,10 +33,13 @@ pub const TOTAL_BUDGET_CHARS: usize = 200_000;
 /// it carries no `rename_all` obligations.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct PromptBlockSizes {
-    /// Rendered `## Core` section, chars (0 when the section was skipped).
-    pub core: usize,
-    /// Rendered `## Responsibilities` section, chars.
+    /// Rendered `## Manifest` section, chars (0 when the section was skipped).
+    pub manifest: usize,
+    /// Rendered `## Responsibilities` roster, chars.
     pub responsibilities: usize,
+    /// Rendered `## Current Focus` charter detail, chars (0 when the run is
+    /// not dispatched for a charter).
+    pub focused: usize,
     /// Rendered `## Recent Episodes (oldest first)` section, chars.
     pub episodes: usize,
     /// The whole assembled prompt, chars.
@@ -41,12 +52,13 @@ impl PromptBlockSizes {
     /// without capturing log output.
     pub fn over_budget(&self) -> Vec<(&'static str, usize, usize)> {
         let checks = [
-            ("core", self.core, CORE_BUDGET_CHARS),
+            ("manifest", self.manifest, MANIFEST_BUDGET_CHARS),
             (
                 "responsibilities",
                 self.responsibilities,
                 RESPONSIBILITIES_BUDGET_CHARS,
             ),
+            ("focused", self.focused, FOCUSED_BUDGET_CHARS),
             ("episodes", self.episodes, EPISODES_BUDGET_CHARS),
             ("total", self.total, TOTAL_BUDGET_CHARS),
         ];
@@ -83,8 +95,9 @@ pub fn warn_over_budget(sizes: &PromptBlockSizes) {
         .collect::<Vec<_>>()
         .join(", ");
     tracing::warn!(
-        core_chars = sizes.core,
+        manifest_chars = sizes.manifest,
         responsibilities_chars = sizes.responsibilities,
+        focused_chars = sizes.focused,
         episodes_chars = sizes.episodes,
         total_chars = sizes.total,
         "prompt block(s) over size tripwire (nothing truncated): {detail}",
@@ -107,21 +120,23 @@ mod tests {
     #[test]
     fn over_budget_names_exactly_the_blocks_past_their_tripwire() {
         let fine = PromptBlockSizes {
-            core: CORE_BUDGET_CHARS,
+            manifest: MANIFEST_BUDGET_CHARS,
             responsibilities: 10,
+            focused: FOCUSED_BUDGET_CHARS,
             episodes: 0,
             total: 50_000,
         };
         assert!(fine.over_budget().is_empty(), "at-budget is not over");
 
         let over = PromptBlockSizes {
-            core: CORE_BUDGET_CHARS + 1,
+            manifest: MANIFEST_BUDGET_CHARS + 1,
             responsibilities: 10,
+            focused: FOCUSED_BUDGET_CHARS + 3,
             episodes: EPISODES_BUDGET_CHARS + 5,
             total: TOTAL_BUDGET_CHARS + 1,
         };
         let names: Vec<&str> = over.over_budget().iter().map(|(n, _, _)| *n).collect();
-        assert_eq!(names, vec!["core", "episodes", "total"]);
+        assert_eq!(names, vec!["manifest", "focused", "episodes", "total"]);
         // Emitting the warn for real must not panic outside a subscriber.
         warn_over_budget(&over);
     }

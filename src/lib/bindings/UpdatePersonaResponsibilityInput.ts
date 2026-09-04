@@ -2,6 +2,7 @@
 import type { ResponsibilityCadence } from "./ResponsibilityCadence";
 import type { ResponsibilityObjective } from "./ResponsibilityObjective";
 import type { ResponsibilityOutcome } from "./ResponsibilityOutcome";
+import type { ResponsibilitySpec } from "./ResponsibilitySpec";
 import type { ResponsibilityTenure } from "./ResponsibilityTenure";
 
 /**
@@ -11,4 +12,4 @@ import type { ResponsibilityTenure } from "./ResponsibilityTenure";
  * through `retire_persona_responsibility` / the repo's `set_status`, never
  * here.
  */
-export type UpdatePersonaResponsibilityInput = { title: string | null, domain: string | null, outcomes: Array<ResponsibilityOutcome> | null, objectives: Array<ResponsibilityObjective> | null, scopeRung: number | null, refusalClasses: Array<string> | null, approvalGates: Array<string> | null, owner: string | null, cadence: ResponsibilityCadence | null, budgetMonthlyUsd: number | null | null, tenure: ResponsibilityTenure | null, projectId: string | null | null, };
+export type UpdatePersonaResponsibilityInput = { title: string | null, domain: string | null, outcomes: Array<ResponsibilityOutcome> | null, objectives: Array<ResponsibilityObjective> | null, scopeRung: number | null, refusalClasses: Array<string> | null, approvalGates: Array<string> | null, owner: string | null, cadence: ResponsibilityCadence | null, budgetMonthlyUsd: number | null | null, tenure: ResponsibilityTenure | null, projectId: string | null | null, connectors: Array<string> | null, procedure: string | null, spec: ResponsibilitySpec | null, };

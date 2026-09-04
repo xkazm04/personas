@@ -704,13 +704,17 @@ const PAYLOAD_CHARTER_LIMIT: usize = 5;
 const PAYLOAD_CHARTER_OBJECTIVES_LIMIT: usize = 6;
 const PAYLOAD_ATTENTION_ROWS: u32 = 15;
 
-/// Render the persona's authored Core for the Director's payload (input 6 of
-/// the rubric). Reuses the runtime prompt's [`render_core`] prose so the judge
-/// sees exactly the identity the persona itself runs under, capped at
-/// [`PAYLOAD_CORE_MAX_CHARS`]. Absence is stated plainly ("No Core authored.")
-/// so the rubric's gate can tell the model to skip `core_fidelity` instead of
-/// hallucinating a Core; an authored-but-unparsable Core says so and carries
-/// its own skip instruction.
+/// Render the persona's authored core document for the Director's payload
+/// (input 6 of the rubric). Post-rebase (spark `agent-manifest-rebase`) the
+/// column is the MANIFEST MIRROR: rendered markdown for any persona whose
+/// manifest was touched — rendered here as the runtime prompt renders it
+/// (verbatim, frontmatter stripped) so `core_fidelity` judges against the
+/// text the persona actually runs under. A legacy `PersonaCore` JSON renders
+/// through the same prose the runtime's `## Manifest` fallback uses. Both are
+/// capped at [`PAYLOAD_CORE_MAX_CHARS`]. Absence is stated plainly
+/// ("No Core authored.") so the rubric's gate can tell the model to skip
+/// `core_fidelity` instead of hallucinating one; a JSON-shaped blob that does
+/// not parse says so and carries its own skip instruction.
 fn render_core_profile_block(persona: &Persona) -> String {
     let mut s = String::from("## Core profile (authored identity)\n");
     let raw = persona
@@ -720,22 +724,29 @@ fn render_core_profile_block(persona: &Persona) -> String {
         .filter(|c| !c.is_empty());
     match raw {
         None => s.push_str("No Core authored.\n"),
-        Some(raw) => match serde_json::from_str::<crate::db::models::PersonaCore>(raw) {
-            Ok(core) => {
-                let rendered = super::prompt::render_core(&core);
-                let body = rendered.strip_prefix("## Core\n").unwrap_or(&rendered);
-                s.push_str(&truncate(body.trim_end(), PAYLOAD_CORE_MAX_CHARS));
-                s.push('\n');
+        Some(raw) if raw.starts_with('{') => {
+            match serde_json::from_str::<crate::db::models::PersonaCore>(raw) {
+                Ok(core) => {
+                    let body = super::prompt::render_legacy_core_prose(&core);
+                    s.push_str(&truncate(body.trim_end(), PAYLOAD_CORE_MAX_CHARS));
+                    s.push('\n');
+                }
+                Err(e) => {
+                    tracing::warn!(persona_id = %persona.id, error = %e,
+                        "Director: core_profile JSON failed to parse for the payload");
+                    s.push_str(
+                        "A Core is authored but could not be parsed (invalid JSON). \
+                         Skip the core_fidelity category this cycle.\n",
+                    );
+                }
             }
-            Err(e) => {
-                tracing::warn!(persona_id = %persona.id, error = %e,
-                    "Director: core_profile JSON failed to parse for the payload");
-                s.push_str(
-                    "A Core is authored but could not be parsed (invalid JSON). \
-                     Skip the core_fidelity category this cycle.\n",
-                );
-            }
-        },
+        }
+        Some(raw) => {
+            // The manifest mirror — judge against the rendered text itself.
+            let body = super::prompt::manifest_body(raw).trim();
+            s.push_str(&truncate(body, PAYLOAD_CORE_MAX_CHARS));
+            s.push('\n');
+        }
     }
     s.push('\n');
     s
@@ -3047,6 +3058,9 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
                 status: "active",
                 project_id: None,
                 source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
             },
         )
         .unwrap();
@@ -3070,9 +3084,12 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
         let payload = build_director_payload(&pool, &ctx, &rollup);
 
         // Core block: rendered prose, not raw JSON, and no absence line.
+        // (Dial bands are retired with the manifest rebase — the block carries
+        // the authored words only.)
         assert!(payload.contains("## Core profile (authored identity)"));
-        assert!(payload.contains("risk-averse"), "dial renders as prose");
+        assert!(payload.contains("**Why you care**: Keep the docs honest"));
         assert!(payload.contains("Verify before claiming done"));
+        assert!(!payload.contains("riskTolerance"), "no raw JSON");
         assert!(!payload.contains("No Core authored."));
 
         // Charter block: title, cadence, and the unmeasured objective.
@@ -3128,6 +3145,37 @@ DIRECTOR_WIN: {\"category\":\"nonsense\",\"note\":\"must drop\"}\n",
         assert!(payload.contains("could not be parsed"));
         assert!(payload.contains("Skip the core_fidelity category"));
         assert!(!payload.contains("No Core authored."));
+        Ok(())
+    }
+
+    /// A manifest MIRROR (rendered markdown — the post-rebase shape of
+    /// `core_profile`) renders into the payload verbatim minus frontmatter,
+    /// so core_fidelity judges against the text the persona runs under.
+    #[test]
+    fn build_payload_renders_manifest_mirror_markdown() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let pid = mk_persona(&pool, "Manifest Agent");
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE personas SET core_profile = ?1 WHERE id = ?2",
+                params![
+                    "---\ntype: manifest\nupdated: 2026-09-01T00:00:00Z\n---\n\n\
+                     # Mandate\n\nMarge — keeps the docs honest\n\n\
+                     # Boundaries\n\n- no external sends\n",
+                    pid
+                ],
+            )
+            .unwrap();
+        }
+        let ctx = gather_context(&pool, &pid).unwrap();
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(pid.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+        assert!(payload.contains("Marge — keeps the docs honest"));
+        assert!(payload.contains("- no external sends"));
+        assert!(!payload.contains("type: manifest"), "frontmatter stripped");
+        assert!(!payload.contains("No Core authored."));
+        assert!(!payload.contains("could not be parsed"));
         Ok(())
     }
 }

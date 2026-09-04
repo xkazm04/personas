@@ -69,6 +69,35 @@ pub fn retire_persona_responsibility(
         .ok_or_else(|| AppError::NotFound(format!("Responsibility {id}")))
 }
 
+/// Move a charter along the status ladder — the door `retire` was a special
+/// case of. Without it `draft` is a one-way trap: the operator can CREATE a
+/// draft and the agent-proposed growth loop MINTS one on approval
+/// (`growth::apply_responsibility_draft` forces `status = 'draft'`), but
+/// nothing could ever activate it, so every proposed charter would sit inert
+/// forever and the propose-adopt loop would not close.
+///
+/// `retired` is reachable here too, so this and `retire_persona_responsibility`
+/// agree by construction rather than by two copies of the same transition.
+///
+/// `status` arrives as the lowercase wire string (the enum is deliberately not
+/// ts-exported — see its doc comment) and is parsed through `FromStr`, so an
+/// unknown value is a `Validation` error here rather than a CHECK-constraint
+/// failure three layers down.
+#[tauri::command]
+pub fn set_persona_responsibility_status(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    status: String,
+) -> Result<PersonaResponsibility, AppError> {
+    require_auth_sync(&state)?;
+    let status: ResponsibilityStatus = status.parse()?;
+    if !repo::set_status(&state.db, &id, status)? {
+        return Err(AppError::NotFound(format!("Responsibility {id}")));
+    }
+    repo::get_by_id(&state.db, &id)?
+        .ok_or_else(|| AppError::NotFound(format!("Responsibility {id}")))
+}
+
 /// A persona's attention/consolidation passes, newest first (read-only;
 /// the loop that writes them lands in WP5).
 #[tauri::command]

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { PersonaHero } from './PersonaHero';
 import { UseCaseRow } from './UseCaseRow';
 
@@ -29,7 +29,7 @@ interface PersonaLayoutProps {
    *  nothing — caller decides what the empty state looks like since it
    *  differs across modes (scratch shows compose textarea, adoption shows
    *  template loading state, view shows EmptyState). */
-  items: DisplayUseCase[];
+  items: PersonaCapability[];
 
   /** When set, the row with this id renders nothing — the detailNode
    *  takes the full surface. Caller controls the lifecycle. */
@@ -42,9 +42,9 @@ interface PersonaLayoutProps {
   /** Per-row handlers. `onRun` is optional — in adoption / scratch
    *  pre-build modes there's no runnable persona, so the row hides its
    *  run button. */
-  onRowOpen: (uc: DisplayUseCase) => void;
-  onRowToggle: (uc: DisplayUseCase) => void;
-  onRowRun?: (uc: DisplayUseCase) => void;
+  onRowOpen: (uc: PersonaCapability) => void;
+  onRowToggle: (uc: PersonaCapability) => void;
+  onRowRun?: (uc: PersonaCapability) => void;
 
   /** Optional content rendered on the right side of the hero's metadata
    *  band (e.g. persona default model picker). Flows into the band, not
@@ -118,7 +118,7 @@ interface PersonaLayoutProps {
   /** Per-row inline policy controls (memory / review / events). Caller
    *  decides what to render — view mode supplies TilePolicyToggles;
    *  adoption / scratch supply their own equivalents (or omit). */
-  renderRowPolicySlot?: (uc: DisplayUseCase) => ReactNode;
+  renderRowPolicySlot?: (uc: PersonaCapability) => ReactNode;
 
   /** Optional content rendered after the last capability row. View mode
    *  uses this for the "Add capability" dashed-row affordance; adoption

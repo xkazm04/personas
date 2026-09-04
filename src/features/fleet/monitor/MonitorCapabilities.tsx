@@ -1,7 +1,8 @@
 // MonitorCapabilities — quick-execute grid for a persona's capabilities.
 //
-// Renders the persona's use cases as mini capability sigils. Clicking a
-// runnable capability fires `execute_persona` for that use case; the sigil
+// Renders the persona's capabilities (charters since e19, legacy design-context
+// use cases before it) as mini capability sigils. Clicking a
+// runnable capability fires `execute_persona` for it; the sigil
 // immediately transitions to a disabled, animated in-progress state and is
 // locked for RUN_LOCK_MS so it can't be fired twice.
 
@@ -12,8 +13,9 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import {
   getHealthMeta,
-  type DisplayUseCase,
-} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+  specParameterValues,
+  type PersonaCapability,
+} from '@/lib/personas/capabilities';
 import { useThemeStore } from '@/stores/themeStore';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -26,7 +28,7 @@ const RUN_LOCK_MS = 60_000;
 
 interface MonitorCapabilitiesProps {
   personaId: string;
-  useCases: DisplayUseCase[];
+  useCases: PersonaCapability[];
 }
 
 export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilitiesProps) {
@@ -44,7 +46,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
     return () => { for (const tmr of map.values()) clearTimeout(tmr); };
   }, []);
 
-  const run = useCallback(async (uc: DisplayUseCase) => {
+  const run = useCallback(async (uc: PersonaCapability) => {
     setExecuting((prev) => {
       if (prev.has(uc.id)) return prev;
       return new Set(prev).add(uc.id);
@@ -57,7 +59,9 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
     const tmr = setTimeout(() => { release(); timers.current.delete(uc.id); }, RUN_LOCK_MS);
     timers.current.set(uc.id, tmr);
     try {
-      const sample = uc.raw.sample_input;
+      // Run inputs by origin: a charter keeps them in `spec.sampleInput`, a
+      // legacy design-context use case in `sample_input`.
+      const sample = uc.charter ? specParameterValues(uc.charter.spec) : uc.raw?.sample_input;
       await executePersona(
         personaId,
         undefined,

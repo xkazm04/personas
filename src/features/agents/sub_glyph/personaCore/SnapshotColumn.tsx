@@ -1,6 +1,6 @@
 /** SnapshotColumn — the mentality presets as a vertical list of rich MentalityCards
- *  (avatar + name + tagline + signature trait strip). Picking one seeds disposition
- *  + conflict + dominant traits (applyPreset). */
+ *  (avatar + name + tagline + signature trait strip). Picking one seeds the
+ *  conflict style + dominant traits (applyPreset). */
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { MentalityCard } from "./MentalityCard";

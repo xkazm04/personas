@@ -2,6 +2,7 @@
 import type { ResponsibilityCadence } from "./ResponsibilityCadence";
 import type { ResponsibilityObjective } from "./ResponsibilityObjective";
 import type { ResponsibilityOutcome } from "./ResponsibilityOutcome";
+import type { ResponsibilitySpec } from "./ResponsibilitySpec";
 import type { ResponsibilityTenure } from "./ResponsibilityTenure";
 
 /**
@@ -19,4 +20,4 @@ domain?: string, outcomes: Array<ResponsibilityOutcome>, objectives: Array<Respo
 /**
  * 'draft' | 'active' | 'suspended' | 'retired'; defaults to 'active'.
  */
-status?: string, projectId?: string, };
+status?: string, projectId?: string, connectors: Array<string>, procedure: string, spec: ResponsibilitySpec, };

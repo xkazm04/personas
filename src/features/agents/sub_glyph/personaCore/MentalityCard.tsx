@@ -2,7 +2,7 @@
  *  column. A large traced, self-drawing AVATAR (via /motionize; falls back to the
  *  lucide glyph), the name + tagline, and a SIGNATURE STRIP of the archetype's
  *  dominant traits rendered as their axis-coloured icons — so each card reads as a
- *  distinct persona at a glance. Picking one seeds disposition + conflict + those
+ *  distinct persona at a glance. Picking one seeds the conflict style + those
  *  dominant traits (applyPreset).
  */
 import { useEffect, useRef, useState } from "react";

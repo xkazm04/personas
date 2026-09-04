@@ -313,7 +313,7 @@ describe("usePersonaCore", () => {
   it("goes back to unconfigured when every choice is undone", async () => {
     // `configured` gates BOTH the augmentation and the badge label. Latching it
     // on the first click meant a user who toggled a trait on and off still
-    // shipped "Disposition: balanced" + "Model tier: Sonnet" into the intent.
+    // shipped "Model tier: Sonnet" into the intent.
     const { result } = renderHook(() => usePersonaCore("build-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -480,13 +480,13 @@ import { PersonaCoreCodex } from "../PersonaCoreCodex";
 
 describe("PersonaCoreCodex column order", () => {
   it("puts Mentality (the one-click preset) ahead of hand assembly", () => {
-    // A mentality card seeds disposition, conflict style and five dominant
-    // traits at once. With it third, a first-timer read the modal backwards —
+    // A mentality card seeds the conflict style and five dominant traits at
+    // once. With it third, a first-timer read the modal backwards —
     // 20 trait toggles and three tile groups by hand, then the shortcut.
     const core = {
-      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      state: { traits: [] as string[], conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
       archetypes: [], loadFailed: false, discardedTraits: null,
-      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      toggleTrait: () => {}, setConflict: () => {},
       setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
       retryLoad: () => {}, restoreTraits: () => {},
     } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
@@ -513,9 +513,9 @@ describe("PersonaCoreCodex column order", () => {
     // contract: without it a flex child will not shrink, so it never overflows
     // and the overflow-y-auto is decoration.
     const core = {
-      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      state: { traits: [] as string[], conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
       archetypes: [], loadFailed: false, discardedTraits: null,
-      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      toggleTrait: () => {}, setConflict: () => {},
       setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
       retryLoad: () => {}, restoreTraits: () => {},
     } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
@@ -601,7 +601,7 @@ import { setAnalyticsSink, noopSink, type InteractionEvent } from "@/lib/analyti
 
 describe("persona-core selection label", () => {
   const base = {
-    archetypeId: null, disposition: 0.4, conflictStyle: null,
+    archetypeId: null, conflictStyle: null,
     traits: [] as string[], model: "sonnet", effort: "medium",
   } as Parameters<typeof personaCoreSelectionLabel>[0];
 

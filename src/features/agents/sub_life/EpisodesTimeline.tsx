@@ -12,11 +12,26 @@ import { episodesCache } from './lifeCache';
 
 const PAGE_SIZE = 30;
 
+interface EpisodesTimelineProps {
+  personaId: string;
+  /**
+   * Render inside its own `SectionCard`. Default `true` for a standalone
+   * mount; the Brain dashboard passes `false` because the record is a
+   * DRILL-DOWN under the volume tile there, and a card inside a card reads as
+   * a second, unrelated section.
+   */
+  framed?: boolean;
+}
+
 /**
  * The persona's episodic record, newest first, with a keyset "load older"
  * cursor (both `beforeCreatedAt` and `beforeId`, per the command contract).
+ *
+ * This is the DETAIL view, not the front page: at a few hundred episodes a
+ * flat newest-first list stops being readable, so `sub_brain`'s volume tile
+ * carries the shape and opens this on demand.
  */
-export function EpisodesTimeline({ personaId }: { personaId: string }) {
+export function EpisodesTimeline({ personaId, framed = true }: EpisodesTimelineProps) {
   const { t } = useTranslation();
   const life = t.agents.life;
   const [episodes, setEpisodes] = useState<PersonaEpisode[]>(
@@ -63,10 +78,9 @@ export function EpisodesTimeline({ personaId }: { personaId: string }) {
     }
   }, [episodes, personaId]);
 
-  return (
-    <div data-testid="life-brain-episodes">
-      <SectionCard title={life.brain_episodes_title}>
-        {episodes.length === 0 ? (
+  const body = (
+    <>
+      {episodes.length === 0 ? (
           isLoading ? (
             <div className="space-y-1.5" aria-hidden>
               {[0, 1, 2, 3].map((i) => (
@@ -107,7 +121,12 @@ export function EpisodesTimeline({ personaId }: { personaId: string }) {
             )}
           </>
         )}
-      </SectionCard>
+    </>
+  );
+
+  return (
+    <div data-testid="life-brain-episodes">
+      {framed ? <SectionCard title={life.brain_episodes_title}>{body}</SectionCard> : body}
     </div>
   );
 }

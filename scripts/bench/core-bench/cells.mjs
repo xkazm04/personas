@@ -1,22 +1,23 @@
 // core-bench cell composition — PURE, deterministic given the JSON inputs.
 //
 // A cell = (archetype × focus domain × template): the archetype supplies the
-// Core under test (dials + identity + voice + principles), the template
-// supplies the capabilities (use cases, tools, connectors), and the focus
-// domain supplies the industry (kp role family + which template folders the
-// capabilities come from).
+// Core under test (identity + voice + principles), the template supplies the
+// capabilities (use cases, tools, connectors), and the focus domain supplies
+// the industry (kp role family + which template folders the capabilities come
+// from). The grid is keyed on archetype × domain × template and on nothing
+// else — the 7 numeric dials were deleted from the product in the
+// agent-manifest rebase, and the grid did not shrink by a cell.
 //
 // No Date.now, no Math.random, no network, no app: composition is seeded by
 // cell id (fnv1a) so two runs over the same JSON inputs compose byte-identical
 // cells. The driver (run.mjs) materializes payloads from cells at call time.
 //
 // Ground truth this module is derived from (re-check before editing):
-//   - scripts/templates/_archetypes.json          (9 archetypes, persona.core dials)
+//   - scripts/templates/_archetypes.json          (9 archetypes, persona.core prose)
 //   - scripts/templates/<category>/*.json         (schema-v3 templates)
 //   - scripts/templates/_recipe_seeds.json        (recipe_ref id -> use-case name/description)
 //   - scripts/bench/core-bench/domains.json       (industry mapping)
 //   - src/lib/bindings/CreatePersonaResponsibilityInput.ts (+ nested bindings)
-//   - src-tauri/engine/src/prompt/core_section.rs (dial band cuts + directive prose)
 
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -44,60 +45,17 @@ export function fnv1a(str) {
 }
 
 // ---------------------------------------------------------------------------
-// Dial bands — MUST mirror src-tauri/engine/src/prompt/core_section.rs
+// Dial bands — REMOVED (agent-manifest rebase, WP7).
+//
+// This module used to carry `band()` plus a VERBATIM copy of the dial and
+// conflict directive prose from `src-tauri/engine/src/prompt/core_section.rs`,
+// so the L1 asserts `core_dials_match` and `dial_prose_matches_band` could
+// grep the assembled prompt for those exact sentences. WP2 deleted the band
+// tables from the engine — the prose no longer exists anywhere in the product,
+// so a mirror of it here would be a table that matches nothing, and two
+// asserts that could only ever fail. Both are gone; the grid is unaffected
+// because it is keyed on archetype × domain × template, never on a dial value.
 // ---------------------------------------------------------------------------
-
-/** Three-band dial cut: `<0.34` -> 0 (low), `<0.67` -> 1 (mid), else 2 (high).
- *  Mirrors core_section.rs `band()` exactly. */
-export function band(value) {
-  if (value < 0.34) return 0;
-  if (value < 0.67) return 1;
-  return 2;
-}
-
-// Directive prose copied VERBATIM from core_section.rs:42-77. The L1 assert
-// "dial prose matches the band" greps the assembled prompt for these exact
-// sentences; if the Rust prose changes, this table must change in the same
-// commit (run.test.mjs pins the band cuts; the strings are pinned here).
-export const DIAL_DIRECTIVES = {
-  riskTolerance: [
-    "You are risk-averse: prefer the reversible option, take the smaller step, and surface uncertainty before acting on it.",
-    "You take calculated risks: act when the expected upside is clear, but keep a rollback path for anything hard to undo.",
-    "You are risk-seeking: bias toward the bold move and act on incomplete information — treat inaction as the costlier failure.",
-  ],
-  speedVsQuality: [
-    "You optimize for quality over speed: finish properly, verify before declaring done, and never ship a shortcut you would not defend.",
-    "You balance speed and quality: deliver promptly, and when time runs short cut scope rather than rigor.",
-    "You optimize for speed: ship the useful version now and iterate — a rough answer today beats a polished one next week.",
-  ],
-  deference: [
-    "You hold your ground in disagreement: keep your position until presented with evidence that actually defeats it.",
-    "You weigh disagreement on its merits: concede to the stronger argument, hold firm against mere pressure.",
-    "You yield readily to stronger arguments: update fast when someone shows better evidence, and say so plainly.",
-  ],
-};
-
-export const CONFLICT_DIRECTIVES = {
-  challenger:
-    "In conflict you are a challenger: press the uncomfortable question rather than let a weak consensus stand.",
-  harmonizer:
-    "In conflict you are a harmonizer: find the shared ground first, and keep the disagreement about the work, never the people.",
-  analyst:
-    "In conflict you are an analyst: slow the argument down to evidence — restate both positions, then test them against the data.",
-  pragmatist:
-    "In conflict you are a pragmatist: steer toward the resolution the team can act on today, even if imperfect.",
-};
-
-/** Expected directive sentences for a core's dials (what `## Core` must carry). */
-export function expectedDialDirectives(core) {
-  return {
-    riskTolerance: DIAL_DIRECTIVES.riskTolerance[band(core.riskTolerance)],
-    speedVsQuality: DIAL_DIRECTIVES.speedVsQuality[band(core.speedVsQuality)],
-    deference: DIAL_DIRECTIVES.deference[band(core.deference)],
-    conflictStyle:
-      CONFLICT_DIRECTIVES[String(core.conflictStyle).toLowerCase()] ?? null,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Binding-field parsing (payload validation against the REAL ts-rs bindings)
@@ -294,7 +252,6 @@ export function composeCells(inputs, { maxTemplates = 2 } = {}) {
       const picks = pickTemplates(pool, archetype, domain, recipesById, maxTemplates);
       for (const template of picks) {
         const { resolved, warnings } = resolveUseCases(template, recipesById);
-        const core = buildArchetypeCore(archetype);
         cells.push({
           id: `${archetype.id}.${domain.id}.${template.id}`,
           archetypeId: archetype.id,
@@ -309,15 +266,6 @@ export function composeCells(inputs, { maxTemplates = 2 } = {}) {
           responsibilityTitle: `${template.name} — ${domain.family} charter`,
           useCases: resolved,
           compositionWarnings: warnings,
-          expected: {
-            dials: {
-              riskTolerance: core.riskTolerance,
-              speedVsQuality: core.speedVsQuality,
-              deference: core.deference,
-              conflictStyle: core.conflictStyle,
-            },
-            directives: expectedDialDirectives(core),
-          },
         });
       }
     }
@@ -333,8 +281,9 @@ export function composeCells(inputs, { maxTemplates = 2 } = {}) {
  * Build the PersonaCore JSON (camelCase, per the PersonaCore binding /
  * `#[serde(rename_all = "camelCase")]`) from an archetype: the 7 authored
  * dials plus the living-agent additive identity/voice/principles fields
- * folded in from the archetype's persona prose, so the rendered `## Core`
- * carries the full Character.
+ * folded in from the archetype's persona prose, so the rendered `## Manifest`
+ * section carries the full Character. (The 7 dials still ride along in the
+ * seed and no longer reach a prompt — see the README's re-anchor note.)
  */
 export function buildArchetypeCore(archetype) {
   const p = archetype.persona;
@@ -435,6 +384,18 @@ export function synthesizeResponsibilityInput(cell, personaId) {
       source: "core-bench judge",
     },
   ];
+  // The operating procedure, composed from the template's own use cases. The
+  // charter shape gained `connectors` / `procedure` / `spec` in the
+  // agent-manifest rebase (e19); all three are REQUIRED on the create door.
+  //   - `connectors: []` means "whatever the persona holds" per the binding's
+  //     own contract — a bench cell declares no connector of its own.
+  //   - `spec: {}` is what a hand-authored charter carries; this one is
+  //     hand-authored by the composer and has no recipe provenance to claim.
+  // Neither is filler standing in for a value we know and withheld.
+  const procedure =
+    ucs.length > 0
+      ? ucs.map((uc) => `- ${uc.name}: ${uc.description || uc.name}`.slice(0, 400)).join("\n")
+      : `Carry out ${cell.templateName} to the ${cell.archetypeName} standard.`;
   return {
     personaId,
     title: cell.responsibilityTitle,
@@ -450,6 +411,9 @@ export function synthesizeResponsibilityInput(cell, personaId) {
     budgetMonthlyUsd: 5,
     tenure: { retireCriteria: [`core-bench cell ${cell.id} teardown`] },
     status: "active",
+    connectors: [],
+    procedure,
+    spec: {},
   };
 }
 
@@ -532,11 +496,9 @@ export class BudgetLedger {
 export const L1_ASSERTS = [
   "adopted",
   "core_profile_stamped",
-  "core_dials_match",
   "responsibility_created",
   "core_section_present",
   "responsibilities_section_present",
-  "dial_prose_matches_band",
   "responsibility_title_present",
 ];
 

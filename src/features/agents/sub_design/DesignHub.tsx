@@ -1,31 +1,20 @@
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Sliders, Plug, Zap, Bell, Sparkles, ClipboardList, Brain } from 'lucide-react';
+import { ScrollText, ClipboardList, Brain, Plug } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { DesignTab } from './DesignTab';
-import {
-  DesignParametersPanel,
-  DesignConnectorsPanel,
-  DesignEventsPanel,
-  DesignNotificationsPanel,
-} from './components/DesignSubtabPanels';
 import { useSystemStore } from '@/stores/systemStore';
-import { useVaultStore } from '@/stores/vaultStore';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { DesignSubTab } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
-
-const PersonaUseCasesTab = lazy(() =>
-  import('@/features/agents/sub_use_cases/components/core/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
-);
-
-// The living-agent panels (former top-level Life tab) stay one deferred chunk:
-// three lazyRetry boundaries over the same module dedupe into a single import.
-const DesignCorePanel = lazyRetry(() =>
-  import('./components/DesignLifePanels').then((m) => ({ default: m.DesignCorePanel })),
+// The four standing surfaces stay one deferred chunk each. Connectors keeps
+// its own module (it pulls the vault + verification machinery); the three
+// living-agent panels share `DesignLifePanels`, whose lazyRetry boundaries
+// dedupe into a single import.
+const DesignManifestPanel = lazyRetry(() =>
+  import('./components/DesignLifePanels').then((m) => ({ default: m.DesignManifestPanel })),
 );
 const DesignResponsibilitiesPanel = lazyRetry(() =>
   import('./components/DesignLifePanels').then((m) => ({ default: m.DesignResponsibilitiesPanel })),
@@ -33,13 +22,15 @@ const DesignResponsibilitiesPanel = lazyRetry(() =>
 const DesignBrainPanel = lazyRetry(() =>
   import('./components/DesignLifePanels').then((m) => ({ default: m.DesignBrainPanel })),
 );
+const DesignConnectorsPanel = lazyRetry(() =>
+  import('./components/DesignSubtabPanels').then((m) => ({ default: m.DesignConnectorsPanel })),
+);
 
 interface DesignHubProps {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   modelDirty: boolean;
-  /** Retained for the EditorBody contract; no longer wired now that the
-   *  Connectors subtab was removed (connector readiness surfaces in Use Cases). */
+  /** Retained for the EditorBody contract; not wired by any current sub-tab. */
   onConnectorsMissingChange?: (count: number) => void;
 }
 
@@ -47,38 +38,46 @@ interface SubTabDef {
   id: DesignSubTab;
   /** Key into `t.agents.design_subtabs` — resolved at render so all 14 locales apply. */
   labelKey: string;
-  icon: typeof ListChecks;
+  icon: typeof ScrollText;
 }
 
-// Rebuilt out of the former monolithic "Prompt" sub-tab: Properties keeps the
-// prompt/design wizard, and Parameters / Connectors / Events & Triggers /
-// Notifications each get their own sub-tab (the sections that used to stack
-// inside the saved Prompt view). `prompt` is relabelled "Properties" and
-// `messaging` "Notifications" via the design_subtabs i18n values.
-// core / responsibilities / brain are the living-agent surfaces, folded in
-// from the former top-level Life editor tab (operator decision, 2026-08-31).
+/**
+ * FOUR sub-tabs, in the order an agent is authored: what it IS, what it OWNS,
+ * what it REMEMBERS, what it REACHES. Collapsed from ten by the agent-manifest
+ * rebase (2026-09-04) — the six that went were either a read-only recap of the
+ * build wizard (`prompt`, `parameters`, `triggers`, `messaging`), a surface a
+ * charter now covers (`use-cases`), or a union member with no tab behind it at
+ * all (`automations`).
+ */
 const SUB_TABS: SubTabDef[] = [
-  { id: 'use-cases', labelKey: 'use_cases', icon: ListChecks },
-  { id: 'prompt', labelKey: 'prompt', icon: FileText },
-  { id: 'parameters', labelKey: 'parameters', icon: Sliders },
-  { id: 'connectors', labelKey: 'connectors', icon: Plug },
-  { id: 'triggers', labelKey: 'triggers', icon: Zap },
-  { id: 'messaging', labelKey: 'messaging', icon: Bell },
-  { id: 'core', labelKey: 'core', icon: Sparkles },
+  { id: 'manifest', labelKey: 'manifest', icon: ScrollText },
   { id: 'responsibilities', labelKey: 'responsibilities', icon: ClipboardList },
   { id: 'brain', labelKey: 'brain', icon: Brain },
+  { id: 'connectors', labelKey: 'connectors', icon: Plug },
 ];
 
-export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
+/** Where an unknown persisted sub-tab lands. */
+const FALLBACK_SUB_TAB: DesignSubTab = 'manifest';
+
+/**
+ * `_props` is deliberately unbound: all four panels read the selected persona
+ * from the store rather than through the editor draft, so nothing is threaded
+ * down today. The prop contract stays declared because `EditorBody` passes it
+ * and a future panel that needs the in-flight draft should take it from here
+ * rather than re-deriving one.
+ */
+export function DesignHub(_props: DesignHubProps) {
   const { t } = useTranslation();
   const subtabLabels = t.agents.design_subtabs as Record<string, string>;
   const { designSubTab, setDesignSubTab } = useSystemStore(
     useShallow((s) => ({ designSubTab: s.designSubTab, setDesignSubTab: s.setDesignSubTab })),
   );
-  const credentials = useVaultStore((s) => s.credentials);
 
+  // A persisted value from an older build redirects rather than blanking the
+  // hub — the rehydrate arm remaps the ones we know about, this catches the
+  // rest (including a value written by a NEWER build the user rolled back from).
   const activeSubTab = useMemo<DesignSubTab>(
-    () => (SUB_TABS.some((t) => t.id === designSubTab) ? designSubTab : 'use-cases'),
+    () => (SUB_TABS.some((tab) => tab.id === designSubTab) ? designSubTab : FALLBACK_SUB_TAB),
     [designSubTab],
   );
 
@@ -96,7 +95,6 @@ export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
                 key={tab.id}
                 data-testid={`design-subtab-${tab.id}`}
                 onClick={() => setDesignSubTab(tab.id)}
-                title={label}
                 className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
                 }`}
@@ -117,23 +115,11 @@ export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
       </div>
 
       <div className="flex-1 min-h-0 pt-4">
-        <Suspense fallback={<SuspenseFallback />}>
-          {activeSubTab === 'use-cases' && (
-            // No EditorTabContent wrapper here — PersonaUseCasesTab now
-            // owns its own per-layout width policy. The Persona Layout
-            // mode wants the full content area (sigil + side panels
-            // spread to the edges); the legacy sigil-grid layout still
-            // applies the 900 px prose cap internally.
-            <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
-          )}
-          {activeSubTab === 'prompt' && <DesignTab />}
-          {activeSubTab === 'parameters' && <DesignParametersPanel />}
-          {activeSubTab === 'connectors' && <DesignConnectorsPanel />}
-          {activeSubTab === 'triggers' && <DesignEventsPanel />}
-          {activeSubTab === 'messaging' && <DesignNotificationsPanel />}
-          {activeSubTab === 'core' && <DesignCorePanel />}
+        <Suspense fallback={<RouteChunkSkeleton />}>
+          {activeSubTab === 'manifest' && <DesignManifestPanel />}
           {activeSubTab === 'responsibilities' && <DesignResponsibilitiesPanel />}
           {activeSubTab === 'brain' && <DesignBrainPanel />}
+          {activeSubTab === 'connectors' && <DesignConnectorsPanel />}
         </Suspense>
       </div>
     </div>

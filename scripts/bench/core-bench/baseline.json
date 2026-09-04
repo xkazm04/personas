@@ -6,11 +6,9 @@
     "requiredExpectations": [
       "adopted",
       "core_profile_stamped",
-      "core_dials_match",
       "responsibility_created",
       "core_section_present",
       "responsibilities_section_present",
-      "dial_prose_matches_band",
       "responsibility_title_present"
     ]
   },

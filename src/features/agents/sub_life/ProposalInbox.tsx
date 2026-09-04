@@ -35,7 +35,12 @@ export function ProposalInbox({ personaId, onApplied }: ProposalInboxProps) {
 
   const load = useCallback(async () => {
     try {
-      const rows = await listPersonaMemoryReviewProposals(personaId, true);
+      const all = await listPersonaMemoryReviewProposals(personaId, true);
+      // `responsibility_draft` rows belong to the Responsibilities tab's own
+      // draft inbox, which renders the typed charter. Listing them here too
+      // would show the same pending decision in two places, and this card
+      // cannot render a charter — its body branches on memory/self-model only.
+      const rows = all.filter((p) => p.kind !== 'responsibility_draft');
       proposalsCache.set(personaId, rows);
       setProposals(rows);
     } catch (err) {

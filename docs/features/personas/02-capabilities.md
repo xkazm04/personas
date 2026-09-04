@@ -9,6 +9,7 @@ reference: "if I want behaviour X, which field controls it?"
 ```
   Persona
     │
+    ├── Charters      — WHAT the persona owns, and how it carries it out
     ├── Tools         — what the persona can CALL (actions)
     ├── Triggers      — how the persona gets WOKEN from outside (events, clocks, webhooks)
     ├── Attention     — how the persona spends its OWN initiative (the attention loop)
@@ -21,8 +22,50 @@ reference: "if I want behaviour X, which field controls it?"
 Each surface has a table with a `persona_id` FK and one or more
 `persona.*` columns that gate it. This page walks each in turn, then
 describes [the assembled prompt](#the-assembled-prompt) that stitches
-the living-agent pieces (Core, charters, episodes, memory) into every
+the living-agent pieces (the manifest, charters, episodes, memory) into every
 execution.
+
+---
+
+## Charters
+
+**Purpose**: the standing responsibilities a persona holds. A charter is the
+answer to "what can this agent do", and it carries both halves of that answer:
+the governance half (outcomes, objectives, scope rung, refusal classes, owner,
+cadence, budget, tenure) and the runtime half (procedure, connector allowlist,
+input schema, routing, policies).
+
+**Storage**: `persona_responsibilities`. See
+[01-data-model.md](01-data-model.md#persona_responsibilities-charters) for the
+columns and the `ResponsibilitySpec` envelope.
+
+Charters replaced design-context **use cases** as the capability surface. The
+`e19_agent_manifest` migration minted one charter per use case for every
+persona that had any, and adoption and promote now mint charters directly, so
+`design_context.useCases` is parsed but never written. Resolve capabilities
+through `resolvePersonaCapabilities` (`src/lib/personas/capabilities.ts`), or
+the `useSelectedPersonaCapabilities` hook over it: it is the one read-model
+that projects charters and any surviving legacy use cases into a single shape.
+
+**How a charter reaches a run**:
+
+| Path | What happens |
+|---|---|
+| **Roster** | every `active` charter renders in the prompt's `## Responsibilities` section on every execution |
+| **Focus** | a run dispatched FOR a charter (its id in `input_data._responsibility`) additionally gets `## Current Focus` with that charter's full detail |
+| **Run now** | the per-charter button in Design → Responsibilities dispatches a focused run by hand; the charter id travels in `execute_persona`'s use-case argument, which resolves a charter by id first and falls back to `spec.migratedFromUseCaseId` |
+| **Trigger** | a `persona_triggers` row carrying that charter's `responsibility_id` |
+| **Attention** | the loop's `advance` lane picks the least-recently-advanced charter whose `cadence.attention_enabled` is set |
+
+**Status gates dispatch**, not deletion: `draft` · `active` · `suspended` ·
+`retired`. Only `active` charters render in the roster or are picked by the
+attention loop. `set_persona_responsibility_status` moves a charter along the
+ladder in either direction, which is what lets an agent-proposed `draft` become
+live; `retire_persona_responsibility` is the narrow special case of it.
+
+**Charters can be agent-proposed.** See
+[the improve lane](#the-attention-loop) below and
+[03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law).
 
 ---
 
@@ -85,7 +128,8 @@ never advance a trigger's schedule.
 
 **Storage**: `persona_triggers` table — one row per trigger, any
 number per persona. `trigger_type` and `config` define the activation
-condition.
+condition, and `responsibility_id` names the charter the trigger fires (the
+legacy `use_case_id` column is left in place and no longer authoritative).
 
 **The ten trigger types**:
 
@@ -173,7 +217,15 @@ tick, in priority order:
    (`sleep_cycle::admit`): enqueues a consolidation job, DB-only.
 3. **`improve`** — once per day (`count_today(lane='improve') == 0`):
    a self-improvement pass on the persona's own craft. Deliberately
-   ranked above `advance`, otherwise it would be unreachable.
+   ranked above `advance`, otherwise it would be unreachable. It is the ONE
+   lane whose run output the loop reads back: the brief invites the persona to
+   propose ONE draft charter for a standing responsibility it keeps serving
+   without one, by emitting a single `propose_responsibility_draft` JSON line
+   in its final report. The loop waits for the run to reach a terminal state,
+   scans the output for that line, validates the payload through the ordinary
+   charter intake, and files it as a `responsibility_draft` proposal for the
+   operator. At most one per persona per day, and it grants nothing until a
+   human approves it.
 4. **`advance`** — push the least-recently-advanced charter's
    objectives forward (never-advanced charters first).
 
@@ -189,9 +241,9 @@ Every pass, refusal, dispatch outcome and consolidation run lands in
 `persona_attention_ledger` (schema in
 [01-data-model.md](01-data-model.md#persona_attention_ledger));
 verdicts run `started → dispatched | enqueued | acted | noop | refused
-| failed`. The Design hub's Responsibilities sub-tab, the Mission Control
-attention-loop tile (which also holds the loop's global toggle), and the
-Activity feed read this ledger.
+| failed`. The Design hub's Responsibilities and Brain sub-tabs, the Mission
+Control attention-loop tile (which also holds the loop's global toggle), and
+the Activity feed read this ledger.
 
 ---
 
@@ -248,6 +300,10 @@ output (parsed by `engine/parser.rs`):
 Creates a `persona_events` row with status `pending`. The event bus
 tick (~1s) claims pending rows, matches against subscriptions +
 listeners, and spawns executions.
+
+`use_case_id` here is the runtime's capability slot and it now carries a
+**charter id**; the name survives from before charters existed. The same slot
+is what `execute_persona` takes, and it resolves a charter by id first.
 
 **See** [execution/03-chaining-and-approval.md](../execution/03-chaining-and-approval.md)
 for cascade semantics (chain_trace_id, cascade guards, DLQ handling).
@@ -356,9 +412,12 @@ EVERY tool call emits a review and waits. This is separate from the
 explicit `manual_review` protocol that any persona can invoke.
 `persona.headless == true` bypasses the trust-level check.
 
-A cousin of this surface carries the living-agent **self-model diffs**:
-a `persona_memory_review_proposal` row of kind `self_model_diff` is a
-"please-approve-this-identity-edit" request, applied only on operator
+A cousin of this surface is `persona_memory_review_proposal`, which carries
+every change the agent wants to make to itself and cannot make alone: a
+`memory_curation` row is a batch of memory edits, a `self_model_diff` row is a
+"please-approve-this-edit-to-my-manifest-self-model" request, and a
+`responsibility_draft` row is a charter the agent is asking to be given. All
+three are propose-only and apply through the same pair of doors on human
 approval (see
 [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law)).
 
@@ -448,31 +507,50 @@ what happens:
 Every execution's system prompt is assembled in
 `src-tauri/engine/src/prompt/assemble.rs`
 (`assemble_prompt_with_skills` is the full-arity entry; section
-renderers in `prompt/core_section.rs`). Since the living-agent rebase
-the assembler renders three sections that make the persona a WHO
-before a HOW:
+renderers in `prompt/core_section.rs`). The assembler renders the persona as a
+WHO before a HOW:
 
 | Section | Content | Source |
 |---|---|---|
-| `## Core` | The rendered `PersonaCore` — identity, voice, the 7 dials, principles, constraints, decision principles. Placed immediately before the `## Identity` branch ("WHO before HOW"); when the Core carries its own `identity`, the structured prompt's identity subsection is skipped so the two never fight. | `persona.core_profile`, parsed once; a corrupt Core warns and skips — it can never fail assembly |
-| `## Responsibilities` | Up to 3 active charters (then "+N more"): domain, outcomes with success criteria, the scope-rung line ("never merge, deploy, or change your own gates"), refusal classes as refuse-and-escalate prose, the monthly budget line | `resp_repo::list_by_persona` filtered to `active`, loaded best-effort by `runner::load_living_prompt_inputs` |
+| `## Manifest` | The persona's core document, **verbatim** (front-matter stripped). Its own `# Mandate` / `# Boundaries` / `# Operation defaults` / `# My work` / `# My self-reads` headings ride along untouched: demoting them would un-quote the operator's word. | `persona.core_profile`, read once |
+| *(self-model op addendum)* | For a persona that HAS a manifest, the grammar for proposing a self-model diff, so it knows the op exists and knows the rules (self-model sections only, at most 5 anchored diffs, filed for operator review, never applied by itself). | `prompt::SELF_MODEL_OP_ADDENDUM` |
+| `## Responsibilities` | **All** active charters as a compact roster (no cap and no "+N more" collapse: the roster IS the capability surface now): domain, outcomes with success criteria, the scope-rung line ("never merge, deploy, or change your own gates"), refusal classes as refuse-and-escalate prose, the monthly budget line | `resp_repo::list_by_persona` filtered to `active`, loaded best-effort by `runner::load_living_prompt_inputs` |
+| `## Current Focus` | One charter in full (procedure, outcomes, objectives, connector allowlist, spec policies) when the run was dispatched FOR it | `input_data._responsibility` |
+| `## Capability Parameters` | For manifest personas, the tunable `{{param.*}}` knobs re-derived from the active charters' `spec.inputSchema` and resolved through the same trusted variable path | `recipe_parameters::derive_capability_params_from_charters` |
 | `## Recent Episodes (oldest first)` | The last 8 episodes, **reversed to oldest-first** so the story reads forward; body nonce-fenced, the heading and framing sentence deliberately outside the fence | `episode_repo::list_recent` (newest-first, then `.rev()`) |
 
-Alongside them the assembler keeps the pre-living pieces: the
-structured-prompt subsections (identity/instructions/toolGuidance/…),
-tool guidance, and the memory sections (`## Agent Memory — Core
-Beliefs`, `## Agent Memory — Recent Learnings`).
+**A manifest replaces the structured prompt.** For a persona whose
+`core_profile` holds manifest markdown, none of the `structured_prompt`
+subsections render (identity, instructions, toolGuidance, examples,
+errorHandling): the manifest and the charter roster are the persona's word, and
+the structured prompt is a template-side artifact. Its adopt-time parameters
+block goes with it, which is why `## Capability Parameters` re-derives one from
+the charters. Tool guidance and the memory sections (`## Agent Memory — Core
+Beliefs`, `## Agent Memory — Recent Learnings`) render either way.
+
+**A persona without a manifest keeps the pre-rebase rendering**, unchanged.
+`core_profile` values are told apart by their first character: markdown never
+opens with `{`. A JSON value parses as the legacy `PersonaCore` and renders its
+**prose only** under the same `## Manifest` heading, with the structured
+prompt's identity subsection skipped when the Core carries identity prose of
+its own. The numeric dials render nowhere: the band table that turned them into
+calibrated pseudo-prose was deleted, because the manifest's law sections are
+the authored word now. A JSON value that fails to parse warns and skips the
+section, because a corrupt `core_profile` can never fail assembly.
 
 The living inputs are **best-effort**: a failed charter or episode
 read warns and degrades to an empty section — a broken brain must
 never block an execution. They are skipped on session resume (the
 session already carries its context). Per-section size tripwires
-(`prompt/budget.rs`: Core 8k chars, Responsibilities 8k, Episodes 12k,
-total 200k) log overruns for observability but never truncate.
+(`prompt/budget.rs`: Manifest 16k chars, Responsibilities 12k, Current Focus
+8k, Episodes 12k, total 200k) log overruns for observability but never
+truncate.
 
-A Core edit invalidates warm prepared-run caches — the Core is hashed
-into the cache key (`prepared_run_cache.rs`), and
-`core_fingerprint` travels with the execution record.
+A manifest edit invalidates warm prepared-run caches: `core_profile` is hashed
+into the cache key (`prepared_run_cache.rs`), and `core_fingerprint` travels
+with the execution record. The manifest commands also invalidate the persona's
+live session, because a first read seeds the file and therefore changes the
+prompt.
 
 ---
 
@@ -520,9 +598,12 @@ These combine across surfaces and are worth knowing:
 |---|---|
 | `src-tauri/src/engine/tool_runner.rs` | Tool kind detection + dispatch (script/API/automation) |
 | `src-tauri/src/engine/automation_runner.rs` | External platform invocation |
-| `src-tauri/engine/src/prompt/assemble.rs` | Prompt assembly (Core / Responsibilities / Episodes / memory / tools) |
-| `src-tauri/engine/src/prompt/core_section.rs` | `render_core` + `render_responsibilities` |
-| `src-tauri/src/engine/subscription/attention.rs` | The attention loop (lanes, admission ladder, guardrails) |
+| `src-tauri/engine/src/prompt/assemble.rs` | Prompt assembly (Manifest / Responsibilities / Current Focus / Capability Parameters / Episodes / memory / tools) |
+| `src-tauri/engine/src/prompt/core_section.rs` | `render_manifest_markdown`, `render_legacy_core_prose`, `render_responsibilities`, `render_responsibility_focused`, `SELF_MODEL_OP_ADDENDUM` |
+| `src-tauri/engine/src/recipe_parameters.rs` | `derive_capability_params_from_charters` + the `{{param.*}}` block |
+| `src-tauri/db/src/repos/core/responsibilities.rs` | Charter CRUD + `set_status` + `list_active_with_attention` |
+| `src-tauri/src/engine/subscription/attention.rs` | The attention loop (lanes, admission ladder, guardrails, improve-lane draft harvest) |
+| `src-tauri/src/engine/persona_brain/growth.rs` | The propose-only doors for self-model diffs and charter drafts |
 | `src-tauri/src/engine/persona_brain/sleep_cycle.rs` | Consolidation loop (maintenance lane's target) |
 | `src-tauri/engine/src/parser.rs` | Protocol message extraction (emit_event, manual_review, …) |
 | `src-tauri/src/engine/dispatch.rs` | Turn protocol messages into DB writes |

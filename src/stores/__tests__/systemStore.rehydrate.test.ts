@@ -89,16 +89,18 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     _resetDedupCacheForTests();
     useSystemStore.setState({
       editorTab: 'activity',
-      designSubTab: 'use-cases',
+      designSubTab: 'manifest',
     });
   });
 
-  it("migrates legacy 'prompt' to design+prompt", async () => {
+  it("migrates legacy 'prompt' to design+manifest", async () => {
+    // The Properties/Prompt recap has no successor surface: what a persona IS
+    // is authored in its manifest now.
     seedPersistedSystemStore({ editorTab: 'prompt' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('prompt');
+    expect(state.designSubTab).toBe('manifest');
   });
 
   it("migrates legacy 'connectors' to design+connectors", async () => {
@@ -109,28 +111,51 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     expect(state.designSubTab).toBe('connectors');
   });
 
-  it("migrates legacy 'health' to design+prompt", async () => {
+  it("migrates legacy 'health' to design+manifest", async () => {
     seedPersistedSystemStore({ editorTab: 'health' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('prompt');
+    expect(state.designSubTab).toBe('manifest');
   });
 
-  it("migrates legacy 'use-cases' editorTab to design+use-cases sub-tab", async () => {
+  it("migrates legacy 'use-cases' editorTab to design+responsibilities sub-tab", async () => {
+    // A use case became a standing charter with the agent-manifest rebase.
     seedPersistedSystemStore({ editorTab: 'use-cases' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('use-cases');
+    expect(state.designSubTab).toBe('responsibilities');
   });
 
-  it("migrates legacy designSubTab 'design' to 'prompt'", async () => {
-    seedPersistedSystemStore({ editorTab: 'design', designSubTab: 'design' });
+  it("remaps every retired designSubTab rather than discarding it", async () => {
+    // A REMAP, not a discard: each retired surface had a successor, and the
+    // user should land on the tab that inherited its job.
+    const cases: [string, string][] = [
+      ['design', 'manifest'],
+      ['prompt', 'manifest'],
+      ['parameters', 'manifest'],
+      ['core', 'manifest'],
+      ['use-cases', 'responsibilities'],
+      ['triggers', 'connectors'],
+      ['messaging', 'connectors'],
+      ['automations', 'connectors'],
+    ];
+    for (const [retired, expected] of cases) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      seedPersistedSystemStore({ editorTab: 'design', designSubTab: retired });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().designSubTab).toBe(expected);
+    }
+  });
+
+  it("lands an unrecognised designSubTab on the manifest instead of blanking", async () => {
+    // The case no remap table can cover: a value written by a NEWER build the
+    // user rolled back from.
+    seedPersistedSystemStore({ editorTab: 'design', designSubTab: 'from-the-future' });
     await useSystemStore.persist.rehydrate();
-    const state = useSystemStore.getState();
-    expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('prompt');
+    expect(useSystemStore.getState().designSubTab).toBe('manifest');
   });
 
   it("preserves a current 'design' editorTab as-is", async () => {
@@ -147,11 +172,11 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     expect(useSystemStore.getState().editorTab).toBe('settings');
   });
 
-  it("migrates legacy 'life' editorTab to design+core sub-tab", async () => {
+  it("migrates legacy 'life' editorTab to design+manifest sub-tab", async () => {
     seedPersistedSystemStore({ editorTab: 'life' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('core');
+    expect(state.designSubTab).toBe('manifest');
   });
 });

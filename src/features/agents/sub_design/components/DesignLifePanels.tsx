@@ -1,31 +1,50 @@
 import { useAgentStore } from '@/stores/agentStore';
-import { CoreSection } from '@/features/agents/sub_life/CoreSection';
-import { ResponsibilitiesSection } from '@/features/agents/sub_life/ResponsibilitiesSection';
+import { ManifestTab } from '@/features/agents/sub_manifest';
+import { ResponsibilitiesTab } from '@/features/agents/sub_responsibilities';
 import { BrainSection } from '@/features/agents/sub_life/BrainSection';
 
 /**
  * The Design hub's living-agent sub-tab panels — thin store-reading wrappers
- * around the self-contained `sub_life` sections (which keep their own
- * `life-core-*` / `life-resp-*` / `life-brain-*` testids). Folded in from the
- * former top-level Life editor tab (2026-08-31); this module is lazy-loaded
- * by DesignHub so the three sections stay one deferred chunk, as they were.
+ * around self-contained sections. Lazy-loaded by DesignHub so the three stay
+ * one deferred chunk.
+ *
+ * Each returns `null` without a selected persona rather than rendering an
+ * empty shell: the hub only exists inside a persona editor, so no persona is
+ * a transient state between selections, not a state to explain.
  */
 
-/** Core — the operator-owned character: dials, prose, principle lists. */
-export function DesignCorePanel() {
+/** Manifest — the two-author core document (operator law + agent self-model). */
+export function DesignManifestPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   if (!selectedPersona) return null;
-  return <CoreSection persona={selectedPersona} />;
+  return <ManifestTab personaId={selectedPersona.id} />;
 }
 
-/** Responsibilities — standing charters plus the attention-ledger strip. */
+/**
+ * Responsibilities — the standing charters that replaced use cases.
+ *
+ * MOUNTING SEAM (WP5) — CLOSED. Now `@/features/agents/sub_responsibilities`,
+ * the consolidated glyph master/detail tab that also absorbed the retired Use
+ * Cases and Parameters surfaces. It reads the selected persona from the store
+ * itself, so it takes no props; the guard above stays because the hub renders
+ * this panel before a selection settles.
+ */
 export function DesignResponsibilitiesPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   if (!selectedPersona) return null;
-  return <ResponsibilitiesSection personaId={selectedPersona.id} />;
+  return <ResponsibilitiesTab />;
 }
 
-/** Brain — episodic record, self-model, and the proposal inbox. */
+/**
+ * Brain — the memory/episode dashboard.
+ *
+ * MOUNTING SEAM (WP7): this still points at the pre-rebase
+ * `sub_life/BrainSection` (proposal inbox + identity panel + episode
+ * timeline). WP7 rebuilds it around `get_persona_brain_dashboard`; swap the
+ * import when it lands. The self-model half of the old BrainSection (its
+ * `IdentityPanel`) is now the Manifest tab's job and is duplicated until WP7
+ * drops it.
+ */
 export function DesignBrainPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   if (!selectedPersona) return null;

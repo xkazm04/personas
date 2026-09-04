@@ -1,13 +1,17 @@
 use super::super::templates::CORRECTION_EVIDENCE_BANNER;
 use super::super::*;
-use super::{assemble_for, fix_loop_input, fix_loop_persona, test_persona, trusted_structure_only};
+use super::{
+    assemble_focused, assemble_for, fix_loop_charter, fix_loop_input, fix_loop_persona,
+    fix_loop_use_case, test_persona, trusted_structure_only,
+};
 
 /// THE verification this whole change exists for.
 #[test]
 fn corrective_attempt_is_not_worse_informed_than_the_attempt_it_corrects() {
     let persona = fix_loop_persona();
+    let charters = [fix_loop_charter()];
     let original = fix_loop_input();
-    let attempt_1 = assemble_for(&persona, &original);
+    let attempt_1 = assemble_focused(&persona, &original, &charters);
 
     // What the fix loop actually queues after a critical assertion failure.
     let reentry_json = crate::fix_loop::build_reentry_input(
@@ -19,7 +23,7 @@ fn corrective_attempt_is_not_worse_informed_than_the_attempt_it_corrects() {
     );
     let reentry: serde_json::Value =
         serde_json::from_str(&reentry_json).expect("re-entry input must be JSON");
-    let attempt_2 = assemble_for(&persona, &reentry);
+    let attempt_2 = assemble_focused(&persona, &reentry, &charters);
 
     // 1. The variable resolves, instead of leaking `{{ticket}}` verbatim.
     assert!(attempt_1.contains("PROD-4171 payment webhook retries"));
@@ -32,17 +36,20 @@ fn corrective_attempt_is_not_worse_informed_than_the_attempt_it_corrects() {
         "unresolved placeholder shipped to the model"
     );
 
-    // 2. Current Focus survives.
+    // 2. Current Focus survives — `_responsibility` is underscore metadata,
+    //    so the fix loop's re-entry carries it exactly like `_use_case`.
     assert!(attempt_1.contains("## Current Focus"));
     assert!(
         attempt_2.contains("## Current Focus"),
-        "attempt 2 lost its capability scope"
+        "attempt 2 lost its charter scope"
     );
     assert!(attempt_2.contains("Triage inbound incidents"));
 
-    // 3. Every generation-policy line attempt 1 got, attempt 2 gets. This is
-    //    the class of defect that silently skipped approvals in production.
-    let policy_lines = render_capability_policy_lines(original.get("_use_case").unwrap());
+    // 3. Every generation-policy line attempt 1 got, attempt 2 gets — the
+    //    review_policy=always line now arrives through the focused charter's
+    //    design-context bridge. This is the class of defect that silently
+    //    skipped approvals in production.
+    let policy_lines = render_capability_policy_lines(&fix_loop_use_case());
     assert!(
         !policy_lines.is_empty(),
         "fixture must exercise the policy renderer"

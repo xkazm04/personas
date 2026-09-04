@@ -9,7 +9,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
-import type { DesignUseCase } from '@/lib/types/frontendTypes';
+import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -32,7 +32,7 @@ interface AutomationTriggerStepProps {
   loadingRepos: boolean;
   zapierZaps: ZapierZap[];
   loadingZaps: boolean;
-  availableUseCases: DesignUseCase[];
+  availableUseCases: PersonaCapability[];
   useCaseId: string | null;
   setUseCaseId: (v: string | null) => void;
   canDesign: boolean;

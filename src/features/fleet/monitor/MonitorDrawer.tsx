@@ -14,8 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripPersonaPrefix } from '@/features/overview/sub_manual-review/libs/reviewHelpers';
 import { ContextDataPreview } from '@/features/overview/sub_manual-review/components/ReviewListItem';
-import { getUseCases } from '@/features/agents/sub_use_cases/libs/useCaseHelpers';
-import { toDisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import { usePersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 import { MonitorCapabilities } from './MonitorCapabilities';
 import { navigateToProcess } from './navigateToProcess';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -29,7 +28,8 @@ import {
 interface MonitorDrawerProps {
   card: PersonaCardModel;
   initialSection: DrawerSection;
-  /** Raw `design_context` JSON of the selected persona — source of capabilities. */
+  /** Raw `design_context` JSON of the selected persona — the PRE-MIGRATION
+   *  capability source; charters are fetched by id. */
   designContext: string | null;
   isProcessing: boolean;
   now: number;
@@ -44,10 +44,9 @@ export function MonitorDrawer({
   const { t, tx } = useTranslation();
   const [section, setSection] = useState<DrawerSection>(initialSection);
 
-  const useCases = useMemo(
-    () => getUseCases(designContext).map((uc) => toDisplayUseCase(uc)),
-    [designContext],
-  );
+  // Charters first, design-context use cases only for a persona the e19
+  // migration has not reached — the one door, not a second local derivation.
+  const { capabilities: useCases } = usePersonaCapabilities(card.personaId, { designContext });
 
   const sortedReviews = useMemo(
     () => [...card.reviews].sort(

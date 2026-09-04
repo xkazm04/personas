@@ -3,12 +3,13 @@
 /**
  * One table's share of a prune's blast radius.
  */
-export type TableImpact = {
+export type TableImpact = { 
 /**
  * Table name (a code identifier, shown verbatim).
  */
-table: string,
+table: string, 
 /**
- * Rows this table lost when the delete executed.
+ * Rows this table lost when the delete executed. Bounded far under 2^53
+ * (a single prune's casualties), so the wire carries a JS number.
  */
 rows: number, };

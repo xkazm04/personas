@@ -6,20 +6,26 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { ProposalInbox } from './ProposalInbox';
-import { IdentityPanel } from './IdentityPanel';
-import { EpisodesTimeline } from './EpisodesTimeline';
+import { BrainDashboard } from '@/features/agents/sub_brain/BrainDashboard';
 
 /**
- * The Brain surface: proposal inbox (the human gate), the read-only
- * self-model, the episodic record, and the manual consolidation trigger.
+ * The Brain surface: the proposal inbox (the human gate), the abstracted
+ * dashboard (memory, intake, consolidation yield, pressure/anomalies and
+ * coverage — with the flat episode record demoted to a drill-down inside the
+ * volume tile), and the manual consolidation trigger.
+ *
+ * The self-model is NOT rendered here: WP6 moved the manifest to its own tab,
+ * and mounting it in Brain too would show the same document twice.
  */
 export function BrainSection({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
   const life = t.agents.life;
   const addToast = useToastStore((s) => s.addToast);
-  // Bumped when a self-model proposal is applied so the IdentityPanel
-  // remounts and refetches the freshly rewritten identity.md.
-  const [identityEpoch, setIdentityEpoch] = useState(0);
+  // Bumped when a proposal is applied so the dashboard remounts and refetches:
+  // an approved memory-curation proposal changes the tier and category counts
+  // the tiles just drew. (Its module cache means the remount paints warm, then
+  // refreshes — no ghost flash.)
+  const [dashboardEpoch, setDashboardEpoch] = useState(0);
 
   const consolidate = async () => {
     try {
@@ -45,12 +51,9 @@ export function BrainSection({ personaId }: { personaId: string }) {
       </div>
       <ProposalInbox
         personaId={personaId}
-        onApplied={(kind) => {
-          if (kind === 'self_model_diff') setIdentityEpoch((n) => n + 1);
-        }}
+        onApplied={() => setDashboardEpoch((n) => n + 1)}
       />
-      <IdentityPanel key={identityEpoch} personaId={personaId} />
-      <EpisodesTimeline personaId={personaId} />
+      <BrainDashboard key={dashboardEpoch} personaId={personaId} />
     </div>
   );
 }
