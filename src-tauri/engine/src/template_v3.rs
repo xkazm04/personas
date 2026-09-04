@@ -806,6 +806,11 @@ fn hoist_persona_connectors(obj: &mut Map<String, Value>) {
 /// fields (identity, voice, principles, constraints, decision_principles,
 /// operating_instructions, tool_guidance, error_handling). Preserves
 /// any pre-existing structured_prompt — v3 authors may supply both.
+///
+/// Manifest-rebase note (WP2): this stays a TEMPLATE-side normalizer.
+/// Runtime assembly no longer renders `structured_prompt` for a persona
+/// whose manifest mirror exists (`prompt/assemble.rs`); the composed object
+/// remains the adopt-time source the manifest seed and legacy personas read.
 fn compose_structured_prompt(obj: &mut Map<String, Value>) {
     if obj.get("structured_prompt").is_some() {
         return;
@@ -911,6 +916,14 @@ fn compose_structured_prompt(obj: &mut Map<String, Value>) {
 /// `memory_policy`, and emitted event subscriptions. This preserves the
 /// downstream checks that look for `manual_review` / `agent_memory` /
 /// `emit_event` protocol capability entries.
+///
+/// Manifest-rebase note (WP2): RETAINED as-is, deliberately. This walks a
+/// TEMPLATE payload's `use_cases[]` at adoption time — charters do not exist
+/// yet at this point (e19/adopt mints them from the flattened use cases), so
+/// there is no charter spec to re-anchor to. The runtime prompt surfaces that
+/// consumed use cases (`## Active Capabilities`, the `_use_case` focus blob)
+/// are what the rebase retired; this derivation feeds the adopt/build
+/// pipeline, not the prompt.
 fn derive_protocol_capabilities(obj: &mut Map<String, Value>) {
     if obj.get("protocol_capabilities").is_some() {
         return;

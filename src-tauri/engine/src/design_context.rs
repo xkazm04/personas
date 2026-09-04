@@ -33,6 +33,20 @@ use serde_json::Value;
 /// `None` when neither key is present or the value is not an array.
 ///
 /// Pure: no I/O. Lifetimes preserved so callers can avoid clones.
+/// Find one use case by id in a raw `design_context` JSON string. Read-side
+/// helper for the focused-charter policy bridge (WP2): a charter minted from
+/// a legacy use case (`spec.migratedFromUseCaseId`) still bridges its
+/// review-policy / generation-settings prompt lines from the design-context
+/// object, because those fields have no charter home. `None` on absent /
+/// unparseable context or an unknown id.
+pub fn find_use_case_by_id(design_context: Option<&str>, uc_id: &str) -> Option<Value> {
+    let dc: Value = serde_json::from_str(design_context?).ok()?;
+    pick_use_cases_array(&dc)?
+        .iter()
+        .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id))
+        .cloned()
+}
+
 pub fn pick_use_cases_array(dc: &Value) -> Option<&Vec<Value>> {
     dc.get("use_cases")
         .and_then(|v| v.as_array())

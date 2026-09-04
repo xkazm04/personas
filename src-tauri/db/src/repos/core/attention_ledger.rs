@@ -473,6 +473,7 @@ pub fn consolidation_series(
                     updated: n("updated"),
                     rejected: n("rejected"),
                     skipped_tombstoned: n("skipped_tombstoned"),
+                    self_model_diffs_proposed: n("selfModelDiffsProposed"),
                     cost_usd: r.get("cost_usd")?,
                     verdict: r.get("verdict")?,
                 })

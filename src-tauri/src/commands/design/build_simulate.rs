@@ -54,6 +54,18 @@ use ts_rs::TS;
 /// today — see `commands/execution/executions.rs:174` and
 /// `commands/core/use_cases.rs:568`.
 ///
+/// ⚠ Stage B WP4 (agent-manifest rebase): this is DELIBERATELY still the
+/// LEGACY `use_cases` shape, while the adopt/promote paths now mint
+/// `persona_responsibilities` charters and write NO use-case array into
+/// design_context. The snapshot written here is TRANSIENT — stamped onto the
+/// persona row for the duration of one dry-run and restored on every exit
+/// path (`DesignContextRestore`), never a durable capability store — and its
+/// readers (`execute_persona_inner`'s design-context UC resolution, the
+/// simulate paths in `commands/core/use_cases.rs`) still key on snake-case
+/// `use_cases`. Re-anchor this snapshot to charters ONLY together with those
+/// readers (the engine read-side re-anchor owns that move); flipping the
+/// writer alone would silently break every build dry-run.
+///
 /// Each UC entry preserves `id`, `sample_input`, `time_filter`, and
 /// `model_override` from the IR. When the IR omits an `id`, one is
 /// fabricated as `uc_idx_<N>` so dry-run can still address the UC.

@@ -22,10 +22,10 @@ pub enum EpisodeRole {
     Run,
     /// A channel exchange (inbound message + the persona's reply).
     Channel,
-    /// Something the operator did to/with the persona. Part of the WP4 wire
-    /// contract (`run|channel|operator|system`); its first minting call site
-    /// (operator chat/setting acts) is a follow-up WP.
-    #[allow(dead_code)]
+    /// Something the operator did to/with the persona. Minted by the app's
+    /// own operator chat (`commands::communication::persona_channel`, WP3);
+    /// external bridges (Slack/Discord pollers, team channels) stay
+    /// [`EpisodeRole::Channel`].
     Operator,
     /// System-originated events (migrations, lifecycle acts). Same contract
     /// note as `Operator`.

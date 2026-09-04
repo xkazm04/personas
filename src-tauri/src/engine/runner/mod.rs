@@ -285,17 +285,22 @@ pub async fn run_execution(
         .and_then(|f| f.as_bool())
         .unwrap_or(false);
 
-    // Phase C5 — capability attribution. The execution's use_case_id is
-    // expanded into `input_data._use_case` by `execute_persona` (see
-    // commands/execution/executions.rs §1b). Recover the bare id here so
-    // every dispatch context (and the memory injection below) can scope
-    // by capability.
-    let mut execution_use_case_id: Option<String> = input_data
+    // Phase C5 — capability attribution. The dispatched charter's id is
+    // expanded into `input_data._responsibility` by `execute_persona` (see
+    // commands/execution/executions.rs §1b; WP2 — replaces `_use_case`).
+    // Resolve the charter row here (ownership-checked — the key is
+    // payload-reachable) and recover the legacy use-case id it was minted
+    // from: memory scoping, the dim gates and the per-UC model override all
+    // still key on `use_case_id` until the WP4 cutover.
+    let focused_charter: Option<PersonaResponsibility> = input_data
         .as_ref()
-        .and_then(|d| d.get("_use_case"))
-        .and_then(|uc| uc.get("id"))
-        .and_then(|id| id.as_str())
-        .map(|s| s.to_string());
+        .and_then(|d| d.get("_responsibility"))
+        .and_then(|v| v.as_str())
+        .and_then(|id| resp_repo::get_by_id(&pool, id).ok().flatten())
+        .filter(|c| c.persona_id == persona.id);
+    let mut execution_use_case_id: Option<String> = focused_charter
+        .as_ref()
+        .and_then(|c| c.spec.migrated_from_use_case_id.clone());
 
     // 2026-05-05 — fallback to the execution row's `use_case_id` column.
     // Trigger-fired executions (event_listener cascade, schedule wakeup,
@@ -385,6 +390,16 @@ pub async fn run_execution(
                 model_profile = Some(merged);
             }
         }
+    }
+
+    // Charter-direct dispatch (WP2): no design-context row to read
+    // engine_mode from — fall back to the charter spec's engineMode.
+    if engine_mode.is_none() {
+        engine_mode = focused_charter
+            .as_ref()
+            .and_then(|c| c.spec.engine_mode.as_deref())
+            .map(|m| m.to_ascii_lowercase())
+            .filter(|m| m == "mixed" || m == "local_first");
     }
 
     // Capability-tier floor — the single authoritative chokepoint for EVERY
@@ -808,11 +823,22 @@ pub async fn run_execution(
     // once for BOTH assembly branches below and for the prepared-run cache
     // key. Skipped on session resume — the resume prompt carries no persona
     // sections. Best-effort: failures degrade to empty inside the loader.
-    let (responsibilities, recent_episodes) = if is_session_resume {
+    let (mut responsibilities, recent_episodes) = if is_session_resume {
         (Vec::new(), Vec::new())
     } else {
         load_living_prompt_inputs(&pool, &persona.id)
     };
+    // The dispatched charter may be non-active (a simulation of a disabled
+    // capability) and so absent from the active-only load above — append it
+    // so `## Current Focus` still resolves; the roster renderer skips
+    // non-active rows.
+    if !is_session_resume {
+        if let Some(ch) = focused_charter.as_ref() {
+            if !responsibilities.iter().any(|r| r.id == ch.id) {
+                responsibilities.push(ch.clone());
+            }
+        }
+    }
     if !responsibilities.is_empty() || !recent_episodes.is_empty() {
         logger.log(&format!(
             "[living] {} active charter(s), {} episode excerpt(s) in prompt",
@@ -1104,26 +1130,31 @@ pub async fn run_execution(
         match root {
             None => prompt_text,
             Some(root) => {
-                let uc = input_data.as_ref().and_then(|d| d.get("_use_case"));
-                let field = |key: &str| {
-                    uc.and_then(|u| u.get(key))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or_default()
-                        .to_string()
-                };
+                // Focused-charter signals (WP2): `_responsibility` carries the
+                // charter id; the charter travels in `responsibilities` above.
+                // Title + first outcome statement are the matching text (the
+                // procedure can be pages — the outcome names the job).
+                let focused = input_data
+                    .as_ref()
+                    .and_then(|d| d.get("_responsibility"))
+                    .and_then(|v| v.as_str())
+                    .and_then(|id| responsibilities.iter().find(|r| r.id == id));
                 let signals = kc::Signals {
                     persona_name: persona.name.clone(),
                     persona_description: persona.description.clone().unwrap_or_default(),
                     template_category: persona.template_category.clone().unwrap_or_default(),
-                    use_case_title: field("title"),
-                    use_case_description: {
-                        let s = field("capability_summary");
-                        if s.is_empty() {
-                            field("description")
-                        } else {
-                            s
-                        }
-                    },
+                    use_case_title: focused.map(|r| r.title.clone()).unwrap_or_default(),
+                    use_case_description: focused
+                        .and_then(|r| {
+                            r.outcomes
+                                .first()
+                                .map(|o| o.statement.clone())
+                                .filter(|s| !s.trim().is_empty())
+                                .or_else(|| {
+                                    Some(r.procedure.clone()).filter(|p| !p.trim().is_empty())
+                                })
+                        })
+                        .unwrap_or_default(),
                 };
                 match kc::consult(&root, &signals) {
                     Some((section, log)) => {

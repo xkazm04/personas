@@ -812,7 +812,19 @@ fn build_improve_task() -> String {
          were repeatedly slow or wrong about.\n\
          File ONE propose_backlog entry per improvement idea about your own \
          prompt, charters, cadence or tooling. Do NOT change anything in this \
-         pass — review and propose only.\n\n",
+         pass — review and propose only.\n\n\
+         Additionally, if the review reveals a STANDING responsibility you \
+         keep serving without a charter for it, you may propose ONE draft \
+         charter by emitting this JSON on its own line in your final report \
+         (nothing else on that line):\n\
+         {\"op\":\"propose_responsibility_draft\",\"input\":{\"title\":\"...\",\
+\"domain\":\"general\",\"procedure\":\"how you would carry it out\",\
+\"connectors\":[],\"outcomes\":[{\"id\":\"o1\",\"statement\":\"...\",\
+\"successCriteria\":[\"...\"]}],\"scopeRung\":1},\"motivation\":\"the \
+recurring evidence, citing episode/run ids\"}\n\
+         The input is a camelCase CreatePersonaResponsibilityInput; it is \
+         filed as a DRAFT proposal your operator reviews — it grants nothing \
+         until a human approves it, and at most one is accepted per day.\n\n",
     );
     s.push_str(ATTENTION_GUARDRAILS);
     bound_task(s)
@@ -850,6 +862,9 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                 ledger_id,
                 work,
             } = plan;
+            // Set by the improve arm: the spawned execution whose output the
+            // draft harvest reads back after the decision row closes.
+            let mut improve_execution: Option<String> = None;
             let outcome: Result<serde_json::Value, AppError> = match work {
                 DispatchWork::Arrivals {
                     message_id,
@@ -903,19 +918,36 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         Err(e) => Err(e),
                     }
                 }
-                DispatchWork::Improve { task } => spawn_attention_execution(
-                    &state,
-                    app.clone(),
-                    &persona_id,
-                    &ledger_id,
-                    None,
-                    LANE_IMPROVE,
-                    &task,
-                )
-                .await
-                .map(|execution_id| serde_json::json!({ "executionId": execution_id })),
+                DispatchWork::Improve { task } => {
+                    match spawn_attention_execution(
+                        &state,
+                        app.clone(),
+                        &persona_id,
+                        &ledger_id,
+                        None,
+                        LANE_IMPROVE,
+                        &task,
+                    )
+                    .await
+                    {
+                        Ok(execution_id) => {
+                            improve_execution = Some(execution_id.clone());
+                            Ok(serde_json::json!({ "executionId": execution_id }))
+                        }
+                        Err(e) => Err(e),
+                    }
+                }
             };
             record_dispatch_outcome(&pool, &ledger_id, outcome);
+            // WP3: the improve lane is the ONE lane whose run output the loop
+            // reads back — a completed self-review may carry a
+            // `propose_responsibility_draft` op line. The decision row above
+            // is already closed (it records the DISPATCH, exactly as before);
+            // this bounded follow-up only files a propose-only draft proposal
+            // and dies silently with the process (best-effort by design).
+            if let Some(execution_id) = improve_execution {
+                harvest_improve_draft(&pool, &persona_id, &execution_id).await;
+            }
         },
         move |panic_msg| async move {
             if let Err(e) = attention_ledger::complete(
@@ -969,6 +1001,128 @@ async fn spawn_attention_execution(
     )
     .await?;
     Ok(execution.id)
+}
+
+// ── Improve-lane draft harvest (WP3) ───────────────────────────────────────
+
+/// How long the harvest waits for the improve run to reach a terminal state
+/// — the same bound the channel reply-waiter uses.
+const IMPROVE_HARVEST_DEADLINE_SECS: u64 = 30 * 60;
+const IMPROVE_HARVEST_POLL_SECS: u64 = 5;
+
+/// Where the improve run stands, as far as the harvest cares.
+enum ImproveRunState {
+    Running,
+    /// Terminal with a (possibly absent) output to scan.
+    Completed(Option<String>),
+    /// Failed / cancelled / vanished — nothing to harvest.
+    Ended,
+}
+
+fn improve_run_state(pool: &DbPool, execution_id: &str) -> Result<ImproveRunState, AppError> {
+    use rusqlite::OptionalExtension;
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT status, output_data FROM persona_executions WHERE id = ?1",
+            rusqlite::params![execution_id],
+            |r| {
+                Ok((
+                    r.get::<_, String>("status")?,
+                    r.get::<_, Option<String>>("output_data")?,
+                ))
+            },
+        )
+        .optional()?;
+    Ok(match row {
+        None => ImproveRunState::Ended,
+        Some((status, output)) => match status.as_str() {
+            "completed" => ImproveRunState::Completed(output),
+            "failed" | "cancelled" => ImproveRunState::Ended,
+            _ => ImproveRunState::Running,
+        },
+    })
+}
+
+/// Bounded wait for the improve execution's terminal state, then scan its
+/// output for a `propose_responsibility_draft` op. The chosen seam: the loop
+/// does not observe run outcomes anywhere today (`execute_persona_inner`
+/// returns at SPAWN time and the decision row closes at dispatch), so the
+/// harvest lives in the SAME guarded task after the row closes — the channel
+/// reply-waiter's shape, and the only propose-only seam that reads the real
+/// ledger'd output without holding the decision row open for the run's
+/// whole duration.
+async fn harvest_improve_draft(pool: &DbPool, persona_id: &str, execution_id: &str) {
+    let deadline = tokio::time::Instant::now()
+        + tokio::time::Duration::from_secs(IMPROVE_HARVEST_DEADLINE_SECS);
+    let output = loop {
+        match improve_run_state(pool, execution_id) {
+            Ok(ImproveRunState::Completed(output)) => break output,
+            Ok(ImproveRunState::Ended) => return,
+            Ok(ImproveRunState::Running) => {
+                if tokio::time::Instant::now() >= deadline {
+                    tracing::info!(
+                        persona_id,
+                        execution_id,
+                        "persona_attention: improve run outlived the harvest window; \
+                         any draft op in its output goes unharvested"
+                    );
+                    return;
+                }
+                tokio::time::sleep(tokio::time::Duration::from_secs(IMPROVE_HARVEST_POLL_SECS))
+                    .await;
+            }
+            Err(e) => {
+                tracing::warn!(persona_id, execution_id, error = %e,
+                    "persona_attention: improve harvest probe failed");
+                return;
+            }
+        }
+    };
+    let Some(output) = output else { return };
+    absorb_improve_output(pool, persona_id, &output);
+}
+
+/// The sync half of the harvest (the testable seam): extract the op, run it
+/// through the growth door (validate → dedupe → file as a
+/// `responsibility_draft` proposal), and ledger the drop when the draft was
+/// invalid — a terminal `refused` note, which `count_today` excludes, so
+/// neither the daily cap nor the improve once-per-day gate tighten.
+pub(crate) fn absorb_improve_output(pool: &DbPool, persona_id: &str, output: &str) {
+    use crate::engine::persona_brain::growth;
+    let Some(op) = growth::extract_responsibility_draft_op(output) else {
+        return;
+    };
+    match growth::file_responsibility_draft(pool, persona_id, &op) {
+        Ok(growth::DraftFiling::Filed { proposal_id }) => tracing::info!(
+            persona_id,
+            proposal_id = %proposal_id,
+            "persona_attention: improve pass proposed a draft charter"
+        ),
+        Ok(growth::DraftFiling::DedupedToday) => tracing::info!(
+            persona_id,
+            "persona_attention: draft charter op deduped — one per persona per day"
+        ),
+        Ok(growth::DraftFiling::Invalid { reason }) => {
+            let note = serde_json::json!({
+                "kind": "responsibility_draft_rejected",
+                "error": reason,
+            });
+            if let Err(e) = attention_ledger::insert_refusal(
+                pool,
+                persona_id,
+                None,
+                KIND_ATTENTION,
+                Some(LANE_IMPROVE),
+                &note.to_string(),
+            ) {
+                tracing::warn!(persona_id, error = %e,
+                    "persona_attention: failed to ledger the dropped draft");
+            }
+        }
+        Err(e) => tracing::warn!(persona_id, error = %e,
+            "persona_attention: draft charter filing failed"),
+    }
 }
 
 /// Close a dispatch's ledger row with `dispatched`/`failed` — the spawn-stub
@@ -1202,6 +1356,13 @@ mod attention_tests {
         let improve = build_improve_task();
         assert!(improve.contains("propose_backlog"));
         assert!(improve.contains("Do NOT change anything"));
+        // WP3: the draft-charter grammar rides in the improve brief, named
+        // by the same op const the parser matches on.
+        assert!(
+            improve.contains(crate::engine::persona_brain::growth::OP_PROPOSE_RESPONSIBILITY_DRAFT)
+        );
+        assert!(improve.contains("CreatePersonaResponsibilityInput"));
+        assert!(improve.contains("DRAFT proposal"));
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
     }
 
@@ -1558,6 +1719,74 @@ mod attention_tests {
             |r| r.get(0),
         )?;
         assert_eq!(job_count2, 1, "idempotent across ticks");
+        Ok(())
+    }
+
+    /// WP3 — the improve-output harvest seam, driven directly (the async
+    /// waiter is a thin bounded poll around this).
+    #[test]
+    fn improve_output_files_valid_drafts_and_ledgers_invalid_ones() -> Result<(), AppError> {
+        use crate::db::repos::core::memory_review_proposal as proposal_repo;
+        use crate::engine::persona_brain::growth;
+
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+
+        // No op in the output: nothing filed, nothing ledgered.
+        absorb_improve_output(&pool, "p1", "reviewed my runs; filed two backlog ideas");
+        assert!(ledger_rows(&pool, "p1").is_empty());
+        assert_eq!(proposal_repo::list(&pool, Some("p1"), false, 10)?.len(), 0);
+
+        // A valid draft op: filed as ONE pending responsibility_draft
+        // proposal; no charter row minted (propose-only).
+        let valid = format!(
+            "self-review report\n{}\ndone",
+            serde_json::json!({
+                "op": growth::OP_PROPOSE_RESPONSIBILITY_DRAFT,
+                "input": {
+                    "title": "Own the weekly digest",
+                    "procedure": "Collect the week's runs, post a digest.",
+                },
+                "motivation": "did it by hand three weeks running",
+            })
+        );
+        absorb_improve_output(&pool, "p1", &valid);
+        let proposals = proposal_repo::list(&pool, Some("p1"), true, 10)?;
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(proposals[0].kind, growth::KIND_RESPONSIBILITY_DRAFT);
+        let summary = proposals[0].summary.as_deref().unwrap();
+        assert!(
+            summary.starts_with("Draft charter: Own the weekly digest"),
+            "{summary}"
+        );
+        assert!(summary.contains("three weeks running"), "{summary}");
+        assert!(
+            responsibilities::list_by_persona(&pool, "p1", true)?.is_empty(),
+            "propose-only: no charter until a human applies"
+        );
+
+        // An INVALID draft (rung past the ceiling) on a fresh persona: not
+        // filed, dropped with a terminal ledger note that tightens no cap.
+        seed_persona(&pool, "p2")?;
+        let invalid = serde_json::json!({
+            "op": growth::OP_PROPOSE_RESPONSIBILITY_DRAFT,
+            "input": { "title": "Too mighty", "scopeRung": 4 },
+            "motivation": "m",
+        })
+        .to_string();
+        absorb_improve_output(&pool, "p2", &invalid);
+        assert_eq!(proposal_repo::list(&pool, Some("p2"), false, 10)?.len(), 0);
+        let rows = ledger_rows(&pool, "p2");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].verdict, "refused");
+        assert_eq!(rows[0].lane.as_deref(), Some(LANE_IMPROVE));
+        let reason: serde_json::Value = serde_json::from_str(&rows[0].reason).unwrap();
+        assert_eq!(reason["kind"], "responsibility_draft_rejected");
+        assert_eq!(
+            attention_ledger::count_today(&pool, "p2", KIND_ATTENTION, Some(LANE_IMPROVE))?,
+            0,
+            "the drop note is a refusal — the improve once-per-day gate stays open"
+        );
         Ok(())
     }
 

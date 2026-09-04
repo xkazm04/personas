@@ -363,10 +363,83 @@ pub fn resolve_speaker(requested: &str, roster: &[RosterMember]) -> Option<Strin
 pub struct RosterMember {
     pub id: String,
     pub name: String,
-    /// Raw `core_profile` JSON (a [`crate::db::models::PersonaCore`]) when
-    /// authored (D5), else `None`.
+    /// Raw `core_profile` column when authored, else `None`. Post-rebase
+    /// (spark `agent-manifest-rebase`) this is the MANIFEST MIRROR — rendered
+    /// markdown — for any persona whose manifest was touched; legacy personas
+    /// still carry `PersonaCore` JSON. Prompt builders reduce either shape
+    /// through [`core_digest`], never dump it raw.
     pub core_profile: Option<String>,
 }
+
+/// Reduce a `core_profile` column value to prompt-ready text (WP2 — replaces
+/// the raw JSON dumps): manifest markdown passes through with its
+/// frontmatter stripped; legacy `PersonaCore` JSON is reduced to its prose
+/// fields. Char-capped with an ellipsis; `single_line` flattens newlines for
+/// roster bullets. `None` when nothing readable remains.
+fn core_digest(raw: &str, max_chars: usize, single_line: bool) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let text = if trimmed.starts_with('{') {
+        // Legacy JSON core → prose digest. An unparsable blob yields nothing
+        // (dumping broken JSON at the model helps no one).
+        let v: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+        let mut parts: Vec<String> = Vec::new();
+        for key in [
+            "identity",
+            "voice",
+            "motivation",
+            "stance",
+            "northStarCommitment",
+        ] {
+            if let Some(s) = v.get(key).and_then(|x| x.as_str()) {
+                let s = s.trim();
+                if !s.is_empty() {
+                    parts.push(s.to_string());
+                }
+            }
+        }
+        for key in ["principles", "constraints", "decisionPrinciples"] {
+            if let Some(items) = v.get(key).and_then(|x| x.as_array()) {
+                for item in items.iter().filter_map(|i| i.as_str()) {
+                    let item = item.trim();
+                    if !item.is_empty() {
+                        parts.push(item.to_string());
+                    }
+                }
+            }
+        }
+        if parts.is_empty() {
+            return None;
+        }
+        parts.join(if single_line { "; " } else { "\n" })
+    } else {
+        crate::engine::prompt::manifest_body(trimmed)
+            .trim()
+            .to_string()
+    };
+    if text.is_empty() {
+        return None;
+    }
+    let text = if single_line {
+        text.split_whitespace().collect::<Vec<_>>().join(" ")
+    } else {
+        text
+    };
+    // Char-safe truncation (byte-slicing a multibyte boundary panics).
+    if text.chars().count() <= max_chars {
+        Some(text)
+    } else {
+        let head: String = text.chars().take(max_chars).collect();
+        Some(format!("{head}…"))
+    }
+}
+
+/// Roster-bullet cap for a member's core digest.
+const ROSTER_CORE_DIGEST_CHARS: usize = 320;
+/// Turn-prompt cap for the speaking persona's own core.
+const TURN_CORE_DIGEST_CHARS: usize = 4_000;
 
 /// Everything the moderator reasons over for one tick. Plain data so
 /// [`build_moderator_prompt`] stays pure + testable.
@@ -417,7 +490,11 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     }
     let _ = writeln!(p, "\n## TEAM MEMBERS (route by their core)");
     for m in &ctx.roster {
-        match &m.core_profile {
+        match m
+            .core_profile
+            .as_deref()
+            .and_then(|c| core_digest(c, ROSTER_CORE_DIGEST_CHARS, true))
+        {
             Some(core) => {
                 let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
             }
@@ -1193,7 +1270,7 @@ pub fn build_turn_prompt(
         "You are {name}, a member of an autonomous product team in a live deliberation."
     );
     let _ = writeln!(p, "\n## YOUR IDENTITY\n{identity}");
-    if let Some(core) = core_profile {
+    if let Some(core) = core_profile.and_then(|c| core_digest(c, TURN_CORE_DIGEST_CHARS, false)) {
         let _ = writeln!(p, "\n## YOUR CORE (think and speak from this)\n{core}");
     }
     if let Some(ns) = north_star {
@@ -1673,7 +1750,11 @@ pub fn build_split_prompt(
     }
     let _ = writeln!(p, "\n## TEAM MEMBERS (assign the key ones per track by id)");
     for m in roster {
-        match &m.core_profile {
+        match m
+            .core_profile
+            .as_deref()
+            .and_then(|c| core_digest(c, ROSTER_CORE_DIGEST_CHARS, true))
+        {
             Some(core) => {
                 let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
             }

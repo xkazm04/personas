@@ -107,6 +107,19 @@ pub fn is_law_section(section_path: &str) -> bool {
     LAW_SECTIONS.iter().any(|l| l.eq_ignore_ascii_case(h1))
 }
 
+/// Whether a diff's section path sits under an agent-authored SELF heading.
+/// The strict complement of [`is_law_section`] — an unknown `# ` heading is
+/// NEITHER (the growth doors drop it; the propose door would let it through
+/// to fail at apply, which burns a review round for nothing).
+pub fn is_self_section(section_path: &str) -> bool {
+    let h1 = section_path
+        .split(" / ")
+        .next()
+        .unwrap_or(section_path)
+        .trim();
+    SELF_SECTIONS.iter().any(|s| s.eq_ignore_ascii_case(h1))
+}
+
 fn law_heading(section: &str) -> Option<&'static str> {
     LAW_SECTIONS
         .iter()

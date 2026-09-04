@@ -229,54 +229,82 @@ pub(crate) async fn execute_persona_inner(
         }
     }
 
-    // 1b. Auto-expand use_case_id into input_data._use_case (Phase C1).
+    // 1b. Resolve the dispatched charter and expand it into
+    // input_data._responsibility (spark `agent-manifest-rebase`, WP2 —
+    // replaces the Phase C1 `_use_case` blob expansion).
     //
-    // When a trigger fires with a use_case_id (or a manual per-capability run
-    // provides one), expand the capability JSON from design_context and merge
-    // it into input_data so the prompt assembler renders "Current Focus"
-    // correctly. Enforces `enabled != Some(false)` — disabled capabilities
-    // cannot be executed even if a stale trigger fires.
+    // `use_case_id` may name a legacy design-context use case (every UI/
+    // trigger path today) or, forward-looking, a charter id directly. Either
+    // way the prompt key carries the CHARTER ID only — the assembler resolves
+    // it against the charters the runner loads, so a payload can select but
+    // never author the focused content. The legacy use-case JSON is still
+    // consulted (when present) for the enable gate, the time filter and the
+    // model override, which stay use-case-anchored until the WP4 cutover.
     //
     // See docs/concepts/persona-capabilities/03-runtime.md §2.
     let mut input_data = input_data;
     if let Some(uc_id) = use_case_id.as_ref() {
-        let Some(dc_str) = persona.design_context.as_deref() else {
-            return Err(AppError::Validation(format!(
-                "Persona '{}' has no design_context but use_case_id='{}' was requested",
-                persona.name, uc_id
-            )));
+        // Charter resolution is best-effort (living-agent posture): a broken
+        // responsibilities read must not fail a run that carries a valid
+        // legacy use case.
+        let charter = match crate::db::repos::core::responsibilities::list_by_persona(
+            &state.db,
+            &persona_id,
+            true,
+        ) {
+            Ok(rows) => rows
+                .iter()
+                .find(|r| r.id == *uc_id)
+                .or_else(|| {
+                    rows.iter().find(|r| {
+                        r.spec.migrated_from_use_case_id.as_deref() == Some(uc_id.as_str())
+                    })
+                })
+                .cloned(),
+            Err(e) => {
+                tracing::warn!(persona_id = %persona_id, error = %e,
+                    "charter resolution failed (non-fatal); dispatching without _responsibility");
+                None
+            }
         };
-        let dc: serde_json::Value = serde_json::from_str(dc_str).map_err(|e| {
-            AppError::Validation(format!("design_context is not valid JSON: {}", e))
-        })?;
-        let use_case = crate::engine::design_context::pick_use_cases_array(&dc)
-            .and_then(|arr| {
-                arr.iter()
-                    .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id))
-            })
-            .cloned()
-            .ok_or_else(|| {
-                AppError::Validation(format!(
-                    "use_case_id '{}' not found on persona '{}'",
-                    uc_id, persona.name
-                ))
-            })?;
 
-        // Simulations deliberately bypass the enable gate so users can test
-        // a disabled capability before activating it. Real executions reject.
-        if !is_simulation && use_case.get("enabled").and_then(|v| v.as_bool()) == Some(false) {
+        let use_case: Option<serde_json::Value> =
+            crate::engine::design_context::find_use_case_by_id(
+                persona.design_context.as_deref(),
+                uc_id,
+            );
+        if charter.is_none() && use_case.is_none() {
             return Err(AppError::Validation(format!(
-                "Capability '{}' is disabled on persona '{}'",
+                "use_case_id '{}' matches neither a capability nor a charter on persona '{}'",
                 uc_id, persona.name
             )));
         }
 
-        // Merge capability metadata into input_data._use_case and _time_filter.
-        // Caller-provided _use_case takes precedence — this is only a default.
-        // A malformed (non-empty) caller input_data must be rejected, not
-        // silently dropped — swallowing it here would execute the persona
-        // with none of the caller's actual input and no indication anything
-        // was lost.
+        // Simulations deliberately bypass the enable gate so users can test
+        // a disabled capability before activating it. Real executions reject.
+        // The use-case `enabled` flag is the toggle surface today; charter
+        // status gates only a charter-direct dispatch (no use case row).
+        if !is_simulation {
+            let uc_disabled = use_case
+                .as_ref()
+                .map(|uc| uc.get("enabled").and_then(|v| v.as_bool()) == Some(false))
+                .unwrap_or(false);
+            let charter_inactive =
+                use_case.is_none() && charter.as_ref().is_some_and(|c| c.status != "active");
+            if uc_disabled || charter_inactive {
+                return Err(AppError::Validation(format!(
+                    "Capability '{}' is disabled on persona '{}'",
+                    uc_id, persona.name
+                )));
+            }
+        }
+
+        // Merge charter metadata into input_data._responsibility and
+        // _time_filter. A caller-provided _responsibility takes precedence —
+        // this is only a default. A malformed (non-empty) caller input_data
+        // must be rejected, not silently dropped — swallowing it here would
+        // execute the persona with none of the caller's actual input and no
+        // indication anything was lost.
         let mut merged: serde_json::Map<String, serde_json::Value> = match input_data
             .as_deref()
             .map(|s| s.trim())
@@ -293,10 +321,16 @@ pub(crate) async fn execute_persona_inner(
             None => serde_json::Map::new(),
         };
 
-        merged
-            .entry("_use_case".to_string())
-            .or_insert_with(|| use_case.clone());
-        if let Some(tf) = use_case.get("time_filter").cloned() {
+        if let Some(ch) = charter.as_ref() {
+            merged
+                .entry("_responsibility".to_string())
+                .or_insert_with(|| serde_json::Value::String(ch.id.clone()));
+        }
+        let time_filter = use_case
+            .as_ref()
+            .and_then(|uc| uc.get("time_filter").cloned())
+            .or_else(|| charter.as_ref().and_then(|c| c.spec.time_filter.clone()));
+        if let Some(tf) = time_filter {
             merged.entry("_time_filter".to_string()).or_insert(tf);
         }
         input_data = Some(serde_json::to_string(&merged).map_err(|e| {
@@ -310,8 +344,19 @@ pub(crate) async fn execute_persona_inner(
         // in the capability UI; resolve_use_case_model_override handles both.
         // (The old `mo.to_string()` JSON-quoted tier slugs into a string
         // parse_model_profile silently rejected — tiers never took effect.)
-        if let Some(mo) = use_case.get("model_override") {
-            if let Some(profile) = crate::engine::prompt::resolve_use_case_model_override(mo) {
+        // Charter-direct dispatch falls back to spec.modelOverride (a string,
+        // per the e19 fold).
+        let model_override = use_case
+            .as_ref()
+            .and_then(|uc| uc.get("model_override").cloned())
+            .or_else(|| {
+                charter
+                    .as_ref()
+                    .and_then(|c| c.spec.model_override.clone())
+                    .map(serde_json::Value::String)
+            });
+        if let Some(mo) = model_override {
+            if let Some(profile) = crate::engine::prompt::resolve_use_case_model_override(&mo) {
                 if let Ok(json) = serde_json::to_string(&profile) {
                     persona.model_profile = Some(json);
                 }

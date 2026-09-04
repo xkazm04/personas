@@ -1124,10 +1124,16 @@ struct ToolAction {
     create_input: Option<CreateToolDefinitionInput>,
 }
 
-/// Structured use cases extracted from agent IR, ready for design_context.
+/// Structured capability entries extracted from agent IR.
+///
+/// Stage B WP4: these no longer land in `design_context.useCases` (that array
+/// is gone) — they are the mint input for the persona's charters and the
+/// source the event-subscription writer reads. The parallel `ids` field the
+/// struct used to carry (freshly minted `uc-<uuid>` ids, slotted onto trigger
+/// rows' `use_case_id`) is gone with it: the charter row ids now fill that
+/// role, so a second id space would be a second source of truth.
 struct UseCaseData {
     structured: Vec<serde_json::Value>,
-    ids: Vec<String>,
 }
 
 /// All data assembled before the transaction begins.
@@ -1159,15 +1165,26 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
     if ir.use_cases.is_empty() {
         return UseCaseData {
             structured: Vec::new(),
-            ids: Vec::new(),
         };
     }
 
     let mut structured = Vec::new();
-    let mut ids = Vec::new();
 
     for (idx, uc) in ir.use_cases.iter().enumerate() {
-        let uc_id = format!("uc-{}", uuid::Uuid::new_v4());
+        // The LLM-emitted id when there is one, so the charter's
+        // `spec.migratedFromUseCaseId` provenance points at the id the build
+        // conversation and the recipe both used. A Simple-variant capability
+        // has none, so it falls back to a minted one.
+        let uc_id = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => {
+                d.id.as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+            }
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => None,
+        }
+        .unwrap_or_else(|| format!("uc-{}", uuid::Uuid::new_v4()));
 
         let title = uc.title().to_string();
         let description = uc.description().to_string();
@@ -1286,10 +1303,9 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             "source_recipe_version": source_recipe_version,
             "adopted_at": source_recipe_id.as_ref().map(|_| chrono::Utc::now().to_rfc3339()),
         }));
-        ids.push(uc_id);
     }
 
-    UseCaseData { structured, ids }
+    UseCaseData { structured }
 }
 
 // ============================================================================
@@ -1831,7 +1847,6 @@ fn validate_triggers(ir: &crate::db::models::AgentIr) -> Result<(), AppError> {
 
 fn build_design_json(
     ir: &crate::db::models::AgentIr,
-    structured_use_cases: &[serde_json::Value],
     tool_names: &[String],
     credential_links: &std::collections::HashMap<String, String>,
 ) -> (String, String) {
@@ -1856,8 +1871,11 @@ fn build_design_json(
     let connectors = ir.effective_connectors_json();
     let summary = ir.design_summary();
 
+    // Stage B WP4: no `useCases` array — the structured entries are minted
+    // as `persona_responsibilities` charters by the promote path instead
+    // (the envelope keeps its other keys; the full IR still lands in
+    // `last_design_result` via the design_result below).
     let design_context = serde_json::json!({
-        "useCases": structured_use_cases,
         "summary": summary,
         "builderMeta": {
             "creationMethod": "matrix"
@@ -2101,14 +2119,20 @@ fn collect_persona_emit_event_types(
 }
 
 // ============================================================================
-// Transaction: create triggers linked to use cases
+// Transaction: create triggers linked to their charters
 // ============================================================================
 
+/// `responsibility_ids` are the freshly minted charter row ids, positionally
+/// aligned with `ir.triggers` (the same idx-alignment contract the legacy
+/// `use_case_ids` slotting used — `build_structured_use_cases` and the mint
+/// both preserve `ir.use_cases` order). Stage B WP4: the row's legacy
+/// `use_case_id` column is no longer written here — new triggers carry
+/// `responsibility_id` only.
 fn create_triggers_in_tx(
     tx: &rusqlite::Transaction<'_>,
     persona_id: &str,
     ir: &crate::db::models::AgentIr,
-    use_case_ids: &[String],
+    responsibility_ids: &[String],
     persona_emits: &std::collections::HashSet<String>,
     now: &str,
 ) -> Result<(u32, Vec<String>), AppError> {
@@ -2165,9 +2189,9 @@ fn create_triggers_in_tx(
             }
             serde_json::to_string(v).unwrap_or_default()
         });
-        let use_case_id = use_case_ids
+        let responsibility_id = responsibility_ids
             .get(idx)
-            .or_else(|| use_case_ids.last())
+            .or_else(|| responsibility_ids.last())
             .cloned();
         let encrypted_config = config
             .as_deref()
@@ -2210,11 +2234,11 @@ fn create_triggers_in_tx(
 
         tx.execute(
             "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
+             (id, persona_id, trigger_type, config, enabled, status, responsibility_id, next_trigger_at, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?8)",
             rusqlite::params![
                 trigger_id, persona_id, trigger_type, encrypted_config,
-                status, use_case_id, next_trigger_at, now,
+                status, responsibility_id, next_trigger_at, now,
             ],
         ).map_err(AppError::Database)?;
 
@@ -2925,7 +2949,7 @@ pub async fn promote_build_draft_inner(
         }
     };
     let (design_context_str, design_result_str) =
-        build_design_json(&ir, &use_cases.structured, &tool_names, &credential_links);
+        build_design_json(&ir, &tool_names, &credential_links);
     // KP bridge (WP4): promote rebuilds design_context from the build IR,
     // which would silently drop the typed `kp_link` the kp_hire_request
     // approval stamped on the draft persona — and with it every future
@@ -2977,56 +3001,117 @@ pub async fn promote_build_draft_inner(
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
 
     // ================================================================
+    // Stage B WP4 — mint the promoted capabilities as charters
+    // ================================================================
+    // One `persona_responsibilities` row per structured entry, through the
+    // engine's operator door (full field preservation — the same mapper the
+    // instant-adopt path uses, which is what kills the historical adopt/
+    // promote write asymmetry). Minted BEFORE the transaction because the
+    // engine door is pool-based and SQLite holds the write lock once the tx
+    // starts writing; the charter ids are stamped onto the trigger rows
+    // inside the tx, and a tx failure deletes the freshly minted rows so a
+    // failed promote leaves no charter behind. Superseded charters from an
+    // earlier promote of the same persona are retired only AFTER commit.
+    let minted_charters = super::template_adopt::mint_charters_from_use_cases(
+        &state.db,
+        &persona_id,
+        &use_cases.structured,
+    )?;
+    let charter_ids: Vec<String> = minted_charters.iter().map(|r| r.id.clone()).collect();
+
+    // ================================================================
     // BEGIN TRANSACTION — all writes are atomic from here
     // ================================================================
-    let mut conn = state
-        .db
-        .get()
-        .map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
-    let now = chrono::Utc::now().to_rfc3339();
+    let mut conn = match state.db.get() {
+        Ok(c) => c,
+        Err(e) => {
+            super::template_adopt::delete_charter_rows(&state.db, &charter_ids);
+            return Err(AppError::Internal(format!("Pool error: {e}")));
+        }
+    };
+    let tx_outcome = (|| -> Result<(u32, u32, Vec<String>, u32, u32), AppError> {
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let tools_created = create_tools_in_tx(&tx, &persona_id, &tool_actions, &now)?;
-    // Compute the persona's own emit-event set once; both trigger config
-    // patching and subscription insertion need it to decide whether an inbound
-    // listen is intra-persona (self-loop) or cross-persona (chain) so the
-    // promote path can default `source_filter = "*"` for chain inbounds.
-    let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
-    let (triggers_created, created_trigger_ids) =
-        create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &persona_emits, &now)?;
-    let subscriptions_created =
-        create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &persona_emits, &now)?;
-    let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
-    update_persona_in_tx(
-        &tx,
+        let tools_created = create_tools_in_tx(&tx, &persona_id, &tool_actions, &now)?;
+        // Compute the persona's own emit-event set once; both trigger config
+        // patching and subscription insertion need it to decide whether an inbound
+        // listen is intra-persona (self-loop) or cross-persona (chain) so the
+        // promote path can default `source_filter = "*"` for chain inbounds.
+        let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
+        let (triggers_created, created_trigger_ids) =
+            create_triggers_in_tx(&tx, &persona_id, &ir, &charter_ids, &persona_emits, &now)?;
+        let subscriptions_created = create_event_subscriptions_in_tx(
+            &tx,
+            &persona_id,
+            &ir,
+            &use_cases,
+            &persona_emits,
+            &now,
+        )?;
+        let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
+        update_persona_in_tx(
+            &tx,
+            &persona_id,
+            &ir,
+            &notification_channels,
+            &design_context_str,
+            &design_result_str,
+            &now,
+        )?;
+        create_version_snapshot_in_tx(
+            &tx,
+            &persona_id,
+            &ir,
+            &design_context_str,
+            &design_result_str,
+            &session.resolved_cells,
+            &now,
+        )?;
+
+        // Transition build session to Promoted
+        tx.execute(
+            "UPDATE build_sessions SET phase = ?1, updated_at = ?2 WHERE id = ?3",
+            rusqlite::params![BuildPhase::Promoted.as_str(), now, session_id],
+        )
+        .map_err(AppError::Database)?;
+
+        // ================================================================
+        // COMMIT — all entities are persisted atomically
+        // ================================================================
+        tx.commit().map_err(AppError::Database)?;
+        Ok((
+            tools_created,
+            triggers_created,
+            created_trigger_ids,
+            subscriptions_created,
+            assertions_created,
+        ))
+    })();
+    let (
+        tools_created,
+        triggers_created,
+        created_trigger_ids,
+        subscriptions_created,
+        assertions_created,
+    ) = match tx_outcome {
+        Ok(v) => v,
+        Err(e) => {
+            // The tx rolled back; take the pre-tx charter mint with it.
+            super::template_adopt::delete_charter_rows(&state.db, &charter_ids);
+            return Err(e);
+        }
+    };
+
+    // Re-promote parity with the wholesale design_context.useCases overwrite
+    // the legacy path did: the previous promote's use-case-born charters are
+    // superseded by this mint — retire them (hand-authored charters carry no
+    // `spec.migrated_from_use_case_id` marker and are never touched).
+    super::template_adopt::retire_use_case_born_charters(
+        &state.db,
         &persona_id,
-        &ir,
-        &notification_channels,
-        &design_context_str,
-        &design_result_str,
-        &now,
-    )?;
-    create_version_snapshot_in_tx(
-        &tx,
-        &persona_id,
-        &ir,
-        &design_context_str,
-        &design_result_str,
-        &session.resolved_cells,
-        &now,
-    )?;
-
-    // Transition build session to Promoted
-    tx.execute(
-        "UPDATE build_sessions SET phase = ?1, updated_at = ?2 WHERE id = ?3",
-        rusqlite::params![BuildPhase::Promoted.as_str(), now, session_id],
-    )
-    .map_err(AppError::Database)?;
-
-    // ================================================================
-    // COMMIT — all entities are persisted atomically
-    // ================================================================
-    tx.commit().map_err(AppError::Database)?;
+        &charter_ids.iter().cloned().collect(),
+    );
 
     // KP bridge (WP4) — the persona update above flipped `lifecycle = 'active'`;
     // if this persona was hired through a KP request, tell the KP app.
@@ -3351,7 +3436,6 @@ mod tests {
                     {"event_type": "external.thing.happened", "direction": "listen"},
                 ]),
             )],
-            ids: vec!["uc-1".into()],
         };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert!(emits.contains("news.draft.captured"));
@@ -3375,10 +3459,7 @@ mod tests {
             ],
             ..Default::default()
         };
-        let use_cases = UseCaseData {
-            structured: vec![],
-            ids: vec![],
-        };
+        let use_cases = UseCaseData { structured: vec![] };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert!(emits.contains("a.b.published"));
         assert!(!emits.contains("c.d.received"));
@@ -3399,7 +3480,6 @@ mod tests {
                 "uc-1",
                 serde_json::json!([{"event_type": "beta.y.emitted", "direction": "emit"}]),
             )],
-            ids: vec!["uc-1".into()],
         };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert_eq!(emits.len(), 2);
@@ -3422,7 +3502,6 @@ mod tests {
                 "uc-1",
                 serde_json::json!([{"event_type": "p.q.r"}]), // missing direction
             )],
-            ids: vec!["uc-1".into()],
         };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert!(emits.is_empty());

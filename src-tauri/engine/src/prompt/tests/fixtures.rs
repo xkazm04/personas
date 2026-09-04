@@ -69,19 +69,46 @@ pub(crate) fn test_tool() -> PersonaToolDefinition {
 // no time filter — while being told to satisfy every check. These tests
 // pin the parity: whatever attempt 1 knew, attempt 2 knows.
 
-/// Realistic capability payload: `review_policy.mode = "always"` is the
-/// exact line whose absence silently skipped human approvals in production
-/// (see the comment above `render_capability_policy_lines`'s call site).
+/// The legacy use case the fix-loop charter was minted from.
+/// `review_policy.mode = "always"` is the exact line whose absence silently
+/// skipped human approvals in production; post-rebase it reaches the prompt
+/// through the focused charter's design-context BRIDGE
+/// (`spec.migratedFromUseCaseId` → `render_capability_policy_lines`).
+pub(crate) fn fix_loop_use_case() -> serde_json::Value {
+    serde_json::json!({
+        "id": "uc-triage",
+        "title": "Triage inbound incidents",
+        "capability_summary": "Classify the incident and propose a remediation.",
+        "tool_hints": ["github", "slack"],
+        "review_policy": { "mode": "always" },
+    })
+}
+
+/// The focused charter (WP2): `_responsibility` carries its ID; the charter
+/// itself travels through the assembler's `responsibilities` input.
+pub(crate) fn fix_loop_charter() -> personas_db::models::PersonaResponsibility {
+    personas_db::models::PersonaResponsibility {
+        id: "resp-triage".into(),
+        persona_id: "test-id".into(),
+        title: "Triage inbound incidents".into(),
+        domain: "support".into(),
+        procedure: "Classify the incident and propose a remediation.".into(),
+        status: "active".into(),
+        source: "migration".into(),
+        spec: personas_db::models::ResponsibilitySpec {
+            migrated_from_use_case_id: Some("uc-triage".into()),
+            ..Default::default()
+        },
+        created_at: "2026-01-01T00:00:00Z".into(),
+        updated_at: "2026-01-01T00:00:00Z".into(),
+        ..Default::default()
+    }
+}
+
 pub(crate) fn fix_loop_input() -> serde_json::Value {
     serde_json::json!({
         "ticket": "PROD-4171 payment webhook retries",
-        "_use_case": {
-            "id": "uc-triage",
-            "title": "Triage inbound incidents",
-            "capability_summary": "Classify the incident and propose a remediation.",
-            "tool_hints": ["github", "slack"],
-            "review_policy": { "mode": "always" },
-        },
+        "_responsibility": "resp-triage",
         "_time_filter": {
             "description": "Only look at the last day of events.",
             "field": "created_at",
@@ -93,6 +120,7 @@ pub(crate) fn fix_loop_input() -> serde_json::Value {
 pub(crate) fn fix_loop_persona() -> Persona {
     let mut p = test_persona();
     p.system_prompt = "Triage the incident described in {{ticket}}.".into();
+    p.design_context = Some(serde_json::json!({ "use_cases": [fix_loop_use_case()] }).to_string());
     p
 }
 
@@ -105,6 +133,28 @@ pub(crate) fn assemble_for(persona: &Persona, input: &serde_json::Value) -> Stri
         None,
         None,
         #[cfg(feature = "desktop")]
+        None,
+    )
+}
+
+/// Like [`assemble_for`], with the focused charter on board — the shape the
+/// runner main path assembles for a charter-dispatched run.
+pub(crate) fn assemble_focused(
+    persona: &Persona,
+    input: &serde_json::Value,
+    charters: &[personas_db::models::PersonaResponsibility],
+) -> String {
+    assemble_prompt_with_skills(
+        persona,
+        &[],
+        Some(input),
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+        None,
+        Some(charters),
         None,
     )
 }

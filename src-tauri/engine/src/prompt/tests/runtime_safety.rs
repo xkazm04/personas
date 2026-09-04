@@ -253,14 +253,14 @@ fn test_replace_variables_preserves_trusted_magic_vars() {
 fn test_replace_variables_skips_internal_metadata_keys() {
     let persona = test_persona();
     let input = serde_json::json!({
-        "_use_case": {"title": "Test"},
+        "_responsibility": "resp_1",
         "_time_filter": {"field": "created_at"},
         "task": "review"
     });
-    let text = "Task: {{task}}, UseCase: {{_use_case}}";
+    let text = "Task: {{task}}, Charter: {{_responsibility}}";
     let result = replace_variables(text, &persona, Some(&input));
-    // _use_case should NOT be substituted (internal metadata)
-    assert!(result.contains("{{_use_case}}"));
+    // _responsibility should NOT be substituted (internal metadata)
+    assert!(result.contains("{{_responsibility}}"));
     // Regular key should be substituted
     assert!(result.contains("Task: review"));
 }

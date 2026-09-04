@@ -9,6 +9,7 @@ use crate::db::repos::core::memory_claims::{self as claims_repo, DisputedMemoryR
 use crate::db::repos::core::memory_review_proposal::{
     self as proposal_repo, CreateProposalInput, MemoryReviewProposal, ProposalEntry,
 };
+use crate::engine::persona_brain::growth as charter_growth;
 use crate::engine::persona_brain::manifest as manifest_apply;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -916,6 +917,30 @@ pub fn apply_persona_memory_review_proposal(
             synthesized: 0,
             archived: 0,
             errors: outcome.skipped,
+        });
+    }
+
+    // Agent-proposed charters (kind='responsibility_draft', WP3) route to the
+    // growth apply door, which derives the owner persona from the proposal
+    // ROW and mints with `source='agent-proposed'` + `status='draft'` FORCED
+    // server-side (whatever the payload claims is ignored), CAS-guarded like
+    // the branch above. No session invalidation: a draft charter is inert
+    // until the operator activates it, so no prompt changed.
+    if proposal.kind == charter_growth::KIND_RESPONSIBILITY_DRAFT {
+        let created = charter_growth::apply_responsibility_draft(&state.db, &proposal_id)?;
+        tracing::info!(
+            persona_id = %created.persona_id,
+            proposal_id = %proposal_id,
+            responsibility_id = %created.id,
+            "responsibility draft minted as a draft charter"
+        );
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: 1,
+            synthesized: 0,
+            archived: 0,
+            errors: vec![],
         });
     }
 

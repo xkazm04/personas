@@ -6,6 +6,11 @@
  */
 export type ConsolidationPoint = { completedAt: string, episodesFed: number, created: number, updated: number, rejected: number, skippedTombstoned: number, 
 /**
+ * Self-model diffs the pass proposed for operator review (never applied
+ * by the pass itself). Zero for a pass that proposed none.
+ */
+selfModelDiffsProposed: number, 
+/**
  * Absent when the pass reported no cost (subscription lane) — not zero.
  */
 costUsd?: number, 

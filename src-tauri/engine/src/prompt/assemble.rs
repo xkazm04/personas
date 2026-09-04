@@ -1,9 +1,10 @@
 use super::advisory::build_advisory_prompt;
 use super::budget::{warn_over_budget, PromptBlockSizes};
-use super::capabilities::{
-    build_tool_documentation, render_active_capabilities, render_capability_policy_lines,
+use super::capabilities::{build_tool_documentation, render_capability_policy_lines};
+use super::core_section::{
+    looks_like_legacy_core, normalized_line, render_legacy_core_section, render_manifest_markdown,
+    render_responsibilities, render_responsibility_focused, spec_policy_lines,
 };
-use super::core_section::{render_core, render_responsibilities};
 use super::runtime_safety::{wrap_runtime_xml_boundary, RUNTIME_CANARY_INSTRUCTION};
 use super::templates::{
     CORRECTION_EVIDENCE_BANNER, DATA_HONESTY_INVARIANT, DELIBERATE_MODE_DIRECTIVE,
@@ -69,13 +70,13 @@ pub fn wrap_untrusted_section(label: &str, content: &str) -> String {
 /// sidecar first — the runner's main path — should call
 /// [`assemble_prompt_with_skills`] with the exact set of connectors whose file
 /// was written, so a connector whose write failed keeps its inline usage.
-/// Living-agent note (spark `living-agent-core`, WP2): this wrapper passes
-/// `None` for `responsibilities` and `recent_episodes`, so prompts built
-/// through it carry `## Core` (parsed from `persona.core_profile`, which
-/// travels on the struct) but no `## Responsibilities` / `## Recent Episodes`
-/// sections. Callers that want those load them and call
-/// [`assemble_prompt_with_skills`] directly (runner main path, preview,
-/// prepare, dry-run).
+/// Living-agent note (spark `agent-manifest-rebase`, WP2): this wrapper
+/// passes `None` for `responsibilities` and `recent_episodes`, so prompts
+/// built through it carry `## Manifest` (read from `persona.core_profile`,
+/// which travels on the struct) but no `## Responsibilities` /
+/// `## Current Focus` / `## Recent Episodes` sections. Callers that want
+/// those load them and call [`assemble_prompt_with_skills`] directly (runner
+/// main path, preview, prepare, dry-run).
 pub fn assemble_prompt(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
@@ -109,13 +110,17 @@ pub fn assemble_prompt(
 /// connector gets a pointer (the sidecar is assumed installed for all). See
 /// `skills_sidecar/DESIGN.md` for the lockstep rationale.
 ///
-/// Living-agent inputs (spark `living-agent-core`, WP2):
-/// - `responsibilities` — the persona's ACTIVE standing charters, rendered as
-///   `## Responsibilities` immediately after `## Core`. Callers filter by
-///   status before passing; `None`/empty renders nothing.
+/// Living-agent inputs (spark `agent-manifest-rebase`, WP2):
+/// - `responsibilities` — the persona's standing charters. ACTIVE ones render
+///   as the `## Responsibilities` roster immediately after `## Manifest`
+///   (callers pass active-only; the renderer re-filters). A run dispatched
+///   FOR a charter (`input_data._responsibility` = its id) additionally gets
+///   `## Current Focus` with that charter's full detail — a caller may append
+///   a non-active charter to the slice so a simulation's focus still
+///   resolves; the roster skips it. `None`/empty renders nothing.
 /// - `recent_episodes` — the tail of the persona's episodic record, OLDEST
 ///   FIRST, rendered as `## Recent Episodes (oldest first)` immediately after
-///   `## Active Capabilities`, nonce-fenced as derived-untrusted content.
+///   the persona block, nonce-fenced as derived-untrusted content.
 ///   At most [`MAX_EPISODES_RENDERED`] rows render.
 #[allow(clippy::too_many_arguments)]
 pub fn assemble_prompt_with_skills(
@@ -147,31 +152,51 @@ pub fn assemble_prompt_with_skills(
 
     // ── Normal Persona Execution ────────────────────────────────────────
 
-    // Living-agent Core (spark `living-agent-core`, WP2). Parsed ONCE here:
-    // the `## Core` section below renders from it, and its `identity` field
-    // drives the `## Identity` skip rule. Parse failure is a warn + skip —
-    // a corrupt core_profile must never fail prompt assembly, and the
-    // pre-living identity path stays fully intact in that case.
-    let core: Option<PersonaCore> = persona
+    // The manifest mirror (spark `agent-manifest-rebase`, WP2). Read ONCE:
+    // `personas.core_profile` holds either the rendered manifest markdown
+    // (any persona whose manifest was touched — WP1's `write_and_mirror`) or
+    // the legacy `PersonaCore` JSON. Both render under `## Manifest`; a
+    // markdown mirror additionally REPLACES the structured_prompt sections
+    // below (the two-author manifest + the charters are the persona's word
+    // now). Parse failure of a JSON-shaped value is a warn + skip — a corrupt
+    // core_profile must never fail prompt assembly, and the pre-living
+    // identity path stays fully intact in that case.
+    enum CoreSource {
+        None,
+        Legacy(Box<PersonaCore>),
+        Manifest(String),
+    }
+    let core_source = match persona
         .core_profile
         .as_deref()
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .and_then(|json| match serde_json::from_str::<PersonaCore>(json) {
-            Ok(c) => Some(c),
-            Err(e) => {
-                tracing::warn!(
-                    persona_id = %persona.id,
-                    error = %e,
-                    "core_profile JSON failed to parse — skipping ## Core section",
-                );
-                None
+    {
+        None => CoreSource::None,
+        Some(raw) if looks_like_legacy_core(raw) => {
+            match serde_json::from_str::<PersonaCore>(raw) {
+                Ok(c) => CoreSource::Legacy(Box::new(c)),
+                Err(e) => {
+                    tracing::warn!(
+                        persona_id = %persona.id,
+                        error = %e,
+                        "core_profile JSON failed to parse — skipping ## Manifest section",
+                    );
+                    CoreSource::None
+                }
             }
-        });
-    let core_identity_present = core
-        .as_ref()
-        .and_then(|c| c.identity.as_deref())
-        .is_some_and(|s| !s.trim().is_empty());
+        }
+        Some(raw) => CoreSource::Manifest(raw.to_string()),
+    };
+    // A markdown manifest IS the identity; a legacy Core suppresses the
+    // `## Identity` branch only when it carries identity prose (the
+    // pre-rebase skip rule, unchanged for legacy personas).
+    let manifest_present = matches!(core_source, CoreSource::Manifest(_));
+    let core_identity_present = manifest_present
+        || match &core_source {
+            CoreSource::Legacy(c) => c.identity.as_deref().is_some_and(|s| !s.trim().is_empty()),
+            _ => false,
+        };
 
     // Context-aware variable substitution: replace {{variable}} in persona fields.
     let name = replace_variables(&persona.name, persona, input_data);
@@ -262,24 +287,66 @@ pub fn assemble_prompt_with_skills(
         }
     }
 
-    // ## Core — the persona's authored Character (living-agent spine),
-    // rendered immediately BEFORE the `## Identity` branch so the model reads
-    // WHO it is before HOW it is configured. Operator-authored configuration,
-    // same trust class as structured_prompt — deliberately not nonce-fenced.
-    let core_section = core.as_ref().map(render_core).unwrap_or_default();
-    prompt.push_str(&core_section);
+    // ## Manifest — the persona's core document (two-author manifest mirror,
+    // or the legacy Core's prose), rendered immediately BEFORE the
+    // `## Identity` branch so the model reads WHO it is before HOW it is
+    // configured. Operator-authored configuration, same trust class as
+    // structured_prompt — deliberately not nonce-fenced.
+    let manifest_section = match &core_source {
+        CoreSource::None => String::new(),
+        CoreSource::Legacy(core) => render_legacy_core_section(core),
+        CoreSource::Manifest(md) => render_manifest_markdown(md),
+    };
+    prompt.push_str(&manifest_section);
 
-    // ## Responsibilities — the persona's active standing charters,
-    // immediately after `## Core`.
+    // The self-model proposal grammar, rendered only for a persona that HAS
+    // a manifest: without one there are no self-model sections to propose
+    // against, and teaching the op to a legacy persona would invite a
+    // proposal the apply door must refuse. Propose-only — the parser
+    // (`persona_brain::growth`) files for operator review and never applies.
+    if manifest_present {
+        prompt.push_str(super::SELF_MODEL_OP_ADDENDUM);
+        prompt.push_str("\n\n");
+    }
+
+    // ## Responsibilities — the persona's active standing charters as a
+    // full roster, immediately after `## Manifest`. This roster replaces the
+    // retired `## Active Capabilities` menu: post-e19 every legacy use case
+    // has a charter, so the charters ARE the capability surface.
     let responsibilities_section = responsibilities
         .filter(|r| !r.is_empty())
         .map(render_responsibilities)
         .unwrap_or_default();
     prompt.push_str(&responsibilities_section);
 
+    // ## Capability Parameters — for manifest personas (whose
+    // structured_prompt no longer renders, taking the adopt-time-injected
+    // parameters block with it), re-derive the block from the charters'
+    // `spec.inputSchema` and resolve `{{param.*}}` through the same trusted
+    // variable path. Legacy personas keep the copy inside their rendered
+    // `## Instructions` — deriving it again here would double-emit it.
+    if manifest_present {
+        let charter_params = crate::recipe_parameters::derive_capability_params_from_charters(
+            responsibilities.unwrap_or_default(),
+        );
+        if let Some(section) = crate::recipe_parameters::render_parameters_section(&charter_params)
+        {
+            prompt.push_str(replace_variables(&section, persona, input_data).trim_start());
+            prompt.push_str("\n\n");
+        }
+    }
+
     // Identity and Instructions from structured_prompt or system_prompt.
-    // These are persona-authored and wrapped in boundary tags for structural isolation.
-    if let Some(ref sp_json) = persona.structured_prompt {
+    // These are persona-authored and wrapped in boundary tags for structural
+    // isolation. For a persona with a markdown MANIFEST none of them render:
+    // the manifest (law + self-model) and the charter roster/focus are the
+    // persona's word now, and structured_prompt is a template-side artifact
+    // (see `template_v3::compose_structured_prompt`). Legacy personas — a
+    // JSON core or none — keep the pre-rebase rendering unchanged until
+    // their manifest is seeded.
+    if manifest_present {
+        // Nothing: `## Manifest` + `## Responsibilities` above replace this.
+    } else if let Some(ref sp_json) = persona.structured_prompt {
         if let Ok(sp) = serde_json::from_str::<serde_json::Value>(sp_json) {
             // Identity. Living-agent skip rule: when the Core carries its own
             // identity prose, `## Core` above IS the identity — rendering the
@@ -452,16 +519,13 @@ pub fn assemble_prompt_with_skills(
         prompt.push_str("\n\n");
     }
 
-    // Active Capabilities (Phase C1) — persona's runtime-enabled use cases.
-    // Filters design_context.useCases by `enabled != false` so toggling a
-    // capability immediately removes it from the LLM's awareness. Always
-    // rendered in normal execution; advisory mode has its own rendering.
-    prompt.push_str(&render_active_capabilities(
-        persona.design_context.as_deref(),
-    ));
+    // `## Active Capabilities` (Phase C1) is RETIRED here (WP2): the
+    // `## Responsibilities` roster above renders every active charter — the
+    // charters e19 minted one-per-use-case — so the design-context menu would
+    // only duplicate it. Advisory mode keeps its own use-case rendering.
 
     // ## Recent Episodes — the tail of the persona's episodic record,
-    // immediately after `## Active Capabilities`. The body is DERIVED-
+    // immediately after the persona block. The body is DERIVED-
     // UNTRUSTED: it is what the persona (and whoever talked to it) actually
     // said, so the whole section body gets the same nonce-fenced treatment as
     // `## Input Data`. The heading and framing sentence stay OUTSIDE the
@@ -820,77 +884,82 @@ pub fn assemble_prompt_with_skills(
         }
     }
 
+    // Focused-run detail. `_responsibility` (WP2, replacing `_use_case`)
+    // carries a CHARTER ID, resolved against the charters the caller loaded —
+    // never a payload-authored blob, which is why nothing here needs the
+    // nonce fence: the id can only SELECT among the persona's own
+    // operator-trust charters, not author content into trusted structure.
+    let mut focused_section = String::new();
+    if let Some(data) = input_data {
+        if let Some(resp_id) = data.get("_responsibility").and_then(|v| v.as_str()) {
+            let focused = responsibilities.and_then(|rs| rs.iter().find(|r| r.id == resp_id));
+            match focused {
+                Some(charter) => {
+                    focused_section.push_str("## Current Focus\n");
+                    focused_section.push_str(&render_responsibility_focused(charter));
+
+                    // Generation-policy lines (Phase C5b — the SOFT layer;
+                    // `engine::dispatch` enforces the same rules silently as
+                    // the HARD net). Spec-derived lines first; then the
+                    // legacy BRIDGE: review_policy / generation_settings
+                    // never migrated into the charter spec, so a migrated
+                    // charter still reads them off the design-context use
+                    // case it was minted from. Without the bridge,
+                    // review_policy=always personas silently stop emitting
+                    // manual_review (the exact 2026-05-06 production defect).
+                    // Deduped on collapsed whitespace: spec.memoryPolicy and
+                    // the use case's memory_policy are the same fact.
+                    let mut policy_lines = spec_policy_lines(&charter.spec);
+                    let spec_count = policy_lines.len();
+                    if let Some(uc) =
+                        charter
+                            .spec
+                            .migrated_from_use_case_id
+                            .as_deref()
+                            .and_then(|uc_id| {
+                                crate::design_context::find_use_case_by_id(
+                                    persona.design_context.as_deref(),
+                                    uc_id,
+                                )
+                            })
+                    {
+                        let seen: Vec<String> =
+                            policy_lines.iter().map(|l| normalized_line(l)).collect();
+                        for line in render_capability_policy_lines(&uc) {
+                            if !seen.contains(&normalized_line(&line)) {
+                                policy_lines.push(line);
+                            }
+                        }
+                    }
+                    // The spec lines already rendered inside the focused body
+                    // ("Charter policies for this run"); append only what the
+                    // bridge added beyond them.
+                    if policy_lines.len() > spec_count {
+                        focused_section.push_str("Generation policy for this charter:\n");
+                        for line in &policy_lines[spec_count..] {
+                            focused_section.push_str(&format!("- {line}\n"));
+                        }
+                    }
+                    focused_section.push_str(
+                        "Focus on this charter. Ignore your other charters unless the input \
+                         explicitly requires coordination with them.\n\n",
+                    );
+                }
+                None => {
+                    tracing::warn!(
+                        persona_id = %persona.id,
+                        responsibility_id = %resp_id,
+                        "input_data._responsibility names a charter the assembler was not \
+                         given — no ## Current Focus section rendered",
+                    );
+                }
+            }
+        }
+    }
+    prompt.push_str(&focused_section);
+
     // Input Data -- wrapped in XML boundary tags with random nonce for structural isolation
     if let Some(data) = input_data {
-        // Inject use case context if present -- wrap user-controlled values in
-        // XML boundary tags so the model treats them as data, not instructions.
-        if let Some(use_case) = data.get("_use_case") {
-            // Phase C1 — scoped execution focus. Surfaced as "Current Focus"
-            // to complement the "## Active Capabilities" menu rendered above.
-            prompt.push_str("## Current Focus\n");
-            if let Some(title) = use_case.get("title").and_then(|v| v.as_str()) {
-                prompt.push_str(&format!(
-                    "This execution is scoped to the capability: {}\n",
-                    wrap_runtime_xml_boundary("use_case_title", title)
-                ));
-            }
-            if let Some(desc) = use_case
-                .get("capability_summary")
-                .and_then(|v| v.as_str())
-                .filter(|s| !s.is_empty())
-                .or_else(|| use_case.get("description").and_then(|v| v.as_str()))
-            {
-                prompt.push_str(&format!(
-                    "Summary:\n{}\n",
-                    wrap_runtime_xml_boundary("use_case_description", desc)
-                ));
-            }
-            if let Some(hints) = use_case.get("tool_hints").and_then(|v| v.as_array()) {
-                let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
-                if !names.is_empty() {
-                    prompt.push_str(&format!(
-                        "Preferred tools for this capability: {}\n",
-                        names.join(", ")
-                    ));
-                }
-            }
-            if let Some(channels) = use_case
-                .get("notification_channels")
-                .and_then(|v| v.as_array())
-            {
-                let types: Vec<String> = channels
-                    .iter()
-                    .filter_map(|c| {
-                        c.get("type")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_string())
-                    })
-                    .collect();
-                if !types.is_empty() {
-                    prompt.push_str(&format!("Deliver outputs via: {}\n", types.join(", ")));
-                }
-            }
-            // Phase C5b — render the capability's generation policy so the LLM
-            // knows what artefact protocol messages to suppress for this run.
-            // This is the SOFT layer; `engine::dispatch` enforces the same
-            // rules silently as a HARD safety net for ignored instructions.
-            // 2026-05-06 — switched to the richer renderer that also derives
-            // policy lines from review_policy.mode / memory_policy.enabled
-            // when generation_settings is absent. The build LLM writes the
-            // IR fields directly; without this fallback the runtime prompt
-            // never told the agent "review_policy=always means emit
-            // manual_review for every output", so approvals were silently
-            // skipped on personas built via the rapid-validation flow.
-            let policy_lines = render_capability_policy_lines(use_case);
-            if !policy_lines.is_empty() {
-                prompt.push_str("Generation policy for this capability:\n");
-                for line in policy_lines {
-                    prompt.push_str(&format!("- {}\n", line));
-                }
-            }
-            prompt.push_str("Focus on this capability. Ignore other capabilities unless the input explicitly requires coordination with them.\n\n");
-        }
-
         // Inject time filter constraints if present -- field/window values are user-controlled
         if let Some(time_filter) = data.get("_time_filter") {
             prompt.push_str("## Time Filter (IMPORTANT)\n");
@@ -966,12 +1035,13 @@ pub fn assemble_prompt_with_skills(
         }
     }
 
-    // Prompt-size tripwires (living-agent WP2): measure the three new
-    // sections + the whole prompt; at most one warn per assembly, and
-    // NOTHING is ever truncated. See `budget.rs`.
+    // Prompt-size tripwires: measure the living-agent sections + the whole
+    // prompt; at most one warn per assembly, and NOTHING is ever truncated.
+    // See `budget.rs`.
     warn_over_budget(&PromptBlockSizes {
-        core: core_section.chars().count(),
+        manifest: manifest_section.chars().count(),
         responsibilities: responsibilities_section.chars().count(),
+        focused: focused_section.chars().count(),
         episodes: episodes_section.chars().count(),
         total: prompt.chars().count(),
     });

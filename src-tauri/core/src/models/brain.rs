@@ -211,6 +211,10 @@ pub struct ConsolidationPoint {
     pub rejected: i64,
     #[ts(type = "number")]
     pub skipped_tombstoned: i64,
+    /// Self-model diffs the pass proposed for operator review (never applied
+    /// by the pass itself). Zero for a pass that proposed none.
+    #[ts(type = "number")]
+    pub self_model_diffs_proposed: i64,
     /// Absent when the pass reported no cost (subscription lane) — not zero.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]

@@ -21,4 +21,43 @@ engineMode?: string, notificationChannels?: Array<string>, eventSubscriptions?: 
  * one-way migration — the migration's idempotency key, and the pointer
  * the trigger remap (`persona_triggers.responsibility_id`) followed.
  */
-migratedFromUseCaseId?: string, memoryPolicy?: JsonValue, suggestedTrigger?: JsonValue, };
+migratedFromUseCaseId?: string, memoryPolicy?: JsonValue, 
+/**
+ * Human-gate policy carried from the source use case / recipe seed
+ * (`{mode}`: `auto_triage` skips the review queue). Slotted rather than
+ * dropped: a charter minted from a recipe has no use case to fall back
+ * on, and silently losing this is a SAFETY regression, not a cosmetic
+ * one — the same class of defect the legacy `DesignUseCase` struct had,
+ * where review/memory/error fell off every Rust round-trip.
+ */
+reviewPolicy?: JsonValue, 
+/**
+ * v3 generation envelope (`memories`/`reviews`/`events`/`event_aliases`)
+ * — the preferred source when present; `memory_policy`/`review_policy`
+ * are the older fallbacks the prompt path already resolves in that order.
+ */
+generationSettings?: JsonValue, 
+/**
+ * Free-prose error guidance from the recipe seed (299/299 carry prose,
+ * none carry a structured policy). Deliberately NOT synthesized into
+ * `error_policy` — inferring booleans from prose is fabrication.
+ */
+errorHandling?: string, 
+/**
+ * Tool identifiers the source declared; the legacy connector inference
+ * read these when no explicit connector list existed.
+ */
+toolHints?: Array<string>, 
+/**
+ * Why the source chose its model — authored context, never a directive.
+ */
+modelRationale?: string, 
+/**
+ * The authored step flow, kept as evidence behind `procedure`.
+ */
+useCaseFlow?: JsonValue, 
+/**
+ * Whether the source shipped this capability on by default; the charter's
+ * own `status` governs at runtime.
+ */
+enabledByDefault?: boolean, suggestedTrigger?: JsonValue, };

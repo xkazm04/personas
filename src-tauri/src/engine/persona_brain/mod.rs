@@ -21,12 +21,17 @@
 //!   `persona_attention_ledger`.
 //! * [`dashboard`] — the read that folds memory tiers, episode activity,
 //!   consolidation history, pressure and anomalies into one payload.
+//! * [`growth`] — the charter growth loop and the OP-line grammar (WP3):
+//!   chat replies proposing self-model diffs, improve passes proposing draft
+//!   charters, and the human-gated apply door that mints an approved draft
+//!   with `source`/`status` forced server-side.
 //!
 //! The pure admission logic lives in `personas_core::cycle` so it unit-tests
 //! without a database.
 
 pub mod dashboard;
 pub mod episodes;
+pub mod growth;
 pub mod manifest;
 pub mod sleep_cycle;
 
