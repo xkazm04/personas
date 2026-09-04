@@ -1082,6 +1082,30 @@ an instrument is specified below.*
         "description": "the COMPLIANT half of hardcoded-model-choice-label: same anchor, same seven-token vocabulary, same option shape, `label:` swapped for `labelKey:`. Scores 4 matches in 1 file (src/lib/models/modelCatalog.ts:84-87, EFFORT_OPTIONS) against the violating rule's 20 in 5. It must be non-zero and disjoint, and 20 + 4 must equal the anchor population (24) - otherwise the violating rule is measuring 'is this an option list' rather than 'is the label owned by the catalogue'. The 5x separation is the honest headline and it is ALSO the finding: the compliant form exists, is correctly typed (`labelKey: `models.effort_${EffortLevel}``, a template-literal type), and has ZERO IMPORTERS across 3,793 client files - so this control counts a primitive nobody reaches. It carries NO baseline by design: a ratchet is monotone-downward and a control counting compliant code would fail the build every time adoption improved."
       },
       "floor": 2000
+    },
+    {
+      "id": "bare-model-id-literal",
+      "goldenPath": "docs/concepts/golden-paths/model-and-effort-selection.md",
+      "title": "Anthropic model id spelled as a string literal outside personas_core::model_ids",
+      "roots": ["src-tauri"],
+      "extensions": [".rs"],
+      "signal": {
+        "pattern": "\"claude-(?:opus|sonnet|haiku|fable)-\\d[0-9a-z.\\-]*\"",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a double-quoted `claude-<family>-<n…>` string literal in src-tauri/**/*.rs. PROXY FOR the stack-free condition: a vendor-scheduled fact (which model ids exist) spelled inline at a call site, so a retirement is a tree-wide grep instead of a one-file diff. Measured 2026-08-25 (research: apache/maka model-metadata): 54 production files carried one, five of them independently declaring the same default-judge string; the retired `*-20250514` ids stayed live in the failover ladder for that reason (failover.rs:634). Inline test fixtures count too — a fixture that pins a dated id also rots. The legal fix is a named constant in `src-tauri/core/src/model_ids.rs` (tier: DEFAULT_FAST / DEFAULT_BALANCED / DEFAULT_STRONG; CLI alias: ALIAS_*), which is the only file excluded."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/core/src/model_ids.rs",
+          "reason": "the single door itself — the constants this rule routes callers TO"
+        }
+      ],
+      "baseline": {
+        "files": 55,
+        "matches": 120
+      },
+      "floor": 900
     }
   ]
 }
