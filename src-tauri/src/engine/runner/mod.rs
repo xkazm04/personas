@@ -1702,6 +1702,13 @@ pub async fn run_execution(
     let mut last_spawn_error: Option<String> = None;
     #[allow(unused_assignments)]
     let mut active_engine_kind = primary_engine; // overwritten per-candidate in failover loop
+
+    // Which rung of the failover chain actually served. `active_engine_kind`
+    // cannot answer this: `EngineKind` has one variant today, so comparing it
+    // to `primary_engine` is a constant `false`, and the within-provider model
+    // ladder (`CLAUDE_MODEL_CHAIN`, opus -> sonnet -> haiku) is invisible to it.
+    // The audit trail's `was_failover` must observe the substitution it reports.
+    let mut active_candidate_idx: usize = 0;
     #[allow(unused_assignments)]
     let mut cli_provider: Box<dyn provider::CliProvider> =
         provider::resolve_provider(primary_engine); // overwritten per-candidate
@@ -1726,6 +1733,7 @@ pub async fn run_execution(
             }
 
             active_engine_kind = candidate.engine_kind;
+            active_candidate_idx = candidate_idx;
             cli_provider = provider::resolve_provider(candidate.engine_kind);
 
             // Build model profile override for this candidate
@@ -3177,7 +3185,10 @@ pub async fn run_execution(
         persona_name: persona.name.clone(),
         engine_kind: active_engine_kind.as_setting().to_string(),
         model_used: metrics.model_used.clone(),
-        was_failover: active_engine_kind != primary_engine,
+        // True when ANY rung below the configured candidate served — a provider
+        // change or a within-provider model downgrade. Chain index is the only
+        // signal that sees both; see `active_candidate_idx` above.
+        was_failover: active_engine_kind != primary_engine || active_candidate_idx > 0,
         routing_rule_name: policy_decision.routing_rule_name.clone(),
         compliance_rule_name: policy_decision.compliance_rule_name.clone(),
         cost_usd: Some(metrics.cost_usd),

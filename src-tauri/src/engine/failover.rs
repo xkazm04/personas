@@ -1022,6 +1022,46 @@ mod tests {
             .any(|c| c.model.as_deref() == Some("claude-sonnet-4-6")));
     }
 
+    /// The audit trail's `was_failover` must observe the substitution it
+    /// reports (`runner::mod`, provider audit entry). Paired assertion over the
+    /// real chain: the engine-kind predicate the field used to be computed from
+    /// cannot see a within-provider model downgrade, because every rung of the
+    /// ladder carries the SAME `engine_kind`. Chain index can.
+    #[test]
+    fn test_engine_kind_cannot_detect_a_model_downgrade() {
+        let profile = ModelProfile {
+            model: Some("claude-opus-4-8".into()),
+            ..Default::default()
+        };
+        let primary = EngineKind::ClaudeCode;
+        let chain = build_failover_chain(primary, Some(&profile));
+
+        // The ladder must actually offer a downgrade, or the test proves nothing.
+        assert!(
+            chain.len() > 1,
+            "chain has no downgrade rung; the premise is gone"
+        );
+        assert_ne!(
+            chain[1].model, chain[0].model,
+            "rung 1 must be a different model than the configured one"
+        );
+
+        for (idx, candidate) in chain.iter().enumerate() {
+            let arm_a = candidate.engine_kind != primary; // former predicate
+            let arm_b = candidate.engine_kind != primary || idx > 0; // current
+            if idx > 0 {
+                assert!(
+                    !arm_a,
+                    "rung {idx} substitutes the model but the engine-kind \
+                     predicate reports no failover"
+                );
+                assert!(arm_b, "rung {idx} is a substitution and must be flagged");
+            } else {
+                assert!(!arm_a && !arm_b, "rung 0 is not a substitution");
+            }
+        }
+    }
+
     #[test]
     fn test_record_failure_returns_transition_on_circuit_open() {
         let cb = ProviderCircuitBreaker::new();
