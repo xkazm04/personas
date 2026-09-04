@@ -145,6 +145,7 @@ pub async fn cancel_schema_proposal(
 /// snake_case (no `rename_all`) — the connector-setup UI already reads
 /// `result.all_tables` / `result.missing`.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct SchemaValidationResult {
     /// True when every expected table was found.

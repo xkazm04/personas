@@ -435,6 +435,7 @@ pub async fn healthcheck_all_credentials(
 /// frontend has read `status.key_source` / `status.credential_audit_write_failures`
 /// since before this payload was typed.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct VaultStatus {
     /// Where the master key came from — `"keychain"` when the OS keyring holds
@@ -474,6 +475,7 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<VaultStatus, AppE
 /// Outcome of the startup sweep that encrypts any credential still stored in
 /// plaintext.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct MigrationResult {
     pub migrated: usize,

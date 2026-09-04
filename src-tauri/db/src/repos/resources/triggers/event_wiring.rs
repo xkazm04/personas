@@ -457,6 +457,7 @@ pub(crate) const RESERVED_EVENT_TYPES: &[&str] = &[
 /// Counts for UI feedback after a rename. Every field is the number of rows
 /// whose stored event_type value was actually changed from `old` to `new`.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct RenameEventTypeResult {
     pub events_updated: u32,

@@ -513,6 +513,7 @@ fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
 /// snake_case to match what the polling hooks already read (`auth_url`,
 /// `session_id`).
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct GoogleCredentialOAuthStartResult {
     pub session_id: String,
@@ -1505,6 +1506,7 @@ fn apply_oauth_outcome(
 /// only whether a token exists, and `oauth_session_ref` is a one-time handle
 /// the backend redeems server-side.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct OAuthStatusResult {
     pub status: OAuthSessionStatus,
@@ -1646,6 +1648,7 @@ pub(crate) fn redeem_oauth_session_into_fields(
 /// One entry of the built-in OAuth provider registry, as offered to the
 /// connector-design UI.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct OAuthProvider {
     pub id: String,
@@ -1655,6 +1658,7 @@ pub struct OAuthProvider {
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct OAuthProviderListResult {
     pub providers: Vec<OAuthProvider>,
@@ -1681,6 +1685,7 @@ pub fn list_oauth_providers(
 
 /// Handle for a freshly opened universal-gateway consent flow.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct OAuthStartResult {
     pub session_id: String,
