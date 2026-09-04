@@ -637,9 +637,9 @@ pub struct FailoverCandidate {
 /// ids are the same ones `engine::prompt::capabilities::tier_slug_to_model_id`
 /// bakes into recipes/templates (opus→`claude-opus-4-8`, sonnet→`claude-sonnet-4-6`).
 const CLAUDE_MODEL_CHAIN: &[&str] = &[
-    "claude-opus-4-8",
-    "claude-sonnet-4-6",
-    "claude-haiku-4-5-20251001",
+    personas_core::model_ids::OPUS_CURRENT,
+    personas_core::model_ids::SONNET_CURRENT,
+    personas_core::model_ids::HAIKU_CURRENT,
 ];
 
 /// Build the complete failover chain given a primary engine and model profile.
@@ -1004,7 +1004,7 @@ mod tests {
     #[test]
     fn test_failover_chain_never_reaches_retired_ids() {
         let profile = ModelProfile {
-            model: Some("claude-opus-4-8".into()),
+            model: Some(personas_core::model_ids::OPUS_CURRENT.into()),
             ..Default::default()
         };
         let chain = build_failover_chain(EngineKind::ClaudeCode, Some(&profile));
@@ -1030,7 +1030,7 @@ mod tests {
     #[test]
     fn test_engine_kind_cannot_detect_a_model_downgrade() {
         let profile = ModelProfile {
-            model: Some("claude-opus-4-8".into()),
+            model: Some(personas_core::model_ids::OPUS_CURRENT.into()),
             ..Default::default()
         };
         let primary = EngineKind::ClaudeCode;

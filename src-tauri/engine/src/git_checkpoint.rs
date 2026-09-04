@@ -31,7 +31,11 @@ fn branch_name(run_id: &str) -> String {
     format!("personas/run/{run_id}")
 }
 
-async fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
+/// The module's git argv owner. Every git invocation in the app funnels here so
+/// hardening flags, the working directory and the no-window flag are applied in
+/// exactly one place; callers outside this module use it rather than spawning
+/// their own child (see the spawning-a-cli-subprocess golden path).
+pub async fn run_git(dir: &Path, args: &[&str]) -> Result<String, String> {
     let mut cmd = Command::new("git");
     cmd.current_dir(dir);
     cmd.args(HARDENING);
@@ -67,31 +71,31 @@ pub async fn checkpoint_stage(
     let branch = branch_name(run_id);
 
     // Switch to (or create) the run branch without disturbing the working tree.
-    if git(dir, &["rev-parse", "--verify", "--quiet", &branch])
+    if run_git(dir, &["rev-parse", "--verify", "--quiet", &branch])
         .await
         .is_ok()
     {
-        git(dir, &["checkout", &branch]).await?;
+        run_git(dir, &["checkout", &branch]).await?;
     } else {
-        git(dir, &["checkout", "-B", &branch]).await?;
+        run_git(dir, &["checkout", "-B", &branch]).await?;
     }
 
-    git(dir, &["add", "-A"]).await?;
+    run_git(dir, &["add", "-A"]).await?;
 
     // Nothing staged → nothing to checkpoint.
-    if git(dir, &["diff", "--cached", "--quiet"]).await.is_ok() {
+    if run_git(dir, &["diff", "--cached", "--quiet"]).await.is_ok() {
         return Ok(None);
     }
 
     let subject = format!("personas({run_id}): {stage} ({status})");
     let trailer = format!("Personas-Run: {run_id}\nPersonas-Stage: {stage}");
-    git(
+    run_git(
         dir,
         &["commit", "--no-verify", "-m", &subject, "-m", &trailer],
     )
     .await?;
 
-    let sha = git(dir, &["rev-parse", "HEAD"]).await?;
+    let sha = run_git(dir, &["rev-parse", "HEAD"]).await?;
     Ok(Some(sha))
 }
 
@@ -110,7 +114,7 @@ pub async fn snapshot_stage(
     run_id: &str,
     checkpoint_id: &str,
 ) -> Result<Option<String>, String> {
-    let sha = git(
+    let sha = run_git(
         dir,
         &["stash", "create", &format!("personas checkpoint {run_id}")],
     )
@@ -119,7 +123,7 @@ pub async fn snapshot_stage(
         return Ok(None); // clean tree — nothing to snapshot
     }
     let refname = format!("refs/personas/checkpoints/{run_id}/{checkpoint_id}");
-    git(dir, &["update-ref", &refname, &sha]).await?;
+    run_git(dir, &["update-ref", &refname, &sha]).await?;
     Ok(Some(sha))
 }
 
@@ -127,10 +131,10 @@ pub async fn snapshot_stage(
 /// the SHA is an ancestor of the current branch tip before forking.
 pub async fn fork_from_checkpoint(dir: &Path, sha: &str, new_run_id: &str) -> Result<(), String> {
     // Ancestry guard: refuse to fork from a SHA not reachable from HEAD.
-    git(dir, &["merge-base", "--is-ancestor", sha, "HEAD"])
+    run_git(dir, &["merge-base", "--is-ancestor", sha, "HEAD"])
         .await
         .map_err(|_| format!("checkpoint {sha} is not an ancestor of HEAD"))?;
-    git(dir, &["checkout", "-B", &branch_name(new_run_id), sha]).await?;
+    run_git(dir, &["checkout", "-B", &branch_name(new_run_id), sha]).await?;
     Ok(())
 }
 
@@ -141,7 +145,7 @@ pub async fn fork_from_checkpoint(dir: &Path, sha: &str, new_run_id: &str) -> Re
 /// `git stash create` commits, and `reset --hard` onto one leaves HEAD detached
 /// on a stash object — use [`restore_snapshot`] instead.
 pub async fn rollback_to(dir: &Path, sha: &str) -> Result<(), String> {
-    git(dir, &["reset", "--hard", sha]).await?;
+    run_git(dir, &["reset", "--hard", sha]).await?;
     Ok(())
 }
 
@@ -163,7 +167,7 @@ pub async fn rollback_to(dir: &Path, sha: &str) -> Result<(), String> {
 /// since are left alone rather than deleted.
 pub async fn restore_snapshot(dir: &Path, sha: &str) -> Result<(), String> {
     // `^{tree}` so a caller may pass either the snapshot commit or its tree.
-    git(
+    run_git(
         dir,
         &["read-tree", "-u", "--reset", &format!("{sha}^{{tree}}")],
     )
@@ -180,7 +184,7 @@ pub async fn restore_snapshot(dir: &Path, sha: &str) -> Result<(), String> {
 /// a SHA this repo does not contain is a drifted index row, not a rollback
 /// target.
 pub async fn contains_object(dir: &Path, sha: &str) -> bool {
-    git(dir, &["cat-file", "-e", &format!("{sha}^{{object}}")])
+    run_git(dir, &["cat-file", "-e", &format!("{sha}^{{object}}")])
         .await
         .is_ok()
 }
@@ -190,16 +194,18 @@ mod tests {
     use super::*;
 
     async fn init_repo(dir: &Path) {
-        git(dir, &["init", "-q"]).await.unwrap();
-        git(dir, &["config", "user.email", "t@t.test"])
+        run_git(dir, &["init", "-q"]).await.unwrap();
+        run_git(dir, &["config", "user.email", "t@t.test"])
             .await
             .unwrap();
-        git(dir, &["config", "user.name", "test"]).await.unwrap();
+        run_git(dir, &["config", "user.name", "test"])
+            .await
+            .unwrap();
         tokio::fs::write(dir.join("seed.txt"), "seed")
             .await
             .unwrap();
-        git(dir, &["add", "-A"]).await.unwrap();
-        git(dir, &["commit", "--no-verify", "-m", "seed"])
+        run_git(dir, &["add", "-A"]).await.unwrap();
+        run_git(dir, &["commit", "--no-verify", "-m", "seed"])
             .await
             .unwrap();
     }
@@ -216,7 +222,7 @@ mod tests {
     async fn snapshot_and_restore_rewind_the_tree_without_moving_head() {
         let dir = temp_dir("snap_restore");
         init_repo(&dir).await;
-        let head_before = git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
+        let head_before = run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
 
         tokio::fs::write(dir.join("seed.txt"), "good")
             .await
@@ -239,7 +245,7 @@ mod tests {
             "restore must bring the snapshotted content back"
         );
         assert_eq!(
-            git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
+            run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
             head_before,
             "restore must NOT move HEAD -- that is the whole difference from rollback_to"
         );
@@ -321,10 +327,10 @@ mod tests {
     async fn snapshot_is_non_disruptive() {
         let dir = temp_dir("snap");
         init_repo(&dir).await;
-        let branch_before = git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
+        let branch_before = run_git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
             .await
             .unwrap();
-        let head_before = git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
+        let head_before = run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
 
         tokio::fs::write(dir.join("seed.txt"), "modified")
             .await
@@ -337,13 +343,13 @@ mod tests {
 
         // HEAD, branch, and working tree must all be untouched.
         assert_eq!(
-            git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
+            run_git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
                 .await
                 .unwrap(),
             branch_before
         );
         assert_eq!(
-            git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
+            run_git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
             head_before
         );
         assert_eq!(
@@ -354,7 +360,7 @@ mod tests {
         );
 
         // The hidden ref keeps the snapshot reachable.
-        let refsha = git(&dir, &["rev-parse", "refs/personas/checkpoints/run9/ckpt9"])
+        let refsha = run_git(&dir, &["rev-parse", "refs/personas/checkpoints/run9/ckpt9"])
             .await
             .unwrap();
         assert_eq!(refsha, sha);

@@ -251,9 +251,13 @@ pub async fn dev_tools_rollback_run_checkpoint(
     sha: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
+    // The caller's own input is refused by the shared validator, so an empty
+    // sha reads as "sha cannot be empty" rather than as a membership miss.
+    // The membership check below then speaks only about the index.
+    personas_core::validation::require_non_empty("sha", &sha)?;
 
     let rows = ckpt_repo::list(&state.db, &run_id)?;
-    if !rows.iter().any(|r| r.sha == sha && !r.sha.is_empty()) {
+    if !rows.iter().any(|r| r.sha == sha) {
         return Err(AppError::Validation(format!(
             "checkpoint {sha} is not in run {run_id}'s index"
         )));
@@ -292,24 +296,14 @@ pub async fn dev_tools_rollback_run_checkpoint(
 mod tests {
     use super::*;
     use crate::db::DbPool;
-    use std::sync::atomic::{AtomicU64, Ordering};
 
+    /// The shared helper, not a locally built pool: it copies the migrated
+    /// template and builds through `SqlitePragmaCustomizer`, so a test
+    /// connection carries the same pragmas (foreign keys included) as a
+    /// production one. A pool built inline here would run on rusqlite's
+    /// defaults and quietly test a different database than the app uses.
     fn test_pool() -> DbPool {
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:run_ckpt_testdb_{id}?mode=memory&cache=shared");
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder()
-            .max_size(4)
-            .build(manager)
-            .expect("pool");
-        {
-            let conn = pool.get().expect("conn");
-            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-            crate::db::migrations::run(&conn).expect("migrations");
-            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
-        }
-        pool
+        crate::db::init_test_db().expect("test db")
     }
 
     fn temp_dir(tag: &str) -> std::path::PathBuf {
@@ -319,14 +313,13 @@ mod tests {
         d
     }
 
+    /// Through the module that owns git argv, not a child of our own: a fixture
+    /// repository built with different flags than the code under test uses is a
+    /// fixture for a different program.
     async fn git(dir: &Path, args: &[&str]) {
-        let out = tokio::process::Command::new("git")
-            .current_dir(dir)
-            .args(args)
-            .output()
+        personas_engine::git_checkpoint::run_git(dir, args)
             .await
-            .expect("git");
-        assert!(out.status.success(), "git {args:?}: {:?}", out);
+            .unwrap_or_else(|e| panic!("git {args:?}: {e}"));
     }
 
     async fn init_repo(dir: &Path) {

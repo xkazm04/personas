@@ -174,6 +174,33 @@ where
 
 // -- Core job fields shared by every background job -------------
 
+/// The job lifecycle's legal states, in one place.
+///
+/// `status` stays a `String` on the entry because it crosses the IPC boundary
+/// as one, but a transition is named rather than spelled: the legal set is
+/// enumerable from the type, and a misspelled state is a compile error instead
+/// of a job that never leaves "runnning".
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JobStatus {
+    Running,
+    Failed,
+}
+
+impl JobStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            JobStatus::Running => "running",
+            JobStatus::Failed => "failed",
+        }
+    }
+}
+
+impl std::fmt::Display for JobStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// The common fields every background job must have.
 /// Job-specific data lives in the `extra` field.
 #[derive(Clone)]
@@ -654,7 +681,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         self.set_status(
             app,
             job_id,
-            "failed",
+            JobStatus::Failed.as_str(),
             Some(CancelOutcome::Requested.error_text().into()),
         );
         Ok(())
@@ -684,7 +711,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         grace: Duration,
     ) -> Result<CancelOutcome, AppError> {
         let outcome = self.cancel_and_reclaim_quiet(job_id, grace).await?;
-        self.set_status(app, job_id, "failed", Some(outcome.error_text().into()));
+        self.set_status(
+            app,
+            job_id,
+            JobStatus::Failed.as_str(),
+            Some(outcome.error_text().into()),
+        );
         Ok(outcome)
     }
 
@@ -750,7 +782,11 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         };
 
         self.note_cancel(job_id, outcome);
-        self.set_status_quiet(job_id, "failed", Some(outcome.error_text().into()))?;
+        self.set_status_quiet(
+            job_id,
+            JobStatus::Failed.as_str(),
+            Some(outcome.error_text().into()),
+        )?;
         Ok(outcome)
     }
 
@@ -797,7 +833,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         self.set_status(
             app,
             job_id,
-            "failed",
+            JobStatus::Failed.as_str(),
             Some(CancelOutcome::Requested.error_text().into()),
         );
         Ok(())
@@ -890,7 +926,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     ///
     /// The single most common background-job shape in this backend: a
     /// fire-and-forget worker whose entire panic recovery is
-    /// `set_status(app, job_id, "failed", Some(msg))`. Callers whose recovery
+    /// `set_status(app, job_id, JobStatus::Failed.as_str(), Some(msg))`. Callers whose recovery
     /// arm does more (emit a line, write a repo row, clear an ad-hoc registry)
     /// use [`spawn_guarded`] directly with their own closure rather than
     /// growing this method an `Option` parameter.
@@ -924,7 +960,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         let job_id_for_panic = job_id.clone();
         let job_id_for_registry = job_id.clone();
         let handle = spawn_guarded(task, job_id, fut, move |msg| async move {
-            self.set_status(&app, &job_id_for_panic, "failed", Some(msg));
+            self.set_status(
+                &app,
+                &job_id_for_panic,
+                JobStatus::Failed.as_str(),
+                Some(msg),
+            );
         });
         self.register_abortable(&job_id_for_registry, handle);
     }
@@ -1061,7 +1102,7 @@ mod tests {
                 panic!("worker died");
             },
             move |msg| async move {
-                let _ = JOBS.set_status_quiet(&jid, "failed", Some(msg));
+                let _ = JOBS.set_status_quiet(&jid, JobStatus::Failed.as_str(), Some(msg));
             },
         )
         .await

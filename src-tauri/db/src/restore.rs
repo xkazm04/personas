@@ -174,7 +174,11 @@ fn probe_state(path: &Path) -> (SetState, &'static str) {
 }
 
 fn verdict(conn: &rusqlite::Connection) -> SetState {
-    match conn.query_row("PRAGMA quick_check(1)", [], |r| r.get::<_, String>(0)) {
+    // By column name, not position: the pragma's single result column is named
+    // after the pragma itself, and a name cannot shift under an index.
+    match conn.query_row("PRAGMA quick_check(1)", [], |r| {
+        r.get::<_, String>("quick_check")
+    }) {
         Ok(v) if v.eq_ignore_ascii_case("ok") => SetState::Readable,
         Ok(_) => SetState::Damaged,
         // The probe itself failed. The file opened and then would not answer:
@@ -387,8 +391,12 @@ mod tests {
     /// Trash the header magic — the one place SQLite is guaranteed to read
     /// first and reject. Same deterministic fault `damage.rs` uses.
     fn damage_header(db_path: &Path) {
+        /// The SQLite file header opens with a fixed 16-byte magic string. This
+        /// is that string's length, not an arbitrary sample size: overwriting
+        /// exactly it is what makes the file unopenable and nothing more.
+        const HEADER_MAGIC_LEN: usize = 16;
         let mut bytes = std::fs::read(db_path).expect("read the store");
-        for b in bytes.iter_mut().take(16) {
+        for b in bytes.iter_mut().take(HEADER_MAGIC_LEN) {
             *b = 0xFF;
         }
         std::fs::write(db_path, &bytes).expect("write the damaged store");

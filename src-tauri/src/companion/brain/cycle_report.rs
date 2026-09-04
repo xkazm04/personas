@@ -488,7 +488,7 @@ mod tests {
 
         // The markdown is on disk under the brain root, with frontmatter.
         let rel: String = {
-            let conn = pool.get().unwrap();
+            let conn = checkout(&pool);
             conn.query_row(
                 "SELECT file_path FROM companion_node WHERE id = ?1",
                 params![node_id],
@@ -593,8 +593,18 @@ mod tests {
         assert!(finish_cycle(&pool, "cyc_nope", STATUS_COMPLETED, "{}", "body").is_err());
     }
 
+    /// One checkout point for these tests: a pool that cannot hand out a
+    /// connection is a failure of the fixture, and it says so once here rather
+    /// than panicking at three different call sites.
+    fn checkout(pool: &UserDbPool) -> r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager> {
+        match pool.get() {
+            Ok(c) => c,
+            Err(e) => panic!("test pool could not hand out a connection: {e}"),
+        }
+    }
+
     fn raw_phases(pool: &UserDbPool, cycle_id: &str) -> String {
-        let conn = pool.get().unwrap();
+        let conn = checkout(pool);
         conn.query_row(
             "SELECT phases_json FROM companion_cycle WHERE id = ?1",
             params![cycle_id],
@@ -635,7 +645,7 @@ mod tests {
         // would: valid UTF-8, not a JSON array.
         const CORRUPT: &str = r#"[{"phase":"compress","status":"comp"#;
         {
-            let conn = pool.get().unwrap();
+            let conn = checkout(&pool);
             conn.execute(
                 "UPDATE companion_cycle SET phases_json = ?1 WHERE id = ?2",
                 params![CORRUPT, &cycle_id],
