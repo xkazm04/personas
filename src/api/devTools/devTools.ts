@@ -1383,6 +1383,45 @@ export const cancelAutoRun = (runId: string) =>
 export const getAutoRunStatus = (projectId?: string) =>
   invoke<AutoRunStatus>("dev_tools_get_auto_run_status", { projectId: projectId ?? null });
 
+// -- Run checkpoints (git rewind for an auto-run) ----------------------------
+
+/** One recorded stage boundary of an auto-run. A row with an empty `sha` is a
+ *  known GAP -- `status` carries a typed `gap:<reason>` -- so a rollback offer
+ *  can say what it cannot reach instead of showing a hole as coverage. */
+export interface RunCheckpointRow {
+  id: string;
+  stage: string;
+  sha: string;
+  status: string;
+  createdAt: string;
+  /** Whether the SHA still resolves in the run's workspace. */
+  reachable: boolean;
+}
+
+export interface RunCheckpointsView {
+  runId: string;
+  workspace: string | null;
+  checkpoints: RunCheckpointRow[];
+  /** Recoverable stage boundaries. */
+  captured: number;
+  /** Boundaries known to be missing, with a typed reason. */
+  gaps: number;
+  /** Captured rows the workspace can no longer resolve. Should be 0; anything
+   *  else means the SQLite index and the git repository have drifted apart. */
+  unreachable: number;
+}
+
+export const listRunCheckpoints = (runId: string) =>
+  invoke<RunCheckpointsView>("dev_tools_list_run_checkpoints", { runId });
+
+/** Roll the run's workspace back to one of its checkpoints.
+ *
+ *  Resets TRACKED files only, and rewinds nothing else: the run ledger, the
+ *  task rows and the companion history still describe work that may no longer
+ *  exist on disk. Tell the operator that before calling this. */
+export const rollbackRunCheckpoint = (runId: string, sha: string) =>
+  invoke<void>("dev_tools_rollback_run_checkpoint", { runId, sha });
+
 // ============================================================================
 // Cross-Project (Codebases connector)
 // ============================================================================

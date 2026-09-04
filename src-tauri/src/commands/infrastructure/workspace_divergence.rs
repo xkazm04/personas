@@ -270,7 +270,7 @@ pub async fn dev_tools_workspace_run_divergence(
     let valid_projects: Vec<String> = members.iter().map(|p| p.name.clone()).collect();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
-    spawn_guarded(
+    let divergence_handle = spawn_guarded(
         "workspace divergence",
         jid_for_panic.clone(),
         async move {
@@ -308,6 +308,10 @@ pub async fn dev_tools_workspace_run_divergence(
             DIVERGENCE_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
         },
     );
+    // Make the pass reclaimable: `dev_tools_workspace_cancel_divergence` runs
+    // agent CLIs over a workspace, so a cancel that only fired a token could
+    // leave a subprocess writing rows behind a job the desk shows as cancelled.
+    DIVERGENCE_JOBS.register_abortable(&job_id, divergence_handle);
 
     Ok(job_id)
 }
@@ -335,13 +339,16 @@ pub fn dev_tools_workspace_get_divergence_status(
 }
 
 #[tauri::command]
-pub fn dev_tools_workspace_cancel_divergence(
+pub async fn dev_tools_workspace_cancel_divergence(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     job_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    DIVERGENCE_JOBS.cancel(&app, &job_id)
+    DIVERGENCE_JOBS
+        .cancel_and_reclaim(&app, &job_id, crate::background_job::DEFAULT_RECLAIM_GRACE)
+        .await
+        .map(|_| ())
 }
 
 // ── core ────────────────────────────────────────────────────────────────────

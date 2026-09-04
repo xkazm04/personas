@@ -44,11 +44,19 @@ pub fn list_schema_proposal_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel a schema proposal job (called from unified workflows dispatcher).
-pub fn cancel_schema_proposal_job(
+/// Async because it *reclaims* — see `cancel_query_debug_job`.
+pub async fn cancel_schema_proposal_job(
     app: &tauri::AppHandle,
     proposal_id: &str,
 ) -> Result<(), AppError> {
-    SCHEMA_PROPOSAL_JOBS.cancel(app, proposal_id)
+    SCHEMA_PROPOSAL_JOBS
+        .cancel_and_reclaim(
+            app,
+            proposal_id,
+            crate::background_job::DEFAULT_RECLAIM_GRACE,
+        )
+        .await
+        .map(|_| ())
 }
 
 // -- Tauri commands ------------------------------------------------------

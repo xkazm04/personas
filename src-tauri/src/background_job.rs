@@ -7,7 +7,8 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 use std::time::{Duration, Instant};
 
 use futures_util::FutureExt;
@@ -43,6 +44,70 @@ const DEFAULT_STALE_RUNNING_SECS: u64 = 10 * 60;
 /// Grace period added on top of the stale timeout (30 seconds).
 const STALE_GRACE_SECS: u64 = 30;
 
+/// How long a cancelling caller waits for a signalled task to finish its own
+/// bookkeeping before the handle is aborted outright.
+///
+/// Mirrors the ladder `engine::execution::cancel` already runs for the primary
+/// agent-execution path (signal → terminate → bounded grace → abort), at a
+/// shorter horizon: these jobs write a status row, not a metrics batch.
+pub const DEFAULT_RECLAIM_GRACE: Duration = Duration::from_secs(2);
+
+// -- Cancellation outcome ---------------------------------------
+
+/// What a cancel request actually **achieved** — as opposed to what it asked
+/// for.
+///
+/// Before this existed, `cancel()` fired a cooperative [`CancellationToken`]
+/// and then wrote `status = "failed", error = "Cancelled by user"`
+/// *unconditionally*, for every job, whether or not anything could observe the
+/// token. Most background tasks are spawned through [`spawn_guarded`], which
+/// until now dropped the returned [`JoinHandle`] at every production call site,
+/// so for those jobs there was nothing to abort and nothing to await: the
+/// terminal row asserted a reclaim the system could not perform, and a task
+/// that ignored the token (blocking FFI, a `Command` mid-`output()`, a loop
+/// with no `select!` arm) kept running behind a job the UI showed as finished.
+///
+/// The two values below cost one field and no behaviour change. They make the
+/// difference visible in the snapshot so a caller can tell "we asked" from "it
+/// stopped", which is the precondition for closing the gap rather than
+/// papering over it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CancelOutcome {
+    /// The cooperative token was fired, but **no abortable handle was
+    /// registered** for this job (or the caller used the synchronous
+    /// [`BackgroundJobManager::cancel`], which cannot await one). The task may
+    /// still be running. This is *not* a reclaim.
+    Requested,
+    /// The token was fired **and** the task's [`JoinHandle`] was reclaimed —
+    /// it either finished within the grace period or was aborted after it.
+    /// Nothing of this job is still scheduled.
+    Reclaimed,
+}
+
+impl CancelOutcome {
+    /// The error text written onto the terminal job row. The `Requested` text
+    /// deliberately refuses to say the job stopped, because nothing proved it.
+    pub fn error_text(self) -> &'static str {
+        match self {
+            Self::Reclaimed => "Cancelled by user",
+            Self::Requested => {
+                "Cancellation requested — the task was not abortable and may still be running"
+            }
+        }
+    }
+}
+
+/// A slot holding a spawned task's [`JoinHandle`] so a later cancel can await
+/// or abort it.
+///
+/// `Arc<tokio::sync::Mutex<Option<..>>>` rather than a bare handle because
+/// [`JobEntry`] is `Clone` (snapshots and the `or_default()` upsert path both
+/// rely on it) and a `JoinHandle` is not. The `Option` is taken — not
+/// borrowed — by the reclaim path, since awaiting a handle consumes it, and
+/// that also makes a second cancel a no-op instead of a double-abort.
+pub type AbortSlot = Arc<tokio::sync::Mutex<Option<JoinHandle<()>>>>;
+
 /// Truncate a single output line to [`MAX_LINE_BYTES`], appending a marker that
 /// names how many bytes were dropped so the live log reads honestly rather than
 /// silently swallowing the tail.
@@ -72,11 +137,14 @@ fn clamp_line(line: String) -> String {
 /// nine spellings of one idea and could not be unified any other way, because
 /// `tracing` field names must be literals.
 ///
-/// **This preserves what the call sites do today, including dropping the
-/// `JoinHandle`.** The returned handle is `#[must_use]`-free on purpose: a
-/// caller that wants to register or await it can, and the ~20 callers that
-/// discard it keep discarding it. Making these tasks abortable is a separate,
-/// behaviour-changing piece of work.
+/// **The returned handle is `#[must_use]`-free on purpose.** A caller that
+/// wants the task to be abortable hands the handle to
+/// [`BackgroundJobManager::register_abortable`] (or spawns through
+/// [`BackgroundJobManager::spawn_job`], which registers it for you); a
+/// fire-and-forget caller keeps discarding it. Discarding it is a real
+/// choice with a real consequence — such a job can only ever report
+/// [`CancelOutcome::Requested`], never `Reclaimed` — so it should be made
+/// deliberately, not by default.
 pub fn spawn_guarded<F, R, Fut>(
     task: &'static str,
     entity_id: impl Into<String>,
@@ -115,6 +183,15 @@ pub struct JobEntry<E: Clone> {
     pub lines: Vec<String>,
     pub cancel_token: Option<CancellationToken>,
     pub created_at: Instant,
+    /// The spawned worker's `JoinHandle`, if the call site registered one.
+    /// `None` means this job is **not abortable**: a cancel can signal it and
+    /// nothing more. See [`AbortSlot`] and [`CancelOutcome`].
+    pub abort: Option<AbortSlot>,
+    /// What the last cancel request on this job achieved. `None` until one is
+    /// made. Carried on the entry (not derived from `status`) because the
+    /// terminal status is `"failed"` in both cases and only this field says
+    /// whether the task was actually reclaimed.
+    pub cancel_outcome: Option<CancelOutcome>,
     /// Job-specific extra state (e.g., draft, result_json, questions, session_id).
     pub extra: E,
 }
@@ -127,6 +204,8 @@ impl<E: Clone + Default> Default for JobEntry<E> {
             lines: Vec::new(),
             cancel_token: None,
             created_at: Instant::now(),
+            abort: None,
+            cancel_outcome: None,
             extra: E::default(),
         }
     }
@@ -158,6 +237,11 @@ pub struct BackgroundJobManager<E: Clone + Default + Send + 'static> {
     lock_error_msg: &'static str,
     status_event_name: &'static str,
     output_event_name: &'static str,
+    /// Cancel requests this manager has signalled (token fired), lifetime.
+    cancels_signalled: AtomicU64,
+    /// Of those, the ones that actually reclaimed a task handle.
+    /// `signalled - reaped` is the size of the gap, in units, at runtime.
+    cancels_reaped: AtomicU64,
 }
 
 impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
@@ -176,7 +260,57 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             lock_error_msg,
             status_event_name,
             output_event_name,
+            cancels_signalled: AtomicU64::new(0),
+            cancels_reaped: AtomicU64::new(0),
         }
+    }
+
+    /// `(signalled, reaped)` — cancel requests this manager has fired a token
+    /// for, and how many of those actually reclaimed the task.
+    ///
+    /// The measurable the cancellation work is judged on. A manager whose
+    /// `reaped` is structurally 0 has cancel *requests* only; the difference
+    /// is the number of times the app told a user a job was over while its
+    /// task was still scheduled.
+    pub fn cancel_counts(&self) -> (u64, u64) {
+        (
+            self.cancels_signalled.load(Ordering::Relaxed),
+            self.cancels_reaped.load(Ordering::Relaxed),
+        )
+    }
+
+    /// Record a cancel outcome on the entry and bump the two counters.
+    fn note_cancel(&self, job_id: &str, outcome: CancelOutcome) {
+        self.cancels_signalled.fetch_add(1, Ordering::Relaxed);
+        if outcome == CancelOutcome::Reclaimed {
+            self.cancels_reaped.fetch_add(1, Ordering::Relaxed);
+        }
+        let (signalled, reaped) = self.cancel_counts();
+        tracing::info!(
+            job_id = %job_id,
+            manager = self.lock_error_msg,
+            outcome = ?outcome,
+            cancels_signalled = signalled,
+            cancels_reaped = reaped,
+            "background job cancel"
+        );
+        let mut jobs = self.lock_or_recover();
+        let entry = jobs.entry(job_id.to_string()).or_default();
+        entry.cancel_outcome = Some(outcome);
+    }
+
+    /// Register a spawned task's handle so a later cancel can reclaim it.
+    ///
+    /// Without this the job is signal-only: [`cancel_and_reclaim`] will report
+    /// [`CancelOutcome::Requested`] and the task keeps whatever it holds.
+    /// [`spawn_job`] calls this for you.
+    ///
+    /// [`cancel_and_reclaim`]: Self::cancel_and_reclaim
+    /// [`spawn_job`]: Self::spawn_job
+    pub fn register_abortable(&self, job_id: &str, handle: JoinHandle<()>) {
+        let mut jobs = self.lock_or_recover();
+        let entry = jobs.entry(job_id.to_string()).or_default();
+        entry.abort = Some(Arc::new(tokio::sync::Mutex::new(Some(handle))));
     }
 
     fn jobs(&self) -> &Mutex<HashMap<String, JobEntry<E>>> {
@@ -254,10 +388,24 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                     max_age.as_secs()
                 );
                 job.status = "failed".to_string();
+                // The sweeper runs on a poll thread and cannot await, so it
+                // can only ever SIGNAL. Say which of the two happened rather
+                // than letting the row read as a completed reclaim: an
+                // un-abortable task survives this sweep and the diagnostic
+                // must not imply otherwise.
+                let abortable = job.abort.is_some();
                 job.error = Some(format!(
-                    "Job timed out after {}s without completing (stale job detection)",
-                    elapsed
+                    "Job timed out after {}s without completing (stale job detection); \
+                     the task was signalled to stop but {}",
+                    elapsed,
+                    if abortable {
+                        "has not been reclaimed by this sweep"
+                    } else {
+                        "is not abortable and may still be running"
+                    }
                 ));
+                job.cancel_outcome = Some(CancelOutcome::Requested);
+                self.cancels_signalled.fetch_add(1, Ordering::Relaxed);
                 // Cancel the token so the spawned task can clean up if still alive
                 if let Some(token) = &job.cancel_token {
                     token.cancel();
@@ -314,6 +462,8 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                 lines: Vec::new(),
                 cancel_token: Some(cancel_token),
                 created_at: Instant::now(),
+                abort: None,
+                cancel_outcome: None,
                 extra,
             },
         );
@@ -457,6 +607,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             entry.status = "running".to_string();
             entry.error = None;
             entry.cancel_token = Some(token);
+            // A resumed job is a fresh attempt: the previous run's handle is
+            // finished and its cancel verdict no longer describes anything.
+            // Leaving either behind would let a stale `Reclaimed` vouch for a
+            // task that has not been spawned yet.
+            entry.abort = None;
+            entry.cancel_outcome = None;
         }
 
         let _ = app.emit(
@@ -477,14 +633,125 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         Ok(())
     }
 
-    /// Cancel a job: fire the cancellation token and set status to failed.
+    /// Cancel a job **cooperatively**: fire the cancellation token and set the
+    /// status to failed.
+    ///
+    /// This is the signal-only half. It cannot await or abort the task — it is
+    /// synchronous and the task's handle can only be reclaimed from an async
+    /// context — so it always records [`CancelOutcome::Requested`] and writes
+    /// the terminal error text that says so. It never claims the job stopped.
+    ///
+    /// Callers that can `.await` should use [`cancel_and_reclaim`] instead;
+    /// that is the path that can report `Reclaimed`.
+    ///
+    /// [`cancel_and_reclaim`]: Self::cancel_and_reclaim
     pub fn cancel(&self, app: &tauri::AppHandle, job_id: &str) -> Result<(), AppError> {
         let token = self.get_cancel_token(job_id)?;
         if let Some(token) = token {
             token.cancel();
         }
-        self.set_status(app, job_id, "failed", Some("Cancelled by user".into()));
+        self.note_cancel(job_id, CancelOutcome::Requested);
+        self.set_status(
+            app,
+            job_id,
+            "failed",
+            Some(CancelOutcome::Requested.error_text().into()),
+        );
         Ok(())
+    }
+
+    /// Cancel a job and **reclaim its task**, following the same ladder the
+    /// primary agent-execution path runs (`engine::execution::cancel`):
+    ///
+    /// 1. fire the cooperative token, so a task with a `select!` arm can wind
+    ///    down on its own terms;
+    /// 2. wait up to `grace` for it to finish, so whatever bookkeeping it owes
+    ///    (status row, repo write, temp-file cleanup) still lands;
+    /// 3. `abort()` if it overstays, so a task that ignores the token — a
+    ///    blocking FFI call, a `Command` mid-`output()`, a loop with no
+    ///    cancellation arm — cannot outlive the job that reports it finished.
+    ///
+    /// Returns what was actually achieved. [`CancelOutcome::Requested`] means
+    /// no handle was registered for this job (see [`register_abortable`]) and
+    /// step 2–3 could not run; the task may still be scheduled and the job row
+    /// says so rather than claiming otherwise.
+    ///
+    /// [`register_abortable`]: Self::register_abortable
+    pub async fn cancel_and_reclaim(
+        &self,
+        app: &tauri::AppHandle,
+        job_id: &str,
+        grace: Duration,
+    ) -> Result<CancelOutcome, AppError> {
+        let outcome = self.cancel_and_reclaim_quiet(job_id, grace).await?;
+        self.set_status(app, job_id, "failed", Some(outcome.error_text().into()));
+        Ok(outcome)
+    }
+
+    /// The whole of [`cancel_and_reclaim`] except the Tauri status event.
+    ///
+    /// Split out because it is the half a unit test can drive: no unit test in
+    /// this process can build an `AppHandle`, and a cancellation guarantee that
+    /// only holds in a running app is not a guarantee. Callers in the app use
+    /// [`cancel_and_reclaim`]; this is public so the ladder itself is testable.
+    ///
+    /// [`cancel_and_reclaim`]: Self::cancel_and_reclaim
+    pub async fn cancel_and_reclaim_quiet(
+        &self,
+        job_id: &str,
+        grace: Duration,
+    ) -> Result<CancelOutcome, AppError> {
+        // 1. Signal.
+        if let Some(token) = self.get_cancel_token(job_id)? {
+            token.cancel();
+        }
+
+        // Take the slot out from under the store lock — the reclaim below
+        // awaits, and the store guard is a std Mutex that must not be held
+        // across an await point.
+        let slot = {
+            let jobs = self.lock_or_recover();
+            jobs.get(job_id).and_then(|j| j.abort.clone())
+        };
+
+        let outcome = match slot {
+            None => CancelOutcome::Requested,
+            Some(slot) => {
+                // A second cancel finds the Option already taken and is a
+                // no-op rather than a double-abort.
+                let handle = slot.lock().await.take();
+                match handle {
+                    None => CancelOutcome::Reclaimed,
+                    Some(mut handle) => {
+                        // 2. Bounded grace for the task's own bookkeeping.
+                        //
+                        // `&mut handle`, not `handle`: `timeout` takes its
+                        // future by value, and dropping a `JoinHandle`
+                        // DETACHES the task rather than stopping it — which
+                        // would be the exact false reclaim this method exists
+                        // to remove. `JoinHandle` is `Unpin`, so `&mut` is
+                        // itself a `Future` and ownership stays here.
+                        if tokio::time::timeout(grace, &mut handle).await.is_err() {
+                            tracing::warn!(
+                                job_id = %job_id,
+                                manager = self.lock_error_msg,
+                                grace_ms = grace.as_millis() as u64,
+                                "cancel: task did not finish within grace period, aborting",
+                            );
+                            // 3. Terminate, then await the abort so the
+                            // outcome is observed and not merely requested.
+                            handle.abort();
+                            let _ = handle.await;
+                        }
+                        CancelOutcome::Reclaimed
+                    }
+                }
+            }
+        };
+
+        self.note_cancel(job_id, outcome);
+        self.set_status_quiet(job_id, "failed", Some(outcome.error_text().into()))?;
+        Ok(outcome)
     }
 
     /// Cancel a job, or pre-emptively insert a cancelled entry if the job
@@ -506,10 +773,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                     job_id.to_string(),
                     JobEntry {
                         status: "failed".into(),
-                        error: Some("Cancelled by user".into()),
+                        error: Some(CancelOutcome::Requested.error_text().into()),
                         lines: Vec::new(),
                         cancel_token: Some(token.clone()),
                         created_at: Instant::now(),
+                        abort: None,
+                        cancel_outcome: Some(CancelOutcome::Requested),
                         extra,
                     },
                 );
@@ -521,7 +790,16 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             token.cancel();
         }
 
-        self.set_status(app, job_id, "failed", Some("Cancelled by user".into()));
+        // Always `Requested`: the pre-empt arm exists precisely because the
+        // task may not have been spawned yet, so there is nothing to reap and
+        // a start could still race in behind the pre-fired token.
+        self.note_cancel(job_id, CancelOutcome::Requested);
+        self.set_status(
+            app,
+            job_id,
+            "failed",
+            Some(CancelOutcome::Requested.error_text().into()),
+        );
         Ok(())
     }
 
@@ -542,6 +820,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             error: job.error.clone(),
             lines: job.lines.clone(),
             elapsed_secs: job.created_at.elapsed().as_secs(),
+            cancel_outcome: job.cancel_outcome,
         })
     }
 
@@ -562,6 +841,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                 error: job.error.clone(),
                 lines: job.lines.clone(),
                 elapsed_secs: job.created_at.elapsed().as_secs(),
+                cancel_outcome: job.cancel_outcome,
             })
             .collect()
     }
@@ -600,6 +880,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             error: job.error.clone(),
             lines: job.lines.clone(),
             elapsed_secs: job.created_at.elapsed().as_secs(),
+            cancel_outcome: job.cancel_outcome,
             extras: map_extras(&job.extra),
         })
     }
@@ -615,21 +896,37 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// growing this method an `Option` parameter.
     ///
     /// Takes `&'static self` because every manager in the tree is a `static`.
+    ///
+    /// The spawned handle is **registered on the job entry**
+    /// ([`register_abortable`]) rather than returned, so every job spawned
+    /// this way is reclaimable by [`cancel_and_reclaim`] without the call site
+    /// doing anything.
+    ///
+    /// Returning `()` is deliberate: a `JoinHandle` can be awaited only once
+    /// and only by its owner, and the owner has to be the registry — that is
+    /// the whole point. Handing a copy back would mean either detaching the
+    /// task on drop (the false reclaim this work removes) or racing the cancel
+    /// path for the join. A caller that genuinely needs the handle spawns
+    /// through [`spawn_guarded`] and calls [`register_abortable`] itself.
+    ///
+    /// [`register_abortable`]: Self::register_abortable
+    /// [`cancel_and_reclaim`]: Self::cancel_and_reclaim
     pub fn spawn_job<F>(
         &'static self,
         app: tauri::AppHandle,
         job_id: String,
         task: &'static str,
         fut: F,
-    ) -> JoinHandle<()>
-    where
+    ) where
         F: Future + Send + 'static,
         F::Output: Send,
     {
         let job_id_for_panic = job_id.clone();
-        spawn_guarded(task, job_id, fut, move |msg| async move {
+        let job_id_for_registry = job_id.clone();
+        let handle = spawn_guarded(task, job_id, fut, move |msg| async move {
             self.set_status(&app, &job_id_for_panic, "failed", Some(msg));
-        })
+        });
+        self.register_abortable(&job_id_for_registry, handle);
     }
 
     /// Update the status field directly on a locked job (no event emission).
@@ -657,6 +954,11 @@ pub struct JobSnapshot {
     pub lines: Vec<String>,
     /// Seconds since this job was created.
     pub elapsed_secs: u64,
+    /// What the last cancel request achieved, if one was made. `requested`
+    /// means the app asked and could not prove the task stopped; `reclaimed`
+    /// means it did. Additive on the wire — existing consumers that key on
+    /// `status` are unaffected.
+    pub cancel_outcome: Option<CancelOutcome>,
 }
 
 /// A generic snapshot that combines the common job fields with
@@ -669,6 +971,8 @@ pub struct BackgroundTaskSnapshot<T: Clone + Serialize> {
     pub error: Option<String>,
     pub lines: Vec<String>,
     pub elapsed_secs: u64,
+    /// See [`JobSnapshot::cancel_outcome`].
+    pub cancel_outcome: Option<CancelOutcome>,
     #[serde(flatten)]
     pub extras: T,
 }
@@ -822,6 +1126,231 @@ mod tests {
             &format!("line-{}", MAX_LINES + overflow - 1)
         );
         assert_eq!(snap.lines.first().unwrap(), &format!("line-{overflow}"));
+    }
+
+    // -- Cancellation: requested vs reclaimed -------------------------
+    //
+    // The property under test is the one the old `cancel()` violated for every
+    // job in the tree: it wrote `failed / "Cancelled by user"` whether or not
+    // anything could be stopped. These tests pin the two halves apart.
+
+    /// The load-bearing one. A job whose worker was spawned fire-and-forget
+    /// (no handle registered) must NOT claim reclamation — not in the outcome,
+    /// not in the counters, and not in the terminal error text a user reads.
+    #[tokio::test]
+    async fn cancelling_a_non_abortable_job_does_not_claim_reclamation() {
+        let m = mgr();
+        let job = "job-not-abortable";
+        m.insert_running(job.into(), CancellationToken::new(), ())
+            .unwrap();
+
+        let outcome = m
+            .cancel_and_reclaim_quiet(job, Duration::from_millis(50))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            outcome,
+            CancelOutcome::Requested,
+            "no handle was registered, so nothing was reaped"
+        );
+        let snap = m.get_snapshot(job).expect("job present");
+        assert_eq!(snap.cancel_outcome, Some(CancelOutcome::Requested));
+        assert_ne!(
+            snap.error.as_deref(),
+            Some("Cancelled by user"),
+            "the terminal row must not assert a stop nothing performed"
+        );
+        assert!(
+            snap.error
+                .as_deref()
+                .unwrap()
+                .contains("may still be running"),
+            "the row must say what it could not do, got {:?}",
+            snap.error
+        );
+        assert_eq!(
+            m.cancel_counts(),
+            (1, 0),
+            "one unit signalled, zero reaped — the gap, measured"
+        );
+    }
+
+    /// A registered handle whose task is still alive gets aborted after the
+    /// grace period, and the task really stops: the flag it would have set
+    /// after its sleep stays false.
+    #[tokio::test]
+    async fn cancelling_an_abortable_job_aborts_the_task_and_reports_reclaimed() {
+        let m = mgr();
+        let job = "job-abortable";
+        m.insert_running(job.into(), CancellationToken::new(), ())
+            .unwrap();
+
+        let reached_the_end = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = reached_the_end.clone();
+        // No `select!` on the token: this is the un-cooperative task that a
+        // signal-only cancel could never stop.
+        let handle = spawn_guarded(
+            "unit-test",
+            job,
+            async move {
+                tokio::time::sleep(Duration::from_secs(30)).await;
+                flag.store(true, Ordering::Relaxed);
+            },
+            |_| async {},
+        );
+        m.register_abortable(job, handle);
+
+        let outcome = m
+            .cancel_and_reclaim_quiet(job, Duration::from_millis(50))
+            .await
+            .unwrap();
+
+        assert_eq!(outcome, CancelOutcome::Reclaimed);
+        assert!(
+            !reached_the_end.load(Ordering::Relaxed),
+            "the task must have been aborted, not merely asked to stop"
+        );
+        let snap = m.get_snapshot(job).expect("job present");
+        assert_eq!(snap.cancel_outcome, Some(CancelOutcome::Reclaimed));
+        assert_eq!(snap.error.as_deref(), Some("Cancelled by user"));
+        assert_eq!(m.cancel_counts(), (1, 1), "signalled and reaped");
+    }
+
+    /// A cooperative task that honours the token finishes its own bookkeeping
+    /// inside the grace window — the abort arm must not fire, and the write
+    /// the task owed must land. This is the half `execution.rs`'s ladder exists
+    /// for, and the reason a cancel awaits before it aborts.
+    #[tokio::test]
+    async fn a_cooperative_task_finishes_its_bookkeeping_within_the_grace() {
+        static JOBS: BackgroundJobManager<()> =
+            BackgroundJobManager::new("test lock poisoned", "test-status", "test-output");
+        let job = "job-cooperative";
+        let token = CancellationToken::new();
+        JOBS.insert_running(job.into(), token.clone(), ()).unwrap();
+
+        let wrote = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let sink = wrote.clone();
+        let handle = spawn_guarded(
+            "unit-test",
+            job,
+            async move {
+                token.cancelled().await;
+                // The bookkeeping the grace period exists to protect.
+                JOBS.record_line(job, "[Cancelled] flushed");
+                sink.store(true, Ordering::Relaxed);
+            },
+            |_| async {},
+        );
+        JOBS.register_abortable(job, handle);
+
+        let outcome = JOBS
+            .cancel_and_reclaim_quiet(job, Duration::from_secs(5))
+            .await
+            .unwrap();
+
+        assert_eq!(outcome, CancelOutcome::Reclaimed);
+        assert!(
+            wrote.load(Ordering::Relaxed),
+            "the task must have been given room to finish, not aborted at once"
+        );
+        let snap = JOBS.get_snapshot(job).expect("job present");
+        assert!(snap.lines.iter().any(|l| l.contains("flushed")));
+    }
+
+    /// A second cancel finds the slot already emptied and must be a no-op that
+    /// still reports `Reclaimed` — not a double-abort, and not a downgrade to
+    /// `Requested` that would make an already-reaped job look un-reaped.
+    #[tokio::test]
+    async fn a_second_cancel_is_idempotent() {
+        let m = mgr();
+        let job = "job-twice";
+        m.insert_running(job.into(), CancellationToken::new(), ())
+            .unwrap();
+        let handle = spawn_guarded("unit-test", job, async {}, |_| async {});
+        m.register_abortable(job, handle);
+
+        let first = m
+            .cancel_and_reclaim_quiet(job, Duration::from_secs(1))
+            .await
+            .unwrap();
+        let second = m
+            .cancel_and_reclaim_quiet(job, Duration::from_secs(1))
+            .await
+            .unwrap();
+
+        assert_eq!(first, CancelOutcome::Reclaimed);
+        assert_eq!(second, CancelOutcome::Reclaimed);
+        assert_eq!(m.cancel_counts(), (2, 2));
+    }
+
+    /// The stale sweeper runs on a poll thread and can only signal. Its
+    /// diagnostic must say so for a job with no handle, and it must record
+    /// `Requested` rather than leaving the row indistinguishable from a real
+    /// reclaim.
+    #[test]
+    fn the_stale_sweeper_records_a_request_not_a_reclaim() {
+        let m = mgr();
+        let job = "job-stale";
+        {
+            let mut jobs = m.lock().unwrap();
+            jobs.insert(
+                job.into(),
+                JobEntry {
+                    status: "running".into(),
+                    created_at: Instant::now()
+                        - Duration::from_secs(DEFAULT_STALE_RUNNING_SECS + STALE_GRACE_SECS + 60),
+                    cancel_token: Some(CancellationToken::new()),
+                    ..Default::default()
+                },
+            );
+            let stale = m.sweep_stale_running(&mut jobs);
+            assert_eq!(stale, vec![job.to_string()]);
+        }
+
+        let snap = m.get_snapshot(job).expect("job present");
+        assert_eq!(snap.status, "failed");
+        assert_eq!(snap.cancel_outcome, Some(CancelOutcome::Requested));
+        assert!(
+            snap.error
+                .as_deref()
+                .unwrap()
+                .contains("may still be running"),
+            "a sweep cannot reclaim; the diagnostic must not imply it did — got {:?}",
+            snap.error
+        );
+        assert_eq!(m.cancel_counts(), (1, 0));
+    }
+
+    /// `spawn_job` must register the handle it spawns, so every job that goes
+    /// through it is reclaimable without the call site opting in. This is what
+    /// makes the six `spawn_job` sites abortable for free.
+    #[tokio::test]
+    async fn spawn_job_registers_its_handle() {
+        static JOBS: BackgroundJobManager<()> =
+            BackgroundJobManager::new("test lock poisoned", "test-status", "test-output");
+        let job = "job-spawned".to_string();
+        JOBS.insert_running(job.clone(), CancellationToken::new(), ())
+            .unwrap();
+        // `spawn_job` needs an AppHandle only for its panic arm; register the
+        // same way it does and assert the slot is filled.
+        let handle = spawn_guarded(
+            "unit-test",
+            job.clone(),
+            async { tokio::time::sleep(Duration::from_secs(30)).await },
+            |_| async {},
+        );
+        JOBS.register_abortable(&job, handle);
+
+        assert!(
+            JOBS.lock().unwrap().get(&job).unwrap().abort.is_some(),
+            "register_abortable must fill the entry's abort slot"
+        );
+        let outcome = JOBS
+            .cancel_and_reclaim_quiet(&job, Duration::from_millis(50))
+            .await
+            .unwrap();
+        assert_eq!(outcome, CancelOutcome::Reclaimed);
     }
 
     #[test]

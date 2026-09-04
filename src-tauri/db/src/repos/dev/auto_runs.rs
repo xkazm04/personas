@@ -118,6 +118,28 @@ pub fn set_auto_run_status(pool: &DbPool, run_id: &str, status: &str) -> Result<
     })
 }
 
+/// One auto-run row by id.
+///
+/// Added for the checkpoint rollback path, which has to resolve a run's
+/// workspace from the run itself: the checkpoint index carries no repository
+/// column, so `run -> project -> root_path` is the only binding between a
+/// checkpoint SHA and the tree it means something in. `latest_auto_run` is not
+/// a substitute -- a rollback is usually offered for a run that has since been
+/// overtaken by a newer one.
+pub fn get_auto_run(pool: &DbPool, run_id: &str) -> Result<Option<DevAutoRun>, AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::get_auto_run", {
+        let conn = pool.get()?;
+        let row = conn
+            .query_row(
+                "SELECT * FROM dev_auto_runs WHERE id = ?1",
+                params![run_id],
+                row_to_auto_run,
+            )
+            .optional()?;
+        Ok(row)
+    })
+}
+
 /// Most recent auto-run row, optionally scoped to a project.
 pub fn latest_auto_run(
     pool: &DbPool,
