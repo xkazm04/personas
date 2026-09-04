@@ -16,7 +16,7 @@ from pathlib import Path
 from . import backends
 from .clock import Clock
 from .consumer import answer, final_answer
-from .judge import judge_form, judge_value
+from .judge import judge_form, judge_value, needs_extraction
 from concurrent.futures import ThreadPoolExecutor
 
 from .llm import LLM, DEFAULT_CONSUMER, DEFAULT_JUDGE
@@ -125,8 +125,8 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
             if p.gold == "FORM":
                 v, note, jname = judge_form(p, text, jllm, strict_judge)
             else:
-                v, note = judge_value(p, text)
-                jname = "deterministic"
+                v, note = judge_value(p, text, jllm)
+                jname = "deterministic+assert" if needs_extraction(p, text) else "deterministic"
             keep(Answer(p.id, rung, text[:2000], reply.tokens, len(reply.items), v, jname, ms, note))
             continue
         ctx = backend.recall(p, clock, budget_tokens)   # captured at the probe's own instant
@@ -142,8 +142,8 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
         if p.gold == "FORM":
             v, note, jname = judge_form(p, text, jllm, strict_judge)
         else:
-            v, note = judge_value(p, text)
-            jname = "deterministic"
+            v, note = judge_value(p, text, jllm)
+            jname = "deterministic+assert" if needs_extraction(p, text) else "deterministic"
         return Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note)
 
     with ThreadPoolExecutor(max_workers=parallel) as ex:
@@ -228,8 +228,8 @@ def rejudge(run_dir: Path, judge_model: str | None, strict: bool, out_root: Path
         if p.gold == "FORM":
             a.verdict, a.note, a.judge = judge_form(p, a.text, jllm, strict)
         else:
-            a.verdict, a.note = judge_value(p, a.text)
-            a.judge = "deterministic"
+            a.verdict, a.note = judge_value(p, a.text, jllm)
+            a.judge = "deterministic+assert" if needs_extraction(p, a.text) else "deterministic"
     header["rejudged"] = time.strftime("%Y-%m-%d %H:%M")
     header["judge"] = judge_model or "deterministic-only"
     header["judge_direction"] = "strict" if strict else "lenient"

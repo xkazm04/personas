@@ -21,9 +21,22 @@ def norm(s: str) -> str:
     return s
 
 
+NO_RECORD_PHRASES = (
+    "i don t have", "i do not have", "i don t know of", "no record", "no entry",
+    "nothing on file", "nothing recorded", "nothing about", "never been recorded",
+    "not recorded", "don t have that", "don t have one", "have not recorded",
+)
+
+
 def is_abstention(text: str) -> bool:
     t = norm(text)
-    return t.startswith("unknown") or t in ("i don t know", "i do not know", "not known") or "unknown" == t.split(" ")[0] if t else False
+    if not t:
+        return False
+    if t.startswith("unknown") or t in ("i don t know", "i do not know", "not known"):
+        return True
+    # a design answering in its own voice abstains in a sentence, not with a marker; the
+    # marker is the harness consumer's convention and must not be the only accepted form
+    return any(ph in t for ph in NO_RECORD_PHRASES)
 
 
 ARTICLES = ("a ", "an ", "the ")
@@ -47,8 +60,57 @@ def contains_value(answer: str, value: str) -> bool:
     return len(head) >= 4 and head in a
 
 
-def judge_value(probe: Probe, answer: str) -> tuple[str, str]:
+ASSERT_SYSTEM = (
+    "You extract, you never judge. You are given a question and a reply someone gave to it. "
+    "Report only which value the reply asserts is CURRENT."
+)
+
+
+def asserted_value(llm: LLM, question: str, answer: str) -> str:
+    """The value a verbose reply ASSERTS, stripped of the history it narrates.
+
+    A judge written for a terse consumer reads 'Django, changed from Axum in April' as an
+    answer that names both values and scores it stale. That is the judge's defect, not the
+    design's: the reply asserts one value and dates the other. This collapses such a reply
+    to its assertion before the deterministic comparison runs, so a design answering in its
+    own conversational voice is scored on what it claims, not on what it mentions.
+    """
+    prompt = (
+        f"Question: {question}\n\nReply:\n{answer}\n\n"
+        "What value does the reply assert is CURRENT for that question? Answer with the value "
+        "alone, no sentence, no punctuation. A value the reply mentions only as history - what "
+        "something used to be, what it changed from, what was dropped - is NOT the current "
+        "value. If the reply asserts no value, or says it has no record of one, answer exactly "
+        "NONE."
+    )
+    try:
+        return llm.complete(prompt, system=ASSERT_SYSTEM).text.strip().splitlines()[0][:120]
+    except Exception:
+        return ""
+
+
+def needs_extraction(probe: Probe, answer: str) -> bool:
+    """When the deterministic reading is unsafe: a long reply, or one naming the gold and a
+    superseded value together. Terse answers keep the deterministic path untouched, so the
+    ladder's other rungs are judged exactly as before."""
+    if probe.cls == "procedure" or probe.gold == "FORM":
+        return False
+    if len(answer) > 200:
+        return True
+    if probe.gold and probe.gold != "UNKNOWN" and contains_value(answer, probe.gold):
+        return any(contains_value(answer, w) and norm(w) not in norm(probe.gold) for w in probe.wrong)
+    return False
+
+
+def judge_value(probe: Probe, answer: str, llm: LLM | None = None) -> tuple[str, str]:
     """-> (verdict, note)"""
+    if llm is not None and needs_extraction(probe, answer):
+        v = asserted_value(llm, probe.question, answer)
+        if v:
+            if norm(v) in ("none", "no value", "unknown"):
+                answer = "UNKNOWN"
+            else:
+                answer = v
     if probe.gold == "UNKNOWN":
         if is_abstention(answer):
             return "correct", "abstained as required"
