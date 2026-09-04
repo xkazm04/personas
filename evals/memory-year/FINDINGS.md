@@ -69,12 +69,23 @@ admitted sleep cycles, 0 cycle failures, 0.05–0.14 model calls per event.
    recovered all of them. `model_routing::MAIN` runs at `low`. The harness consumer was
    moved to medium so the ladder measures memory rather than effort; the athena-turn row
    keeps production routing on purpose, so its gap to the athena row prices this.
-5. **The reconcile leg's prompt grows with the live fact table.** Over the year replay the
-   reconcile prompt went from ~3k characters (day 30, ~40 facts) to ~17k (day 240, 256
-   facts), and three cycles then hit the leg's 180 s timeout while one compress leg exited
-   with an error; by year end 31 of 102 cycles had failed. The timeout and the prompt shape were sized for a young store; a mature
-   one needs either a bounded candidate set per cycle (only facts touching the new
-   episodes' scopes and tags) or a budget that scales with the table.
+5. **The reconcile leg scans the store instead of shortlisting candidates.** Over the year
+   the reconcile prompt grew from ~3k characters (day 30, ~40 facts) to ~17k (day 240, 256
+   facts), and by year end 31 of 102 cycles had died — reconcile timeouts at 180 s, plus
+   one compress leg exiting non-zero. The corpus predicts this exactly: consolidation is
+   supposed to open with a deterministic prefilter that shortlists *a handful* of
+   candidates per new item, so the pass costs the same at two hundred items as at two
+   hundred thousand, and the stated failure is that "the pass gets slower exactly as memory
+   starts paying off". Athena's caps (200 facts per cycle, 200 characters per value) bound
+   the ceiling but do not prefilter: `phase_reconcile` asks the leg to judge the whole
+   active set at once. Two consequences, and the second is the worse one:
+   - Cost rises with the store until the ceiling, and the timeout is fixed, so cycles start
+     failing partway up. A third of the year's consolidation was lost this way.
+   - Past 200 active facts the truncation becomes a permanent blind spot. The fact list is
+     ordered by importance then recency, so the low-importance, least-recently-updated tail
+     is never a reconcile candidate again — a duplicate that lands there is never retired,
+     and nothing reports the miss. A relevance shortlist has no such tail; a store-ordered
+     cap does.
 6. **Preference probes are Athena's weak class on the smoke run** (1/3): a stated
    preference that was never restated does not surface for a question phrased as a
    task. Whether the year run confirms this decides whether it is a retrieval-lane
@@ -93,7 +104,7 @@ admitted sleep cycles, 0 cycle failures, 0.05–0.14 model calls per event.
 
 - [ ] secondary sort key (episode id) at `brain/retrieval.rs:399` and `:510`, or `ORDER BY created_at, id` in `load_episodes_by_ids` (finding 2)
 - [ ] brace-balanced object extraction in `brain/oneshot.rs::extract_json_span` (finding 3)
-- [ ] bound the reconcile candidate set per cycle, or scale the leg timeout with the fact count (finding 5)
+- [ ] shortlist reconcile candidates per new item (a deterministic prefilter) instead of scanning the active set under a 200-fact truncation (finding 5)
 - [ ] decide whether MAIN stays at `low` given the abstention rate (finding 4)
 - [ ] merge `direction/memory-year-sim` (sim clock + driver) — the seam is worth keeping
       regardless of the harness
