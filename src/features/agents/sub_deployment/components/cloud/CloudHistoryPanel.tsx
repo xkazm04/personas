@@ -10,7 +10,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } fro
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { statusIcon as _statusIcon, formatDuration, formatCost, timeAgo as _timeAgo } from './CloudHistoryHelpers';
+import { formatDuration, formatCost } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -134,14 +134,14 @@ export function CloudHistoryPanel() {
       {/* Stats cards */}
       {stats && (
         <div className="grid grid-cols-4 3xl:grid-cols-8 gap-3">
-          <StatCard label="Total Runs" value={String(stats.totalExecutions)} />
+          <StatCard label={dt.history.total_runs} value={String(stats.totalExecutions)} />
           <StatCard
-            label="Success Rate"
+            label={dt.history.success_rate}
             value={stats.successRate != null ? formatNumeric(stats.successRate, 'ratio', { precision: 0 }) : '-'}
             color={stats.successRate != null && stats.successRate >= 0.9 ? 'emerald' : stats.successRate != null && stats.successRate >= 0.7 ? 'amber' : 'red'}
           />
-          <StatCard label="Total Cost" value={formatCost(stats.totalCostUsd)} />
-          <StatCard label="Avg Duration" value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />
+          <StatCard label={dt.history.total_cost} value={formatCost(stats.totalCostUsd)} />
+          <StatCard label={dt.history.avg_duration} value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />
         </div>
       )}
 
@@ -192,7 +192,7 @@ export function CloudHistoryPanel() {
         {historyLastPolled != null && (
           <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2">
             <LiveStatusDot tone="active" ping size="sm" />
-            Live
+            {t.agents.executions.live}
           </div>
         )}
         <button
@@ -202,7 +202,7 @@ export function CloudHistoryPanel() {
           className={`flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 

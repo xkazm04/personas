@@ -81,7 +81,7 @@ export function CloudOAuthPanel({
             onClick={onCancelOAuth}
             className="px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@ export function CloudOAuthPanel({
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
           >
             <ShieldX className="w-3.5 h-3.5" />
-            Disconnect
+            {t.deployment.connection.disconnect}
           </button>
         </div>
       </div>

@@ -29,17 +29,18 @@ type TabId = 'connection' | 'status' | 'oauth' | 'deployments' | 'schedules' | '
 
 interface TabDef {
   id: TabId;
-  label: string;
   disabledWhenOffline: boolean;
 }
 
+// Labels resolve from `t.deployment.tabs[id]` at render so they follow the
+// active language; the ids double as the catalog keys.
 const TABS: TabDef[] = [
-  { id: 'connection', label: 'Connection', disabledWhenOffline: false },
-  { id: 'status', label: 'Status', disabledWhenOffline: true },
-  { id: 'oauth', label: 'OAuth', disabledWhenOffline: true },
-  { id: 'deployments', label: 'Deployments', disabledWhenOffline: true },
-  { id: 'schedules', label: 'Schedules', disabledWhenOffline: true },
-  { id: 'history', label: 'History', disabledWhenOffline: true },
+  { id: 'connection', disabledWhenOffline: false },
+  { id: 'status', disabledWhenOffline: true },
+  { id: 'oauth', disabledWhenOffline: true },
+  { id: 'deployments', disabledWhenOffline: true },
+  { id: 'schedules', disabledWhenOffline: true },
+  { id: 'history', disabledWhenOffline: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -205,7 +206,7 @@ export default function CloudDeployPanel() {
         }
       >
         <PanelTabBar
-          tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
+          tabs={TABS.map((tab) => ({ ...tab, label: t.deployment.tabs[tab.id], disabled: tab.disabledWhenOffline && !isConnected }))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           underlineClass="bg-indigo-500"

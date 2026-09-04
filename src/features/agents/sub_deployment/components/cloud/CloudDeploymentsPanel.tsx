@@ -91,7 +91,7 @@ export function CloudDeploymentsPanel({
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
         </div>
 
@@ -152,7 +152,7 @@ export function CloudDeploymentsPanel({
             disabled={!selectedPersonaId || isDeploying}
             accentColor="indigo"
           >
-            {isDeploying ? 'Deploying\u2026' : 'Deploy'}
+            {isDeploying ? t.deployment.deploying : 'Deploy'}
           </Button>
         </div>
       </div>

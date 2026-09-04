@@ -51,7 +51,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
         {lastPolled != null ? (
           <div className="flex items-center gap-2 typo-caption text-foreground">
             <LiveStatusDot tone="active" ping size="sm" />
-            Live
+            {t.agents.executions.live}
           </div>
         ) : <div />}
         <button
@@ -61,7 +61,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 
@@ -69,9 +69,9 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       <div>
         <SectionHeading className="mb-3">{dt.cloud_status.workers}</SectionHeading>
         <div className="flex flex-wrap gap-3">
-          <WorkerBadge label="Idle" count={workers.idle} color="emerald" />
-          <WorkerBadge label="Executing" count={workers.executing} color="blue" />
-          <WorkerBadge label="Disconnected" count={workers.disconnected} color="red" />
+          <WorkerBadge label={dt.cloud_status.worker_idle} count={workers.idle} color="emerald" />
+          <WorkerBadge label={dt.cloud_status.worker_executing} count={workers.executing} color="blue" />
+          <WorkerBadge label={dt.cloud_status.worker_disconnected} count={workers.disconnected} color="red" />
         </div>
       </div>
 
@@ -80,13 +80,13 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
         <SectionHeading className="mb-3">{dt.cloud_status.activity}</SectionHeading>
         <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
           <ActivityGauge
-            label="Queue Length"
+            label={dt.cloud_status.queue_length}
             value={status.queueLength}
             tone="violet"
             maxHint={10}
           />
           <ActivityGauge
-            label="Active Executions"
+            label={dt.cloud_status.active_executions}
             value={status.activeExecutions}
             tone="blue"
             maxHint={Math.max(5, status.workerCounts.executing + status.workerCounts.idle)}

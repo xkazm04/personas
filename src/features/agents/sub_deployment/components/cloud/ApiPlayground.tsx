@@ -211,8 +211,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                          hover:bg-secondary/40 transition-colors cursor-pointer"
             >
               {copiedSnippet
-                ? <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
-                : <><Copy className="w-3 h-3" /> Copy</>}
+                ? <><Check className="w-3 h-3 text-emerald-400" /> {t.common.copied}</>
+                : <><Copy className="w-3 h-3" /> {t.common.copy}</>}
             </button>
           </div>
           <pre className="text-[11px] font-mono bg-secondary/50 border border-primary/10 rounded-card

@@ -129,7 +129,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
             onClick={() => { fetchTriggers(); onRefresh(); }}
             disabled={isLoading}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
         </div>
       </div>
