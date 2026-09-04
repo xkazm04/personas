@@ -27,6 +27,7 @@ fn fact(key: &str, sources: Vec<String>) -> Fact {
         importance: 3,
         confidence: 0.9,
         sources,
+        expires_at: None,
         supersedes_id: None,
         contradicts_id: None,
         updated_at: "2026-01-01T00:00:00Z".to_string(),

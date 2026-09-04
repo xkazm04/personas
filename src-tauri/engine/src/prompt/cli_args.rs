@@ -157,6 +157,26 @@ pub(super) fn build_cli_args_inner(
         if super::deep_fanout_enabled(persona) {
             args.push("--forward-subagent-text".to_string());
         }
+
+        // Positive tool roster. Until this landed, every persona spawn carried
+        // Claude Code's FULL default roster plus whatever MCP configs the turn
+        // attached, and personas' only roster control was subtractive and lived
+        // on the HTTP path (`http_engine::config::REMOTE_SAFE_MCP_TOOLS`,
+        // withheld for a security reason). The flag itself was already known to
+        // the tree — `commands/credentials/auto_cred_browser.rs:807` pins the
+        // browser flow to `mcp__playwright__*` — it had simply never been given
+        // to a persona.
+        //
+        // Undeclared personas are untouched: `resolve_allowed_tools` returns
+        // `None` and no flag is emitted, so this is behaviour-preserving by
+        // default. The roster's SIZE is recorded on the run
+        // (`ExecutionConfig::tool_roster_size`) so the latency/cost correlation
+        // the source measured (42.2s → 36.6s on a five-tool roster) can be read
+        // from data personas already stores, instead of being believed.
+        if let Some(roster) = super::resolve_allowed_tools(persona) {
+            args.push("--allowedTools".to_string());
+            args.push(roster.join(","));
+        }
     }
 
     let mut cli_args = CliArgs {

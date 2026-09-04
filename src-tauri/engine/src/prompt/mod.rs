@@ -51,3 +51,7 @@ pub(crate) mod tests;
 
 pub use assemble::*;
 pub(crate) use discipline::*;
+// The per-persona tool roster is read outside this crate too — the runner
+// stamps its size into the run's `ExecutionConfig` and hands the roster to the
+// HTTP engine — so it is `pub`, unlike the rest of `discipline`.
+pub use discipline::{resolve_allowed_tools, ALLOWED_TOOLS_PARAM};

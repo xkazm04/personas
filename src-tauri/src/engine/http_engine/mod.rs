@@ -34,11 +34,24 @@ use std::time::Instant;
 
 use crate::engine::events::ExecutionEventEmitter;
 use crate::engine::types::{ExecutionResult, ModelProfile};
+use personas_core::types::ExecutionConfig;
 
 /// Execute a persona via the remote HTTP provider. Resolves the key + endpoint,
 /// then dispatches to the tool-calling loop (tool-enabled) or the streaming text
 /// path. Emits live events + a terminal status and returns the `ExecutionResult`
 /// for the caller to persist. Never writes terminal DB status itself.
+///
+/// `declared_roster` is the persona's positively-declared tool allowlist, or
+/// `None` when it has not declared one. It narrows the assembled tool array; it
+/// can never widen it past `config::tool_allowed`, whose exclusions are a
+/// security boundary rather than a latency lever.
+///
+/// `execution_config` is the run's frozen config snapshot. It is returned on
+/// the `ExecutionResult` with the roster measurement stamped into it, so a
+/// remote run's roster size lands on the same DB row as its duration and cost.
+/// Before this parameter existed the HTTP branch returned above the only site
+/// that persisted a snapshot, so every remote run stored `execution_config`
+/// NULL.
 #[allow(clippy::too_many_arguments)]
 pub async fn run_http_execution(
     emitter: &dyn ExecutionEventEmitter,
@@ -47,6 +60,8 @@ pub async fn run_http_execution(
     model_profile: &ModelProfile,
     prompt_text: &str,
     tools_enabled: bool,
+    declared_roster: Option<Vec<String>>,
+    execution_config: ExecutionConfig,
     cancelled: &Arc<AtomicBool>,
     start_time: Instant,
 ) -> ExecutionResult {
@@ -92,12 +107,14 @@ pub async fn run_http_execution(
             &base_url,
             &api_key,
             prompt_text,
+            declared_roster,
+            execution_config,
             cancelled,
             start_time,
         )
         .await
     } else {
-        openai::run_streaming(
+        let mut result = openai::run_streaming(
             emitter,
             execution_id,
             provider,
@@ -108,13 +125,42 @@ pub async fn run_http_execution(
             cancelled,
             start_time,
         )
-        .await
+        .await;
+        // The streaming path posts no `tools` key at all. That is a roster of
+        // zero, which is a measurement and not an absence — it is the floor the
+        // tool-loop runs are compared against.
+        result.execution_config =
+            config::stamp_roster(execution_config, Some(0), Some(0), "http_engine_no_tools");
+        result
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A frozen config snapshot for the tests, matching what `runner` hands in.
+    /// The roster fields start unset — the engine is what fills them.
+    fn test_config() -> ExecutionConfig {
+        ExecutionConfig {
+            model_profile: None,
+            engine: "qwen".into(),
+            max_budget_usd: None,
+            max_turns: None,
+            timeout_ms: 60_000,
+            has_workspace_instructions: false,
+            workspace_id: None,
+            tool_names: vec![],
+            tool_roster_size: None,
+            tool_roster_bytes: None,
+            tool_roster_source: String::new(),
+            credential_connectors: vec![],
+            routing_rule: None,
+            compliance_rule: None,
+            continuation_mode: "none".into(),
+            assembled_at: "2026-09-04T00:00:00Z".into(),
+        }
+    }
     use crate::engine::events::{ExecutionEventEmitter, NoOpEmitter};
     use crate::engine::types::ModelProfile;
     use std::sync::atomic::AtomicBool;
@@ -164,6 +210,8 @@ mod tests {
             &profile,
             "ping",
             false,
+            None,
+            test_config(),
             &cancelled,
             Instant::now(),
         )
@@ -202,6 +250,8 @@ mod tests {
             &profile,
             "the entire assembled prompt, team memory and goals",
             false,
+            None,
+            test_config(),
             &cancelled,
             Instant::now(),
         )
@@ -268,6 +318,8 @@ mod tests {
             &qwen_profile(),
             "Reply with exactly the single word: PONG",
             false,
+            None,
+            test_config(),
             &cancelled,
             Instant::now(),
         )
@@ -296,6 +348,8 @@ mod tests {
             &qwen_profile(),
             "What is the current UTC time? You MUST call the get_current_time tool, then state the time you got.",
             true,
+            None,
+            test_config(),
             &cancelled,
             Instant::now(),
         )
@@ -353,6 +407,8 @@ mod tests {
             &qwen_profile(),
             "Call the personas_health tool and report how many personas exist. You MUST use the tool.",
             true,
+            None,
+            test_config(),
             &cancelled,
             Instant::now(),
         )
