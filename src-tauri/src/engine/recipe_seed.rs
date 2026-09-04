@@ -1,10 +1,12 @@
 //! Stage B Phase 2.4 — recipe seed bootstrap.
 //!
-//! Embeds `scripts/templates/_recipe_seeds.json` (298 recipes derived from
-//! the pre-Phase-2.2 inline-UC catalog at commit 34f483f1f^, plus 9
+//! Embeds `scripts/templates/_recipe_seeds.json` (recipes derived from the
+//! pre-Phase-2.2 inline-UC catalog at commit 34f483f1f^, plus the
 //! SDLC-template recipes appended after that ref) into the binary via
 //! `include_str!`, and idempotently inserts any missing rows into
-//! `recipe_definitions` on app startup.
+//! `recipe_definitions` on app startup. The bundle held 299 rows until the
+//! 2026-09 template retirement removed 31 templates and the 86 recipes only
+//! they owned, leaving 213.
 //!
 //! Why this exists: Phase 2.2 collapsed every template's inline use_cases
 //! into recipe_ref pointers, so on a fresh install the recipe table is
@@ -19,7 +21,7 @@
 //! {
 //!   "version": 2,
 //!   "ref": "34f483f1f^",
-//!   "recipe_count": 299,
+//!   "recipe_count": 213,
 //!   "recipes": [ { "id": "<uuid>", "source_template_id": ..., ... }, ... ]
 //! }
 //! ```
@@ -49,8 +51,9 @@
 //!
 //! Seed regeneration: do NOT blindly re-run
 //! `python scripts/generate-recipe-seeds.py` — the checked-in bundle is
-//! no longer a pure function of the script's default ref (9 recipes were
-//! appended from templates converted later; a blind re-run drops them).
+//! no longer a pure function of the script's default ref (recipes were
+//! appended from templates converted later, and the 2026-09 retirement
+//! pruned 86 rows out; a blind re-run undoes both).
 //! Read the CAUTION block in that script's docstring first.
 
 use serde::Deserialize;
@@ -438,17 +441,17 @@ mod tests {
         }
     }
 
-    /// Recipe ids that predate the UUIDv5 derivation convention — the 9
+    /// Recipe ids that predate the UUIDv5 derivation convention — the
     /// hand-minted SDLC rows appended after ref `34f483f1f^` (see the
     /// module-header warning about blind regeneration). Frozen: new refs
     /// must use `derive_recipe_id`; this list must only ever shrink.
+    /// It shrank from 9 to 7 when the `code-reviewer` and `docs-steward`
+    /// templates were retired and their rows left the bundle with them.
     const HAND_MINTED_RECIPE_IDS: &[&str] = &[
         "5dc1a001-a5c0-4a01-9e01-5dc1a0010001", // solution-architect:uc_architecture_review
         "5dc1a002-a5c0-4a02-9e02-5dc1a0020002", // solution-architect:uc_idea_architecture_analysis
-        "5dc1a003-a5c0-4a03-9e03-5dc1a0030003", // code-reviewer:uc_code_review
         "5dc1a004-a5c0-4a04-9e04-5dc1a0040004", // release-manager:uc_release_automation
         "5dc1a005-a5c0-4a05-9e05-5dc1a0050005", // security-sentinel:uc_security_scan
-        "5dc1a006-a5c0-4a06-9e06-5dc1a0060006", // docs-steward:uc_docs_sync
         "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100", // qa-guardian:uc_coverage_scan
         "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200", // qa-guardian:uc_bug_hunt
         "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300", // qa-guardian:uc_pr_review

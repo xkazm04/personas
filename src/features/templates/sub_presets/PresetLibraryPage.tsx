@@ -13,8 +13,7 @@ import { PresetPreviewModal } from './PresetPreviewModal';
 /** Preset ids that ship a symbolic Leonardo illustration (dark + light). Other
  *  presets fall back to a color-gradient tile. */
 const PRESET_ART = new Set([
-  'backlog-execution', 'daily-ops', 'engineering-triage',
-  'reflective-journaling', 'sdlc-lifecycle', 'web-development',
+  'backlog-execution', 'sdlc-lifecycle', 'web-development',
 ]);
 function presetArt(id: string, isDark: boolean): string | null {
   if (!PRESET_ART.has(id)) return null;

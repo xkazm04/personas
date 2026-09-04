@@ -1,0 +1,672 @@
+{
+ "inferred_rule": "The roster comes first, then every template is filed against it. You are not sorting templates by shape, you are choosing a fixed cast of about fifteen standing agents that mirror the roles in the operation you actually run, and then asking of each file: is this file the best embodiment of one of those roles (Template), is its work a kind of work that belongs on a role that already has a seat (Recipe, and you name the seat in the agent column even when that seat has no Template yet), or does no seat want it (Delete). Three consequences follow that the shape-based reading misses. First, at most one file per role gets Template, which is why only five exist against about fourteen named seats: the other seats will be assembled out of Recipe-flagged responsibilities rather than inherited from a file. Second, Recipe does not mean the template was one workflow, it means the template dissolves and its content survives as one or more responsibilities on a named owner. Third, within every cluster of templates doing the same job, exactly one is chosen as the carrier and the rest are deleted regardless of individual quality, which is why the Delete list is full of perfectly good templates.",
+ "rule_strains_where": [
+  "Security Sentinel (Template) declares exactly ONE use case, which is a single workflow. Under the stated rule in _director_findings section 13 it should be a Recipe. It survives because the ROLE has several latent kinds of work (dependency CVEs, secrets, risky patterns, plus the pen tests your annotation adds) even though the file packs them into one recipe. The criterion is the role's latent decomposition, not the file's declared capability count.",
+  "Digital Clone (Template) and Idea Harvester (Template) both decompose into STAGES of one pipeline (triage then draft then digest; harvest then triage then analyze), which is exactly what the stated rule says makes a Recipe. They survive because each is the carrier for a whole class of work that other templates then fold into: six templates route into Harvester, two into Digital Clone.",
+  "Financial Stocks Signaller (Recipe) has three responsibilities in your own annotation (periodic digests, gem discovery, congressional disclosure) that are unambiguously KINDS of work, not stages. Under the stated rule it should be a Template. It is a Recipe because the Investor seat does not exist as a file yet, so the content waits as a responsibility. This is the clearest evidence that Template versus Recipe is about which file becomes the seat, not about internal structure.",
+  "QA Guardian and Content Performance Reporter carry your own 'Responsibility per type of X' phrasing, the same phrasing that justified keeping DevOps Guardian and Security Sentinel as Templates, and yet both are Recipes. The difference is that App Master and Harvester already have carriers.",
+  "Router (Template) has two capabilities and one of them is configuration, not work. It survives for a reason none of the other four share: it is the universal event door that the rest of the roster needs, so it is infrastructure rather than a role with several kinds of work."
+ ],
+ "delete_logic": "Delete is not 'not a role'. It resolves into three distinct reasons, and separating them matters because they have different reversibility. (1) REDUNDANT WITH A CHOSEN CARRIER, the largest group. You say it out loud four times ('Consolidate into Technical decision tracker responsibilities' for knowledge-base-review-cycle-manager, ai-document-intelligence-hub and self-evolving-codebase-memory; 'Consolidate into survey responsibility above' for survey-processor) and apply it silently many more times: codebase-health-scanner against lean-codebase-sentinel, security-vulnerability-pipeline against security-sentinel, docs-steward against the Librarian, market-intelligence-scout and linkedin-watchlist-scout and ai-weekly-research and ai-research-report-generator against product-scout. Note that consolidation can land as EITHER verdict: product-scout is a Recipe with a consolidate note because it brought new responsibilities to the Harvester, while knowledge-base-review-cycle-manager is a Delete because it brought nothing the carrier lacked. The test is whether the file adds a kind of work, not whether it overlaps. (2) OUTSIDE THE OPERATION YOU RUN. recruiting-pipeline-use-case, sheets-e-commerce-command-center, freelancer-invoice-autopilot, user-lifecycle-manager, customer-feedback-router, youtube-content-pipeline, game-character-animator, personal-finance-use-case, brand-protection-sentinel, plus the enterprise SDLC ceremony set (design-handoff-coordinator, dev-lifecycle-manager, feature-flag-experiment-analyst, feature-flag-governance-use-case, build-intelligence-use-case, deadline-synchronizer). These are for a business with clients, staff, a sales team or a release board, none of which is present. (3) A UNIVERSAL STEP RATHER THAN A SEPARABLE RESPONSIBILITY, which you name explicitly once: code-reviewer, 'Should be part of any development process'. That reason is worth keeping distinct because it deletes work you obviously DO want, on the grounds that it belongs inside every workflow rather than to any one agent. A corroborating signal that is strong but not decisive: almost every Delete is anchored to a SaaS you do not run (Zendesk, HubSpot, Salesforce, Calendly, Stripe, Xero, Confluence, Canva, Buffer) while almost every Recipe rests on things you do have (a codebase, email, a database, the web, a vault, Claude itself). It is not decisive because autonomous-issue-resolver is Jira-anchored and you kept it as a Recipe, reframing it as 'Responsibility per issue resource to track' and generalizing away from the vendor. So the job decides, and the connector only predicts.",
+ "proposals": [
+  {
+   "file": "scripts/templates/_team_presets/backlog-execution.json",
+   "name": "Backlog & Execution",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. Five of its six members (personal-capture-bot, survey-insights-analyzer, technical-decision-tracker, autonomous-issue-resolver, daily-standup-compiler) stop existing as templates under your decisions, so the preset resolves to one live member. The chain it describes is real and is now the Harvester plus App Master plus Librarian plus Director seats, but that is a team of roles, not this file.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/backlog-execution.zh.json",
+   "name": "Backlog & Execution (zh shard)",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. This one is defective on its own terms: no id, no members, no schema_version. It is the untranslated-title duplicate already flagged in _director_findings section 6.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/daily-ops.json",
+   "name": "Daily Ops",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. All three members go: email-morning-digest and daily-standup-compiler become recipes, appointment-orchestrator is proposed for deletion here. Nothing is left to compose.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/engineering-triage.json",
+   "name": "Engineering Triage",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. codebase-health-scanner is already deleted, lean-codebase-sentinel and qa-guardian become recipes under App Master, documentation-freshness-guardian is proposed for deletion here. The whole preset collapses into App Master responsibilities.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/reflective-journaling.json",
+   "name": "Reflective Journaling",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. Its single member, vault-grounded-journal-coach, is in your Delete list. The preset is empty the moment that file goes.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/sdlc-lifecycle.json",
+   "name": "SDLC Delivery Team",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. Eight of nine members become recipes or are already deleted (code-reviewer, docs-steward); only security-sentinel survives as a template. It also encodes the enterprise SDLC ceremony (separate reviewer, separate docs steward) that your Delete list rejected item by item.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/_team_presets/web-development.json",
+   "name": "Web Development Team",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Team preset, a different artifact class: schema_version 1, no persona and no use cases, just a member list of template ids. Three members are already deleted (design-handoff-coordinator, code-reviewer, docs-steward), three become recipes, and website-conversion-auditor is proposed for deletion here as a duplicate. Only devops-guardian survives as a template.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.ar.json",
+   "name": "Autonomous Issue Resolver (ar shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.bn.json",
+   "name": "Autonomous Issue Resolver (bn shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.cs.json",
+   "name": "Autonomous Issue Resolver (cs shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.de.json",
+   "name": "Autonomous Issue Resolver (de shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.es.json",
+   "name": "Autonomous Issue Resolver (es shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.fr.json",
+   "name": "Autonomous Issue Resolver (fr shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.hi.json",
+   "name": "Autonomous Issue Resolver (hi shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.id.json",
+   "name": "Autonomous Issue Resolver (id shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.ja.json",
+   "name": "Autonomous Issue Resolver (ja shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.ko.json",
+   "name": "Autonomous Issue Resolver (ko shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.ru.json",
+   "name": "Autonomous Issue Resolver (ru shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.vi.json",
+   "name": "Autonomous Issue Resolver (vi shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/development/autonomous-issue-resolver.zh.json",
+   "name": "Autonomous Issue Resolver (zh shard)",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Not an independent template: same template id and the same three recipe_refs as development/autonomous-issue-resolver.json, which you marked Recipe under App Master. It is a translation payload. It inherits the English verdict and must be handled in the same step, or the localized catalog breaks.",
+   "agent": "App Master",
+   "responsibilities": [
+    "Responsibility per issue resource to track and add into backlog",
+    "Review of issue status to escalate or close"
+   ]
+  },
+  {
+   "file": "scripts/templates/content/analytics-content-distribution-use-case.json",
+   "name": "Analytics Content Distribution Use Case",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "CMS publish to Buffer schedule to GA review to weekly strategy digest. Both halves already have chosen carriers: content-cascade (Recipe, Content) does the platform fan-out including Buffer, and content-performance-reporter (Recipe, Harvester) is annotated \"Responsibility per data source: Google Analytics, Database\". Same family as youtube-content-pipeline, which you deleted.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/content/audio-briefing-host.json",
+   "name": "Audio Briefing Host",
+   "status": "Recipe",
+   "confidence": "low",
+   "why": "Source document to two-host audio briefing via TTS plus ffmpeg, both local, no SaaS. The job is a rendering of a brief rather than a new kind of intelligence, which points at Director, whose kept responsibility is daily-standup-compiler (\"Cross project progress analysis and brief\"). Low confidence because no seat in the roster currently owns audio: Artist is annotated as 2D image generation and dev-project assets, Content as text repurposing.",
+   "agent": "Director",
+   "responsibilities": [
+    "Render a compiled brief as a scripted two-host audio segment, human-approved before TTS spend"
+   ]
+  },
+  {
+   "file": "scripts/templates/content/content-approval-workflow.json",
+   "name": "Content Approval Workflow",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Notion Ready-for-Review to reviewer email to Slack approval card to SLA escalation. It automates a review board you do not have. Same shape as design-handoff-coordinator and dev-lifecycle-manager, both deleted.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/content/feature-video-creator.json",
+   "name": "Feature Video Creator",
+   "status": "Delete",
+   "confidence": "low",
+   "why": "Feature description to script to TTS to cloud video composition. demo-recorder is already the chosen carrier in the feature-announcement cluster (Recipe, agent \"Any\", annotated \"Review current possibility of Claude in Chrome to use\"), and your pattern keeps exactly one carrier per cluster. Low confidence because the two are genuinely different (capture versus produce) and the Media Studio work in this repo suggests appetite for the produce half.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/content/scientific-writing-editor.json",
+   "name": "Scientific Writing Editor",
+   "status": "Delete",
+   "confidence": "low",
+   "why": "Zero connectors, pure prose discipline (the twelve Sainani rules with cited reasoning). No roster seat owns prose quality, and docs-steward, the nearest doc-quality template, is already deleted. Low confidence: if you want a writing-quality responsibility on Content this file is the best source text in the corpus for it, and nothing else carries the rule set.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/content/social-media-designer.json",
+   "name": "Social Media Designer",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Canva-anchored branded asset production. The Artist seat is already defined by two kept recipes with different scope: autonomous-art-director (\"2D image generation\") and visual-brand-asset-factory (\"Generate components and assets into dev projects\"). This adds a third tool-specific variant of the same seat, on a SaaS that is not in the operation.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/development/documentation-freshness-guardian.json",
+   "name": "Documentation Freshness Guardian",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Confluence staleness scan, owner emails, weekly digest. You already deleted docs-steward, and the Librarian seat (technical-decision-tracker, annotated \"Redesign into ai-registry structure\") owns knowledge maintenance. knowledge-base-health-auditor, proposed as a Recipe below, is the local-first version of the same audit and is the better carrier.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/development/skill-librarian.json",
+   "name": "Skill Librarian",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Audits .claude/skills/ against codebase drift, computes per-skill usage from Skill-Ref commit markers, proposes edits and retirements through human review, and files the approved change as a tracked issue. This is your actual operation (36 skills, the ai-registry lane, the shipped Skill Launchpad) and it is a distinct kind of Librarian work from recording decisions. Strongest keep in the unreviewed set.",
+   "agent": "Librarian",
+   "responsibilities": [
+    "Skill catalog audit against codebase drift, as reviewable diffs",
+    "Usage-strength scoring per skill, surfacing retirement candidates",
+    "Approved proposal to tracked issue so the change lands through normal review"
+   ]
+  },
+  {
+   "file": "scripts/templates/email/intake-processor.json",
+   "name": "Intake Processor",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Email triage, Slack routing, optional Notion tracking. Digital Clone already declares Inbound Triage as one of its three capabilities, and email-morning-digest is a kept recipe for the read-and-report slice. This is a third copy of a job with two carriers.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/accounting-reconciliation-use-case.json",
+   "name": "Accounting Reconciliation Use Case",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Xero transactions matched against bank feeds. Bookkeeping is not in the roster: your finance seats are Investor (financial-stocks-signaller) and Contractor (contract lifecycle), and you deleted personal-finance-use-case and freelancer-invoice-autopilot.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/expense-receipt-processor.json",
+   "name": "Expense Receipt Processor",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Gmail receipts to a Sheets expense ledger with anomaly alerts. The cost slice you did keep is budget-spending-monitor (Recipe, DevOps Guardian), which is API and cloud spend, not business expenses. No seat owns bookkeeping.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/finance-controller.json",
+   "name": "Finance Controller",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "QuickBooks sync, overdue invoice chasing, cash flow reporting. Same reason as accounting-reconciliation: no bookkeeping seat, and it chases customers you do not invoice.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/invoice-tracker.json",
+   "name": "Invoice Tracker",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Accounts payable from the inbox into a local SQLite ledger. Notably it needs no SaaS, so the connector argument does not apply, but the job is still bookkeeping and freelancer-invoice-autopilot set the precedent.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/revenue-operations-hub.json",
+   "name": "Revenue Operations Hub",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Stripe event sync, dunning sequence, daily revenue summary. revenue-intelligence-copilot is already the chosen carrier for the reporting half (Recipe, Web marketer, \"Analyze payments and prepare report\"), and the dunning half is customer collections you do not run. Deleting this makes pending merge \"Payment Recovery Sequence into Dunning Sequence\" moot.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/finance/subscription-billing-use-case.json",
+   "name": "Subscription Billing Use Case",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Paddle lifecycle events, three-tier dunning, monthly MRR report. Same cluster as revenue-operations-hub with the same chosen carrier. Flagged deliberately: this is the only template in the corpus that would serve Personas own future subscription billing, so it is the one finance Delete worth a second look. Deleting it makes pending merge \"finance platform Event Sync into Subscription Event Sync\" moot.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/hr/onboarding-tracker.json",
+   "name": "Onboarding Tracker",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "New-hire checklists, tiered deadline reminders, weekly HR progress reports. There is no HR seat in the roster and you deleted recruiting-pipeline-use-case, the only other HR template.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/legal/ai-contract-reviewer.json",
+   "name": "AI Contract Reviewer",
+   "status": "Recipe",
+   "confidence": "medium",
+   "why": "Six-pass clause extraction, ten-category risk rating, red-flag alerting, and a renewal and obligation deadline sweep. The Contractor seat exists (contract-lifecycle-use-case, \"Contract tracking (review, status change) and reporting\") and this brings a genuinely different kind of work to it: analysis rather than tracking. That is the same distinction that made product-scout a Recipe consolidated into Idea Harvester rather than a Delete.",
+   "agent": "Contractor",
+   "responsibilities": [
+    "Contract intake and structured clause extraction",
+    "Risk rating and red-flag escalation",
+    "Renewal and obligation deadline watch"
+   ]
+  },
+  {
+   "file": "scripts/templates/marketing/autonomous-cro-experiment-runner.json",
+   "name": "Autonomous CRO Experiment Runner",
+   "status": "Recipe",
+   "confidence": "low",
+   "why": "Underperforming page detection, variant hypotheses through human review, deployment, significance gating, winner promotion. The Web marketer seat is defined by website-conversion-audit (\"Achieve highest possible ranking\" plus competitor analysis) and web-marketing, neither of which covers running experiments. Low confidence because it needs an experimentation backend that is not in the operation, and the value depends on whether personas-web gets enough traffic for significance.",
+   "agent": "Web marketer",
+   "responsibilities": [
+    "Conversion experiment hypothesis generation for underperforming pages",
+    "In-flight significance watch with promote, revert or archive proposals"
+   ]
+  },
+  {
+   "file": "scripts/templates/marketing/editorial-calendar-manager.json",
+   "name": "Editorial Calendar Manager",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Notion calendar mirrored to Airtable, tiered deadline reminders to assigned writers, weekly workload report. It coordinates a writing team you do not have. Same class as deadline-synchronizer, deleted.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/marketing/reddit-trend-digest.json",
+   "name": "Social Trend Digest",
+   "status": "Recipe",
+   "confidence": "medium",
+   "why": "Polls social feeds, clusters posts into themes with sentiment, ships a deduplicated digest. This lands exactly on your own Harvester annotation: newsletter-curator is \"Responsibility is type of ingest leading into backlog items (RSS, scraping, smtp)\" and social feeds are a further ingest type, not a duplicate of one. Unlike industry-intelligence-aggregator it does not re-implement the RSS lane.",
+   "agent": "Harvester",
+   "responsibilities": [
+    "Social feed ingest (subreddits, platform lists and groups) into backlog candidates",
+    "Per-source health tracking so dead sources surface for removal"
+   ]
+  },
+  {
+   "file": "scripts/templates/productivity/appointment-orchestrator.json",
+   "name": "Appointment Orchestrator",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Calendly bookings enriched into a CRM with confirmation, reminder and follow-up emails. Requires Calendly and a CRM, and automates an external meeting cadence that is not in the operation.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/productivity/email-intelligence-operator.json",
+   "name": "Email Intelligence Operator",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Seven use cases covering three unrelated jobs: outbound thread follow-up, inbound task extraction to Notion, and inbound lead scoring. Each already has a carrier: leads by lead-capture-pipeline (Digital Clone), inbound triage by Digital Clone itself, the digest by email-morning-digest. Worth one carve-out: \"never let an outbound thread go silent\" is the one capability here that nothing else in the surviving corpus carries.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/productivity/meeting-lifecycle-manager.json",
+   "name": "Meeting Lifecycle Manager",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Calendar prep emails, in-meeting status, post-meeting action-item distribution, morning briefing. The briefing slice is already daily-standup-compiler (Recipe, Director). The rest coordinates attendees and a team calendar that are not in the operation.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/project-management/agency-client-retainer-manager.json",
+   "name": "Agency Client Retainer Manager",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Client change requests from email into SLA-tracked work items, applied through a codebases connector, closed with monthly retainer reports. A retainer web agency business, the same class as the deleted sheets-e-commerce-command-center and recruiting-pipeline-use-case.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/project-management/client-portal-orchestrator.json",
+   "name": "Client Portal Orchestrator",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Agency client lifecycle on a Notion hub: signup verification, milestone emails, stall escalation, monthly portfolio reports. Same agency business, no seat.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/bi-dashboard-digest.json",
+   "name": "BI Dashboard Digest",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Consumes human-curated Redash or Metabase saved queries into a morning digest. You deleted product-analytics-briefer, the same job on a different tool, and the Database owner seat (database-performance-monitor, conversational-database-analyst, real-time-database-watcher) already owns querying your own data.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/customer-event-intelligence.json",
+   "name": "Customer Event Intelligence",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Product analytics webhooks classified into buying intent and routed to sales reps. There is no sales seat beyond Digital Clone lead capture, and no rep to alert.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/industry-intelligence-aggregator.json",
+   "name": "Industry Intelligence Aggregator",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "RSS and URL monitoring, dedupe, AI summarization with importance scoring, knowledge base logging, breaking-news alerts, daily briefing. This is the lane newsletter-curator and product-scout already own under Harvester, and it is the same shape as ai-weekly-research and ai-research-report-generator, both deleted.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/knowledge-base-health-auditor.json",
+   "name": "Knowledge Base Health Auditor",
+   "status": "Recipe",
+   "confidence": "high",
+   "why": "Lints persona memories, vector knowledge bases and an optional Obsidian vault for staleness, broken wikilinks, contradictions and orphans, read-only, every finding through manual review. It audits the workspace knowledge surface this product runs on, needs no SaaS, and is a distinct kind of Librarian work from recording decisions. Keeps pending merge \"Monthly Deep Audit into Weekly Health Audit\" live, now internal to one responsibility set.",
+   "agent": "Librarian",
+   "responsibilities": [
+    "Persona-memory and vector knowledge-base staleness lint",
+    "Vault wikilink, orphan and contradiction audit",
+    "Human-triaged prune proposals, never a silent delete"
+   ]
+  },
+  {
+   "file": "scripts/templates/research/product-signal-detector.json",
+   "name": "Product Signal Detector",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Analytics anomalies against EWMA baselines into insight cards and auto-created tickets. The anomaly-detection pattern is already carried twice: DevOps Guardian owns error, infra and DB anomaly checks as its declared responsibility types, and database-performance-monitor is a kept recipe for log anomalies.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/research-knowledge-curator.json",
+   "name": "Research Knowledge Curator",
+   "status": "Recipe",
+   "confidence": "medium",
+   "why": "URL to a structured knowledge entry with a three-tier summary, controlled taxonomy tags and discovered cross-references, plus a weekly orphan and taxonomy pass. This is the ai-registry job your Librarian annotation points at. The feed-scanning capability overlaps the Harvester ingest lane, so it may need splitting across two seats. Keeps pending merge \"Feed Scanning into Content Curation\" live.",
+   "agent": "Librarian",
+   "responsibilities": [
+    "URL or document to a structured knowledge entry with controlled taxonomy",
+    "Cross-reference discovery so each entry enriches the existing graph",
+    "Weekly orphan detection and taxonomy consolidation proposals"
+   ]
+  },
+  {
+   "file": "scripts/templates/research/research-paper-indexer.json",
+   "name": "Research Paper Indexer",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "arXiv, PubMed and Semantic Scholar monitoring with Problem-Method-Result summaries and trend reports. No connectors at all, so it is cheap, but academic literature tracking is the same job as ai-weekly-research, which you deleted, and its useful slice for you (papers about agents) is Harvester web research.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/research/website-market-intelligence-profiler.json",
+   "name": "Website & Market Intelligence Profiler",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "URL list to seven-dimension classification to a landscape report with white-space analysis. This is competitor analysis, and the carrier is already chosen: website-conversion-audit is a kept Recipe whose second capability is literally Competitor Comparison and whose annotation reads \"Competitor analysis: Compare feature and memorize progress\". Flagged: this file is the fuller implementation of that annotation, so it is worth mining before it goes.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/contact-enrichment-agent.json",
+   "name": "Contact Enrichment Agent",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Email signatures mined into confidence-scored contact fields with human conflict arbitration. It is contact-database hygiene, not communication, and Digital Clone is the only seat with any sales adjacency (lead-capture-pipeline, \"Responsibility per lead source type\"). Deleting this and contact-sync-manager makes pending merge \"Conflict Resolution into Contact Data Conflict Resolution\" moot.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/contact-sync-manager.json",
+   "name": "Contact Sync Manager",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "The same job as contact-enrichment-agent (email signature extraction into a local contact database with batched conflict review), continuous instead of batch. Your one-carrier-per-cluster pattern deletes at least one of the pair, and neither has a seat.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/crm-data-quality-auditor.json",
+   "name": "CRM Data Quality Auditor",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "HubSpot duplicate, staleness and formatting hygiene with a quality score. Requires a CRM that is not in the operation and there is no seat for CRM administration.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/local-business-lead-prospector.json",
+   "name": "Local Business Lead Prospector",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Google Maps prospecting for local businesses with weak websites, tiered for web-design outreach. It is the lead-generation half of a web agency, the same business as agency-client-retainer-manager.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/outbound-sales-intelligence-pipeline.json",
+   "name": "Outbound Sales Intelligence Pipeline",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Five-stage SDR enrichment on spreadsheet prospect rows ending in cold outreach drafts. No SDR function, no seat, and lead-capture-pipeline already carries the only lead work you kept.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/personality-enriched-sales-prep.json",
+   "name": "Personality-Enriched Sales Prep",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "LinkedIn and email-history behavioral profiling of external meeting attendees. You deleted linkedin-watchlist-scout, and there are no external sales meetings to prep.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/sales-deal-intelligence.json",
+   "name": "Sales Deal Intelligence",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Real-time CRM deal-change sensor plus monthly seven-dimension win/loss analysis. Both lenses need a CRM pipeline and a sales team.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/sales-pipeline-autopilot.json",
+   "name": "Sales Pipeline Autopilot",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "CRM stage transitions driving stage-specific emails, team messages, stale-deal escalation and a weekly pipeline report. Same cluster as sales-deal-intelligence, same missing seat.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/sales-proposal-generator.json",
+   "name": "Sales Proposal Generator",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Newly qualified CRM deals researched into tiered Notion proposals behind a review gate. The nearest seat is Contractor, but its declared job is tracking and analyzing contracts you have signed, not generating sales proposals.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/sales/website-conversion-auditor.json",
+   "name": "Website Conversion Auditor",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "A near-duplicate of marketing/website-conversion-audit.json, which you kept as a Recipe under Web marketer. Same job (crawl a business site, score conversion dimensions, produce a prioritized report), differing only in ten dimensions versus eight categories and browser automation versus scraping. The names differ by two letters, so this pair is easy to keep by accident.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/support/email-support-operator.json",
+   "name": "Email Support Operator",
+   "status": "Delete",
+   "confidence": "medium",
+   "why": "Five capabilities: triage and ticketing, SLA escalation, confidence-gated auto-reply, knowledge-gap handling, daily report. The carrier is already chosen: support-escalation-engine is a kept Recipe under Digital Clone with the annotation \"Customer support escalation\". This is the fuller pipeline but the seat only wants the escalation slice.",
+   "agent": null,
+   "responsibilities": null
+  },
+  {
+   "file": "scripts/templates/support/support-intelligence-use-case.json",
+   "name": "Support Intelligence",
+   "status": "Delete",
+   "confidence": "high",
+   "why": "Zendesk ticket triage with sentiment and urgency, KB-matched resolutions, SLA warnings, KB enrichment on close. Zendesk-anchored, same cluster and same chosen carrier as email-support-operator. Deleting it makes pending merge \"SLA Breach Prevention into SLA Breach Watch & Escalation\" moot, though the merge target itself survives inside support-escalation-engine.",
+   "agent": null,
+   "responsibilities": null
+  }
+ ],
+ "roster_effect": "No new seats and no new Templates. The proposals add kinds of work to four existing seats and leave the rest of the roster untouched. LIBRARIAN is the big winner and changes character: skill-librarian (skill catalog audit), knowledge-base-health-auditor (memory and vector KB health) and research-knowledge-curator (external source to structured entry) join technical-decision-tracker plus the four templates you already consolidated into it, giving it four clear kinds of work: record decisions, audit knowledge health, curate what comes in, maintain the skill catalog. That makes Librarian the best-populated unfilled seat in the corpus and the strongest candidate for the next Template. Worth noting that technical-decision-tracker is annotated as a redesign target rather than a working file, so if you want a Librarian Template today the better base is knowledge-base-health-auditor or research-knowledge-curator. CONTRACTOR gains a second kind (clause and risk analysis alongside tracking), which is the minimum that makes it a role rather than a single responsibility. HARVESTER gains a further ingest type (social feeds), consistent with your 'Responsibility is type of ingest' annotation. WEB MARKETER gains conversion experimentation, its third kind after ranking audit and competitor analysis. DIRECTOR gains an optional audio rendering of the brief, at low confidence. Everything else is subtraction: HR, sales operations, CRM administration, agency project management, bookkeeping and BI reporting end this pass with zero seats and zero templates, which is the roster telling you those functions are not part of the operation. On the corpus: your 31 deletes take 299 recipes to 213; these 45 proposed deletes take it to 108, and the cut is clean in the same sense yours was, zero of the 105 recipes they own is referenced by any survivor. Four of the eight still-pending recipe merges become moot (Subscription Event Sync, Payment Recovery, Contact Data Conflict Resolution, SLA Breach Prevention), leaving four.",
+ "questions_for_operator": [
+  "Team presets: all seven are proposed for deletion, but only because their members evaporate, not because the idea is bad. reflective-journaling literally has one member and you deleted it. Does the team-preset concept survive the responsibility model at all? A team of role-agents that each carry several responsibilities is a different object from a team of workflow-agents wired end to end, and if you want the former the presets need re-authoring against the new roster rather than deleting.",
+  "The thirteen autonomous-issue-resolver locale files are one artifact, not thirteen decisions. They share the template id and the recipe refs of the English file you marked Recipe. Confirm they follow the English verdict, and note that whatever the apply pass does to the English file must touch all thirteen in the same step or the localized catalog breaks. Separately: is there a plan for localizing the new responsibility model at all, because right now exactly one template in the corpus is localized.",
+  "Is there a media seat, or does Artist cover motion and audio? Artist is annotated as 2D image generation and dev-project assets, Content as text repurposing, and demo-recorder sits at agent 'Any'. That leaves audio-briefing-host and feature-video-creator homeless, and I split them (Recipe under Director, Delete) with low confidence on both. One answer resolves both files.",
+  "subscription-billing-use-case is the only template in the entire corpus that would serve Personas own future subscription billing. I propose deleting it as redundant with revenue-intelligence-copilot, which is the right call for the operation you run today and the wrong call if you expect to sell subscriptions inside the year.",
+  "email-intelligence-operator carries one capability nothing else in the surviving corpus has: tracking your own outbound threads so a conversation never goes silent. I still propose deleting the file because its other two jobs have carriers, but if that capability matters it needs an explicit home, most plausibly Digital Clone.",
+  "website-market-intelligence-profiler is deleted as redundant with website-conversion-audit, whose annotation already reads 'Competitor analysis: Compare feature and memorize progress'. But the profiler is a much fuller implementation of that exact annotation (seven-dimension classification, landscape report, white-space analysis). Should the carrier keep its name and absorb this file's content, which is the pattern you used for product-scout into Idea Harvester?",
+  "scientific-writing-editor has no seat and no connectors, and I put it at Delete with low confidence. It is the only file in the corpus that encodes a prose-quality rule set with cited reasoning. If writing quality is a responsibility you want (on Content, or on the Librarian for docs), this is the source text and there is no second copy.",
+  "My proposal comes out at 45 Delete of 65, a 69 percent delete rate against your 47 percent. I believe that is your rule applied faithfully rather than a divergence: the 66 you reviewed were concentrated in development and productivity, the areas you work in, and what is left is concentrated in sales, support, finance and agency project management, where your own decisions established almost no seats. If 69 percent still reads as too aggressive, the files to re-open are the medium-confidence redundancy calls (intake-processor, industry-intelligence-aggregator, product-signal-detector, bi-dashboard-digest, research-paper-indexer, email-support-operator), not the connector-anchored ones."
+ ]
+}

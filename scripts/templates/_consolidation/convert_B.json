@@ -1,0 +1,917 @@
+{
+  "lane": "B",
+  "templates": [
+    {
+      "file": "scripts/templates/development/qa-guardian.json",
+      "name": "QA Guardian",
+      "seat": "App Master",
+      "operator_intent": "- Responsibility per type of test (large scans for code quality and bugs)",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Test coverage debt",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "The parts of the codebase that would hurt most if they broke are the parts that have tests.",
+              "success_criteria": [
+                "Every module the seat has visited carries a recorded coverage state, so an unvisited area is distinguishable from a deliberately skipped one",
+                "Tests written by the seat pass on the project's own runner before they are offered, and follow the conventions already present in that project's test files",
+                "Coverage on the areas that change most often does not fall between passes"
+              ]
+            }
+          ],
+          "procedure": "Own the gap between what the code does and what the tests prove. Judgment here is about picking the next area worth covering, not about maximising a percentage: a thin test on a hot path beats full coverage of a config file. Follow the project's existing test conventions rather than importing your own. Never claim coverage you have not run. Escalate when a module cannot be tested without a design change.",
+          "trigger": "self_paced",
+          "pacing_note": "Watch what has changed since the last pass and what is still uncovered. Act when a meaningful amount of untested code has landed, or when a previously covered area drifted. Memory carries per-module coverage state, the test framework and fixture pattern each module uses, and the list of areas still pending, so a pass resumes at the next area instead of re-deriving the map. Debt is the pending list plus any module whose tests the seat could not make pass.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "Which codebase this seat is accountable for, and which parts of it the adopter considers load-bearing",
+            "What the adopter treats as an acceptable coverage bar, and whether that bar is per-area rather than global",
+            "Whether new tests may land directly or must be offered for review first"
+          ],
+          "from_recipes": ["c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100"]
+        },
+        {
+          "title": "Latent defect hunt",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "Defects that a careful reader would catch are found before a user does.",
+              "success_criteria": [
+                "Each filed finding names a file and line and says what goes wrong, not just that something looks unusual",
+                "The same defect is never filed twice across passes",
+                "The proportion of filed findings a human confirms stays high enough that the queue is worth reading"
+              ]
+            }
+          ],
+          "procedure": "Read the codebase the way a reviewer would and file what is genuinely likely to break: unhandled failure paths, missing null checks, leaked resources, edge cases the code assumes away. The accountability is signal, not volume, so a quiet pass with two real findings beats twenty speculative ones. Confirmable findings go to human triage. Escalate anything that looks like a security exposure rather than filing it in the ordinary queue.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when an area has changed without being read, or when the review queue has drained enough that new findings will actually be looked at. Memory carries a stable signature per reported finding, per-area scan history, and the recurring defect shapes this codebase produces. Debt is the set of areas never read and the findings filed but never triaged.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "What the adopter considers worth being told about, since the floor between noise and signal is a taste judgment",
+            "How many open findings the adopter can absorb at once, which sets how hard this responsibility should push",
+            "Whether findings should stop at a report or become backlog items directly"
+          ],
+          "from_recipes": ["b0a5e200-4b1d-4b09-9e20-72a5b0a5e200"]
+        },
+        {
+          "title": "Verdict on a change before it merges",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "No change reaches the main branch without having been run.",
+              "success_criteria": [
+                "Every proposed change carries a verdict that names what was run and what the result was",
+                "A failing or unrun suite never produces an approval",
+                "Testing a change never disturbs the working tree anyone else is using"
+              ]
+            }
+          ],
+          "procedure": "When a change is proposed, exercise it in isolation and say plainly whether it is safe to land. The verdict is the deliverable: approve, ask for changes, or hand it on with the failure named. Test in a separate checkout so nobody else's work is touched. Where the project has required checks of its own, defer to them rather than overriding. Escalate rather than deciding when the suite is broken for reasons unrelated to the change.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["codebase", "github"],
+          "personalization_needs": [
+            "Where changes arrive from, since a hosted pull request and a local branch need different handling",
+            "How far the seat may act on its own verdict, from commenting only through to enabling a merge",
+            "The project's branching and merge policy, because the verdict is only meaningful against it"
+          ],
+          "from_recipes": ["c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300"]
+        }
+      ],
+      "notes": "Three kinds of checking, per the operator's 'responsibility per type of test'. The defect hunt and the two scan responsibilities from lean-codebase-sentinel land on the same seat and should share one open-finding ledger, otherwise App Master files the same dead function twice from two directions. The merge-the-cleared-work sentence in release-manager's goal belongs to this verdict responsibility rather than to release discipline, so that only one App Master responsibility ever claims merge authority."
+    },
+    {
+      "file": "scripts/templates/development/real-time-database-watcher.json",
+      "name": "Real-Time Database Watcher",
+      "seat": "Database owner",
+      "operator_intent": "- Responsibility to analyze specific db connector and report or create backlog item",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Health read on one database connector",
+          "domain": "data_ai",
+          "outcomes": [
+            {
+              "statement": "The state of each connected database is known to its owner, and what is wrong with it is written down where work gets picked up.",
+              "success_criteria": [
+                "Every registered database connector has been read recently enough that its account is still true",
+                "Findings arrive as backlog items with the table, the pattern, and why it matters, not as a metric dump",
+                "A finding already filed and still open is not filed again"
+              ]
+            }
+          ],
+          "procedure": "Hold one database at a time and answer what is actually true of it: schema drift, rows that violate what the schema implies, growth that will become a problem, queries the shape of the data will punish. The output is either a plain report or a backlog item, chosen by whether anyone needs to do something. Judgment is in deciding what is worth someone's attention. Escalate anything that suggests data loss rather than filing it.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when a connector has gone unread for longer than its rate of change justifies, or when the anomaly watch has raised the same pattern more than once. Memory carries per-connector baselines, the schema as last seen, and the open findings already filed. Debt is the set of connectors never read and findings filed without an outcome.",
+          "connectors": ["supabase", "personas_database", "messaging"],
+          "personalization_needs": [
+            "Which databases the seat owns and which are read-only to it, because the answer changes what it may propose",
+            "What normal looks like for this data, since the adopter knows which spikes are the business working correctly",
+            "Whether findings should become backlog items automatically or be reported first"
+          ],
+          "from_recipes": ["a0f09053-db9a-5080-9796-b5ea0b2e72af", "a7b101bb-c357-5fc5-a2ee-47fde7939daa"]
+        },
+        {
+          "title": "Anomalous row change watch",
+          "domain": "data_ai",
+          "outcomes": [
+            {
+              "statement": "A row change that should not have happened is noticed while it still matters.",
+              "success_criteria": [
+                "Changes that break an invariant are surfaced with the record and the reason, not just a count",
+                "Routine volume produces no notification at all",
+                "A burst of related changes arrives as one account rather than one message per row"
+              ]
+            }
+          ],
+          "procedure": "React to row-level changes on the watched tables and judge which of them are genuinely off. Most changes are the product working; the job is to be quiet about those and clear about the rest. Compare against what this data normally does rather than a fixed threshold, and collapse a flood into a single summary instead of relaying it. Escalate anything that reads as corruption or unauthorised change immediately.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["supabase", "messaging"],
+          "personalization_needs": [
+            "Which tables carry consequences and which are noise, since watching everything equally is the same as watching nothing",
+            "What the adopter wants to be interrupted for versus what can wait for the health read",
+            "Where an alert should land, given the seat may have no channel configured at all"
+          ],
+          "from_recipes": ["906e8b82-4e28-5960-ac6c-ad7613f00d53"]
+        }
+      ],
+      "notes": "Narrowed hard to the operator's stated intent. The source template spends most of its content on routing row events into messaging cards and firing onboarding emails to new signups; that is a notification pipeline for a business he does not run, and none of it survives here. What survives is the analysis: baselines, anomaly judgment, and an account of each connector. The weekly digest recipe is folded into the health read rather than kept as its own responsibility, because a weekly digest is the report, not a separate kind of work."
+    },
+    {
+      "file": "scripts/templates/productivity/survey-insights-analyzer.json",
+      "name": "Survey Insights Analyzer",
+      "seat": "Any",
+      "operator_intent": "- Survey method of backlog generation as responsibility",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Backlog from what respondents actually said",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "What people tell us in surveys turns into work someone can pick up, instead of a chart nobody acts on.",
+              "success_criteria": [
+                "Each filed item names the theme, roughly how many respondents raised it, and what changing it would fix",
+                "A theme already filed grows in weight rather than producing a duplicate item",
+                "A rising theme is distinguishable from a loud one, because the reading is against prior periods and not just this batch"
+              ]
+            }
+          ],
+          "procedure": "Read new responses for themes rather than scores, and file the ones worth acting on. The value is in the reading: a theme that recurs quietly across periods usually matters more than a single furious response. Weight by how many said it and how consistently, and say when the sample is too thin to conclude anything. Do not file an item you cannot phrase as a change someone could make.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when enough new responses have accumulated to say something the last pass could not, which is a judgment about signal and not a fixed count. Memory carries the last-read cursor, rolling theme and sentiment baselines across periods, and the items already filed per theme. Debt is unread responses and themes that crossed the bar but were never written up.",
+          "connectors": ["personas_database", "knowledge_base"],
+          "personalization_needs": [
+            "Where the responses live and what the questions were, since a theme only means something against the question asked",
+            "Who the respondents are, because the same complaint from a trial user and a paying one deserves different weight",
+            "What the adopter wants the output to be: an item in a backlog, an entry in a knowledge base, or both"
+          ],
+          "from_recipes": ["555079dd-836b-532f-a6ad-802a6c1cfdd7", "eadf1ac7-ecca-55a5-8cb6-76d68e80283a"]
+        }
+      ],
+      "notes": "One responsibility, matching the operator's singular phrasing. The source splits analysis and report delivery into two use cases, which is a pipeline stage split rather than two kinds of work, so they are one responsibility here. The trend and anomaly machinery is not a separate responsibility either: it is what lets the pass tell a rising theme from a loud one, so it lives inside the reading. Seat is 'Any', so this is written to be held by whichever agent owns the product surface the survey covers."
+    },
+    {
+      "file": "scripts/templates/development/solution-architect.json",
+      "name": "Solution Architect",
+      "seat": "Harvester",
+      "operator_intent": "- Backlog idea generation from code analysis",
+      "departs_from_intent": "The source template's second job, evaluating a proposed idea against the architecture, is not written here as its own responsibility. It merges into product-strategist's idea enrichment on the same seat, because judging an incoming idea is one kind of work whether the lens is architectural or commercial. The ADR publishing the source does is also dropped from this seat: the operator's decisions put the decision record on Librarian, via technical-decision-tracker.",
+      "responsibilities": [
+        {
+          "title": "Ideas the code itself argues for",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "The backlog contains the structural work the codebase needs, proposed before the need becomes an incident.",
+              "success_criteria": [
+                "Each idea names the code that motivates it, so a reader can check the premise without trusting the proposer",
+                "An idea is not proposed twice, and an idea already settled against is not re-proposed without new evidence",
+                "Ideas are scoped small enough that someone could start one, not framed as a rewrite"
+              ]
+            }
+          ],
+          "procedure": "Read the codebase for the structural problems that will cost the most later: boundaries that have eroded, a pattern copied past the point of usefulness, a subsystem nothing owns. Turn each into an idea with the evidence attached. Judgment is in restraint, because architecture work competes with product work and only the ideas worth that trade belong in the backlog. Settled decisions are constraints, not starting points to reopen.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when a subsystem has changed enough to be worth re-reading, or when the seat has never read one at all. Memory carries which areas have been analysed and when, the ideas already proposed with their outcome, and the standing decisions this codebase has settled. Debt is unread subsystems and proposed ideas that never got a verdict.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "Which codebase and which parts of it the adopter is willing to change, since proposals against frozen code are waste",
+            "The decisions already settled, so the seat treats them as constraints rather than re-deriving them",
+            "How much structural work the adopter wants in the queue relative to product work"
+          ],
+          "from_recipes": ["5dc1a001-a5c0-4a01-9e01-5dc1a0010001"]
+        }
+      ],
+      "notes": "Cross-template merge: this file's uc_idea_architecture_analysis recipe is carried by product-strategist's 'Verdict on an idea before it is ranked' responsibility, on the same Harvester seat. The ADR-writing substance has no carrier in this lane and is flagged in questions_for_operator, because Librarian sits in another lane."
+    },
+    {
+      "file": "scripts/templates/devops/release-manager.json",
+      "name": "Release Manager",
+      "seat": "App Master",
+      "operator_intent": "- Maintaining release discipline",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "The release record stays true",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "Anyone reading the changelog can tell what changed and what it means for them, without reading the commits.",
+              "success_criteria": [
+                "Every landed change is represented in the record, categorised by what it does rather than by who wrote it",
+                "The version reflects the nature of the change, and the reasoning behind that choice is recoverable later",
+                "A breaking change is never recorded as anything else"
+              ]
+            }
+          ],
+          "procedure": "When work lands, make the record reflect it. The version is a claim about compatibility, so choose it from what the change actually does to callers, not from the commit message wording. Entries are written for the person who will read them in six months. Where the change is ambiguous between two version steps, prefer the more conservative one and say why. Escalate when a landed change should not have shipped.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["codebase", "github"],
+          "personalization_needs": [
+            "Where the version and changelog live in this project, since every project keeps them somewhere different",
+            "The versioning convention the project actually follows, which is often not the one it claims",
+            "Which branch is the one releases are cut from"
+          ],
+          "from_recipes": ["5dc1a004-a5c0-4a04-9e04-5dc1a0040004"]
+        },
+        {
+          "title": "Knowing when the increment deserves a release",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "Finished work does not sit unreleased, and a release is never cut around work that is not ready.",
+              "success_criteria": [
+                "Unreleased entries do not accumulate past the point where a release would still be readable",
+                "Every cut release has notes a user could act on, not a commit list",
+                "A release is not cut while a known-broken change is in the increment"
+              ]
+            }
+          ],
+          "procedure": "Decide when what has accumulated is worth shipping as a release, and then cut it cleanly. This is a judgment about readiness and about the reader: a release with forty unrelated entries helps nobody, and one with a single typo fix wastes the ceremony. Draft the notes from what users will notice. Hold the cut when something in the increment is known to be broken, and say what is holding it.",
+          "trigger": "self_paced",
+          "pacing_note": "Watch the size and shape of what is unreleased, whether any of it is a breaking change users need warning about, and whether anything in the increment is still failing. Memory carries the last cut, the version decisions made and why, and the entries pending since. Debt is unreleased work that has been ready for a while.",
+          "connectors": ["codebase", "github"],
+          "personalization_needs": [
+            "Whether releases are expected on a rhythm or when the work justifies one, which the adopter alone knows",
+            "Who the release notes are written for, since an internal tool and a public library need different voices",
+            "How far the seat may go on its own, from drafting notes through to tagging and publishing"
+          ],
+          "from_recipes": ["5dc1a004-a5c0-4a04-9e04-5dc1a0040004"]
+        }
+      ],
+      "notes": "Split into the part an event forces and the part that is judgment. Keeping the record current is genuinely event-driven, because a landed change makes the record wrong immediately. Deciding when to cut is exactly the self-paced case: the source hard-wired it to every merge, which is a cadence nobody chose. The source's goal sentence about merging cleared work first is deliberately not carried here, because qa-guardian's verdict responsibility on this same seat already owns that."
+    },
+    {
+      "file": "scripts/templates/project-management/product-strategist.json",
+      "name": "Product Strategist",
+      "seat": "Harvester",
+      "operator_intent": "- Idea backlog enrichment based on expertize in SW Product disciplines",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Verdict on an idea before it is ranked",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "An idea reaches the ranked queue already carrying what a reviewer would have had to work out: who it helps, what it costs, and whether the architecture allows it.",
+              "success_criteria": [
+                "Each enriched idea states who benefits, what it is worth, and what would tell you it worked",
+                "Ideas that contradict a settled decision or duplicate shipped work are turned away with the reason attached",
+                "The enrichment is short enough to read and specific enough to disagree with"
+              ]
+            }
+          ],
+          "procedure": "Take an idea as it arrives and add the judgment it is missing, from both the product side and the architectural side: who this is for, what it is worth, how it fits what exists, what it would break. Be willing to conclude that it should not be done, and say why in terms a future scan can respect. Do not turn enrichment into a design document; the seat decides whether, not how.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "What the adopter is optimising for right now, because impact is meaningless without knowing what counts as impact here",
+            "The decisions already settled and the constraints that are hard, so a verdict can cite them",
+            "Which disciplines the enrichment should cover, since the useful lenses differ between a product and an internal tool"
+          ],
+          "from_recipes": ["5dc1a002-a5c0-4a02-9e02-5dc1a0020002"]
+        },
+        {
+          "title": "A queue that reflects what matters now",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "The top of the backlog is the work worth doing next, and the reasons it got there are still legible later.",
+              "success_criteria": [
+                "A small number of items are ranked at a time, with the rest left pending rather than force-ordered",
+                "The ranked set is not all one lens, so business value, user experience and technical health are all represented",
+                "Rejections carry a durable reason and are not silently deleted"
+              ]
+            }
+          ],
+          "procedure": "Own the order of the queue. Rank few items, deeply, rather than sorting everything shallowly. Balance the lenses so the queue does not become all refactors or all features. Prefer the increment that builds on what just shipped. Reject rather than let low-value work linger, and write the reason so the same idea does not return unchanged. Never re-litigate a settled decision, and cite it when turning work away.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when the pending pile has grown enough that the order is no longer obvious, or when something shipped that changes what should come next. Memory carries the current ranking with its reasoning, every rejection and its reason, and what recently shipped. Debt is ideas that have sat pending without ever being read.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "What the adopter counts as value, since ranking without that is arbitrary",
+            "How many items the adopter can actually hold in flight, which sets how many are worth ranking",
+            "Whether the seat may reject on its own or only recommend rejection"
+          ],
+          "from_recipes": []
+        }
+      ],
+      "notes": "This file declares no use cases at all, so its content is the persona body: rank few, balance lenses, reject durably, respect settled decisions. Cross-template merge: the first responsibility also carries solution-architect's uc_idea_architecture_analysis, because judging an incoming idea is one kind of work regardless of whether the lens is commercial or architectural, and both files land on Harvester. Splitting them would give one seat two responsibilities that both fire on the same arriving idea."
+    },
+    {
+      "file": "scripts/templates/content/autonomous-art-director.json",
+      "name": "Autonomous Art Director",
+      "seat": "Artist",
+      "operator_intent": "- 2D image generation",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Original 2D work, curated",
+          "domain": "creative_design",
+          "outcomes": [
+            {
+              "statement": "There is a growing body of generated work that the person curating it actually wanted, and its direction moves with their taste.",
+              "success_criteria": [
+                "Every piece is presented for an explicit keep or discard decision before it is kept",
+                "Discarded work leaves a reason behind, and repeated reasons stop showing up in later work",
+                "New pieces are not restatements of pieces already made"
+              ]
+            }
+          ],
+          "procedure": "Conceive and generate work, then let the curator decide. The accountability is the direction over time, not any single image: a run that produces one piece worth keeping beats four near-duplicates. Learn from what is turned down, especially when the reason repeats, and stop generating in that direction. Keep the record of what a kept piece was made from, because that is what makes the next one better.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when there is a direction worth exploring that has not been tried, and pause when recent work is going unreviewed, since generating into a full review queue helps nobody. Memory carries approved pieces with what produced them, the categorised reasons work was turned down, and enough concept history to avoid repeating. Debt is directions raised but never explored and pieces generated but never curated.",
+          "connectors": ["image_generation", "storage"],
+          "personalization_needs": [
+            "The subject matter and mood the adopter wants explored, in their own words rather than from a menu",
+            "How much say the adopter wants over each piece, because that decides whether this is a curated feed or a supervised commission",
+            "Where kept work should live, since a gallery and a project folder imply different handling"
+          ],
+          "from_recipes": ["c3722109-62e6-52eb-b796-1a501121766a"]
+        }
+      ],
+      "notes": "Deliberately not merged with visual-brand-asset-factory even though both land on Artist and both are generate-evaluate-curate loops. The outcomes differ: this one is exploratory work whose point is the curator's taste, that one is applied work held to a brand brief and delivered into a project. Merging them would collapse two real jobs into one. They should share the approval and rejection memory, since taste learned in one is useful in the other, and that is noted in seat_effects."
+    },
+    {
+      "file": "scripts/templates/support/support-escalation-engine.json",
+      "name": "Support Escalation Engine",
+      "seat": "Digital Clone",
+      "operator_intent": "- Customer support escalation",
+      "departs_from_intent": "The source is built for a support team with tiers, assigned agents and a lead who receives a digest. The operator has no such team, and the seat is Digital Clone, so the human being protected is the operator himself. Escalation therefore means putting the request in front of him rather than routing it to a queue owner, and the tier and agent-load machinery does not survive.",
+      "responsibilities": [
+        {
+          "title": "Nothing waits longer than it should",
+          "domain": "customer_support",
+          "outcomes": [
+            {
+              "statement": "Nobody who asked for help is waiting without either an answer or a human knowing they are waiting.",
+              "success_criteria": [
+                "The oldest unanswered request is always known, and the seat can say why it is still open",
+                "A request escalated once is not escalated again for the same reason",
+                "What was promised to a requester is tracked against what actually happened"
+              ]
+            }
+          ],
+          "procedure": "Hold the promise made to whoever asked. Answer what you can answer well, and put in front of a human what needs one, with enough context that they do not have to reconstruct the case. Judgment is in deciding what genuinely needs a person: escalating everything is as bad as escalating nothing. When many things break at once, hand over one account of the situation rather than a stream of alerts.",
+          "trigger": "self_paced",
+          "pacing_note": "Watch the oldest unanswered request and any commitment that is about to come due. Act sooner when a request is time-sensitive and later when the queue is quiet, rather than polling on a fixed interval. Memory carries what has already been escalated and to whom, the response commitments outstanding, and how long this kind of request usually takes. Debt is anything answered by nobody and any promise made and not kept.",
+          "connectors": ["support", "messaging", "email"],
+          "personalization_needs": [
+            "What the adopter has actually promised requesters, since urgency is meaningless without a commitment to measure it against",
+            "Which situations require a human and which the seat may answer alone, which is a trust boundary only the adopter can set",
+            "How the adopter wants to be reached when something needs them, and what is important enough to interrupt for"
+          ],
+          "from_recipes": ["410bed86-bf86-5ef8-8c98-23ff437f33d2"]
+        },
+        {
+          "title": "What the escalations keep saying",
+          "domain": "customer_support",
+          "outcomes": [
+            {
+              "statement": "A problem that keeps producing escalations gets fixed instead of being escalated again.",
+              "success_criteria": [
+                "Recurring causes are named and filed as work, not restated in each summary",
+                "The account distinguishes what changed from what has always been true",
+                "A cause already filed is not re-filed each time it recurs"
+              ]
+            }
+          ],
+          "procedure": "Read your own escalation history for patterns, and turn the ones with a fixable cause into work. This is the difference between a support seat that absorbs pain forever and one that reduces it. Say plainly when the pattern is the product's fault. Keep the account short and comparative, because the useful content is what changed, and escalate a pattern that is getting worse rather than waiting to report it.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when enough escalations have accumulated to see a shape, or when one cause has recurred often enough to be worth naming. Memory carries the escalation history with causes, the patterns already filed as work, and what the previous account said so the next one can be comparative. Debt is patterns identified but never filed.",
+          "connectors": ["support", "knowledge_base", "email"],
+          "personalization_needs": [
+            "Where filed causes should go, since a backlog and a knowledge base serve different follow-up",
+            "Who reads this account and what decision they make with it, which sets its length and shape",
+            "How far back the adopter considers relevant, because pattern detection over the wrong window invents trends"
+          ],
+          "from_recipes": ["70e00cca-ff11-55b0-bb95-b86ab0e8dd4d"]
+        }
+      ],
+      "notes": "The source's daily digest becomes a responsibility about causes rather than a scheduled report, which is the clearest case in this lane of a cadence that existed only because someone said daily. The polling interval also does not survive: a request being overdue is a clock condition the persona can watch, not an external event, so this is self-paced work that happens to be time-sensitive."
+    },
+    {
+      "file": "scripts/templates/marketing/web-marketing.json",
+      "name": "Web Marketing",
+      "seat": "Web marketer",
+      "operator_intent": "Consolidate into responsibility pack with Website conversion audit",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Where the spend and the traffic are actually going",
+          "domain": "sales_marketing",
+          "outcomes": [
+            {
+              "statement": "Paid and organic performance are read together, so money is not spent buying traffic that was already arriving.",
+              "success_criteria": [
+                "Movements are reported against a rolling baseline, so a normal fluctuation is distinguishable from a real change",
+                "Spend on terms that already win organically is identified with the amount it is costing",
+                "Each proposed change carries the data that argues for it and an estimate of what it is worth"
+              ]
+            }
+          ],
+          "procedure": "Read paid and organic together, because the interesting findings live between them. Report movement against what is normal for this account rather than against last week alone. Turn the reading into a small number of specific changes worth making, each with its evidence, and be willing to propose nothing in a quiet period. Learn from which proposals get taken and which are refused, and stop proposing into refused categories.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when enough has changed to be worth reading, which for most accounts is slower than weekly and for a live campaign is faster. Memory carries rolling baselines per campaign and per page, which proposals were accepted or refused and why, and the outcome of accepted ones. Debt is proposals accepted but never confirmed as done, and periods that went unread.",
+          "connectors": ["advertising", "analytics"],
+          "personalization_needs": [
+            "What the adopter is trying to move, because a signup goal and a revenue goal argue for opposite changes",
+            "What counts as a meaningful amount of money here, which sets the floor for what is worth proposing",
+            "Which changes the seat may make and which need approval, since spend changes are consequential"
+          ],
+          "from_recipes": [
+            "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+            "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+            "41e87ce8-6c73-5361-b10a-81b5978bb176"
+          ]
+        },
+        {
+          "title": "Places to be seen that cost nothing",
+          "domain": "sales_marketing",
+          "outcomes": [
+            {
+              "statement": "The product is present in the places its actual audience already gathers, found by looking rather than by guessing.",
+              "success_criteria": [
+                "Each suggested surface is justified by what the product does, not by generic popularity",
+                "Surfaces already tried are not suggested again",
+                "Surfaces that turned out to be noise stop appearing, and the categories they belong to are suppressed"
+              ]
+            }
+          ],
+          "procedure": "Find the forums, communities, newsletters and directories where this product's actual users already are. Ground the search in what the product genuinely does, read from its own materials, because the failure mode here is generic suggestions that fit any product. Offer few and specific rather than many and plausible. Take the tagging of good and bad seriously; a category rejected twice should not come back a third time.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when the product's own description has changed enough to open new surfaces, or when the accepted set has been exhausted. Slow down as memory maps the obvious ground, because the tenth pass over the same niche finds nothing. Memory carries what the product is, per-source quality from accept and reject history, and what came of the accepted ones. Debt is accepted surfaces never actually used.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "What the product is in the adopter's own words, since a description scraped from a repository is often stale or internal",
+            "Which communities are off limits, because posting in the wrong place costs more than the visibility is worth",
+            "Whether the adopter wants suggestions only, or wants drafted approaches too"
+          ],
+          "from_recipes": ["c83283bc-126d-5512-a0a3-50a962cbffa5"]
+        }
+      ],
+      "notes": "The source's performance scan and optimization proposals are two stages of one loop, not two kinds of work, so they are one responsibility here; the cannibalization watch folds into the same one as a specific thing that reading must catch. The operator's intent is explicitly to pack this with website-conversion-audit, which sits in lane A on the same Web marketer seat. That file's ranking and competitor responsibilities should sit alongside these two rather than overlap them, and the boundary between its ranking work and this file's organic reading needs one decision at apply time. Flagged in questions_for_operator."
+    },
+    {
+      "file": "scripts/templates/marketing/visual-brand-asset-factory.json",
+      "name": "Visual Brand Asset Factory",
+      "seat": "Artist",
+      "operator_intent": "- Generate components and assets into dev projects to improve visual impression",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "The design brief the work is held to",
+          "domain": "creative_design",
+          "outcomes": [
+            {
+              "statement": "There is one written description of how this product should look, specific enough that two people would produce compatible work from it.",
+              "success_criteria": [
+                "The brief names concrete colour roles, type treatment and layout direction rather than adjectives like premium or modern",
+                "It matches what the product's own code and surfaces actually do, or says explicitly where it is aspirational",
+                "It is reviewed by a human before anything is made from it"
+              ]
+            }
+          ],
+          "procedure": "Own the written brand direction that everything else is judged against. Derive it from what the product actually looks like where that exists, and accept the adopter's own brief verbatim when they have one rather than rewriting it. The failure mode is vagueness: a brief that cannot rule anything out is not a brief. Revise it when the product's real design drifts away from it, and never revise it silently.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when the product's own design has moved away from what the brief says, or when work keeps being rejected on the same brief dimension, which means the brief is wrong rather than the work. Memory carries the current brief, what it was derived from, and the rejection categories that keep recurring. Debt is a brief known to be stale and not yet revised.",
+          "connectors": ["codebase"],
+          "personalization_needs": [
+            "Whether the adopter already has a brief to use as-is, because rewriting someone's existing brand direction is a loss",
+            "Which product or surface the brief governs, since one adopter may run several with different looks",
+            "What the product should feel like to its users, which cannot be read out of code"
+          ],
+          "from_recipes": ["d9189ae3-df8a-5843-b174-86befb61a0ad"]
+        },
+        {
+          "title": "On-brand assets delivered into the project",
+          "domain": "creative_design",
+          "outcomes": [
+            {
+              "statement": "Surfaces that would otherwise ship with placeholder or generic visuals get work that belongs to this product.",
+              "success_criteria": [
+                "Every delivered asset traces to the brief, and where it departs from it the departure is deliberate and stated",
+                "Assets land where the project can actually use them, in the format and size that surface needs",
+                "Nothing is delivered without a human seeing it first"
+              ]
+            }
+          ],
+          "procedure": "Make the visual work the project needs and put it where the project can use it. Look for the surfaces that are still generic rather than waiting to be asked, and be honest when a surface does not need art. Judge your own output against the brief before showing it, and iterate a small number of times rather than indefinitely. When the work cannot reach the bar, ask for a reference instead of trying again.",
+          "trigger": "self_paced",
+          "pacing_note": "Watch for surfaces still carrying placeholder or stock visuals, new surfaces added without art, and requests waiting. Act on request immediately and on your own initiative when the queue is clear. Memory carries the phrasings that produced approved work per asset type, the categorised reasons work was rejected, and which surfaces have already been covered. Debt is surfaces identified as needing work and not yet done.",
+          "connectors": ["codebase", "image_generation", "vision"],
+          "personalization_needs": [
+            "Which project surfaces are in scope, because an unbounded remit here produces work nobody asked for",
+            "What kinds of asset the adopter needs most, which shapes what the seat gets good at",
+            "How assets should reach the project, since a file in a folder and a committed change are different levels of trust"
+          ],
+          "from_recipes": ["e300b1db-400a-5b38-9a53-5f8cdcad95c2"]
+        }
+      ],
+      "notes": "The operator's wording extends the source: he asks for components as well as assets, delivered into dev projects. The second responsibility is written to that wider remit and to a proactive stance, since 'improve visual impression' implies looking for what needs work rather than only answering requests. The source's build-time-only brief step becomes self-paced maintenance, because a brief that is written once and never revisited is exactly the artifact that goes stale."
+    },
+    {
+      "file": "scripts/templates/development/lean-codebase-sentinel.json",
+      "name": "Lean Codebase Sentinel",
+      "seat": "App Master",
+      "operator_intent": "- Scan type should be standalone responsibility",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "Dead and duplicated code does not accumulate",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "Code nobody calls and code copied one time too many are found and removed rather than maintained forever.",
+              "success_criteria": [
+                "Each finding carries a file and a line and a concrete removal, not a score",
+                "A finding already open is not filed again on the next sweep",
+                "Findings that turn out to be intentional are remembered as such and not re-raised"
+              ]
+            }
+          ],
+          "procedure": "Run the analysis this project's stack supports and turn its output into work, one finding at a time. The value is that the result is deterministic, so resist the urge to score, rank or summarise beyond what the tool actually found. Some dead code is deliberate, so learn which and stop raising it. Escalate rather than filing when the tool's output suggests the configuration is wrong rather than the code.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when the tree has changed enough that a sweep would find something new, which after a quiet week is not at all. Memory carries fingerprints of open findings, the findings dismissed as intentional, and the counts from the last sweep so the seat can tell whether things are improving. Debt is findings filed and never resolved.",
+          "connectors": ["codebase", "desktop_terminal"],
+          "personalization_needs": [
+            "Which analysis tool this project uses and how it is invoked, since the seat injects no flags of its own",
+            "Which code is deliberately unreferenced, such as public API surface or generated files",
+            "Whether findings go straight to the backlog or through a person first"
+          ],
+          "from_recipes": ["478fab0f-0db5-59d2-a84d-0471660e9791"]
+        },
+        {
+          "title": "Module boundaries hold",
+          "domain": "software_engineering",
+          "outcomes": [
+            {
+              "statement": "The structure the project says it has is the structure it actually has.",
+              "success_criteria": [
+                "Each violation names the import or reference that crosses the line it should not",
+                "A boundary the project has deliberately relaxed stops being reported once that is known",
+                "Violations are reported as they appear rather than accumulating into an unreadable pile"
+              ]
+            }
+          ],
+          "procedure": "Watch the lines the project draws between its parts and report where they have been crossed. A boundary is only meaningful if the project actually intends it, so the first job is knowing which lines are real. Report the crossing and what would fix it. Judgment is in distinguishing an erosion that matters from an exception someone chose on purpose, and the second is learned rather than assumed.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when structural code has moved, since boundaries do not erode from within a file. Memory carries the boundaries this project intends, the exceptions accepted, and the violations already open. Debt is violations filed and still crossing.",
+          "connectors": ["codebase", "desktop_terminal"],
+          "personalization_needs": [
+            "Which boundaries the project intends, because no tool can infer intent from imports alone",
+            "Which crossings are accepted exceptions, so they are not reported forever",
+            "Whether a violation should block anything or only be recorded"
+          ],
+          "from_recipes": ["478fab0f-0db5-59d2-a84d-0471660e9791"]
+        }
+      ],
+      "notes": "Split by scan type, per the operator's instruction, from one source recipe. Both responsibilities run the same kind of deterministic tool, but they hold different claims about the codebase and learn different exceptions, which is what makes them separable rather than one sweep reported twice. They belong to the same open-finding ledger as qa-guardian's defect hunt on this seat, so the same dead function is not filed from two directions."
+    },
+    {
+      "file": "scripts/templates/content/newsletter-curator.json",
+      "name": "Newsletter Curator",
+      "seat": "Harvester",
+      "operator_intent": "- Responsibility is type of ingest leading into backlog items (RSS, scraping, smtp)",
+      "departs_from_intent": "The source is a newsletter publisher: it curates articles, writes commentary, assembles HTML and mails subscribers. The operator keeps only the front half, the ingest, and redirects its output from an audience to his own backlog. Nothing about issue assembly, subscribers or delivery survives.",
+      "responsibilities": [
+        {
+          "title": "Feed ingest",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "Nothing published in a followed feed that should have changed a decision goes unnoticed.",
+              "success_criteria": [
+                "Items that matter reach the backlog with the source, the claim, and why it is relevant here",
+                "The same item arriving through two feeds produces one entry",
+                "A feed that has stopped working is noticed rather than silently producing nothing"
+              ]
+            }
+          ],
+          "procedure": "Follow the feeds worth following and pull out only what would actually change something. Most published items are noise; the accountability is the ratio, not the volume. Say why an item matters in terms of the work it affects, because an item filed without that is a link nobody opens. Track which sources keep earning their place and quietly stop pulling from those that do not.",
+          "trigger": "self_paced",
+          "pacing_note": "Act on a rhythm set by how fast the followed sources actually publish, which differs per source. Memory carries seen-item hashes for dedup, a quality score per source built from what was kept and what was discarded, and the last successful fetch per source. Debt is unread items and sources that have failed repeatedly without being fixed.",
+          "connectors": ["web_scraping"],
+          "personalization_needs": [
+            "Which sources the adopter follows and which they gave up on, since a stale source list is worse than none",
+            "What the adopter is watching for, because relevance here is entirely a function of current work",
+            "Where items should land, and whether they arrive as backlog items or as a reading list"
+          ],
+          "from_recipes": ["99d7c2b2-f602-553e-a508-4ff143713b2e"]
+        },
+        {
+          "title": "Page and site ingest",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "Sources that publish nothing machine-readable are still watched, and a change on one is noticed.",
+              "success_criteria": [
+                "A watched page produces an entry only when it has meaningfully changed, not when its markup shifted",
+                "Each entry says what changed rather than restating the page",
+                "A page that has become unreachable is reported instead of being treated as unchanged"
+              ]
+            }
+          ],
+          "procedure": "Watch the pages that matter but publish no feed: changelogs, pricing pages, documentation, a competitor's product page. The hard judgment is the difference between a change and a rerender, so compare meaning rather than bytes. Report what changed and what it implies. Be conservative about adding pages, since an unbounded watch list produces constant low-value churn.",
+          "trigger": "self_paced",
+          "pacing_note": "Act at a rhythm matched to how often each page has historically changed, slowing down on stable ones. Memory carries the last meaningful content seen per page, the observed change rate, and what was already reported. Debt is pages not checked in a long while and detected changes never written up.",
+          "connectors": ["web_scraping"],
+          "personalization_needs": [
+            "Which pages are worth watching, which only the adopter knows, and what on each page matters",
+            "What kind of change is worth reporting, since a typo fix and a pricing change look identical to a differ",
+            "How aggressively to watch, because polite crawling is a constraint the adopter may care about"
+          ],
+          "from_recipes": ["99d7c2b2-f602-553e-a508-4ff143713b2e"]
+        },
+        {
+          "title": "Inbox ingest",
+          "domain": "product_project",
+          "outcomes": [
+            {
+              "statement": "Things that arrive by mail and deserve action become work, instead of being read once and lost.",
+              "success_criteria": [
+                "Mail that implies an action produces an entry carrying the sender, the ask, and any deadline",
+                "Mail that implies nothing produces nothing",
+                "An entry made from a message can be traced back to that message"
+              ]
+            }
+          ],
+          "procedure": "Read what arrives and separate the mail that implies work from the mail that does not. Most incoming mail is neither, so the accountability is precision. Carry deadlines and the actual ask into the entry, because a filed item missing its deadline is worse than not filing it. Do not reply on the seat's own authority; this responsibility ends at making the work visible.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["email"],
+          "personalization_needs": [
+            "Which mailbox or which labels are in scope, since the whole inbox is almost never the right answer",
+            "Which senders and subjects always matter and which never do",
+            "Whether entries should be created directly or offered for confirmation first"
+          ],
+          "from_recipes": ["99d7c2b2-f602-553e-a508-4ff143713b2e"]
+        }
+      ],
+      "notes": "Three responsibilities, one per ingest type the operator named, all derived from the single curation recipe. They differ in more than the door: dedup, change detection and action extraction are different problems, and each keeps its own source-quality memory. The editorial-feedback learning from the source survives as the per-source quality score in each. Inbox ingest is the only one triggered by a real event, since mail arriving is genuinely external."
+    },
+    {
+      "file": "scripts/templates/marketing/content-cascade.json",
+      "name": "Content Cascade",
+      "seat": "Content",
+      "operator_intent": null,
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "A voice per channel that survives the fan-out",
+          "domain": "creative_design",
+          "outcomes": [
+            {
+              "statement": "Drafts read as though the person wrote them, and read differently on each channel because each channel is different.",
+              "success_criteria": [
+                "Each channel has a written description of its voice, derived from real examples rather than adjectives",
+                "A change to one channel's voice does not leak into another's",
+                "Repeated corrections on the same dimension change the description rather than being corrected again"
+              ]
+            }
+          ],
+          "procedure": "Own the written description of how this person sounds on each channel: how they open, how long their sentences run, what words they never use, how they close. Derive it from their actual best work. When drafts keep getting corrected the same way, the description is wrong and should be revised rather than the correction repeated. Never generalise one channel's voice onto another.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when corrections on a channel start clustering on one dimension, when a new channel is added, or when the person's own recent work has moved away from the description. Memory carries the approved phrasings per channel and the categorised corrections. Debt is a channel whose description is known to be behind its corrections.",
+          "connectors": [],
+          "personalization_needs": [
+            "Real examples of the person's own best posts per channel, which is the only usable input here",
+            "Which channels matter, since building a voice for a channel nobody posts to is waste",
+            "What the person considers off-voice, which is often easier for them to state than what is on-voice"
+          ],
+          "from_recipes": ["ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896"]
+        },
+        {
+          "title": "One artifact reaches the channels it should",
+          "domain": "creative_design",
+          "outcomes": [
+            {
+              "statement": "Something published once is present wherever its audience is, in a form that fits each place, and approved work does not sit unpublished.",
+              "success_criteria": [
+                "Each draft respects its channel's own constraints and voice rather than being the same text reformatted",
+                "Nothing is published without an explicit approval for that specific channel",
+                "An approved draft either goes live or scheduled, or its failure is surfaced with what to do about it"
+              ]
+            }
+          ],
+          "procedure": "Take a published piece and produce what each channel needs from it, then carry the approved ones through to actually being live. A channel variant is a rewrite, not an excerpt. Approval is per channel, so one being turned down does not hold the others. Treat publication as part of the job rather than a separate step, and when a destination fails, say so with the draft intact rather than dropping it.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["youtube_data", "linkedin", "x_twitter", "notion", "buffer"],
+          "personalization_needs": [
+            "Which channels are in scope, since drafting for a channel with no account is waste",
+            "Where source artifacts come from and whether their arrival should trigger this at all",
+            "Whether approved work publishes immediately or goes into a queue, which is a control preference not a config value"
+          ],
+          "from_recipes": ["b1c5780a-ff95-5663-b9e1-c42174b5daee", "5e07793e-c964-590f-95dc-f72631789f48"]
+        }
+      ],
+      "notes": "The operator left no note on this file, so this is my reading and should be checked. The source's third use case, publishing after approval, is folded into the fan-out responsibility rather than kept separate: publishing is the completion of the draft, not a different kind of work, and separating them creates a seat where one responsibility can succeed while the work never ships. The fan-out is genuinely event-triggered because a new artifact being published is a real external event."
+    },
+    {
+      "file": "scripts/templates/legal/contract-lifecycle-use-case.json",
+      "name": "Contract Lifecycle Use Case",
+      "seat": "Contractor",
+      "operator_intent": "- Contract tracking (review, status change) and reporting",
+      "departs_from_intent": null,
+      "responsibilities": [
+        {
+          "title": "The contract record matches reality",
+          "domain": "legal_compliance",
+          "outcomes": [
+            {
+              "statement": "The tracker says what is actually true of every contract, including the ones still moving.",
+              "success_criteria": [
+                "A status change is reflected in the tracker without anyone entering it by hand",
+                "The same event arriving twice does not create a second record",
+                "A contract that stalls at a stage is visible as stalled rather than looking merely open"
+              ]
+            }
+          ],
+          "procedure": "Keep the record true as contracts move through review and signature. Each event should leave the tracker in a state someone could act on, which means carrying who it is with, what stage it is at and how long it has been there. Handle repeats idempotently, since the same event will arrive more than once. Escalate a decline or a withdrawal rather than only recording it.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["legal", "spreadsheet", "messaging"],
+          "personalization_needs": [
+            "Where the tracker lives and what its columns mean, since the seat is writing into someone else's structure",
+            "Which stages this adopter's contracts actually pass through, because review workflows differ per organisation",
+            "Which status changes deserve to interrupt someone and which are just record keeping"
+          ],
+          "from_recipes": ["4d115a03-9ba9-556b-88fa-abe921f7f3e1"]
+        },
+        {
+          "title": "No date passes unnoticed",
+          "domain": "legal_compliance",
+          "outcomes": [
+            {
+              "statement": "Nothing lapses, auto-renews unnoticed, or sits unsigned because everyone forgot about it.",
+              "success_criteria": [
+                "A contract approaching a renewal or notice deadline is raised while there is still time to act",
+                "An unsigned contract is chased a sensible number of times and then handed to a person, not chased forever",
+                "The same reminder does not fire twice for the same stage"
+              ]
+            }
+          ],
+          "procedure": "Watch the dates that carry consequences: renewals, notice windows, signatures that have gone quiet. Chasing is a relationship, so escalate to a person rather than sending a fourth reminder to the same counterparty. Give more room to counterparties who are historically slow but reliable. Anything going to an external party should be seen by a human first unless the adopter has said otherwise.",
+          "trigger": "self_paced",
+          "pacing_note": "Act from the dates themselves rather than a calendar rhythm: check when something is approaching its window and stay quiet when nothing is. Memory carries which reminders already fired for which contract and stage, per-counterparty response history, and outcomes of past renewals. Debt is a date that passed without action and a chase escalated to nobody.",
+          "connectors": ["spreadsheet", "legal", "email", "messaging"],
+          "personalization_needs": [
+            "How long the adopter is willing to wait before nudging, which is a relationship judgment not a default",
+            "Which contracts carry notice windows, because those deadlines are earlier and more costly than the renewal date",
+            "Which outbound messages need approval before they leave, especially anything to an external party"
+          ],
+          "from_recipes": ["2d6945b7-5cca-5f28-b91c-26b03249ea70", "55bf5308-996a-5c0c-a3e3-6903823cc221"]
+        },
+        {
+          "title": "A current account of where things stand",
+          "domain": "legal_compliance",
+          "outcomes": [
+            {
+              "statement": "The person responsible can answer what is outstanding, what is at risk and what renews next without going to look.",
+              "success_criteria": [
+                "The account names what is at risk and why, rather than listing everything",
+                "It says what changed since last time",
+                "Anything needing a decision is separated from what is merely in progress"
+              ]
+            }
+          ],
+          "procedure": "Give whoever is accountable a short, current picture: what is outstanding, what is stuck, what is coming. The value is in the shape, not the completeness, so lead with what needs a decision and keep the inventory underneath. Be comparative, because what changed is more useful than what is. Say when nothing needs attention rather than padding an account to look busy.",
+          "trigger": "self_paced",
+          "pacing_note": "Act when something has changed enough to be worth saying, or when someone asks. Do not produce an account into a period where nothing moved. Memory carries what the last account said, so the next one can be about the difference. Debt is a risk identified and never communicated.",
+          "connectors": ["spreadsheet", "messaging", "email"],
+          "personalization_needs": [
+            "Who reads this and what they decide with it, which sets the shape entirely",
+            "What the adopter counts as at risk, since that threshold is a business judgment",
+            "How they want to receive it, given the seat may have no channel configured"
+          ],
+          "from_recipes": ["55bf5308-996a-5c0c-a3e3-6903823cc221"]
+        }
+      ],
+      "notes": "The operator's three words, tracking, review and status change, are read as one responsibility about record currency rather than as a separate contract-review job, since the source template only tracks and never reads contract terms. If he meant that the Contractor should also read a contract before it is signed, that is a fourth responsibility and new work, not a carry from this file. Flagged in questions_for_operator. The reminder sweep and the renewal monitor are merged: both are the same kind of work, watching a date and acting before it passes, differing only in which clock."
+    },
+    {
+      "file": "scripts/templates/sales/lead-capture-pipeline.json",
+      "name": "Lead Capture Pipeline",
+      "seat": "Digital Clone",
+      "operator_intent": "- Responsibility per lead source type",
+      "departs_from_intent": "The source assumes a sales team: assigned reps, tier routing, rep direct messages, a CRM someone else administers. The seat is Digital Clone, so the human being handed the lead is the operator. Alerting a rep becomes putting the lead in front of him, and the four-factor scoring survives only as the judgment of whether a lead is worth his time.",
+      "responsibilities": [
+        {
+          "title": "Leads arriving through a form",
+          "domain": "sales_marketing",
+          "outcomes": [
+            {
+              "statement": "Every form submission is recorded, judged, and answered, and the ones worth a person's time reach one quickly.",
+              "success_criteria": [
+                "Each submission produces exactly one record, even when the same person submits twice",
+                "The reply reflects what they actually wrote, not a template with a name substituted",
+                "A lead judged worth attention reaches a person while the submission is still fresh in their mind"
+              ]
+            }
+          ],
+          "procedure": "Take a submission, work out who this is and whether they matter, record it, and answer them. Judgment is in the reply: someone who wrote three sentences about their problem should not get the same message as someone who typed a name. Say what makes a lead worth attention rather than only scoring it. Never send a reply that claims something about the product that is not true.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["forms", "crm", "email", "messaging"],
+          "personalization_needs": [
+            "Which forms are in scope and what each one asks, because the questions determine what can be judged",
+            "What makes a lead worth the adopter's attention, in their words rather than as a score threshold",
+            "Whether replies send automatically or wait for approval, and whether that differs by how promising the lead is"
+          ],
+          "from_recipes": [
+            "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+            "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+            "136c0300-30bf-59af-a13d-4b55efb99489"
+          ]
+        },
+        {
+          "title": "Leads arriving by mail",
+          "domain": "sales_marketing",
+          "outcomes": [
+            {
+              "statement": "Someone who writes directly instead of filling in a form is treated as well as someone who used the form.",
+              "success_criteria": [
+                "An enquiry arriving by mail produces the same record as one arriving by form, and is recognised as the same person if they used both",
+                "Mail that is not an enquiry produces no record",
+                "The reply continues their message rather than restarting the conversation"
+              ]
+            }
+          ],
+          "procedure": "Read incoming mail for genuine enquiries and treat them as first-class, since the person who wrote a paragraph directly is usually more interested than the one who filled in a form. The hard part is precision, because most mail is not an enquiry. Match against people already known so the same person is not recorded twice. Reply in the thread they started, keeping their own context.",
+          "trigger": "event",
+          "pacing_note": null,
+          "connectors": ["email", "crm"],
+          "personalization_needs": [
+            "Which addresses or labels carry enquiries, since scanning the whole mailbox is both noisy and intrusive",
+            "How the adopter distinguishes a real enquiry from a pitch, which is a judgment they can describe but not encode",
+            "Whether replies to mail need approval, which is often a different answer than for form replies"
+          ],
+          "from_recipes": ["d45de649-64f6-5cbc-9482-5da7e27f37ce", "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87"]
+        },
+        {
+          "title": "Nobody who reached out is dropped",
+          "domain": "sales_marketing",
+          "outcomes": [
+            {
+              "statement": "A lead lost by a broken door is found anyway, and no one who made contact goes without a reply.",
+              "success_criteria": [
+                "Submissions that never produced a record are found and recovered rather than staying invisible",
+                "A recovered lead is not answered twice",
+                "A source that has gone quiet for longer than normal is reported as a possible failure, not assumed to be a quiet week"
+              ]
+            }
+          ],
+          "procedure": "Assume the doors sometimes fail, and check. Reconcile what each source holds against what was recorded, and pick up whatever fell through. Silence from a source that is normally busy is a signal about the door, not the market. Recover carefully, since answering someone twice is worse than answering late. Escalate a source that appears broken rather than quietly compensating for it forever.",
+          "trigger": "self_paced",
+          "pacing_note": "Act more often than the cost of a lost lead would tolerate, and less often when every source is healthy and recent reconciliations found nothing. Memory carries the ledger of what has been processed per source, each source's normal arrival rate, and the recoveries already made. Debt is a source not reconciled recently and a recovered lead not yet answered.",
+          "connectors": ["forms", "crm", "email"],
+          "personalization_needs": [
+            "How costly a lost lead is here, which decides how hard this responsibility should work",
+            "The normal arrival rate per source, which the adopter knows and the seat can only learn slowly",
+            "Whether a recovered lead should be answered as usual or handed to a person because it is already late"
+          ],
+          "from_recipes": ["d45de649-64f6-5cbc-9482-5da7e27f37ce"]
+        }
+      ],
+      "notes": "One responsibility per source type, per the operator's instruction, with the whole intake-to-reply loop inside each rather than split into intake, welcome and alert stages. That split in the source is a pipeline, and the operator's phrasing rejects it: the source type is the unit. The third responsibility is the exception, holding the safety net the source hid inside a two-minute polling fallback, and it is the only self-paced one here."
+    }
+  ],
+  "seat_effects": "Nine seats are touched by these fifteen files. App Master takes the heaviest load: qa-guardian, release-manager and lean-codebase-sentinel together give it seven responsibilities, five of which read the codebase and file findings, so that seat needs one shared open-finding ledger or it will report the same dead function from the defect hunt, the dead-code sweep and the boundary sweep at once. It also needs one clear answer about merge authority, which is written here into qa-guardian's verdict responsibility and deliberately withheld from release discipline. Harvester takes four responsibilities from three files: solution-architect supplies ideas the code argues for, newsletter-curator supplies three ingest doors, and product-strategist supplies both the enrichment verdict and the ranking; that seat is now a complete backlog owner, from ingest through enrichment to order, which is the first seat in this lane that is coherent end to end. Artist takes two files that are deliberately not merged, one exploratory and one applied, but they should share the approval and rejection memory since taste learned in one transfers. Digital Clone takes two files that both amount to a person reaching out and deserving an answer, one from support and one from leads, and the two should share the notion of an outstanding promise rather than tracking it twice. Database owner, Web marketer, Content and Contractor each take one file and are single-file seats after this lane, which means their remit is whatever these files happened to carry, not a designed role. Web marketer in particular is incomplete here by design: the operator's note routes it to pack with website-conversion-audit in another lane. The seat named 'Any' takes one responsibility from survey-insights-analyzer, which is written to be portable rather than assuming a seat.",
+  "questions_for_operator": [
+    "Solution Architect currently publishes an ADR alongside its task breakdown. Your decisions put the decision record on Librarian, through technical-decision-tracker, and that file is in another lane. Should the architecture ideas responsibility write into the Librarian's record, or should Harvester stop producing a decision record at all?",
+    "Web Marketing is marked to consolidate with Website conversion audit, which is in another lane. Its own note there says 'Achieve highest possible ranking', which overlaps the organic half of the performance reading proposed here. Should ranking be one responsibility owned by that file, with this one holding only paid and cross-channel work?",
+    "For Contract lifecycle you wrote 'tracking (review, status change)'. I read that as tracking the review stage, not as reading contract terms before signature, because the source template never reads a contract. If you meant the Contractor should actually review terms, that is new work and needs its own responsibility.",
+    "Content Cascade carries no note from you. Everything proposed for the Content seat here is my reading of the file, so it is the one entry in this lane with no operator signal behind it.",
+    "QA Guardian and Lean Codebase Sentinel both file code findings onto App Master, from an LLM reading and from a deterministic tool. Should they be one responsibility with two methods, or stay two as proposed, with a shared ledger to prevent duplicate filings?",
+    "Real-Time Database Watcher's original content is mostly notification routing and onboarding email for a signup funnel. I dropped all of it and kept only the analysis, per your note. Confirm nothing in that routing is worth keeping on the Database owner seat.",
+    "Twenty-two of the thirty-one responsibilities here are self-paced and none are on a time trigger. The nine event triggers are all genuine external arrivals: a change proposed, a row changed, work landed, an idea arriving, mail arriving, an artifact published, a contract status changing, a form submitted. If any of those should instead be a persona deciding for itself, the most arguable is release record currency, which could wait until a cut."
+  ]
+}

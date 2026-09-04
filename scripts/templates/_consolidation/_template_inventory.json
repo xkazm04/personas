@@ -1,0 +1,1050 @@
+[
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/backlog-execution.json",
+  "id": "backlog-execution",
+  "name": "Backlog & Execution",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/backlog-execution.zh.json",
+  "id": "",
+  "name": "积压与执行",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/daily-ops.json",
+  "id": "daily-ops",
+  "name": "Daily Ops",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/engineering-triage.json",
+  "id": "engineering-triage",
+  "name": "Engineering Triage",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/reflective-journaling.json",
+  "id": "reflective-journaling",
+  "name": "Reflective Journaling",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/sdlc-lifecycle.json",
+  "id": "sdlc-lifecycle",
+  "name": "SDLC Delivery Team",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "_team_presets",
+  "file": "scripts/templates/_team_presets/web-development.json",
+  "id": "web-development",
+  "name": "Web Development Team",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/ai-document-intelligence-hub.json",
+  "id": "ai-document-intelligence-hub",
+  "name": "AI Document Intelligence Hub",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/analytics-content-distribution-use-case.json",
+  "id": "analytics-content-distribution-use-case",
+  "name": "Analytics Content Distribution Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/audio-briefing-host.json",
+  "id": "audio-briefing-host",
+  "name": "Audio Briefing Host",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/autonomous-art-director.json",
+  "id": "autonomous-art-director",
+  "name": "Autonomous Art Director",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/content-approval-workflow.json",
+  "id": "content-approval-workflow",
+  "name": "Content Approval Workflow",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/content-performance-reporter.json",
+  "id": "content-performance-reporter",
+  "name": "Content Performance Reporter",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/demo-recorder.json",
+  "id": "demo-recorder",
+  "name": "Demo Recorder",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/feature-video-creator.json",
+  "id": "feature-video-creator",
+  "name": "Feature Video Creator",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/game-character-animator.json",
+  "id": "game-character-animator",
+  "name": "Game Character Animator",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/newsletter-curator.json",
+  "id": "newsletter-curator",
+  "name": "Newsletter Curator",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/scientific-writing-editor.json",
+  "id": "scientific-writing-editor",
+  "name": "Scientific Writing Editor",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/social-media-designer.json",
+  "id": "social-media-designer",
+  "name": "Social Media Designer",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "content",
+  "file": "scripts/templates/content/youtube-content-pipeline.json",
+  "id": "youtube-content-pipeline",
+  "name": "YouTube Content Pipeline",
+  "use_cases": 5,
+  "recipe_refs": 5
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.ar.json",
+  "id": "autonomous-issue-resolver",
+  "name": "حلّال المشكلات المستقل",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.bn.json",
+  "id": "autonomous-issue-resolver",
+  "name": "স্বায়ত্তশাসিত ইস্যু সমাধানকারী",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.cs.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Autonomní řešitel issues",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.de.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Autonomer Issue-Resolver",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.es.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Resolutor Autónomo de Incidencias",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.fr.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Résolveur Autonome de Tickets",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.hi.json",
+  "id": "autonomous-issue-resolver",
+  "name": "स्वायत्त इश्यू रिज़ॉल्वर",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.id.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Resolver Masalah Otonom",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.ja.json",
+  "id": "autonomous-issue-resolver",
+  "name": "自律的イシュー解決エージェント",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Autonomous Issue Resolver",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.ko.json",
+  "id": "autonomous-issue-resolver",
+  "name": "자율 이슈 해결사",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.ru.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Автономный решатель задач",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.vi.json",
+  "id": "autonomous-issue-resolver",
+  "name": "Trình giải quyết vấn đề tự trị",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/autonomous-issue-resolver.zh.json",
+  "id": "autonomous-issue-resolver",
+  "name": "自主问题解决器",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/build-intelligence-use-case.json",
+  "id": "build-intelligence-use-case",
+  "name": "Build Intelligence Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/code-reviewer.json",
+  "id": "code-reviewer",
+  "name": "Code Reviewer",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/codebase-health-scanner.json",
+  "id": "codebase-health-scanner",
+  "name": "Codebase Health Scanner",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/design-handoff-coordinator.json",
+  "id": "design-handoff-coordinator",
+  "name": "Design Handoff Coordinator",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/dev-clone.json",
+  "id": "dev-clone",
+  "name": "Dev Clone",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/dev-lifecycle-manager.json",
+  "id": "dev-lifecycle-manager",
+  "name": "Dev Lifecycle Manager",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/docs-steward.json",
+  "id": "docs-steward",
+  "name": "Docs Steward",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/documentation-freshness-guardian.json",
+  "id": "documentation-freshness-guardian",
+  "name": "Documentation Freshness Guardian",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/feature-flag-experiment-analyst.json",
+  "id": "feature-flag-experiment-analyst",
+  "name": "Feature Flag & Experiment Analyst",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/feature-flag-governance-use-case.json",
+  "id": "feature-flag-governance-use-case",
+  "name": "Feature Flag Governance Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/lean-codebase-sentinel.json",
+  "id": "lean-codebase-sentinel",
+  "name": "Lean Codebase Sentinel",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/qa-guardian.json",
+  "id": "qa-guardian",
+  "name": "QA Guardian",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/real-time-database-watcher.json",
+  "id": "real-time-database-watcher",
+  "name": "Real-Time Database Watcher",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/self-evolving-codebase-memory.json",
+  "id": "self-evolving-codebase-memory",
+  "name": "Self-Evolving Codebase Memory",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/skill-librarian.json",
+  "id": "skill-librarian",
+  "name": "Skill Librarian",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/solution-architect.json",
+  "id": "solution-architect",
+  "name": "Solution Architect",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "development",
+  "file": "scripts/templates/development/user-lifecycle-manager.json",
+  "id": "user-lifecycle-manager",
+  "name": "User Lifecycle Manager",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "devops",
+  "file": "scripts/templates/devops/devops-guardian.json",
+  "id": "devops-guardian",
+  "name": "DevOps Guardian",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "devops",
+  "file": "scripts/templates/devops/incident-logger.json",
+  "id": "incident-logger",
+  "name": "Incident Logger",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "devops",
+  "file": "scripts/templates/devops/release-manager.json",
+  "id": "release-manager",
+  "name": "Release Manager",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "devops",
+  "file": "scripts/templates/devops/telegram-ops-command-center.json",
+  "id": "telegram-ops-command-center",
+  "name": "Telegram Ops Command Center",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "email",
+  "file": "scripts/templates/email/intake-processor.json",
+  "id": "intake-processor",
+  "name": "Intake Processor",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/accounting-reconciliation-use-case.json",
+  "id": "accounting-reconciliation-use-case",
+  "name": "Accounting Reconciliation Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/budget-spending-monitor.json",
+  "id": "budget-spending-monitor",
+  "name": "Budget Spending Monitor",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/expense-receipt-processor.json",
+  "id": "expense-receipt-processor",
+  "name": "Expense Receipt Processor",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/finance-controller.json",
+  "id": "finance-controller",
+  "name": "Finance Controller",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/financial-stocks-signaller.json",
+  "id": "financial-stocks-signaller",
+  "name": "Financial Stocks Signaller",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/freelancer-invoice-autopilot.json",
+  "id": "freelancer-invoice-autopilot",
+  "name": "Freelancer Invoice Autopilot",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/invoice-tracker.json",
+  "id": "invoice-tracker",
+  "name": "Invoice Tracker",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/market-intelligence-scout.json",
+  "id": "market-intelligence-scout",
+  "name": "Market Intelligence Scout",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/personal-finance-use-case.json",
+  "id": "personal-finance-use-case",
+  "name": "Personal Finance Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/revenue-intelligence-copilot.json",
+  "id": "revenue-intelligence-copilot",
+  "name": "Revenue Intelligence Copilot",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/revenue-operations-hub.json",
+  "id": "revenue-operations-hub",
+  "name": "Revenue Operations Hub",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "finance",
+  "file": "scripts/templates/finance/subscription-billing-use-case.json",
+  "id": "subscription-billing-use-case",
+  "name": "Subscription Billing Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "hr",
+  "file": "scripts/templates/hr/onboarding-tracker.json",
+  "id": "onboarding-tracker",
+  "name": "Onboarding Tracker",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "hr",
+  "file": "scripts/templates/hr/recruiting-pipeline-use-case.json",
+  "id": "recruiting-pipeline-use-case",
+  "name": "Recruiting Pipeline Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "legal",
+  "file": "scripts/templates/legal/ai-contract-reviewer.json",
+  "id": "ai-contract-reviewer",
+  "name": "AI Contract Reviewer",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "legal",
+  "file": "scripts/templates/legal/contract-lifecycle-use-case.json",
+  "id": "contract-lifecycle-use-case",
+  "name": "Contract Lifecycle Use Case",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/autonomous-cro-experiment-runner.json",
+  "id": "autonomous-cro-experiment-runner",
+  "name": "Autonomous CRO Experiment Runner",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/content-cascade.json",
+  "id": "content-cascade",
+  "name": "Content Cascade",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/editorial-calendar-manager.json",
+  "id": "editorial-calendar-manager",
+  "name": "Editorial Calendar Manager",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/reddit-trend-digest.json",
+  "id": "reddit-trend-digest",
+  "name": "Social Trend Digest",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/visual-brand-asset-factory.json",
+  "id": "visual-brand-asset-factory",
+  "name": "Visual Brand Asset Factory",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/web-marketing.json",
+  "id": "web-marketing",
+  "name": "Web Marketing",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "marketing",
+  "file": "scripts/templates/marketing/website-conversion-audit.json",
+  "id": "website-conversion-audit",
+  "name": "Website Conversion Audit",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/appointment-orchestrator.json",
+  "id": "appointment-orchestrator",
+  "name": "Appointment Orchestrator",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/daily-standup-compiler.json",
+  "id": "daily-standup-compiler",
+  "name": "Daily Personal Briefer",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/digital-clone.json",
+  "id": "digital-clone",
+  "name": "Digital Clone",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/email-intelligence-operator.json",
+  "id": "email-intelligence-operator",
+  "name": "Email Intelligence Operator",
+  "use_cases": 7,
+  "recipe_refs": 7
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/email-morning-digest.json",
+  "id": "email-morning-digest",
+  "name": "Email Morning Digest",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/idea-harvester.json",
+  "id": "idea-harvester",
+  "name": "Idea Harvester",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/meeting-lifecycle-manager.json",
+  "id": "meeting-lifecycle-manager",
+  "name": "Meeting Lifecycle Manager",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/personal-capture-bot.json",
+  "id": "personal-capture-bot",
+  "name": "Personal Capture Bot",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/router.json",
+  "id": "router",
+  "name": "Router",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/survey-insights-analyzer.json",
+  "id": "survey-insights-analyzer",
+  "name": "Survey Insights Analyzer",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/survey-processor.json",
+  "id": "survey-processor",
+  "name": "Survey Processor",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "productivity",
+  "file": "scripts/templates/productivity/vault-grounded-journal-coach.json",
+  "id": "vault-grounded-journal-coach",
+  "name": "Vault-Grounded Journal Coach",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "project-management",
+  "file": "scripts/templates/project-management/agency-client-retainer-manager.json",
+  "id": "agency-client-retainer-manager",
+  "name": "Agency Client Retainer Manager",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "project-management",
+  "file": "scripts/templates/project-management/client-portal-orchestrator.json",
+  "id": "client-portal-orchestrator",
+  "name": "Client Portal Orchestrator",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "project-management",
+  "file": "scripts/templates/project-management/deadline-synchronizer.json",
+  "id": "deadline-synchronizer",
+  "name": "Deadline Synchronizer",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "project-management",
+  "file": "scripts/templates/project-management/product-strategist.json",
+  "id": "product-strategist",
+  "name": "Product Strategist",
+  "use_cases": 0,
+  "recipe_refs": 0
+ },
+ {
+  "folder": "project-management",
+  "file": "scripts/templates/project-management/technical-decision-tracker.json",
+  "id": "technical-decision-tracker",
+  "name": "Technical Decision Tracker",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/ai-research-report-generator.json",
+  "id": "ai-research-report-generator",
+  "name": "AI Research Report Generator",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/ai-weekly-research.json",
+  "id": "ai-weekly-research",
+  "name": "AI Weekly Research",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/bi-dashboard-digest.json",
+  "id": "bi-dashboard-digest",
+  "name": "BI Dashboard Digest",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/conversational-database-analyst.json",
+  "id": "conversational-database-analyst",
+  "name": "Conversational Database Analyst",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/customer-event-intelligence.json",
+  "id": "customer-event-intelligence",
+  "name": "Customer Event Intelligence",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/database-performance-monitor.json",
+  "id": "database-performance-monitor",
+  "name": "Database Performance Monitor",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/industry-intelligence-aggregator.json",
+  "id": "industry-intelligence-aggregator",
+  "name": "Industry Intelligence Aggregator",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/knowledge-base-health-auditor.json",
+  "id": "knowledge-base-health-auditor",
+  "name": "Knowledge Base Health Auditor",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/linkedin-watchlist-scout.json",
+  "id": "linkedin-watchlist-scout",
+  "name": "LinkedIn Watchlist Scout",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/product-analytics-briefer.json",
+  "id": "product-analytics-briefer",
+  "name": "Product Analytics Briefer",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/product-scout.json",
+  "id": "product-scout",
+  "name": "Product Scout",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/product-signal-detector.json",
+  "id": "product-signal-detector",
+  "name": "Product Signal Detector",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/research-knowledge-curator.json",
+  "id": "research-knowledge-curator",
+  "name": "Research Knowledge Curator",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/research-paper-indexer.json",
+  "id": "research-paper-indexer",
+  "name": "Research Paper Indexer",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "research",
+  "file": "scripts/templates/research/website-market-intelligence-profiler.json",
+  "id": "website-market-intelligence-profiler",
+  "name": "Website & Market Intelligence Profiler",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/contact-enrichment-agent.json",
+  "id": "contact-enrichment-agent",
+  "name": "Contact Enrichment Agent",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/contact-sync-manager.json",
+  "id": "contact-sync-manager",
+  "name": "Contact Sync Manager",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/crm-data-quality-auditor.json",
+  "id": "crm-data-quality-auditor",
+  "name": "CRM Data Quality Auditor",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/lead-capture-pipeline.json",
+  "id": "lead-capture-pipeline",
+  "name": "Lead Capture Pipeline",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/local-business-lead-prospector.json",
+  "id": "local-business-lead-prospector",
+  "name": "Local Business Lead Prospector",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/outbound-sales-intelligence-pipeline.json",
+  "id": "outbound-sales-intelligence-pipeline",
+  "name": "Outbound Sales Intelligence Pipeline",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/personality-enriched-sales-prep.json",
+  "id": "personality-enriched-sales-prep",
+  "name": "Personality-Enriched Sales Prep",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/sales-deal-intelligence.json",
+  "id": "sales-deal-intelligence",
+  "name": "Sales Deal Intelligence",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/sales-pipeline-autopilot.json",
+  "id": "sales-pipeline-autopilot",
+  "name": "Sales Pipeline Autopilot",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/sales-proposal-generator.json",
+  "id": "sales-proposal-generator",
+  "name": "Sales Proposal Generator",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/sheets-e-commerce-command-center.json",
+  "id": "sheets-e-commerce-command-center",
+  "name": "Sheets E-Commerce Command Center",
+  "use_cases": 4,
+  "recipe_refs": 4
+ },
+ {
+  "folder": "sales",
+  "file": "scripts/templates/sales/website-conversion-auditor.json",
+  "id": "website-conversion-auditor",
+  "name": "Website Conversion Auditor",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "security",
+  "file": "scripts/templates/security/brand-protection-sentinel.json",
+  "id": "brand-protection-sentinel",
+  "name": "Brand Protection Sentinel",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "security",
+  "file": "scripts/templates/security/security-sentinel.json",
+  "id": "security-sentinel",
+  "name": "Security Sentinel",
+  "use_cases": 1,
+  "recipe_refs": 1
+ },
+ {
+  "folder": "security",
+  "file": "scripts/templates/security/security-vulnerability-pipeline.json",
+  "id": "security-vulnerability-pipeline",
+  "name": "Security Vulnerability Pipeline",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "support",
+  "file": "scripts/templates/support/customer-feedback-router.json",
+  "id": "customer-feedback-router",
+  "name": "Customer Feedback Router",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "support",
+  "file": "scripts/templates/support/email-support-operator.json",
+  "id": "email-support-operator",
+  "name": "Email Support Operator",
+  "use_cases": 5,
+  "recipe_refs": 5
+ },
+ {
+  "folder": "support",
+  "file": "scripts/templates/support/knowledge-base-review-cycle-manager.json",
+  "id": "knowledge-base-review-cycle-manager",
+  "name": "Knowledge Base Review Cycle Manager",
+  "use_cases": 3,
+  "recipe_refs": 3
+ },
+ {
+  "folder": "support",
+  "file": "scripts/templates/support/support-escalation-engine.json",
+  "id": "support-escalation-engine",
+  "name": "Support Escalation Engine",
+  "use_cases": 2,
+  "recipe_refs": 2
+ },
+ {
+  "folder": "support",
+  "file": "scripts/templates/support/support-intelligence-use-case.json",
+  "id": "support-intelligence-use-case",
+  "name": "Support Intelligence",
+  "use_cases": 3,
+  "recipe_refs": 3
+ }
+]

@@ -1,0 +1,1161 @@
+{
+  "slice": "research",
+  "reviewed": 56,
+  "recipes": [
+    {
+      "id": "acdf652b-4876-5fb1-afd2-07515bb78e65",
+      "old_title": "Research Report",
+      "title": "Research Report",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "trustworthy-answer",
+          "statement": "The requester gets a claim they can act on, with each finding traceable to a named source and a stated confidence level.",
+          "success_criteria": [
+            "Every finding in the delivered report cites the source it came from",
+            "Confidence is stated per finding, not just for the report as a whole",
+            "A reader can tell which claims are well-supported and which are speculative"
+          ]
+        },
+        {
+          "id": "kb-durable",
+          "statement": "The research becomes reusable: it lands in the knowledge base, not just an outbound message.",
+          "success_criteria": [
+            "The report is stored in the knowledge base under a findable topic",
+            "A later request on the same or an adjacent topic can build on it instead of starting over"
+          ]
+        }
+      ],
+      "procedure": "Ground every finding in the sources the requester trusts before reaching for open web search, and say plainly when a claim rests on a single source or a weak one. Weigh complementary angles rather than confirming the first plausible answer. Judge how much depth the topic and scope warrant, and escalate rather than guess when the requester's intent is ambiguous. The report should survive someone checking it, not just read well.",
+      "verdict": "keep"
+    },
+    {
+      "id": "02ca2e3f-0d4d-568c-9d3e-f6d18cfe74b6",
+      "old_title": "Trend Watch Addendum",
+      "title": "Trend Watch Addendum",
+      "domain": "data_ai",
+      "outcomes": [
+        {
+          "id": "real-signal-not-noise",
+          "statement": "A reader can tell which topics are genuinely accelerating or fading across sessions, not just ordinary week-to-week variation.",
+          "success_criteria": [
+            "A trend is only called out once there is enough session history behind it",
+            "Each trend states the direction and the evidence across sessions, not a single data point"
+          ]
+        }
+      ],
+      "procedure": "Only speak when there is enough cross-session history to say something real; a thin history should produce silence, not a forced trend line. Distinguish a genuine shift from ordinary variance, and name which categories are accelerating, fading, or holding steady with the evidence behind each call. This rides on the weekly briefing's own cadence; add what spans sessions, do not restate what the briefing already covers.",
+      "verdict": "keep",
+      "notes": "Companion to Weekly AI Briefing (2975ba49); kept separate rather than merged because the outcome differs (cross-session trend detection vs. a single week's synthesis), the same distinction this review applied to Weekly Pattern Digest vs. Journal Reflection."
+    },
+    {
+      "id": "2975ba49-79d7-5cb4-9e76-a70ddf60774e",
+      "old_title": "Weekly AI Briefing",
+      "title": "Weekly AI Briefing",
+      "domain": "data_ai",
+      "outcomes": [
+        {
+          "id": "grounded-weekly-signal",
+          "statement": "The reader knows what actually mattered in the AI ecosystem this week, weighted by impact rather than volume.",
+          "success_criteria": [
+            "Findings are grounded in the user's reference sources, not a generic web summary",
+            "Each finding carries an impact score or equivalent priority signal",
+            "Coverage spans the subdomains the user follows rather than letting one dominate"
+          ]
+        }
+      ],
+      "procedure": "Weigh developments by likely impact to the reader, not by how much coverage they got elsewhere. Ground synthesis in the user's own reference sources first and use general search only to fill gaps. Keep angle coverage balanced across the subdomains the user follows. Note when a week is genuinely quiet rather than manufacturing a briefing out of thin material.",
+      "verdict": "keep"
+    },
+    {
+      "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
+      "old_title": "New Variant Proposals",
+      "title": "New Variant Proposals",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "credible-hypotheses",
+          "statement": "Every underperforming page gets a small set of testable hypotheses grounded in its actual numbers, not generic advice.",
+          "success_criteria": [
+            "Each proposal names the page's specific conversion gap versus baseline",
+            "Each proposal states expected lift and the metric it targets",
+            "No page gets more than the configured cap of hypotheses per run"
+          ]
+        },
+        {
+          "id": "nothing-ships-unreviewed",
+          "statement": "No experiment reaches the live site without a human choosing to run it.",
+          "success_criteria": [
+            "Every proposal sits in human review before deployment",
+            "Only approved proposals reach the experimentation backend"
+          ]
+        }
+      ],
+      "procedure": "Prioritize pages by how far below baseline they sit, and keep hypotheses specific to what is actually underperforming rather than reusable boilerplate. State expected lift honestly, including when it is a rough estimate. Nothing here should ever deploy without a person choosing to; the job ends at a proposal a reviewer can approve or reject with confidence.",
+      "verdict": "keep"
+    },
+    {
+      "id": "554bb37e-8b55-5ed4-9249-4def9cf33486",
+      "old_title": "Ambiguous Review",
+      "title": "Ambiguous Review",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "nothing-silently-misfiled",
+          "statement": "Feedback the classifier could not confidently place still gets classified correctly by a human, instead of landing in the wrong bucket or getting dropped.",
+          "success_criteria": [
+            "Every ambiguous item gets a review prompt with enough context to classify in one glance",
+            "Processing resumes automatically once a human responds, with no manual restart needed"
+          ]
+        }
+      ],
+      "procedure": "Give the reviewer enough context to classify correctly without re-reading the original conversation, and use a response mechanism cheap enough that a human actually uses it. This exists because the classifier itself is not confident; never silently guess, and never let ambiguous items pile up unresolved. Resume the pipeline the moment an answer comes back.",
+      "verdict": "keep",
+      "notes": "Companion to Feedback Triage (82e93705); kept separate because it is a distinct responsibility (getting humans to resolve what automatic classification could not), not a duplicate of triage itself."
+    },
+    {
+      "id": "82e93705-0730-5712-9d4d-a36f0b7d85e9",
+      "old_title": "Feedback Triage",
+      "title": "Feedback Triage",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "no-duplicate-issues",
+          "statement": "Every actionable piece of feedback becomes exactly one tracked issue, not a scattered pile of near-duplicates.",
+          "success_criteria": [
+            "New feedback is checked against known issues before a new one is created",
+            "Feature requests, bugs, questions, and praise are distinguished, not lumped together"
+          ]
+        },
+        {
+          "id": "signal-reaches-the-team",
+          "statement": "The team sees what customers are actually saying without reading every raw conversation themselves.",
+          "success_criteria": [
+            "A per-batch summary reaches the team on a predictable cadence",
+            "The summary reflects real classification, not a raw dump of conversations"
+          ]
+        }
+      ],
+      "procedure": "Classify by what the feedback is actually asking for, not by keyword matching alone, and check hard before creating a new issue since a missed duplicate costs the team more than a slightly slower triage. Route ambiguous cases to human review rather than guessing. Keep the team's summary focused on what changed and what needs attention, not a restatement of every conversation.",
+      "verdict": "keep"
+    },
+    {
+      "id": "38427a7d-6e94-529b-8493-b89a758553a1",
+      "old_title": "Weekly Digest",
+      "title": "Weekly Feedback Digest",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "recurring-themes-visible",
+          "statement": "The team can see which problems keep coming back, not just how many pieces of feedback arrived this week.",
+          "success_criteria": [
+            "Themes are ranked by how often they recur, not just listed",
+            "Pending manual reviews are visible so nothing ambiguous is quietly forgotten"
+          ]
+        }
+      ],
+      "procedure": "Surface what recurs, not just what happened; a theme mentioned once is noise, a theme mentioned five times is a signal the team should act on. Keep the dedup memory clean by pruning entries that are no longer useful, so future triage compares against real history, not stale state. Flag pending manual reviews so they do not fall through a week's cracks.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Weekly Digest' to distinguish it from Weekly Watchlist Digest (5bb6b6b6), Weekly Pattern Digest (cbdd0d9a), and Daily Escalation Digest (70e00cca) elsewhere in this slice."
+    },
+    {
+      "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+      "old_title": "Decision Support",
+      "title": "Decision Support",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "defensible-choice",
+          "statement": "The requester can defend the choice they made, because the tradeoffs, risks, and evidence behind it are explicit.",
+          "success_criteria": [
+            "Each option is scored against the same weighted criteria",
+            "Risks carry a stated mitigation, not just a mention",
+            "The decision has a concrete checkpoint with success metrics and a kill criterion"
+          ]
+        }
+      ],
+      "procedure": "Ask enough clarifying questions to understand what actually matters to the requester before building the matrix; a well-built matrix on the wrong criteria is worse than a rough one on the right criteria. Research each option honestly, including how it could fail. Give the decision a real checkpoint, not just a recommendation, so the requester can tell within weeks whether it was right.",
+      "verdict": "keep"
+    },
+    {
+      "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
+      "old_title": "Personal Briefing",
+      "title": "Personal Briefing",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "one-actionable-read",
+          "statement": "The requester starts the day knowing what changed, where they stand on their goals, and what needs their attention, from one message.",
+          "success_criteria": [
+            "The briefing fuses research, goal progress, and pending work rather than delivering them separately",
+            "It ends with a prioritized set of actions, not just a status dump"
+          ]
+        }
+      ],
+      "procedure": "Keep this to one focused, readable message; the value is in fusing research, goal progress, and pending work so the requester does not have to piece it together. Prioritize the action plan by what actually matters today, not by recency. Ground research in the sources and goals the requester has defined, not generic content.",
+      "verdict": "keep"
+    },
+    {
+      "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
+      "old_title": "Weekly Review",
+      "title": "Weekly Review",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "honest-goal-trajectory",
+          "statement": "The requester knows, honestly, whether each active goal is on track, and what to focus on next week.",
+          "success_criteria": [
+            "Every active goal gets a real trend read, not just a status label",
+            "Ideas captured during the week are actually triaged, not left in a pile"
+          ]
+        },
+        {
+          "id": "decisions-get-revisited",
+          "statement": "A decision does not get made and forgotten; it comes back for review at its checkpoint.",
+          "success_criteria": [
+            "Decisions reaching their 14-day checkpoint are surfaced automatically",
+            "The review states whether the original success metric was hit"
+          ]
+        }
+      ],
+      "procedure": "Give an honest trend read on each goal, including when the honest answer is that it stalled. Triage the week's captured ideas rather than letting them accumulate; a backlog nobody reviews is the same as no backlog. Surface decisions that reached their checkpoint so nothing gets decided once and quietly forgotten.",
+      "verdict": "keep"
+    },
+    {
+      "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
+      "old_title": "Email Digest",
+      "title": "Email Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "important-mail-surfaces",
+          "statement": "The requester sees what actually needs their attention in their inbox without reading every unread message.",
+          "success_criteria": [
+            "Messages are ranked by a real signal (sender history plus content), not just recency",
+            "The digest is tiered by priority so the most important items are not buried"
+          ]
+        }
+      ],
+      "procedure": "Weigh sender history alongside content when ranking; a message from someone who matters deserves more attention than its word count would suggest, and let the scoring adapt as sender patterns become clearer over time. Keep the digest to what is genuinely worth surfacing from the lookback window. Priority tiers should make the most urgent items impossible to miss.",
+      "verdict": "keep"
+    },
+    {
+      "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
+      "old_title": "Congressional Disclosure Scan",
+      "title": "Congressional Disclosure Scan",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "relevant-disclosures-only",
+          "statement": "The requester learns about politician stock trades that plausibly matter to their sectors of interest, not every disclosure filed.",
+          "success_criteria": [
+            "Findings are filtered to the user's watchlist and declared sectors",
+            "Unusual sector-level patterns are called out, not just individual trades"
+          ]
+        }
+      ],
+      "procedure": "Match disclosures against the watchlist and the user's declared sectors rather than reporting every filing; the value is relevance, not volume. Fall back to the Senate EFD source when the primary source is unavailable rather than going silent. Use the user's usefulness tags to tighten next week's filters, so signal-to-noise actually improves over time instead of staying flat.",
+      "verdict": "keep"
+    },
+    {
+      "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+      "old_title": "Sector Gem Discovery",
+      "title": "Sector Gem Discovery",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "real-candidates",
+          "statement": "Every surfaced candidate is genuinely under-covered with a real catalyst, not a name that merely cleared a mechanical filter.",
+          "success_criteria": [
+            "Each candidate combines low analyst coverage, strong technicals, and a recent news catalyst, not just one factor",
+            "Rejected candidates get a stated reason so thresholds can be tuned"
+          ]
+        }
+      ],
+      "procedure": "Require the combination of low coverage, strong technicals, and a real catalyst before surfacing a name; any single factor alone is not enough evidence. Record why a candidate was rejected, not just that it was, since that is what lets the coverage and technical thresholds actually improve from review feedback. Stay within the user's declared sectors rather than drifting toward whatever looks exciting.",
+      "verdict": "keep",
+      "notes": "Distinct from Congressional Disclosure Scan (34e9138a): different signal source (technical/coverage screening vs. politician trade filings) and different output (new candidates vs. watchlist-match alerts). Not a merge candidate despite the shared 'sectors of interest' framing."
+    },
+    {
+      "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
+      "old_title": "Idea Harvesting",
+      "title": "Idea Harvesting",
+      "domain": "product_project",
+      "outcomes": [
+        {
+          "id": "grounded-not-generic",
+          "statement": "Harvested ideas actually fit what this product is and could plausibly become, because they are grounded in its real codebase and stack.",
+          "success_criteria": [
+            "Candidates are seeded from the bound codebase's actual domain and stack when one is connected",
+            "Vague or meta candidates are skipped rather than passed through to triage"
+          ]
+        },
+        {
+          "id": "never-goes-silent",
+          "statement": "The harvest still delivers something useful even when no chat or knowledge-base source is connected.",
+          "success_criteria": [
+            "Web and codebase research alone produce candidates when messaging/KB sources are absent",
+            "A missing chat or KB connector is never treated as a failure"
+          ]
+        }
+      ],
+      "procedure": "Ground candidates in what the product actually is, reading the codebase before searching the web so results are plausible rather than generic. Skip vague or meta content rather than passing volume through to triage. Learn from acceptance patterns per category and stop mining categories that keep getting rejected. A missing chat or knowledge-base connector should never stop the harvest; web and codebase research alone are enough to deliver value.",
+      "verdict": "keep"
+    },
+    {
+      "id": "563cf0cd-126c-5e8f-9ea2-ff1d04df897e",
+      "old_title": "Daily Briefing",
+      "title": "Daily News Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "todays-signal",
+          "statement": "The reader gets a categorized, ranked view of what was actually worth reading from the last 24 hours, not a raw feed dump.",
+          "success_criteria": [
+            "Articles are categorized and ranked, not listed chronologically",
+            "The briefing reflects only genuinely new material since the last rollup"
+          ]
+        }
+      ],
+      "procedure": "Rank by what is actually worth the reader's time, not by recency alone, and keep categories meaningful rather than a catch-all bucket. This is the delivery layer over the ingestion pipeline's work; build the rollup from what has already been ingested and scored rather than re-fetching or re-summarizing. Format for a genuine read, not a wall of headlines.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Daily Briefing' to distinguish it from the other in-slice 'Daily Briefing' (42cd9785, a meeting-day overview, renamed Meeting Day Briefing). These are genuinely different jobs: a news/article rollup vs. a calendar summary. A third 'Daily Briefing' (a product-analytics briefing) is referenced by the spec's own example but is not in this slice."
+    },
+    {
+      "id": "2ecd8643-83ad-52e8-a8cb-7426b30c3cfb",
+      "old_title": "Source Ingestion",
+      "title": "Source Ingestion",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "nothing-missed-nothing-duplicated",
+          "statement": "Nothing from an attached source is missed, and nothing is logged twice.",
+          "success_criteria": [
+            "New items are deduped against a rolling window before being logged",
+            "Every logged item carries an importance score, not just a summary"
+          ]
+        },
+        {
+          "id": "breaking-news-is-timely",
+          "statement": "Genuinely urgent items reach the user in real time rather than waiting for the next scheduled rollup.",
+          "success_criteria": [
+            "Breaking items are alerted immediately, not batched with the rest",
+            "The bar for a real-time alert is high enough to avoid alert fatigue"
+          ]
+        }
+      ],
+      "procedure": "Dedup honestly against the rolling window so the same story does not appear twice under a different headline. Score importance so downstream consumers like the daily digest can rank sensibly, and reserve real-time alerts for items that genuinely cannot wait. This is the intake layer; keep it reliable and quiet, and let the digest recipe handle presentation.",
+      "verdict": "keep",
+      "notes": "Feeds Daily News Digest (563cf0cd); kept separate because ingestion/dedup/alerting is a different job from daily rollup delivery."
+    },
+    {
+      "id": "1a683240-1f50-56d7-a504-d8773e527d12",
+      "old_title": "Inbox Triage & messaging Routing",
+      "title": "Inbox Triage & Channel Routing",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "right-channel-first-time",
+          "statement": "Each unread email reaches the channel where the people who need to see it already are, without a human re-routing it.",
+          "success_criteria": [
+            "Classification improves as sender patterns accumulate rather than staying static",
+            "A summary reaches the topic-matched channel for every classified message"
+          ]
+        }
+      ],
+      "procedure": "Classify by sender memory first, since a known sender's pattern is stronger signal than content alone, and let that memory keep improving as more mail is processed. Route to the channel that actually matches the topic rather than a single catch-all destination. Keep the posted summary tight enough to be read at a glance.",
+      "verdict": "keep",
+      "notes": "Retitled to fix a mechanical-transform artifact in the original title ('& messaging Routing', a lowercase connector name mid-sentence)."
+    },
+    {
+      "id": "8fe557a7-eeca-5e0c-b057-744adda03356",
+      "old_title": "Evening Completion Processing",
+      "title": "Evening Completion Processing",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "reviews-actually-close-the-loop",
+          "statement": "When a reviewer finishes an article review, the knowledge base reflects it immediately and the reviewer's effort is visibly acknowledged.",
+          "success_criteria": [
+            "Last Reviewed and Next Due update the same day the status changes to Reviewed",
+            "Next Due is computed from the article's own review frequency, not a fixed interval"
+          ]
+        }
+      ],
+      "procedure": "Detect completions promptly rather than batching them into the next morning's cycle, and compute the next due date from each article's own frequency rather than a blanket rule. Acknowledge the reviewer's work; a rotation that never says thank you erodes participation over time. This closes the loop that the morning assignment opened.",
+      "verdict": "keep",
+      "notes": "Reassigned from category=support to domain=general_professional: this is an internal knowledge-base article review rotation, not customer support. Part of a trio with Morning Assignment Scan (cf5b451c) and Overdue Reminder (0dafb086)."
+    },
+    {
+      "id": "cf5b451c-b5d5-5944-aaa4-9091241ea0a4",
+      "old_title": "Morning Assignment Scan",
+      "title": "Morning Assignment Scan",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "fair-and-timely-coverage",
+          "statement": "Every article due for review gets assigned to a capable reviewer promptly, and no one reviewer is overloaded.",
+          "success_criteria": [
+            "Assignment respects each reviewer's cap and any manual override",
+            "Rotation fairness holds across the full cycle, not just the first few articles"
+          ]
+        }
+      ],
+      "procedure": "Respect reviewer caps and manual overrides; a rotation that quietly overloads one person will stop being trusted. Keep the rotation state durable so a restart never produces a duplicate assignment. Use judgment on tone and channel for the reminder, and honor the optional pre-send confirmation gate when the persona is configured to want a human check before emails go out.",
+      "verdict": "keep",
+      "notes": "Reassigned from category=support to domain=general_professional; see Evening Completion Processing (8fe557a7)."
+    },
+    {
+      "id": "0dafb086-19bf-5d0c-88ea-da782f5c9b00",
+      "old_title": "Overdue Reminder",
+      "title": "Overdue Reminder",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "nothing-quietly-stalls",
+          "statement": "An overdue review never sits silently; the right person hears about it, with urgency that matches how overdue it is.",
+          "success_criteria": [
+            "Reminder tone escalates with how overdue the item is, not a single flat nudge",
+            "A review that stays overdue long enough reaches a manager, not just the original reviewer"
+          ]
+        }
+      ],
+      "procedure": "Match the reminder's urgency to how overdue the item actually is; a gentle nudge at two days and an unresolved item at four days are different problems and should read differently. Escalate to a manager only once softer reminders have genuinely failed, and keep an honest count of how many times each item has been nudged so escalation timing stays accurate.",
+      "verdict": "keep",
+      "notes": "Reassigned from category=support to domain=general_professional; see Evening Completion Processing (8fe557a7)."
+    },
+    {
+      "id": "5ca4c73a-35d9-5fe2-82cd-61f47e2575e6",
+      "old_title": "LinkedIn Watchlist Sweep",
+      "title": "LinkedIn Watchlist Sweep",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "real-changes-only",
+          "statement": "Alerts reflect changes that actually matter about a watched company, not routine noise in the data.",
+          "success_criteria": [
+            "Each alert is scored for importance before being sent, not sent on any detected diff",
+            "Only changes clearing the configured score threshold trigger a real-time alert"
+          ]
+        }
+      ],
+      "procedure": "Score every detected change for how much it actually matters before deciding whether it warrants a real-time alert; a diff is not automatically a signal. Keep per-company snapshots current so the next sweep compares against reality. Respect the alerting rate so the channel does not become noise the user tunes out.",
+      "verdict": "keep"
+    },
+    {
+      "id": "5bb6b6b6-5c62-5401-a309-28a15122ccf9",
+      "old_title": "Weekly Watchlist Digest",
+      "title": "Weekly Watchlist Digest",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "patterns-across-companies",
+          "statement": "The reader sees not just what changed at each company this week, but what pattern connects several of them.",
+          "success_criteria": [
+            "Changes are grouped by company and ranked by importance within each",
+            "Cross-company patterns are called out explicitly when the data supports one"
+          ]
+        }
+      ],
+      "procedure": "Look across companies for a pattern worth naming, not just a per-company recap; three competitors making the same kind of hire this week is worth more than the same three items listed separately. Rank within each company by importance rather than chronologically. This is the weekly rollup of the sweep's real-time alerts; synthesize what already surfaced rather than re-scoring from scratch.",
+      "verdict": "keep",
+      "notes": "Companion to LinkedIn Watchlist Sweep (5ca4c73a); kept separate as a distinct real-time-alert vs. weekly-rollup pair, consistent with other such pairs in this slice."
+    },
+    {
+      "id": "84c29b58-bf62-50d9-aac6-ed5154310608",
+      "old_title": "Niche Business Discovery",
+      "title": "Niche Business Discovery",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "qualified-lead-list",
+          "statement": "The requester gets a tiered list of real prospects worth pursuing in a niche and location, not a raw scrape of every listed business.",
+          "success_criteria": [
+            "Prospects are deduplicated across Maps and directory sources before delivery",
+            "Each prospect is tiered by a real signal (review volume, web-presence health), not listed flat"
+          ]
+        }
+      ],
+      "procedure": "Tier prospects by a real quality signal, mixing review volume with a quick website health check, rather than delivering every match flat. Dedupe hard across sources since the same business often appears on Maps and in directories under slightly different names. Respect the same-day repeat guard so a re-run does not waste the requester's time on results they already have.",
+      "verdict": "keep"
+    },
+    {
+      "id": "29115c99-de65-5219-839a-5657fd52c39b",
+      "old_title": "News Correlation",
+      "title": "News Correlation",
+      "domain": "finance_accounting",
+      "outcomes": [
+        {
+          "id": "context-not-noise",
+          "statement": "Every flagged market anomaly gets news context strong enough to actually explain it, or an honest note that none was found.",
+          "success_criteria": [
+            "Only articles clearing the relevance threshold are attached to a market",
+            "A market with no qualifying context says so rather than attaching a weak match"
+          ]
+        }
+      ],
+      "procedure": "Attach news only when it genuinely explains the anomaly; a loosely related headline is worse than none, because it implies a causal story that is not there. Fall back to general web search when the primary news source is unavailable rather than leaving a market unexplained, but be explicit when context is missing entirely. This depends on an upstream anomaly-detection capability for its input; do not duplicate that detection logic here.",
+      "verdict": "keep",
+      "notes": "Listens for stocks.markets.anomaly, emitted by a market-anomaly-watch capability that is not part of this slice (likely categorized elsewhere in the corpus). Its output quality depends entirely on that upstream recipe."
+    },
+    {
+      "id": "42cd9785-71fd-5172-88f7-6d9ea100b5f6",
+      "old_title": "Daily Briefing",
+      "title": "Meeting Day Briefing",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "walks-in-prepared",
+          "statement": "The requester starts the day knowing exactly what meetings are coming and who they need to be ready for.",
+          "success_criteria": [
+            "The timeline and attendee list reflect the actual calendar for the day, not a stale cache",
+            "A preparation checklist is included for meetings that plausibly need one"
+          ]
+        }
+      ],
+      "procedure": "Build the day's meeting picture fresh each morning rather than trusting cached state, since a calendar can change overnight. Flag which meetings actually need preparation instead of treating every entry the same. This also seeds the day's meeting state for the calendar watch, so keep the initialization reliable even on a light day.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Daily Briefing' to distinguish it from the other in-slice 'Daily Briefing' (563cf0cd, a news/article rollup, renamed Daily News Digest). See that recipe's notes for the corpus's third 'Daily Briefing'."
+    },
+    {
+      "id": "9b5001d0-c6fd-5b39-be02-3d00d93d1967",
+      "old_title": "Deadline Check",
+      "title": "Deadline Check",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "nothing-quietly-slips",
+          "statement": "No onboarding task goes overdue without the right person being told, with urgency escalating as it gets later.",
+          "success_criteria": [
+            "Reminders escalate from assignee to manager CC to HR manual review as a task ages",
+            "Milestone transitions and 90-day completions are detected and surfaced, not just individual tasks"
+          ]
+        }
+      ],
+      "procedure": "Escalate in proportion to how overdue a task actually is; a same-day nudge to the assignee and a manager CC for something genuinely stuck are different situations. Detect milestone transitions and completions so HR sees progress, not just problems. Keep the checklist scan comprehensive across all active hires rather than sampling.",
+      "verdict": "keep"
+    },
+    {
+      "id": "e8f3711d-4b76-5789-857d-a463154e98dd",
+      "old_title": "New Hire Checklist Setup",
+      "title": "New Hire Checklist Setup",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "every-hire-gets-the-right-plan",
+          "statement": "Every new employee gets an onboarding checklist matched to their actual role, set up before it is needed.",
+          "success_criteria": [
+            "The role template selected actually matches the new hire's role",
+            "A hire whose role has no template still gets a checklist, flagged for HR to adjust"
+          ]
+        }
+      ],
+      "procedure": "Match the checklist template to the actual role rather than defaulting broadly; when no template fits, fall back to the general template but flag it for HR rather than silently under-serving the hire. Check for an existing checklist before creating one so a duplicate is never generated. Confirm setup so the new hire and their manager know onboarding has started.",
+      "verdict": "keep"
+    },
+    {
+      "id": "51adfa5d-a248-5032-af9a-1312a907e705",
+      "old_title": "Weekly Progress Report",
+      "title": "Onboarding Progress Report",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "at-risk-hires-visible",
+          "statement": "HR and managers know which new hires are genuinely at risk of a bad onboarding before it becomes a retention problem.",
+          "success_criteria": [
+            "A hire is flagged at-risk on real criteria (multiple overdue tasks or meaningfully behind expected progress), not a single missed task",
+            "Bottlenecks are attributed to specific task types, not reported as a vague aggregate"
+          ]
+        }
+      ],
+      "procedure": "Reserve the at-risk flag for hires who are genuinely struggling, using overdue count and progress percentage together rather than any single missed deadline; over-flagging trains people to ignore the report. Identify which task types are actually the bottleneck so the onboarding process itself can improve, not just the individual hire's pace.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Weekly Progress Report' to name its actual subject (onboarding), reducing collision risk with progress/status reports elsewhere in the corpus."
+    },
+    {
+      "id": "01c9ef1e-e182-5507-9071-a571f1aea0bc",
+      "old_title": "Daily Digest",
+      "title": "Daily Capture Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "nothing-captured-is-lost",
+          "statement": "Everything the user captured during the day is visible in one place at day's end, grouped in a way that is easy to scan.",
+          "success_criteria": [
+            "Captures are grouped by type, not listed in raw chronological order",
+            "The digest is stored for trend tracking, and the day's buffer is cleared afterward"
+          ]
+        }
+      ],
+      "procedure": "Group by type so the reader can scan what kind of day it was, not just how much was captured. Store the digest for trend tracking before clearing the buffer, since that historical record is what makes a later pattern digest possible. Keep the summary itself short; the value is the daily habit, not a long readout.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'Daily Digest' to name its actual subject (captures), reducing collision risk with other daily-digest recipes elsewhere in the corpus."
+    },
+    {
+      "id": "36c3affe-b12f-50aa-9b3c-8a2355107191",
+      "old_title": "Meeting Prep",
+      "title": "Meeting Prep",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "walks-in-knowing-who",
+          "statement": "The requester walks into every external meeting already knowing who they are meeting and what approach fits that person.",
+          "success_criteria": [
+            "Every external meeting in the next 48 hours gets a prep page before it happens",
+            "Internal-only meetings are skipped, not padded with irrelevant prep"
+          ]
+        }
+      ],
+      "procedure": "Skip internal meetings; prep only earns its cost when there is someone external to understand. Build a real behavioral profile from LinkedIn and email history rather than a generic bio, and reuse the profile cache instead of re-enriching someone the requester met with recently. Write the result as a structured page the requester can actually scan before walking in, not a research dump.",
+      "verdict": "keep"
+    },
+    {
+      "id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
+      "old_title": "Scan & Enrich Implementation Opportunities",
+      "title": "Scan & Enrich Implementation Opportunities",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "relevant-to-this-stack",
+          "statement": "Surfaced opportunities (connectors, API updates, tooling) actually fit the codebase's real stack, not a generic developer-news feed.",
+          "success_criteria": [
+            "Candidates are scoped by the bound codebase's actual dependencies when one is connected",
+            "Each candidate is classified into new_connector, api_version, or tooling before reaching triage"
+          ]
+        }
+      ],
+      "procedure": "Ground the search in what the codebase actually depends on, reading its manifest before searching, so results are relevant rather than generic developer news. Classify and dedupe before candidates reach triage so the reviewer's time is spent judging relevance, not filtering junk. A missing email connector should never block delivery; web research alone should always produce something.",
+      "verdict": "keep",
+      "notes": "Distinct from Idea Harvesting (20ed97c9): this one hunts for technical implementation opportunities (connectors, API versions, tooling), domained software_engineering; Idea Harvesting hunts for product/feature ideas, domained product_project."
+    },
+    {
+      "id": "aec1d257-421e-5281-ad40-268b713e7620",
+      "old_title": "Offer Approval & Dispatch",
+      "title": "Offer Approval & Dispatch",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "never-auto-sends",
+          "statement": "An offer never reaches a candidate without a human choosing to send it.",
+          "success_criteria": [
+            "Every drafted offer sits in human review before dispatch",
+            "A rejected draft is discarded with the reason logged, not silently resent"
+          ]
+        }
+      ],
+      "procedure": "This never auto-sends; the draft exists to make the human reviewer's decision fast, not to bypass them. Confirm dispatch and post a clear confirmation so the recruiter knows the offer actually went out. Log rejection reasons honestly, since that history is what improves future drafts.",
+      "verdict": "keep"
+    },
+    {
+      "id": "8ddb7f51-3346-51df-a23a-d781a554d3c3",
+      "old_title": "Stage Transition Processing",
+      "title": "Stage Transition Processing",
+      "domain": "hr_people",
+      "outcomes": [
+        {
+          "id": "candidate-hears-promptly",
+          "statement": "A candidate whose stage changes hears from the company promptly, with a message that fits the stage they actually reached.",
+          "success_criteria": [
+            "The email content matches the specific transition (acknowledgment, interview prep, rejection), not a generic template",
+            "Offer-stage transitions are handed to the approval capability rather than auto-sent"
+          ]
+        }
+      ],
+      "procedure": "Match tone and content to the actual stage transition; a rejection and an interview-prep email should not read like the same template with swapped variables. Post hiring updates to messaging in a way that respects candidate privacy. Hand offer-stage transitions to the approval capability rather than sending directly; that boundary exists on purpose and should not be worked around for convenience.",
+      "verdict": "keep",
+      "notes": "Explicitly hands off offer-stage transitions to Offer Approval & Dispatch (aec1d257) rather than duplicating that approval gate; kept as two recipes because intake/routing and approval-gated dispatch are different responsibilities."
+    },
+    {
+      "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+      "old_title": "Feed Scanning",
+      "title": "Feed Scanning",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "feeds-stay-current",
+          "statement": "New items from configured feeds enter the curation pipeline promptly, without reprocessing what was already seen.",
+          "success_criteria": [
+            "Items are deduplicated and age-filtered before entering curation",
+            "Per-run volume stays within the configured cap"
+          ]
+        }
+      ],
+      "procedure": "Dedupe and age-filter before handing items to curation, and respect the per-run cap so API usage stays predictable. The judgment that matters (is this worth a knowledge-base page, and how should it be summarized and cross-referenced) belongs to the curation pipeline itself, not to this intake step.",
+      "verdict": "merge_into",
+      "merge_into": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+      "merge_reason": "Both recipes exist to turn a piece of content into a well-summarized, cross-referenced knowledge base page. Feed Scanning's own description says it runs each new item through 'the curation pipeline', i.e. the same work Manual Curation does; the only real difference is how content arrives (a scheduled RSS/Atom sweep vs. a user-submitted URL), which is exactly what the cadence field already exists to express, not a reason for two separate charters."
+    },
+    {
+      "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+      "old_title": "Manual Curation",
+      "title": "Content Curation",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "worth-being-in-the-kb",
+          "statement": "Everything that enters the knowledge base through curation is genuinely worth being there: summarized well, tagged, and connected to what is already there.",
+          "success_criteria": [
+            "Every curated page carries a three-tier summary, tags, and any real cross-references, not just a raw copy",
+            "Duplicate or near-duplicate content is caught rather than creating a second page for the same source"
+          ]
+        }
+      ],
+      "procedure": "Judge whether a piece of content is actually worth adding, not just whether it can be fetched and summarized. Write a genuinely useful three-tier summary and find the cross-references that make the page discoverable later, not just filed. This charter covers content arriving either from a user-submitted URL or from a scheduled feed sweep; the intake trigger differs, the judgment about what belongs in the knowledge base does not.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Manual Curation' to 'Content Curation' because it should absorb Feed Scanning (fb223f0f, see merge_into on that recipe); the survivor's job is no longer manual-only."
+    },
+    {
+      "id": "c868be14-e5b0-503d-a691-e8d238d924a3",
+      "old_title": "Paper Discovery",
+      "title": "Paper Discovery",
+      "domain": "data_ai",
+      "outcomes": [
+        {
+          "id": "only-real-papers-indexed",
+          "statement": "The index fills with papers that genuinely match the user's keyword groups, not near-misses padded to hit a count.",
+          "success_criteria": [
+            "Papers below the relevance threshold are discarded, not indexed",
+            "Duplicate papers found across multiple databases are merged, not double-indexed"
+          ]
+        },
+        {
+          "id": "low-confidence-is-flagged-not-hidden",
+          "statement": "A low-confidence summary is still visible for human review rather than silently indexed as if it were solid.",
+          "success_criteria": [
+            "Low-confidence summaries route to manual review and stay out of trend analysis until resolved",
+            "Retractions are excluded from trend analysis, not just noted"
+          ]
+        }
+      ],
+      "procedure": "Hold the relevance bar; a wider net that lets marginal papers through defeats the point of a keyword-scoped index. Write summaries honestly, and flag low confidence for review rather than indexing a guess as fact. Watch for retractions and keep them out of trend analysis. The tool spans disciplines (CS, physics, biomedical); scope coverage to what the user's keyword groups and enabled databases actually ask for.",
+      "verdict": "keep",
+      "notes": "Discipline-agnostic (arXiv/PubMed/Semantic Scholar toggle) but the illustrative keyword example and CS-first framing lean toward AI/ML research teams as the primary user, hence domain=data_ai rather than a healthcare/life-sciences domain."
+    },
+    {
+      "id": "385ab63f-7e11-5332-9a53-eb362389f0f8",
+      "old_title": "Proposal Generation",
+      "title": "Proposal Generation",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "proposal-fits-the-deal",
+          "statement": "Every proposal reflects genuine research into the specific prospect, not a template with the company name swapped in.",
+          "success_criteria": [
+            "The proposal tier (startup/standard/enterprise) matches the actual deal, not a default",
+            "Prospect, industry, and competitor research grounds the proposal's specifics before it reaches review"
+          ]
+        },
+        {
+          "id": "never-sent-unreviewed",
+          "statement": "No proposal reaches a prospect without a human reviewing it first.",
+          "success_criteria": [
+            "Every generated proposal is flagged for human review before delivery"
+          ]
+        }
+      ],
+      "procedure": "Research the prospect, their industry, and their competitors before drafting; a proposal that reads generically will not close. Pick the tier that actually fits the deal size and needs, not a default. This always stops at human review; never treat 'generated' as 'ready to send'.",
+      "verdict": "keep"
+    },
+    {
+      "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
+      "old_title": "Daily Escalation Digest",
+      "title": "Daily Escalation Digest",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "lead-sees-the-real-picture",
+          "statement": "The support lead sees the day's escalations in context, including whether things are trending better or worse, not just today's raw count.",
+          "success_criteria": [
+            "The digest includes week-over-week trend, not just today's numbers",
+            "Repeat offenders and long-breach patterns are called out explicitly"
+          ]
+        }
+      ],
+      "procedure": "Give the support lead trend, not just a count; a number without last week's comparison does not tell them whether to worry. Call out repeat offenders and unusually long breach durations by name so patterns are visible, not buried in an average. Keep the digest scannable in under a minute; the lead reads this at the end of a long day.",
+      "verdict": "keep",
+      "notes": "Rollup companion of SLA Breach Watch & Escalation (410bed86); kept separate as a digest vs. real-time-escalation pair."
+    },
+    {
+      "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+      "old_title": "SLA Breach Watch & Escalation",
+      "title": "SLA Breach Watch & Escalation",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "nothing-breaches-silently",
+          "statement": "No ticket crosses its SLA deadline without the right person having already been warned, with warning proportional to severity.",
+          "success_criteria": [
+            "A ticket approaching its SLA threshold gets a proactive warning before it breaches, not just a post-breach alert",
+            "Critical-tier breaches reach the lead directly, not just a channel post"
+          ]
+        },
+        {
+          "id": "patterns-not-just-instances",
+          "statement": "Repeat offenders and agent overload show up as patterns the team can act on, not just isolated escalations.",
+          "success_criteria": [
+            "An escalation notes when the same customer or issue has recurred",
+            "Every escalation is logged to the knowledge base for later pattern analysis"
+          ]
+        }
+      ],
+      "procedure": "Warn before the breach, not just after; the earlier a ticket crosses into its risk window, the more useful the alert. Weight severity by tier and route the most urgent cases directly to the lead rather than a channel post that might be missed. Enrich with repeat-offender and agent-overload context so the team sees a pattern, not just one more ticket. Log every escalation so the daily digest and later analysis have something real to work from.",
+      "verdict": "keep",
+      "notes": "Absorbs SLA Breach Prevention (43d1c9b8, see that recipe's merge_reason). Kept distinct from SLA Monitoring & Escalation (6dbde915, renamed KB Ticket SLA Escalation), which runs against a different ticket store (knowledge base rather than a dedicated support/ticketing platform) - see that recipe's notes for why this review did not force that merge."
+    },
+    {
+      "id": "0e18c6ea-e50c-5f10-8c33-8c566fa38b7b",
+      "old_title": "Knowledge Base Enrichment",
+      "title": "Knowledge Base Enrichment",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "kb-learns-from-every-resolution",
+          "statement": "The knowledge base gets measurably better every time a ticket is resolved, not just when someone remembers to update it.",
+          "success_criteria": [
+            "Every resolved ticket updates a matching KB entry's frequency or creates a new one",
+            "Root cause and resolution steps are captured, not just the fact that it was resolved"
+          ]
+        }
+      ],
+      "procedure": "Extract the real root cause and resolution steps, not just a one-line close note; that is what makes the entry useful the next time this problem recurs. Match against the right existing entry before creating a new one, so the same problem does not spawn duplicate articles. This runs automatically on every resolution; the value compounds only if it never gets skipped.",
+      "verdict": "keep"
+    },
+    {
+      "id": "43d1c9b8-25be-5abb-8b8e-55faeb9aedc1",
+      "old_title": "SLA Breach Prevention",
+      "title": "SLA Breach Prevention",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "single-timely-warning",
+          "statement": "A critical or high ticket gets one proactive warning as its remaining time crosses into the risk window.",
+          "success_criteria": [
+            "The warning fires once per threshold crossing, not repeatedly",
+            "Only critical/high tickets are tracked"
+          ]
+        }
+      ],
+      "procedure": "Fire the warning once, at the moment remaining time crosses into the risk window, for critical/high tickets specifically. Runs paired with the same ticket-triage cadence it depends on for its tracked set.",
+      "verdict": "merge_into",
+      "merge_into": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+      "merge_reason": "Same job as SLA Breach Watch & Escalation: warn before a ticket breaches its SLA. Both watch remaining time on critical/high tickets from the same support platform, and both run on cadences explicitly paired with the same triage cycle (60 seconds, matching Ticket Triage & Routing's own cadence). This recipe's single-warning behavior is a narrower version of the tiered warning/escalation the other recipe already performs; keeping both risks two competing warnings firing for the same ticket."
+    },
+    {
+      "id": "5154b28a-cd99-562b-9ef1-d2a8e52b7ce5",
+      "old_title": "Ticket Triage & Routing",
+      "title": "Ticket Triage & Routing",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "right-tier-first-time",
+          "statement": "Every new or updated ticket reaches the right destination on the first pass, weighted by real urgency and sentiment, not just keyword matching.",
+          "success_criteria": [
+            "Classification considers both sentiment and urgency, not urgency alone",
+            "A ticket with a matching KB resolution is suggested before being routed for manual handling"
+          ]
+        }
+      ],
+      "procedure": "Weigh sentiment alongside urgency; an angry customer with a minor issue and a calm customer with a critical one need different handling. Search the knowledge base honestly before routing, so a ticket with a known resolution is not treated as if nobody has seen it before. Route by the urgency-and-KB-match combination rather than a single dimension.",
+      "verdict": "keep",
+      "notes": "Uses a dedicated support/ticketing platform connector, distinguishing its system from the email-intake and KB-as-ticket-store systems elsewhere in this slice; see the notes on SLA Monitoring & Escalation (6dbde915) for the cross-system picture."
+    },
+    {
+      "id": "b362fec9-50d5-5133-90dc-21b34507f652",
+      "old_title": "Journal Reflection",
+      "title": "Journal Reflection",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "grounded-reflection",
+          "statement": "The user gets a reflection on their own entry that is actually grounded in their vault and their recurring patterns, not a generic pep talk.",
+          "success_criteria": [
+            "The Coach section references real context from the vault, not boilerplate",
+            "Recurring themes noted in pattern memory inform the reflection when relevant"
+          ]
+        },
+        {
+          "id": "one-current-reflection-per-note",
+          "statement": "A note carries exactly one, current Coach reflection, whether it is written the first time or refreshed later.",
+          "success_criteria": [
+            "Re-running against a date replaces the existing Coach section rather than appending a duplicate",
+            "The refreshed reflection accounts for content added since the prior pass"
+          ]
+        }
+      ],
+      "procedure": "Ground the reflection in the vault's own context and in patterns that have actually recurred, not a template response to any journal entry. Trigger only when there is real new content, not on every minor edit, and treat a manual re-run against a specific date the same way: replace the existing Coach section in place rather than stacking a second one. Write directly into the note; this is the entire output, there is no separate message or notification to also manage.",
+      "verdict": "keep",
+      "notes": "Absorbs Journal Rescan (c62bbf82, see that recipe's merge_reason)."
+    },
+    {
+      "id": "c62bbf82-5e82-5001-bea3-5e4f9d07f77d",
+      "old_title": "Journal Rescan",
+      "title": "Journal Rescan",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "fresh-not-duplicated",
+          "statement": "A re-run reflects the note's current content and replaces the old reflection, rather than stacking a second one underneath.",
+          "success_criteria": [
+            "Re-running on a date replaces the existing Coach section in place",
+            "The refreshed reflection accounts for content added since the original pass"
+          ]
+        }
+      ],
+      "procedure": "Replace the existing Coach section in place rather than appending a second one, and otherwise follow the same grounding discipline as the scheduled reflection.",
+      "verdict": "merge_into",
+      "merge_into": "b362fec9-50d5-5133-90dc-21b34507f652",
+      "merge_reason": "Same job as Journal Reflection: produce a grounded Coach reflection for a daily note. Journal Rescan is only a manual re-invocation of that identical reflection logic against a specific date, replacing rather than duplicating the Coach section when re-run. The trigger difference (automatic on vault change vs. manual on-demand) is exactly what a manual-invocation mode already exists to express, not a separate charter. This mirrors the Feed Scanning / Manual Curation merge in this same slice."
+    },
+    {
+      "id": "cbdd0d9a-5661-5525-9abb-7ebc5c91bb7d",
+      "old_title": "Weekly Pattern Digest",
+      "title": "Weekly Pattern Digest",
+      "domain": "general_professional",
+      "outcomes": [
+        {
+          "id": "slow-burn-themes-surface",
+          "statement": "The user learns about themes recurring across weeks that no single day's reflection would have surfaced.",
+          "success_criteria": [
+            "Only clusters that exceed the recurrence floor are surfaced, not every loose keyword overlap",
+            "A cluster already digested before is not repeated"
+          ]
+        }
+      ],
+      "procedure": "This only runs when the user has opted in; respect that off-by-default posture rather than treating it as always active. Cluster by real keyword overlap and hold the recurrence floor so a single coincidental repeat does not get treated as a pattern. Skip clusters already surfaced in a prior digest so the weekly summary stays genuinely new.",
+      "verdict": "keep",
+      "notes": "Kept separate from Journal Reflection (b362fec9) despite being an optional add-on to the same journal system: the outcome is genuinely different (cross-week theme synthesis to a message channel vs. per-entry reflection written into the vault)."
+    },
+    {
+      "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
+      "old_title": "Free Promotion Source Discovery",
+      "title": "Free Promotion Source Discovery",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "sources-actually-fit-the-product",
+          "statement": "Discovered promotion surfaces plausibly fit what this specific product is, not a generic list of places to post a startup.",
+          "success_criteria": [
+            "Sources are grounded in the app's own README and package metadata, not a static list",
+            "Sources the user tagged bad are not resurfaced"
+          ]
+        }
+      ],
+      "procedure": "Ground discovery in what the product's own codebase says it is; a generic promotion list wastes the user's time. Use the user's good/bad tags to actually tighten future discovery, not just log them. Favor communities where the fit is genuine over the largest audience available.",
+      "verdict": "keep"
+    },
+    {
+      "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+      "old_title": "Optimization Proposals",
+      "title": "Optimization Proposals",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "grounded-in-real-performance-data",
+          "statement": "Every proposal traces back to something the performance scan actually found, with a stated expected impact, not a generic best-practice checklist.",
+          "success_criteria": [
+            "Each proposal cites the specific data point that motivated it",
+            "Proposals are capped to a size the reviewer can actually evaluate each run"
+          ]
+        }
+      ],
+      "procedure": "Ground every proposal in a specific finding from the performance scan; a suggestion that would apply to any account regardless of its data is not doing its job. Keep the list to a size a human can actually evaluate rather than dumping every plausible idea. State priority and expected impact honestly, including uncertainty. Nothing here enters the backlog without a human accepting it.",
+      "verdict": "keep"
+    },
+    {
+      "id": "f026e7a3-90d7-5514-921e-c47ad9a3f43d",
+      "old_title": "Profile URLs",
+      "title": "Profile URLs",
+      "domain": "sales_marketing",
+      "outcomes": [
+        {
+          "id": "classification-holds-up",
+          "statement": "Every URL in the source list gets classified across all seven dimensions accurately, including the hard cases (paywalls, login walls, JS-rendered pages).",
+          "success_criteria": [
+            "A site behind a paywall or login wall is marked accordingly rather than misclassified as unavailable data",
+            "Duplicates are handled gracefully, not reprocessed as new"
+          ]
+        }
+      ],
+      "procedure": "Handle the hard cases explicitly, marking paywalled, login-gated, or JS-rendered sites for what they are rather than forcing a classification from a failed fetch. Respect rate-limited batching so the source site and the source-list API are not hammered. Follow the profiling intent's guidance on which signals matter most for this run, since that changes what a good classification actually looks like.",
+      "verdict": "keep",
+      "notes": "Domain assigned on inferred evidence: the recipe's own events use 'market.profile.*' naming and feed a downstream landscape report, pointing toward competitive/market-landscape profiling rather than a named field. Flagged for Director confirmation."
+    },
+    {
+      "id": "5c43d914-56b5-55bd-b824-8aa15b060f37",
+      "old_title": "Outline + Titles",
+      "title": "Outline + Titles",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "creator-can-decide-fast",
+          "statement": "The creator gets a genuinely pickable set of options (outline, three titles, thumbnail direction) they can approve or redirect in one pass.",
+          "success_criteria": [
+            "The outline follows a structure that actually maps to the approved topic, not a generic template",
+            "The three title options represent genuinely different angles (curiosity, benefit, identity), not variations of the same phrasing"
+          ]
+        }
+      ],
+      "procedure": "Make the three title options genuinely distinct in angle, not near-duplicates; the creator needs a real choice, not three phrasings of one idea. Learn which hook patterns actually land on this channel from past approvals rather than treating every topic the same way. Cap revision loops and suggest a different topic rather than iterating indefinitely on one that is not working.",
+      "verdict": "keep"
+    },
+    {
+      "id": "ce7e3575-0844-51c5-9dd2-5a4c93df0eaf",
+      "old_title": "Niche Research",
+      "title": "Niche Research",
+      "domain": "creative_design",
+      "outcomes": [
+        {
+          "id": "gate-is-honest",
+          "statement": "A topic that clears the niche gate genuinely has an audience; a topic that fails gets stopped before the creator invests in it.",
+          "success_criteria": [
+            "The median view count test is applied honestly against real query results, not estimated",
+            "A failing topic returns a hard stop with alternatives, not a soft warning that gets ignored"
+          ]
+        }
+      ],
+      "procedure": "Apply the niche gate honestly; the median view count test exists to stop the creator investing in a topic without an audience, so do not soften a fail into a maybe. Rank candidates by real signal across sources, and fall back gracefully between them rather than failing the whole run when one is rate-limited. Ground rankings in citations the creator can verify.",
+      "verdict": "keep",
+      "notes": "Feeds Outline + Titles (5c43d914) once a topic is approved; kept as separate recipes because each stage has its own human approval gate."
+    },
+    {
+      "id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
+      "old_title": "On-Demand Security Scan",
+      "title": "On-Demand Security Scan",
+      "domain": "software_engineering",
+      "outcomes": [
+        {
+          "id": "findings-are-actionable",
+          "statement": "Every finding tells the developer exactly what is wrong and how to fix it, ranked by real severity, not a generic vulnerability list.",
+          "success_criteria": [
+            "Each finding carries a severity rank and a concrete remediation, not just a description",
+            "The same finding is not re-reported scan after scan once already surfaced"
+          ]
+        }
+      ],
+      "procedure": "Rank by real severity and give a concrete fix, not just a description of the problem; a developer should be able to act on a finding without further research. Treat dependency vulnerabilities, exposed secrets, and risky patterns (auth bypasses, PII handling, injection) as genuinely distinct categories, not lumped together. Dedupe against what has already been reported so re-running the scan does not just repeat the same list.",
+      "verdict": "keep"
+    },
+    {
+      "id": "10a9bac8-581e-5e55-875a-997428016656",
+      "old_title": "Email Triage & Ticketing",
+      "title": "Email Triage & Ticketing",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "every-email-becomes-a-tracked-ticket",
+          "statement": "Every incoming support email becomes a properly prioritized, SLA-bound ticket, and the inbox reflects what has actually been handled.",
+          "success_criteria": [
+            "Priority is computed from multiple signals (keywords, sender history, impact language, sender frequency), not one",
+            "A ticket is only created and the email marked read once the ticket write actually succeeds"
+          ]
+        }
+      ],
+      "procedure": "Weigh multiple signals when setting priority; a single keyword should not override sender history and impact language. Only mark an email read once the ticket has actually been created, so a failure never silently drops a request. Set the SLA deadline honestly from the priority tier, since everything downstream (the KB ticket store's own escalation) depends on that deadline being right.",
+      "verdict": "keep",
+      "notes": "Feeds KB Ticket SLA Escalation (6dbde915), which watches the tickets this recipe creates in the knowledge base."
+    },
+    {
+      "id": "6dbde915-d3ad-515b-bfa1-a9f951d70c51",
+      "old_title": "SLA Monitoring & Escalation",
+      "title": "KB Ticket SLA Escalation",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "staged-escalation-holds",
+          "statement": "A ticket approaching its SLA deadline moves through warning, critical, and breach stages predictably, and an unassigned critical ticket gets flagged before it breaches.",
+          "success_criteria": [
+            "The three stages (warning, critical if unassigned, breach) trigger at their actual configured thresholds",
+            "A ticket already assigned is not flagged as critical the same way an unassigned one is"
+          ]
+        }
+      ],
+      "procedure": "Hold the staged thresholds precisely; escalating too early trains the team to ignore warnings, too late defeats the point. Treat an unassigned ticket at the critical stage as more urgent than an assigned one, since it needs both attention and an owner. This operates against tickets stored in the knowledge base, distinct from the separate support-platform ticket flow another recipe in this slice watches; do not conflate the two ticket stores when tuning thresholds.",
+      "verdict": "keep",
+      "notes": "Renamed from the generic 'SLA Monitoring & Escalation' to make the distinction explicit: this recipe watches tickets created in the knowledge base by Email Triage & Ticketing (10a9bac8), while SLA Breach Watch & Escalation (410bed86) watches a dedicated support/ticketing platform connector. They read as near-identical responsibilities and may be alternate implementations of the same job wired to two different template setups, but this review does not have the template-wiring information to confirm that, so it is flagged for Director judgment rather than force-merged. See slice_findings."
+    },
+    {
+      "id": "aeb4d1d4-0bc5-545a-83f1-60d0a8ba996e",
+      "old_title": "Email Triage",
+      "title": "Email Auto-Reply Triage",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "confident-cases-resolve-fast",
+          "statement": "A customer with a question the knowledge base already answers gets a reply immediately, without waiting on a human.",
+          "success_criteria": [
+            "Auto-reply fires only above a real confidence threshold against a matched KB article",
+            "Below-threshold matches route to human review rather than guessing"
+          ]
+        },
+        {
+          "id": "gaps-get-flagged-not-guessed",
+          "statement": "When the knowledge base has no good answer, that gap gets flagged rather than papered over with a low-confidence auto-reply.",
+          "success_criteria": [
+            "A KB miss routes to knowledge-gap detection, not a forced auto-reply",
+            "Every routing decision reflects an actual computed confidence, not a default"
+          ]
+        }
+      ],
+      "procedure": "Only auto-reply when the KB match is genuinely strong; a wrong auto-reply costs more trust than a slower human reply. Route the middle ground to human review rather than forcing a binary auto-or-ignore decision, and route true KB misses to gap detection so the underlying content problem gets tracked, not just this one email.",
+      "verdict": "keep",
+      "notes": "Renamed from 'Email Triage' to distinguish it from Email Triage & Ticketing (10a9bac8) and Ticket Triage & Routing (5154b28a). Despite the similar names, this is a different job: confidence-gated auto-reply and deflection over raw email, with no ticket system of record, vs. those two recipes' ticket-creation/routing jobs. See slice_findings for the full picture of parallel support systems in this slice."
+    },
+    {
+      "id": "088b826e-981e-52b6-b871-5458c625c8a4",
+      "old_title": "Knowledge Gap Handling",
+      "title": "Knowledge Gap Handling",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "customer-not-left-hanging",
+          "statement": "A customer whose question has no KB answer still gets acknowledged promptly with a real expectation for when they will hear back.",
+          "success_criteria": [
+            "An acknowledgment with a promised response time goes out immediately on a detected gap",
+            "The promised timeframe is one the team can actually meet"
+          ]
+        },
+        {
+          "id": "recurring-gaps-escalate",
+          "statement": "A gap that keeps recurring gets treated as more urgent than a one-off, since it means real content is missing.",
+          "success_criteria": [
+            "Gap frequency is tracked across occurrences, not reset per incident",
+            "A gap's severity rises as its frequency does"
+          ]
+        }
+      ],
+      "procedure": "Acknowledge the customer immediately with a promised timeframe the team can realistically hit; a vague or unrealistic promise is worse than none. Write the gap report with enough of an outline that whoever fills it does not have to start from nothing. Track frequency honestly so a gap that keeps recurring escalates in visible severity rather than being logged fresh each time.",
+      "verdict": "keep",
+      "notes": "Companion to Email Auto-Reply Triage (aeb4d1d4), which emits the event this recipe listens for."
+    },
+    {
+      "id": "dc0f0f1c-b657-594e-b9b7-9d670164442a",
+      "old_title": "Daily Activity Report",
+      "title": "Daily Activity Report",
+      "domain": "customer_support",
+      "outcomes": [
+        {
+          "id": "team-sees-the-real-trend",
+          "statement": "The team can tell, from one daily report, whether the auto-reply system is actually working and whether new content gaps are opening up.",
+          "success_criteria": [
+            "Auto-reply rate, approval rate, and confidence trend are reported together, not in isolation",
+            "New knowledge gaps from the day are visible, not just aggregate ticket counts"
+          ]
+        }
+      ],
+      "procedure": "Report the metrics together so a reader can connect them; a rising auto-reply rate alongside a falling confidence trend tells a different story than either number alone. Surface new gaps prominently, since that is the leading indicator of where the knowledge base needs work. Keep this to a genuine daily snapshot, not a running total that obscures the day's actual activity.",
+      "verdict": "keep",
+      "notes": "Rollup of Email Auto-Reply Triage (aeb4d1d4)'s activity; its vocabulary (auto-reply rate, approval rate, confidence trend) matches that recipe exactly. Declares an empty connectors[] despite 'delivers to the configured channel' - see slice_findings."
+    }
+  ],
+  "slice_findings": [
+    "Two of the corpus's three 'Daily Briefing' recipes are in this slice and are genuinely different jobs: 563cf0cd (a news/article rollup) renamed to 'Daily News Digest', and 42cd9785 (a meeting-day overview) renamed to 'Meeting Day Briefing'. Per the spec brief a third 'Daily Briefing' (product-analytics) exists elsewhere in the corpus but is outside this slice.",
+    "Three merges proposed, all on 'same job, different trigger' grounds rather than coincidental naming: Feed Scanning (fb223f0f) into Manual Curation/renamed Content Curation (7baf2513) - scheduled feed sweep vs. manual URL submission running the identical curation pipeline; Journal Rescan (c62bbf82) into Journal Reflection (b362fec9) - manual re-invocation of the identical reflection logic; SLA Breach Prevention (43d1c9b8) into SLA Breach Watch & Escalation (410bed86) - a narrower single-warning version of the same tiered SLA-warning responsibility on the same platform and cadence.",
+    "This slice's category=support tag covers at least four unrelated systems, most of which were reassigned off customer_support: (1) a dedicated-ticketing-platform SLA suite (Ticket Triage & Routing, SLA Breach Watch & Escalation, Knowledge Base Enrichment, Daily Escalation Digest - domain customer_support); (2) a knowledge-base-as-ticket-store suite (Email Triage & Ticketing, KB Ticket SLA Escalation - domain customer_support); (3) an email-deflection suite with no formal ticket store (Email Auto-Reply Triage, Knowledge Gap Handling, Daily Activity Report - domain customer_support); (4) an internal KB-article review rotation with no customer contact at all (Morning Assignment Scan, Overdue Reminder, Evening Completion Processing - reassigned to domain general_professional). Separately, category=support's Feedback Triage / Ambiguous Review / Weekly Digest trio is product feedback management, not customer support, and was reassigned to domain product_project.",
+    "KB Ticket SLA Escalation (6dbde915) and SLA Breach Watch & Escalation (410bed86) read as near-identical responsibilities (stage-based SLA warning/escalation for support tickets) but were not merged, because they operate against two different ticket stores (knowledge-base-stored tickets vs. a dedicated support-platform connector). They may be alternate per-connector implementations of one job; confirming that requires template-wiring information this review does not have access to. Flagged for Director judgment rather than force-merged, consistent with the spec's conservatism.",
+    "Several recipes describe delivering a report to 'the configured channel' or named recipients while declaring an empty or under-specified connectors[]: Daily Activity Report (dc0f0f1c, connectors: []), Onboarding Progress Report (51adfa5d, connectors: knowledge_base only, no delivery connector for the stated 'stakeholder-facing summary'), and several general_professional recipes (Decision Support, Personal Briefing, Weekly Review) with no connectors at all despite being clearly delivered to the user somehow. Not fixed here since connectors are out of scope for this review; worth a wiring check.",
+    "News Correlation (29115c99) listens for stocks.markets.anomaly, emitted by a market-anomaly-watch capability that is not in this slice (likely filed under a different category). Its output quality depends entirely on that upstream recipe's own judgment; this review could not evaluate that dependency.",
+    "One title-casing artifact from the mechanical transform was fixed: 'Inbox Triage & messaging Routing' (a lowercase connector name mid-sentence) became 'Inbox Triage & Channel Routing'.",
+    "Despite being flagged as the slice most likely to yield retirement candidates, every recipe here traced to a genuinely recurring, non-trivial standing job once read in full (memory policy, event contracts, and error handling were all present and substantive). The redundancy in this slice took the shape of duplicate-trigger variants of one job (fixed via the three merges above), not jobs unworthy of being a preset at all, so zero retirements are proposed.",
+    "Domain assignment for this slice spread across nine of the sixteen closed-vocabulary values (general_professional, data_ai, sales_marketing, finance_accounting, product_project, hr_people, customer_support, software_engineering, creative_design) with no single domain dominating, which matches the task brief's framing of this slice as the corpus's widest-spreading junk drawer by source category."
+  ]
+}

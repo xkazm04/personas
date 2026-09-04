@@ -1,0 +1,976 @@
+{
+ "slice": "automation",
+ "reviewed": 50,
+ "recipes": [
+  {
+   "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
+   "old_title": "Approval Workflow",
+   "title": "Access Request Approval Chain",
+   "domain": "operations_logistics",
+   "outcomes": [
+    {
+     "id": "no-request-stalls",
+     "statement": "No access request sits without a decision or a clear reason it is still pending.",
+     "success_criteria": [
+      "Every request reaches approved, denied, or escalated within its urgency-appropriate window",
+      "An approver falling behind gets a reminder before the request breaches its timeout",
+      "A breached timeout always escalates rather than silently expiring"
+     ]
+    },
+    {
+     "id": "high-privilege-always-human",
+     "statement": "High-privilege or sensitive access never gets granted without an explicit human decision.",
+     "success_criteria": [
+      "Admin-level, production, or sensitive-resource requests always reach a human reviewer regardless of other automation",
+      "No approval is inferred or auto-advanced from silence"
+     ]
+    }
+   ],
+   "procedure": "Own getting every incoming access request to a clear, timely decision. Route through the configured approval levels, watch for stalled approvers, and escalate rather than let a request go quiet. High-privilege or sensitive requests always need an explicit human call; use judgment on urgency and who to nudge, but never auto-approve past that gate. When approvers disagree or a target is unclear, escalate to a human rather than guessing.",
+   "verdict": "keep",
+   "notes": "Companion charter to Access Request Intake & Triage (4d59fa79); kept separate because intake's accountability (a complete, correct record) is genuinely distinct from this recipe's accountability (a timely, safe decision)."
+  },
+  {
+   "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
+   "old_title": "Request Intake & Triage",
+   "title": "Access Request Intake & Triage",
+   "domain": "operations_logistics",
+   "outcomes": [
+    {
+     "id": "complete-audit-trail",
+     "statement": "Every incoming access request is captured once, correctly classified, and never lost.",
+     "success_criteria": [
+      "Each distinct request produces exactly one audit record, with duplicates and malformed requests handled without dropping the underlying ask",
+      "Every request carries an accurate privilege classification before it reaches the approval chain"
+     ]
+    },
+    {
+     "id": "no-blind-approvals",
+     "statement": "The approval chain never starts deciding on an incomplete or unverified request.",
+     "success_criteria": [
+      "Requests from unverified or external senders are flagged rather than queued for approval",
+      "The audit record exists and is durable before the approval workflow is notified"
+     ]
+    }
+   ],
+   "procedure": "Own turning inbound access-request emails into a trustworthy, deduplicated queue the approval chain can act on. Extract the real request from each message, catch duplicates and malformed asks, and classify privilege level accurately since that classification decides whether a human must review later. Treat completeness and correctness of the audit record as more important than speed; never hand a request to approval before its record is durable.",
+   "verdict": "keep"
+  },
+  {
+   "id": "bf47bb03-ad1e-5a9a-8458-094af1f403d1",
+   "old_title": "Reconciliation Sync",
+   "title": "Bank Reconciliation Sync",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "ledger-matches-bank",
+     "statement": "The finance platform and the bank statement agree, and every place they don't is visible.",
+     "success_criteria": [
+      "Every transaction is classified matched, partially matched, or unmatched with nothing silently dropped",
+      "Discrepancies are logged to the ledger before the cycle is considered complete",
+      "A recurring, previously-confirmed mismatch pattern doesn't re-surface as a fresh discrepancy every cycle"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the finance platform and the bank feed in agreement. Compare the two sources for the relevant period, decide what counts as a match given normal timing slack between systems, and make sure nothing that disagrees goes unrecorded. Learn from confirmed recurring patterns so they stop generating noise. If a source is unreachable, don't advance sync state as though the comparison happened.",
+   "verdict": "keep"
+  },
+  {
+   "id": "c6b1f5c6-063b-5fac-af37-315a5229e5e4",
+   "old_title": "Monthly Report",
+   "title": "Retainer Monthly Client Report",
+   "domain": "operations_logistics",
+   "outcomes": [
+    {
+     "id": "clients-know-their-standing",
+     "statement": "Every active retainer client receives an accurate picture of the month's work, spend, and site health.",
+     "success_criteria": [
+      "Hours, SLA compliance, and site health are reported correctly per client with no duplicate sends for the same month",
+      "A health-check outage is disclosed as a finding rather than causing the report to be skipped"
+     ]
+    }
+   ],
+   "procedure": "Own giving every active client an honest, useful monthly account of the retainer relationship: what was done, how hours and SLA held up, and what to improve next. Ground recommendations in the client's own history rather than generic advice. If a data source is degraded, say so in the report instead of omitting the client. Never send the same month's report twice.",
+   "verdict": "keep"
+  },
+  {
+   "id": "1bdd7c5e-6522-5f6e-9110-b263c5b7d408",
+   "old_title": "Request Intake",
+   "title": "Retainer Work Request Intake",
+   "domain": "operations_logistics",
+   "outcomes": [
+    {
+     "id": "nothing-unlogged",
+     "statement": "Every legitimate client request becomes a tracked work item with the right priority and SLA.",
+     "success_criteria": [
+      "Requests from registered client addresses are classified and logged, with ambiguous cases held for human judgment rather than guessed",
+      "The client always receives acknowledgment that their request was received"
+     ]
+    }
+   ],
+   "procedure": "Own turning client emails into correctly prioritized, tracked work items. Judge whether a message is really a request, and how urgent it genuinely is, using the client's own patterns as a guide. When a classification is genuinely ambiguous, hold it for a human rather than guessing a priority that could break an SLA. Every accepted request should leave the client with a clear acknowledgment.",
+   "verdict": "keep"
+  },
+  {
+   "id": "19030844-10d7-5e77-b626-04d9b3fb8137",
+   "old_title": "SLA Scan",
+   "title": "Retainer SLA Breach Scan",
+   "domain": "operations_logistics",
+   "outcomes": [
+    {
+     "id": "no-silent-breach",
+     "statement": "No SLA breach goes unnoticed by the agency, and no severe breach goes unnoticed by the client.",
+     "success_criteria": [
+      "Work items approaching their deadline are surfaced before they breach, not just after",
+      "A breach that has gone unresolved long enough reaches the client directly, not just an internal alert",
+      "A single breach doesn't generate a fresh alert every scan"
+     ]
+    }
+   ],
+   "procedure": "Own catching SLA risk before it becomes breach, and breach before it becomes client-visible neglect. Watch open work against its deadlines and alert the team early enough to act. For breaches that have gone on long enough that silence would damage the relationship, reach out to the client directly rather than only alerting internally. Avoid re-alerting on the same breach repeatedly.",
+   "verdict": "keep"
+  },
+  {
+   "id": "266fd356-f09f-5ce7-a817-b75f3fb4c038",
+   "old_title": "Work Execution",
+   "title": "Retainer Work Execution",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "safe-changes-ship",
+     "statement": "Work within the agreed complexity gate gets applied correctly and closed out, without ever slipping past what was agreed.",
+     "success_criteria": [
+      "Changes within the complexity gate are applied, committed, and the client is told the work is done",
+      "Nothing above the complexity gate is partially applied without a human decision first",
+      "Out-of-retainer work is logged as a scope conversation, not silently done or silently dropped"
+     ]
+    }
+   ],
+   "procedure": "Own applying approved client changes correctly within the agreed complexity boundary, and recognizing when a request has outgrown that boundary. When a repo is missing or a change conflicts, block rather than guess. Anything above the complexity gate needs a human before any repo write happens. Out-of-retainer requests are a business conversation, not a technical one; surface them as a scope escalation with an estimate rather than doing the work or ignoring it.",
+   "verdict": "keep"
+  },
+  {
+   "id": "814f451b-1e0e-576b-8b4d-3740d5f9afdb",
+   "old_title": "Booking Intake",
+   "title": "Meeting Booking Intake",
+   "domain": "sales_marketing",
+   "outcomes": [
+    {
+     "id": "booking-state-trustworthy",
+     "statement": "Every booking or cancellation is reflected consistently across CRM, confirmation email, and team awareness.",
+     "success_criteria": [
+      "A new booking always produces a CRM record, a confirmation to the invitee, and a team notification",
+      "A cancellation is reflected everywhere a confirmation was, including an offer to reschedule",
+      "The same booking event never gets processed twice"
+     ]
+    }
+   ],
+   "procedure": "Own making a booking or cancellation immediately and reliably real everywhere it needs to be: the CRM, the invitee's inbox, and the team's awareness. If the CRM write fails, don't let the invitee or the team be left in the dark; flag the sync gap and keep the human-facing parts moving. Treat duplicate webhook deliveries as a non-event.",
+   "verdict": "keep"
+  },
+  {
+   "id": "262d4972-c244-5af0-9605-f6daf4a25eb2",
+   "old_title": "Post-meeting Follow-up",
+   "title": "CRM Meeting Follow-up",
+   "domain": "sales_marketing",
+   "outcomes": [
+    {
+     "id": "every-meeting-followed-up",
+     "statement": "Every sales meeting gets a timely, appropriately-toned follow-up, and the CRM reflects that it happened.",
+     "success_criteria": [
+      "A meeting that ended a day or more ago and hasn't been followed up gets a follow-up composed and sent",
+      "Multi-attendee follow-ups are reviewed by a human before sending; single-attendee ones aren't held up by that gate",
+      "The CRM deal carries a note that the follow-up happened"
+     ]
+    }
+   ],
+   "procedure": "Own making sure no sales meeting goes without a follow-up and that the follow-up reads like it was written by someone who was in the room, adapting tone to the deal stage where that's useful. Multi-attendee follow-ups carry more reputational risk, so route those through a human before they go out; single-attendee ones can move on their own. Keep the CRM record honest about what was sent.",
+   "verdict": "keep",
+   "notes": "Renamed to resolve a name collision with 33fc8376 (also originally titled 'Post-meeting Follow-up'). Not a duplicate: this one is the CRM/sales-pipeline meeting follow-up (Calendly + HubSpot deal notes); the other is a personal calendar assistant's meeting close-out with no CRM involved. See that recipe's notes and slice_findings."
+  },
+  {
+   "id": "c80b13ec-016c-508e-8b27-e865fdfad261",
+   "old_title": "Pre-meeting Reminder",
+   "title": "Sales Meeting Reminder",
+   "domain": "sales_marketing",
+   "outcomes": [
+    {
+     "id": "nobody-shows-up-unprepared",
+     "statement": "Nobody shows up to a confirmed meeting without a reminder and relevant prep.",
+     "success_criteria": [
+      "Every confirmed meeting starting within the configured lead window gets a reminder to the invitee and a ping to the assigned rep",
+      "A meeting is never reminded twice for the same lead window"
+     ]
+    }
+   ],
+   "procedure": "Own making sure invitees and reps are reminded before a confirmed meeting, with enough context that the meeting isn't a cold start. If email delivery fails, fall back to a direct message to the rep rather than letting the meeting go unmentioned entirely. Keep per-meeting state so a reminder never fires twice for the same booking.",
+   "verdict": "keep"
+  },
+  {
+   "id": "cbfac734-11d3-525a-8425-89c0cdfc28ea",
+   "old_title": "Client Onboarding",
+   "title": "Agency Client Onboarding",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "verified-client-ready",
+     "statement": "A new signup becomes a verified, fully set-up client with a project hub and a team that knows about them.",
+     "success_criteria": [
+      "Signup is verified by OTP before any client record is created",
+      "A verified client always gets a linked Client and Project record, a welcome email, and a team announcement",
+      "Suspicious repeated verification failures are flagged rather than silently retried forever"
+     ]
+    }
+   ],
+   "procedure": "Own turning a raw signup into a verified, fully onboarded client: identity confirmed, project hub created, and both the client and the team properly welcomed. Match tone to the client's project type and budget rather than sending boilerplate. Treat repeated OTP failures as a possible fraud signal worth flagging, not just a retry loop. Never create the client's records before verification succeeds.",
+   "verdict": "keep"
+  },
+  {
+   "id": "18a33df8-2fb4-589a-a3c6-e80c8272045c",
+   "old_title": "Phase Monitoring",
+   "title": "Project Phase Milestone Notifications",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "stakeholders-know-the-phase",
+     "statement": "The client and team always know what phase a project is actually in, without stale information lingering.",
+     "success_criteria": [
+      "A genuine phase change produces the matching milestone email and team update promptly",
+      "A phase regression is flagged to the team, and to the client only when it's severe enough to warrant it",
+      "Progress updates during a long phase don't require the phase to change first"
+     ]
+    }
+   ],
+   "procedure": "Own keeping clients and the team accurately informed as a project moves through its phases. Detect real phase changes and communicate them with the right message for that milestone, and don't let a project sit in one phase for a long stretch without some update reaching someone. A regression is a signal worth surfacing, calibrated to how alarming it actually is. Avoid duplicate notifications for a phase that hasn't actually changed.",
+   "verdict": "keep"
+  },
+  {
+   "id": "312eb968-c41f-5f06-950b-10483b79398f",
+   "old_title": "Portfolio Report",
+   "title": "Client Portfolio Monthly Report",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "leadership-sees-the-whole-book",
+     "statement": "Leadership gets an accurate, trend-aware view of the whole client portfolio every month.",
+     "success_criteria": [
+      "The report covers active projects, phase distribution, pipeline, completion rate, new-client acquisition, and stalled count for the period",
+      "Month-over-month trend is shown when history exists, and gracefully omitted rather than fabricated when it doesn't"
+     ]
+    }
+   ],
+   "procedure": "Own giving leadership a trustworthy monthly snapshot of the whole portfolio, not just individual projects. Compute the real numbers for the period and put them in context against prior months where that history exists. If a prior month's archive is missing, drop the trend section rather than inventing a comparison. Deliver even if one channel is unavailable; don't let a messaging outage suppress the report.",
+   "verdict": "keep"
+  },
+  {
+   "id": "599fa37f-f76a-5f8e-9551-27767952c25c",
+   "old_title": "Stall Escalation",
+   "title": "Stalled Project Escalation",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "nothing-stays-stalled-quietly",
+     "statement": "A project that has stopped moving gets escalated in proportion to how long it's been stuck, and never silently forgotten.",
+     "success_criteria": [
+      "A project with no phase change past the stall threshold is caught and escalated, with escalation intensity rising the longer it stays stalled",
+      "The client only hears from a stalled project once it's stalled long enough to warrant direct re-engagement",
+      "The same stall doesn't re-trigger the same escalation level repeatedly within a short window"
+     ]
+    }
+   ],
+   "procedure": "Own catching projects that have stopped moving and escalating them appropriately: internal alert first, then the people responsible, then the client if it drags on. Judge escalation intensity by how long the stall has actually persisted, and never drop a critical escalation even if a channel is temporarily down. Don't re-alert on a stall that's already been flagged recently.",
+   "verdict": "keep"
+  },
+  {
+   "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
+   "old_title": "legal platform Event Processing",
+   "title": "Contract Envelope Event Sync",
+   "domain": "legal_compliance",
+   "outcomes": [
+    {
+     "id": "envelope-state-trustworthy",
+     "statement": "The tracked contract record always reflects the real state of the envelope, and the right people are notified of what changed.",
+     "success_criteria": [
+      "A status change or decline is reflected in the tracker keyed by envelope ID with no duplicate records",
+      "The event-appropriate channel is notified even when events arrive out of order",
+      "A failure in one leg (notification or tracker write) doesn't prevent the other from completing"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the contract tracker and the team's awareness in sync with what's actually happening to each envelope. Reconstruct the true sequence when events arrive out of order, and complete whichever legs of the job succeed rather than failing the whole cycle over one bad leg. Learn signer behavior over time to make future velocity expectations realistic.",
+   "verdict": "keep",
+   "notes": "Retitled away from the vendor-placeholder phrasing 'legal platform Event Processing' to describe the actual job; no vendor name was invented, none was referenced by the recipe's own connectors."
+  },
+  {
+   "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
+   "old_title": "Schema Refresh",
+   "title": "Database Schema Cache Refresh",
+   "domain": "data_ai",
+   "outcomes": [
+    {
+     "id": "schema-cache-current",
+     "statement": "The cached schema never lies about what the real database looks like.",
+     "success_criteria": [
+      "New tables, altered columns, and dropped entities are detected and reflected in the cache",
+      "A failed introspection leaves the last-known-good cache in place rather than corrupting it, and is disclosed as an error"
+     ]
+    }
+   ],
+   "procedure": "Own making sure anything relying on the schema cache is working from an accurate picture of the real database. Detect structural changes and refresh the cache to match. If introspection fails, protect the existing cache rather than overwriting it with a bad read, and make the failure visible rather than silent.",
+   "verdict": "keep"
+  },
+  {
+   "id": "3a821ac2-9c71-5583-a860-8c254df191f2",
+   "old_title": "Calendar Sync",
+   "title": "Task Deadline Calendar Sync",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "calendar-mirrors-board",
+     "statement": "The calendar always reflects the current set of cards that carry a due date, no more and no less.",
+     "success_criteria": [
+      "A card gaining, changing, or losing a due date is reflected as a calendar event created, updated, or removed",
+      "A single card's sync failure doesn't block the rest of the cycle, and a corrupted local state can be rebuilt by matching against the calendar itself"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the calendar an accurate mirror of due-dated work on the board, nothing stale, nothing missing. Treat this as a two-system agreement problem: the board is the source of truth, the calendar should always catch up to it. If state gets corrupted, rebuild by matching real calendar events against real cards rather than assuming the worst and wiping everything.",
+   "verdict": "keep"
+  },
+  {
+   "id": "ec453445-1d7b-5148-98d5-d3e662980ba1",
+   "old_title": "Deadline Reminders",
+   "title": "Task Deadline Reminders",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "nobody-blindsided",
+     "statement": "Nobody on a tracked card is blindsided by its deadline arriving.",
+     "success_criteria": [
+      "A card gets exactly one reminder per threshold it crosses, escalating in urgency as the deadline nears",
+      "A card with chronically-late history is called out inline rather than treated like any other reminder"
+     ]
+    }
+   ],
+   "procedure": "Own giving people enough warning before a deadline that being late is a choice, not a surprise, escalating urgency and who gets pinged as the deadline nears. Surface a card's history of lateness inline so patterns are visible, not just the current deadline. Missing assignee info shouldn't suppress a reminder; post it without the mention rather than skip it.",
+   "verdict": "keep"
+  },
+  {
+   "id": "1e7811b0-c04a-5c2f-a9d4-fda47856cd09",
+   "old_title": "Overdue Enforcement",
+   "title": "Overdue Task Enforcement",
+   "domain": "product_project",
+   "outcomes": [
+    {
+     "id": "overdue-work-visible",
+     "statement": "Work that's past its due date is visibly marked as blocked, with a clear trail of why.",
+     "success_criteria": [
+      "A card past due gets moved to a Blocked state, or commented if the move itself fails, plus an alert, with the reason recorded",
+      "A card is never left with neither a move nor a comment explaining its overdue status",
+      "A card overdue repeatedly is recognized as a recurring pattern"
+     ]
+    }
+   ],
+   "procedure": "Own making overdue work impossible to miss. When a card passes its due date, get it visibly flagged, whether that's moving it to a blocked state or, if permissions prevent the move, at least leaving a clear comment and alert. Never leave a card silently overdue with no trace. Recognize cards that are overdue often enough to be a pattern worth naming, so reminders elsewhere can call it out.",
+   "verdict": "keep"
+  },
+  {
+   "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
+   "old_title": "Inbound Triage",
+   "title": "Personal Inbound Message Triage",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "nothing-arrives-unseen",
+     "statement": "Every inbound message across connected channels is logged and correctly assessed for whether it needs a reply.",
+     "success_criteria": [
+      "Each new message is logged once, classified by urgency and intent, and flagged if it needs a reply",
+      "A channel auth failure doesn't silently stop triage; the user is alerted through a channel that still works"
+     ]
+    }
+   ],
+   "procedure": "Own making sure nothing arriving across the user's connected channels goes unseen or misjudged. Classify each message's urgency and intent well enough that the reply-needed flag is trustworthy, since a downstream drafting capability depends on it. If one channel's credentials fail, keep triaging the others and make sure the user finds out. Reject exact duplicates without noise.",
+   "verdict": "keep"
+  },
+  {
+   "id": "b66bf5ee-c0b7-5ba9-9480-5ba9a96896ae",
+   "old_title": "knowledge base to spreadsheet Sync",
+   "title": "Editorial Calendar Sync",
+   "domain": "sales_marketing",
+   "outcomes": [
+    {
+     "id": "calendars-agree",
+     "statement": "The knowledge base editorial calendar and the spreadsheet tracker never drift out of agreement.",
+     "success_criteria": [
+      "Creates, updates, and cancellations in the source calendar are reflected in the tracker",
+      "A cancellation is always represented as a soft status, never a deletion",
+      "A record missing required fields is synced with an explicit incomplete marker rather than silently dropped"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the editorial calendar and its spreadsheet tracker in agreement without ever destroying history. Diff the two sources and apply the real difference; treat cancellations as a status, not a deletion, since the record itself still matters. When a source entry is missing required data, sync it flagged as incomplete so gap analysis can catch it rather than silently excluding it.",
+   "verdict": "keep"
+  },
+  {
+   "id": "8b08747a-a936-5a54-9c74-ab9f64f223fd",
+   "old_title": "Receipt Ingest",
+   "title": "Personal Receipt Ingest",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "every-receipt-logged",
+     "statement": "Every receipt that lands in the inbox becomes an accurate, categorized ledger entry, exactly once.",
+     "success_criteria": [
+      "A receipt-shaped email produces one ledger row with vendor, amount, and category populated",
+      "Low-confidence extractions are marked as such and routed for a human check rather than silently trusted",
+      "The same email is never logged twice"
+     ]
+    }
+   ],
+   "procedure": "Own turning receipt emails into a clean, categorized expense ledger the user can trust without re-checking every row. Normalize vendor names and categories using what's been learned before, and be honest when an extraction is uncertain rather than guessing silently; low-confidence rows should be easy for the user to spot later. Never log the same message twice.",
+   "verdict": "keep"
+  },
+  {
+   "id": "29721ded-e4a9-50ff-940b-73eb561ccaf4",
+   "old_title": "finance platform → Sheets Sync",
+   "title": "Finance Ledger Sync and Anomaly Detection",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "ledger-current-and-watched",
+     "statement": "The spreadsheet ledger accurately reflects the finance platform's invoices and expenses, and unusual spending gets caught.",
+     "success_criteria": [
+      "New and changed invoices and expenses are synced to the correct ledger tabs without duplicate invoice numbers",
+      "A transaction well outside the rolling baseline for its category or vendor triggers an anomaly alert",
+      "Anomaly alerts don't flood the user on a bad day; they batch into a digest instead"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the ledger an accurate reflection of the finance platform and catching spending that looks wrong. Sync new activity without creating duplicates, and compare against a rolling baseline to flag transactions or categories that stand out. If baselines get corrupted, rebuild them from the ledger's own recent history rather than guessing. Don't let an auth failure quietly advance the sync watermark.",
+   "verdict": "keep",
+   "notes": "Retitled away from the vendor-placeholder phrasing 'finance platform → Sheets Sync'; no vendor name invented."
+  },
+  {
+   "id": "d4aed9ee-b1f6-58dd-86df-44f927901980",
+   "old_title": "Overdue Invoice Reminders",
+   "title": "Overdue Invoice Reminders",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "collections-progress",
+     "statement": "Every overdue invoice gets the collections attention appropriate to its age, and severely overdue accounts always reach a human.",
+     "success_criteria": [
+      "Invoices are reminded at a tone and frequency appropriate to how overdue they are, respecting cooldowns and the exclusion list",
+      "An invoice 31+ days overdue always escalates to human review rather than getting another automated email",
+      "A bounced customer email is flagged for manual review rather than logged as a successful reminder"
+     ]
+    }
+   ],
+   "procedure": "Own making sure no overdue invoice is neglected while avoiding customer fatigue. Match reminder tone to how overdue the invoice is, respect cooldowns so the same customer isn't hit repeatedly, and honor the exclusion list. Severely overdue accounts are a judgment call for a human, not something to keep auto-emailing. Treat a bounce as a signal to escalate, not to log as delivered.",
+   "verdict": "keep"
+  },
+  {
+   "id": "e632c344-787b-56ec-ba20-b1714ff72544",
+   "old_title": "Invoice Template Build",
+   "title": "Invoice Template Setup",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "billing-ready-before-first-run",
+     "statement": "The branded invoice template and the time-tracking connection are proven to work before the monthly flow ever needs them.",
+     "success_criteria": [
+      "A rendered, on-brand invoice template exists in storage using the business's real details",
+      "The time-tracking credential is verified as working, or the user is clearly told it isn't, before monthly generation is trusted to run unattended"
+     ]
+    }
+   ],
+   "procedure": "Own getting billing infrastructure into a genuinely working state before the unattended monthly flow depends on it: a real branded template, and a verified time-tracking connection. Don't report success on a credential that hasn't actually been tested. If storage write fails, fall back rather than leaving the setup incomplete, and be explicit in the summary about what still needs the user's attention.",
+   "verdict": "keep"
+  },
+  {
+   "id": "b0bf1b02-f635-5a35-b766-1f7381f19724",
+   "old_title": "Monthly Invoice Generation",
+   "title": "Monthly Invoice Generation",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "accurate-invoices-every-client",
+     "statement": "Every client with billable hours gets an accurate invoice, and corrections make future months more accurate.",
+     "success_criteria": [
+      "One invoice per client is generated from the prior month's hours with learned rate overrides and billable/non-billable tags applied",
+      "Every invoice is reviewed by a human before it's considered final",
+      "A rejection's correction notes actually change how the next month's invoice is generated"
+     ]
+    }
+   ],
+   "procedure": "Own producing correct client invoices every month and getting steadily more accurate at it. Apply what's been learned about rates and billable classification, but never treat an invoice as final without a human's approval; corrections from rejections should visibly change next month's output. Flag uncategorized time rather than guessing which client it belongs to.",
+   "verdict": "keep"
+  },
+  {
+   "id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
+   "old_title": "Incident Intake & Classification",
+   "title": "Incident Intake and Classification",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "incident-captured-correctly",
+     "statement": "Every reported incident is captured once, with an honest severity and a clear escalation clock.",
+     "success_criteria": [
+      "A new report becomes a structured record with severity, escalation deadline, and update cadence set correctly on the first pass",
+      "A likely duplicate is caught and resolved (merge or distinct) rather than silently creating a second incident for the same problem"
+     ]
+    }
+   ],
+   "procedure": "Own getting every incident correctly captured and correctly rated the moment it's reported. Check for likely duplicates against recent open incidents before creating a new record, and set severity honestly based on real impact, since the escalation clock and notification routing both depend on it being right. When a duplicate match is uncertain, let a human decide rather than guessing merge-or-create.",
+   "verdict": "keep"
+  },
+  {
+   "id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
+   "old_title": "Lifecycle Tracking & Escalation",
+   "title": "Incident Lifecycle Tracking and Escalation",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "open-incidents-stay-honest",
+     "statement": "The status board for every open incident stays honest, current, and escalates on schedule until it's actually resolved.",
+     "success_criteria": [
+      "Status updates are reflected in the timeline with escalation timers reset appropriately",
+      "An incident is never marked resolved without a human confirming closure",
+      "A restart doesn't cause a missed escalation window to go unnoticed; it's caught and sent late with the real delay labeled"
+     ]
+    }
+   ],
+   "procedure": "Own keeping the live status of every open incident honest and moving it toward real resolution, not just a status flip. Enforce severity-appropriate update cadences and escalate when they're missed. Resolution always needs a human's closure confirmation; an incident is never closed on the agent's own say-so. If a restart caused a gap in escalation coverage, catch up rather than pretending the gap didn't happen.",
+   "verdict": "keep"
+  },
+  {
+   "id": "be6009e2-467f-5e8b-b140-201c66fc29f4",
+   "old_title": "Invoice Ingest",
+   "title": "Vendor Invoice Ingest",
+   "domain": "finance_accounting",
+   "outcomes": [
+    {
+     "id": "bills-captured-for-payment",
+     "statement": "Every vendor invoice arriving by email is captured for payment processing exactly once, with confidence in the extraction honestly represented.",
+     "success_criteria": [
+      "A new invoice email produces a pending ledger record with confidence-scored extraction",
+      "Low-confidence or high-value extractions are flagged for manual review rather than trusted outright",
+      "The same vendor invoice is never recorded twice across scans"
+     ]
+    }
+   ],
+   "procedure": "Own capturing every incoming vendor invoice accurately enough that a downstream payment process can trust it. Extract structured data from the email and any attachments, and be honest when extraction confidence is low or the amount is high enough to warrant a second look; flag rather than silently accept. Learn each vendor's format over time so extraction gets more reliable, not just repeated.",
+   "verdict": "keep",
+   "notes": "Distinct from Personal Receipt Ingest (8b08747a) and Finance Ledger Sync (29721ded): different source system, different downstream consumer (feeds a payment-monitoring capability, not a general ledger)."
+  },
+  {
+   "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+   "old_title": "Monthly Deep Audit",
+   "title": "Knowledge Base Deep Audit",
+   "domain": "data_ai",
+   "outcomes": [
+    {
+     "id": "contradictions-caught",
+     "statement": "Cross-article contradictions in the compiled wiki are caught, not just individual staleness or orphan issues.",
+     "success_criteria": [
+      "Title-family clusters are checked for body disagreement and surfaced as findings"
+     ]
+    }
+   ],
+   "procedure": "Own the deeper, opt-in layer of the knowledge-health audit: everything the standard audit already covers, plus checking whether related articles actually agree with each other. Findings, including contradiction pairs, go through human review, especially borderline disagreements. On large wikis, page the scan across runs rather than blowing the budget in one pass.",
+   "verdict": "merge_into",
+   "merge_into": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+   "merge_reason": "Its own description says it is 'everything the weekly audit does, plus a cross-article contradiction pass' - not a distinct job, a deeper pass of the same one. Both audit the same layers (persona memories, vector KBs, optional Obsidian vault), share the same connector, the same review policy (every finding queued for manual review), and the same trend-tracking memory. Running both on the same cadence family is redundant since the monthly pass already contains the weekly one. The surviving recipe (Weekly Health Audit / Memory & Knowledge Base Health Audit) should absorb the contradiction-detection pass as an optional deeper scope, controlled by a parameter and by cadence, not by keeping two separate charters."
+  },
+  {
+   "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+   "old_title": "Weekly Health Audit",
+   "title": "Memory and Knowledge Base Health Audit",
+   "domain": "data_ai",
+   "outcomes": [
+    {
+     "id": "memory-layers-stay-healthy",
+     "statement": "Stale, contradictory, or orphaned content across the persona's memory layers gets caught and queued for a human decision, not left to accumulate silently.",
+     "success_criteria": [
+      "Every configured layer (persona memories, vector KBs, optional Obsidian vault) is audited within its cadence and every finding reaches manual review with a severity and recommended action",
+      "Findings are capped sensibly per category with the suppressed count disclosed, not silently truncated",
+      "A deeper contradiction-detection pass runs on the cadence and scope the user wants, without needing a second, separate charter to get it"
+     ]
+    }
+   ],
+   "procedure": "Own catching drift, staleness, contradictions, and orphaned content across the persona's memory layers before it erodes trust in the system, and always let a human decide what to do about it; this agent never mutates memory itself. Run the deeper cross-article contradiction pass when the configured scope calls for it rather than treating it as a separate job. If a layer isn't configured, skip it silently and note it in the summary rather than failing.",
+   "verdict": "keep",
+   "notes": "Absorbs Monthly Deep Audit's (b80fc21f) contradiction-detection pass as an optional deeper scope; see that recipe's merge_reason."
+  },
+  {
+   "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+   "old_title": "Submission Intake & Scoring",
+   "title": "Lead Submission Intake and Scoring",
+   "domain": "sales_marketing",
+   "outcomes": [
+    {
+     "id": "every-lead-scored-once",
+     "statement": "Every form submission becomes a correctly scored, correctly tiered CRM record exactly once.",
+     "success_criteria": [
+      "A new submission is scored against the calibrated model and written to the CRM with a touchpoint count",
+      "A returning lead is recognized as a re-engagement rather than a fresh submission",
+      "The same response is never processed twice even if both the webhook and the polling safety net see it"
+     ]
+    }
+   ],
+   "procedure": "Own turning every form submission into an accurately scored, correctly classified lead the sales process can trust. Calibrate scoring to the actual sales motion rather than a generic rubric, and recognize when someone who already exists in the CRM has come back rather than treating them as new. If the CRM is at capacity or rejecting writes, don't lose the lead; hold it somewhere recoverable and raise the alarm.",
+   "verdict": "keep"
+  },
+  {
+   "id": "987b9406-630d-5ed3-be71-c08a9213698a",
+   "old_title": "Calendar Watch",
+   "title": "Personal Meeting Prep and Status",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "meetings-arrive-prepared",
+     "statement": "The user arrives at every work-hours meeting with relevant prep already sent, and their status reflects whether they're in one.",
+     "success_criteria": [
+      "A meeting gets a contextual prep email a reasonable interval before it starts, exactly once",
+      "The user's status reflects being in a meeting while it's happening and clears correctly, including back-to-back meetings",
+      "Private events don't leak attendee or detail information into the prep"
+     ]
+    }
+   ],
+   "procedure": "Own making sure the user shows up to meetings prepared and that their visible status honestly reflects whether they're in one. Send prep content early enough to be useful, and keep meeting-status transitions clean even when meetings run back-to-back. Respect privacy on events marked private, generic framing only. If a channel fails, fall back to whichever one still works rather than leaving the user unprepared.",
+   "verdict": "keep"
+  },
+  {
+   "id": "33fc8376-4cba-5803-969a-af2e502566a3",
+   "old_title": "Post-meeting Follow-up",
+   "title": "Meeting Notes Follow-up",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "meetings-get-closed-out",
+     "statement": "Every meeting gets closed out with a follow-up to attendees, and the user's status reflects the meeting has ended.",
+     "success_criteria": [
+      "After a meeting ends, the user is prompted for notes and a follow-up is drafted and sent to all attendees",
+      "Follow-ups to more than two attendees are reviewed by the user before sending",
+      "The user's active status is cleared once the follow-up work is done"
+     ]
+    }
+   ],
+   "procedure": "Own making sure every meeting gets a real close-out: notes captured from the user, a follow-up sent to everyone who was there, and the user's status cleared. Larger group follow-ups carry more risk of misrepresenting the meeting, so route those through the user before sending. If the user gives no notes, still send something rather than leaving attendees with nothing; keep it brief and offer a way to add detail later.",
+   "verdict": "keep",
+   "notes": "Renamed to resolve a name collision with 262d4972 (also originally titled 'Post-meeting Follow-up'). Not a duplicate: this one is a personal calendar assistant's meeting close-out (no CRM); the other is the CRM/sales-pipeline follow-up. See slice_findings."
+  },
+  {
+   "id": "171b983b-e643-5af2-bd57-989a84fa5283",
+   "old_title": "Capture and Route",
+   "title": "Personal Capture and Routing",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "nothing-captured-gets-lost",
+     "statement": "Anything the user sends in gets correctly typed and lands in the right system, with the user knowing it arrived.",
+     "success_criteria": [
+      "A new message is classified as task, idea, bookmark, or note and routed to the right destination, with a confirmation reply",
+      "An uncertain classification defaults to a safe, reviewable type rather than being silently dropped or misfiled"
+     ]
+    }
+   ],
+   "procedure": "Own making quick-capture actually reliable: whatever the user sends, in whatever shorthand they normally use, ends up correctly typed and in the right place, with confirmation that it landed. Learn the user's personal shorthand over time. When classification confidence is genuinely low, prefer a safe default and a review flag over guessing wrong and burying the item somewhere unexpected.",
+   "verdict": "keep"
+  },
+  {
+   "id": "aec61d93-6c55-5902-a084-e46b75ebcc60",
+   "old_title": "Longitudinal Log",
+   "title": "Briefing Archive Log",
+   "domain": "data_ai",
+   "outcomes": [
+    {
+     "id": "history-stays-searchable",
+     "statement": "Every delivered briefing becomes a searchable historical record, so questions like 'when did this last happen' have an answer.",
+     "success_criteria": [
+      "Each delivered briefing produces one structured record in the user's knowledge base",
+      "A knowledge base outage doesn't lose the entry; it's queued and written on the next successful opportunity"
+     ]
+    }
+   ],
+   "procedure": "Own making the history of delivered briefings genuinely searchable later, not just delivered and forgotten. Write each one as a structured record the user's knowledge base can search across time. If the destination is unavailable or its schema doesn't match, degrade gracefully (queue it, or fall back to plain text) rather than losing the entry or repeating the same warning endlessly.",
+   "verdict": "keep"
+  },
+  {
+   "id": "344f23eb-28c7-5eb3-95c3-6308794963a7",
+   "old_title": "Ticket Critical Signals",
+   "title": "Critical Signal Ticketing",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "critical-signals-tracked",
+     "statement": "A critical or persistently-warning signal always becomes a tracked investigation, never just a notification that scrolls away.",
+     "success_criteria": [
+      "A qualifying signal opens a ticket, or comments on an existing open ticket for the same metric within the dedup window, rather than creating duplicates",
+      "If the ticketing connector or auth is unavailable, the failure is visible to the user, not silent"
+     ]
+    }
+   ],
+   "procedure": "Own turning signals that matter into tracked, actionable investigations instead of letting them pass as a transient alert. Recognize when an open ticket already covers the same metric and comment rather than duplicate. Respect whether the team wants critical tickets auto-created or gated behind approval; that's a per-team choice, not a fixed rule. If the connector is missing, disable quietly rather than erroring repeatedly.",
+   "verdict": "keep"
+  },
+  {
+   "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
+   "old_title": "Weekly Maintenance",
+   "title": "Knowledge Base Curation Audit",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "kb-stays-tidy",
+     "statement": "Orphaned pages and taxonomy sprawl in the knowledge base are surfaced for the user to act on, and the base doesn't quietly degrade over time.",
+     "success_criteria": [
+      "Orphaned pages and consolidation opportunities are identified and reported with a trend against prior weeks",
+      "No merge or structural change happens without the user applying it themselves"
+     ]
+    }
+   ],
+   "procedure": "Own surfacing knowledge-base upkeep the user would otherwise never notice: orphaned pages, taxonomy that's sprawled past usefulness, and how curation health is trending. This is informational only, never merge, delete, or restructure anything automatically; the user decides and applies changes themselves. If part of the audit can't run, skip that section and say so rather than failing the whole report.",
+   "verdict": "keep",
+   "notes": "Not a duplicate of Memory and Knowledge Base Health Audit (ba138faf): that recipe audits a persona's own memory layers (persona memories, vector KBs, Obsidian vault) via the codebase connector; this one curates a user's actual knowledge_base app content (orphaned pages, taxonomy) via the knowledge_base connector. Different subject entirely, despite similar names."
+  },
+  {
+   "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
+   "old_title": "Classify and Route",
+   "title": "Webhook Classification and Routing",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "no-event-lost",
+     "statement": "Every incoming webhook event reaches its correct destination, and none are ever silently lost.",
+     "success_criteria": [
+      "An event is classified by source, type, and priority, then delivered to every destination its routing rule names",
+      "An event that fails every destination still lands in a durable fallback rather than disappearing",
+      "Urgent-priority events are gated through human approval when the team has chosen that"
+     ]
+    }
+   ],
+   "procedure": "Own making sure every webhook event actually gets where it needs to go. Classify accurately enough that the routing rule applies correctly, and fan out to every named destination, transforming the payload as each one needs. Treat losing an event as the one unacceptable outcome; when everything else fails, it still lands in a durable fallback. Respect whether the team wants urgent events gated through approval.",
+   "verdict": "keep"
+  },
+  {
+   "id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
+   "old_title": "Manage Rules",
+   "title": "Webhook Routing Rules Management",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "rules-reflect-intent",
+     "statement": "The routing rules always reflect what the user actually asked for, with no silent conflicts.",
+     "success_criteria": [
+      "A plain-language rule change is correctly translated into the rules file and confirmed back to the user with a diff",
+      "A new rule that conflicts with an existing one is surfaced for the user to resolve, never silently overwritten or silently ignored"
+     ]
+    }
+   ],
+   "procedure": "Own translating the user's plain-language routing intent into correct, working rules, and catching when a new instruction conflicts with what's already configured. Ask one clarifying question when the instruction is ambiguous rather than guessing. Always show the user what changed. Learn common rule patterns to make future edits faster, but never apply a rule the user didn't actually confirm.",
+   "verdict": "keep"
+  },
+  {
+   "id": "194648fe-5f11-5e3a-940f-4ecbc9799dc4",
+   "old_title": "Realtime Push Scan",
+   "title": "Push-triggered Vulnerability Scan",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "new-code-checked-immediately",
+     "statement": "A push to a primary branch never introduces or reintroduces a vulnerability without it being caught and tracked.",
+     "success_criteria": [
+      "Every push to a primary branch triggers a rescan and any new finding becomes a deduplicated, severity-mapped ticket",
+      "A CVE that reappears after being previously closed is flagged as a regression, not a routine new finding",
+      "The same CVE doesn't generate a fresh alert within the suppression window"
+     ]
+    }
+   ],
+   "procedure": "Own catching vulnerabilities the moment they're introduced by a push, not days later. Trigger a rescan, wait for real results, and get new findings into tracking with the right severity, deduplicated against what's already open. Recognize when a previously-closed CVE has come back; that's a regression and deserves different treatment than a fresh finding. If ticketing is down, don't lose the finding, queue it for retry.",
+   "verdict": "keep",
+   "notes": "Shares a memory ledger with Scheduled Vulnerability Sweep (1c822cb8) by its own description. Considered merging but kept as two recipes: they cover genuinely complementary, concurrently-needed triggers (a push can't catch a newly-published CVE against unchanged code, and a periodic sweep can't catch a vulnerability the moment it's introduced), unlike the audit pair above where one recipe's own text said it strictly contained the other. See slice_findings."
+  },
+  {
+   "id": "1c822cb8-55ce-5b52-a4c6-c5e43671d6c0",
+   "old_title": "Scheduled Full Scan",
+   "title": "Scheduled Vulnerability Sweep",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "existing-code-stays-checked",
+     "statement": "Vulnerabilities newly published against dependencies already in use get caught even without a new commit to trigger a scan.",
+     "success_criteria": [
+      "Every monitored repository is swept on cadence and findings are deduplicated against open tickets org-wide",
+      "A digest reaches the team even when some repositories fail to scan, noting what was skipped",
+      "A CVE regression on an already-closed finding is flagged distinctly from a routine new finding"
+     ]
+    }
+   ],
+   "procedure": "Own catching vulnerabilities that a push-triggered scan structurally can't: new CVEs published against dependencies that haven't changed. Sweep every monitored repository on cadence, batch new findings into tickets, and don't let one repo's failure stop the others. Deliver a digest that's honest about what was and wasn't covered this cycle.",
+   "verdict": "keep"
+  },
+  {
+   "id": "9e027497-a2d9-5c54-bc10-5700c6486ce9",
+   "old_title": "Process Responses",
+   "title": "Survey Response Processing",
+   "domain": "customer_support",
+   "outcomes": [
+    {
+     "id": "responses-scored-and-surfaced",
+     "statement": "Every survey response is scored correctly and the right people see it, especially the unhappy customers.",
+     "success_criteria": [
+      "A new response is scored against the rubric and the enriched record is written to the ledger without losing a row",
+      "A detractor response reaches the support-facing channel, gated through review when the team has chosen that"
+     ]
+    }
+   ],
+   "procedure": "Own scoring every survey response accurately and making sure the team actually sees what matters, particularly detractors who need attention fastest. Write enriched, ledger-durable records; never lose a processed response even if the write has to retry. Respect whether the team wants detractor escalation gated through a human first.",
+   "verdict": "keep"
+  },
+  {
+   "id": "c914eb39-a506-58d5-bf1a-adefa1bd73e7",
+   "old_title": "Send Follow-up Email",
+   "title": "Survey Follow-up Email",
+   "domain": "customer_support",
+   "outcomes": [
+    {
+     "id": "every-respondent-hears-back",
+     "statement": "Every survey respondent gets a tier-appropriate follow-up, and none get sent without an address or without required approval.",
+     "success_criteria": [
+      "A processed response produces a follow-up email matching its tier (promoter, neutral, or detractor)",
+      "A detractor follow-up that needs manual-review approval never sends until that approval happens",
+      "A send failure retries rather than silently dropping the follow-up"
+     ]
+    }
+   ],
+   "procedure": "Own closing the loop with every survey respondent using a tone appropriate to how they scored. Respect the gate on detractor follow-ups when the team has chosen to require review; that population is the one where the wrong words do the most damage. Retry failed sends up to a reasonable limit rather than giving up silently, and skip cleanly, with a log entry, when there's no address to send to.",
+   "verdict": "keep"
+  },
+  {
+   "id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
+   "old_title": "Code Linking",
+   "title": "ADR Code Linking",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "decisions-traceable-to-code",
+     "statement": "Every accepted architectural decision is traceable to the code that actually implements it.",
+     "success_criteria": [
+      "Candidate PRs and commits mentioning the decision are found and, once confirmed, written into the decision record",
+      "A link is never written without the user confirming the candidate first",
+      "Related or superseded decisions are cross-referenced"
+     ]
+    }
+   ],
+   "procedure": "Own connecting accepted architectural decisions to the code that implements them, so the record stays useful rather than becoming a document nobody trusts. Search for real candidate PRs and commits, but always let the user confirm before writing a link; false links are worse than missing ones. Keep watching for future PRs that reference the decision, and cross-reference related or superseded decisions.",
+   "verdict": "keep"
+  },
+  {
+   "id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
+   "old_title": "Decision Intake",
+   "title": "ADR Decision Intake",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "decisions-documented-with-rigor",
+     "statement": "A new technical decision becomes a properly reasoned, documented record, not just a title with no alternatives considered.",
+     "success_criteria": [
+      "A new decision is documented with alternatives analysis before it's created; missing alternatives trigger enrichment rather than being skipped",
+      "A decision that closely resembles an existing one is linked to it instead of duplicated",
+      "Stakeholder sign-off happens when the team requires it"
+     ]
+    }
+   ],
+   "procedure": "Own making sure a new technical decision is actually documented with rigor: real alternatives considered, not just the chosen option written down. Catch near-duplicate decisions before creating a redundant record. When required alternatives or rationale are missing, run the enrichment interview rather than accepting a thin record. Respect whether the team requires stakeholder sign-off before it's final.",
+   "verdict": "keep"
+  },
+  {
+   "id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
+   "old_title": "Review Cycle",
+   "title": "ADR Review Cycle",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "decisions-stay-current",
+     "statement": "Accepted decisions get periodically re-checked against reality, so the record never quietly goes stale.",
+     "success_criteria": [
+      "Every due decision is presented to a human for reaffirm, re-evaluate, or deprecate; none are auto-reaffirmed",
+      "A stale, deprecated decision that's no longer referenced elsewhere gets archived",
+      "A decision still referenced by other active decisions isn't archived out from under them"
+     ]
+    }
+   ],
+   "procedure": "Own making sure accepted decisions don't quietly outlive their own assumptions. Bring up decisions that are due for review and let a human judge whether the constraints still hold; this agent never silently reaffirms on its own. Use real signals, like recent code activity, to inform the conversation when available. Archive deprecated decisions once they're safely unreferenced, not before.",
+   "verdict": "keep"
+  },
+  {
+   "id": "5220dac2-4efa-5035-afb9-724e8b76e4d4",
+   "old_title": "Command Intake & Execution",
+   "title": "ChatOps Command Intake and Execution",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "safe-fast-destructive-safe",
+     "statement": "A team member can get a safe operation done from chat immediately, while anything destructive always waits for explicit confirmation.",
+     "success_criteria": [
+      "An authorized sender's safe-operation intent is parsed and executed with a formatted response, without needing a second round trip",
+      "A destructive-classified operation never executes without going through the confirmation step, no exceptions",
+      "An unauthorized sender is rejected without executing anything"
+     ]
+    }
+   ],
+   "procedure": "Own making chat-driven operations fast for the safe case and uncompromising about safety for the destructive one. Verify the sender is authorized before parsing intent, and classify accurately whether an operation is destructive; that classification is the whole safety boundary. Ask for clarification on ambiguous intent rather than guessing what to run. Learn the team's own vocabulary for common operations over time.",
+   "verdict": "keep",
+   "notes": "Companion charter to Destructive Action Confirmation (6b1cf829); kept separate for the same reason as the access-request pair: safe-path execution and the destructive-path safety gate are distinct accountabilities."
+  },
+  {
+   "id": "6b1cf829-3578-5444-a930-bb450b06ef5e",
+   "old_title": "Destructive Action Confirmation",
+   "title": "ChatOps Destructive Action Confirmation",
+   "domain": "software_engineering",
+   "outcomes": [
+    {
+     "id": "destructive-ops-cant-slip-through",
+     "statement": "A destructive operation only ever executes when the same operator who requested it explicitly confirms, within a bounded window.",
+     "success_criteria": [
+      "A YES from the original requester executes the stored operation and broadcasts a severity-appropriate alert",
+      "A confirmation from a different operator, or one that arrives after expiry, is treated as a no-op, not as approval",
+      "An execution failure notifies rather than silently failing"
+     ]
+    }
+   ],
+   "procedure": "Own making sure no destructive operation ever runs without the exact person who requested it confirming, inside a bounded time window. Reject confirmations from anyone else and treat expired ones as automatically cancelled. Once confirmed, execute and make sure the broadcast alert actually reaches the secondary channel, queuing it rather than dropping it if that channel is briefly down.",
+   "verdict": "keep"
+  },
+  {
+   "id": "fb0e8a6e-47f8-59b6-92c4-0428d6458039",
+   "old_title": "Create or Review",
+   "title": "Email Task Candidate Triage",
+   "domain": "general_professional",
+   "outcomes": [
+    {
+     "id": "real-tasks-become-tasks",
+     "statement": "A task candidate extracted from email becomes a real tracked task when it's genuinely new and genuine, and the classifier gets better from every human decision.",
+     "success_criteria": [
+      "A high-confidence, non-duplicate candidate becomes a task in the knowledge base",
+      "A low-confidence candidate is held for human review rather than auto-created or auto-dismissed",
+      "Approvals and dismissals both feed back into future confidence scoring"
+     ]
+    }
+   ],
+   "procedure": "Own turning genuine task candidates into real tracked tasks while keeping noise out. Check high-confidence candidates against the knowledge base for duplicates before creating anything. Route low-confidence candidates to a human rather than guessing, and treat every approval or dismissal as a training signal that should make the next batch of candidates more accurate.",
+   "verdict": "keep"
+  }
+ ],
+ "slice_findings": [
+  "This slice is the pipeline-as-recipe pattern the brief warned about, almost every recipe's original description was a fetch-transform-notify sentence and every payload carried a full useCaseFlow node/edge graph. I rewrote every 'procedure' as outcome-focused guidance and left 'id', 'connectors', 'cadence', 'approvalGates' and everything under 'spec' (including useCaseFlow) untouched per the spec's instruction, but the Director should know the flowchart-as-process-definition problem still lives one field over, out of this review's reach.",
+  "One real merge found: Knowledge Base Deep Audit (b80fc21f, formerly 'Monthly Deep Audit') into Memory and Knowledge Base Health Audit (ba138faf, formerly 'Weekly Health Audit'). The tell was that the recipe's own description said it was 'everything the weekly audit does, plus' a contradiction pass; that is a depth parameter, not a second job, and cadence/scope already have real fields to carry the difference.",
+  "Considered and rejected a second merge with the same shape: Push-triggered Vulnerability Scan (194648fe) and Scheduled Vulnerability Sweep (1c822cb8) share a memory ledger by their own description ('shared with uc_realtime_scan'), but unlike the audit pair, neither supersedes the other, a push-triggered scan structurally cannot catch a newly-published CVE against unchanged code, and a periodic sweep structurally cannot catch a vulnerability the instant it's introduced. Both need to run concurrently for real coverage, which is a materially different relationship from one recipe containing the other. Flagging this pair explicitly since it is the closest look-alike to the audit merge and a future pass might collapse it incorrectly.",
+  "One true name collision resolved: two recipes were both titled 'Post-meeting Follow-up' (262d4972 and 33fc8376) and are not duplicates, one is a CRM/sales-pipeline follow-up chained off Calendly + HubSpot bookings, the other a personal calendar assistant's meeting close-out with no CRM at all. Renamed to 'CRM Meeting Follow-up' and 'Meeting Notes Follow-up' respectively.",
+  "A near-collision worth flagging even though titles differed: 'Weekly Health Audit' (persona memory layers, via the codebase connector) and 'Weekly Maintenance' (a user's actual knowledge_base app content, via the knowledge_base connector) read as the same job at a glance and are not, retitled to 'Memory and Knowledge Base Health Audit' and 'Knowledge Base Curation Audit' to make the difference legible on sight.",
+  "Nine of the thirteen categories in this slice held exactly one recipe each (workflow, build, configuration, scheduled, realtime, ingestion, intake, archive, collections); none of them named a domain distinct from what the recipe's actual content called for once read (operations_logistics, finance_accounting, legal_compliance, software_engineering, sales_marketing, data_ai, general_professional all absorbed at least one). Confirms the brief's framing that this was categorization noise, not taxonomy.",
+  "The corpus repeatedly and consistently splits 'intake/triage' from 'decision/execution' as two separate charters within the same operational system: access requests (Access Request Intake & Triage / Access Request Approval Chain), retainer work (Retainer Work Request Intake / Retainer Work Execution), and ChatOps commands (ChatOps Command Intake and Execution / ChatOps Destructive Action Confirmation). I kept every one of these pairs split, each half has a genuinely distinct accountability (completeness and accuracy of intake vs timeliness and safety of the decision), which lines up with the spec's own distinction between queue-moving jobs and everything else. Flagging the pattern so a future reviewer doesn't merge them on 'same system' grounds alone.",
+  "Domain split worth a second look from the Director: this slice contains two structurally similar 'agency serving clients' families that I placed in different domains. Retainer support work (SLA Scan, Work Execution, Request Intake, Monthly Report) went to operations_logistics because it is ongoing, ticket-shaped service delivery with no phase structure. Discrete client projects (Client Onboarding, Phase Monitoring, Portfolio Report, Stall Escalation) went to product_project because they are explicitly phase-tracked (Discovery to Proposal to Active to Review to Completed). Both plausibly could sit in either bucket; I chose based on presence or absence of phase structure in the recipe's own data.",
+  "Two titles were vendor-redaction artifacts rather than real names: 'legal platform Event Processing' and 'finance platform → Sheets Sync' read as if a vendor-neutralization pass replaced a product name with its category and left the sentence broken. Retitled both to describe the actual job (Contract Envelope Event Sync, Finance Ledger Sync and Anomaly Detection) without inventing any vendor name, consistent with the house rule against inventing connectors or vendors."
+ ]
+}

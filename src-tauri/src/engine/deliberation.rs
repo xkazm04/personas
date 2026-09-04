@@ -2455,10 +2455,8 @@ mod core_content_tests {
         "development/solution-architect.json",
         "development/dev-clone.json",
         "development/qa-guardian.json",
-        "development/code-reviewer.json",
         "security/security-sentinel.json",
         "devops/release-manager.json",
-        "development/docs-steward.json",
         "marketing/visual-brand-asset-factory.json",
         "project-management/product-strategist.json",
     ];

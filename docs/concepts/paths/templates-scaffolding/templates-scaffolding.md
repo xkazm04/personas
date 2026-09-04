@@ -16,7 +16,7 @@ evidence:
   - scripts/generate-template-checksums.mjs                                                      # one generator, two manifests (frontend + backend) — derivation named
 counter_evidence:
   - src-tauri/src/commands/design/template_adopt.rs      # :34-72 — the autopsy comment of the deleted inert gate (manifest keyed path+whole-file, callers passed label+payload)
-  - scripts/templates/development/dev-lifecycle-manager.json   # one of 8 templates / 10 select questions whose default is outside its own option list (de-branding drift)
+  - scripts/templates/productivity/router.json   # one of 5 templates / 7 select questions whose default is outside its own option list (de-branding drift)
 deviations:
   - w11-templates-scaffolding   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

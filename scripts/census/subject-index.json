@@ -7462,7 +7462,7 @@
    ],
    "counter_evidence": [
     "src-tauri/src/commands/design/template_adopt.rs",
-    "scripts/templates/development/dev-lifecycle-manager.json"
+    "scripts/templates/productivity/router.json"
    ],
    "deviations": [
     "w11-templates-scaffolding"
