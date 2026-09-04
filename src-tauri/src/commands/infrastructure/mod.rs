@@ -39,6 +39,7 @@ pub mod registry_coverage;
 pub mod registry_sync;
 pub mod registry_usage;
 pub mod research_lab;
+pub mod run_checkpoints;
 pub mod scraper;
 pub mod settings;
 pub mod setup;

@@ -135,9 +135,54 @@ pub async fn fork_from_checkpoint(dir: &Path, sha: &str, new_run_id: &str) -> Re
 }
 
 /// Hard-reset the working tree to a checkpoint SHA (rollback).
+///
+/// Pairs with [`checkpoint_stage`], whose SHAs are ordinary commits on the run
+/// branch. Do **not** point it at a [`snapshot_stage`] SHA: those are dangling
+/// `git stash create` commits, and `reset --hard` onto one leaves HEAD detached
+/// on a stash object — use [`restore_snapshot`] instead.
 pub async fn rollback_to(dir: &Path, sha: &str) -> Result<(), String> {
     git(dir, &["reset", "--hard", sha]).await?;
     Ok(())
+}
+
+/// Rewind the index and working tree to a [`snapshot_stage`] SHA **without
+/// moving HEAD**.
+///
+/// The counterpart `snapshot_stage` was missing. `snapshot_stage` is the
+/// non-disruptive primitive — it captures the tree and leaves HEAD, the index
+/// and the worktree exactly where the operator (or the agent) left them — but
+/// the only restore the module offered was [`rollback_to`], which is
+/// `reset --hard`. Applied to a stash-create SHA that detaches HEAD onto a
+/// dangling object, so the non-disruptive capture had a disruptive rewind and
+/// the pair could not be used together. `read-tree -u --reset` is the matching
+/// operation: it makes the index and worktree equal the snapshot's tree
+/// (removing tracked files added since) and touches nothing else.
+///
+/// Same limitation as `snapshot_stage`: tracked content only. Files that were
+/// untracked at snapshot time are not restored, and untracked files created
+/// since are left alone rather than deleted.
+pub async fn restore_snapshot(dir: &Path, sha: &str) -> Result<(), String> {
+    // `^{tree}` so a caller may pass either the snapshot commit or its tree.
+    git(
+        dir,
+        &["read-tree", "-u", "--reset", &format!("{sha}^{{tree}}")],
+    )
+    .await?;
+    Ok(())
+}
+
+/// Whether `sha` names an object that exists in *this* repository.
+///
+/// The runtime binding for a rollback. A checkpoint SHA is meaningful only in
+/// the repository that produced it, and the index rows carry no repository of
+/// their own — so before a rollback moves anyone's tree, the caller asks the
+/// target repository whether it has ever heard of the object. A row pointing at
+/// a SHA this repo does not contain is a drifted index row, not a rollback
+/// target.
+pub async fn contains_object(dir: &Path, sha: &str) -> bool {
+    git(dir, &["cat-file", "-e", &format!("{sha}^{{object}}")])
+        .await
+        .is_ok()
 }
 
 #[cfg(test)]
@@ -165,6 +210,61 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[tokio::test]
+    async fn snapshot_and_restore_rewind_the_tree_without_moving_head() {
+        let dir = temp_dir("snap_restore");
+        init_repo(&dir).await;
+        let head_before = git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
+
+        tokio::fs::write(dir.join("seed.txt"), "good")
+            .await
+            .unwrap();
+        let snap = snapshot_stage(&dir, "run-restore", "wave-1")
+            .await
+            .unwrap()
+            .expect("dirty tree yields a snapshot");
+
+        tokio::fs::write(dir.join("seed.txt"), "sideways")
+            .await
+            .unwrap();
+        restore_snapshot(&dir, &snap).await.unwrap();
+
+        assert_eq!(
+            tokio::fs::read_to_string(dir.join("seed.txt"))
+                .await
+                .unwrap(),
+            "good",
+            "restore must bring the snapshotted content back"
+        );
+        assert_eq!(
+            git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
+            head_before,
+            "restore must NOT move HEAD -- that is the whole difference from rollback_to"
+        );
+    }
+
+    #[tokio::test]
+    async fn contains_object_separates_this_repo_from_another() {
+        let mine = temp_dir("contains_mine");
+        let theirs = temp_dir("contains_theirs");
+        init_repo(&mine).await;
+        init_repo(&theirs).await;
+
+        tokio::fs::write(mine.join("seed.txt"), "mine")
+            .await
+            .unwrap();
+        let snap = snapshot_stage(&mine, "run-a", "wave-1")
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert!(contains_object(&mine, &snap).await);
+        assert!(
+            !contains_object(&theirs, &snap).await,
+            "a checkpoint SHA must not resolve in a repository that never produced it"
+        );
     }
 
     #[tokio::test]

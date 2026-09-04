@@ -13,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
+use crate::commands::infrastructure::run_checkpoints as checkpoints;
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
@@ -1501,6 +1502,14 @@ pub async fn dev_tools_start_auto_run(
         tracing::warn!(run_id = %run_id, error = %e, "auto-run: failed to record start row");
     }
 
+    // The run's workspace, resolved once: it cannot change mid-run, and the
+    // checkpoint at every wave boundary needs it. `None` is a recorded gap, not
+    // a refusal to run -- a project without a readable root_path still executes.
+    let workspace_root = repo::get_project_by_id(&state.db, &project_id)
+        .ok()
+        .map(|p| p.root_path)
+        .filter(|r| !r.trim().is_empty());
+
     let app_handle = app.clone();
     let pool = state.db.clone();
     let project_id_for_spawn = project_id.clone();
@@ -1521,6 +1530,17 @@ pub async fn dev_tools_start_auto_run(
             if snapshot_size == 0 {
                 // Nothing to do — emit complete immediately.
             } else {
+                // Wave 0: the state the run started from. Without it the
+                // earliest reachable point is *after* the first wave, which is
+                // exactly the wave most likely to be the one you want undone.
+                checkpoints::checkpoint_stage_boundary(
+                    &pool,
+                    &run_id_for_spawn,
+                    "wave-0",
+                    workspace_root.as_deref(),
+                )
+                .await;
+
                 'outer: while iterations < max_iterations {
                     if cancel_for_spawn.is_cancelled() {
                         termination_reason = "cancelled".to_string();
@@ -1557,6 +1577,18 @@ pub async fn dev_tools_start_auto_run(
                     }
 
                     iterations += 1;
+
+                    // Stage boundary: the JoinSet above is drained, so no agent
+                    // is mid-write and the tree is quiet. This is the only such
+                    // moment in the loop. Best-effort by contract — a failed
+                    // checkpoint records a typed gap and the wave continues.
+                    checkpoints::checkpoint_stage_boundary(
+                        &pool,
+                        &run_id_for_spawn,
+                        &format!("wave-{iterations}"),
+                        workspace_root.as_deref(),
+                    )
+                    .await;
                 }
 
                 if iterations >= max_iterations && !cancel_for_spawn.is_cancelled() {

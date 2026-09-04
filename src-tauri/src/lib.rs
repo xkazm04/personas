@@ -1827,6 +1827,9 @@ pub fn run() {
             commands::infrastructure::task_executor::dev_tools_start_auto_run,
             commands::infrastructure::task_executor::dev_tools_cancel_auto_run,
             commands::infrastructure::task_executor::dev_tools_get_auto_run_status,
+            // Dev Tools -- run checkpoints (git rewind for an auto-run)
+            commands::infrastructure::run_checkpoints::dev_tools_list_run_checkpoints,
+            commands::infrastructure::run_checkpoints::dev_tools_rollback_run_checkpoint,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,
