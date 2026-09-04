@@ -2,7 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConical, X } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { AsyncButton } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -75,41 +75,43 @@ export function DeploymentCard({
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          {/* Busy state on an action control is a REAL spinner (AsyncButton),
+              the same shape DeploymentTable uses. The previous
+              `busy ? <LoadingSpinner/> : <Icon/>` swap made the icon vanish
+              into nothing, because LoadingSpinner renders null. */}
           {d.status === 'active' && onTest && (
-            <button
-              type="button"
+            <AsyncButton
+              variant="ghost"
+              size="icon-sm"
               title={dt.test_deployment}
               onClick={() => onTest(d.id, d.personaId)}
-              disabled={isBusy || testRunning}
-              className="p-1.5 rounded-card text-foreground hover:text-blue-400
-                         hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
-            >
-              {testRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
-            </button>
+              disabled={isBusy}
+              isLoading={testRunning ?? false}
+              icon={<FlaskConical className="w-3.5 h-3.5" />}
+              className="hover:!text-blue-400 hover:!bg-blue-500/10"
+            />
           )}
           {d.status === 'active' && (
-            <button
-              type="button"
+            <AsyncButton
+              variant="ghost"
+              size="icon-sm"
               title={dt.pause_deployment}
               onClick={() => handleAction(d.id, () => onPause(d.id))}
-              disabled={isBusy}
-              className="p-1.5 rounded-card text-foreground hover:text-amber-400
-                         hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
-            >
-              {isBusy ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
-            </button>
+              isLoading={isBusy}
+              icon={<Pause className="w-3.5 h-3.5" />}
+              className="hover:!text-amber-400 hover:!bg-amber-500/10"
+            />
           )}
           {d.status === 'paused' && (
-            <button
-              type="button"
+            <AsyncButton
+              variant="ghost"
+              size="icon-sm"
               title={dt.resume_deployment}
               onClick={() => handleAction(d.id, () => onResume(d.id))}
-              disabled={isBusy}
-              className="p-1.5 rounded-card text-foreground hover:text-emerald-400
-                         hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
-            >
-              {isBusy ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
+              isLoading={isBusy}
+              icon={<Play className="w-3.5 h-3.5" />}
+              className="hover:!text-emerald-400 hover:!bg-emerald-500/10"
+            />
           )}
           <button
             type="button"

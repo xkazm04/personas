@@ -3,7 +3,7 @@ import {
   CheckCircle2, PauseCircle, XCircle, AlertCircle, FileText,
 } from 'lucide-react';
 import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { AsyncButton } from '@/features/shared/components/buttons';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 
@@ -107,15 +107,17 @@ export function ActionButton({
   busy: boolean;
   onClick: () => void;
 }) {
+  // A busy action control shows a REAL spinner (AsyncButton owns it); the
+  // old `busy ? <LoadingSpinner/> : <Icon/>` swap rendered nothing at all.
   return (
-    <button
-      type="button"
+    <AsyncButton
+      variant="ghost"
+      size="icon-sm"
       title={title}
       onClick={onClick}
-      disabled={busy}
-      className={`p-1.5 rounded-card text-foreground ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer focus-ring`}
-    >
-      {busy ? <LoadingSpinner size="sm" /> : <Icon className="w-3.5 h-3.5" />}
-    </button>
+      isLoading={busy}
+      icon={<Icon className="w-3.5 h-3.5" />}
+      className={hoverColor.replace(/hover:(text|bg)-/g, 'hover:!$1-')}
+    />
   );
 }
