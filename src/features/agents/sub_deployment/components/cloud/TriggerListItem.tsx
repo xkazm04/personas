@@ -9,6 +9,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -61,15 +62,15 @@ export function TriggerListItem({
         </span>
         <span className="typo-body text-foreground truncate flex-1">
           {personaName}
-          <span className="text-foreground ml-2">{triggerTypeLabel(trigger.triggerType)}</span>
+          <span className="text-foreground ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
         </span>
         {config.cron && (
           <span className="typo-code font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
             {`${config.cron}`}
           </span>
         )}
-        {healthBadge(trigger.healthStatus)}
-        <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? 'Enabled' : 'Disabled'} />
+        {healthBadge(t, trigger.healthStatus)}
+        <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? t.common.enabled : t.common.disabled} />
       </button>
 
       {/* Expanded detail */}
@@ -77,8 +78,8 @@ export function TriggerListItem({
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-3">
           {/* Trigger info */}
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(trigger.triggerType)}</span></div>
-            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
+            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(t, trigger.triggerType)}</span></div>
+            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? t.common.enabled : t.common.disabled}</span></div>
             <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.lastTriggeredAt)}</span></div>
             <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground"><AbsoluteTime timestamp={trigger.nextTriggerAt} /></span></div>
             {config.cron && <div className="col-span-2"><span className="text-foreground">{dt.label_cron}</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
@@ -100,14 +101,14 @@ export function TriggerListItem({
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
               }`}
             >
-              {trigger.enabled ? <><Pause className="w-3 h-3" /> Pause</> : <><Play className="w-3 h-3" /> Enable</>}
+              {trigger.enabled ? <><Pause className="w-3 h-3" /> {t.deployment.dashboard.action_pause}</> : <><Play className="w-3 h-3" /> Enable</>}
             </button>
             <button
               type="button"
               onClick={onDelete}
               className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors"
             >
-              <Trash2 className="w-3 h-3" /> Delete
+              <Trash2 className="w-3 h-3" /> {t.common.delete}
             </button>
           </div>
 
@@ -126,7 +127,7 @@ export function TriggerListItem({
                   <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
                     {f.status === 'completed' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> :
                      f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
-                     <LoadingSpinner size="xs" className="text-blue-400" />}
+                     <LiveStatusDot tone="syncing" size="sm" className="mx-0.5" />}
                     <span className="text-foreground">{f.status}</span>
                     <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
                     {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}

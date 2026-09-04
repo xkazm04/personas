@@ -17,7 +17,7 @@ import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 interface Props {
   deployments: CloudDeployment[];
@@ -84,15 +84,23 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
     return () => { cancelled = true; };
   }, [expandedId]);
 
+  // Both are remote writes against the orchestrator. A rejection used to
+  // surface only as an unhandled promise: no toast, the row unchanged, and
+  // nothing to tell the user the click did not land. The toast renderer
+  // classifies the raw error into the registry's friendly copy.
   const handleToggle = async (trigger: CloudTrigger) => {
-    await cloudUpdateTrigger(trigger.id, undefined, undefined, !trigger.enabled);
-    await fetchTriggers();
+    try {
+      await cloudUpdateTrigger(trigger.id, undefined, undefined, !trigger.enabled);
+      await fetchTriggers();
+    } catch (err) { toastCatch('CloudSchedulesPanel:toggle')(err); }
   };
 
   const handleDelete = async (triggerId: string) => {
-    await cloudDeleteTrigger(triggerId);
-    if (expandedId === triggerId) setExpandedId(null);
-    await fetchTriggers();
+    try {
+      await cloudDeleteTrigger(triggerId);
+      if (expandedId === triggerId) setExpandedId(null);
+      await fetchTriggers();
+    } catch (err) { toastCatch('CloudSchedulesPanel:delete')(err); }
   };
 
   const handleCreated = async () => {
@@ -129,7 +137,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
             onClick={() => { fetchTriggers(); onRefresh(); }}
             disabled={isLoading}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
         </div>
       </div>

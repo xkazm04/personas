@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Filter, ChevronDown } from 'lucide-react';
 import type { DeployTarget, DeployStatus } from './deploymentTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface DeploymentFiltersProps {
   search: string;
@@ -89,7 +90,7 @@ export function DeploymentFilters({
                         : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
                     }`}
                   >
-                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                    {v === 'all' ? dt.filter_all : tokenLabel(t, 'deployment', v)}
                   </button>
                 ))}
               </div>

@@ -6,41 +6,57 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
-import type { CloudDeployment } from '@/api/system/cloud';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { en } from '@/i18n/en';
+import type { Translations } from '@/i18n/en';
 
-const t = en;
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface CloudSchedulesPanelProps {
-  deployments: CloudDeployment[];
-  onRefresh: () => void;
-}
+// Every label here is resolved through the `t` the caller already holds.
+// Until 2026-09-04 this module did `const t = en` at load time, so the cron
+// presets, trigger-type names and the health badge were English in all 14
+// locales while their keys sat translated in every catalog -- the same rule
+// as `@/lib/utils/cronPresets` (which carries ids, never labels), with only
+// that side migrated. Passing `t` in also re-renders on a language switch.
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-export const CRON_PRESETS = [
-  { label: t.deployment.cron_every_5min, cron: '*/5 * * * *' },
-  { label: t.deployment.cron_every_15min, cron: '*/15 * * * *' },
-  { label: t.deployment.cron_every_hour, cron: '0 * * * *' },
-  { label: t.deployment.cron_every_6hours, cron: '0 */6 * * *' },
-  { label: t.deployment.cron_daily_midnight, cron: '0 0 * * *' },
-  { label: t.deployment.cron_daily_9am, cron: '0 9 * * *' },
-  { label: t.deployment.cron_weekdays_9am, cron: '0 9 * * 1-5' },
-  { label: t.deployment.cron_weekly_sun, cron: '0 0 * * 0' },
+/** Cloud cron presets are UTC-labelled and separately keyed from the local
+ * scheduler's list (`@/lib/utils/cronPresets`), which is why they stay here. */
+export type CloudCronPresetId =
+  | 'cron_every_5min'
+  | 'cron_every_15min'
+  | 'cron_every_hour'
+  | 'cron_every_6hours'
+  | 'cron_daily_midnight'
+  | 'cron_daily_9am'
+  | 'cron_weekdays_9am'
+  | 'cron_weekly_sun';
+
+export interface CloudCronPreset {
+  readonly id: CloudCronPresetId;
+  readonly cron: string;
+}
+
+export const CLOUD_CRON_PRESETS: readonly CloudCronPreset[] = [
+  { id: 'cron_every_5min', cron: '*/5 * * * *' },
+  { id: 'cron_every_15min', cron: '*/15 * * * *' },
+  { id: 'cron_every_hour', cron: '0 * * * *' },
+  { id: 'cron_every_6hours', cron: '0 */6 * * *' },
+  { id: 'cron_daily_midnight', cron: '0 0 * * *' },
+  { id: 'cron_daily_9am', cron: '0 9 * * *' },
+  { id: 'cron_weekdays_9am', cron: '0 9 * * 1-5' },
+  { id: 'cron_weekly_sun', cron: '0 0 * * 0' },
 ] as const;
+
+export function cloudCronPresetLabel(t: Translations, preset: CloudCronPreset): string {
+  return t.deployment[preset.id];
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-export function triggerTypeLabel(type: string): string {
+export function triggerTypeLabel(t: Translations, type: string): string {
   switch (type) {
     case 'schedule': return t.deployment.cloud_trigger_schedule;
     case 'polling': return t.deployment.cloud_trigger_polling;
@@ -60,7 +76,7 @@ export function triggerTypeIcon(type: string) {
   }
 }
 
-export function healthBadge(status: string | null) {
+export function healthBadge(t: Translations, status: string | null) {
   if (!status || status === 'healthy') {
     return <StatusBadge variant="success" size="sm" className="typo-caption" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>{t.deployment.cloud_healthy}</StatusBadge>;
   }

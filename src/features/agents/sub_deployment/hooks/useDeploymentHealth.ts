@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { cloudExecutionStats } from '@/api/system/cloud';
+import { silentCatch } from '@/lib/silentCatch';
 import type { HealthDataPoint } from '../components/DeploymentHealthSparkline';
 
 interface DeploymentHealthMap {
@@ -82,6 +83,11 @@ export function useDeploymentHealth(
               successRate: d.successRate,
               cost: d.cost,
             }));
+          } else {
+            // A persona whose stats call failed simply had no sparkline and
+            // the cell read "Loading..." forever; the rejection reached no
+            // error door at all. Background surface: Sentry + console only.
+            silentCatch('features/deployment/hooks/useDeploymentHealth:stats')(result.reason);
           }
         }
 

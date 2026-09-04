@@ -43,29 +43,20 @@ const ONLY = argValue('--only')?.split(',').map((s) => s.trim()).filter(Boolean)
 const PAUSE_ON_FAIL = !argFlag('--continue-on-fail'); // default: pause
 
 /**
- * `--golden` — the curated regression subset. Templates chosen to span the
- * connector classes and to have UNAMBIGUOUS connector bindings for a typical
- * populated vault, so the marathon auto-drives them cleanly (vault questions
- * resolve to a single credential via the modal's auto-detect — see D4.1). Each
- * delivered business value in the 2026-05 50-template run.
- * Use this as the fast pre-release regression check:
- * `node template-marathon-driver.mjs --golden`.
- *
- * The set was five. It is three, and the corpus — not this list — is why:
- *   - `research-paper-indexer` (public web fetch, no user credential) was
- *     retired by the 2026-09-04 preset consolidation, wave 3.
- *   - `ai-environment-posture-audit` (zero-config — audits the runtime itself)
- *     was already dead before that, retired in 413a3929a. Left uncorrected for
- *     four months because an absent golden id only warns (see below) — this
- *     list has no gate and nothing recomputes it.
- * Both connector classes they covered are now UNREPRESENTED here. Re-pick a
- * survivor for each before trusting `--golden` as a pre-release gate; the
- * remaining three do not span the classes the comment above claims.
+ * `--golden` — the curated regression subset. Five templates chosen to
+ * span the connector classes and to have UNAMBIGUOUS connector bindings
+ * for a typical populated vault, so the marathon auto-drives them cleanly
+ * (vault questions resolve to a single credential via the modal's
+ * auto-detect — see D4.1). All five delivered business value in the
+ * 2026-05 50-template run. Use this as the fast pre-release regression
+ * check: `node template-marathon-driver.mjs --golden`.
  */
 const GOLDEN_TEMPLATES = [
+  'ai-environment-posture-audit', // zero-config — audits the runtime itself
   'email-morning-digest',         // credential — gmail (single account)
   'financial-stocks-signaller',   // credential — alpha_vantage
   'demo-recorder',                // global-probe — codebase (Dev Tools project)
+  'research-paper-indexer',       // public web fetch, no user credential
 ];
 const GOLDEN = argFlag('--golden');
 

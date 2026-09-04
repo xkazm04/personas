@@ -1,12 +1,14 @@
 import { CheckCircle2, XCircle, Ban } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 
 export function statusIcon(status: string) {
   switch (status) {
     case 'completed': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
     case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
     case 'cancelled': return <Ban className="w-3.5 h-3.5 text-amber-400" />;
-    default: return <LoadingSpinner size="sm" className="text-blue-400" />;
+    // `LoadingSpinner` renders null, so a queued/running row had NO status
+    // glyph at all. The shared liveness dot is the vocabulary for "in flight".
+    default: return <LiveStatusDot tone="syncing" size="sm" className="mx-0.5" />;
   }
 }
 

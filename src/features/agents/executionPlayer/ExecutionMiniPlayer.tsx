@@ -23,6 +23,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from '@/features/agents/executionPlayer/PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
 import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
@@ -342,7 +343,7 @@ export default function ExecutionMiniPlayer() {
           <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
             <span className="text-[10px] uppercase tracking-wider text-foreground mr-1">{t.execution.background}</span>
             {backgroundExecutions.map((bg) => (
-              <Tooltip key={bg.executionId} content={`${bg.personaName} — ${bg.status}`}>
+              <Tooltip key={bg.executionId} content={`${bg.personaName}: ${tokenLabel(t, 'execution', bg.status)}`}>
                 <div className="relative w-5 h-5 rounded-input flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
                   <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} />
                   <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${

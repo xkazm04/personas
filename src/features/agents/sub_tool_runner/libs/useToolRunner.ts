@@ -70,7 +70,7 @@ export function useToolRunner(personaId: string | undefined) {
             personaId: '',
             isRunning: false,
             result: null,
-            error: 'No active persona — open a persona before running tools.',
+            error: 'No active persona. Open a persona before running tools.',
           },
         }));
         return;
@@ -90,8 +90,12 @@ export function useToolRunner(personaId: string | undefined) {
         [toolId]: { personaId: runPersonaId, isRunning: true, result: null, error: null },
       }));
 
+      // The timer is cleared in `finally`: without that, every run that
+      // finished in under 120s left a live timer (and its closure) behind for
+      // the rest of the window, one per click.
+      let timer: ReturnType<typeof setTimeout> | undefined;
       const timeout = new Promise<never>((_, reject) => {
-        setTimeout(
+        timer = setTimeout(
           () => reject(new Error(`Tool run timed out after ${TOOL_RUN_TIMEOUT_MS / 1000}s`)),
           TOOL_RUN_TIMEOUT_MS,
         );
@@ -124,6 +128,7 @@ export function useToolRunner(personaId: string | undefined) {
           };
         });
       } finally {
+        clearTimeout(timer);
         // Only release the dedupe slot if we're still on the same persona
         // (otherwise the persona-switch effect already cleared the set).
         if (runPersonaId === personaIdRef.current) {
