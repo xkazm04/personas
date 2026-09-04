@@ -662,6 +662,7 @@ mod tombstone_tests {
                 sources: std::slice::from_ref(&source.to_string()),
                 importance: 3,
                 confidence: 0.9,
+                expires_at: None,
                 supersedes_id: None,
                 contradicts_id: None,
             },
