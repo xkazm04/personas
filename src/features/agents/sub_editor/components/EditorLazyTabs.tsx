@@ -9,9 +9,9 @@ export const PersonaSettingsTab = lazy(() =>
 export const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/components/shared/LabTab').then((m) => ({ default: m.LabTab })),
 );
-/** DesignHub — tabbed container hosting Use Cases, Prompt, Connectors & Tools,
- *  Events & Triggers, Messaging, and the living-agent surfaces (Core,
- *  Responsibilities, Brain — folded in from the former top-level Life tab). */
+/** DesignHub — tabbed container hosting the Manifest, Responsibilities, Brain
+ *  and Connectors sub-tabs (`DesignSubTab`); the former Use Cases, Prompt,
+ *  Health and Life tabs all land here via `setEditorTab`'s legacy remaps. */
 export const DesignTab = lazy(() =>
   import('@/features/agents/sub_design').then((m) => ({ default: m.DesignHub })),
 );
