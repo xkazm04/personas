@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { History, ArrowRight } from 'lucide-react';
 import { listPersonaChangeLog } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
@@ -29,16 +29,23 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
   const [entries, setEntries] = useState<PersonaChangeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Generation counter: only the newest request may write. Without it a
+  // slow response for persona A landed after the user had switched to B and
+  // painted A's history under B's name (and cleared B's loading ghost early).
+  const generationRef = useRef(0);
   const load = useCallback(() => {
+    const generation = ++generationRef.current;
     listPersonaChangeLog(personaId, 50)
-      .then(setEntries)
+      .then((rows) => { if (generation === generationRef.current) setEntries(rows); })
       .catch((err) => { silentCatch('PersonaChangeHistory:list')(err); })
-      .finally(() => setLoading(false));
+      .finally(() => { if (generation === generationRef.current) setLoading(false); });
   }, [personaId]);
 
   useEffect(() => {
     setLoading(true);
     load();
+    // A persona switch or unmount retires every response still in flight.
+    return () => { generationRef.current++; };
   }, [load]);
 
   // A completed run never edits config, but saves do — re-pull when the store
@@ -76,7 +83,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
             ))}
           </div>
         ) : entries.length === 0 ? (
-          <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground/60">
+          <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground">
             <History className="w-3.5 h-3.5" />
             {labels.empty}
           </p>
@@ -87,7 +94,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
                 <span className="typo-body font-medium text-foreground min-w-0 shrink-0">
                   {fieldLabel(e.field)}
                 </span>
-                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground/70">
+                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground">
                   <span className="truncate max-w-[8rem]" title={displayValue(e.beforeValue)}>
                     {displayValue(e.beforeValue)}
                   </span>
@@ -99,7 +106,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
                 <span className={`shrink-0 px-1.5 py-0.5 rounded-card border typo-caption ${SOURCE_TONE[e.source ?? 'other'] ?? SOURCE_TONE.other}`}>
                   {sourceLabel(e.source)}
                 </span>
-                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-foreground/60" />
+                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-foreground" />
               </li>
             ))}
           </ul>
