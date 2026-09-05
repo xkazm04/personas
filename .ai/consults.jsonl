@@ -25,3 +25,4 @@
 {"ts":"2026-09-05T16:12:42.116Z","bundle":"software-engineering","subjects":["health-checks","quality-gates"],"techniques":["three-state-outcomes","health-rollup","remediation-affordances","check-scheduling"],"deviations":2}
 {"ts":"2026-09-05T16:53:25.646Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","sorting","client-server-split"],"deviations":2}
 {"ts":"2026-09-05T18:15:45.054Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing","acquisition"],"deviations":0}
+{"ts":"2026-09-05T18:25:38.439Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","platform-build-parity"],"deviations":1}
