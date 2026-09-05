@@ -20,9 +20,9 @@ vi.mock('@/stores/vaultStore', () => ({
 }));
 // Hoisted: the i18n module calls silentCatch while it is being imported, which
 // happens before a plain top-level const would be initialised.
-const { mockSilentCatch } = vi.hoisted(() => ({ mockSilentCatch: vi.fn(() => vi.fn()) }));
+const { mockSilentCatch } = vi.hoisted(() => ({ mockSilentCatch: vi.fn((_scope: string) => vi.fn()) }));
 vi.mock('@/lib/silentCatch', () => ({
-  silentCatch: (...args: unknown[]) => mockSilentCatch(...args),
+  silentCatch: (scope: string) => mockSilentCatch(scope),
 }));
 
 import { useHealthCheck } from './useHealthCheck';
