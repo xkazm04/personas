@@ -69,7 +69,7 @@ function pushIssue(
  * structured_prompt section" — the digest is now a live operational
  * health view backed by execution data.
  */
-function buildResultFromSignals(
+export function buildResultFromSignals(
   persona: Persona,
   signal: PersonaHealthSignal | undefined,
   healingIssues: PersonaHealingIssue[],
@@ -103,12 +103,16 @@ function buildResultFromSignals(
     pushIssue(issues, persona.id, 'error',
       interpolate(t.signal_circuit_breaker, { count: signal.rollbackCount }));
   }
-  if (signal.budgetRatio >= 1) {
-    pushIssue(issues, persona.id, 'error',
-      interpolate(t.signal_over_budget, { pct: Math.round(signal.budgetRatio * 100) }));
-  }
+  // One fact, one charge. `projectedExhaustionDays === 0` is defined as
+  // `max_budget - spend <= 0` (personaHealthSlice.ts:441-445) - the same
+  // condition as `budgetRatio >= 1`, not a second one. Emitting both cost an
+  // agent that had merely hit its cap two error penalties (50 of 100 points)
+  // for a single overrun. Prefer the more specific wording when it applies.
   if (signal.projectedExhaustionDays === 0) {
     pushIssue(issues, persona.id, 'error', t.signal_budget_exhausted);
+  } else if (signal.budgetRatio >= 1) {
+    pushIssue(issues, persona.id, 'error',
+      interpolate(t.signal_over_budget, { pct: Math.round(signal.budgetRatio * 100) }));
   }
 
   // Warnings — degrading state worth attention.
