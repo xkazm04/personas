@@ -3,7 +3,7 @@ import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import { useOverviewStore } from "@/stores/overviewStore";
 import {
-  computeHealthScore,
+  computeAggregateHealthScore,
   makeIssueId,
 } from "@/features/agents/sub_health/useHealthCheck";
 import type {
@@ -190,8 +190,10 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
     }
   }
 
-  const allIssues = checks.flatMap((c) => c.result.issues);
-  const totalScore = computeHealthScore(allIssues);
+  // Mean of the per-agent scores, not the penalty sum over a flattened list:
+  // the 100-point budget is per agent, so flattening made the fleet score a
+  // function of fleet size and pinned any real install at 0 / unhealthy.
+  const totalScore = computeAggregateHealthScore(checks);
 
   return {
     generatedAt: new Date().toISOString(),
