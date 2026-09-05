@@ -136,8 +136,12 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
       <div className={`flex items-start gap-3 ${densityTokens.cardPadding}`}>
         <button
           type="button"
+          // Same semantics as the desktop SelectCell: a checkbox whose
+          // accessible name is the persona and whose state is announced.
+          role="checkbox"
+          aria-checked={selected}
+          aria-label={p.name}
           onClick={() => onToggleSelect(id)}
-          aria-label={selected ? 'Deselect' : 'Select'}
           className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
             selected ? 'bg-primary/80 border-primary/60' : 'border-primary/30'
           }`}
