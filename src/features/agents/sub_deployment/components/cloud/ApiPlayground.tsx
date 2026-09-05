@@ -100,7 +100,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
         data: null,
         error: err instanceof Error ? err.message : String(err),
         durationMs: null,
-        costUsd: 0,
+        // Never recorded (the call threw), not free - see PlaygroundResponse.
+        costUsd: null,
         model: null,
       });
     } finally {
