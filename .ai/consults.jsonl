@@ -19,6 +19,15 @@
 {"ts":"2026-08-30T18:30:00Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["constitution-self-model-split","anchored-identity-diffs","disk-truth-db-index"],"deviations":1}
 {"ts":"2026-08-30T18:30:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["autonomous-cycle-hosting"],"deviations":2}
 {"ts":"2026-08-30T18:30:00Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["memory-governance","consolidation","decay-and-forgetting","recall-injection"],"deviations":2}
+{"ts":"2026-09-01T19:24:44Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","lifecycle-signals","durable-fleet-state","heterogeneous-model-panels","substrate-reconciliation"],"deviations":0}
+{"ts":"2026-09-01T19:56:17Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-09-02T00:00:00Z","bundle":"software-engineering","subjects":["terminal-multiplexing","fleet-orchestration"],"techniques":["bounded-replay-buffers","attach-detach-lifecycle","keystroke-injection","renderer-economics","absent-status-passthrough"],"deviations":3}
+{"ts":"2026-09-02T19:00:00Z","bundle":"software-engineering","subjects":["fleet-orchestration","eval-harness"],"techniques":["absent-status-passthrough","result-harvest"],"deviations":1}
+{"ts":"2026-09-02T19:30:00Z","bundle":"software-engineering","subjects":["realtime-events","client-state"],"techniques":["singleton-lifecycle"],"deviations":0}
 {"ts":"2026-09-03T00:00:00Z","bundle":"software-engineering","subjects":["companion-identity","agent-memory"],"techniques":["constitution-self-model-split","anchored-identity-diffs","disk-truth-db-index","memory-governance","coverage-instrumentation","probe-without-write-back"],"deviations":0}
+{"ts":"2026-09-03T01:00:00Z","bundle":"software-engineering","subjects":["streaming-output","agent-cli-transport"],"techniques":["bounded-replay-buffers","absent-status-passthrough"],"deviations":0}
+{"ts":"2026-09-03T02:00:00Z","bundle":"software-engineering","subjects":["client-state","observability-telemetry","pipeline-dag"],"techniques":["singleton-lifecycle","bounded-replay-buffers","absent-status-passthrough"],"deviations":1}
+{"ts":"2026-09-03T08:00:00Z","bundle":"software-engineering","subjects":["companion-identity","companion-runtime","agent-memory"],"techniques":["absent-status-passthrough"],"deviations":2}
+{"ts":"2026-09-03T09:00:00Z","bundle":"software-engineering","subjects":["paginated-list-query","trace-rollup-and-attribution"],"techniques":["absent-status-passthrough"],"deviations":1}
 {"ts": "2026-09-04T21:19:19Z", "bundle": "software-engineering", "subjects": ["deployment-contract", "cicd-monitoring"], "techniques": ["liveness-scoped-polling", "remote-action-consent", "deployment-history"], "deviations": 2}
 {"ts": "2026-09-04T21:32:12Z", "bundle": "software-engineering", "subjects": ["wizard-flows", "mcp-tools"], "techniques": [], "deviations": 0}
