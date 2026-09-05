@@ -9,6 +9,11 @@ interface PersonaOverviewToolbarProps {
   onSearchChange: (value: string) => void;
   view: AgentListViewConfig;
   onViewChange: (next: AgentListViewConfig) => void;
+  /** Home-team filter id from the drop rail; `null` when unfiltered. */
+  groupFilter?: string | null;
+  /** Display name for `groupFilter` (team name, or the "no team" label). */
+  groupFilterLabel?: string | null;
+  onClearGroupFilter?: () => void;
 }
 
 interface Chip {
@@ -29,6 +34,9 @@ export function PersonaOverviewToolbar({
   onSearchChange,
   view,
   onViewChange,
+  groupFilter = null,
+  groupFilterLabel = null,
+  onClearGroupFilter,
 }: PersonaOverviewToolbarProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +92,17 @@ export function PersonaOverviewToolbar({
       label: t.agents.filters.favorites,
       tone: 'amber',
       onClear: () => onViewChange({ ...view, favoriteOnly: false }),
+    });
+  }
+  // The home team narrows the roster like any other filter, so it gets a chip
+  // like any other filter. Without one, a team filter was invisible: the strip
+  // showed nothing, and the only way back to the full roster was to find the
+  // drop rail again.
+  if (groupFilter !== null && groupFilterLabel && onClearGroupFilter) {
+    chips.push({
+      key: 'group',
+      label: groupFilterLabel,
+      onClear: onClearGroupFilter,
     });
   }
   if (search.trim()) {

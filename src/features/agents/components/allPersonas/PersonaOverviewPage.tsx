@@ -9,7 +9,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
+import { DEFAULT_VIEW_CONFIG, hasActiveListFilter, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
@@ -124,6 +124,14 @@ export default function PersonaOverviewPage() {
     [teams],
   );
   const addToast = useToastStore((s) => s.addToast);
+  // Label for the home-team chip. `'__ungrouped__'` is the sentinel the drop
+  // rail and the filter pipeline share; a team whose row has not loaded yet
+  // falls back to nothing so the chip never renders a raw id.
+  const groupFilterLabel = useMemo(() => {
+    if (groupFilter === null) return null;
+    if (groupFilter === '__ungrouped__') return t.agents.persona_list.batch_move_to_ungrouped;
+    return teamNameById.get(groupFilter) ?? null;
+  }, [groupFilter, teamNameById, t.agents.persona_list.batch_move_to_ungrouped]);
   const handleBatchMoveToGroup = useCallback(
     async (homeTeamId: string | null) => {
       const ids = [...selectedIds];
@@ -199,16 +207,15 @@ export default function PersonaOverviewPage() {
       : { ...prev, sortKey: key, sortDirection: 'asc' });
   }, []);
 
-  const hasActiveFilter =
-    view.statusFilter !== 'all' ||
-    view.healthFilter !== 'all' ||
-    view.connectorFilter !== 'all' ||
-    view.favoriteOnly ||
-    search.trim().length > 0;
+  // One definition of "is anything narrowing the roster", shared with the
+  // toolbar's chip strip. It counts `groupFilter`, which the filter pipeline
+  // has always applied and this check never asked about.
+  const hasActiveFilter = hasActiveListFilter(view, search, groupFilter);
 
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
     setSearch('');
+    setGroupFilter(null);
   }, []);
 
   const columns = usePersonaColumns({
@@ -260,7 +267,15 @@ export default function PersonaOverviewPage() {
             ]}
           />
           {pageTab === 'personas' && (
-            <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
+            <PersonaOverviewToolbar
+              search={search}
+              onSearchChange={setSearch}
+              view={view}
+              onViewChange={setView}
+              groupFilter={groupFilter}
+              groupFilterLabel={groupFilterLabel}
+              onClearGroupFilter={() => setGroupFilter(null)}
+            />
           )}
         </div>
 
