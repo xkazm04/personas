@@ -30,7 +30,7 @@ interface Props {
 const TRIGGER_CASCADE_ROWS = 14;
 
 export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false, onRefresh }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ds = t.deployment.schedules;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
@@ -119,7 +119,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <SectionHeading className="typo-caption">{ds.header.replace('{count}', String(triggers.length))}</SectionHeading>
+        <SectionHeading className="typo-caption">{tx(ds.header, { count: triggers.length })}</SectionHeading>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
