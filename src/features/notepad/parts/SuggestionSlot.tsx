@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { FilePlus2, HelpCircle, Pencil, Sparkles } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -48,6 +49,7 @@ const KIND_META: Record<
  */
 function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boolean }) {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
   const { Icon, labelKey } = KIND_META[row.kind];
   const label = t.notepad[labelKey];
   const [editing, setEditing] = useState<string | null>(null);
@@ -78,8 +80,16 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
   };
 
   return (
-    <div
-      className="rounded-card border border-primary/15 bg-secondary/20 px-3 py-2.5 space-y-2 animate-fade-slide-in"
+    <motion.div
+      layout={reduceMotion ? false : 'position'}
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      // Accepting a row INSERTS its text into the note; the block leaving is
+      // the confirmation that the insert happened, so it fades rather than
+      // vanishing — and the blocks below it slide up instead of jumping.
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+      className="rounded-card border border-primary/15 bg-secondary/20 px-3 py-2.5 space-y-2"
       data-testid={`notepad-suggestion-${row.rowId}`}
     >
       <div className="flex items-center gap-1.5 typo-caption text-foreground/85">
@@ -154,7 +164,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
           </Button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -189,9 +199,11 @@ export function SuggestionSlot({
         <Sparkles className="w-3 h-3" aria-hidden />
         {t.notepad.suggestions_title}
       </div>
-      {suggestions.map((row) => (
-        <SuggestionBlock key={`${row.cardId}:${row.rowId}`} row={row} readOnly={readOnly} />
-      ))}
+      <AnimatePresence initial={false}>
+        {suggestions.map((row) => (
+          <SuggestionBlock key={`${row.cardId}:${row.rowId}`} row={row} readOnly={readOnly} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

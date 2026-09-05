@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "Nouvelle section",
     "suggestion_readonly": "Cette note a été publiée — son contenu est verrouillé, les suggestions ne peuvent donc être que rejetées.",
     "suggestion_reject": "Rejeter",
-    "suggestion_save": "Appliquer"
+    "suggestion_save": "Appliquer",
+    "ask_athena_pending": "Interrogation d'Athena…",
+    "ask_athena_sent": "Athena a été interrogée. Ses suggestions apparaîtront dans cette note."
   }
 }

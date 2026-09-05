@@ -21878,6 +21878,8 @@
     "suggestion_edit_label": "Your version of this suggestion",
     "suggestion_answer_placeholder": "Answer her…",
     "suggestion_answer_send": "Send answer",
-    "suggestion_readonly": "This note has been published — its body is locked, so suggestions can only be dismissed."
+    "suggestion_readonly": "This note has been published — its body is locked, so suggestions can only be dismissed.",
+    "ask_athena_pending": "Asking Athena…",
+    "ask_athena_sent": "Asked Athena. Her suggestions land in this note."
   }
 }

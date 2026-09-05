@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "Bagian baru",
     "suggestion_readonly": "Catatan ini telah dipublikasikan — isinya terkunci, jadi saran hanya dapat diabaikan.",
     "suggestion_reject": "Tolak",
-    "suggestion_save": "Terapkan"
+    "suggestion_save": "Terapkan",
+    "ask_athena_pending": "Menanyakan Athena…",
+    "ask_athena_sent": "Athena telah ditanya. Sarannya akan muncul di catatan ini."
   }
 }

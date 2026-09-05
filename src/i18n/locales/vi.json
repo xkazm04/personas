@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "Mục mới",
     "suggestion_readonly": "Ghi chú này đã được xuất bản — nội dung đã bị khóa, nên các đề xuất chỉ có thể bị từ chối.",
     "suggestion_reject": "Từ chối",
-    "suggestion_save": "Áp dụng"
+    "suggestion_save": "Áp dụng",
+    "ask_athena_pending": "Đang hỏi Athena…",
+    "ask_athena_sent": "Đã hỏi Athena. Gợi ý của cô ấy sẽ xuất hiện trong ghi chú này."
   }
 }

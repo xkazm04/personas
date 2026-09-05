@@ -5,12 +5,20 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
+import { prefetchNotepadHost } from './notepadHostChunk';
+
 /**
  * Footer toggle for the notepad layer.
  *
  * Ships in every build (unlike the DEV-gated fleet cluster beside it): a
  * scratch note is not dev tooling. Raising it is a LAYER, not a navigation —
  * one click to jot, one to close, and the page underneath never moved.
+ *
+ * Pointer-over and focus warm the overlay chunk. Hover is the earliest honest
+ * signal of intent this control has, and it buys the ~100-200 ms of fetch +
+ * evaluate that would otherwise sit between the click and the first painted
+ * frame; `prefetchNotepadHost` is idempotent, so a hovered-but-never-clicked
+ * icon costs exactly one import and never more.
  */
 export default function NotepadFooterIcon() {
   const open = useSystemStore((s) => s.notepadOpen);
@@ -29,6 +37,8 @@ export default function NotepadFooterIcon() {
       <button
         type="button"
         onClick={handleClick}
+        onPointerEnter={prefetchNotepadHost}
+        onFocus={prefetchNotepadHost}
         data-testid="footer-notepad"
         aria-label={label}
         aria-pressed={open}

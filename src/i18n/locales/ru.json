@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "Новый раздел",
     "suggestion_readonly": "Эта заметка опубликована — её текст заблокирован, предложения можно только отклонить.",
     "suggestion_reject": "Отклонить",
-    "suggestion_save": "Применить"
+    "suggestion_save": "Применить",
+    "ask_athena_pending": "Спрашиваем Афину…",
+    "ask_athena_sent": "Афина ответила. Её предложения появятся в этой заметке."
   }
 }

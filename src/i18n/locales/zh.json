@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "新建章节",
     "suggestion_readonly": "该笔记已发布，正文已锁定，建议只能被驳回。",
     "suggestion_reject": "驳回",
-    "suggestion_save": "应用"
+    "suggestion_save": "应用",
+    "ask_athena_pending": "正在询问雅典娜…",
+    "ask_athena_sent": "已询问雅典娜。她的建议将出现在这条笔记中。"
   }
 }

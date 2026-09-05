@@ -70,5 +70,7 @@
   "suggestion_kind_section": "नया अनुभाग",
   "suggestion_readonly": "यह नोट प्रकाशित हो चुका है — इसका मुख्य भाग लॉक है, इसलिए सुझावों को केवल खारिज किया जा सकता है।",
   "suggestion_reject": "अस्वीकारें",
-  "suggestion_save": "लागू करें"
+  "suggestion_save": "लागू करें",
+  "ask_athena_pending": "एथेना से पूछा जा रहा है…",
+  "ask_athena_sent": "एथेना से पूछा जा चुका है। उसके सुझाव इसी नोट में दिखाई देंगे।"
 }

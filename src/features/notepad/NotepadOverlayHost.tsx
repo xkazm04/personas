@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NotepadText, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -81,6 +82,7 @@ interface PendingDelete {
  */
 export default function NotepadOverlayHost() {
   const { t, tx } = useTranslation();
+  const reduceMotion = useReducedMotion();
   const setOpen = useSystemStore((s) => s.notepadSetOpen);
   const activeId = useSystemStore((s) => s.notepadActiveNoteId);
   const setActiveNote = useSystemStore((s) => s.notepadSetActiveNote);
@@ -195,13 +197,21 @@ export default function NotepadOverlayHost() {
   const showEmpty = loaded && !loading && notes.length === 0;
 
   return createPortal(
-    <div
+    <motion.div
       ref={rootRef}
       role="dialog"
       aria-modal="true"
       aria-label={t.notepad.overlay_label}
       data-testid="notepad-overlay"
-      className="fixed inset-0 bottom-8 z-[200] flex flex-col bg-background animate-fade-slide-in"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduceMotion ? 0 : 0.14, ease: 'easeOut' }}
+      // TOP OFFSET, not `inset-0`: the title bar is the app's own chrome and
+      // stays reachable while the pad is up (the window controls live there).
+      // `--titlebar-height` is the shell's owned measure of it — the same one
+      // PersonaMonitor and the notification drawer anchor to, so all three
+      // agree instead of each carrying its own guess.
+      className="fixed inset-x-0 bottom-8 top-[var(--titlebar-height,40px)] z-[200] flex flex-col bg-background"
     >
       <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
         <span className="flex items-center gap-2 typo-caption text-foreground/60">
@@ -264,14 +274,28 @@ export default function NotepadOverlayHost() {
           onOpenArchive={() => setArchiveOpen(true)}
           panel={
             active ? (
-              <Body
-                note={active}
-                onPatch={(patch) => patchNote(active.id, patch)}
-                readOnly={active.status !== 'draft'}
-                project={activeProject}
-                suggestions={suggestions}
-                actions={noteActionsFor(active, activeProject)}
-              />
+              // Keyed on the note AND the layout, so switching either crosses
+              // a fade rather than snapping. Never keyed on the note's TEXT —
+              // that would re-mount the editor on every keystroke.
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={`${variant}:${active.id}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.12, ease: 'easeOut' }}
+                  className="flex-1 min-h-0 flex flex-col"
+                >
+                  <Body
+                    note={active}
+                    onPatch={(patch) => patchNote(active.id, patch)}
+                    readOnly={active.status !== 'draft'}
+                    project={activeProject}
+                    suggestions={suggestions}
+                    actions={noteActionsFor(active, activeProject)}
+                  />
+                </motion.div>
+              </AnimatePresence>
             ) : undefined
           }
         />
@@ -293,6 +317,7 @@ export default function NotepadOverlayHost() {
             project={activeProject}
             onSelectProject={(project) => setProject(active.id, project.id)}
             actions={noteActionsFor(active, activeProject)}
+            suggestionCount={suggestions.length}
           />
         </>
       ) : (
@@ -332,7 +357,7 @@ export default function NotepadOverlayHost() {
           onCancel={() => setPendingDelete(null)}
         />
       )}
-    </div>,
+    </motion.div>,
     document.body,
   );
 }

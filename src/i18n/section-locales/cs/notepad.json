@@ -70,5 +70,7 @@
   "suggestion_kind_section": "Nová sekce",
   "suggestion_readonly": "Tato poznámka byla publikována — její text je uzamčen, návrhy tedy lze pouze odmítnout.",
   "suggestion_reject": "Odmítnout",
-  "suggestion_save": "Použít"
+  "suggestion_save": "Použít",
+  "ask_athena_pending": "Ptám se Athény…",
+  "ask_athena_sent": "Athéna byla dotázána. Její návrhy se objeví přímo v této poznámce."
 }

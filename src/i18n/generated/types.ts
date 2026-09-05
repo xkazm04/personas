@@ -21885,5 +21885,7 @@ export type Translations = {
     suggestion_answer_placeholder: string;
     suggestion_answer_send: string;
     suggestion_readonly: string;
+    ask_athena_pending: string;
+    ask_athena_sent: string;
   };
 };

@@ -20,6 +20,12 @@ interface DevToolsProjectDropdownProps {
   placeholder?: string;
   /** Additional classes on the root container. */
   className?: string;
+  /** Render each project's root path beside its name. On by default — the path
+   *  is what tells two same-named repos apart. Turn it OFF in a narrow trigger
+   *  (the notepad's dispatch bar is 16rem wide): a path that does not fit is
+   *  not disambiguation, it is a truncated string pushing the name out of view.
+   */
+  showPath?: boolean;
 }
 
 /**
@@ -35,6 +41,7 @@ export function DevToolsProjectDropdown({
   status,
   placeholder: placeholderProp,
   className,
+  showPath = true,
 }: DevToolsProjectDropdownProps) {
   const { t } = useTranslation();
   const placeholder = placeholderProp ?? t.shared.devtools_select_project;
@@ -83,6 +90,10 @@ export function DevToolsProjectDropdown({
     <Listbox
       className={className}
       portal
+      // The trigger can sit in a bottom action bar (the notepad's dispatch
+      // rail), where a menu anchored below it renders past the window edge.
+      flipMenu
+      menuMaxHeight={300}
       itemCount={projects.length}
       onSelectFocused={handleSelect}
       ariaLabel="Select DevTools project"
@@ -104,10 +115,10 @@ export function DevToolsProjectDropdown({
             ) : error ? (
               <span className="text-rose-400/80 typo-caption">{t.shared.devtools_load_failed}</span>
             ) : selected ? (
-              <div className="min-w-0">
-                <span className="font-medium">{selected.name}</span>
-                {selected.root_path && (
-                  <span className="text-foreground ml-2 typo-caption truncate">
+              <div className="min-w-0 flex items-baseline gap-2">
+                <span className="font-medium truncate">{selected.name}</span>
+                {showPath && selected.root_path && (
+                  <span className="text-foreground typo-caption truncate">
                     {selected.root_path}
                   </span>
                 )}
@@ -185,13 +196,13 @@ export function DevToolsProjectDropdown({
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        {project.root_path && (
+                        {showPath && project.root_path && (
                           <span className="typo-caption text-foreground truncate">
                             {project.root_path}
                           </span>
                         )}
                         {project.tech_stack && (
-                          <span className="text-[10px] text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
+                          <span className="typo-caption text-foreground bg-secondary/50 px-1.5 py-0.5 rounded-interactive">
                             {project.tech_stack}
                           </span>
                         )}

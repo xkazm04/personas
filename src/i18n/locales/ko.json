@@ -21878,6 +21878,8 @@
     "suggestion_kind_section": "새 섹션",
     "suggestion_readonly": "이 노트는 게시되어 본문이 잠겨 있습니다. 제안은 거부만 가능합니다.",
     "suggestion_reject": "거부",
-    "suggestion_save": "적용"
+    "suggestion_save": "적용",
+    "ask_athena_pending": "아테나에게 묻는 중…",
+    "ask_athena_sent": "아테나에게 물었습니다. 그녀의 제안이 이 노트에 표시됩니다."
   }
 }

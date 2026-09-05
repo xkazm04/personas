@@ -70,5 +70,7 @@
   "suggestion_kind_section": "Nueva sección",
   "suggestion_readonly": "Esta nota se ha publicado — su contenido está bloqueado, así que las sugerencias solo se pueden descartar.",
   "suggestion_reject": "Rechazar",
-  "suggestion_save": "Aplicar"
+  "suggestion_save": "Aplicar",
+  "ask_athena_pending": "Preguntando a Athena…",
+  "ask_athena_sent": "Se consultó a Athena. Sus sugerencias aparecerán en esta nota."
 }

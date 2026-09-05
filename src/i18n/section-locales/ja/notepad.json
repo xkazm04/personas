@@ -70,5 +70,7 @@
   "suggestion_kind_section": "新しいセクション",
   "suggestion_readonly": "このノートは公開済みのため本文はロックされています。提案は却下のみ可能です。",
   "suggestion_reject": "却下",
-  "suggestion_save": "適用"
+  "suggestion_save": "適用",
+  "ask_athena_pending": "アテナに質問中…",
+  "ask_athena_sent": "アテナに質問しました。彼女からの提案はこのノートに表示されます。"
 }
