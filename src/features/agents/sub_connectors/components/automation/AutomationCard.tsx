@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
@@ -88,11 +89,10 @@ export function AutomationCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {automation.deploymentStatus === 'active' && (
-            <button type="button" onClick={() => onTest(automation.id)} disabled={isTesting}
-              title={isTesting ? 'Test is already running' : undefined}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
-              {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
-            </button>
+            <Button variant="secondary" size="sm" loading={isTesting} disabled={isTesting}
+              icon={<Activity className="w-3 h-3" />} onClick={() => onTest(automation.id)}>
+              {t.agents.connectors.auto_test}
+            </Button>
           )}
           {automation.deploymentStatus === 'draft' && (
             <button type="button" onClick={() => onEdit(automation.id)}

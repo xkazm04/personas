@@ -1,6 +1,6 @@
 import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -142,10 +142,10 @@ export function ConnectorsSection({
           </>
         )}
         trailing={testableCount > 0 ? (
-          <button type="button" onClick={onTestAll} disabled={testingAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
-            {testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />} {t.agents.connectors.st_test_all}
-          </button>
+          <Button variant="secondary" size="sm" loading={testingAll} disabled={testingAll}
+            icon={<RefreshCw className="w-3 h-3" />} onClick={onTestAll}>
+            {t.agents.connectors.st_test_all}
+          </Button>
         ) : undefined}
       />
       {roleGroups.length === 0 && healthFilter && onHealthFilterChange ? (

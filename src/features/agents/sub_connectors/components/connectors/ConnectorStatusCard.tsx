@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { STATUS_CONFIG, getStatusKey } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -73,10 +73,10 @@ export function ConnectorStatusCard({
           )}
           {status.credentialId ? (
             <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
-              <button type="button" onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.st_test}
-              </button>
+              <Button variant="secondary" size="sm" loading={status.testing} disabled={status.testing}
+                icon={<Activity className="w-3 h-3" />} onClick={() => onTest(status.name, status.credentialId!)}>
+                {t.agents.connectors.st_test}
+              </Button>
             </Tooltip>
           ) : (
             <>
