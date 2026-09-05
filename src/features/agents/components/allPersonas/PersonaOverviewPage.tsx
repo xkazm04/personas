@@ -134,7 +134,9 @@ export default function PersonaOverviewPage() {
         try {
           await applyPersonaOp(id, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
           ok += 1;
-        } catch {
+        } catch (err) {
+          // The partial toast reports the count; the breadcrumb keeps the cause.
+          silentCatch('PersonaOverviewPage:batchMoveToGroup')(err);
           failed += 1;
         }
       }
