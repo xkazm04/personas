@@ -625,12 +625,6 @@ export type Translations = {
     usage_unit_hour: string;
     usage_unit_minute: string;
     usage_under_minute: string;
-    usage_plan_pro: string;
-    usage_plan_max: string;
-    usage_plan_max_5x: string;
-    usage_plan_max_20x: string;
-    usage_plan_team: string;
-    usage_plan_enterprise: string;
     usage_as_of: string;
     grid_chat_bubble_aria: string;
     grid_chat_unseen: string;

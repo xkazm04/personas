@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
 import {
-  formatCountdown, meterTone, orderWindows, pace, planKey, windowProgress,
+  formatCountdown, meterTone, orderWindows, pace, windowProgress,
 } from '../usageModel';
 
 const H = 3_600_000;
@@ -19,23 +19,6 @@ describe('meterTone', () => {
     expect(meterTone(75)).toBe('warning');
     expect(meterTone(90)).toBe('error');
     expect(meterTone(100)).toBe('error');
-  });
-});
-
-describe('planKey', () => {
-  it('prefers the tier when it names the Max multiplier', () => {
-    expect(planKey('max', 'default_claude_max_20x')).toBe('max_20x');
-    expect(planKey('max', 'default_claude_max_5x')).toBe('max_5x');
-  });
-  it('falls back to the subscription type', () => {
-    expect(planKey('max', null)).toBe('max');
-    expect(planKey('pro', 'default_claude_pro')).toBe('pro');
-    expect(planKey('team', null)).toBe('team');
-    expect(planKey('enterprise', null)).toBe('enterprise');
-  });
-  it('says nothing for an unknown plan', () => {
-    expect(planKey(null, null)).toBeNull();
-    expect(planKey('free', 'weird')).toBeNull();
   });
 });
 

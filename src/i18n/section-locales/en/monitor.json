@@ -618,12 +618,6 @@
   "usage_unit_hour": "h",
   "usage_unit_minute": "m",
   "usage_under_minute": "<1m",
-  "usage_plan_pro": "Pro",
-  "usage_plan_max": "Max",
-  "usage_plan_max_5x": "Max 5×",
-  "usage_plan_max_20x": "Max 20×",
-  "usage_plan_team": "Team",
-  "usage_plan_enterprise": "Enterprise",
   "usage_as_of": "as of",
   "grid_chat_bubble_aria": "{name} says: {text}",
   "grid_chat_unseen": "{count} new in channel"

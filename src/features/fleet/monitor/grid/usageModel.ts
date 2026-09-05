@@ -29,26 +29,6 @@ export function meterTone(pct: number): MeterTone {
   return 'ok';
 }
 
-/** The plan family the strip can name, or `null` for "say nothing". */
-export type PlanKey = 'pro' | 'max' | 'max_5x' | 'max_20x' | 'team' | 'enterprise';
-
-/**
- * Derive the plan from what the CLI stored. The rate-limit tier is the more
- * specific of the two (`default_claude_max_20x` says which Max), so it wins
- * when it can be read; the subscription type is the fallback.
- */
-export function planKey(subscriptionType: string | null, rateLimitTier: string | null): PlanKey | null {
-  const tier = (rateLimitTier ?? '').toLowerCase();
-  if (tier.includes('max_20x')) return 'max_20x';
-  if (tier.includes('max_5x')) return 'max_5x';
-  const sub = (subscriptionType ?? '').toLowerCase();
-  if (sub === 'pro' || tier.includes('pro')) return 'pro';
-  if (sub === 'max' || tier.includes('max')) return 'max';
-  if (sub === 'team' || tier.includes('team')) return 'team';
-  if (sub === 'enterprise' || tier.includes('enterprise')) return 'enterprise';
-  return null;
-}
-
 export interface WindowProgress {
   /** Ms until the window resets, floored at 0; `null` without a reset. */
   remainingMs: number | null;

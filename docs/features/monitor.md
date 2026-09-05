@@ -95,17 +95,17 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
-**The Claude usage strip (2026-09-05).** A thin row between the board's
+**The Claude usage strip (2026-09-05).** A thin band between the board's
 header and its project columns shows how much of the signed-in Claude
-subscription this machine has burned: one meter per rolling rate-limit
-window — the **5-hour** session window and the **7-day** window, plus the
-per-family weekly windows (Opus, Sonnet) on accounts that report them — each
-with its utilisation, a **reset countdown**, and a **pace** verdict
-(*burning fast* / *on pace* / *under pace*: utilisation against how much of
-the window has already elapsed). A plan chip names the tier the CLI stored
-(Pro, Max 5×, Max 20×, Team, Enterprise). Meters turn warning at 75% and
-error at 90%, and every non-ok state carries an icon and a label, never
-colour alone. The source is Anthropic's OAuth usage endpoint — the same one
+subscription this machine has burned: one aligned row per rolling rate-limit
+window, stacked — the **5-hour** session window and the **7-day** window,
+plus the per-family weekly windows (Opus, Sonnet) on accounts that report
+them — each with its utilisation meter, percent, a **reset countdown**, and a
+**pace** glyph (a flame when utilisation runs ahead of the clock, a snowflake
+when it runs behind, a gauge when they agree; the name is in the row's
+accessible label). Nothing on the rows is hover-only. Meters turn warning at
+75% and error at 90%, and every non-ok state carries an icon and a label,
+never colour alone. The source is Anthropic's OAuth usage endpoint — the same one
 the community usage monitors opt into — read with the Claude Code login
 already on the machine (`~/.claude/.credentials.json`, or
 `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and

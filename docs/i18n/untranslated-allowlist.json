@@ -10,8 +10,6 @@
   "*:director.healing_source_badge",
   "*:mastermind.family_runners",
   "*:mastermind.score_legend",
-  "*:monitor.usage_plan_enterprise",
-  "*:monitor.usage_plan_team",
   "*:overview.athena.section_title",
   "*:overview.reports.channel_desktop",
   "*:overview.reports.channel_email",
