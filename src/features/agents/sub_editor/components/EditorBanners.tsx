@@ -69,13 +69,15 @@ interface UnsavedBannerProps {
 export function UnsavedChangesBanner({
   visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss,
 }: UnsavedBannerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <BannerPrimitive
       visible={visible}
       colorScheme="amber"
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
-      message={`${t.agents.editor_ui.unsaved_changes}${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
+      message={changedSections.length > 0
+        ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
+        : t.agents.editor.unsaved_changes_generic}
       actions={[
         <Button key="save" variant="accent" accentColor="amber" size="sm" onClick={onSaveAndSwitch}>
           {t.agents.editor.save_and_switch}

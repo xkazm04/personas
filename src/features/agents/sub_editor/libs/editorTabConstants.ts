@@ -32,9 +32,21 @@ export const TAB_LABELS: Record<string, string> = {
   model: 'Model',
 };
 
+/**
+ * Translated label for one dirty-state tab identifier. `catalog` is the
+ * `agents.editor.tabs` map (keyed with underscores, so `use-cases` reads
+ * `use_cases`). It is the one place these labels are translated, and until
+ * this resolver existed it had zero consumers while three call sites each
+ * rendered their own English: TAB_LABELS here, a capitalised id in the editor
+ * body, and a hardcoded toast in the switch guard.
+ */
+export function tabIdLabel(id: string, catalog?: Record<string, string>): string {
+  return catalog?.[id.replace(/-/g, '_')] ?? TAB_LABELS[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
+}
+
 /** Convert a list of tab IDs to human-readable labels. */
-export function tabIdsToLabels(ids: string[]): string {
-  return ids.map((id) => TAB_LABELS[id] ?? id).join(', ');
+export function tabIdsToLabels(ids: string[], catalog?: Record<string, string>): string {
+  return ids.map((id) => tabIdLabel(id, catalog)).join(', ');
 }
 
 /** Check whether a tab should show as dirty, considering both its own
