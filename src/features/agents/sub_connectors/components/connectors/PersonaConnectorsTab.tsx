@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
-import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ToolsSection } from './ToolsSection';
 import { AutomationsSection } from '../automation/AutomationsSection';
 import { AutomationSetupModal } from '../automation/AutomationSetupModal';
 import { AgentCredentialDemands } from './AgentCredentialDemands';
 import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
-import { silentCatch } from "@/lib/silentCatch";
 import { ConnectorVerificationPanel } from './ConnectorVerificationPanel';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
@@ -23,23 +21,16 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   // ONE instance, shared with the verification panel below — it used to call
   // the hook itself, so this component mounted two auto-test loops.
   const verification = useConnectorStatuses();
-  const { tools, requiredCredTypes, fetchCredentials } = verification;
+  const { tools, requiredCredTypes } = verification;
 
-  const [designOpen, setDesignOpen] = useState(false);
-  const [designInstruction, setDesignInstruction] = useState('');
   const [automationModalOpen, setAutomationModalOpen] = useState(false);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
-
-  const handleDesignComplete = () => {
-    setDesignOpen(false); setDesignInstruction('');
-    void fetchCredentials().catch(silentCatch("PersonaConnectorsTab:fetchCredentialsOnDesignComplete"));
-  };
 
   if (!selectedPersona) {
     return <div className="flex items-center justify-center py-8 text-foreground">{t.agents.connectors.ct_no_persona}</div>;
   }
 
-  const connectorNames = selectedPersona ? extractConnectorNames(selectedPersona, 10) : [];
+  const connectorNames = extractConnectorNames(selectedPersona, 10);
 
   return (
     <div className="space-y-6">
@@ -63,16 +54,11 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       <AgentCredentialDemands />
       <ConnectorVerificationPanel verification={verification} onMissingCountChange={onMissingCountChange} />
       <ToolsSection tools={tools} />
-      <AutomationsSection automations={selectedPersona?.automations ?? []} onAdd={() => setAutomationModalOpen(true)} onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }} />
-      {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (
+      <AutomationsSection automations={selectedPersona.automations ?? []} onAdd={() => setAutomationModalOpen(true)} onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }} />
+      {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona.automations ?? []).length === 0 && (
         <EmptyState variant="connectors-empty" />
       )}
       <AutomationSetupModal open={automationModalOpen} personaId={selectedPersona.id} onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} editAutomationId={editingAutomationId} />
-      {designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-modal overflow-hidden">
-          <CredentialDesignModal open={designOpen} embedded initialInstruction={designInstruction} onClose={() => { setDesignOpen(false); setDesignInstruction(''); }} onComplete={handleDesignComplete} />
-        </div>
-      )}
     </div>
   );
 }
