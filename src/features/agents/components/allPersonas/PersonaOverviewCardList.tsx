@@ -7,6 +7,7 @@ import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta'
 import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
@@ -19,7 +20,11 @@ async function copyDescription(text: string, t: { description_copied: string; co
   try {
     await copyText(text);
     addToast(t.description_copied, 'success');
-  } catch {
+  } catch (err) {
+    // The toast tells the user it failed; nothing told anyone WHY. A clipboard
+    // write can fail for reasons worth seeing (permission policy, a headless
+    // webview, a document that lost focus).
+    silentCatch('PersonaOverviewCardList:copyDescription')(err);
     addToast(t.copy_failed, 'error');
   }
 }
