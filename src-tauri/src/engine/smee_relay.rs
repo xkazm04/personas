@@ -27,9 +27,31 @@ use crate::db::DbPool;
 const MAX_SSE_BUFFER_BYTES: usize = 1_024 * 1_024;
 
 /// Minimum time a connection must be alive before we consider it "stable" and
-/// reset the backoff on clean disconnect. Prevents reconnect storms when the
-/// server accepts TCP then immediately closes (e.g., rate limiting).
+/// reset the backoff when it ends. Prevents reconnect storms when the server
+/// accepts TCP then immediately closes (e.g., rate limiting). The reset keys on
+/// lifetime, not on how the connection ended: a reaped idle stream ends the
+/// body cleanly, a laptop resuming from sleep ends it with a read error, and
+/// both count as stable once they lived past this threshold.
 const MIN_STABLE_CONNECTION_SECS: u64 = 30;
+
+/// First and largest reconnect delay. Read together with
+/// `MIN_STABLE_CONNECTION_SECS`: a close before the stable threshold keeps the
+/// current rung, so an origin that accepts and immediately closes is retried
+/// at most every `RECONNECT_BACKOFF_MAX`, never at `RECONNECT_BACKOFF_BASE`.
+const RECONNECT_BACKOFF_BASE: Duration = Duration::from_secs(1);
+const RECONNECT_BACKOFF_MAX: Duration = Duration::from_secs(30);
+
+/// Backoff rung to sleep before the next reconnect, given the rung in force and
+/// how long the connection that just ended lived. A stable connection resets
+/// the ladder whatever its close looked like (clean end of body or read
+/// error); a short-lived one keeps the rung whatever its close looked like.
+fn backoff_after_close(current: Duration, lived: Duration) -> Duration {
+    if lived.as_secs() >= MIN_STABLE_CONNECTION_SECS {
+        RECONNECT_BACKOFF_BASE
+    } else {
+        current
+    }
+}
 
 /// Optional shared secret for authenticating inbound smee payloads.
 ///
@@ -737,8 +759,7 @@ pub async fn run_smee_relay(
                          the GitHub webhook secret to enable HMAC verification (fail-closed)."
                     );
                 }
-                let mut backoff = Duration::from_secs(1);
-                let max_backoff = Duration::from_secs(30);
+                let mut backoff = RECONNECT_BACKOFF_BASE;
                 // Persists across reconnects so a smee history replay on the
                 // fresh connection isn't re-published (bug-hunt 2026-06-07
                 // triggers #1).
@@ -758,7 +779,7 @@ pub async fn run_smee_relay(
                         webhook_secret: webhook_secret2.clone(),
                     };
                     let connected_at = Instant::now();
-                    match relay_sse_core(
+                    let outcome = relay_sse_core(
                         &params,
                         &pool2,
                         &app2,
@@ -766,15 +787,15 @@ pub async fn run_smee_relay(
                         &cancel_for_task,
                         &mut dedup,
                     )
-                    .await
-                    {
+                    .await;
+                    // Measured once, before the arms: the reset below keys on
+                    // lifetime, not on which arm we land in.
+                    let lived = connected_at.elapsed();
+                    match outcome {
                         Ok(()) => {
                             if cancel_for_task.is_cancelled() {
                                 tracing::info!(relay_id = %relay_id2, "Smee relay disconnected for cancellation");
                                 return;
-                            }
-                            if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
-                                backoff = Duration::from_secs(1);
                             }
                         }
                         Err(e) => {
@@ -798,6 +819,7 @@ pub async fn run_smee_relay(
                             emit_status(&app2, &mut s);
                         }
                     }
+                    backoff = backoff_after_close(backoff, lived);
                     tokio::select! {
                         _ = cancel_for_task.cancelled() => {
                             tracing::info!(relay_id = %relay_id2, "Smee relay backoff interrupted by cancellation");
@@ -805,7 +827,7 @@ pub async fn run_smee_relay(
                         }
                         _ = tokio::time::sleep(backoff) => {}
                     }
-                    backoff = (backoff * 2).min(max_backoff);
+                    backoff = (backoff * 2).min(RECONNECT_BACKOFF_MAX);
 
                     // Check if relay is still active before reconnecting
                     if let Ok(urls) = smee_relay_repo::list_active_urls(&pool2) {
@@ -842,5 +864,106 @@ pub async fn run_smee_relay(
             _ = notifier.notified() => {}
             _ = tokio::time::sleep(Duration::from_secs(300)) => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod reconnect_backoff_tests {
+    //! A/B over the reconnect ladder. Policy A is the rule this loop carried
+    //! until 2026-09-05, transcribed verbatim: reset only in the `Ok` arm, i.e.
+    //! only after a clean end of body. Policy B is `backoff_after_close`. Each
+    //! case is a recorded shape from this relay's own history
+    //! (docs/harness/bug-hunt-2026-06-07/triggers-and-event-automations.md #1,
+    //! which names laptop sleep, Wi-Fi drop and smee rate-limit closes), and
+    //! the instrument is the sequence of sleeps the loop would take.
+    use super::*;
+
+    /// One iteration of the relay loop, as recorded: did `relay_sse_core`
+    /// return `Ok` (clean end of body) or `Err`, and how long did it live.
+    type Close = (bool, u64);
+
+    fn policy_a(current: Duration, clean: bool, lived: Duration) -> Duration {
+        if clean && lived.as_secs() >= MIN_STABLE_CONNECTION_SECS {
+            RECONNECT_BACKOFF_BASE
+        } else {
+            current
+        }
+    }
+
+    fn policy_b(current: Duration, _clean: bool, lived: Duration) -> Duration {
+        backoff_after_close(current, lived)
+    }
+
+    /// Replays the loop's ladder (reset, sleep, double-with-cap) and returns
+    /// the sleep taken after each close, in seconds.
+    fn replay(policy: fn(Duration, bool, Duration) -> Duration, closes: &[Close]) -> Vec<u64> {
+        let mut backoff = RECONNECT_BACKOFF_BASE;
+        let mut sleeps = Vec::new();
+        for &(clean, lived_secs) in closes {
+            backoff = policy(backoff, clean, Duration::from_secs(lived_secs));
+            sleeps.push(backoff.as_secs());
+            backoff = (backoff * 2).min(RECONNECT_BACKOFF_MAX);
+        }
+        sleeps
+    }
+
+    /// smee rate-limits: accepts the handshake, then closes within seconds.
+    /// Both policies hold the rung; the ladder climbs to the cap instead of
+    /// hammering at one second. A "reset on open" client would sleep 1s here
+    /// forever - that is the storm MIN_STABLE_CONNECTION_SECS was added for.
+    #[test]
+    fn rate_limit_accept_then_close_keeps_the_rung_under_both_policies() {
+        let closes = [
+            (true, 2),
+            (true, 1),
+            (true, 3),
+            (true, 2),
+            (true, 1),
+            (true, 2),
+        ];
+        let expected = vec![1, 2, 4, 8, 16, 30];
+        assert_eq!(replay(policy_a, &closes), expected);
+        assert_eq!(replay(policy_b, &closes), expected);
+    }
+
+    /// The reaped idle stream: after minutes of silence an intermediary ends
+    /// the body cleanly. The hand-rolled reader reconnects (the loop never
+    /// exits on `Ok`) and, the connection having been stable, starts the
+    /// ladder over. Both policies agree.
+    #[test]
+    fn stable_then_clean_close_resets_under_both_policies() {
+        let closes = [(false, 0), (false, 0), (true, 600)];
+        assert_eq!(replay(policy_a, &closes), vec![1, 2, 1]);
+        assert_eq!(replay(policy_b, &closes), vec![1, 2, 1]);
+    }
+
+    /// Laptop resumes from sleep: five handshakes fail while the network is
+    /// still down (the ladder reaches the cap), the sixth connects and lives
+    /// ten hours, then Wi-Fi drops and the read errors. Policy A never resets
+    /// on an `Err`, so the relay waits the full cap before its first retry;
+    /// policy B reads the lifetime and retries at the base.
+    #[test]
+    fn stable_then_read_error_resets_only_under_policy_b() {
+        let closes = [
+            (false, 0),
+            (false, 0),
+            (false, 0),
+            (false, 0),
+            (false, 0),
+            (false, 36_000),
+        ];
+        assert_eq!(replay(policy_a, &closes), vec![1, 2, 4, 8, 16, 30]);
+        assert_eq!(replay(policy_b, &closes), vec![1, 2, 4, 8, 16, 1]);
+    }
+
+    /// A non-2xx handshake (channel deleted, `HTTP 404`) lives zero seconds and
+    /// must never reset, or a permanently gone channel is retried at the base
+    /// forever. Both policies climb; neither has an attempt limit, which is
+    /// the deviation the registry application records.
+    #[test]
+    fn failed_handshake_never_resets() {
+        let closes = [(false, 0); 7];
+        assert_eq!(replay(policy_b, &closes), vec![1, 2, 4, 8, 16, 30, 30]);
+        assert_eq!(replay(policy_a, &closes), replay(policy_b, &closes));
     }
 }
