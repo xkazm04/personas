@@ -33,7 +33,7 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
         // Same catalog the editor body and banner read (`agents.editor.tabs`),
         // so the toast names a tab the way the user sees it instead of from a
         // second English copy that could only drift.
-        const catalog = t.agents.editor.tabs as Record<string, string>;
+        const catalog = t.agents.editor.tabs;
         let label: string = t.agents.editor.save_failed_generic;
         if (err instanceof TabSaveError) {
           label = tx(t.agents.editor.save_failed, { tabs: tabIdsToLabels(err.failedTabs, catalog) });

@@ -138,10 +138,10 @@ export function EditorBody() {
     return <EditorEmptyState />;
   }
 
-  // The i18n proxy types `tabs` as a fixed-key object; the resolver takes the
-  // open map because dirty-group ids can outrun the catalog (it falls back to
-  // the id). Same catalog the switch-guard toast reads, so the two agree.
-  const tabCatalog = t.agents.editor.tabs as Record<string, string>;
+  // Passed uncast: the resolver declares the catalog's closed shape, so a
+  // label missing from the locale files is a type error here rather than a
+  // machine token on screen. Same catalog the switch-guard toast reads.
+  const tabCatalog = t.agents.editor.tabs;
   const changedSections = allDirtyTabs.map((id) => tabIdLabel(id, tabCatalog));
 
   return (
