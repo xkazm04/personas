@@ -58,5 +58,17 @@
   "variant_journal": "জার্নাল",
   "variant_label": "লেআউট",
   "variant_split": "স্প্লিট ক্যানভাস",
-  "variant_workbench": "ওয়ার্কবেঞ্চ"
+  "variant_workbench": "ওয়ার্কবেঞ্চ",
+  "suggestion_accept": "গ্রহণ করুন",
+  "suggestion_answer_placeholder": "তাকে উত্তর দিন…",
+  "suggestion_answer_send": "উত্তর পাঠান",
+  "suggestion_cancel": "বাতিল",
+  "suggestion_edit": "সম্পাদনা",
+  "suggestion_edit_label": "এই পরামর্শের আপনার সংস্করণ",
+  "suggestion_kind_edit": "সম্পাদনা",
+  "suggestion_kind_question": "প্রশ্ন",
+  "suggestion_kind_section": "নতুন বিভাগ",
+  "suggestion_readonly": "এই নোটটি প্রকাশিত হয়েছে — এর মূল অংশ লক করা আছে, তাই পরামর্শগুলো শুধু বাতিল করা যাবে।",
+  "suggestion_reject": "প্রত্যাখ্যান",
+  "suggestion_save": "প্রয়োগ করুন"
 }

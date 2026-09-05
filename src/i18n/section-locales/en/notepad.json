@@ -58,5 +58,17 @@
   "variant_label": "Layout",
   "variant_journal": "Journal",
   "variant_workbench": "Workbench",
-  "variant_split": "Split canvas"
+  "variant_split": "Split canvas",
+  "suggestion_kind_section": "New section",
+  "suggestion_kind_edit": "Edit",
+  "suggestion_kind_question": "Question",
+  "suggestion_accept": "Accept",
+  "suggestion_edit": "Edit",
+  "suggestion_reject": "Reject",
+  "suggestion_save": "Apply",
+  "suggestion_cancel": "Cancel",
+  "suggestion_edit_label": "Your version of this suggestion",
+  "suggestion_answer_placeholder": "Answer her…",
+  "suggestion_answer_send": "Send answer",
+  "suggestion_readonly": "This note has been published — its body is locked, so suggestions can only be dismissed."
 }

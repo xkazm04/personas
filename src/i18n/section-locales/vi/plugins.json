@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Tôi có thể xem các agent, lần thực thi và bộ nhớ của bạn. Hãy hỏi bất cứ điều gì, hoặc bắt đầu với một trong những gợi ý này.",
     "welcome_title": "Tôi có thể giúp gì hôm nay?",
     "working": "Đang xử lý…",
-    "you_label": "Bạn"
+    "you_label": "Bạn",
+    "note_suggestions_accept": "Chấp nhận",
+    "note_suggestions_accepted": "Đã thêm vào ghi chú",
+    "note_suggestions_count_one": "1 đề xuất cho “{title}”",
+    "note_suggestions_count_other": "{count} đề xuất cho “{title}”",
+    "note_suggestions_empty": "Thẻ này không có đề xuất nào.",
+    "note_suggestions_heading": "Đề xuất cho ghi chú",
+    "note_suggestions_open_pad": "Mở notepad để xem chúng sẽ được áp dụng ở đâu.",
+    "note_suggestions_question_hint": "Trả lời câu này trong ghi chú, hoặc trong khung chat.",
+    "note_suggestions_reject": "Từ chối",
+    "note_suggestions_rejected": "Đã bỏ qua"
   },
   "dev_context": {
     "auto_scan": "Tự động quét",

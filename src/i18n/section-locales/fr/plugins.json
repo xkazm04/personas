@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Je vois vos agents, exécutions et mémoire. Posez-moi n’importe quelle question, ou commencez par l’une de ces options.",
     "welcome_title": "Comment puis-je vous aider aujourd’hui ?",
     "working": "Travail en cours…",
-    "you_label": "Vous"
+    "you_label": "Vous",
+    "note_suggestions_accept": "Accepter",
+    "note_suggestions_accepted": "Ajouté à la note",
+    "note_suggestions_count_one": "1 suggestion pour « {title} »",
+    "note_suggestions_count_other": "{count} suggestions pour « {title} »",
+    "note_suggestions_empty": "Cette carte ne contient aucune suggestion.",
+    "note_suggestions_heading": "Suggestions pour une note",
+    "note_suggestions_open_pad": "Ouvrez le bloc-notes pour voir où elles s'appliquent.",
+    "note_suggestions_question_hint": "Répondez à ceci dans la note, ou dans le chat.",
+    "note_suggestions_reject": "Rejeter",
+    "note_suggestions_rejected": "Ignoré"
   },
   "dev_context": {
     "auto_scan": "Scan auto",

@@ -60,6 +60,10 @@ export const ACTIONABLE_CHAT_CARD_KINDS = [
   'fleet_plan',
   'ship_milestone',
   'ship_goals',
+  // Not a one-click confirm: its rows are answered one at a time over minutes,
+  // and the durable row is what keeps the un-answered ones alive across the
+  // send that would otherwise wipe them.
+  'note_suggestions',
 ] as const;
 
 /** True when a card is an unresolved actionable proposal worth preserving. */

@@ -6,11 +6,15 @@ import type { NoteActions } from '../notepadActions';
 
 /**
  * One Athena suggestion attached to a note. Shape mirrors the card config in
- * `.claude/spark/notepad-contract.md` § Athena. WP3 fills the array; until
- * then every variant receives `[]` and renders its `SuggestionSlot` empty —
- * which is the point of shipping the slot now rather than a `TODO`.
+ * `.claude/spark/notepad-contract.md` § Athena. The parse from that wire shape
+ * lives at ONE boundary — `athena/noteSuggestions.ts` — because the card config
+ * is snake_case JSON hand-built in Rust and has no ts-rs binding by design.
  */
 export interface NoteSuggestion {
+  /** Durable `companion_chat_card` row id. A suggestion is addressed by the
+   *  PAIR (`cardId`, `rowId`) — one note can carry rows from two cards, and the
+   *  resolve command needs both. */
+  cardId: string;
   rowId: string;
   kind: 'section' | 'edit' | 'question';
   anchor: { after_heading: string } | null;

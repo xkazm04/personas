@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "Je vois vos agents, exécutions et mémoire. Posez-moi n’importe quelle question, ou commencez par l’une de ces options.",
       "welcome_title": "Comment puis-je vous aider aujourd’hui ?",
       "working": "Travail en cours…",
-      "you_label": "Vous"
+      "you_label": "Vous",
+      "note_suggestions_accept": "Accepter",
+      "note_suggestions_accepted": "Ajouté à la note",
+      "note_suggestions_count_one": "1 suggestion pour « {title} »",
+      "note_suggestions_count_other": "{count} suggestions pour « {title} »",
+      "note_suggestions_empty": "Cette carte ne contient aucune suggestion.",
+      "note_suggestions_heading": "Suggestions pour une note",
+      "note_suggestions_open_pad": "Ouvrez le bloc-notes pour voir où elles s'appliquent.",
+      "note_suggestions_question_hint": "Répondez à ceci dans la note, ou dans le chat.",
+      "note_suggestions_reject": "Rejeter",
+      "note_suggestions_rejected": "Ignoré"
     },
     "dev_context": {
       "auto_scan": "Scan auto",
@@ -21819,6 +21829,18 @@
     "variant_journal": "Journal",
     "variant_label": "Disposition",
     "variant_split": "Vue partagée",
-    "variant_workbench": "Atelier"
+    "variant_workbench": "Atelier",
+    "suggestion_accept": "Accepter",
+    "suggestion_answer_placeholder": "Répondez-lui…",
+    "suggestion_answer_send": "Envoyer la réponse",
+    "suggestion_cancel": "Annuler",
+    "suggestion_edit": "Modifier",
+    "suggestion_edit_label": "Votre version de cette suggestion",
+    "suggestion_kind_edit": "Modification",
+    "suggestion_kind_question": "Interrogation",
+    "suggestion_kind_section": "Nouvelle section",
+    "suggestion_readonly": "Cette note a été publiée — son contenu est verrouillé, les suggestions ne peuvent donc être que rejetées.",
+    "suggestion_reject": "Rejeter",
+    "suggestion_save": "Appliquer"
   }
 }

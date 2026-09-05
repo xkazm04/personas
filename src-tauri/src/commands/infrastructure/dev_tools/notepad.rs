@@ -149,3 +149,27 @@ pub fn notepad_ingest_runs(
     };
     Ok(sweep_notepad_runs_core(&state.db, &mut emit))
 }
+
+/// Accept, edit or reject ONE row of an Athena `note_suggestions` card.
+///
+/// There is no batch confirm and deliberately so — see the header of
+/// `note_suggestions.rs`. Async because it does rusqlite work on both pools and
+/// a sync command would do it on the IPC worker thread.
+#[tauri::command]
+pub async fn notepad_resolve_suggestion(
+    state: State<'_, Arc<AppState>>,
+    card_id: String,
+    row_id: String,
+    outcome: String,
+    body_md: Option<String>,
+) -> Result<DevNote, AppError> {
+    crate::ipc_auth::require_auth(&state).await?;
+    super::note_suggestions::resolve_note_suggestion_core(
+        &state.db,
+        &state.user_db,
+        &card_id,
+        &row_id,
+        &outcome,
+        body_md.as_deref(),
+    )
+}

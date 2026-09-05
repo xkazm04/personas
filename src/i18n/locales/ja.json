@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "エージェント、実行状況、メモリを確認できます。何でもお尋ねください。または以下からお選びください。",
       "welcome_title": "今日はどのようにお手伝いできますか？",
       "working": "作業中…",
-      "you_label": "あなた"
+      "you_label": "あなた",
+      "note_suggestions_accept": "承認",
+      "note_suggestions_accepted": "ノートに追加しました",
+      "note_suggestions_count_one": "「{title}」への提案が1件あります",
+      "note_suggestions_count_other": "「{title}」への提案が{count}件あります",
+      "note_suggestions_empty": "このカードに提案はありません。",
+      "note_suggestions_heading": "ノートへの提案",
+      "note_suggestions_open_pad": "ノートパッドを開いて反映先を確認してください。",
+      "note_suggestions_question_hint": "ノート内、またはチャットでこれに答えてください。",
+      "note_suggestions_reject": "却下",
+      "note_suggestions_rejected": "却下しました"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",
@@ -21819,6 +21829,18 @@
     "variant_journal": "ジャーナル",
     "variant_label": "レイアウト",
     "variant_split": "分割キャンバス",
-    "variant_workbench": "ワークベンチ"
+    "variant_workbench": "ワークベンチ",
+    "suggestion_accept": "承認",
+    "suggestion_answer_placeholder": "彼女に答える…",
+    "suggestion_answer_send": "回答を送信",
+    "suggestion_cancel": "キャンセル",
+    "suggestion_edit": "編集",
+    "suggestion_edit_label": "この提案に対するあなたの編集内容",
+    "suggestion_kind_edit": "編集",
+    "suggestion_kind_question": "質問",
+    "suggestion_kind_section": "新しいセクション",
+    "suggestion_readonly": "このノートは公開済みのため本文はロックされています。提案は却下のみ可能です。",
+    "suggestion_reject": "却下",
+    "suggestion_save": "適用"
   }
 }

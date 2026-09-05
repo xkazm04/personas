@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "Ich sehe Ihre Agenten, Ausführungen und den Speicher. Stellen Sie eine Frage oder beginnen Sie mit einem dieser Vorschläge.",
       "welcome_title": "Wie kann ich heute helfen?",
       "working": "Arbeitet…",
-      "you_label": "Sie"
+      "you_label": "Sie",
+      "note_suggestions_accept": "Annehmen",
+      "note_suggestions_accepted": "Zur Notiz hinzugefügt",
+      "note_suggestions_count_one": "1 Vorschlag für „{title}“",
+      "note_suggestions_count_other": "{count} Vorschläge für „{title}“",
+      "note_suggestions_empty": "Diese Karte enthält keine Vorschläge.",
+      "note_suggestions_heading": "Vorschläge für eine Notiz",
+      "note_suggestions_open_pad": "Öffnen Sie den Notizblock, um zu sehen, wo diese landen.",
+      "note_suggestions_question_hint": "Beantworten Sie dies in der Notiz oder im Chat.",
+      "note_suggestions_reject": "Ablehnen",
+      "note_suggestions_rejected": "Verworfen"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",
@@ -21819,6 +21829,18 @@
     "variant_journal": "Journal",
     "variant_label": "Layout",
     "variant_split": "Geteilte Ansicht",
-    "variant_workbench": "Werkbank"
+    "variant_workbench": "Werkbank",
+    "suggestion_accept": "Annehmen",
+    "suggestion_answer_placeholder": "Antworte ihr…",
+    "suggestion_answer_send": "Antwort senden",
+    "suggestion_cancel": "Abbrechen",
+    "suggestion_edit": "Bearbeiten",
+    "suggestion_edit_label": "Ihre Version dieses Vorschlags",
+    "suggestion_kind_edit": "Bearbeitung",
+    "suggestion_kind_question": "Frage",
+    "suggestion_kind_section": "Neuer Abschnitt",
+    "suggestion_readonly": "Diese Notiz wurde veröffentlicht — ihr Inhalt ist gesperrt, daher können Vorschläge nur verworfen werden.",
+    "suggestion_reject": "Ablehnen",
+    "suggestion_save": "Übernehmen"
   }
 }

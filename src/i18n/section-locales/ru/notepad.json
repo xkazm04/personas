@@ -58,5 +58,17 @@
   "variant_journal": "Журнал",
   "variant_label": "Раскладка",
   "variant_split": "Разделённый холст",
-  "variant_workbench": "Верстак"
+  "variant_workbench": "Верстак",
+  "suggestion_accept": "Принять",
+  "suggestion_answer_placeholder": "Ответить ей…",
+  "suggestion_answer_send": "Отправить ответ",
+  "suggestion_cancel": "Отмена",
+  "suggestion_edit": "Изменить",
+  "suggestion_edit_label": "Ваш вариант этого предложения",
+  "suggestion_kind_edit": "Изменение",
+  "suggestion_kind_question": "Вопрос",
+  "suggestion_kind_section": "Новый раздел",
+  "suggestion_readonly": "Эта заметка опубликована — её текст заблокирован, предложения можно только отклонить.",
+  "suggestion_reject": "Отклонить",
+  "suggestion_save": "Применить"
 }

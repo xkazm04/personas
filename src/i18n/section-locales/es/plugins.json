@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Puedo ver sus agentes, ejecuciones y memoria. Pregúnteme lo que quiera, o empiece con una de estas opciones.",
     "welcome_title": "¿En qué puedo ayudarte hoy?",
     "working": "Trabajando…",
-    "you_label": "Tú"
+    "you_label": "Tú",
+    "note_suggestions_accept": "Aceptar",
+    "note_suggestions_accepted": "Añadido a la nota",
+    "note_suggestions_count_one": "1 sugerencia para “{title}”",
+    "note_suggestions_count_other": "{count} sugerencias para “{title}”",
+    "note_suggestions_empty": "Esta tarjeta no contiene sugerencias.",
+    "note_suggestions_heading": "Sugerencias para una nota",
+    "note_suggestions_open_pad": "Abre el bloc de notas para ver dónde se aplican.",
+    "note_suggestions_question_hint": "Responde esto en la nota o en el chat.",
+    "note_suggestions_reject": "Rechazar",
+    "note_suggestions_rejected": "Descartado"
   },
   "dev_context": {
     "auto_scan": "Auto-Escaneo",

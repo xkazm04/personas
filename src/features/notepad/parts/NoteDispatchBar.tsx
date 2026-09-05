@@ -47,9 +47,13 @@ export function NoteDispatchBar({ note, onSelectProject, actions }: NoteDispatch
   const run = async (fn: () => Promise<{ ok: boolean; pending?: boolean }>) => {
     const result = await fn();
     if (!result.ok && result.pending) {
-      // WP3 has not landed the real dispatch yet. Say so plainly rather than
-      // letting the press look like it did something.
-      useToastStore.getState().addToast(t.notepad.dispatch_not_wired, 'warning');
+      // A precondition the bar ALREADY states on the disabled control. Reaching
+      // here at all means the note changed under the click (the sweeper flipped
+      // its status, another surface unmapped its project), so the honest thing
+      // is the same sentence the tooltip carries — not a second vocabulary for
+      // the same refusal. A real failure never lands here: `notepadActions`
+      // reports those through `toastCatch`, which also reaches Sentry.
+      useToastStore.getState().addToast(blockedHint, 'warning');
     }
   };
 

@@ -62,23 +62,58 @@ a free-form `report.md`. The fleet ticker sweeps those files every 30 seconds
 Completed; a failed run leaves the note In progress with the failure in its
 result. The CLI never writes the Personas database.
 
+The dispatch goes through `companion_dispatch_fleet_plan`, which returns a
+message rather than a session id, so the note records its dispatch key
+(`note:<note-id>`) and not the session. The session is bound back to the note
+when it reaches Running (the Fleet session-state listener matches the session
+label `note:<first 8 of the id>` against the pad), so the pad shows In progress
+within a second of the terminal starting; the run-artifact sweeper is
+authoritative for everything after that.
+
 ## Turn into goals
 
 Sends Athena a prompt that points her at the note (she reads it with the
-`describe_note` op) and asks her to propose goals for the project's open
-milestone through her existing `show_ship_goals` card — the only door that
-creates goals. She may ask clarifying questions in chat first. Proposing the
-card moves the note to In progress; pressing **Create** on the card creates the
-goals and moves the note to Completed with the goal ids recorded.
+`describe_note` op, which also tells her the project's open milestone id) and
+asks her to propose goals through her existing `show_ship_goals` card, the only
+door that creates goals. Pressing the button moves the note to **Published**
+immediately; **proposing** the card moves it to **In progress**, so the button
+stops being offered while a card is already on screen and a second card cannot
+duplicate the first. Pressing **Create** on the card creates the goals, binds
+them to the milestone, and moves the note to **Completed** with the goal ids in
+its result. She may ask clarifying questions first, in chat or as `question`
+rows on a suggestions card.
+
+A note with no project, or a project with no unshipped milestone, cannot be
+decomposed; `describe_note` says so and she reports it rather than choosing a
+project for you.
 
 ## Ask Athena
 
 The **Ask Athena** button (with an optional one-line focus such as "add a risks
-section") asks her to read the note and answer with a `note_suggestions` card.
-Its rows render inside the note as inline suggestion blocks — new sections,
-edits, or questions — each with Accept / Edit / Reject; questions carry a reply
-field. Accepted text is inserted under the heading Athena anchored it to (or
-appended). The same card appears in her chat and survives restarts.
+section") asks her to read the note with `describe_note` and answer with a
+`show_note_suggestions` card. Its rows render **inside the note** as inline
+blocks at the heading each row anchors to: a suggested change to a piece of
+writing is judged next to the writing.
 
-_The Athena and Fleet sections describe the design contract; the Athena ops and
-the dispatch wiring land with the spark's third work package._
+Each row is one of three kinds:
+
+| Kind | What it is | What Accept does |
+|---|---|---|
+| **New section** | a part of the note that is not there yet | inserts the markdown |
+| **Edit** | a rewrite of something already written | inserts the markdown |
+| **Question** | something she needs answered before she can propose | **writes nothing**; it sends her your answer and closes the row |
+
+Every row is answered on its own; there is no "accept all". Accepted text lands
+after the anchored section's last line, before the next heading of the same or
+shallower depth. A row whose anchor no longer matches any heading is appended at
+the end rather than refused, so accepted text is never lost to a renamed heading.
+
+Accept and Edit only work while the note is a draft. A published note may
+already be open in a running CLI session, so its body is locked; the blocks then
+render read-only with a Reject button and say why. Asking Athena about a note
+does **not** publish it; publishing would lock the body her suggestions need.
+
+The same rows also appear in her chat as a `note_suggestions` card, where they
+can be accepted or rejected but not edited. The card is a durable row, so it
+survives a refresh and a restart, and it resolves itself once no row is left
+undecided.

@@ -58,5 +58,17 @@
   "variant_journal": "ジャーナル",
   "variant_label": "レイアウト",
   "variant_split": "分割キャンバス",
-  "variant_workbench": "ワークベンチ"
+  "variant_workbench": "ワークベンチ",
+  "suggestion_accept": "承認",
+  "suggestion_answer_placeholder": "彼女に答える…",
+  "suggestion_answer_send": "回答を送信",
+  "suggestion_cancel": "キャンセル",
+  "suggestion_edit": "編集",
+  "suggestion_edit_label": "この提案に対するあなたの編集内容",
+  "suggestion_kind_edit": "編集",
+  "suggestion_kind_question": "質問",
+  "suggestion_kind_section": "新しいセクション",
+  "suggestion_readonly": "このノートは公開済みのため本文はロックされています。提案は却下のみ可能です。",
+  "suggestion_reject": "却下",
+  "suggestion_save": "適用"
 }

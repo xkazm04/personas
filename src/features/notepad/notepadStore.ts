@@ -417,6 +417,75 @@ async function transition(id: string, status: NoteStatus, label: string): Promis
   }
 }
 
+/**
+ * Move a note through a DISPATCH transition, stamping its metadata.
+ *
+ * Unlike `archiveNote` / `restoreNote` above, this one RETHROWS. Its callers
+ * are the multi-step dispatch doors in `notepadActions.ts`, where a failed
+ * status stamp has to abort the sequence — swallowing it into a toast would
+ * leave a note that was published on disk and dispatched to Fleet while the
+ * database still calls it a draft.
+ */
+export async function setNoteStatus(
+  id: string,
+  status: NoteStatus,
+  extra?: notepadApi.SetNoteStatusExtra,
+): Promise<DevNote> {
+  await flush(id);
+  const row = await notepadApi.setNoteStatus(id, status, extra);
+  adopt(row);
+  return row;
+}
+
+/**
+ * Which note, if any, a Fleet session name belongs to.
+ *
+ * The dispatch labels a session `note:<first 8 of id>`; the single-session
+ * spawn path renders that verbatim (`athena · note:abc12345`) and the
+ * multi-session path kebabs it (`athena-note-abc12345`), so both separators are
+ * accepted. The prefix is matched against the ids the pad actually holds rather
+ * than parsed as an id, because eight characters is not a uuid and a lookup by
+ * prefix is the only honest way to use one.
+ */
+export function noteIdForSessionName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const match = /note[:-]([0-9a-fA-F]{4,})/.exec(name);
+  if (!match) return null;
+  const prefix = match[1]!.toLowerCase();
+  const hits = Object.keys(notes).filter((id) => id.toLowerCase().startsWith(prefix));
+  // Two notes sharing an eight-character prefix is a collision we cannot
+  // resolve from a name, and guessing which one is running would move the wrong
+  // note. The sweeper is authoritative and will settle both from disk.
+  return hits.length === 1 ? hits[0]! : null;
+}
+
+/**
+ * A dispatched note's session reached Running.
+ *
+ * Idempotent and deliberately narrow: only a `published` note dispatched to
+ * Fleet moves, because `in_progress → in_progress` is an illegal transition
+ * (it would rewrite `startedAt`) and a note that reached `completed` has
+ * already been settled by the sweeper, which is authoritative. This listener
+ * exists to make the pad feel live between the spawn and the first artifact,
+ * not to own the lifecycle.
+ */
+export async function markNoteRunning(noteId: string, fleetSessionId?: string): Promise<void> {
+  const note = notes[noteId];
+  if (!note || note.status !== 'published' || note.dispatchTarget !== 'fleet') return;
+  try {
+    const row = await notepadApi.setNoteStatus(noteId, 'in_progress', {
+      dispatchTarget: 'fleet',
+      dispatchKey: note.dispatchKey,
+      fleetSessionId: fleetSessionId ?? null,
+    });
+    adopt(row);
+  } catch (e) {
+    // Background: the sweeper flips the same note from `started.json` within a
+    // tick, so a lost race here costs nothing the operator can see.
+    silentCatch('notepad mark running')(e);
+  }
+}
+
 export function archiveNote(id: string): Promise<DevNote | null> {
   return transition(id, 'archived', 'archive');
 }

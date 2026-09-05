@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "আমি আপনার এজেন্ট, এক্সিকিউশন এবং মেমোরি দেখতে পাচ্ছি। যেকোনো প্রশ্ন করুন, বা নিচের যেকোনো একটি দিয়ে শুরু করুন।",
       "welcome_title": "আজ কীভাবে সাহায্য করতে পারি?",
       "working": "কাজ চলছে…",
-      "you_label": "আপনি"
+      "you_label": "আপনি",
+      "note_suggestions_accept": "গ্রহণ করুন",
+      "note_suggestions_accepted": "নোটে যোগ করা হয়েছে",
+      "note_suggestions_count_one": "“{title}”-এর জন্য ১টি পরামর্শ",
+      "note_suggestions_count_other": "“{title}”-এর জন্য {count}টি পরামর্শ",
+      "note_suggestions_empty": "এই কার্ডে কোনো পরামর্শ নেই।",
+      "note_suggestions_heading": "একটি নোটের জন্য পরামর্শ",
+      "note_suggestions_open_pad": "এগুলো কোথায় প্রয়োগ হবে দেখতে নোটপ্যাড খুলুন।",
+      "note_suggestions_question_hint": "এর উত্তর নোটে দিন, অথবা চ্যাটে।",
+      "note_suggestions_reject": "প্রত্যাখ্যান",
+      "note_suggestions_rejected": "বাতিল করা হয়েছে"
     },
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
@@ -21819,6 +21829,18 @@
     "variant_journal": "জার্নাল",
     "variant_label": "লেআউট",
     "variant_split": "স্প্লিট ক্যানভাস",
-    "variant_workbench": "ওয়ার্কবেঞ্চ"
+    "variant_workbench": "ওয়ার্কবেঞ্চ",
+    "suggestion_accept": "গ্রহণ করুন",
+    "suggestion_answer_placeholder": "তাকে উত্তর দিন…",
+    "suggestion_answer_send": "উত্তর পাঠান",
+    "suggestion_cancel": "বাতিল",
+    "suggestion_edit": "সম্পাদনা",
+    "suggestion_edit_label": "এই পরামর্শের আপনার সংস্করণ",
+    "suggestion_kind_edit": "সম্পাদনা",
+    "suggestion_kind_question": "প্রশ্ন",
+    "suggestion_kind_section": "নতুন বিভাগ",
+    "suggestion_readonly": "এই নোটটি প্রকাশিত হয়েছে — এর মূল অংশ লক করা আছে, তাই পরামর্শগুলো শুধু বাতিল করা যাবে।",
+    "suggestion_reject": "প্রত্যাখ্যান",
+    "suggestion_save": "প্রয়োগ করুন"
   }
 }

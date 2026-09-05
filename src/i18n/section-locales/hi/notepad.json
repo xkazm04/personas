@@ -58,5 +58,17 @@
   "variant_journal": "जर्नल",
   "variant_label": "लेआउट",
   "variant_split": "स्प्लिट कैनवस",
-  "variant_workbench": "वर्कबेंच"
+  "variant_workbench": "वर्कबेंच",
+  "suggestion_accept": "स्वीकारें",
+  "suggestion_answer_placeholder": "उसे जवाब दें…",
+  "suggestion_answer_send": "जवाब भेजें",
+  "suggestion_cancel": "रद्द करें",
+  "suggestion_edit": "संपादित करें",
+  "suggestion_edit_label": "इस सुझाव का आपका संस्करण",
+  "suggestion_kind_edit": "संपादन",
+  "suggestion_kind_question": "प्रश्न",
+  "suggestion_kind_section": "नया अनुभाग",
+  "suggestion_readonly": "यह नोट प्रकाशित हो चुका है — इसका मुख्य भाग लॉक है, इसलिए सुझावों को केवल खारिज किया जा सकता है।",
+  "suggestion_reject": "अस्वीकारें",
+  "suggestion_save": "लागू करें"
 }

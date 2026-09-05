@@ -16,6 +16,7 @@ import { NoteTabStrip } from './NoteTabStrip';
 import { NoteArchiveModal } from './NoteArchiveModal';
 import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
+import { useNoteSuggestions } from './athena/noteSuggestions';
 import {
   archivedNotes as archivedNotesOf,
   atCap as atCapNow,
@@ -156,6 +157,12 @@ export default function NotepadOverlayHost() {
     [projects, active],
   );
 
+  // Athena's open suggestions for the note on screen. Read from the companion
+  // store rather than fetched here: `AthenaChatPanel` is mounted app-wide, so
+  // its chat-card listener and durable-row hydration already keep this array
+  // live and refresh-proof whether or not her panel is open.
+  const suggestions = useNoteSuggestions(active?.id ?? null);
+
   const selectNote = useCallback(
     (id: string) => {
       // Flush the outgoing note before switching — the debounce timer belongs
@@ -262,8 +269,8 @@ export default function NotepadOverlayHost() {
                 onPatch={(patch) => patchNote(active.id, patch)}
                 readOnly={active.status !== 'draft'}
                 project={activeProject}
-                suggestions={[]}
-                actions={noteActionsFor(active)}
+                suggestions={suggestions}
+                actions={noteActionsFor(active, activeProject)}
               />
             ) : undefined
           }
@@ -285,7 +292,7 @@ export default function NotepadOverlayHost() {
             note={active}
             project={activeProject}
             onSelectProject={(project) => setProject(active.id, project.id)}
-            actions={noteActionsFor(active)}
+            actions={noteActionsFor(active, activeProject)}
           />
         </>
       ) : (

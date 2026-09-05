@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "Vidím vaše agenty, spuštění a paměť. Zeptejte se mě na cokoliv, nebo začněte jednou z těchto možností.",
       "welcome_title": "Jak vám mohu dnes pomoci?",
       "working": "Pracuji…",
-      "you_label": "Vy"
+      "you_label": "Vy",
+      "note_suggestions_accept": "Přijmout",
+      "note_suggestions_accepted": "Přidáno do poznámky",
+      "note_suggestions_count_one": "1 návrh pro „{title}“",
+      "note_suggestions_count_other": "{count} návrhů pro „{title}“",
+      "note_suggestions_empty": "Tato karta neobsahuje žádné návrhy.",
+      "note_suggestions_heading": "Návrhy k poznámce",
+      "note_suggestions_open_pad": "Otevřete poznámkový blok a podívejte se, kam se tyto návrhy promítnou.",
+      "note_suggestions_question_hint": "Odpovězte na to v poznámce, nebo v chatu.",
+      "note_suggestions_reject": "Odmítnout",
+      "note_suggestions_rejected": "Zamítnuto"
     },
     "dev_context": {
       "auto_scan": "Automatický sken",
@@ -21819,6 +21829,18 @@
     "variant_journal": "Deník",
     "variant_label": "Rozvržení",
     "variant_split": "Rozdělené plátno",
-    "variant_workbench": "Pracovní stůl"
+    "variant_workbench": "Pracovní stůl",
+    "suggestion_accept": "Přijmout",
+    "suggestion_answer_placeholder": "Odpovědět jí…",
+    "suggestion_answer_send": "Odeslat odpověď",
+    "suggestion_cancel": "Zrušit",
+    "suggestion_edit": "Upravit",
+    "suggestion_edit_label": "Vaše verze tohoto návrhu",
+    "suggestion_kind_edit": "Úprava",
+    "suggestion_kind_question": "Otázka",
+    "suggestion_kind_section": "Nová sekce",
+    "suggestion_readonly": "Tato poznámka byla publikována — její text je uzamčen, návrhy tedy lze pouze odmítnout.",
+    "suggestion_reject": "Odmítnout",
+    "suggestion_save": "Použít"
   }
 }

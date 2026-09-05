@@ -56,7 +56,7 @@ export default function NoteBodyJournal({
         {/* The margin. Empty by design until WP3 fills it — the column keeps
             its width so the prose does not reflow when the first note lands. */}
         <aside className="hidden xl:block w-56 flex-shrink-0 pt-24">
-          <SuggestionSlot suggestions={suggestions} quietWhenEmpty />
+          <SuggestionSlot suggestions={suggestions} readOnly={readOnly} quietWhenEmpty />
         </aside>
       </div>
     </div>

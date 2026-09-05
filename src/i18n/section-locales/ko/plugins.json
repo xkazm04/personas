@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "에이전트, 실행, 메모리를 확인할 수 있습니다. 무엇이든 물어보거나 아래 항목 중 하나로 시작하세요.",
     "welcome_title": "오늘 무엇을 도와드릴까요?",
     "working": "작업 중…",
-    "you_label": "나"
+    "you_label": "나",
+    "note_suggestions_accept": "수락",
+    "note_suggestions_accepted": "노트에 추가되었습니다",
+    "note_suggestions_count_one": "“{title}”에 대한 제안 1개",
+    "note_suggestions_count_other": "“{title}”에 대한 제안 {count}개",
+    "note_suggestions_empty": "이 카드에는 제안이 없습니다.",
+    "note_suggestions_heading": "노트에 대한 제안",
+    "note_suggestions_open_pad": "노트패드를 열어 반영 위치를 확인하세요.",
+    "note_suggestions_question_hint": "노트나 채팅에서 답변해 주세요.",
+    "note_suggestions_reject": "거부",
+    "note_suggestions_rejected": "거부됨"
   },
   "dev_context": {
     "auto_scan": "자동 스캔",

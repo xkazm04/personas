@@ -35,7 +35,16 @@ use crate::AppState;
 /// Card kinds that are ACTIONABLE — a proposal the operator confirms, which
 /// writes something real (spawns CLI sessions, creates a milestone). Only
 /// these get a durable row; everything else stays transient by design.
-pub const ACTIONABLE_KINDS: &[&str] = &["fleet_plan", "ship_milestone", "ship_goals"];
+/// `note_suggestions` joins them for a different reason than the other three:
+/// it is not confirmed in one click, but its rows are ANSWERED one at a time
+/// over minutes, and the durable row is what keeps the un-answered ones alive
+/// across the send that would otherwise wipe them.
+pub const ACTIONABLE_KINDS: &[&str] = &[
+    "fleet_plan",
+    "ship_milestone",
+    "ship_goals",
+    "note_suggestions",
+];
 
 /// Statuses a card row may hold. `pending` is the only actionable state.
 const VALID_STATUSES: &[&str] = &["pending", "dispatched", "dismissed", "superseded"];

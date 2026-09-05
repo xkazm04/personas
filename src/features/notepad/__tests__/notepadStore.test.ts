@@ -20,6 +20,8 @@ import {
   getNote,
   load,
   openNotes,
+  markNoteRunning,
+  noteIdForSessionName,
   patchNote,
   saveStateOf,
   shadowKey,
@@ -228,5 +230,80 @@ describe('cap', () => {
     _clearAutoDedupForTests();
     await load();
     expect(atCap()).toBe(false);
+  });
+});
+
+/**
+ * Binding a running Fleet session back to the note that started it.
+ *
+ * The dispatch labels a session `note:<first 8 of the id>`; the single-session
+ * spawn path renders that verbatim and the multi-session path kebabs it, so
+ * both separators have to resolve. The prefix is matched against the ids the
+ * pad actually holds — eight characters is not a uuid, and treating it as one
+ * would move whichever note happened to sort first.
+ */
+describe('noteIdForSessionName', () => {
+  beforeEach(async () => {
+    rows = [note({ id: 'abcd1234-0000-4000-8000-000000000001' })];
+    await load();
+  });
+
+  it('resolves both the spawn label and the kebabbed dispatch role', () => {
+    expect(noteIdForSessionName('athena · note:abcd1234')).toBe(rows[0]!.id);
+    expect(noteIdForSessionName('athena-note-abcd1234 · personas')).toBe(rows[0]!.id);
+  });
+
+  it('is null for a session that has nothing to do with the pad', () => {
+    expect(noteIdForSessionName('athena · personas')).toBeNull();
+    expect(noteIdForSessionName(null)).toBeNull();
+    expect(noteIdForSessionName('note:deadbeef')).toBeNull();
+  });
+
+  /** Two notes sharing a prefix cannot be told apart from a name. Guessing
+   *  would move the wrong note; the sweeper settles both from disk. */
+  it('refuses to guess when a prefix is ambiguous', async () => {
+    rows = [
+      note({ id: 'abcd1234-0000-4000-8000-000000000001' }),
+      note({ id: 'abcd1234-0000-4000-8000-000000000002', orderIndex: 1 }),
+    ];
+    // `invokeWithTimeout` de-duplicates identical in-flight/recent calls, so a
+    // second `load()` in one test would replay the FIRST list and this test
+    // would pass while proving nothing.
+    _clearAutoDedupForTests();
+    await load();
+    expect(noteIdForSessionName('athena · note:abcd1234')).toBeNull();
+  });
+});
+
+/**
+ * `markNoteRunning` is a liveness cue, not a lifecycle owner. It must move ONLY
+ * a published fleet note: `in_progress → in_progress` is an illegal transition
+ * that would rewrite `startedAt`, and a completed note has already been settled
+ * by the sweeper, which is authoritative.
+ */
+describe('markNoteRunning', () => {
+  it('moves a published fleet note and nothing else', async () => {
+    const calls: unknown[] = [];
+    rows = [
+      note({ id: 'n-pub', status: 'published' as NoteStatus, dispatchTarget: 'fleet' }),
+      note({ id: 'n-draft', orderIndex: 1 }),
+      note({ id: 'n-goals', status: 'published' as NoteStatus, dispatchTarget: 'athena_goals', orderIndex: 2 }),
+      note({ id: 'n-running', status: 'in_progress' as NoteStatus, dispatchTarget: 'fleet', orderIndex: 3 }),
+    ];
+    await load();
+    mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'notepad_list_notes') return rows;
+      if (cmd === 'notepad_set_status') {
+        calls.push(args);
+        return note({ id: (args as { id: string }).id, status: 'in_progress' as NoteStatus });
+      }
+      return undefined;
+    });
+
+    for (const id of ['n-pub', 'n-draft', 'n-goals', 'n-running']) {
+      await markNoteRunning(id, 'sess-1');
+    }
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ id: 'n-pub', status: 'in_progress', fleetSessionId: 'sess-1' });
   });
 });

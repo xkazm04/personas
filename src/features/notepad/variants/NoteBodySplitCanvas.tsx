@@ -75,7 +75,7 @@ export default function NoteBodySplitCanvas({
             {t.notepad.preview_title}
           </h3>
           <MarkdownRenderer content={preview} className="typo-body text-foreground/90" />
-          <SuggestionSlot suggestions={suggestions} className="mt-2" quietWhenEmpty />
+          <SuggestionSlot suggestions={suggestions} readOnly={readOnly} className="mt-2" quietWhenEmpty />
         </div>
       </div>
     </div>

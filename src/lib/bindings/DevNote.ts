@@ -2,8 +2,32 @@
 import type { NoteStatus } from "./NoteStatus";
 
 /**
- * One notepad note — a scratch document that can be published to Fleet or
- * turned into Athena goals. Body and `projectId` are editable only while the
- * status is `draft`; the title is editable in any non-archived status.
+ * One note. Mirrors `dev_notes` column-for-column.
  */
-export type DevNote = { id: string, projectId: string | null, title: string, bodyMd: string, status: NoteStatus, orderIndex: number, dispatchTarget: string | null, dispatchKey: string | null, fleetSessionId: string | null, agentId: string | null, resultJson: string | null, publishedAt: string | null, startedAt: string | null, completedAt: string | null, archivedAt: string | null, createdAt: string, updatedAt: string, };
+export type DevNote = { id: string, 
+/**
+ * The repo this note is about. NULL until the operator picks one — and
+ * NULL again if that project is deleted (`ON DELETE SET NULL`), because
+ * the thinking outlives the row it pointed at.
+ */
+projectId: string | null, title: string, bodyMd: string, status: NoteStatus, orderIndex: number, 
+/**
+ * 'fleet' | 'athena_goals' — where this note was handed to. NULL until a
+ * dispatch happens.
+ */
+dispatchTarget: string | null, 
+/**
+ * `note:<id>` — the address the dispatcher stamps on the session name so
+ * the sweeper can find the run that belongs to this note.
+ */
+dispatchKey: string | null, fleetSessionId: string | null, 
+/**
+ * Reserved for a future per-note agent binding; always NULL in v1.
+ */
+agentId: string | null, 
+/**
+ * JSON text. Fleet runs store the `result.json` body
+ * (`{schema_version,status,summary,artifacts[]}`); an Athena goals
+ * dispatch stores `{goal_ids: [...]}`.
+ */
+resultJson: string | null, publishedAt: string | null, startedAt: string | null, completedAt: string | null, archivedAt: string | null, createdAt: string, updatedAt: string, };

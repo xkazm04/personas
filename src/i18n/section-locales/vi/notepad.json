@@ -58,5 +58,17 @@
   "variant_journal": "Nhật ký",
   "variant_label": "Bố cục",
   "variant_split": "Canvas chia đôi",
-  "variant_workbench": "Bàn làm việc"
+  "variant_workbench": "Bàn làm việc",
+  "suggestion_accept": "Chấp nhận",
+  "suggestion_answer_placeholder": "Trả lời cô ấy…",
+  "suggestion_answer_send": "Gửi câu trả lời",
+  "suggestion_cancel": "Hủy",
+  "suggestion_edit": "Chỉnh sửa",
+  "suggestion_edit_label": "Phiên bản của bạn cho đề xuất này",
+  "suggestion_kind_edit": "Chỉnh sửa",
+  "suggestion_kind_question": "Câu hỏi",
+  "suggestion_kind_section": "Mục mới",
+  "suggestion_readonly": "Ghi chú này đã được xuất bản — nội dung đã bị khóa, nên các đề xuất chỉ có thể bị từ chối.",
+  "suggestion_reject": "Từ chối",
+  "suggestion_save": "Áp dụng"
 }

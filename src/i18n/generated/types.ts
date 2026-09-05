@@ -17245,6 +17245,16 @@ export type Translations = {
       health_counter_last_cycle: string;
       health_counter_never: string;
       health_counter_conversation_episodes: string;
+      note_suggestions_heading: string;
+      note_suggestions_count_one: string;
+      note_suggestions_count_other: string;
+      note_suggestions_empty: string;
+      note_suggestions_question_hint: string;
+      note_suggestions_accept: string;
+      note_suggestions_reject: string;
+      note_suggestions_accepted: string;
+      note_suggestions_rejected: string;
+      note_suggestions_open_pad: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -21826,5 +21836,17 @@ export type Translations = {
     variant_journal: string;
     variant_workbench: string;
     variant_split: string;
+    suggestion_kind_section: string;
+    suggestion_kind_edit: string;
+    suggestion_kind_question: string;
+    suggestion_accept: string;
+    suggestion_edit: string;
+    suggestion_reject: string;
+    suggestion_save: string;
+    suggestion_cancel: string;
+    suggestion_edit_label: string;
+    suggestion_answer_placeholder: string;
+    suggestion_answer_send: string;
+    suggestion_readonly: string;
   };
 };

@@ -58,5 +58,17 @@
   "variant_journal": "저널",
   "variant_label": "레이아웃",
   "variant_split": "분할 캔버스",
-  "variant_workbench": "워크벤치"
+  "variant_workbench": "워크벤치",
+  "suggestion_accept": "수락",
+  "suggestion_answer_placeholder": "그녀에게 답하기…",
+  "suggestion_answer_send": "답변 보내기",
+  "suggestion_cancel": "취소",
+  "suggestion_edit": "수정",
+  "suggestion_edit_label": "이 제안에 대한 회원님의 버전",
+  "suggestion_kind_edit": "수정",
+  "suggestion_kind_question": "질문",
+  "suggestion_kind_section": "새 섹션",
+  "suggestion_readonly": "이 노트는 게시되어 본문이 잠겨 있습니다. 제안은 거부만 가능합니다.",
+  "suggestion_reject": "거부",
+  "suggestion_save": "적용"
 }

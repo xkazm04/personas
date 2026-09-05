@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "Puedo ver sus agentes, ejecuciones y memoria. Pregúnteme lo que quiera, o empiece con una de estas opciones.",
       "welcome_title": "¿En qué puedo ayudarte hoy?",
       "working": "Trabajando…",
-      "you_label": "Tú"
+      "you_label": "Tú",
+      "note_suggestions_accept": "Aceptar",
+      "note_suggestions_accepted": "Añadido a la nota",
+      "note_suggestions_count_one": "1 sugerencia para “{title}”",
+      "note_suggestions_count_other": "{count} sugerencias para “{title}”",
+      "note_suggestions_empty": "Esta tarjeta no contiene sugerencias.",
+      "note_suggestions_heading": "Sugerencias para una nota",
+      "note_suggestions_open_pad": "Abre el bloc de notas para ver dónde se aplican.",
+      "note_suggestions_question_hint": "Responde esto en la nota o en el chat.",
+      "note_suggestions_reject": "Rechazar",
+      "note_suggestions_rejected": "Descartado"
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",
@@ -21819,6 +21829,18 @@
     "variant_journal": "Diario",
     "variant_label": "Diseño",
     "variant_split": "Lienzo dividido",
-    "variant_workbench": "Banco de trabajo"
+    "variant_workbench": "Banco de trabajo",
+    "suggestion_accept": "Aceptar",
+    "suggestion_answer_placeholder": "Responde a Athena…",
+    "suggestion_answer_send": "Enviar respuesta",
+    "suggestion_cancel": "Cancelar",
+    "suggestion_edit": "Editar",
+    "suggestion_edit_label": "Tu versión de esta sugerencia",
+    "suggestion_kind_edit": "Edición",
+    "suggestion_kind_question": "Pregunta",
+    "suggestion_kind_section": "Nueva sección",
+    "suggestion_readonly": "Esta nota se ha publicado — su contenido está bloqueado, así que las sugerencias solo se pueden descartar.",
+    "suggestion_reject": "Rechazar",
+    "suggestion_save": "Aplicar"
   }
 }

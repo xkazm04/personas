@@ -19,14 +19,20 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 | `notepadStore.ts` | Module store — ONE mutation door `patchNote`; memory → synchronous localStorage shadow → 500 ms debounced SQLite write; flush on tab switch / close / `beforeunload` / `pagehide`; loud save failure. |
 | `useNotepad.ts` | `useSyncExternalStore` selectors over the store. |
 | `noteStatusMeta.ts` | The ONE presentation table for `NoteStatus` (label key + `Badge` variant + icon); unknown token → warning entry. Never render the raw token. |
-| `notepadActions.ts` | `askAthena` / `publishFleet` / `toGoals` — stubs until WP3 (Athena) lands. |
-| `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SuggestionSlot` (Athena inline suggestions; filled by WP3). |
+| `notepadActions.ts` | The three dispatch doors: `askAthena` (pointer prompt, no status change) · `publishFleet` (brief → skill install → `companionDispatchFleetPlan` → `published`) · `toGoals` (`published` FIRST, then the pointer prompt, so `show_ship_goals` can move it to `in_progress`). |
+| `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SuggestionSlot` (Athena's inline suggestion blocks — Accept / Edit / Reject per row, a reply field on a `question` row, and no batch accept by design). |
+| `athena/*` | The Athena seam: `buildNoteAskPrompt` / `buildNoteGoalsPrompt` (POINTERS — they name `describe_note`, never paste the body), `noteSuggestions.ts` (the ONE boundary parse of the snake_case `note_suggestions` card config; no ts-rs binding by design). |
 | `variants/*` | Journal (single document column, margin notes) · Workbench (editor + right rail with timeline/result) · Split canvas (editor + live preview). |
 
 Backend: `src-tauri/src/commands/infrastructure/dev_tools/notepad.rs` (commands),
 `src-tauri/db/src/repos/dev/notes.rs` (repo), migration `e22_dev_notes.rs`,
 sweeper `src-tauri/src/commands/infrastructure/notepad_ingest.rs` (rides the
 30 s fleet ticker), skill `.claude/skills/note-task/SKILL.md`.
+Athena's half: read op `src-tauri/src/companion/note_ops.rs` (`describe_note`),
+card validation + per-row resolution
+`src-tauri/src/commands/infrastructure/dev_tools/note_suggestions.rs`, dispatcher
+arms in `src-tauri/src/companion/dispatcher/dispatch.rs` (`show_note_suggestions`,
+and the `note_id` extension to `show_ship_goals`).
 
 ## Storage tiers (why three)
 

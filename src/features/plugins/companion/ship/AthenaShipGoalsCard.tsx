@@ -50,6 +50,10 @@ export function AthenaShipGoalsCard({
   const milestoneId = typeof config?.milestone_id === 'string' ? config.milestone_id : '';
   const milestoneName =
     typeof config?.milestone_name === 'string' ? config.milestone_name : '';
+  // Present only when the decomposition came out of a Notepad note. It rides
+  // back to the backend on Create so the note can be closed with the goal ids
+  // it produced — the only link between what he wrote and what came of it.
+  const noteId = typeof config?.note_id === 'string' ? config.note_id : null;
   const [rows, setRows] = useState<ShipGoalProposal[]>(() => parseGoalRows(config?.rows));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +84,7 @@ export function AthenaShipGoalsCard({
           description: r.description?.trim() ? r.description.trim() : null,
           contextId: r.contextId ?? null,
         })),
+        noteId,
       );
       // `created` and `bound` are reported separately because they are
       // different facts: eight new goals and eight adoptions read identically

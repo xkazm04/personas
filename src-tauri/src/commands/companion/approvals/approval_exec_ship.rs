@@ -472,6 +472,11 @@ pub struct ShipGoalsCreated {
     pub created: usize,
     /// Goals that already existed and were bound to the milestone instead.
     pub bound: usize,
+    /// Every goal id the confirmation touched, created and bound alike, in card
+    /// order. Added for the Notepad: a note that decomposed into goals stores
+    /// these in its `result_json`, which is the only record linking the note the
+    /// operator wrote to the work that came out of it.
+    pub goal_ids: Vec<String>,
 }
 
 /// Resolve whatever the model wrote for a context into a real
@@ -680,6 +685,7 @@ pub(crate) fn create_ship_goals_inner(
 ) -> Result<ShipGoalsCreated, AppError> {
     let mut created = 0usize;
     let mut bound = 0usize;
+    let mut goal_ids: Vec<String> = Vec::with_capacity(plan.rows.len());
     for row in &plan.rows {
         let goal_id = match &row.existing_id {
             Some(id) => {
@@ -710,11 +716,13 @@ pub(crate) fn create_ship_goals_inner(
             None,
             None,
         )?;
+        goal_ids.push(goal_id);
     }
     Ok(ShipGoalsCreated {
         milestone_id: plan.milestone_id.clone(),
         created,
         bound,
+        goal_ids,
     })
 }
 
@@ -730,6 +738,7 @@ pub async fn companion_create_ship_goals(
     state: State<'_, Arc<AppState>>,
     milestone_id: String,
     goals: Vec<serde_json::Value>,
+    note_id: Option<String>,
 ) -> Result<ShipGoalsCreated, AppError> {
     ipc_auth::require_auth(&state).await?;
     let plan =
@@ -738,9 +747,56 @@ pub async fn companion_create_ship_goals(
         milestone_id = %plan.milestone_id,
         project_id = %plan.project_id,
         goals = plan.rows.len(),
+        note_id = note_id.as_deref().unwrap_or("-"),
         "companion: creating confirmed ship goals"
     );
-    create_ship_goals_inner(&state.db, &plan)
+    let out = create_ship_goals_inner(&state.db, &plan)?;
+    if let Some(note_id) = note_id.as_deref() {
+        close_note_for_goals(&state.db, note_id, &out.goal_ids);
+    }
+    Ok(out)
+}
+
+/// Stamp the Notepad note this decomposition came from as `completed`, carrying
+/// the goal ids it produced.
+///
+/// Best-effort ON PURPOSE, and this is the one place in the flow where that is
+/// the right call: the goals are already in the database when this runs. A
+/// failure to move the note is a bookkeeping loss the operator can fix from the
+/// pad; propagating it would make the command report failure for work that
+/// succeeded, and a retry would then create the goals a second time.
+///
+/// A note that is not `published` or `in_progress` is left alone. `draft` means
+/// the pad never dispatched it (she reached for the note herself), and
+/// `draft → completed` is not a legal transition — attempting it would log a
+/// confusing validation error for a case that is simply not a completion.
+fn close_note_for_goals(db: &crate::db::DbPool, note_id: &str, goal_ids: &[String]) {
+    use crate::db::models::NoteStatus;
+    let current = match crate::db::repos::dev_tools::get_note(db, note_id) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "notepad: goals created but the note is gone");
+            return;
+        }
+    };
+    if !matches!(
+        current.status,
+        NoteStatus::Published | NoteStatus::InProgress
+    ) {
+        return;
+    }
+    let result_json = serde_json::json!({ "goal_ids": goal_ids }).to_string();
+    if let Err(e) = crate::db::repos::dev_tools::set_status(
+        db,
+        note_id,
+        NoteStatus::Completed,
+        Some("athena_goals"),
+        Some(&format!("note:{note_id}")),
+        None,
+        Some(&result_json),
+    ) {
+        tracing::warn!(note_id, error = %e, "notepad: goals created but the note did not close");
+    }
 }
 
 // ── Scope + lifecycle: acting on a milestone that already exists ──────────

@@ -11361,7 +11361,17 @@
       "welcome_subtitle": "मैं आपके agents, executions और memory देख सकता हूं। कुछ भी पूछें, या इनमें से एक से शुरू करें।",
       "welcome_title": "आज मैं कैसे मदद कर सकता हूं?",
       "working": "काम चल रहा है…",
-      "you_label": "आप"
+      "you_label": "आप",
+      "note_suggestions_accept": "स्वीकारें",
+      "note_suggestions_accepted": "नोट में जोड़ा गया",
+      "note_suggestions_count_one": "“{title}” के लिए 1 सुझाव",
+      "note_suggestions_count_other": "“{title}” के लिए {count} सुझाव",
+      "note_suggestions_empty": "इस कार्ड में कोई सुझाव नहीं है।",
+      "note_suggestions_heading": "एक नोट के लिए सुझाव",
+      "note_suggestions_open_pad": "यह देखने के लिए नोटपैड खोलें कि ये कहाँ लागू होंगे।",
+      "note_suggestions_question_hint": "इसका जवाब नोट में दें, या चैट में।",
+      "note_suggestions_reject": "अस्वीकारें",
+      "note_suggestions_rejected": "खारिज किया गया"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -21819,6 +21829,18 @@
     "variant_journal": "जर्नल",
     "variant_label": "लेआउट",
     "variant_split": "स्प्लिट कैनवस",
-    "variant_workbench": "वर्कबेंच"
+    "variant_workbench": "वर्कबेंच",
+    "suggestion_accept": "स्वीकारें",
+    "suggestion_answer_placeholder": "उसे जवाब दें…",
+    "suggestion_answer_send": "जवाब भेजें",
+    "suggestion_cancel": "रद्द करें",
+    "suggestion_edit": "संपादित करें",
+    "suggestion_edit_label": "इस सुझाव का आपका संस्करण",
+    "suggestion_kind_edit": "संपादन",
+    "suggestion_kind_question": "प्रश्न",
+    "suggestion_kind_section": "नया अनुभाग",
+    "suggestion_readonly": "यह नोट प्रकाशित हो चुका है — इसका मुख्य भाग लॉक है, इसलिए सुझावों को केवल खारिज किया जा सकता है।",
+    "suggestion_reject": "अस्वीकारें",
+    "suggestion_save": "लागू करें"
   }
 }

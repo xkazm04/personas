@@ -258,6 +258,9 @@ export interface ShipGoalsCreated {
   created: number;
   /** Goals that already existed and were bound to the milestone instead. */
   bound: number;
+  /** Every goal id the confirmation touched, created and bound alike. A note
+   *  that decomposed into goals stores these in its `resultJson`. */
+  goalIds: string[];
 }
 
 /**
@@ -274,6 +277,7 @@ export interface ShipGoalsCreated {
 export async function companionCreateShipGoals(
   milestoneId: string,
   goals: ShipGoalProposal[],
+  noteId?: string | null,
 ): Promise<ShipGoalsCreated> {
   return invoke<ShipGoalsCreated>('companion_create_ship_goals', {
     milestoneId,
@@ -282,6 +286,10 @@ export async function companionCreateShipGoals(
       description: g.description ?? null,
       context_hint: g.contextId ?? null,
     })),
+    // Present only when the decomposition came out of a Notepad note. The
+    // backend stamps that note `completed` with the goal ids it produced —
+    // best-effort, because the goals are already written by then.
+    noteId: noteId ?? null,
   });
 }
 

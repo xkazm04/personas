@@ -58,5 +58,17 @@
   "variant_journal": "Journal",
   "variant_label": "Disposition",
   "variant_split": "Vue partagée",
-  "variant_workbench": "Atelier"
+  "variant_workbench": "Atelier",
+  "suggestion_accept": "Accepter",
+  "suggestion_answer_placeholder": "Répondez-lui…",
+  "suggestion_answer_send": "Envoyer la réponse",
+  "suggestion_cancel": "Annuler",
+  "suggestion_edit": "Modifier",
+  "suggestion_edit_label": "Votre version de cette suggestion",
+  "suggestion_kind_edit": "Modification",
+  "suggestion_kind_question": "Interrogation",
+  "suggestion_kind_section": "Nouvelle section",
+  "suggestion_readonly": "Cette note a été publiée — son contenu est verrouillé, les suggestions ne peuvent donc être que rejetées.",
+  "suggestion_reject": "Rejeter",
+  "suggestion_save": "Appliquer"
 }

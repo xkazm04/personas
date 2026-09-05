@@ -107,7 +107,7 @@ export default function NoteBodyWorkbench({
           <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
             {t.notepad.suggestions_title}
           </h3>
-          <SuggestionSlot suggestions={suggestions} />
+          <SuggestionSlot suggestions={suggestions} readOnly={readOnly} />
         </section>
       </aside>
     </div>

@@ -466,6 +466,30 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// fails the build on the next one, with a positive control so a broken
 /// matcher cannot pass as a clean catalog.
 ///
+/// v61 (the Notepad) adds the pad's two ops — the read op `describe_note` and
+/// the card op `show_note_suggestions` — plus an optional `note_id` on
+/// `show_ship_goals`. The pad is a footer overlay holding up to ten scratch
+/// requirements, and it deliberately never pastes a note's body into her
+/// prompt: a note is edited continuously, so a copy in the turn is stale the
+/// moment it is composed. That makes `describe_note` not a convenience but the
+/// only way she has read the thing she is being asked about — which is why the
+/// section leads with it and why the answer also carries the project's OPEN
+/// milestone, so the id `show_ship_goals` needs is in the reading rather than in
+/// a second lookup she has to remember to make. `show_note_suggestions` is the
+/// fourth card op in the `show_fleet_plan` family and the first whose consent
+/// surface is not only the chat: the same rows render as inline blocks inside
+/// the note, at the heading each one anchors to, and each row is answered ON ITS
+/// OWN. There is no batch Confirm, and the section says why rather than only
+/// stating it — "apply all eight of her paragraphs" is not a decision anybody
+/// makes about their own writing. The three row kinds needed teaching rather
+/// than listing: a `question` row writes NOTHING into the note, and exists so an
+/// unclear brief produces a question instead of an assumption with a section
+/// built on top of it. The rule most likely to bite: **a body edit is refused on
+/// anything but a draft**, because a published note may already be open in a
+/// running CLI session — so a suggestion against a published note is a card whose
+/// Accept button cannot work, and the read op says the status for exactly that
+/// reason.
+///
 /// ## How a bump reaches the running app
 ///
 /// Athena's prompt does NOT read this constant. `prompt::build`
@@ -481,4 +505,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// 2026-09-03 by reading both ends (`disk.rs:72-106`, `prompt/build.rs:67-69`).
 /// Note that the backups are never reaped: 31 of them accumulated before
 /// anyone counted, and retention is a Director call, not this constant's.
-pub const CONSTITUTION_VERSION: u32 = 60;
+pub const CONSTITUTION_VERSION: u32 = 61;

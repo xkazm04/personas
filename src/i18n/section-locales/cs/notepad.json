@@ -58,5 +58,17 @@
   "variant_journal": "Deník",
   "variant_label": "Rozvržení",
   "variant_split": "Rozdělené plátno",
-  "variant_workbench": "Pracovní stůl"
+  "variant_workbench": "Pracovní stůl",
+  "suggestion_accept": "Přijmout",
+  "suggestion_answer_placeholder": "Odpovědět jí…",
+  "suggestion_answer_send": "Odeslat odpověď",
+  "suggestion_cancel": "Zrušit",
+  "suggestion_edit": "Upravit",
+  "suggestion_edit_label": "Vaše verze tohoto návrhu",
+  "suggestion_kind_edit": "Úprava",
+  "suggestion_kind_question": "Otázka",
+  "suggestion_kind_section": "Nová sekce",
+  "suggestion_readonly": "Tato poznámka byla publikována — její text je uzamčen, návrhy tedy lze pouze odmítnout.",
+  "suggestion_reject": "Odmítnout",
+  "suggestion_save": "Použít"
 }

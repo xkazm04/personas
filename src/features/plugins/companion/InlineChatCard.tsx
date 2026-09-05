@@ -8,6 +8,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
 import { AthenaShipMilestoneCard } from './ship/AthenaShipMilestoneCard';
 import { AthenaShipGoalsCard } from './ship/AthenaShipGoalsCard';
+import { AthenaNoteSuggestionsCard } from './notepad/AthenaNoteSuggestionsCard';
 
 /**
  * Kinds that render long-form content and should NOT be height-clamped
@@ -86,6 +87,17 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   // would be a create button with no conversation behind it.
   if (card.kind === 'ship_goals') {
     return <AthenaShipGoalsCard config={card.config} title={card.title} cardId={card.id} />;
+  }
+
+  // `note_suggestions` is actionable for a different reason than the three
+  // above: it is not confirmed in one click, its rows are ANSWERED one at a
+  // time, and each answer writes into a document. Pinning a half-answered set
+  // of edit proposals to a dashboard would be a set of Accept buttons with no
+  // note in front of them, so it is deliberately not pinnable either.
+  if (card.kind === 'note_suggestions') {
+    return (
+      <AthenaNoteSuggestionsCard config={card.config} title={card.title} cardId={card.id} />
+    );
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

@@ -58,5 +58,17 @@
   "variant_journal": "Journal",
   "variant_label": "Layout",
   "variant_split": "Geteilte Ansicht",
-  "variant_workbench": "Werkbank"
+  "variant_workbench": "Werkbank",
+  "suggestion_accept": "Annehmen",
+  "suggestion_answer_placeholder": "Antworte ihr…",
+  "suggestion_answer_send": "Antwort senden",
+  "suggestion_cancel": "Abbrechen",
+  "suggestion_edit": "Bearbeiten",
+  "suggestion_edit_label": "Ihre Version dieses Vorschlags",
+  "suggestion_kind_edit": "Bearbeitung",
+  "suggestion_kind_question": "Frage",
+  "suggestion_kind_section": "Neuer Abschnitt",
+  "suggestion_readonly": "Diese Notiz wurde veröffentlicht — ihr Inhalt ist gesperrt, daher können Vorschläge nur verworfen werden.",
+  "suggestion_reject": "Ablehnen",
+  "suggestion_save": "Übernehmen"
 }

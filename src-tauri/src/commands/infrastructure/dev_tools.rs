@@ -8,6 +8,9 @@ pub mod env_connectors;
 pub mod git_ops;
 pub mod goals;
 pub mod milestones;
+/// Athena's `show_note_suggestions` card — validation, text application, and
+/// the per-row resolution door.
+pub mod note_suggestions;
 /// The Notepad: scratch requirements and their dispatch handshake.
 pub mod notepad;
 pub mod portfolio;
@@ -28,6 +31,7 @@ pub use env_connectors::*;
 pub use git_ops::*;
 pub use goals::*;
 pub use milestones::*;
+pub use note_suggestions::*;
 pub use notepad::*;
 pub use portfolio::*;
 pub use ship_ingest::*;
