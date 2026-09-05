@@ -18,6 +18,12 @@ vi.mock('@/api/pipeline/triggers', () => ({
 vi.mock('@/stores/vaultStore', () => ({
   useVaultStore: { getState: () => ({ credentials: [] }) },
 }));
+// Hoisted: the i18n module calls silentCatch while it is being imported, which
+// happens before a plain top-level const would be initialised.
+const { mockSilentCatch } = vi.hoisted(() => ({ mockSilentCatch: vi.fn(() => vi.fn()) }));
+vi.mock('@/lib/silentCatch', () => ({
+  silentCatch: (...args: unknown[]) => mockSilentCatch(...args),
+}));
 
 import { useHealthCheck } from './useHealthCheck';
 
@@ -34,7 +40,25 @@ function select(persona: Persona | null) {
 beforeEach(() => {
   mockFeasibility.mockReset();
   mockFeasibility.mockResolvedValue({ overall: 'partial', confirmed_capabilities: [], issues: ['Tool x is not installed'] });
+  mockSilentCatch.mockClear();
   select(null);
+});
+
+describe('useHealthCheck — a failed check leaves a trace', () => {
+  it('routes a feasibility-door failure through silentCatch as well as into phase/error', async () => {
+    select(personaA);
+    mockFeasibility.mockRejectedValueOnce(new Error('ipc down'));
+    const { result } = renderHook(() => useHealthCheck());
+
+    await act(async () => {
+      await result.current.runHealthCheck(personaA);
+    });
+    expect(result.current.phase).toBe('error');
+    expect(result.current.error).toBe('ipc down');
+    // The badge renders `error` the same as `idle`, so the breadcrumb is the
+    // only durable evidence the door threw.
+    expect(mockSilentCatch).toHaveBeenCalledWith('useHealthCheck:run');
+  });
 });
 
 describe('useHealthCheck — verdict is scoped to the selected persona', () => {

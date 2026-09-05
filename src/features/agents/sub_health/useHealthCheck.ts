@@ -470,6 +470,11 @@ export function useHealthCheck(): UseHealthCheckReturn {
       setPhase('done');
       return check;
     } catch (err) {
+      // The failure reaches the UI as `phase: 'error'`, but the editor badge
+      // renders that state identically to "never checked" (it paints score or
+      // nothing), so without a breadcrumb the only evidence that the feasibility
+      // door threw was a user who noticed the badge never changed.
+      silentCatch('useHealthCheck:run')(err);
       if (gen !== genRef.current) return null;
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
