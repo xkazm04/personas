@@ -287,6 +287,151 @@ pub(super) fn schedule_over_budget(max_budget: Option<f64>, monthly_spend: f64) 
     matches!(max_budget, Some(budget) if budget > 0.0 && monthly_spend >= budget)
 }
 
+// ---------------------------------------------------------------------------
+// Failure-rate auto-pause (schedule triggers)
+// ---------------------------------------------------------------------------
+//
+// A schedule whose runs keep failing is a hot loop nobody chose: every slot
+// re-spends tokens against the same wall, and the persona-level circuit
+// breaker deliberately does NOT trip for team members (`healing_retry.rs
+// check_circuit_breaker`), so for those personas nothing bounded it at all.
+// Before this gate the only writer of `TriggerStatus::Errored` was a DB write
+// failure in `chain.rs` — execution OUTCOMES never touched trigger status.
+//
+// The decision is per TRIGGER, not per persona (a persona can carry a healthy
+// daily digest and a broken five-minute poll), it is explainable after the
+// fact (the incident carries the counts and the window), and it is a pause,
+// not a delete — the schedule is one click from re-enabled. Adopted from the
+// multica autopilot failure monitor (7d lookback, ≥50 runs, ≥90% failed);
+// the run floor is lower here because a single-operator desktop app fires
+// far fewer slots than a cloud workspace in the same window.
+
+/// Rolling window the failure rate is measured over.
+pub(super) const FAILURE_MONITOR_WINDOW_HOURS: i64 = 7 * 24;
+/// Minimum terminal runs in the window before a rate is meaningful — below
+/// this the schedule keeps firing however bad the ratio looks.
+pub(super) const FAILURE_MONITOR_MIN_RUNS: u32 = 12;
+/// `failed / (completed + failed)` at or above this pauses the trigger.
+pub(super) const FAILURE_MONITOR_FAIL_RATIO: f64 = 0.9;
+
+/// Bus event published when a schedule is auto-paused. Registered in
+/// `event_vocabulary.rs`; named here (not inline at the publish site) so the
+/// producer's and the vocabulary's spelling are one binding.
+pub(super) const SCHEDULE_PAUSED_FAILURE_RATE_EVENT: &str = "schedule.paused.failure_rate";
+
+/// Pure decision: does this (completed, failed) window warrant a pause?
+pub(super) fn failure_rate_exceeded(completed: u32, failed: u32) -> bool {
+    let total = completed.saturating_add(failed);
+    if total < FAILURE_MONITOR_MIN_RUNS {
+        return false;
+    }
+    (f64::from(failed) / f64::from(total)) >= FAILURE_MONITOR_FAIL_RATIO
+}
+
+/// Pause `trigger`, leave the durable record (bus signal + incident), and log.
+/// Every write is best-effort and independent: a failed incident row must not
+/// undo the pause, and a failed pause must still leave the signal so the
+/// non-fire is explainable.
+fn auto_pause_failing_schedule(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    completed: u32,
+    failed: u32,
+    paused_at: &str,
+) {
+    let total = completed + failed;
+    tracing::warn!(
+        trigger_id = %trigger.id,
+        persona_id = %trigger.persona_id,
+        completed,
+        failed,
+        window_hours = FAILURE_MONITOR_WINDOW_HOURS,
+        "Schedule auto-paused: {failed}/{total} runs failed in the last {}h",
+        FAILURE_MONITOR_WINDOW_HOURS,
+    );
+
+    let paused = trigger_repo::set_status(
+        pool,
+        &trigger.id,
+        personas_core::lifecycle::TriggerStatus::Paused,
+    )
+    .or_else(|_| trigger_repo::set_enabled(pool, &trigger.id, false));
+    if let Err(e) = paused {
+        tracing::error!(
+            trigger_id = %trigger.id,
+            "failure-rate auto-pause: could not pause trigger: {}", e
+        );
+    }
+
+    let payload = serde_json::json!({
+        "trigger_id": trigger.id,
+        "persona_id": trigger.persona_id,
+        "trigger_type": trigger.trigger_type,
+        "completed": completed,
+        "failed": failed,
+        "window_hours": FAILURE_MONITOR_WINDOW_HOURS,
+        "paused_at": paused_at,
+    })
+    .to_string();
+    if let Err(e) = event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: SCHEDULE_PAUSED_FAILURE_RATE_EVENT.into(),
+            source_type: "scheduler".into(),
+            source_id: Some(trigger.id.clone()),
+            target_persona_id: Some(trigger.persona_id.clone()),
+            project_id: None,
+            payload: Some(payload),
+            use_case_id: trigger.use_case_id.clone(),
+        },
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            "failed to publish schedule.paused.failure_rate signal: {}", e
+        );
+    }
+
+    let persona_name: Option<String> = pool.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT name FROM personas WHERE id = ?1",
+            rusqlite::params![trigger.persona_id],
+            |r| r.get::<_, String>(0),
+        )
+        .ok()
+    });
+    let label = persona_name
+        .clone()
+        .unwrap_or_else(|| trigger.persona_id.clone());
+    if let Err(e) = crate::db::repos::execution::audit_incidents::promote(
+        pool,
+        crate::db::models::CreateAuditIncidentInput {
+            source_table: "persona_triggers".to_string(),
+            source_id: trigger.id.clone(),
+            persona_id: Some(trigger.persona_id.clone()),
+            persona_name,
+            execution_id: None,
+            severity: "high".to_string(),
+            kind: "trigger_auto_paused".to_string(),
+            title: format!("{label}: schedule paused — {failed} of {total} recent runs failed"),
+            detail: Some(format!(
+                "The schedule trigger `{}` was paused automatically: {failed} of {total} runs \
+                 in the last {}h failed (threshold {}% over at least {} runs). It will not \
+                 fire again until it is re-enabled. Fix the cause first — a persona that \
+                 keeps failing on the same input re-spends tokens every slot.",
+                trigger.id,
+                FAILURE_MONITOR_WINDOW_HOURS,
+                (FAILURE_MONITOR_FAIL_RATIO * 100.0) as u32,
+                FAILURE_MONITOR_MIN_RUNS,
+            )),
+        },
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            "failure-rate auto-pause: could not promote incident: {}", e
+        );
+    }
+}
+
 pub(crate) fn log_schedule_rate_limit_issue(
     pool: &DbPool,
     trigger: &crate::db::models::PersonaTrigger,
@@ -760,6 +905,28 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                     trigger.trigger_version,
                 );
                 continue;
+            }
+
+            // Failure-rate auto-pause: a schedule whose recent runs are almost
+            // all failures is paused (status → `paused`, so `get_due` stops
+            // returning it) rather than fired into the same wall again. The
+            // pointer is NOT advanced: the pause itself takes the trigger out
+            // of the due set, and the watermark stays true for when a human
+            // re-enables it. See `auto_pause_failing_schedule`.
+            match exec_repo::trigger_outcomes_in_window(
+                pool,
+                &trigger.id,
+                FAILURE_MONITOR_WINDOW_HOURS,
+            ) {
+                Ok((completed, failed)) if failure_rate_exceeded(completed, failed) => {
+                    auto_pause_failing_schedule(pool, &trigger, completed, failed, &now_str);
+                    continue;
+                }
+                Ok(_) => {}
+                Err(e) => tracing::warn!(
+                    trigger_id = %trigger.id,
+                    "failure-rate monitor: outcome query failed, firing anyway: {}", e
+                ),
             }
         }
 

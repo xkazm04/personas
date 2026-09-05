@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Я вижу ваших агентов, запуски и память. Спросите меня о чём угодно или начните с одного из вариантов ниже.",
     "welcome_title": "Чем могу помочь сегодня?",
     "working": "Работаю…",
-    "you_label": "Вы"
+    "you_label": "Вы",
+    "note_suggestions_accept": "Принять",
+    "note_suggestions_accepted": "Добавлено в заметку",
+    "note_suggestions_count_one": "1 предложение для «{title}»",
+    "note_suggestions_count_other": "{count} предложений для «{title}»",
+    "note_suggestions_empty": "В этой карточке нет предложений.",
+    "note_suggestions_heading": "Предложения к заметке",
+    "note_suggestions_open_pad": "Откройте блокнот, чтобы увидеть, куда они попадут.",
+    "note_suggestions_question_hint": "Ответьте на это в заметке или в чате.",
+    "note_suggestions_reject": "Отклонить",
+    "note_suggestions_rejected": "Отклонено"
   },
   "dev_context": {
     "auto_scan": "Автосканирование",

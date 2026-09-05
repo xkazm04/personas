@@ -181,5 +181,16 @@
   "dispatch_method_cli_desc": "Fire-and-forget claude -p run — resource-light; status and insights in the Fleet grid.",
   "dispatch_method_console": "Your terminal",
   "dispatch_method_console_desc": "Opens a new terminal window you own. It keeps running after Personas closes, but the app cannot watch or stop it.",
-  "dispatch_already_running": "A session already works this dispatch — open it in Fleet, or kill it first."
+  "dispatch_already_running": "A session already works this dispatch — open it in Fleet, or kill it first.",
+  "md_bold": "Bold",
+  "md_italic": "Italic",
+  "md_h1": "Heading 1",
+  "md_h2": "Heading 2",
+  "md_h3": "Heading 3",
+  "md_bullet": "Bulleted list",
+  "md_numbered": "Numbered list",
+  "md_checklist": "Checklist",
+  "md_code": "Inline code",
+  "md_quote": "Quote",
+  "md_toolbar": "Formatting"
 }

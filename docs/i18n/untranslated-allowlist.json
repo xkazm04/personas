@@ -462,6 +462,8 @@
   "cs:monitor.triage_fact_fitness",
   "cs:monitor.triage_fact_persona",
   "cs:monitor.triage_source_cloud",
+  "cs:monitor.usage_window_seven_day_opus",
+  "cs:monitor.usage_window_seven_day_sonnet",
   "cs:overview.activity.col_model",
   "cs:overview.athena.origin_chat",
   "cs:overview.athena.section_title",
@@ -1462,6 +1464,8 @@
   "es:monitor.triage_kind_idea",
   "es:monitor.triage_kind_ideas",
   "es:monitor.triage_source_local",
+  "es:monitor.usage_window_seven_day_opus",
+  "es:monitor.usage_window_seven_day_sonnet",
   "es:overview.athena.origin_chat",
   "es:overview.athena.tokens",
   "es:overview.certification.gate_lint",
@@ -3730,5 +3734,9 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder"
+  "zh:vault.shared.api_path_placeholder",
+  "de:notepad.variant_label",
+  "de:notepad.variant_journal",
+  "fr:notepad.tabs_label",
+  "fr:notepad.variant_journal"
 ]

@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Vidím vaše agenty, spuštění a paměť. Zeptejte se mě na cokoliv, nebo začněte jednou z těchto možností.",
     "welcome_title": "Jak vám mohu dnes pomoci?",
     "working": "Pracuji…",
-    "you_label": "Vy"
+    "you_label": "Vy",
+    "note_suggestions_accept": "Přijmout",
+    "note_suggestions_accepted": "Přidáno do poznámky",
+    "note_suggestions_count_one": "1 návrh pro „{title}“",
+    "note_suggestions_count_other": "{count} návrhů pro „{title}“",
+    "note_suggestions_empty": "Tato karta neobsahuje žádné návrhy.",
+    "note_suggestions_heading": "Návrhy k poznámce",
+    "note_suggestions_open_pad": "Otevřete poznámkový blok a podívejte se, kam se tyto návrhy promítnou.",
+    "note_suggestions_question_hint": "Odpovězte na to v poznámce, nebo v chatu.",
+    "note_suggestions_reject": "Odmítnout",
+    "note_suggestions_rejected": "Zamítnuto"
   },
   "dev_context": {
     "auto_scan": "Automatický sken",

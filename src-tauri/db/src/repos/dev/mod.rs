@@ -32,6 +32,8 @@ pub mod ideas;
 pub mod kpis;
 /// `dev_milestones` and `dev_milestone_items`.
 pub mod milestones;
+/// `dev_notes` — the Notepad: scratch requirements and their dispatch handshake.
+pub mod notes;
 /// `dev_pipelines` — idea-to-execution.
 pub mod pipelines;
 /// Cross-project read models over goals/KPIs/projects (portfolio + pending work).

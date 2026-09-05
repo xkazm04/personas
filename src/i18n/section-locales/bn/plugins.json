@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "আমি আপনার এজেন্ট, এক্সিকিউশন এবং মেমোরি দেখতে পাচ্ছি। যেকোনো প্রশ্ন করুন, বা নিচের যেকোনো একটি দিয়ে শুরু করুন।",
     "welcome_title": "আজ কীভাবে সাহায্য করতে পারি?",
     "working": "কাজ চলছে…",
-    "you_label": "আপনি"
+    "you_label": "আপনি",
+    "note_suggestions_accept": "গ্রহণ করুন",
+    "note_suggestions_accepted": "নোটে যোগ করা হয়েছে",
+    "note_suggestions_count_one": "“{title}”-এর জন্য ১টি পরামর্শ",
+    "note_suggestions_count_other": "“{title}”-এর জন্য {count}টি পরামর্শ",
+    "note_suggestions_empty": "এই কার্ডে কোনো পরামর্শ নেই।",
+    "note_suggestions_heading": "একটি নোটের জন্য পরামর্শ",
+    "note_suggestions_open_pad": "এগুলো কোথায় প্রয়োগ হবে দেখতে নোটপ্যাড খুলুন।",
+    "note_suggestions_question_hint": "এর উত্তর নোটে দিন, অথবা চ্যাটে।",
+    "note_suggestions_reject": "প্রত্যাখ্যান",
+    "note_suggestions_rejected": "বাতিল করা হয়েছে"
   },
   "dev_context": {
     "auto_scan": "স্বয়ংক্রিয় স্ক্যান",

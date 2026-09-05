@@ -181,5 +181,16 @@
   "unsaved_title": "Änderungen vor dem Verlassen speichern?",
   "use_case_count_one": "{count} Anwendungsfall",
   "use_case_count_other": "{count} Anwendungsfälle",
-  "value_placeholder": "Wert"
+  "value_placeholder": "Wert",
+  "md_bold": "Fett",
+  "md_bullet": "Aufzählung",
+  "md_checklist": "Checkliste",
+  "md_code": "Inline-Code",
+  "md_h1": "Überschrift 1",
+  "md_h2": "Überschrift 2",
+  "md_h3": "Überschrift 3",
+  "md_italic": "Kursiv",
+  "md_numbered": "Nummerierte Liste",
+  "md_quote": "Zitat",
+  "md_toolbar": "Formatierung"
 }

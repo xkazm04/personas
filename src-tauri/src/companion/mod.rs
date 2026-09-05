@@ -21,6 +21,7 @@ pub mod jobs;
 pub mod knowledge_ops;
 pub mod model_routing;
 pub mod night_shift;
+pub mod note_ops;
 pub mod observability;
 pub mod orchestration;
 pub mod plugins;

@@ -38,6 +38,7 @@ import type { CertificationSlice } from "./slices/overview/certificationSlice";
 import type { HomeSpineSlice } from "./slices/overview/homeSpineSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { FleetSlice } from "./slices/system/fleetSlice";
+import type { NotepadSlice } from "./slices/system/notepadSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { DevicesSlice } from "./slices/network/devicesSlice";
 import type { RemoteJobsSlice } from "./slices/network/remoteJobsSlice";
@@ -256,6 +257,7 @@ export type SystemStore = CoreState &
   OnboardingSlice &
   DevToolsSlice &
   FleetSlice &
+  NotepadSlice &
   NetworkSlice &
   DevicesSlice &
   RemoteJobsSlice &

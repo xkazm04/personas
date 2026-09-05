@@ -181,5 +181,16 @@
   "unsaved_title": "حفظ التغييرات قبل المغادرة؟",
   "use_case_count_one": "{count} حالة استخدام",
   "use_case_count_other": "{count} حالة استخدام",
-  "value_placeholder": "القيمة"
+  "value_placeholder": "القيمة",
+  "md_bold": "غامق",
+  "md_bullet": "قائمة نقطية",
+  "md_checklist": "قائمة مهام",
+  "md_code": "كود مضمّن",
+  "md_h1": "عنوان 1",
+  "md_h2": "عنوان 2",
+  "md_h3": "عنوان 3",
+  "md_italic": "مائل",
+  "md_numbered": "قائمة مرقمة",
+  "md_quote": "اقتباس",
+  "md_toolbar": "التنسيق"
 }

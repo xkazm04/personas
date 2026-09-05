@@ -575,7 +575,7 @@ _Incident discipline: these are ALREADY FILED — do NOT raise a new incident fo
 /// `design_context` (first enabled use case's `capability_summary` ||
 /// `description`), falling back to the persona's own `description`. Always one
 /// line, truncated to [`CAP_LINE_CHARS`].
-fn top_capability(design_context: Option<&str>, fallback_desc: Option<&str>) -> String {
+pub(crate) fn top_capability(design_context: Option<&str>, fallback_desc: Option<&str>) -> String {
     if let Some(dc_json) = design_context {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
             if let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) {

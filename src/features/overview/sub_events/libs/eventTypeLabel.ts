@@ -22,6 +22,10 @@ export function eventTypeLabel(t: Translations, eventType: string): string {
       return labels.schedule_missed_offline;
     case 'schedule.skipped.overlap':
       return labels.schedule_skipped_overlap;
+    case 'schedule.paused.failure_rate':
+      return labels.schedule_paused_failure_rate;
+    case 'team.channel.leader_verdict':
+      return labels.team_channel_leader_verdict;
     default:
       return humanizeEventType(eventType);
   }

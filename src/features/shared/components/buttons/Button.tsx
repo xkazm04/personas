@@ -121,6 +121,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type = 'button',
       style,
       onClick,
+      // Pulled out of `rest` DELIBERATELY. The attribute below is written after
+      // the spread, so an incoming `aria-busy` used to be clobbered with
+      // `undefined` — which is what happened to every `AsyncButton` in the app:
+      // it computes its own busy state, passes `aria-busy`, and Button erased
+      // it, so a control that visibly span reported nothing to a screen reader
+      // (found 2026-09-05 while testing the notepad dispatch bar).
+      'aria-busy': ariaBusy,
       ...rest
     },
     ref,
@@ -223,7 +230,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isDisabled}
         className={classes}
         style={mergedStyle}
-        aria-busy={loading || undefined}
+        aria-busy={loading || ariaBusy || undefined}
         onClick={onClick ? handleClick : undefined}
       >
         {loading && isIconOnly ? (

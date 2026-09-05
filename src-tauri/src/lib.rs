@@ -1650,6 +1650,15 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- Notepad (scratch requirements -> /note-task dispatch)
+            commands::infrastructure::dev_tools::notepad_list_notes,
+            commands::infrastructure::dev_tools::notepad_create_note,
+            commands::infrastructure::dev_tools::notepad_update_note,
+            commands::infrastructure::dev_tools::notepad_set_status,
+            commands::infrastructure::dev_tools::notepad_delete_note,
+            commands::infrastructure::dev_tools::notepad_fork_note,
+            commands::infrastructure::dev_tools::notepad_ingest_runs,
+            commands::infrastructure::dev_tools::notepad_resolve_suggestion,
             // Dev Tools -- milestones (Ship layer: convergence cuts)
             commands::infrastructure::dev_tools::dev_tools_list_milestones,
             commands::infrastructure::dev_tools::dev_tools_create_milestone,
@@ -2143,6 +2152,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_token_summary,
             commands::fleet::transcript_read::fleet_session_recap,
             commands::fleet::monitor_stats::fleet_monitor_stats,
+            commands::fleet::claude_usage::fleet_claude_usage,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,

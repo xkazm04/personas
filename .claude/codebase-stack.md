@@ -134,6 +134,36 @@ replies are situated in current app state, not chat history alone. Findings abou
 "channel replies ignore X" anchor there; findings about mention grammar anchor at
 `mentioned_members` in `team_channel.rs`.
 
+**Team channel LEADER routing (added `/research` run 2026-09-05, multica squads compare).**
+A mention-free team directive is no longer whole-team `inject` when the team has a leader:
+`commands/teams/channel_leader.rs::channel_leader` picks the first enabled member with
+pipeline role `orchestrator` or `router` (`persona_team_members.role` — the enum the schema
+always had and nothing consumed), and `post_team_directive` summons it ALONE with
+`leaderBriefing` / `channelRole: "leader"` in the input envelope (protocol + roster with exact
+`@Name` tokens + `team_config.leader_instructions`). Persona replies can delegate:
+`delegate_from_reply` summons `@`-mentioned members (never the author — self-trigger guard),
+wakes the leader on a mention-free MEMBER reply, treats a mention-free LEADER reply as
+terminal, and stops at `MAX_DELEGATION_DEPTH = 3` with a display row. The leader's turn ends
+with `VERDICT: action|no_action|failed — reason`, parsed by `parse_leader_verdict` and
+published as `team.channel.leader_verdict` (`unstated` when absent). Findings about "who
+routes work in the channel" anchor at `channel_leader.rs`; the deterministic router for
+ASSIGNMENTS is still `team_assignment_matching` — two different doors, do not conflate.
+
+**Poisoned-session guard (same run).** `error_taxonomy::is_resume_safe(category)` is false
+only for `Validation` (oversize / context-window / 400 invalid_request — the failure lives in
+the transcript). `ai_healing::should_trigger_ai_healing` consults it, so AI healing (which
+`--resume`s the failed session) never re-arms on those; scheduled retries resume only on
+`ApiError` 5xx and were already safe. A scheduled retry that expected to resume but has no
+session id injects `SESSION_LOST_CONTINUITY_HINT` as `_resume_hint`. Findings about "resume
+replays the same failure" anchor at those two functions, not at the runner.
+
+**Schedule failure-rate auto-pause (same run).** `background/scheduler.rs` gates each
+schedule fire on `exec_repo::trigger_outcomes_in_window` (per TRIGGER, 7d, ≥12 runs, ≥90%
+failed → `TriggerStatus::Paused` + `schedule.paused.failure_rate` event + `trigger_auto_paused`
+incident). Before this the only writer of a non-active trigger status was a DB write failure
+in `db/src/chain.rs`; execution outcomes never touched trigger status, and the persona breaker
+deliberately skips team members.
+
 **Codex provider was removed (2026-04-27).** Earlier versions of this doc said `engine/provider/codex.rs::build_execution_args` builds Codex args independently. That file no longer exists; only ClaudeProvider remains. CLI-flag changes only need to be evaluated for Claude Code applicability — there is no second provider to coordinate with. If Codex (or any new CLI engine) is re-introduced, sibling providers would need their own `build_execution_args` impl that does NOT call `prompt::build_cli_args` (since that funnel pins Claude-specific flags like `--effort`).
 
 ### Lifecycle hooks: `hooks_sidecar.rs` is narrow (Claude Code's NATIVE hooks only)

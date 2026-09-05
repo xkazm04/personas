@@ -291,6 +291,208 @@ fn show_ship_goals_is_a_card_op_not_an_action_or_a_read_op() {
     assert!(!READ_OPS.contains(&"show_ship_goals"));
 }
 
+// -- the Notepad: describe_note + show_note_suggestions --------------
+
+/// Same fail-closed doctrine as `show_ship_goals`, and for the sharper reason:
+/// this card's Accept button WRITES INTO a document. A card rendered without a
+/// way to prove the note exists is a button that applies text into nothing.
+#[test]
+fn show_note_suggestions_fails_closed_without_the_notepad() {
+    let op = r###"{"op":"propose_action","action":"show_note_suggestions","params":{"note_id":"n1","rows":[{"kind":"section","body_md":"text"}]}}"###;
+    let out = dispatch_op(op);
+    assert!(
+        out.chat_cards.is_empty(),
+        "no card without a way to prove the note exists"
+    );
+    assert!(out
+        .warnings
+        .iter()
+        .any(|w| w.contains("show_note_suggestions")));
+}
+
+#[test]
+fn show_note_suggestions_is_a_card_op_not_an_action_or_a_read_op() {
+    assert!(!ALLOWED_ACTIONS.contains(&"show_note_suggestions"));
+    assert!(!READ_OPS.contains(&"show_note_suggestions"));
+}
+
+/// `describe_note` is a READ op: it auto-fires, creates no approval row, and
+/// needs a target. An entry on the wrong list would make it either a dead
+/// approval card or a lookup with nothing to look up.
+#[test]
+fn describe_note_is_a_read_op_that_needs_a_query() {
+    assert!(READ_OPS.contains(&"describe_note"));
+    assert!(!ALLOWED_ACTIONS.contains(&"describe_note"));
+    assert!(!READ_OPS_QUERY_OPTIONAL.contains(&"describe_note"));
+}
+
+/// The whole round trip against a real pad: a validated card carries the note's
+/// title, one server-minted `row_id` per row, and an `outcome` that is present
+/// and null rather than absent -- "undecided" is the state this card spends most
+/// of its life in, and an absent key does not say it.
+#[test]
+fn the_note_suggestions_card_carries_server_minted_rows() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let note =
+        crate::db::repos::dev_tools::create_note(&sys, "Notepad polish", None).expect("note");
+    let op = format!(
+        r###"{{"op":"propose_action","action":"show_note_suggestions","params":{{"note_id":"{}","rows":[{{"kind":"section","anchor":{{"after_heading":"Goal"}},"title":"Add a risks section","body_md":"## Risks"}},{{"kind":"question","body_md":"Which repo?"}}]}}}}"###,
+        note.id
+    );
+    let text = format!("Prose.\nOP: {op}\nMore prose.");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    let card = out
+        .chat_cards
+        .iter()
+        .find(|c| c.kind == "note_suggestions")
+        .unwrap_or_else(|| panic!("no card; warnings: {:?}", out.warnings));
+    assert_eq!(
+        card.config["note_title"],
+        serde_json::json!("Notepad polish")
+    );
+    let rows = card.config["rows"].as_array().expect("rows");
+    assert_eq!(rows.len(), 2);
+    assert!(
+        rows[0]["row_id"].as_str().is_some_and(|s| s.len() == 36),
+        "row_id is a server-minted uuid: {:?}",
+        rows[0]
+    );
+    assert!(
+        rows[0].get("outcome").is_some(),
+        "outcome must be PRESENT and null, not absent"
+    );
+    assert!(rows[0]["outcome"].is_null());
+    assert_eq!(
+        rows[0]["anchor"]["after_heading"],
+        serde_json::json!("Goal")
+    );
+    assert!(rows[1]["anchor"].is_null(), "an omitted anchor is null");
+}
+
+/// An archived note is off the pad. Suggesting into one renders blocks in a
+/// document the operator is no longer looking at.
+#[test]
+fn suggestions_are_refused_on_an_archived_note() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let note = crate::db::repos::dev_tools::create_note(&sys, "Old", None).expect("note");
+    crate::db::repos::dev_tools::set_status(
+        &sys,
+        &note.id,
+        crate::db::models::NoteStatus::Archived,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("archive");
+    let op = format!(
+        r###"{{"op":"propose_action","action":"show_note_suggestions","params":{{"note_id":"{}","rows":[{{"kind":"section","body_md":"text"}}]}}}}"###,
+        note.id
+    );
+    let text = format!("Prose.\nOP: {op}");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+    assert!(out.chat_cards.is_empty(), "{:?}", out.chat_cards);
+    assert!(
+        out.warnings.iter().any(|w| w.contains("archived")),
+        "{:?}",
+        out.warnings
+    );
+}
+
+/// The `note_id` on `show_ship_goals` does two things, and this covers both:
+/// it rides into the card config (the confirm path needs it to close the note),
+/// and it moves a PUBLISHED note to `in_progress` so the pad stops offering
+/// "turn into goals" while a card is already on screen.
+#[test]
+fn show_ship_goals_with_a_note_id_carries_it_and_moves_the_note() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let project = crate::db::repos::dev::projects::create_project(
+        &sys, "personas", "C:/repo", None, None, None, None, None,
+    )
+    .expect("project")
+    .id;
+    let milestone = crate::db::repos::dev::milestones::create_milestone(
+        &sys,
+        &project,
+        "M1",
+        None,
+        None,
+        Some("active"),
+        None,
+    )
+    .expect("milestone")
+    .id;
+    let note =
+        crate::db::repos::dev_tools::create_note(&sys, "Idea", Some(&project)).expect("note");
+    crate::db::repos::dev_tools::set_status(
+        &sys,
+        &note.id,
+        crate::db::models::NoteStatus::Published,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("publish");
+
+    let op = format!(
+        r###"{{"op":"propose_action","action":"show_ship_goals","params":{{"milestone_id":"{milestone}","note_id":"{}","goals":[{{"title":"Compose the story"}}]}}}}"###,
+        note.id
+    );
+    let text = format!("Prose.\nOP: {op}");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    let card = out
+        .chat_cards
+        .iter()
+        .find(|c| c.kind == "ship_goals")
+        .unwrap_or_else(|| panic!("no card; warnings: {:?}", out.warnings));
+    assert_eq!(card.config["note_id"], serde_json::json!(note.id));
+
+    let after = crate::db::repos::dev_tools::get_note(&sys, &note.id).expect("note");
+    assert_eq!(after.status, crate::db::models::NoteStatus::InProgress);
+    assert_eq!(after.dispatch_target.as_deref(), Some("athena_goals"));
+}
+
+/// Without a `note_id` the card must not grow one, and no note may move. The
+/// Ship tab's own Decompose button is this path, and it has no note.
+#[test]
+fn show_ship_goals_without_a_note_id_carries_null() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let project = crate::db::repos::dev::projects::create_project(
+        &sys, "personas", "C:/repo", None, None, None, None, None,
+    )
+    .expect("project")
+    .id;
+    let milestone = crate::db::repos::dev::milestones::create_milestone(
+        &sys,
+        &project,
+        "M1",
+        None,
+        None,
+        Some("active"),
+        None,
+    )
+    .expect("milestone")
+    .id;
+    let op = format!(
+        r###"{{"op":"propose_action","action":"show_ship_goals","params":{{"milestone_id":"{milestone}","goals":[{{"title":"Compose the story"}}]}}}}"###
+    );
+    let text = format!("Prose.\nOP: {op}");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+    let card = out
+        .chat_cards
+        .iter()
+        .find(|c| c.kind == "ship_goals")
+        .unwrap_or_else(|| panic!("no card; warnings: {:?}", out.warnings));
+    assert!(card.config["note_id"].is_null(), "{:?}", card.config);
+}
+
 /// The other three Ship ops, each on the list that gives it its behaviour.
 ///
 /// An entry here is not decoration: an action with no `ALLOWED_ACTIONS` entry

@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "يمكنني رؤية وكلاؤك وعمليات التنفيذ والذاكرة. اسألني أي شيء، أو ابدأ بأحد هذه.",
     "welcome_title": "كيف يمكنني المساعدة اليوم؟",
     "working": "جارٍ العمل…",
-    "you_label": "أنت"
+    "you_label": "أنت",
+    "note_suggestions_accept": "قبول",
+    "note_suggestions_accepted": "أُضيف إلى الملاحظة",
+    "note_suggestions_count_one": "اقتراح واحد لـ «{title}»",
+    "note_suggestions_count_other": "{count} اقتراحات لـ «{title}»",
+    "note_suggestions_empty": "لا تحتوي هذه البطاقة على أي اقتراحات.",
+    "note_suggestions_heading": "اقتراحات لملاحظة",
+    "note_suggestions_open_pad": "افتح المفكرة لترى أين ستُطبَّق هذه الاقتراحات.",
+    "note_suggestions_question_hint": "أجب عن هذا في الملاحظة، أو في المحادثة.",
+    "note_suggestions_reject": "رفض",
+    "note_suggestions_rejected": "تم التجاهل"
   },
   "dev_context": {
     "auto_scan": "فحص تلقائي",

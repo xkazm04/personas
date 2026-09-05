@@ -643,7 +643,9 @@
       "schedule_missed_offline": "Пропущенные запланированные запуски (офлайн)",
       "schedule_skipped_overlap": "Расписание пропущено (предыдущий запуск активен)",
       "sla_breach_opened": "Нарушение SLA открыто",
-      "sla_breach_recovered": "Нарушение SLA устранено"
+      "sla_breach_recovered": "Нарушение SLA устранено",
+      "schedule_paused_failure_rate": "Расписание приостановлено (слишком много неудачных запусков)",
+      "team_channel_leader_verdict": "Вердикт руководителя команды"
     },
     "view_name_placeholder": "Название вида (например, 'Сбои вебхуков на этой неделе')",
     "views_label": "Виды:"

@@ -76,3 +76,6 @@ For `.personas/memory-outbox.jsonl`, anchor `context` to the **product-level nam
 `.claude/codebase-context.md`** (49 names, 8 groups - what the app's DB knows). Do NOT use repo-root
 `context-map.json`: it is a peer device's mechanical auto-map whose names the app does not recognize,
 and an unrecognized name is stored with a null context and never counts toward coverage.
+
+## Skill improvement log
+- 2026-09-01: `find-unused-i18n-keys.mjs` exempts every section routeSections.ts preloads (1,709 keys) - grep key names directly for dead keys in matrix_v3/agents/etc. Attribute strings (aria-label=/placeholder= literals) are the residual i18n defect in localized areas; the JSX-text lint never sees them.

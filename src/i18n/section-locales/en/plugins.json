@@ -3118,7 +3118,17 @@
     "health_counter_absent": "none yet",
     "health_counter_last_cycle": "Last sleep cycle",
     "health_counter_never": "never",
-    "health_counter_conversation_episodes": "Conversation episodes"
+    "health_counter_conversation_episodes": "Conversation episodes",
+    "note_suggestions_heading": "Suggestions for a note",
+    "note_suggestions_count_one": "1 suggestion for “{title}”",
+    "note_suggestions_count_other": "{count} suggestions for “{title}”",
+    "note_suggestions_empty": "This card carries no suggestions.",
+    "note_suggestions_question_hint": "Answer this in the note, or in the chat.",
+    "note_suggestions_accept": "Accept",
+    "note_suggestions_reject": "Reject",
+    "note_suggestions_accepted": "Added to the note",
+    "note_suggestions_rejected": "Dismissed",
+    "note_suggestions_open_pad": "Open the notepad to see where these land."
   },
   "artist_gallery": {
     "loading_viewer": "Loading viewer…",

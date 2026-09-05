@@ -24,6 +24,18 @@
 
 - **[2026-09-05 17:24]**
 - **Paths:** `src/features/agents/sub_health/**` · `.claude/scan-history/` · `.personas/memory-outbox.jsonl`
+### research-multica — C:/Program Files/Git/research on multica-ai/multica (multi-LLM CLI providers, agent teams)
+- **[2026-09-05 16:13]** Source: https://github.com/multica-ai/multica
+- **Paths:** `src-tauri/src/engine/**` · `src/features/teams/**` · `.claude/codebase-stack.md`
+- **Status:** started
+
+- **[2026-09-05 15:52]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/**` · `src/api/fleet/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+### spark-notepad — Spark: notepad brainstorming module (footer icon, tabbed markdown notes, Athena suggestions, Fleet/goal dispatch)
+- **[2026-09-05 13:48]**
+- **Paths:** `src/features/notepad/**` · `src/features/shared/chrome/DesktopFooter.tsx` · `src-tauri/src/commands/notepad*` · `src-tauri/db/**/notepad*`
 - **Status:** started
 
 - **[2026-09-04 23:20]**
@@ -631,6 +643,7 @@
 ### scan-sweep-optimize-r2 — /scan-sweep --optimize round 2: agents-components-allpersonas
 
 ### scan-sweep-optimize — C:/Program Files/Git/scan-sweep --optimize loop (registry skill), context by context
+### monitor-coldload-usage-bubbles — Monitor: staged cold paint, Claude usage strip, channel chat bubbles
 
 ### sweep-agents-design — scan-sweep --optimize: agents-design
 
