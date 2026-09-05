@@ -2437,7 +2437,11 @@
     "show_archived_personas": "Archivierte Personas anzeigen",
     "show_only_favorites": "Nur Favoriten anzeigen",
     "star_director_add": "Markieren, um zum Coaching-Bereich des Directors hinzuzufügen",
-    "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen."
+    "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen.",
+    "persona_count_one": "{count} Persona",
+    "persona_count_other": "{count} Personas",
+    "persona_count_filtered_one": "{shown} von {total} Persona",
+    "persona_count_filtered_other": "{shown} von {total} Personas"
   },
   "persona_overview": {
     "click_to_copy": "Zum Kopieren klicken",

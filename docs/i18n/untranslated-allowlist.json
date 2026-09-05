@@ -3738,5 +3738,9 @@
   "de:notepad.variant_label",
   "de:notepad.variant_journal",
   "fr:notepad.tabs_label",
-  "fr:notepad.variant_journal"
+  "fr:notepad.variant_journal",
+  "cs:agents.persona_list.persona_count_one",
+  "es:agents.persona_list.persona_count_one",
+  "es:agents.persona_list.persona_count_other",
+  "id:agents.persona_list.persona_count_one"
 ]

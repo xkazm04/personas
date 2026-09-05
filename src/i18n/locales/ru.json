@@ -2443,7 +2443,11 @@
       "show_archived_personas": "Показать архивные персоны",
       "show_only_favorites": "Показать только избранных",
       "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
-      "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать."
+      "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
+      "persona_count_one": "{count} агент",
+      "persona_count_other": "{count} агентов",
+      "persona_count_filtered_one": "{shown} из {total} агента",
+      "persona_count_filtered_other": "{shown} из {total} агентов"
     },
     "persona_overview": {
       "click_to_copy": "Нажмите для копирования",

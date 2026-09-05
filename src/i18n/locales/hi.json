@@ -2443,7 +2443,11 @@
       "show_archived_personas": "आर्काइव किए गए पर्सोना दिखाएं",
       "show_only_favorites": "केवल पसंदीदा दिखाएं",
       "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
-      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।"
+      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।",
+      "persona_count_one": "{count} पर्सोना",
+      "persona_count_other": "{count} पर्सोना",
+      "persona_count_filtered_one": "{total} में से {shown} पर्सोना",
+      "persona_count_filtered_other": "{total} में से {shown} पर्सोना"
     },
     "persona_overview": {
       "click_to_copy": "कॉपी करने के लिए क्लिक करें",

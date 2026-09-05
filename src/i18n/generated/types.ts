@@ -3367,6 +3367,10 @@ export type Translations = {
       clear_search: string;
       col_persona: string;
       no_connectors_configured: string;
+      persona_count_one: string;
+      persona_count_other: string;
+      persona_count_filtered_one: string;
+      persona_count_filtered_other: string;
     };
     life: {
       sub_core: string;

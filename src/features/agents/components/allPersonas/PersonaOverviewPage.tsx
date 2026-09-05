@@ -218,6 +218,23 @@ export default function PersonaOverviewPage() {
     setGroupFilter(null);
   }, []);
 
+  // The header count used to be a template literal with a hardcoded English
+  // "of" and a hand-rolled `s` plural, so 13 of the 14 locales rendered
+  // "3 of 12 personas" in English on the roster's own header.
+  const subtitle = useMemo(() => {
+    const plural = personas.length !== 1;
+    if (filteredData.length !== personas.length) {
+      return tx(
+        plural ? t.agents.persona_list.persona_count_filtered_other : t.agents.persona_list.persona_count_filtered_one,
+        { shown: filteredData.length, total: personas.length },
+      );
+    }
+    return tx(
+      plural ? t.agents.persona_list.persona_count_other : t.agents.persona_list.persona_count_one,
+      { count: personas.length },
+    );
+  }, [filteredData.length, personas.length, tx, t.agents.persona_list]);
+
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
     onRowClick: handleRowClick,
@@ -230,7 +247,7 @@ export default function PersonaOverviewPage() {
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.agents.persona_list.all_personas}
-        subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} persona${personas.length !== 1 ? 's' : ''}`}
+        subtitle={subtitle}
         actions={pageTab === 'personas' ? (
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <PersonaOverviewBatchBar

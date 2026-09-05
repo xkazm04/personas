@@ -2437,7 +2437,11 @@
     "show_archived_personas": "Mostrar personas archivadas",
     "show_only_favorites": "Mostrar solo favoritos",
     "star_director_add": "Marcar como favorito para añadir al ámbito de coaching del Director",
-    "star_director_remove": "Marcado como favorito — en el ámbito de coaching del Director. Haz clic para quitar."
+    "star_director_remove": "Marcado como favorito — en el ámbito de coaching del Director. Haz clic para quitar.",
+    "persona_count_one": "{count} persona",
+    "persona_count_other": "{count} personas",
+    "persona_count_filtered_one": "{shown} de {total} persona",
+    "persona_count_filtered_other": "{shown} de {total} personas"
   },
   "persona_overview": {
     "click_to_copy": "Haz clic para copiar",

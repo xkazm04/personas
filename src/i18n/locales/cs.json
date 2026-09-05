@@ -2443,7 +2443,11 @@
       "show_archived_personas": "Zobrazit archivované persony",
       "show_only_favorites": "Zobrazit pouze oblíbené",
       "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
-      "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete."
+      "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete.",
+      "persona_count_one": "{count} persona",
+      "persona_count_other": "{count} person",
+      "persona_count_filtered_one": "{shown} z {total} persony",
+      "persona_count_filtered_other": "{shown} z {total} person"
     },
     "persona_overview": {
       "click_to_copy": "Kliknutím zkopírujete",

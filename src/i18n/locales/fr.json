@@ -2443,7 +2443,11 @@
       "show_archived_personas": "Afficher les personas archivées",
       "show_only_favorites": "Afficher uniquement les favoris",
       "star_director_add": "Marquer pour ajouter au périmètre de coaching du Director",
-      "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer."
+      "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer.",
+      "persona_count_one": "{count} agent",
+      "persona_count_other": "{count} agents",
+      "persona_count_filtered_one": "{shown} sur {total} agent",
+      "persona_count_filtered_other": "{shown} sur {total} agents"
     },
     "persona_overview": {
       "click_to_copy": "Cliquez pour copier",

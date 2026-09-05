@@ -2443,7 +2443,11 @@
       "show_archived_personas": "アーカイブ済みのペルソナを表示",
       "show_only_favorites": "お気に入りのみ表示",
       "star_director_add": "スターを付けて Director のコーチング対象に追加",
-      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。"
+      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。",
+      "persona_count_one": "{count} 件のペルソナ",
+      "persona_count_other": "{count} 件のペルソナ",
+      "persona_count_filtered_one": "{total} 件中 {shown} 件のペルソナ",
+      "persona_count_filtered_other": "{total} 件中 {shown} 件のペルソナ"
     },
     "persona_overview": {
       "click_to_copy": "クリックしてコピー",

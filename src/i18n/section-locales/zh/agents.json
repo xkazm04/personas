@@ -2437,7 +2437,11 @@
     "show_archived_personas": "显示已归档角色",
     "show_only_favorites": "只显示收藏",
     "star_director_add": "收藏以加入 Director 的辅导范围",
-    "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。"
+    "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
+    "persona_count_one": "{count} 个智能体",
+    "persona_count_other": "{count} 个智能体",
+    "persona_count_filtered_one": "{total} 个智能体中的 {shown} 个",
+    "persona_count_filtered_other": "{total} 个智能体中的 {shown} 个"
   },
   "persona_overview": {
     "click_to_copy": "点击复制",

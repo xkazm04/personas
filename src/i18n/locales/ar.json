@@ -2443,7 +2443,11 @@
       "show_archived_personas": "عرض الشخصيات المؤرشفة",
       "show_only_favorites": "عرض المفضلة فقط",
       "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
-      "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة."
+      "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة.",
+      "persona_count_one": "{count} وكيل",
+      "persona_count_other": "{count} وكلاء",
+      "persona_count_filtered_one": "{shown} من {total} وكيل",
+      "persona_count_filtered_other": "{shown} من {total} وكلاء"
     },
     "persona_overview": {
       "click_to_copy": "انقر للنسخ",
