@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { Calendar, Clock, Inbox, Plug, Star, Zap } from 'lucide-react';
+import { Calendar, Clock, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
@@ -58,23 +58,13 @@ interface PersonaOverviewCardItemProps {
  *  - row action menu
  */
 export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
-  const { t } = useTranslation();
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     isDraft, connectorNamesMap, densityTokens = DENSITY_TOKENS.comfortable,
   } = props;
 
-  if (data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-          <Inbox className="w-5 h-5 text-foreground" />
-        </div>
-        <p className="typo-heading text-foreground">{t.agents.persona_list.no_personas_match}</p>
-      </div>
-    );
-  }
-
+  // Zero rows never reach this list: PersonaOverviewPage renders the shared
+  // empty state (filters vs. no personas) before choosing card or grid.
   return (
     <div className={`flex-1 overflow-y-auto px-3 py-2 ${densityTokens.cardGap}`}>
       {data.map((p) => (

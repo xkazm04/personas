@@ -9,7 +9,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { DEFAULT_VIEW_CONFIG, hasActiveFilters, type AgentListViewConfig } from './viewConfig';
+import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
@@ -199,8 +199,6 @@ export default function PersonaOverviewPage() {
       : { ...prev, sortKey: key, sortDirection: 'asc' });
   }, []);
 
-  const hasActiveFilter = hasActiveFilters(view, search, groupFilter);
-
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
     setSearch('');
@@ -270,8 +268,16 @@ export default function PersonaOverviewPage() {
 
         <DirectorPanel />
 
-        {filteredData.length === 0 && hasActiveFilter ? (
-          <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
+        {filteredData.length === 0 ? (
+          // Zero rows has two causes with two remedies: no personas at all
+          // (create one) vs. personas that the filters exclude (reset). An
+          // all-archived roster with no filter counts as the second - the
+          // archived toggle is the control that reveals them.
+          <PersonaOverviewEmptyState
+            reason={personas.length === 0 ? 'none' : 'filters'}
+            onResetFilters={handleResetFilters}
+            onCreate={() => setIsCreatingPersona(true)}
+          />
         ) : isMobile ? (
           <PersonaOverviewCardList
             data={filteredData}
