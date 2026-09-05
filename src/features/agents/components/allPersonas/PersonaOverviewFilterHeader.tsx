@@ -99,6 +99,12 @@ export function PersonaOverviewFilterHeader({
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
+        // Same disclosure semantics as the batch bar's team menu: the trigger
+        // announces that it opens a menu and whether it is open, and the
+        // options are menu items. Without these a screen reader hears a plain
+        // button whose activation changes nothing it can perceive.
+        aria-haspopup="menu"
+        aria-expanded={open}
         title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() })}
         // `typo-label` (not a bespoke text-md/font-semibold/tracking-wider mix)
         // so a filterable column header is typographically identical to the
@@ -120,6 +126,8 @@ export function PersonaOverviewFilterHeader({
           <div
             ref={popRef}
             style={style}
+            role="menu"
+            aria-label={label}
             className="min-w-[180px] rounded-card border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
           >
             {options.map((opt) => {
@@ -128,6 +136,8 @@ export function PersonaOverviewFilterHeader({
                 <button
                   key={opt.value}
                   type="button"
+                  role="menuitemradio"
+                  aria-checked={selected}
                   onClick={() => {
                     onChange(opt.value);
                     setOpen(false);
