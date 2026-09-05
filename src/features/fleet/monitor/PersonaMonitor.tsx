@@ -15,7 +15,6 @@ import { memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, MessagesSquare, Bell, LayoutGrid, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
-import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
@@ -449,14 +448,14 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               `typo-* font-semibold` — an unlayered rule quietly winning. */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="h-full p-2 hud-atmosphere">
-            {loading && cards.length === 0 ? (
-              // First-ever cold open only (the warm cache in useMonitorData makes
-              // every re-open paint the last-known fleet immediately): permanent
-              // chrome above stays, and the body shows the shared delayed ghost
-              // instead of the view's settled empty state — "all clear" before
-              // the first read lands would be an empty-flash lie (law 1 / law 3).
-              <RouteChunkSkeleton showIcon showActions={false} />
-            ) : (
+              {/* First-ever cold open only (the warm cache in useMonitorData
+                  makes every re-open paint the last-known fleet immediately):
+                  the board renders its OWN chrome — header, usage strip, rail
+                  footprint — with a geometry-matched ghost where the columns
+                  will be, never a settled empty state before the first read
+                  lands (law 1 / law 3). This used to swap the whole board for
+                  a header-only skeleton, so the cold open painted a page
+                  header, then a blank, then everything at once. */}
               <FleetGridView
                 cards={cards}
                 personas={personas}
@@ -465,8 +464,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 onSelect={handleCardSelect}
                 feedTeams={workspaceTeams}
                 onOpenSpeaker={handleDrillIn}
+                isLoading={loading && cards.length === 0}
               />
-            )}
             </div>
           </div>
 

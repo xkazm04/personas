@@ -21,6 +21,7 @@
 #[cfg(test)]
 pub mod bench;
 pub mod classify;
+pub mod claude_usage;
 pub mod commands;
 pub mod companion_api;
 pub mod debug_log;

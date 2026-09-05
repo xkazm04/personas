@@ -2,6 +2,20 @@
 
 ## Active
 
+### research-multica — C:/Program Files/Git/research on multica-ai/multica (multi-LLM CLI providers, agent teams)
+- **[2026-09-05 16:13]** Source: https://github.com/multica-ai/multica
+- **Paths:** `src-tauri/src/engine/**` · `src/features/teams/**` · `.claude/codebase-stack.md`
+- **Status:** started
+
+- **[2026-09-05 15:52]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/**` · `src/api/fleet/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+### spark-notepad — Spark: notepad brainstorming module (footer icon, tabbed markdown notes, Athena suggestions, Fleet/goal dispatch)
+- **[2026-09-05 13:48]**
+- **Paths:** `src/features/notepad/**` · `src/features/shared/chrome/DesktopFooter.tsx` · `src-tauri/src/commands/notepad*` · `src-tauri/db/**/notepad*`
+- **Status:** started
+
 - **[2026-09-04 23:20]**
 - **Paths:** `src/features/agents/sub_design/**` · `src/features/agents/sub_tool_runner/**`
 - **Status:** started
@@ -595,6 +609,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### monitor-coldload-usage-bubbles — Monitor: staged cold paint, Claude usage strip, channel chat bubbles
 
 ### sweep-agents-design — scan-sweep --optimize: agents-design
 
