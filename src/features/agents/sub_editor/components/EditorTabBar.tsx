@@ -30,11 +30,15 @@ interface EditorTabBarProps {
 
 type TabBadgeVariant = 'dirty' | 'attention' | 'error';
 
-function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number }) {
+/** `srLabel` is the badge's meaning for assistive tech: the dot and the `!`
+ *  are colour and shape only, so without it a screen reader heard nothing
+ *  (or a bare punctuation mark) where a sighted user saw "unsaved". */
+function TabBadge({ variant, count, srLabel }: { variant: TabBadgeVariant; count?: number; srLabel?: string }) {
+  const sr = srLabel ? <span className="sr-only">{srLabel}</span> : null;
   if (variant === 'error') {
     return (
       <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption leading-4 text-center">
-        {count ?? '!'}
+        {count ?? '!'}{sr}
       </span>
     );
   }
@@ -46,7 +50,7 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
       </span>
     );
   }
-  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />;
+  return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse">{sr}</span>;
 }
 
 const GRADE_TONE: Record<'healthy' | 'degraded' | 'unhealthy', string> = {
@@ -109,6 +113,9 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                 key={tab.id}
                 onClick={() => setEditorTab(tab.id)}
                 data-testid={`editor-tab-${tab.id}`}
+                // On mobile the visible label is hidden, and a title is not a
+                // reliable accessible name on touch devices.
+                aria-label={IS_MOBILE ? label : undefined}
                 title={label}
                 className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
@@ -117,11 +124,11 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!IS_MOBILE && label}
                 {failedTabs.includes(tab.id)
-                  ? <TabBadge variant="error" />
+                  ? <TabBadge variant="error" srLabel={editorLabels.tab_save_failed_indicator} />
                   : tab.id === 'design' && connectorsMissing > 0
                     ? <TabBadge variant="error" count={connectorsMissing} />
                     : tabDirty
-                      ? <TabBadge variant="dirty" />
+                      ? <TabBadge variant="dirty" srLabel={editorLabels.unsaved_changes} />
                       : null}
                 {isActive && (
                   <motion.div

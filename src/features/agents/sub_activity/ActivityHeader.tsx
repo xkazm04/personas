@@ -23,6 +23,8 @@ export function ActivityHeader({ itemCount, isLoading, onRefresh }: ActivityHead
           <button
             type="button"
             onClick={onRefresh}
+            aria-label={t.common.refresh}
+            aria-busy={isLoading || undefined}
             className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
             title={t.common.refresh}
           >

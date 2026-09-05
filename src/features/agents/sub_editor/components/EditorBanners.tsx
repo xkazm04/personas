@@ -34,6 +34,7 @@ const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: str
 };
 
 function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss }: BannerPrimitiveProps) {
+  const { t } = useTranslation();
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (
@@ -48,7 +49,7 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
             {actions.map((action, index) => (
               <span key={index}>{action}</span>
             ))}
-            <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="w-7 h-7">
+            <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss} className="w-7 h-7">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
