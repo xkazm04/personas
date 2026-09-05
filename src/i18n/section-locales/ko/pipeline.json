@@ -128,7 +128,7 @@
   "creating_team": "에이전트 {count}개로 팀 생성 중…",
   "current_role": "현재",
   "cycle_detected": "순환 감지됨",
-  "cycle_tooltip": "Part of a cycle \\u2014 execution order is heuristically determined. Consider removing circular connections or marking them as feedback edges.",
+  "cycle_tooltip": "순환의 일부 — 실행 순서가 휴리스틱으로 결정됩니다. 순환 연결을 제거하거나 피드백 엣지로 표시하세요.",
   "cycle_warning": "{nodes}의 실행 순서는 임의로 결정됩니다. 순환 연결을 제거하거나 피드백 엣지로 표시하는 것을 고려하세요.",
   "decision": "결정",
   "default_agent_name": "에이전트",

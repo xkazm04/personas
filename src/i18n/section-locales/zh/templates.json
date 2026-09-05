@@ -1237,7 +1237,7 @@
     "analyzing": "正在分析模板的配置问题…",
     "check_interval": "检查间隔",
     "check_interval_placeholder": "每 5 分钟",
-    "cron_hint": "自然语言（如\\\\\\\"每个工作日上午 9 点\\\\\\\"）或 cron（如\\\\\\\"0 9 * * 1-5\\\\\\\"）",
+    "cron_hint": "自然语言（如\"每个工作日上午 9 点\"）或 cron（如\"0 9 * * 1-5\"）",
     "cron_placeholder": "每个工作日上午 9 点",
     "manual_hint": "手动触发 -- 无需配置",
     "no_triggers": "未选择触发器",

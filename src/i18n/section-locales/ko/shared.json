@@ -198,7 +198,7 @@
   "messages_and_notifications": "메시지 및 알림",
   "persona_all": "모든 페르소나",
   "persona_modal_title": "페르소나 선택",
-  "persona_no_match": "No personas matching \\u201c{query}\\u201d",
+  "persona_no_match": "“{query}”와 일치하는 페르소나가 없습니다",
   "persona_select": "페르소나 선택",
   "process_action_required": "조치 필요",
   "process_active": "진행 중",

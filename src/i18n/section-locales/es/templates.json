@@ -1237,7 +1237,7 @@
     "analyzing": "Analizando plantilla para preguntas de configuración…",
     "check_interval": "Intervalo de verificación",
     "check_interval_placeholder": "Cada 5 minutos",
-    "cron_hint": "Lenguaje natural (ej. \\\\\\\"Cada día laborable a las 9am\\\\\\\") o cron (ej. \\\\\\\"0 9 * * 1-5\\\\\\\")",
+    "cron_hint": "Lenguaje natural (ej. \"Cada día laborable a las 9am\") o cron (ej. \"0 9 * * 1-5\")",
     "cron_placeholder": "Cada día laborable a las 9am",
     "manual_hint": "Se activa manualmente -- no se necesita configuración",
     "no_triggers": "No hay disparadores seleccionados",

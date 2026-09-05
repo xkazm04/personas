@@ -342,7 +342,7 @@
     "no_connector": "Keine Konnektor-Definition für diesen Zugangsdaten-Typ verfügbar.",
     "refresh": "Aktualisieren",
     "refresh_oauth": "OAuth-Token jetzt aktualisieren",
-    "remove_tag": "Tag \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{tag}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" entfernen",
+    "remove_tag": "Tag \"{tag}\" entfernen",
     "stored_result": "Gespeichertes Verbindungstest-Ergebnis"
   },
   "credential_forms": {
@@ -476,7 +476,7 @@
     "pin_table": "Diese Tabelle anheften",
     "pinned": "Angeheftet",
     "placeholder_followup": "Folgefrage stellen…",
-    "placeholder_initial": "z.B. \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Alle Benutzer anzeigen, die letzte Woche registriert haben\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "placeholder_initial": "z.B. \"Alle Benutzer anzeigen, die letzte Woche registriert haben\"",
     "property_count_one": "{count} Eigenschaft",
     "property_count_other": "{count} Eigenschaften",
     "query_failed": "Abfragegenerierung fehlgeschlagen.",
@@ -1117,9 +1117,9 @@
     "retry_authorized": "Ich habe autorisiert — erneut versuchen",
     "retry_failed": "Erneuter Versuch fehlgeschlagen",
     "retrying": "Erneut versuchen…",
-    "step_1": "Klicken Sie auf \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Autorisierungs-URL öffnen\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\", um die Zustimmung im Browser zu erteilen.",
+    "step_1": "Klicken Sie auf \"Autorisierungs-URL öffnen\", um die Zustimmung im Browser zu erteilen.",
     "step_2": "Den Zustimmungsflow für die angeforderten Bereiche abschließen.",
-    "step_3": "Hierher zurückkehren und auf \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Ich habe autorisiert — erneut versuchen\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" klicken.",
+    "step_3": "Hierher zurückkehren und auf \"Ich habe autorisiert — erneut versuchen\" klicken.",
     "title": "Autorisierung erforderlich",
     "tool_needs_consent": "Das Tool {tool} benötigt frische OAuth-Zustimmung, bevor es aufgerufen werden kann."
   },
@@ -1490,7 +1490,7 @@
     "no_documents_heading": "Noch keine Dokumente",
     "no_endpoints": "Keine API-Endpunkte geladen",
     "no_endpoints_hint": "OpenAPI/Swagger-Spezifikation hochladen, um API-Endpunkte zu erkunden und zu testen.",
-    "no_endpoints_match": "Keine Endpunkte entsprechen \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "no_endpoints_match": "Keine Endpunkte entsprechen \"{search}\"",
     "no_endpoints_match_hint": "Anderen Suchbegriff versuchen oder Filter löschen.",
     "no_input_params": "Dieses Tool nimmt keine Eingabeparameter.",
     "no_recipes": "Noch keine Rezepte",
@@ -1597,7 +1597,7 @@
     "recent_refreshes": "Letzte Aktualisierungen",
     "recent_ttls": "Letzte Anbieter-TTLs (neueste zuerst)",
     "total_refreshes": "Gesamtaktualisierungen",
-    "trend_warning": "Token-Lebensdauer wird kürzer \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\u2014 mögliche Anbieter-Drosselung oder Richtlinienänderung."
+    "trend_warning": "Token-Lebensdauer wird kürzer — mögliche Anbieter-Drosselung oder Richtlinienänderung."
   },
   "type_picker": {
     "ai_built": "KI-erstellter Konnektor",
@@ -1698,7 +1698,7 @@
     "clear_selection": "Auswahl aufheben",
     "desktop_bridge": "Desktop-Bridge -- automatisch erkannt",
     "no_filter_match": "Anderen Suchbegriff versuchen oder Filter löschen.",
-    "no_services": "Keine Dienste für \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" gefunden",
+    "no_services": "Keine Dienste für \"{search}\" gefunden",
     "scan_button": "Nach authentifizierten Diensten suchen",
     "scanning": "CLI-Tools und Browsersitzungen werden gescannt…",
     "search_services": "Dienste suchen…",
@@ -1718,7 +1718,7 @@
     "cli_auth": "CLI-Auth",
     "detected": "Erkannt ({count})",
     "local": "Lokal",
-    "no_match": "Keine Dienste entsprechen \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "no_match": "Keine Dienste entsprechen \"{search}\"",
     "session": "Sitzung"
   },
   "workspace_connect": "Workspace-Verbindung",

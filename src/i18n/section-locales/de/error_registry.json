@@ -38,7 +38,7 @@
   "connection_limit_message": "Zu viele aktive Verbindungen.",
   "connection_limit_suggestion": "Eine vorhandene Verbindung trennen, bevor eine neue hinzugefügt wird.",
   "connector_design_message": "Aus Ihrer Beschreibung konnte kein Konnektor generiert werden.",
-  "connector_design_suggestion": "Präziser sein – Dienstname und Zugangsdatentyp angeben (z.B. \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Stripe API-Schlüssel\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\").",
+  "connector_design_suggestion": "Präziser sein – Dienstname und Zugangsdatentyp angeben (z.B. \"Stripe API-Schlüssel\").",
   "decision_conflict_message": "Jemand anderes hat dies bereits entschieden — wird neu geladen.",
   "decision_conflict_suggestion": "Die Liste wird mit dem neuesten Ergebnis aktualisiert. Prüfen Sie es und entscheiden Sie erneut, falls Sie anderer Meinung sind.",
   "decryption_message": "Entschlüsselung fehlgeschlagen – die Passphrase ist möglicherweise falsch oder die Datei beschädigt.",

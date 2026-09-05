@@ -3742,5 +3742,6 @@
   "cs:agents.persona_list.persona_count_one",
   "es:agents.persona_list.persona_count_one",
   "es:agents.persona_list.persona_count_other",
-  "id:agents.persona_list.persona_count_one"
+  "id:agents.persona_list.persona_count_one",
+  "cs:triggers.nl_interval_colon"
 ]

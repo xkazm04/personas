@@ -128,7 +128,7 @@
   "creating_team": "Vytváření týmu s {count} agenty…",
   "current_role": "aktuální",
   "cycle_detected": "Zjištěn cyklus",
-  "cycle_tooltip": "Součást cyklu \\u2014 pořadí spouštění je určeno heuristicky. Zvaž odebrání cyklických spojení nebo jejich označení jako feedback edges.",
+  "cycle_tooltip": "Součást cyklu — pořadí spouštění je určeno heuristicky. Zvaž odebrání cyklických spojení nebo jejich označení jako feedback edges.",
   "cycle_warning": "Pořadí spouštění je libovolné pro: {nodes}. Zvaž odebrání cyklických spojení nebo jejich označení jako feedback edges.",
   "decision": "Rozhodnutí",
   "default_agent_name": "Agent",
