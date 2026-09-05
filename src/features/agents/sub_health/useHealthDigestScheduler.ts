@@ -10,14 +10,28 @@ const DIGEST_ENABLED_KEY = 'health_digest_enabled';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * Parse a stored last-run timestamp. Returns `null` for any value that is
- * missing, empty, non-ISO, or produces a NaN when parsed — callers should
- * treat `null` as "never run" and overwrite with a fresh ISO string.
+ * Tolerated forward clock skew. A stamp inside this window is accepted as
+ * written; anything further ahead is treated as corrupt.
  */
-function parseLastRunMs(raw: string | null | undefined): number | null {
+const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
+
+/**
+ * Parse a stored last-run timestamp. Returns `null` for any value that is
+ * missing, empty, non-ISO, produces a NaN when parsed, or sits implausibly
+ * far in the FUTURE — callers should treat `null` as "never run" and
+ * overwrite with a fresh ISO string.
+ *
+ * The future case is a fail-open the NaN guard did not cover: the due-check
+ * is `now - lastRun < ONE_WEEK_MS`, which any future stamp satisfies, and
+ * keeps satisfying, so one clock that ran ahead (or one bad write) suppressed
+ * the weekly digest on that machine permanently. Exported for unit tests.
+ */
+export function parseLastRunMs(raw: string | null | undefined): number | null {
   if (typeof raw !== 'string' || raw.length === 0) return null;
   const ms = new Date(raw).getTime();
-  return Number.isFinite(ms) ? ms : null;
+  if (!Number.isFinite(ms)) return null;
+  if (ms > Date.now() + MAX_FUTURE_SKEW_MS) return null;
+  return ms;
 }
 
 /**
