@@ -32,7 +32,7 @@ interface AutomationCardProps {
 export function AutomationCard({
   automation, onTest, onEdit, onToggleStatus, onDelete, isTesting, isTransitioning, testResult,
 }: AutomationCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
   const useCases = useSelectedPersonaCapabilities();
   const capabilityTitle = automation.useCaseId
@@ -76,7 +76,7 @@ export function AutomationCard({
                 {capabilityTitle}
               </StatusBadge>
             )}
-            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
+            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{tx(t.agents.connectors.auto_last_run, { time: formatRelativeTime(automation.lastTriggeredAt) })}</span>}
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
             {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (

@@ -43,7 +43,7 @@ export function AutomationConditionStep({
   showAdvanced, setShowAdvanced, inputSchema, setInputSchema,
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
@@ -77,9 +77,9 @@ export function AutomationConditionStep({
           )}
           {platform === 'github_actions' && githubRepo && (
             <div className="px-3 py-2.5 rounded-modal bg-primary/5 border border-primary/20">
-              <p className="typo-body text-foreground"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{t.agents.connectors.auto_github_hint.replace('{repo}', githubRepo ?? '')}</p>
+              <p className="typo-body text-foreground"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{tx(t.agents.connectors.auto_github_hint, { repo: githubRepo ?? '' })}</p>
               {designResult.workflow_definition && !!(designResult.workflow_definition as Record<string, unknown>).event_type && (
-                <p className="typo-body text-foreground mt-1">{t.agents.connectors.auto_event_type.replace('{eventType}', String((designResult.workflow_definition as Record<string, unknown>).event_type))}</p>
+                <p className="typo-body text-foreground mt-1">{tx(t.agents.connectors.auto_event_type, { eventType: String((designResult.workflow_definition as Record<string, unknown>).event_type) })}</p>
               )}
             </div>
           )}

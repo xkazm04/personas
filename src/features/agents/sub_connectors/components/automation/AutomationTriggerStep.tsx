@@ -166,10 +166,10 @@ export function AutomationTriggerStep({
               <div>
                 <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
                 <p className="typo-body text-foreground mt-0.5">
-                  {t.agents.connectors.auto_github_token_needs.replace('{scopes}', [
+                  {tx(t.agents.connectors.auto_github_token_needs, { scopes: [
                     !githubPerms.hasRepo ? "'repo'" : '',
                     !githubPerms.hasWorkflow ? "'workflow'" : '',
-                  ].filter(Boolean).join(' and '))}
+                  ].filter(Boolean).join(' and ') })}
                 </p>
               </div>
             </div>
