@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { History, ArrowRight } from 'lucide-react';
 import { listPersonaChangeLog } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { storeBus } from '@/lib/storeBus';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,24 +30,27 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
   const [entries, setEntries] = useState<PersonaChangeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Generation counter: only the newest request may write. Without it a
-  // slow response for persona A landed after the user had switched to B and
+  // Latest-wins: only the newest request may write. Without it a slow
+  // response for persona A landed after the user had switched to B and
   // painted A's history under B's name (and cleared B's loading ghost early).
-  const generationRef = useRef(0);
+  // The counter/compare pair is the shared one — a hand-rolled `++ref.current`
+  // is the same guard written a second time, and gets the comparison
+  // direction wrong sooner or later.
+  const latestWins = useRef(createLatestWins()).current;
   const load = useCallback(() => {
-    const generation = ++generationRef.current;
+    const token = latestWins.next();
     listPersonaChangeLog(personaId, 50)
-      .then((rows) => { if (generation === generationRef.current) setEntries(rows); })
+      .then((rows) => { if (latestWins.isCurrent(token)) setEntries(rows); })
       .catch((err) => { silentCatch('PersonaChangeHistory:list')(err); })
-      .finally(() => { if (generation === generationRef.current) setLoading(false); });
-  }, [personaId]);
+      .finally(() => { if (latestWins.isCurrent(token)) setLoading(false); });
+  }, [personaId, latestWins]);
 
   useEffect(() => {
     setLoading(true);
     load();
     // A persona switch or unmount retires every response still in flight.
-    return () => { generationRef.current++; };
-  }, [load]);
+    return () => { latestWins.next(); };
+  }, [load, latestWins]);
 
   // A completed run never edits config, but saves do — re-pull when the store
   // signals a persona changed so a fresh edit shows without a manual refresh.
