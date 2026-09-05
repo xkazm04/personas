@@ -11,7 +11,7 @@ import {
   Globe,
   Zap,
 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -145,16 +145,19 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
 
               {/* Run button */}
               {!isBuiltin && (
-              <button
-                type="button"
+              <Button
+                variant="accent"
+                accentColor="violet"
+                size="sm"
                 data-testid={`tool-run-${tool.name}`}
                 onClick={handleRun}
                 disabled={!canRun}
-                className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
+                loading={isRunning}
+                loadingLabel={t.agents.tool_runner.running}
+                icon={<Play className="w-3.5 h-3.5" />}
               >
-                {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-                {isRunning ? t.agents.tool_runner.running : t.agents.tool_runner.run}
-              </button>
+                {t.agents.tool_runner.run}
+              </Button>
               )}
 
               {/* Result */}
@@ -224,7 +227,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
             </span>
           )}
           {result.retryable && (
-            <span className="typo-body text-foreground/70">{t.agents.tool_runner.retryable_hint}</span>
+            <span className="typo-body text-foreground">{t.agents.tool_runner.retryable_hint}</span>
           )}
         </div>
       )}
