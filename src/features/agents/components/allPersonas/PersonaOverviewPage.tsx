@@ -11,6 +11,7 @@ import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/C
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
+import { rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -31,6 +32,15 @@ import { listDirectorScoreTrends } from '@/api/director';
 /** Top-level view of the All-Personas page: the persona list, or the
  *  effective-config resolution table (migrated from Settings → Config). */
 type PageTab = 'personas' | 'config';
+
+/** The grid's rendering of the shared accent rule (`rowAccentTone`). */
+const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
+  building: 'border-l-violet-400/60',
+  draft: 'border-l-zinc-400/40',
+  failing: 'border-l-red-400/60',
+  degraded: 'border-l-amber-400/60',
+  healthy: 'border-l-emerald-400/40',
+};
 
 export default function PersonaOverviewPage() {
   const { t, tx } = useTranslation();
@@ -298,13 +308,7 @@ export default function PersonaOverviewPage() {
             getRowKey={(p) => p.id}
             onRowClick={handleRowClick}
             isRowSelected={(p) => selectedIds.has(p.id)}
-            getRowAccent={(p) =>
-              isBuilding(p.id) ? 'border-l-violet-400/60'
-                : isDraft(p) ? 'border-l-zinc-400/40'
-                : healthMap[p.id]?.status === 'failing' ? 'border-l-red-400/60'
-                : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
-                : 'border-l-emerald-400/40'
-            }
+            getRowAccent={(p) => GRID_ACCENT_CLASS[rowAccentTone(isBuilding(p.id), isDraft(p), healthMap[p.id])]}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}

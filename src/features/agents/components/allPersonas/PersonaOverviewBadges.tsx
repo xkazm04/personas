@@ -16,6 +16,29 @@ export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey:
   failing: { bg: 'bg-red-500/10', text: 'text-red-400', labelKey: 'failing' },
 };
 
+/* -- Row accent ------------------------------------------------------- */
+
+export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'healthy';
+
+/**
+ * ONE priority rule for the left-edge accent a persona row or card carries:
+ * building beats draft beats failing beats degraded, else healthy. The grid
+ * (PersonaOverviewPage) and the mobile card (PersonaOverviewCardList) each
+ * map the tone to their own classes; the order and the health mapping live
+ * here so the two surfaces cannot drift apart again.
+ */
+export function rowAccentTone(
+  building: boolean,
+  draft: boolean,
+  health: PersonaHealth | undefined,
+): RowAccentTone {
+  if (building) return 'building';
+  if (draft) return 'draft';
+  if (health?.status === 'failing') return 'failing';
+  if (health?.status === 'degraded') return 'degraded';
+  return 'healthy';
+}
+
 /* -- Trust score bar -------------------------------------------------- */
 
 export function TrustScoreBar({ score }: { score: number }) {

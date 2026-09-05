@@ -9,7 +9,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
-import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { BuildingBadge, StatusBadge, TrustScoreBar, rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { isPersonaBuilding } from './personaBuildStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
@@ -87,6 +87,15 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
 
 const EMPTY_CONNECTORS: string[] = [];
 
+/** The card's rendering of the shared accent rule (`rowAccentTone`). */
+const CARD_ACCENT_CLASS: Record<RowAccentTone, string> = {
+  building: 'border-l-violet-400',
+  draft: 'border-l-zinc-400',
+  failing: 'border-l-red-400',
+  degraded: 'border-l-amber-400',
+  healthy: 'border-l-emerald-400/60',
+};
+
 const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
   id,
   selected,
@@ -120,11 +129,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
   const building = isPersonaBuilding(id, buildPersonaId, buildPhase);
   const draft = isDraft(p);
   const favorite = isFavorite(id);
-  const accent = building ? 'border-l-violet-400'
-    : draft ? 'border-l-zinc-400'
-    : health?.status === 'failing' ? 'border-l-red-400'
-    : health?.status === 'degraded' ? 'border-l-amber-400'
-    : 'border-l-emerald-400/60';
+  const accent = CARD_ACCENT_CLASS[rowAccentTone(building, draft, health)];
 
   return (
     <div
