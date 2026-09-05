@@ -27,3 +27,4 @@
 {"ts":"2026-09-05T18:15:45.054Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing","acquisition"],"deviations":0}
 {"ts":"2026-09-05T18:25:38.439Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","platform-build-parity"],"deviations":1}
 {"ts":"2026-09-05T18:57:37.332Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":[],"deviations":0}
+{"ts":"2026-09-05T20:18:47.633Z","bundle":"software-engineering","subjects":["draft-editing","settings"],"techniques":["debounced-save-groups","dirty-tracking","navigation-guards"],"deviations":2}
