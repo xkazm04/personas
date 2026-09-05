@@ -9,7 +9,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
+import { DEFAULT_VIEW_CONFIG, hasActiveFilters, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
@@ -199,16 +199,12 @@ export default function PersonaOverviewPage() {
       : { ...prev, sortKey: key, sortDirection: 'asc' });
   }, []);
 
-  const hasActiveFilter =
-    view.statusFilter !== 'all' ||
-    view.healthFilter !== 'all' ||
-    view.connectorFilter !== 'all' ||
-    view.favoriteOnly ||
-    search.trim().length > 0;
+  const hasActiveFilter = hasActiveFilters(view, search, groupFilter);
 
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
     setSearch('');
+    setGroupFilter(null);
   }, []);
 
   const columns = usePersonaColumns({
