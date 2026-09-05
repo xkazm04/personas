@@ -128,6 +128,8 @@ export type { ChatSession } from "./ChatSession";
 export type { ChatSessionContext } from "./ChatSessionContext";
 export type { CircuitBreakerStatus } from "./CircuitBreakerStatus";
 export type { CircuitTransitionEvent } from "./CircuitTransitionEvent";
+export type { ClaudeUsageSnapshot } from "./ClaudeUsageSnapshot";
+export type { ClaudeUsageWindow } from "./ClaudeUsageWindow";
 export type { CliCapabilities } from "./CliCapabilities";
 export type { ClipboardExportResult } from "./ClipboardExportResult";
 export type { CliProbeStatus } from "./CliProbeStatus";

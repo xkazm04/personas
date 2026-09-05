@@ -95,6 +95,46 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
+**The Claude usage strip (2026-09-05).** A thin row between the board's
+header and its project columns shows how much of the signed-in Claude
+subscription this machine has burned: one meter per rolling rate-limit
+window — the **5-hour** session window and the **7-day** window, plus the
+per-family weekly windows (Opus, Sonnet) on accounts that report them — each
+with its utilisation, a **reset countdown**, and a **pace** verdict
+(*burning fast* / *on pace* / *under pace*: utilisation against how much of
+the window has already elapsed). A plan chip names the tier the CLI stored
+(Pro, Max 5×, Max 20×, Team, Enterprise). Meters turn warning at 75% and
+error at 90%, and every non-ok state carries an icon and a label, never
+colour alone. The source is Anthropic's OAuth usage endpoint — the same one
+the community usage monitors opt into — read with the Claude Code login
+already on the machine (`~/.claude/.credentials.json`, or
+`CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
+nowhere else, and never crosses IPC. An install with no OAuth login (API-key
+users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
+whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
+
+**Tiles speak (2026-09-05).** When a persona posts in its team channel, its
+latest line slides in over its tile as a speech bubble and fades on its own
+after ten seconds; a small chat mark with a count stays on the tile until the
+operator opens that persona, which clears it. One bubble per persona — a
+second line inside the window replaces the first and restarts the clock. The
+bubbles are fed by the same channel cache the rail's Messages tab already
+holds open, so they cost no extra reads. Athena, the director, steps, events,
+memories and the operator's own directives never bubble — only a persona with
+something to say.
+
+**The cold open is staged (2026-09-05).** Opening the Monitor for the first
+time in a session used to commit the whole board at once — the card, every
+tile, and the rail's three feeds — behind a header-only skeleton. The board
+now paints its chrome first (header, usage strip, column headers, ghost rows
+the exact size of the tiles, and an empty rail of the persisted width), the
+tiles the next frame, and the rail the frame after; a Monitor opened before
+the roster exists shows the same chrome over a ghost board rather than a
+settled empty state. Once the board has painted in a session, every later
+open is warm and renders complete in one commit. The terminal and recap
+modals are chunk-loaded on first use, so xterm is no longer part of opening
+the board.
+
 **Messages arrive on the event, not the poll (2026-09-02).** A persona's new
 report lights its tile the moment the row lands: the board listens on the same
 `report-created` event the Overview report list uses (one shared
