@@ -67,11 +67,12 @@ export function useHealthDigestScheduler() {
         if (abort.signal.aborted) return;
         if (!digest) {
           // Attempt failed (transient). Previously we returned without latching
-          // ran.current and the finally below released running.current — every
-          // subsequent re-render of the host component re-fired the effect,
-          // hammering the IPC layer in a tight retry storm. Treat one attempt
-          // per app session as the contract: if it failed, the user retries by
-          // restarting the app (or an explicit Settings 'Run digest now' button).
+          // ran.current and the finally below released running.current, so the
+          // next flip of `personasLoaded` (or a strict-mode remount) re-fired
+          // the effect and re-ran the whole digest. Treat one attempt per app
+          // session as the contract: if it failed, the user retries by
+          // restarting the app. (There is no "run digest now" control;
+          // NotificationSettings only exposes the enable/disable toggle.)
           ran.current = true;
           return;
         }

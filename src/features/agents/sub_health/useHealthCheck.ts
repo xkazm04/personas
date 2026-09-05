@@ -10,9 +10,10 @@
  *   1. Route the error through [`silentCatch`] so Sentry gets a breadcrumb.
  *      An empty `catch {}` is never acceptable — "healthy" must never mean
  *      "the backend command threw and we pretended it was fine".
- *   2. Append a single **info-severity** issue to the result noting that the
+ *   2. Append a single **`undetermined`** issue to the result noting that the
  *      sub-check could not run, with enough context for the user to see that
- *      the score is incomplete.
+ *      the score is incomplete. Not `info`: an info penalty charges the
+ *      persona for the prober's own outage (see `DryRunIssue.severity`).
  *   3. Never throw out of the main check. Other sub-checks still produce
  *      useful signal; a transient IPC failure in one must not blank the tab.
  *
@@ -45,7 +46,9 @@ import { GRADE_THRESHOLDS } from '@/features/overview/sub_health/libs/compositeH
  *   after 3 before dragging it toward "unhealthy".
  * - `infoPenalty` 2 → informational notes nudge the score without dominating.
  * - `degradedCutoff` 80 / `unhealthyCutoff` 50 align with the three grade
- *   bands surfaced in HealthScoreDisplay (healthy / degraded / unhealthy).
+ *   bands the editor HealthBadge (EditorTabBar) and the Arena herald paint
+ *   (healthy / degraded / unhealthy). HealthScoreDisplay was deleted in
+ *   fbf3e6a6a.
  */
 export const HEALTH_SCORING = {
   errorPenalty: 25,
