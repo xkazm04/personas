@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 
 interface PersonaOverviewBatchBarProps {
   count: number;
@@ -141,25 +142,32 @@ export function PersonaOverviewBatchBar({
           )}
         </div>
       )}
+      {/* Archive and restore each walk the selection one IPC call at a time,
+          so `onClick={() => void fn()}` let a second click re-run the whole
+          batch. AsyncButton takes the promise-returning handler directly and
+          holds a synchronous in-flight guard, which is the same protection the
+          set-home-team trigger above already had. */}
       {onArchive && (
-        <button
-          type="button"
-          onClick={() => void onArchive()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition-colors"
+        <AsyncButton
+          variant="accent"
+          accentColor="amber"
+          size="sm"
+          icon={<Archive className="w-3.5 h-3.5" />}
+          onClick={() => Promise.resolve(onArchive())}
         >
-          <Archive className="w-3.5 h-3.5" />
           {t.agents.persona_list.batch_archive}
-        </button>
+        </AsyncButton>
       )}
       {onRestore && (
-        <button
-          type="button"
-          onClick={() => void onRestore()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors"
+        <AsyncButton
+          variant="accent"
+          accentColor="emerald"
+          size="sm"
+          icon={<ArchiveRestore className="w-3.5 h-3.5" />}
+          onClick={() => Promise.resolve(onRestore())}
         >
-          <ArchiveRestore className="w-3.5 h-3.5" />
           {t.agents.persona_list.batch_restore}
-        </button>
+        </AsyncButton>
       )}
       <button
         type="button"
