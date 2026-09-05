@@ -39,8 +39,8 @@ use crate::SHARED_HTTP;
 
 /// Anthropic's OAuth usage endpoint. Undocumented but stable since 2025-04;
 /// the beta header is the one Claude Code itself sends.
-const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
-const OAUTH_BETA: &str = "oauth-2025-04-20";
+pub(super) const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
+pub(super) const OAUTH_BETA: &str = "oauth-2025-04-20";
 
 /// The strip polls once a minute; the endpoint itself is rate-limited and a
 /// second Monitor (or a second window) must not double the traffic.
@@ -111,7 +111,7 @@ impl ClaudeUsageSnapshot {
     }
 }
 
-fn now_ms() -> i64 {
+pub(super) fn now_ms() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
@@ -123,15 +123,15 @@ fn now_ms() -> i64 {
 /// The slice of `~/.claude/.credentials.json` this module reads. The token
 /// deliberately has no `Debug` exposure beyond this struct's own derive being
 /// absent — do not add one.
-struct Credentials {
-    access_token: String,
-    expires_at_ms: Option<i64>,
-    subscription_type: Option<String>,
-    rate_limit_tier: Option<String>,
+pub(super) struct Credentials {
+    pub(super) access_token: String,
+    pub(super) expires_at_ms: Option<i64>,
+    pub(super) subscription_type: Option<String>,
+    pub(super) rate_limit_tier: Option<String>,
 }
 
 /// `$CLAUDE_CONFIG_DIR` or `~/.claude` — the same override Claude Code honours.
-fn claude_config_dir() -> Option<PathBuf> {
+pub(super) fn claude_config_dir() -> Option<PathBuf> {
     if let Ok(dir) = std::env::var("CLAUDE_CONFIG_DIR") {
         if !dir.trim().is_empty() {
             return Some(PathBuf::from(dir));
@@ -140,7 +140,7 @@ fn claude_config_dir() -> Option<PathBuf> {
     dirs::home_dir().map(|h| h.join(".claude"))
 }
 
-fn read_credentials() -> Option<Credentials> {
+pub(super) fn read_credentials() -> Option<Credentials> {
     if let Ok(tok) = std::env::var("CLAUDE_CODE_OAUTH_TOKEN") {
         if !tok.trim().is_empty() {
             return Some(Credentials {
@@ -160,7 +160,7 @@ fn read_credentials() -> Option<Credentials> {
 /// Pure half of [`read_credentials`], so the shape can be tested without a
 /// home directory. Accepts the CLI's nested `claudeAiOauth` object and the
 /// flat forms other tooling writes.
-fn parse_credentials(v: &Value) -> Option<Credentials> {
+pub(super) fn parse_credentials(v: &Value) -> Option<Credentials> {
     let oauth = v
         .get("claudeAiOauth")
         .or_else(|| v.get("oauth"))
@@ -187,7 +187,7 @@ fn parse_credentials(v: &Value) -> Option<Credentials> {
 
 /// Epoch in ms from a JSON number that may be seconds or milliseconds, or an
 /// RFC 3339 string. Anything before 2001 in ms terms is taken as seconds.
-fn as_epoch_ms(v: &Value) -> Option<i64> {
+pub(super) fn as_epoch_ms(v: &Value) -> Option<i64> {
     if let Some(n) = v.as_f64() {
         let n = n as i64;
         return Some(if n < 100_000_000_000 { n * 1000 } else { n });
@@ -200,7 +200,7 @@ fn as_epoch_ms(v: &Value) -> Option<i64> {
 
 /// Shape the endpoint's JSON into windows. Pure, so the scaling and the
 /// timestamp variants are pinned by tests rather than by a live account.
-fn parse_windows(body: &Value) -> Vec<ClaudeUsageWindow> {
+pub(super) fn parse_windows(body: &Value) -> Vec<ClaudeUsageWindow> {
     let mut out = Vec::new();
     for (key, window_ms) in WINDOW_KEYS {
         let Some(w) = body.get(key).filter(|w| w.is_object()) else {

@@ -3279,6 +3279,10 @@
         {
           "path": "src-tauri/src/engine/subscription/attention.rs",
           "reason": "AttentionSubscription::tick (:128) is the trait-required () adapter — ReactiveSubscription (subscription/traits.rs:37) fixes the signature for all 41 baselined impls, so this rule's LEGAL FIX (a return type) is unimplementable per-impl until the trait itself changes (the rule's designed end state). The cycle's outcome is NOT discarded: every pass lands durably in persona_attention_ledger (a 'started' row opened BEFORE the spawn, closed dispatched/enqueued/failed/panicked, typed refusal rows, per-tick aggregate narration) — the durable per-cycle producer record this rule's own consequence measurement found the app had exactly ONE of across 244 tables, and which no baselined production impl writes. Cost of the exemption: a regression stripping the ledger writes from this tick goes uncounted here - hand-verified 2026-09-01"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/claude_accounts/rotate.rs",
+          "reason": "ClaudeAccountRotateSubscription::tick (:192) is the trait-required () adapter — ReactiveSubscription fixes the signature, same as the attention.rs exclusion. The cycle's outcome is NOT discarded: a rotation lands durably in app settings (claude_accounts.last_rotation, read back by the strip and toasted on change) and every failure is logged at warn with the target; a disabled policy returns before any HTTP, which is the designed no-work outcome."
         }
       ],
       "baseline": {

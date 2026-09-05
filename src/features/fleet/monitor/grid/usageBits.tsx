@@ -1,0 +1,138 @@
+// usageBits — the small pieces both usage surfaces share: the meter bar, the
+// pace glyph, the window label, the reason copy, and the local clock that
+// drives the countdowns. Pure presentation; the numbers come from usageModel.
+
+import { useEffect, useState } from 'react';
+import { AlertTriangle, Flame, Gauge, Snowflake } from 'lucide-react';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
+import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
+import type { Translations } from '@/i18n/generated/types';
+import {
+  formatCountdown, meterTone, pace, windowProgress, type MeterTone, type Pace,
+} from './usageModel';
+
+/** The countdown ticks locally between polls; a minute is its resolution. */
+const TICK_MS = 30_000;
+
+export const FILL: Record<MeterTone, string> = {
+  ok: 'bg-primary',
+  warning: 'bg-status-warning',
+  error: 'bg-status-error',
+};
+export const TONE_TEXT: Record<MeterTone, string> = {
+  ok: 'text-foreground',
+  warning: 'text-status-warning',
+  error: 'text-status-error',
+};
+
+const PACE_ICON: Record<Pace, typeof Flame> = { fast: Flame, steady: Gauge, slow: Snowflake };
+const PACE_TONE: Record<Pace, string> = {
+  fast: 'text-status-warning',
+  steady: 'text-foreground opacity-50',
+  slow: 'text-status-info',
+};
+
+export function windowLabel(t: Translations, key: string): string {
+  switch (key) {
+    case 'five_hour': return t.monitor.usage_window_five_hour;
+    case 'seven_day': return t.monitor.usage_window_seven_day;
+    case 'seven_day_opus': return t.monitor.usage_window_seven_day_opus;
+    case 'seven_day_sonnet': return t.monitor.usage_window_seven_day_sonnet;
+    default: return key;
+  }
+}
+
+export function paceLabel(t: Translations, p: Pace): string {
+  switch (p) {
+    case 'fast': return t.monitor.usage_pace_fast;
+    case 'steady': return t.monitor.usage_pace_steady;
+    case 'slow': return t.monitor.usage_pace_slow;
+  }
+}
+
+export function reasonLabel(t: Translations, reason: string | null): string {
+  switch (reason) {
+    case 'no_credentials': return t.monitor.usage_reason_no_credentials;
+    case 'token_expired': return t.monitor.usage_reason_token_expired;
+    case 'unauthorized': return t.monitor.usage_reason_unauthorized;
+    case 'rate_limited': return t.monitor.usage_reason_rate_limited;
+    case 'network': return t.monitor.usage_reason_network;
+    case 'parse': return t.monitor.usage_reason_parse;
+    case 'ipc': return t.monitor.usage_reason_ipc;
+    default: return t.monitor.usage_reason_http_error;
+  }
+}
+
+export function countdownText(
+  t: Translations,
+  tx: (s: string, v: Record<string, string | number>) => string,
+  w: ClaudeUsageWindow,
+  now: number,
+): string {
+  const { remainingMs } = windowProgress(w, now);
+  if (remainingMs === null) return t.monitor.usage_resets_unknown;
+  const units = {
+    day: t.monitor.usage_unit_day,
+    hour: t.monitor.usage_unit_hour,
+    minute: t.monitor.usage_unit_minute,
+    underMinute: t.monitor.usage_under_minute,
+  };
+  return tx(t.monitor.usage_resets_in, { time: formatCountdown(remainingMs, units) });
+}
+
+/** Ticks only while the window is visible, re-stamped on re-show. */
+export function useUsageClock(): number {
+  const visible = useDocumentVisibility();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!visible) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(id);
+  }, [visible]);
+  return now;
+}
+
+/** The bar + percent, optionally with the warning/error icon and label. */
+export function MeterBar({
+  w, t, widthClass = 'w-full', showTone = true,
+}: {
+  w: ClaudeUsageWindow;
+  t: Translations;
+  widthClass?: string;
+  showTone?: boolean;
+}) {
+  const tone = meterTone(w.utilizationPct);
+  const pct = Math.round(w.utilizationPct);
+  const toneLabel = tone === 'error' ? t.monitor.usage_tone_error : t.monitor.usage_tone_warning;
+  return (
+    <>
+      <span aria-hidden className={`relative h-1.5 ${widthClass} overflow-hidden rounded-full bg-foreground/10`}>
+        <span
+          className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${FILL[tone]}`}
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+      <span className="typo-caption tabular-nums text-foreground text-right">{pct}%</span>
+      {showTone && tone !== 'ok' && (
+        <span className={`inline-flex flex-shrink-0 items-center gap-0.5 typo-caption ${TONE_TEXT[tone]}`}>
+          <AlertTriangle className="h-3 w-3" aria-hidden />
+          {toneLabel}
+        </span>
+      )}
+    </>
+  );
+}
+
+/** The temperature glyph; the name rides along for screen readers. */
+export function PaceGlyph({ w, now, t }: { w: ClaudeUsageWindow; now: number; t: Translations }) {
+  const p = pace(w, now);
+  if (!p) return <span />;
+  const Icon = PACE_ICON[p];
+  return (
+    <span className={`inline-flex items-center justify-center ${PACE_TONE[p]}`} data-pace={p}>
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      <span className="sr-only">{paceLabel(t, p)}</span>
+    </span>
+  );
+}

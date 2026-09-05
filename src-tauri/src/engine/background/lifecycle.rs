@@ -129,6 +129,13 @@ pub fn start_loops(
         // whose concurrent privileged-IPC stampede produced false "degraded"
         // cards (x-ipc-token race in ipc_auth.rs).
         Box::new(CredentialHealthcheckSubscription { pool: pool.clone() }),
+        // Multi-plan Claude login auto-rotate (Activity board usage strip).
+        // Machine-local by nature; a disabled policy costs no HTTP per tick.
+        Box::new(
+            crate::commands::fleet::claude_accounts::rotate::ClaudeAccountRotateSubscription {
+                pool: pool.clone(),
+            },
+        ),
         // Periodic MCP gateway-member healthcheck: probes each enabled gateway
         // member and records per-member status into its credential metadata so a
         // dead member surfaces as an explicit "failed" instead of just silently

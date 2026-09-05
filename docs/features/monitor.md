@@ -113,6 +113,30 @@ nowhere else, and never crosses IPC. An install with no OAuth login (API-key
 users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
 whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
 
+**Several plans, one strip (2026-09-05).** The usage strip has a second
+mode for operators who juggle more than one Claude subscription. *Store this
+login* captures the CLI's current login (the whole credentials file, encrypted
+with the app's master key, in the `claude_accounts` table) together with the
+account identity from Anthropic's profile endpoint. From then on the strip
+shows one row per stored plan — the active one marked, each with its 5-hour
+and 7-day meters, the 5-hour reset countdown and a pace glyph — and every
+non-active row has a **Switch** button behind a confirm. A switch refreshes
+the stored token if it is about to expire, takes Claude Code's own credential
+lock directories (`<config>/.oauth_refresh.lock`, `~/.claude.lock`), replaces
+`~/.claude/.credentials.json` atomically, and patches `oauthAccount` in
+`~/.claude.json` key-scoped; the CLI picks it up on its next message with no
+restart. Before every read and switch the live file is synced back into the
+store for the account it belongs to, because refresh tokens rotate and a
+stale stored copy would die on first use. A stored login whose refresh token
+is dead is marked *Needs login* and cannot be switched to until `claude
+login` is run for it and it is stored again. **Auto-rotate** (off by default)
+switches to the coolest stored plan when the active one reaches a threshold
+on its 5-hour window — checked once a minute in the background whether or
+not the Monitor is open, with a five-minute cooldown, and only onto a plan
+that is under the threshold on both windows. The last automatic rotation is
+shown in the strip and toasted when it happens. macOS keeps its token in the
+Keychain, which this switcher does not reach; it is a Windows / Linux feature.
+
 **Tiles speak (2026-09-05).** When a persona posts in its team channel, its
 latest line slides in over its tile as a speech bubble and fades on its own
 after ten seconds; a small chat mark with a count stays on the tile until the

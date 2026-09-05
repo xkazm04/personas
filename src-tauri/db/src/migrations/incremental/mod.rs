@@ -49,6 +49,7 @@ mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
 mod c03_fleet_and_workspaces;
 mod c04_milestones_and_autopilot;
+mod c05_claude_accounts;
 
 #[cfg(test)]
 mod tests;
@@ -92,6 +93,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     c02_dev_goals_and_kpis::run(conn)?;
     c03_fleet_and_workspaces::run(conn)?;
     c04_milestones_and_autopilot::run(conn)?;
+    c05_claude_accounts::run(conn)?;
 
     Ok(())
 }

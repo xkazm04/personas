@@ -628,6 +628,28 @@ export type Translations = {
     usage_as_of: string;
     grid_chat_bubble_aria: string;
     grid_chat_unseen: string;
+    usage_accounts_add: string;
+    usage_accounts_add_hint: string;
+    usage_accounts_active: string;
+    usage_accounts_switch: string;
+    usage_accounts_switch_title: string;
+    usage_accounts_switch_body: string;
+    usage_accounts_switched: string;
+    usage_accounts_switch_failed: string;
+    usage_accounts_remove_aria: string;
+    usage_accounts_remove_title: string;
+    usage_accounts_remove_body: string;
+    usage_accounts_captured: string;
+    usage_accounts_capture_failed: string;
+    usage_accounts_quarantined: string;
+    usage_accounts_quarantined_hint: string;
+    usage_auto_rotate: string;
+    usage_auto_rotate_hint: string;
+    usage_auto_rotate_threshold_aria: string;
+    usage_auto_rotate_on: string;
+    usage_auto_rotate_off: string;
+    usage_auto_rotate_failed: string;
+    usage_last_rotation: string;
   };
   common: {
     unknown_error: string;
