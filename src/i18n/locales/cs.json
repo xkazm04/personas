@@ -7920,7 +7920,9 @@
         "schedule_missed_offline": "Zmeškané naplánované běhy (offline)",
         "schedule_skipped_overlap": "Plán přeskočen (předchozí běh aktivní)",
         "sla_breach_opened": "Porušení SLA zahájeno",
-        "sla_breach_recovered": "Porušení SLA vyřešeno"
+        "sla_breach_recovered": "Porušení SLA vyřešeno",
+        "schedule_paused_failure_rate": "Plán pozastaven (příliš mnoho neúspěšných běhů)",
+        "team_channel_leader_verdict": "Verdikt vedoucího týmu"
       },
       "view_name_placeholder": "Název zobrazení (např. 'Selhané webhooky tento týden')",
       "views_label": "Zobrazení:"

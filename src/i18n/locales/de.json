@@ -7920,7 +7920,9 @@
         "schedule_missed_offline": "Verpasste geplante Ausführungen (offline)",
         "schedule_skipped_overlap": "Zeitplan übersprungen (vorheriger Lauf aktiv)",
         "sla_breach_opened": "SLA-Verstoß geöffnet",
-        "sla_breach_recovered": "SLA-Verstoß behoben"
+        "sla_breach_recovered": "SLA-Verstoß behoben",
+        "schedule_paused_failure_rate": "Zeitplan pausiert (zu viele fehlgeschlagene Läufe)",
+        "team_channel_leader_verdict": "Urteil der Teamleitung"
       },
       "view_name_placeholder": "Ansichtsname (z. B. 'Fehlgeschlagene Webhooks diese Woche')",
       "views_label": "Ansichten:"

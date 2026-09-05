@@ -62,6 +62,22 @@ The preview and calendar are engineered to show the minute the engine will *actu
 
 `ScheduleTimeline` listens via `typedListen` (`@/lib/eventRegistry`) for execution and trigger events that should refresh the visible data; the calendar re-derives via `useCalendarEvents` whenever the visible range or entries change.
 
+## Failure-rate auto-pause
+
+A schedule whose runs keep failing is a hot loop nobody chose. Since 2026-09-05 the
+scheduler tick (`engine/background/scheduler.rs`, gate right after the budget check)
+reads the trigger's own terminal outcomes in a rolling window
+(`exec_repo::trigger_outcomes_in_window`: `completed` vs `failed`, per trigger — `incomplete`
+and `cancelled` count on neither side) and, when at least **12** runs in the last **7 days**
+are **≥ 90 %** failed, sets the trigger to `paused` instead of firing it. The pause leaves
+a `schedule.paused.failure_rate` bus event (labelled "Schedule paused (too many failed
+runs)" in the events list) and a `high` audit incident (`kind: trigger_auto_paused`) that
+carries the counts, so the non-fire is explainable. It is per trigger, not per persona: a
+persona's healthy daily digest is untouched by its broken five-minute poll. Re-enable the
+trigger from the Triggers UI once the cause is fixed. This closes the gap where the
+persona-level circuit breaker deliberately never disables team members, so a team
+persona's failing schedule had no bound at all.
+
 ## Known gaps
 
 - The calendar is read-only; creating a schedule still happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).

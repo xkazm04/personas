@@ -25,6 +25,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 
+use super::channel_leader;
 use crate::db::repos::resources::team_channel as channel_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -642,6 +643,11 @@ const SUMMON_PRIOR_MESSAGES: i64 = 12;
 const SUMMON_CAP: usize = 3;
 const SUMMON_REPLY_DEADLINE_SECS: u64 = 30 * 60;
 const SUMMON_REPLY_POLL_SECS: u64 = 2;
+/// How many hops a persona-authored reply may delegate (`@Name` in a reply
+/// summons that member, whose reply may delegate again). The cap is the
+/// chain's only structural terminator — a leader and a member can otherwise
+/// ping-pong forever — so it is small and every stop at it leaves a row.
+const MAX_DELEGATION_DEPTH: u8 = 3;
 
 /// Post a user directive into the team channel. C1: stored in the
 /// authoritative `team_channel_messages` table (`author_kind='user'`).
@@ -669,7 +675,19 @@ pub async fn post_team_directive(
 ) -> Result<crate::db::models::TeamChannelMessage, AppError> {
     require_auth_sync(&state)?;
 
-    let mentioned = mentioned_members(&state.db, &team_id, &content)?;
+    let mut mentioned = mentioned_members(&state.db, &team_id, &content)?;
+    // Leader routing: a directive that addresses nobody goes to the team's
+    // channel leader (an `orchestrator` / `router` member) ALONE, with the
+    // squad briefing, instead of being injected into every member's next
+    // step. Teams without a leader keep the whole-team inject path.
+    let leader = if mentioned.is_empty() {
+        channel_leader::channel_leader(&state.db, &team_id)?
+    } else {
+        None
+    };
+    if let Some(ref l) = leader {
+        mentioned.push((l.persona_id.clone(), l.name.clone()));
+    }
     let consumer = if mentioned.is_empty() {
         "inject"
     } else {
@@ -696,18 +714,44 @@ pub async fn post_team_directive(
     )?;
 
     for (persona_id, persona_name) in mentioned {
+        let briefing = leader
+            .as_ref()
+            .filter(|l| l.persona_id == persona_id)
+            .map(|l| leader_briefing_for(&state.db, &team_id, l, 0));
         summon_member(
-            &state,
-            &app,
+            state.inner().clone(),
+            app.clone(),
             &team_id,
             &message.id,
+            "user",
             &content,
             persona_id,
             persona_name,
+            briefing,
+            0,
         );
     }
 
     Ok(message)
+}
+
+/// Compose the leader's briefing (protocol + roster + operator instructions)
+/// for a summon at `depth`.
+fn leader_briefing_for(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+    leader: &channel_leader::ChannelLeader,
+    depth: u8,
+) -> String {
+    let roster =
+        channel_leader::leader_roster(pool, team_id, &leader.persona_id).unwrap_or_default();
+    channel_leader::render_leader_briefing(
+        leader,
+        &roster,
+        &channel_leader::leader_instructions(pool, team_id),
+        depth,
+        MAX_DELEGATION_DEPTH,
+    )
 }
 
 /// Resolve the team's members whose display name is `@`-mentioned in `body`,
@@ -748,14 +792,23 @@ fn mentioned_members(
 /// Spawn the summon follow-up for one mentioned member: execute with channel
 /// context, then write the reply (or the failure record) back into the team
 /// channel. Fire-and-forget — the directive post returns immediately.
+///
+/// `author_label` names who wrote `content` ("user", or a delegating persona's
+/// name); `briefing` is the leader protocol when the summoned member is the
+/// channel leader; `depth` is the delegation hop this summon sits at (0 for a
+/// user directive) — see [`MAX_DELEGATION_DEPTH`].
+#[allow(clippy::too_many_arguments)]
 fn summon_member(
-    state: &State<'_, Arc<AppState>>,
-    app: &tauri::AppHandle,
+    state: Arc<AppState>,
+    app: tauri::AppHandle,
     team_id: &str,
     message_id: &str,
+    author_label: &str,
     content: &str,
     persona_id: String,
     persona_name: String,
+    briefing: Option<String>,
+    depth: u8,
 ) {
     // Conversation context: the last few non-deliberation channel messages
     // BEFORE this one, oldest first — same shape Lane B renders.
@@ -783,24 +836,32 @@ fn summon_member(
     // Same envelope as the persona channel's Lane B follow-up (`source:
     // "channel"` also tells dispatch the chat lane is externally owned), plus
     // the live-context block so the reply is situated in the team's state.
-    let input_data = serde_json::json!({
+    let is_leader = briefing.is_some();
+    let mut input_data = serde_json::json!({
         "source": "channel",
         "channelId": team_id,
         "messageId": message_id,
-        "author": "user",
+        "author": author_label,
         "content": content,
         "priorMessages": prior_messages,
+        "delegationDepth": depth,
         "liveContext": crate::engine::channel_live_context::build_live_context(
             &state.db,
             &persona_id,
             Some(team_id),
         ),
     });
+    if let Some(text) = briefing {
+        // The leader reads its protocol + roster from the input envelope, next
+        // to the directive it is routing. `channelRole` lets a prompt or a
+        // future reader branch on it structurally instead of sniffing text.
+        input_data["channelRole"] = serde_json::Value::String("leader".into());
+        input_data["leaderBriefing"] = serde_json::Value::String(text);
+    }
     // One execution per (message, persona), ever — a retry dedupes.
     let idempotency_key = format!("channel:{team_id}:{message_id}:{persona_id}");
 
-    let state_arc: Arc<AppState> = state.inner().clone();
-    let app = app.clone();
+    let state_arc: Arc<AppState> = state;
     let team_id = team_id.to_string();
     let message_id = message_id.to_string();
     let panic_pool = state_arc.db.clone();
@@ -821,6 +882,8 @@ fn summon_member(
                 message_id,
                 input_data.to_string(),
                 idempotency_key,
+                depth,
+                is_leader,
             )
             .await;
         },
@@ -850,6 +913,8 @@ async fn run_summon_followup(
     message_id: String,
     input_data: String,
     idempotency_key: String,
+    depth: u8,
+    is_leader: bool,
 ) {
     // Captured before `input_data` moves into the execution: the inbound
     // directive text, for the living-agent channel episode minted on reply.
@@ -864,7 +929,7 @@ async fn run_summon_followup(
 
     let execution = crate::commands::execution::executions::execute_persona_inner(
         &state,
-        app,
+        app.clone(),
         persona_id.clone(),
         None,
         Some(input_data),
@@ -895,7 +960,7 @@ async fn run_summon_followup(
     loop {
         match crate::engine::channel_reply::build_reply_text(&state.db, &execution.id) {
             Ok(Some(text)) => {
-                insert_summon_reply(
+                let reply_id = insert_summon_reply(
                     &state.db,
                     &team_id,
                     &persona_id,
@@ -921,6 +986,36 @@ async fn run_summon_followup(
                         persona_id = %persona_id,
                         error = %e,
                         "team channel: episode mint failed (best-effort)"
+                    );
+                }
+                // The leader's turn leaves a typed record even when it chose
+                // to do nothing — a silent no-op must be a decision, not a
+                // missing reply.
+                if is_leader {
+                    record_leader_verdict(
+                        &state.db,
+                        &team_id,
+                        &persona_id,
+                        &message_id,
+                        reply_id.as_deref(),
+                        &execution.id,
+                        &text,
+                    );
+                }
+                // A persona reply can hand work on: `@Name` summons that
+                // member; a member reply that addresses nobody wakes the
+                // leader to re-evaluate. Bounded by MAX_DELEGATION_DEPTH.
+                if let Some(reply_id) = reply_id {
+                    delegate_from_reply(
+                        state.clone(),
+                        app.clone(),
+                        &team_id,
+                        &persona_id,
+                        &persona_name,
+                        &reply_id,
+                        &text,
+                        depth,
+                        is_leader,
                     );
                 }
                 return;
@@ -955,7 +1050,8 @@ async fn run_summon_followup(
 }
 
 /// Insert the persona's reply as a `consumer='display'` channel row threaded
-/// under the summoning directive. The 15s channel poll surfaces it.
+/// under the summoning directive. The 15s channel poll surfaces it. Returns
+/// the new row's id (None when the insert failed — already logged).
 fn insert_summon_reply(
     pool: &crate::db::DbPool,
     team_id: &str,
@@ -963,7 +1059,7 @@ fn insert_summon_reply(
     _persona_name: &str,
     reply_to: &str,
     body: &str,
-) {
+) -> Option<String> {
     let result = channel_repo::create(
         pool,
         crate::db::models::CreateChannelMessageInput {
@@ -977,12 +1073,172 @@ fn insert_summon_reply(
             consumer: Some("display".into()),
         },
     );
-    if let Err(e) = result {
-        tracing::error!(
+    match result {
+        Ok(row) => Some(row.id),
+        Err(e) => {
+            tracing::error!(
+                team_id = %team_id,
+                persona_id = %persona_id,
+                error = %e,
+                "team channel: failed to persist summon reply row"
+            );
+            None
+        }
+    }
+}
+
+/// Persist the leader's per-turn verdict as a bus event so the channel's
+/// event lens and the events overview both show it. `unstated` (no
+/// `VERDICT:` line) is recorded as such — it is a finding about the leader,
+/// and hiding it would make a protocol miss look like silence by choice.
+#[allow(clippy::too_many_arguments)]
+fn record_leader_verdict(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+    leader_id: &str,
+    directive_id: &str,
+    reply_id: Option<&str>,
+    execution_id: &str,
+    reply_text: &str,
+) {
+    let (verdict, reason) = channel_leader::parse_leader_verdict(reply_text);
+    if verdict == channel_leader::LeaderVerdict::Unstated {
+        tracing::warn!(
             team_id = %team_id,
-            persona_id = %persona_id,
+            persona_id = %leader_id,
+            "team channel: leader reply carried no VERDICT line"
+        );
+    }
+    let payload = serde_json::json!({
+        "verdict": verdict.token(),
+        "reason": reason,
+        "team_id": team_id,
+        "directive_id": directive_id,
+        "reply_id": reply_id,
+        "execution_id": execution_id,
+    })
+    .to_string();
+    if let Err(e) = crate::db::repos::communication::events::publish(
+        pool,
+        crate::db::models::CreatePersonaEventInput {
+            event_type: channel_leader::LEADER_VERDICT_EVENT.into(),
+            source_type: "team_channel".into(),
+            source_id: Some(leader_id.to_string()),
+            target_persona_id: Some(leader_id.to_string()),
+            project_id: None,
+            payload: Some(payload),
+            use_case_id: None,
+        },
+    ) {
+        tracing::warn!(
+            team_id = %team_id,
+            persona_id = %leader_id,
             error = %e,
-            "team channel: failed to persist summon reply row"
+            "team channel: failed to record leader verdict"
+        );
+    }
+}
+
+/// Who a persona-authored reply hands work to: every OTHER team member it
+/// `@`-mentions (the author never summons itself — that is the self-trigger
+/// loop), capped like a user directive. Pure over the mention matcher so the
+/// guard is testable without an execution.
+fn delegation_targets(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+    author_id: &str,
+    body: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    let mut targets = mentioned_members(pool, team_id, body)?;
+    targets.retain(|(id, _)| id != author_id);
+    Ok(targets)
+}
+
+/// Delegation from a persona reply, with the squad re-trigger rules:
+///
+/// - an explicit `@Name` in the reply is the routing signal → summon exactly
+///   those members (never the author itself);
+/// - a MEMBER reply that mentions nobody wakes the LEADER to re-evaluate;
+/// - a LEADER reply that mentions nobody is a terminal turn (its verdict is
+///   the record) — the leader never re-wakes itself;
+/// - the chain stops at [`MAX_DELEGATION_DEPTH`], and the stop leaves a
+///   display row so the arrow that did not fire is distinguishable from one
+///   that broke.
+#[allow(clippy::too_many_arguments)]
+fn delegate_from_reply(
+    state: Arc<AppState>,
+    app: tauri::AppHandle,
+    team_id: &str,
+    author_id: &str,
+    author_name: &str,
+    reply_id: &str,
+    reply_text: &str,
+    depth: u8,
+    author_is_leader: bool,
+) {
+    let next_depth = depth.saturating_add(1);
+    let leader = match channel_leader::channel_leader(&state.db, team_id) {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::warn!(team_id = %team_id, error = %e, "team channel: leader lookup failed");
+            None
+        }
+    };
+
+    let mut targets = match delegation_targets(&state.db, team_id, author_id, reply_text) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(team_id = %team_id, error = %e, "team channel: mention parse failed");
+            Vec::new()
+        }
+    };
+    if targets.is_empty() && !author_is_leader {
+        if let Some(ref l) = leader {
+            if l.persona_id != author_id {
+                targets.push((l.persona_id.clone(), l.name.clone()));
+            }
+        }
+    }
+    if targets.is_empty() {
+        return;
+    }
+
+    if next_depth > MAX_DELEGATION_DEPTH {
+        tracing::warn!(
+            team_id = %team_id,
+            persona_id = %author_id,
+            depth,
+            "team channel: delegation depth cap reached — chain stopped"
+        );
+        insert_summon_reply(
+            &state.db,
+            team_id,
+            author_id,
+            author_name,
+            reply_id,
+            &format!(
+                "_(delegation stopped: {MAX_DELEGATION_DEPTH} hops reached — a human picks up from here)_"
+            ),
+        );
+        return;
+    }
+
+    for (persona_id, persona_name) in targets {
+        let briefing = leader
+            .as_ref()
+            .filter(|l| l.persona_id == persona_id)
+            .map(|l| leader_briefing_for(&state.db, team_id, l, next_depth));
+        summon_member(
+            state.clone(),
+            app.clone(),
+            team_id,
+            reply_id,
+            author_name,
+            reply_text,
+            persona_id,
+            persona_name,
+            briefing,
+            next_depth,
         );
     }
 }
@@ -1453,5 +1709,37 @@ mod tests {
         let both =
             mentioned_members(&pool, TEAM, "@Code Reviewer + @QA Guardian: thoughts?").unwrap();
         assert_eq!(both.len(), 2);
+    }
+
+    /// A persona reply never summons its own author (the self-trigger loop),
+    /// but does summon every other member it names.
+    #[test]
+    fn delegation_targets_exclude_the_author() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        {
+            let conn = pool.get()?;
+            seed_team(&conn);
+            seed_member(&conn, "p-rev", "Code Reviewer");
+            seed_member(&conn, "p-qa", "QA Guardian");
+        }
+        let targets = delegation_targets(
+            &pool,
+            TEAM,
+            "p-rev",
+            "@Code Reviewer done; @QA Guardian please verify",
+        )
+        .unwrap();
+        assert_eq!(
+            targets,
+            vec![("p-qa".to_string(), "QA Guardian".to_string())]
+        );
+
+        // Mentioning only yourself resolves to nobody.
+        assert!(
+            delegation_targets(&pool, TEAM, "p-rev", "@Code Reviewer will handle it")
+                .unwrap()
+                .is_empty()
+        );
+        Ok(())
     }
 }

@@ -9,7 +9,7 @@ mod env;
 mod globals;
 pub(crate) mod hooks;
 mod stages;
-mod team_context;
+pub(crate) mod team_context;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no

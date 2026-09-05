@@ -643,7 +643,9 @@
       "schedule_missed_offline": "Lần chạy theo lịch bị bỏ lỡ (ngoại tuyến)",
       "schedule_skipped_overlap": "Bỏ qua lịch (lần chạy trước đang hoạt động)",
       "sla_breach_opened": "Vi phạm SLA đã mở",
-      "sla_breach_recovered": "Đã khắc phục vi phạm SLA"
+      "sla_breach_recovered": "Đã khắc phục vi phạm SLA",
+      "schedule_paused_failure_rate": "Lịch đã tạm dừng (quá nhiều lần chạy thất bại)",
+      "team_channel_leader_verdict": "Phán quyết của trưởng nhóm"
     },
     "view_name_placeholder": "Tên chế độ xem (vd: 'Webhook thất bại tuần này')",
     "views_label": "Chế độ xem:"

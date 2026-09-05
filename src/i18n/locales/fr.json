@@ -7920,7 +7920,9 @@
         "schedule_missed_offline": "Exécutions planifiées manquées (hors ligne)",
         "schedule_skipped_overlap": "Planification ignorée (exécution précédente active)",
         "sla_breach_opened": "Violation de SLA ouverte",
-        "sla_breach_recovered": "Violation de SLA rétablie"
+        "sla_breach_recovered": "Violation de SLA rétablie",
+        "schedule_paused_failure_rate": "Planification en pause (trop d'exécutions échouées)",
+        "team_channel_leader_verdict": "Verdict du chef d'équipe"
       },
       "view_name_placeholder": "Nom de la vue (ex. 'Webhooks échoués cette semaine')",
       "views_label": "Vues :"

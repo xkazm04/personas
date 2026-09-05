@@ -332,6 +332,23 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         return ErrorCategory::ToolError;
     }
 
+    // A 400 `invalid_request_error` is the API refusing the REQUEST BODY — the
+    // conversation history itself (oversized image, empty message, prompt
+    // over the window). It must be read before the 5xx arm below: the CLI
+    // surfaces it as `API Error: 400 {...invalid_request_error...}`, and the
+    // arm's `api error` substring would otherwise claim it as `ApiError`, the
+    // one class whose recovery RESUMES the session — replaying the same body
+    // into the same 400 forever. Measured 2026-09-05 (`/research` multica):
+    // the poisoned-session test written for `is_resume_safe` failed on exactly
+    // this string. Narrow on purpose: the error-type token, or a 400 that
+    // names `invalid` — a bare "400" inside a URL or a token count is not a
+    // request rejection.
+    if lower.contains("invalid_request_error")
+        || (lower.contains("400") && lower.contains("invalid"))
+    {
+        return ErrorCategory::Validation;
+    }
+
     // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
     // dominant real failure when the provider is at capacity.
     if lower.contains("500")
@@ -414,6 +431,29 @@ pub fn is_auto_fixable(category: &ErrorCategory) -> bool {
         category,
         ErrorCategory::RateLimit | ErrorCategory::Timeout | ErrorCategory::TransientProcessFailure
     )
+}
+
+/// Returns `true` when a failed run's provider session may be `--resume`d by a
+/// follow-up (a healing chain, a scheduled retry).
+///
+/// A session is **poisoned** when the failure is baked into the conversation
+/// history itself, so replaying it deterministically reproduces the failure:
+/// an oversized prompt / context-window overflow, or a request body the API
+/// rejected as invalid (`400 invalid_request_error` — a malformed image, an
+/// empty message). Every one of those lands in [`ErrorCategory::Validation`]
+/// via `classify_error`'s oversize/invalid arm, and none of them can be cured
+/// by continuing the same conversation; only a fresh session can.
+///
+/// Everything else keeps the resume pointer: a 5xx, a rate limit, a timeout, a
+/// network drop, a credential problem are all about the *world*, not the
+/// transcript, and a resumed session is the outcome the operator wants.
+///
+/// One structural read, no message parsing — the taxonomy is the single
+/// authority and this is a query over it, exactly like [`is_auto_fixable`].
+/// Adopted from the multica daemon's `classifyPoisonedOutput` /
+/// `UnresumableHistory` pair (`/research` run 2026-09-05).
+pub fn is_resume_safe(category: &ErrorCategory) -> bool {
+    !matches!(category, ErrorCategory::Validation)
 }
 
 /// Phase C5b — returns `true` for categories that represent **technical**
@@ -506,6 +546,38 @@ pub fn db_category(category: &ErrorCategory) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // --- is_resume_safe (poisoned-session guard) ---
+
+    #[test]
+    fn oversize_and_invalid_request_are_not_resume_safe() {
+        // The two shapes a poisoned history reports as — both classify to
+        // Validation, so both must refuse the resume pointer.
+        for err in [
+            "prompt is too long: 300000 tokens > 200000 maximum",
+            "API Error: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Could not process image\"}}",
+        ] {
+            let cat = classify_error_str(err);
+            assert_eq!(cat, ErrorCategory::Validation, "{err}");
+            assert!(!is_resume_safe(&cat), "{err} must not be resumed");
+        }
+    }
+
+    #[test]
+    fn transient_and_provider_failures_keep_the_resume_pointer() {
+        for cat in [
+            ErrorCategory::RateLimit,
+            ErrorCategory::SessionLimit,
+            ErrorCategory::Timeout,
+            ErrorCategory::Network,
+            ErrorCategory::ApiError,
+            ErrorCategory::CredentialError,
+            ErrorCategory::TransientProcessFailure,
+            ErrorCategory::Unknown,
+        ] {
+            assert!(is_resume_safe(&cat), "{cat:?} should keep its session");
+        }
+    }
 
     // --- is_technical_failure (Phase C5b) ---
 

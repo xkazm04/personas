@@ -7512,7 +7512,9 @@
         "sla_breach_opened": "SLA breach opened",
         "sla_breach_recovered": "SLA breach recovered",
         "schedule_missed_offline": "Missed schedule runs (offline)",
-        "schedule_skipped_overlap": "Schedule skipped (previous run active)"
+        "schedule_skipped_overlap": "Schedule skipped (previous run active)",
+        "schedule_paused_failure_rate": "Schedule paused (too many failed runs)",
+        "team_channel_leader_verdict": "Team leader verdict"
       },
       "load_older": "Load older events",
       "clear_filters": "Clear all filters",

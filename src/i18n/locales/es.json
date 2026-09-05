@@ -7920,7 +7920,9 @@
         "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)",
         "schedule_skipped_overlap": "Programación omitida (ejecución anterior activa)",
         "sla_breach_opened": "Incumplimiento de SLA iniciado",
-        "sla_breach_recovered": "Incumplimiento de SLA recuperado"
+        "sla_breach_recovered": "Incumplimiento de SLA recuperado",
+        "schedule_paused_failure_rate": "Programación en pausa (demasiadas ejecuciones fallidas)",
+        "team_channel_leader_verdict": "Veredicto del líder del equipo"
       },
       "view_name_placeholder": "Nombre de la vista (p. ej. 'Webhooks fallidos esta semana')",
       "views_label": "Vistas:"
