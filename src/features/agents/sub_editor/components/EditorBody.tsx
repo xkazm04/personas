@@ -3,6 +3,7 @@ import { TabSaveError } from '../libs/EditorDocument';
 import { tabIdLabel, tabIdsToLabels } from '../libs/editorTabConstants';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -164,14 +165,16 @@ export function EditorBody() {
           <span className="typo-body text-red-300/90 flex-1">
             {tx(t.agents.editor_ui.save_failed_tabs, { tabs: tabIdsToLabels(failedTabs, tabCatalog) })}
           </span>
-          <button
-            type="button"
-            onClick={() => void runSaveAll()}
-            disabled={isSaving}
-            className="px-2 py-1 typo-body rounded-card border border-red-500/30 text-red-300 hover:bg-red-500/10 disabled:opacity-40"
+          <AsyncButton
+            variant="accent"
+            accentColor="rose"
+            size="xs"
+            onClick={runSaveAll}
+            isLoading={isSaving}
+            data-testid="editor-save-retry"
           >
             {t.agents.editor_ui.save_failed_retry_button}
-          </button>
+          </AsyncButton>
         </div>
       )}
 
