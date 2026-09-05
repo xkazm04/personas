@@ -3,6 +3,7 @@ import { RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle, Search, X, La
 import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
 import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
+import { formatModelShort } from '@/lib/utils/formatters';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
@@ -94,10 +95,9 @@ function capabilityConfigs(designContext: string | null): CapabilityConfig[] {
   });
 }
 
-/** Drop the redundant `claude-` prefix for compact display. */
-function shortModel(m: string): string {
-  return m.replace(/^claude-/, '');
-}
+/** Compact display of a model id - the app-wide rule (prefix and date stamp
+ *  stripped), so a dated Claude id reads the same here as in every other cell. */
+const shortModel = (m: string): string => formatModelShort(m) ?? m;
 
 /** Substring → provider-key rules for deriving the brand from a model name when
  *  the override carries no explicit provider (bare-string overrides usually
