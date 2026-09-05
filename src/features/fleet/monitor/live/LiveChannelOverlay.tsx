@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { jsonOr, safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/personaIndex';
 import { MergedChannels } from '../channels/mergedFeed';
 import type { FeedTeam, TaggedItem } from '../channels/types';
@@ -35,21 +35,14 @@ const READ_KEY = 'personas.live.readIds';
 const READ_CAP = 400;
 
 function loadReadIds(): Set<string> {
-  try {
-    const raw = localStorage.getItem(READ_KEY);
-    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
-  } catch {
-    return new Set();
-  }
+  const ids = jsonOr<unknown>(safeLocalGet(READ_KEY, 'live:read-ledger read'), []);
+  // The blob is whatever an older build wrote; keep only string ids.
+  return new Set(Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : []);
 }
 
 function persistReadIds(ids: Set<string>): void {
-  try {
-    localStorage.setItem(READ_KEY, JSON.stringify([...ids].slice(-READ_CAP)));
-  } catch (e) {
-    // Private mode / quota: acknowledge still works this session.
-    silentCatch('live:read-ledger')(e);
-  }
+  // Private mode / quota: acknowledge still works this session (best-effort write).
+  safeLocalSet(READ_KEY, JSON.stringify([...ids].slice(-READ_CAP)), 'live:read-ledger');
 }
 
 /** Hidden diff sink — turns merged-feed deltas into new pop-up events. */

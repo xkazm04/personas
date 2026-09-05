@@ -8,6 +8,8 @@ pub mod env_connectors;
 pub mod git_ops;
 pub mod goals;
 pub mod milestones;
+/// The Notepad: scratch requirements and their dispatch handshake.
+pub mod notepad;
 pub mod portfolio;
 /// The `/ship-milestone` skill's one gated door back into the app.
 pub mod ship_ingest;
@@ -26,6 +28,7 @@ pub use env_connectors::*;
 pub use git_ops::*;
 pub use goals::*;
 pub use milestones::*;
+pub use notepad::*;
 pub use portfolio::*;
 pub use ship_ingest::*;
 pub use triage_ingest::*;

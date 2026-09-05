@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { createPortal } from 'react-dom';
 import { Palette, Check, Share2, Laptop, LogOut, PanelLeftClose, PanelLeft, Keyboard, Map, Compass } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
@@ -27,6 +28,10 @@ const RadioFooter = lazy(() => import('@/features/plugins/radio/components/Radio
 // Fleet status cluster (DEV-only). Lazy so the fleet module graph stays out of
 // the always-mounted footer chunk.
 const FleetFooterIcon = lazy(() => import('@/features/plugins/fleet/FleetFooterIcon'));
+// Notepad toggle. SHIPS IN PRODUCTION (unlike the fleet cluster below it):
+// a scratch note is not dev tooling. Lazy so the notepad module graph stays
+// out of the always-mounted footer chunk.
+const NotepadFooterIcon = lazyRetry(() => import('@/features/notepad/NotepadFooterIcon'));
 // Debug-recorder stop pill (DEV-only). Renders nothing unless a recording is
 // running, but must be MOUNTED whenever the app is, so the recorder can always
 // be stopped even after you leave the grid where it was started.
@@ -502,6 +507,10 @@ export default function DesktopFooter() {
   // Grid mode covers the sidebar, so the footer takes over as the way into
   // other sections (see FooterSectionNav) — and lifts above the z-200 overlay.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
+  // Both full-screen layers portal to <body> at z-200, so the footer has to
+  // climb above either of them to stay reachable — see the stacking-context
+  // note under the createPortal call below.
+  const notepadOpen = useSystemStore((s) => s.notepadOpen);
   if (IS_MOBILE) return null;
 
   // PORTAL, not an in-place render — this is load-bearing, not tidiness.
@@ -523,7 +532,7 @@ export default function DesktopFooter() {
   return createPortal(
     <div
       role="contentinfo"
-      className={`fixed bottom-0 left-0 right-0 ${fleetGridOpen ? 'z-[210]' : 'z-40'} flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background`}
+      className={`fixed bottom-0 left-0 right-0 ${fleetGridOpen || notepadOpen ? 'z-[210]' : 'z-40'} flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background`}
     >
       {/* Left cluster: Collapse + Account + Theme + Network */}
       <div className="flex items-center gap-1.5">
@@ -570,6 +579,10 @@ export default function DesktopFooter() {
       {/* Right cluster: debug-recorder stop + fleet toggle + system load + tour
           + project picker. */}
       <div className="flex items-center gap-1.5">
+        <Suspense fallback={null}>
+          <NotepadFooterIcon />
+        </Suspense>
+        <div className="w-px h-4 bg-primary/10" />
         {import.meta.env.DEV && (
           <>
             <Suspense fallback={null}>

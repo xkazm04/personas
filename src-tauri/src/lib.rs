@@ -1650,6 +1650,14 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- Notepad (scratch requirements -> /note-task dispatch)
+            commands::infrastructure::dev_tools::notepad_list_notes,
+            commands::infrastructure::dev_tools::notepad_create_note,
+            commands::infrastructure::dev_tools::notepad_update_note,
+            commands::infrastructure::dev_tools::notepad_set_status,
+            commands::infrastructure::dev_tools::notepad_delete_note,
+            commands::infrastructure::dev_tools::notepad_fork_note,
+            commands::infrastructure::dev_tools::notepad_ingest_runs,
             // Dev Tools -- milestones (Ship layer: convergence cuts)
             commands::infrastructure::dev_tools::dev_tools_list_milestones,
             commands::infrastructure::dev_tools::dev_tools_create_milestone,

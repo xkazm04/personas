@@ -421,6 +421,10 @@ fn tick_once(app: &AppHandle) {
     // ingest finished impact runs + raise the wave-complete notification
     // without any UI open. No-op unless the op registered a pending wave.
     crate::commands::infrastructure::feed_impact::sweep_pending_feed_impact_ingests(app);
+    // Notepad watcher — the `/note-task` runs' one gated door. Reads each
+    // published note's `runs/<note_id>/` for `started.json` / `result.json` and
+    // moves the note; rides this ticker for the same reason as the two above.
+    crate::commands::infrastructure::notepad_ingest::sweep_pending_notepad_ingests(app);
     let now = now_ms();
     let stale_secs = effective_secs(
         "PERSONAS_FLEET_STALE_SECS",

@@ -608,6 +608,15 @@
       "sourceGlobs": [
         "src/features/teams/sub_mastermind/**"
       ]
+    },
+    {
+      "doc": "docs/features/notepad.md",
+      "sourceGlobs": [
+        "src/features/notepad/**",
+        "src/api/notepad.ts",
+        "src-tauri/src/commands/infrastructure/dev_tools/notepad.rs",
+        "src-tauri/src/commands/infrastructure/notepad_ingest.rs"
+      ]
     }
   ]
 }

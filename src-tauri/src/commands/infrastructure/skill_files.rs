@@ -263,6 +263,10 @@ const SYSTEM_SKILLS: &[&str] = &[
     // `dev_tools_ship_milestone_ingest` — the app dispatches it from the Ship
     // tab, so it cannot depend on the operator's global library.
     "ship-milestone",
+    // Executes ONE Notepad note and reports back through `notepad_ingest_runs`
+    // — the app dispatches it from the pad into whichever repo the note names,
+    // so it cannot depend on the operator's global library.
+    "note-task",
 ];
 
 /// Is `name` an app-owned system skill (sourced from the bundle/repo, never the

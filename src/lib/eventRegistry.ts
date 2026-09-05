@@ -28,6 +28,7 @@ import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { AuthStateResponse } from '@/lib/bindings/AuthStateResponse';
 import type { TestScenario } from '@/lib/bindings/TestScenario';
 import type { TestScores } from '@/lib/bindings/TestScores';
+import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
 // ---------------------------------------------------------------------------
 // Event name constants (keep in sync with Rust event_registry::event_name)
@@ -328,6 +329,10 @@ export const EventName = {
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
+
+  // Notepad — emitted by the run-artifact sweeper after it flips a note's
+  // status (published → in_progress → completed/failed).
+  NOTEPAD_NOTE_CHANGED: 'notepad-note-changed',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -1191,6 +1196,10 @@ export interface EventPayloadMap {
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;
+
+  // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
+  // so a renamed variant breaks here rather than at a switch default.
+  [EventName.NOTEPAD_NOTE_CHANGED]: { noteId: string; status: NoteStatus };
 
   // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
   // These are backend bus events consumed by persona subscriptions for

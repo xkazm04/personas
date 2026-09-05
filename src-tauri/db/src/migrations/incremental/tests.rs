@@ -290,6 +290,8 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "app_master_gate_runs",
         // e12 — shared-event feed → project quick-dispatch routes.
         "shared_event_project_routes",
+        // e22 — the Notepad's one table.
+        "dev_notes",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),

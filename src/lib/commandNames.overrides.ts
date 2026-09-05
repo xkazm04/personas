@@ -23,4 +23,6 @@ export type UnregisteredCommand =
   | "zapier_create_zap"
   | "zapier_list_zaps"
   | "zapier_trigger_webhook"
-  | "lab_create_version_snapshot";
+  | "lab_create_version_snapshot"
+  // notepad_resolve_suggestion lands with spark-notepad WP3 (Athena); registered in Rust there.
+  | "notepad_resolve_suggestion";

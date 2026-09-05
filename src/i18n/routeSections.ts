@@ -42,6 +42,10 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   //   remote_approval  → RemoteApprovalPrompt (pairing prompt, all routes)
   'consent',
   'remote_approval',
+  // `notepad` — the notepad overlay is an OverlayIsland at the App root and its
+  // footer toggle is always mounted, so there is no route that does not reach
+  // it. Same justification as consent/remote_approval above.
+  'notepad',
   // `debt` is the auto-extracted hardcoded-string staging catalog read through
   // the debtText()/<DebtText/> channel (src/i18n/DebtText.tsx). 539 keys across
   // 113 files spanning agents, overview, plugins, templates, home, triggers,
