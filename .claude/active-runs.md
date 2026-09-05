@@ -2,6 +2,30 @@
 
 ## Active
 
+- **[2026-09-05 21:15]**
+- **Paths:** `src/features/agents/sub_editor/**` · `src/features/agents/sub_activity/**`
+- **Status:** started
+
+- **[2026-09-05 20:52]**
+- **Paths:** `src/features/agents/sub_design/DesignHub.tsx` · `src/features/agents/sub_design/components` · `src/features/agents/sub_design/index.ts` · `src/features/agents/sub_design/libs` · `src/features/agents/sub_design/components/DesignLifePanels.tsx` · `src/features/agents/sub_design/components/DesignSubtabPanels.tsx` · `src/features/agents/sub_design/libs/designStateHelpers.ts` · `src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx` · `src/features/agents/sub_tool_runner/components/ToolRunnerModal.tsx` · `src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx` · `src/features/agents/sub_tool_runner/components/__tests__` · `src/features/agents/sub_tool_runner/libs/useToolRunner.test.ts` · `src/features/agents/sub_tool_runner/libs/useToolRunner.ts` · `src/features/agents/sub_tool_runner/components` · `src/features/agents/sub_tool_runner/index.ts` · `src/features/agents/sub_tool_runner/libs`
+- **Status:** started
+
+- **[2026-09-05 20:16]**
+- **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **Status:** started
+
+- **[2026-09-05 18:53]**
+- **Paths:** `src/features/agents/sub_connectors/**`
+- **Status:** started
+
+- **[2026-09-05 18:13]**
+- **Paths:** `src/features/agents/components/allPersonas/**`
+- **Status:** started
+
+- **[2026-09-05 17:24]**
+- **Paths:** `src/features/agents/sub_health/**` · `.claude/scan-history/` · `.personas/memory-outbox.jsonl`
+- **Status:** started
+
 - **[2026-09-04 23:20]**
 - **Paths:** `src/features/agents/sub_design/**` · `src/features/agents/sub_tool_runner/**`
 - **Status:** started
@@ -595,6 +619,18 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### scan-sweep-optimize-r6 — scan-sweep --optimize round 6: agents-editor
+
+### scan-sweep-optimize-r5 — /scan-sweep --optimize round 5: agents-design
+
+### scan-sweep-optimize-r4 — /scan-sweep --optimize round 4: agents-deployment
+
+### scan-sweep-optimize-r3 — /scan-sweep --optimize round 3: agents-connectors
+
+### scan-sweep-optimize-r2 — /scan-sweep --optimize round 2: agents-components-allpersonas
+
+### scan-sweep-optimize — C:/Program Files/Git/scan-sweep --optimize loop (registry skill), context by context
 
 ### sweep-agents-design — scan-sweep --optimize: agents-design
 
