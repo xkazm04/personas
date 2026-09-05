@@ -6,7 +6,7 @@ import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
-import { FALLBACK_OPTIONS } from '../../libs/useAutomationSetup';
+import { FALLBACK_OPTIONS, TIMEOUT_SECS_DEFAULT, TIMEOUT_SECS_MAX, TIMEOUT_SECS_MIN } from '../../libs/useAutomationSetup';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -165,11 +165,13 @@ export function AutomationConditionStep({
               <div className="flex items-center gap-2 mt-1.5">
                 <NumberStepper
                   value={timeoutSecs}
-                  onChange={(v) => setTimeoutSecs(v ?? 30)}
-                  min={1}
-                  max={300}
+                  onChange={(v) => setTimeoutSecs(v ?? TIMEOUT_SECS_DEFAULT)}
+                  // The same bounds handleDeploy clamps to and timeoutSecsInvalid
+                  // checks -- the stepper used to cap at 300 while the hook allowed 3600.
+                  min={TIMEOUT_SECS_MIN}
+                  max={TIMEOUT_SECS_MAX}
                   step={1}
-                  defaultValue={30}
+                  defaultValue={TIMEOUT_SECS_DEFAULT}
                   ariaLabel={t.agents.connectors.auto_timeout}
                   suffix={t.agents.connectors.auto_seconds}
                 />

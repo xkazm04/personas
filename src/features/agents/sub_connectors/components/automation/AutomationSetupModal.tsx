@@ -128,7 +128,10 @@ export function AutomationSetupModal({
               <button
                 type="button"
                 onClick={() => void s.handleDeploy()}
-                disabled={!s.name.trim() || (!s.hasPlatformCredential && s.needsCredential)}
+                // ONE rule for "may deploy": the hook's canDeploy also covers an
+                // out-of-range timeout and a deploy already in flight, which this
+                // inline test used to ignore.
+                disabled={!s.canDeploy || (!s.hasPlatformCredential && s.needsCredential)}
                 className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Rocket className="w-3.5 h-3.5" />

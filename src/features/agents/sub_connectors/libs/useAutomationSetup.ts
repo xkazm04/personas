@@ -71,7 +71,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const [name, setName] = useState('');
   const [platform, setPlatform] = useState<AutomationPlatform>('n8n');
   const [inputSchema, setInputSchema] = useState('');
-  const [timeoutSecs, setTimeoutSecs] = useState(30);
+  const [timeoutSecs, setTimeoutSecs] = useState(TIMEOUT_SECS_DEFAULT);
   const [fallbackMode, setFallbackMode] = useState<AutomationFallbackMode>('connector');
   const [platformCredentialId, setPlatformCredentialId] = useState<string | null>(null);
   const [useCaseId, setUseCaseId] = useState<string | null>(null);
@@ -178,7 +178,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       setName(design.result.name);
       setPlatform(design.result.platform);
       setInputSchema(design.result.input_schema || '');
-      setTimeoutSecs(design.result.timeout_secs || 30);
+      setTimeoutSecs(design.result.timeout_secs || TIMEOUT_SECS_DEFAULT);
       setFallbackMode(design.result.fallback_mode || 'connector');
     }
   }, [design.result]);
@@ -228,7 +228,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
 
   const handleClose = useCallback(() => {
     design.reset(); setDescription(''); setShowAdvanced(false); setName('');
-    setInputSchema(''); setTimeoutSecs(30); setFallbackMode('connector');
+    setInputSchema(''); setTimeoutSecs(TIMEOUT_SECS_DEFAULT); setFallbackMode('connector');
     setPlatformCredentialId(null); setGithubRepo(null); setGithubRepos([]);
     setGithubPerms(null); setZapierZaps([]); setLocalPhase(null);
     setDeployResult(null); setDeployError(null); setUseCaseId(null);
