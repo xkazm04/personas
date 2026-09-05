@@ -74,6 +74,19 @@ pre-commit:
       glob: "src/i18n/locales/*.json"
       run: node scripts/i18n/check-untranslated.mjs --strict
 
+    # Both gates above read a value and ask a question ABOUT it; neither asks
+    # whether the value itself survived the pipeline intact. On 2026-09-05, 176
+    # values across 12 locales were found carrying runs of literal backslashes
+    # where a character was meant ("Personas suchen" + 16 backslashes + "u2026"
+    # instead of an ellipsis) - an escaping cascade from a tool that re-escaped
+    # already-escaped strings. i18n-no-untranslated was not merely blind to it:
+    # it PASSED 27 untranslated English values precisely because the corruption
+    # made them differ from en.json. This gate holds the count at zero, and
+    # self-tests its own matcher on five fixtures before trusting a green run.
+    - name: i18n-escape-integrity
+      glob: "src/i18n/locales/*.json"
+      run: node scripts/i18n/check-escapes.mjs
+
 pre-push:
   jobs:
     - name: typecheck
