@@ -142,7 +142,12 @@ export default function PersonaOverviewPage() {
         try {
           await applyPersonaOp(id, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
           ok += 1;
-        } catch {
+        } catch (err) {
+          // The toast reports HOW MANY failed; without this it never reported
+          // WHY any of them did. A bulk home-team move can fail N times in a
+          // row and leave no breadcrumb anywhere - the count is a symptom, not
+          // a diagnosis.
+          silentCatch('PersonaOverviewPage:batchMoveToGroup')(err);
           failed += 1;
         }
       }
