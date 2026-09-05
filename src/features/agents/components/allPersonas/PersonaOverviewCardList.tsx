@@ -146,8 +146,14 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
       <div className={`flex items-start gap-3 ${densityTokens.cardPadding}`}>
         <button
           type="button"
+          role="checkbox"
+          aria-checked={selected}
           onClick={() => onToggleSelect(id)}
-          aria-label={selected ? 'Deselect' : 'Select'}
+          // Matches the desktop SelectCell exactly: checkbox semantics plus the
+          // persona's own name. The previous hardcoded 'Select'/'Deselect' was
+          // the only untranslated aria-label left in this context, so on the
+          // mobile roster every row announced in English whatever the locale.
+          aria-label={p.name}
           className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
             selected ? 'bg-primary/80 border-primary/60' : 'border-primary/30'
           }`}

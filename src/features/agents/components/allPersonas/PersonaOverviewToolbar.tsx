@@ -123,6 +123,10 @@ export function PersonaOverviewToolbar({
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          // A placeholder is not a label: it disappears on first keystroke and
+          // is not an accessible name in every AT/browser pair. The sibling
+          // search box in PersonaConfigPanel already carries an aria-label.
+          aria-label={t.agents.persona_list.search_personas}
           placeholder={t.agents.persona_list.search_personas}
           className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
         />
