@@ -10,6 +10,7 @@ import { ChannelList, channelTypes } from './ChannelList';
 import { DeliveryHealthBadge } from './DeliveryHealthBadge';
 import { TOOLS_BORDER } from '@/lib/utils/designTokens';
 import { createLogger } from "@/lib/log";
+import { silentCatch } from "@/lib/silentCatch";
 
 const logger = createLogger("notification-channel-settings");
 
@@ -66,7 +67,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       }
       setChannelsInternal(normalized);
     }
-    catch { setChannelsInternal([]); }
+    catch (err) {
+      // A corrupt notification_channels blob reads as "no channels", and the
+      // next Save would persist [] over it -- the breadcrumb is the only trace.
+      silentCatch('NotificationChannelSettings:parseChannels')(err);
+      setChannelsInternal([]);
+    }
     setIsDirty(false);
   }, [selectedPersona?.notification_channels, isDraftMode]);
 
