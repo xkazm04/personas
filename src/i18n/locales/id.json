@@ -7972,7 +7972,9 @@
         "schedule_missed_offline": "Jadwal terlewat (offline)",
         "schedule_skipped_overlap": "Jadwal dilewati (run sebelumnya masih aktif)",
         "sla_breach_opened": "Pelanggaran SLA dibuka",
-        "sla_breach_recovered": "Pelanggaran SLA pulih"
+        "sla_breach_recovered": "Pelanggaran SLA pulih",
+        "schedule_paused_failure_rate": "Jadwal dijeda (terlalu banyak eksekusi gagal)",
+        "team_channel_leader_verdict": "Keputusan pemimpin tim"
       },
       "view_name_placeholder": "Nama tampilan (misal 'Webhook gagal minggu ini')",
       "views_label": "Tampilan:"

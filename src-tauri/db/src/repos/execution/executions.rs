@@ -1491,6 +1491,45 @@ pub fn count_environmental_failures_in_window(
     )
 }
 
+/// Terminal outcomes of the runs ONE trigger fired inside a rolling window, as
+/// `(completed, failed)`. Feeds the scheduler's failure-rate auto-pause: a
+/// schedule whose recent history is dominated by failures is paused instead of
+/// re-firing into the same wall every slot (adopted from multica's autopilot
+/// failure monitor, `/research` 2026-09-05).
+///
+/// Only `completed` and `failed` count. `incomplete` (exit 0, task not
+/// accomplished) is deliberately excluded from both sides — it is a quality
+/// signal, not a crash, and folding it into the failed column would pause
+/// schedules whose persona merely under-delivers. `cancelled` rows are user
+/// actions and say nothing about the trigger.
+pub fn trigger_outcomes_in_window(
+    pool: &DbPool,
+    trigger_id: &str,
+    window_hours: i64,
+) -> Result<(u32, u32), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::trigger_outcomes_in_window",
+        {
+            let conn = pool.conn("executions::trigger_outcomes_in_window")?;
+            let (completed, failed): (i64, i64) = conn.query_row(
+                "SELECT
+                    COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) AS completed,
+                    COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) AS failed
+                 FROM persona_executions
+                 WHERE trigger_id = ?1
+                   AND datetime(created_at) > datetime('now', ?2)",
+                params![trigger_id, format!("-{window_hours} hours")],
+                |r| Ok((r.get("completed")?, r.get("failed")?)),
+            )?;
+            Ok((
+                completed.clamp(0, u32::MAX as i64) as u32,
+                failed.clamp(0, u32::MAX as i64) as u32,
+            ))
+        }
+    )
+}
+
 /// One in-flight run, in the only five fields anything asks the in-flight set
 /// for. Not a `PersonaExecution`: this set is polled by the live chains panel,
 /// and the full row carries two blobs (avg 7.4 KB + 9.6 KB on the 2026-06-02
@@ -2662,6 +2701,61 @@ mod tests {
     /// row (written here by hand-rolled SQL that no longer exists in the tree)
     /// blanked every execution surface at startup.
     ///
+    /// The failure-rate window counts only THIS trigger's terminal outcomes
+    /// inside the window: another trigger's failures, `incomplete` /
+    /// `cancelled` rows, and rows older than the window all stay out.
+    #[test]
+    fn trigger_outcomes_in_window_scopes_by_trigger_status_and_age() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Cron Agent");
+        let conn = pool.get()?;
+        for tid in ["trg-a", "trg-b"] {
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'schedule', 1, datetime('now'), datetime('now'))",
+                params![tid, persona_id],
+            )
+            .unwrap();
+        }
+        let mut n = 0;
+        let mut insert = |trigger: &str, status: &str, created: &str| {
+            n += 1;
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, trigger_id, status, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![format!("x-{n}"), persona_id, trigger, status, created],
+            )
+            .unwrap();
+        };
+        // In window, this trigger: 1 completed, 3 failed.
+        insert("trg-a", "completed", "2099-01-01 00:00:00");
+        insert("trg-a", "failed", "2099-01-01 00:00:00");
+        insert("trg-a", "failed", "2099-01-01 00:00:00");
+        insert("trg-a", "failed", "2099-01-01 00:00:00");
+        // Excluded: quality/user signals, another trigger, and an old row.
+        insert("trg-a", "incomplete", "2099-01-01 00:00:00");
+        insert("trg-a", "cancelled", "2099-01-01 00:00:00");
+        insert("trg-b", "failed", "2099-01-01 00:00:00");
+        insert("trg-a", "failed", "2000-01-01 00:00:00");
+        drop(conn);
+
+        // created_at in the far future is > now-168h, so it is "in window";
+        // the 2000 row is not.
+        assert_eq!(
+            trigger_outcomes_in_window(&pool, "trg-a", 168).unwrap(),
+            (1, 3)
+        );
+        assert_eq!(
+            trigger_outcomes_in_window(&pool, "trg-b", 168).unwrap(),
+            (0, 1)
+        );
+        assert_eq!(
+            trigger_outcomes_in_window(&pool, "trg-none", 168).unwrap(),
+            (0, 0)
+        );
+        Ok(())
+    }
+
     /// Before `coerce_i64`/`coerce_f64`/`coerce_bool` this panicked on the
     /// `get_by_id`. The reader now reads a number it cannot parse as 0 and a
     /// corrupt boolean as false, and — separately — a numeric string still

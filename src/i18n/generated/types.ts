@@ -7571,6 +7571,8 @@ export type Translations = {
         sla_breach_recovered: string;
         schedule_missed_offline: string;
         schedule_skipped_overlap: string;
+        schedule_paused_failure_rate: string;
+        team_channel_leader_verdict: string;
       };
       load_older: string;
       clear_filters: string;

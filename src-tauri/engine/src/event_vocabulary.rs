@@ -117,6 +117,10 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     // Scheduler reliability signals (never listener-matched — informational)
     ("schedule.missed.offline", "scheduler"),
     ("schedule.skipped.overlap", "scheduler"),
+    ("schedule.paused.failure_rate", "scheduler"),
+    // Team channel: a channel leader's per-turn evaluation record
+    // (`action` / `no_action` / `failed` / `unstated`) — never listener-matched.
+    ("team.channel.leader_verdict", "orchestration"),
 ];
 
 /// Lazily-built set of the *canonical* forms of every builtin type, for O(1)
