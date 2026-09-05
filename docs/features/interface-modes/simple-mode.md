@@ -96,20 +96,24 @@ Simple-mode execution UX:
 
 ## Files with existing `isSimple` checks (reference)
 
+> Re-measured 2026-09-05 against `grep -rl isSimple src/`. The previous table
+> listed 12 files: **five no longer exist** (`HealthCheckPanel.tsx`,
+> `CredentialCardHeader.tsx`, `HealthStatusBar.tsx`, `VaultStatusBadge.tsx`,
+> `DashboardHeaderBadges.tsx`), a sixth (`ExploreView.tsx`) still exists but
+> carries no `isSimple` check, and **three real gate sites were missing**. If
+> you edit this table, derive it from the grep rather than from the row above.
+
 | File | What it gates |
 | --- | --- |
 | `NavigationGrid.tsx` | Home page card visibility |
-| `HealthCheckPanel.tsx` | Hides dry-run capabilities list |
+| `SetupCards.tsx` | Narrows the role list to the beginner role |
 | `ExecutionMiniPlayer.tsx` | Hides token count, streaming indicators |
+| `PersonaSettingsTab.tsx` | Hides the max-concurrent execution control |
 | `CredentialManagerHeader.tsx` | Hides search/filter bar |
 | `CredentialList.tsx` | Passes `isSimple` to column renderer |
 | `CredentialListColumns.tsx` | Simplified columns (fewer fields) |
-| `CredentialCardHeader.tsx` | Hides some action buttons |
-| `HealthStatusBar.tsx` | Hidden entirely |
-| `VaultStatusBadge.tsx` | Simplified badge |
-| `DashboardHeaderBadges.tsx` | Simplified badge |
+| `CredentialDetailModals.tsx` | Skips the playground / schema / vector KB modals entirely |
 | `TemplateDetailModal.tsx` | Hides adoption count, references |
-| `ExploreView.tsx` | Hides technical details |
 
 ## Implementation history
 
