@@ -13,10 +13,13 @@ import type { EditorTab } from '@/lib/types/types';
  * dependent tab. Only add entries where a genuine data dependency exists.
  */
 export const TAB_DIRTY_DEPENDENCIES: Partial<Record<EditorTab, string[]>> = {
-  // Model config changes invalidate use-case test results
-  'use-cases': ['model'],
-  // Design hub absorbs Prompt and Connectors save groups (former standalone tabs).
-  design: ['prompt', 'connectors'],
+  // The `model` save group (useEditorSave) has no tab of its own; its fields
+  // are edited under the Design hub, so that is where its dirty dot shows.
+  // Pinned by libs/__tests__/tabDirtyDependencies.test.ts against the ids that
+  // actually render and register: the previous entries named a tab that no
+  // longer renders (`use-cases`) and two groups nothing registers any more
+  // (`prompt`, `connectors`), so no dependency in the map could ever fire.
+  design: ['model'],
 };
 
 /** Human-readable labels for dirty-state tab identifiers.
