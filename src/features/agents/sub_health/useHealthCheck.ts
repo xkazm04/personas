@@ -100,7 +100,13 @@ export function computeHealthScore(issues: DryRunIssue[]): HealthScore {
 
 // -- Design context reconstruction ------------------------------------
 
-function personaToDesignContext(persona: Persona): DesignContextData | null {
+/**
+ * Never null: a persona with no (or unparseable) design_context gets a minimal
+ * context built from its own fields, so the feasibility check always has
+ * something to run against. The hook used to guard a `null` here and surface
+ * `error_no_design_context`, a branch this function could not reach.
+ */
+function personaToDesignContext(persona: Persona): DesignContextData {
   if (persona.design_context) {
     const ctx = parseJsonOrDefault<DesignContextData | null>(persona.design_context, null);
     if (ctx) return ctx;
@@ -399,14 +405,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
     setError(null);
 
     try {
-      const ctx = personaToDesignContext(persona);
-      if (!ctx) {
-        setError(getActiveTranslations().agents.health_check.error_no_design_context);
-        setPhase('error');
-        return null;
-      }
-
-      const json = JSON.stringify(ctx);
+      const json = JSON.stringify(personaToDesignContext(persona));
 
       if (gen !== genRef.current) return null;
 
