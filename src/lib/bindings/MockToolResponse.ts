@@ -4,4 +4,4 @@ import type { JsonValue } from "./serde_json/JsonValue";
 /**
  * A mock tool response within a scenario.
  */
-export type MockToolResponse = { tool_name: string, description: string | null, mock_response: JsonValue, };
+export type MockToolResponse = { toolName: string, description: string | null, mockResponse: JsonValue, };

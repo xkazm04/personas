@@ -10,7 +10,7 @@ import type { TestScores } from "./TestScores";
  * `src/hooks/realtime/useRunEventListener.ts` flattens snake_case → camelCase
  * for top-level fields but leaves `scores` and `scenarios` as-is.
  */
-export type TestRunStatusEvent = { run_id: string, phase: string, scenarios_count: number | null, current: number | null, total: number | null, model_id: string | null, scenario_name: string | null, status: string | null, scores: TestScores | null, summary: JsonValue | null, error: string | null, 
+export type TestRunStatusEvent = { runId: string, phase: string, scenariosCount: number | null, current: number | null, total: number | null, modelId: string | null, scenarioName: string | null, status: string | null, scores: TestScores | null, summary: JsonValue | null, error: string | null, 
 /**
  * Emitted once during the "generated" phase so the frontend can save scenarios to a suite.
  */
@@ -18,4 +18,4 @@ scenarios: Array<TestScenario> | null,
 /**
  * Elapsed wall-clock milliseconds since the run started (for live progress display).
  */
-elapsed_ms: bigint | null, };
+elapsedMs: bigint | null, };

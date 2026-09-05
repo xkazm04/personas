@@ -2,6 +2,23 @@
 
 ## Active
 
+- **[2026-09-04 23:20]**
+- **Paths:** `src/features/agents/sub_design/**` · `src/features/agents/sub_tool_runner/**`
+- **Status:** started
+
+- **[2026-09-04 22:42]**
+- **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **Status:** started
+
+### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
+- **[2026-09-04 12:58]**
+- **Paths:** `scripts/templates/**` · `src/features/agents/sub_manifest/**` · `src/features/shared/components/editors/**` · `src/features/overview/sub_reports/**`
+- **Status:** started
+
+- **[2026-09-03 18:24]**
+- **Paths:** `src/features/agents/**` · `src/features/shared/glyph/**` · `src-tauri/core/src/models/**` · `src-tauri/db/src/migrations/**` · `src-tauri/db/src/repos/core/**` · `src-tauri/engine/src/**` · `src-tauri/src/engine/**` · `src-tauri/src/commands/**` · `docs/features/personas/**`
+- **Status:** started
+
 - **[2026-08-31 14:48]**
 - **Paths:** `src/features/agents/sub_life/**` · `src/features/agents/sub_editor/**` · `src/features/agents/sub_design/**` · `src/features/overview/sub_missionControl/**` · `src/i18n/**` · `src-tauri/db/src/repos/core/attention_ledger.rs` · `src-tauri/src/commands/core/**`
 - **[2026-09-03 12:49]**
@@ -578,6 +595,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### sweep-agents-design — scan-sweep --optimize: agents-design
+
+### sweep-agents-deployment — scan-sweep --optimize: agents-deployment
+
+### spark-agent-manifest-rebase — Spark: Design-hub consolidation to agent-manifest model (use-cases+parameters->responsibilities, prompt+core->manifest, brain dashboard)
 
 ### living-agent-checklist — post-ship checklist: fold Life into Design + attention toggle/Overview tile + follow-up fixes
 ### spark-living-agent-core — /spark living-agent-core: persona core model rebase (runtime character, responsibility entity, per-persona brain, attention loop; templates/recipes -> practice library) — design phase, worktree later

@@ -3,4 +3,4 @@
 /**
  * Per-scenario scores; serialized snake_case directly into TestRunStatusEvent.scores.
  */
-export type TestScores = { tool_accuracy: number | null, output_quality: number | null, protocol_compliance: number | null, };
+export type TestScores = { toolAccuracy: number | null, outputQuality: number | null, protocolCompliance: number | null, };

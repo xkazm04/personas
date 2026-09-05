@@ -11,4 +11,4 @@ import type { MockToolResponse } from "./MockToolResponse";
  * `src/hooks/realtime/useRunEventListener.ts` does NOT recursively camelCase
  * nested objects; this type is passed through.
  */
-export type TestScenario = { name: string, description: string, input_data: JsonValue | null, mock_tools: Array<MockToolResponse>, expected_behavior: string, expected_tool_sequence: Array<string> | null, expected_protocols: Array<string> | null, };
+export type TestScenario = { name: string, description: string, inputData: JsonValue | null, mockTools: Array<MockToolResponse>, expectedBehavior: string, expectedToolSequence: Array<string> | null, expectedProtocols: Array<string> | null, };
