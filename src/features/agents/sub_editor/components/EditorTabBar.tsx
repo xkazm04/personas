@@ -61,13 +61,23 @@ function HealthBadge() {
   const health = useHealthCheck();
   const labels = t.agents.editor_ui;
   const running = health.phase === 'running';
+  const failed = health.phase === 'error';
   const score = health.score;
-  const badgeTone = score ? GRADE_TONE[score.grade] : 'border-primary/15 bg-secondary/40 text-foreground';
+  // A failed run used to fall through to the neutral "never checked" label, so
+  // pressing the badge and having the check throw looked identical to never
+  // having pressed it. Surface the failure in its own tone instead.
+  const badgeTone = failed
+    ? GRADE_TONE.unhealthy
+    : score
+      ? GRADE_TONE[score.grade]
+      : 'border-primary/15 bg-secondary/40 text-foreground';
   const badgeLabel = running
     ? labels.design_health_checking
-    : score
-      ? `${labels[`design_health_${score.grade}` as const] ?? score.grade} · ${score.value}`
-      : labels.design_health_never_checked;
+    : failed
+      ? t.agents.health_check.check_failed
+      : score
+        ? `${labels[`design_health_${score.grade}` as const] ?? score.grade} · ${score.value}`
+        : labels.design_health_never_checked;
   return (
     <button
       type="button"
