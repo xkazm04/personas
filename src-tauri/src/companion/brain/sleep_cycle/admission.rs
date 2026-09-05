@@ -17,10 +17,10 @@ use super::limits::{
 };
 use super::parse::parse_ts;
 use super::pressure::thousands;
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::{cycle_report, episodic};
 use crate::db::UserDbPool;
 use crate::error::AppError;
-use crate::companion::brain::sim_clock;
 
 // ── Outcomes ───────────────────────────────────────────────────────────────
 
@@ -234,7 +234,12 @@ pub(super) fn measure(pool: &UserDbPool) -> Result<Reading, AppError> {
     let last = cycle_report::last_completed(pool)?;
 
     let hours_since = last.as_ref().and_then(|l| match parse_ts(&l.finished_at) {
-        Some(fin) => Some(sim_clock::now().signed_duration_since(fin).num_hours().max(0)),
+        Some(fin) => Some(
+            sim_clock::now()
+                .signed_duration_since(fin)
+                .num_hours()
+                .max(0),
+        ),
         // An unparseable timestamp must not wedge cycles forever. Treat the
         // floor as satisfied and say so — a noisy log beats a memory that
         // silently stops reconciling because one row is malformed.

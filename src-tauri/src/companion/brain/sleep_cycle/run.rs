@@ -146,6 +146,11 @@ pub(super) struct CycleNotes {
     /// key keeps coming back (which means the evidence behind it is still
     /// accumulating and the real fix is upstream).
     pub(super) refused_forgotten: Vec<String>,
+    /// Ids of the facts this cycle actually wrote, in write order. Not for the
+    /// reader: this is the hand-off from compress to reconcile, which shortlists
+    /// existing candidates AROUND each new fact instead of judging the whole
+    /// store. A fact nobody wrote tonight is not a new duplicate risk.
+    pub(super) written_fact_ids: Vec<String>,
     pub(super) truncation: Option<String>,
     /// Non-fatal things that went sideways — a dropped candidate, an id that
     /// pointed at nothing. Surfaced so "dropped 3" in the stats has a why.

@@ -15,6 +15,7 @@ use super::phases::*;
 use super::pressure::*;
 use super::prompts::*;
 use super::run::*;
+use super::shortlist;
 use crate::companion::brain::{
     cycle_report, episodic, oneshot, procedural, semantic, sync_staging, taxonomy,
 };
@@ -26,6 +27,7 @@ use crate::companion::brain::keyword;
 
 // ── harness ─────────────────────────────────────────────────────────
 
+use crate::companion::brain::sim_clock;
 /// Point `disk::brain_root()` at a throwaway directory. `PERSONAS_HOME` is
 /// process-global, so the guard also serialises the disk-touching tests in
 /// this module against each other — and, crucially, against the single
@@ -39,7 +41,6 @@ use crate::companion::brain::keyword;
 /// serialises the in-process `CYCLE_RUNNING` flag, which two concurrent cycle
 /// tests would otherwise make each other skip.
 use crate::companion::brain::test_home::TestHome as BrainHome;
-use crate::companion::brain::sim_clock;
 
 /// Canned replies per leg. The whole point of the seam: every decision the
 /// cycle makes about a reply is exercised without spawning a process.
@@ -1265,8 +1266,17 @@ fn untrusted_evidence_is_fenced_with_the_rules_outside_it() {
         contradicts_id: None,
         updated_at: String::new(),
     }];
-    let r = build_reconcile_prompt(&facts);
-    assert!(r.find("RULES — non-negotiable").unwrap() < r.find("<untrusted_facts_").unwrap());
+    let neighbour = semantic::Fact {
+        id: "fact_2".into(),
+        value: "v older".into(),
+        ..facts[0].clone()
+    };
+    let groups = vec![shortlist::Group {
+        seed: &facts[0],
+        candidates: vec![&neighbour],
+    }];
+    let r = build_reconcile_prompt(&groups);
+    assert!(r.find("RULES — non-negotiable").unwrap() < r.find("<untrusted_groups_").unwrap());
 }
 
 /// The boundary's three tiers, in order. The `started_at` fallback is what

@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::limits::RECONCILE_VALUE_CHARS;
 use super::parse::one_line;
+use super::shortlist;
 use crate::companion::brain::{episodic, semantic, taxonomy};
 
 // ── Prompts ────────────────────────────────────────────────────────────────
@@ -128,25 +129,33 @@ pub(super) fn build_compress_prompt(
     p
 }
 
-pub(super) fn build_reconcile_prompt(facts: &[semantic::Fact]) -> String {
+/// The reconcile prompt, built from shortlisted groups rather than from the
+/// whole store.
+///
+/// One group is one fact this cycle wrote (or one drawn by the rotating sweep)
+/// together with the few existing entries closest to it. The prompt's size is
+/// therefore set by the cycle's own write budget and the per-seed shortlist,
+/// not by how much the user has ever told her: the same shape at forty facts
+/// and at forty thousand.
+pub(super) fn build_reconcile_prompt(groups: &[shortlist::Group<'_>]) -> String {
     let mut p = String::new();
     p.push_str(
-        "You are running the RECONCILE phase of Athena's nightly sleep cycle. Below is her \
-         ACTIVE long-term fact set, one line each. Your job is to find redundancy and \
-         conflict — nothing else.\n\n",
+        "You are running the RECONCILE phase of Athena's nightly sleep cycle. Below are the \
+         facts this cycle just learned, each followed by the few existing entries closest to \
+         it. Your job is to find redundancy and conflict inside each group — nothing else.\n\n",
     );
     p.push_str(
         "RULES — non-negotiable:\n\
          1. `supersede` means two entries say the SAME thing and the winner says it better or \
          more currently. The loser is retired (it stops being retrieved; it is not deleted). \
-         Only pair ids from the list, only within the same scope, and never an id with \
-         itself.\n\
+         Only pair ids that appear in the SAME group, and never an id with itself.\n\
          2. `contradictions` means two entries cannot both be true. Do NOT try to resolve \
          them — report the pair and what the conflict is. A human decides.\n\
          3. Different facts about related things are NOT duplicates. Merging two distinct \
          claims loses one of them permanently, so when in doubt, leave both.\n\
-         4. At most 8 supersedes are accepted. Empty arrays are a valid, honest answer, and \
-         usually the right one.\n\n",
+         4. A group whose entries are all distinct is the common case. Empty arrays are a \
+         valid, honest answer, and usually the right one.\n\
+         5. At most 8 supersedes are accepted.\n\n",
     );
     p.push_str(
         "OUTPUT — return ONLY this JSON object. No prose, no code fences.\n\n\
@@ -160,16 +169,25 @@ pub(super) fn build_reconcile_prompt(facts: &[semantic::Fact]) -> String {
 
     p.push_str(UNTRUSTED_BANNER);
     let mut body = String::new();
-    for f in facts {
-        body.push_str(&format!(
-            "- `{id}` [{scope}/{key}] {value}\n",
-            id = f.id,
-            scope = f.scope,
-            key = f.key,
-            value = one_line(&f.value, RECONCILE_VALUE_CHARS),
-        ));
+    for (n, g) in groups.iter().enumerate() {
+        body.push_str(&format!("GROUP {}\n", n + 1));
+        body.push_str(&render_fact_line("NEW  ", g.seed));
+        for c in &g.candidates {
+            body.push_str(&render_fact_line("     ", c));
+        }
+        body.push('\n');
     }
-    p.push_str(&fence("facts", body.trim_end()));
+    p.push_str(&fence("groups", body.trim_end()));
     p.push_str("\n\nNow emit ONLY the JSON object.\n");
     p
+}
+
+fn render_fact_line(prefix: &str, f: &semantic::Fact) -> String {
+    format!(
+        "{prefix}- `{id}` [{scope}/{key}] {value}\n",
+        id = f.id,
+        scope = f.scope,
+        key = f.key,
+        value = one_line(&f.value, RECONCILE_VALUE_CHARS),
+    )
 }

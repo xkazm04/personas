@@ -15,10 +15,10 @@ use super::limits::{
 };
 use super::parse::{live_fact_scope, normalize_tag, one_line, str_field, str_opt};
 use super::run::{CycleNotes, CycleStats};
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::{procedural, semantic, taxonomy};
 use crate::db::UserDbPool;
 use crate::error::AppError;
-use crate::companion::brain::sim_clock;
 
 /// Apply the `supersede` verdicts, capped.
 ///
@@ -193,6 +193,7 @@ pub(super) fn apply_candidates(
                 },
             )?;
             apply_tags(pool, &id, &c.tags)?;
+            notes.written_fact_ids.push(id.clone());
             stats.facts_applied += 1;
             notes.learned_facts.push(format!(
                 "**{}/{}** — {} _({} source{}{})_",
