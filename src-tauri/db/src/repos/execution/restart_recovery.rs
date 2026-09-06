@@ -324,6 +324,61 @@ pub fn list_unresolved_recoveries(pool: &DbPool) -> Result<Vec<UnresolvedRecover
     )
 }
 
+/// The resume pointers the classifier wrote, for the rows re-admission is
+/// about to drain.
+///
+/// `mark_resume_pending` records a THIRD position value: not `queued` (never
+/// started) and not `done`, but *this run was mid-flight and here is what we
+/// know about it* — `recovery_state='resume_pending'` plus the
+/// `claude_session_id` that was persisted mid-stream precisely so it would
+/// survive. Re-admission selected on `status` alone, so the two populations
+/// merged at the door on the one field they share and the distinction the
+/// classifier paid a migration to record was discarded one function later. A
+/// re-admitted run then starts a FRESH CLI session and replays the whole
+/// prompt — and personas has no tool-level idempotency, so a run interrupted
+/// after it sent mail sends it again.
+///
+/// Returned as a map keyed by execution id rather than as two new fields on
+/// `PersonaExecution`. The proposal asked for the fields on the struct; the
+/// struct is `#[ts(export)]` and crosses to TypeScript, so widening it drags
+/// generated bindings and a frontend type into a change whose whole point is
+/// one branch at one call site. One extra query at boot, over rows that are
+/// almost always zero, buys the same fact for less.
+///
+/// Only rows that are BOTH `queued` and marked are returned: a row whose
+/// pointer is missing (the session died before `system/init` bound one) is
+/// absent from the map and re-admission correctly runs it fresh.
+pub fn queued_resume_pointers(
+    pool: &DbPool,
+) -> Result<std::collections::HashMap<String, String>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::queued_resume_pointers",
+        {
+            let conn = pool.conn("executions::queued_resume_pointers")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT id, claude_session_id FROM persona_executions
+                 WHERE status = 'queued'
+                   AND recovery_state = ?1
+                   AND claude_session_id IS NOT NULL
+                   AND claude_session_id != ''",
+            )?;
+            let mapped = stmt.query_map(params![RECOVERY_RESUME_PENDING], |row| {
+                Ok((
+                    row.get::<_, String>("id")?,
+                    row.get::<_, String>("claude_session_id")?,
+                ))
+            })?;
+            Ok(crate::repos::utils::collect_rows(
+                mapped,
+                "persona_executions::queued_resume_pointers",
+            )
+            .into_iter()
+            .collect())
+        }
+    )
+}
+
 /// One row of the unresolved-recovery surface.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnresolvedRecovery {
@@ -601,6 +656,152 @@ mod tests {
 
         // 2,114 finished rows were not touched.
         assert_eq!(list_unresolved_recoveries(&pool).unwrap().len(), 74);
+    }
+
+    /// The classifier → re-admission contract, as a data-layer test.
+    ///
+    /// `requeue_persisted_executions` selected on `status` alone, so a
+    /// `resume_pending` row and a never-started `queued` row were
+    /// indistinguishable at the door and both ran fresh — replaying every tool
+    /// call the interrupted run had already made. The selection that separates
+    /// them is `queued_resume_pointers`, and this asserts which continuation
+    /// each class of row produces.
+    ///
+    /// There is no seam above this: `src/engine/execution.rs` has zero
+    /// `#[cfg(test)]`, the local Rust lane runs `--lib` only, and
+    /// `MockProtocol` cannot drive a spawn without a real LLM. So the contract
+    /// is pinned where it can actually run.
+    #[test]
+    fn re_admission_resumes_exactly_the_mid_flight_rows_that_kept_a_pointer() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Re-admission Contract Agent");
+
+        // Four populations, one row each.
+        let mid_flight = insert_rows(
+            &pool,
+            &persona_id,
+            "midflight",
+            1,
+            "running",
+            Some(60),
+            None,
+        );
+        let mid_flight_no_session = insert_rows(
+            &pool,
+            &persona_id,
+            "nosession",
+            1,
+            "running",
+            Some(60),
+            None,
+        );
+        let idle = insert_rows(
+            &pool,
+            &persona_id,
+            "idle",
+            1,
+            "running",
+            Some(RESUME_WINDOW_SECS + 120),
+            None,
+        );
+        // A scheduled row that never started: `queued`, no session, no mark.
+        let never_started = insert_rows(&pool, &persona_id, "fresh", 1, "queued", None, None);
+
+        // Only the first mid-flight row got far enough to bind a session id.
+        {
+            let conn = pool
+                .conn("restart_recovery::test")
+                .expect("a pooled connection");
+            conn.execute(
+                "UPDATE persona_executions SET claude_session_id = 'sess-mid-flight' WHERE id = ?1",
+                params![mid_flight[0]],
+            )
+            .unwrap();
+        }
+
+        let sweep = classify_running_rows(&pool).unwrap();
+        assert_eq!(sweep.resume_pending.len(), 2, "both fresh rows re-admit");
+        assert_eq!(sweep.unproven, vec![idle[0].clone()]);
+
+        // Every re-admittable row still arrives through the one status door...
+        let queued: Vec<String> = executions::get_queued_only(&pool)
+            .unwrap()
+            .into_iter()
+            .map(|e| e.id)
+            .collect();
+        assert!(queued.contains(&mid_flight[0]));
+        assert!(queued.contains(&mid_flight_no_session[0]));
+        assert!(queued.contains(&never_started[0]));
+
+        // ...and the pointer is what tells them apart.
+        let pointers = queued_resume_pointers(&pool).unwrap();
+        assert_eq!(
+            pointers.get(&mid_flight[0]).map(String::as_str),
+            Some("sess-mid-flight"),
+            "a mid-flight row holding a session id is re-admitted as a resume"
+        );
+        assert_eq!(
+            pointers.get(&mid_flight_no_session[0]),
+            None,
+            "marked but pointerless: unresumable, so it must run fresh"
+        );
+        assert_eq!(
+            pointers.get(&never_started[0]),
+            None,
+            "a row that never started a CLI session has nothing to resume"
+        );
+        assert_eq!(
+            pointers.get(&idle[0]),
+            None,
+            "an unproven row is not queued at all and is never re-admitted"
+        );
+        assert_eq!(pointers.len(), 1, "exactly one row of the four resumes");
+    }
+
+    /// A pointer is only a resume pointer while the row is on the queue. Once
+    /// re-admission moves it to `running`, the selection must stop returning it
+    /// — otherwise a second boot inside the same run would resume a session
+    /// something else already owns. The mark itself deliberately survives (the
+    /// escalation counts on that); only the SELECTION is status-scoped.
+    #[test]
+    fn a_pointer_stops_being_selected_once_the_row_leaves_the_queue() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Pointer Scope Agent");
+        let ids = insert_rows(&pool, &persona_id, "scope", 1, "running", Some(60), None);
+        let id = &ids[0];
+        {
+            let conn = pool
+                .conn("restart_recovery::test")
+                .expect("a pooled connection");
+            conn.execute(
+                "UPDATE persona_executions SET claude_session_id = 'sess-scope' WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        }
+
+        classify_running_rows(&pool).unwrap();
+        assert_eq!(queued_resume_pointers(&pool).unwrap().len(), 1);
+
+        // Re-admission starts the run.
+        executions::update_status(
+            &pool,
+            id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            queued_resume_pointers(&pool).unwrap().is_empty(),
+            "a running row is not awaiting re-admission"
+        );
+        assert_eq!(
+            recovery_of(&pool, id),
+            (Some(RECOVERY_RESUME_PENDING.into()), 1),
+            "the mark still survives the resume - only the selection is scoped"
+        );
     }
 
     /// The mistake the peer names, pinned: clearing the mark when the resume

@@ -336,6 +336,13 @@ pub enum Mechanism {
     /// The scheduled-retry drain resumes when the row's reason tag is
     /// `api_error_resume` and a session id was captured, else restarts fresh.
     ApiErrorResumeDrain,
+    /// Boot re-admission converts a queued row the restart classifier marked
+    /// `resume_pending` into a session resume, when the row still holds a
+    /// session id. Without it the row replays its whole prompt, re-executing
+    /// every tool call the interrupted run had already made — this tree has no
+    /// tool-level idempotency, so fresh-vs-resume is a correctness axis here
+    /// and not only a cost one.
+    BootReadmissionSessionResume,
     /// AI healing resumes the original CLI session.
     HealingSessionResume,
 
@@ -355,7 +362,7 @@ pub enum Mechanism {
 impl Mechanism {
     /// Every mechanism. [`Self::assert_all_covered`] proves this covers the
     /// enum at compile time.
-    pub const ALL: [Mechanism; 46] = [
+    pub const ALL: [Mechanism; 47] = [
         Mechanism::ByomPolicySubstitution,
         Mechanism::FailoverCandidateModel,
         Mechanism::RemoteHttpEngineBypass,
@@ -398,6 +405,7 @@ impl Mechanism {
         Mechanism::QaReworkBounce,
         Mechanism::WarmPoolSessionReuse,
         Mechanism::ApiErrorResumeDrain,
+        Mechanism::BootReadmissionSessionResume,
         Mechanism::HealingSessionResume,
         Mechanism::PersonaFailureBreaker,
         Mechanism::NoDeliveryBreaker,
@@ -454,6 +462,7 @@ impl Mechanism {
                 Mechanism::QaReworkBounce => {}
                 Mechanism::WarmPoolSessionReuse => {}
                 Mechanism::ApiErrorResumeDrain => {}
+                Mechanism::BootReadmissionSessionResume => {}
                 Mechanism::HealingSessionResume => {}
                 Mechanism::PersonaFailureBreaker => {}
                 Mechanism::NoDeliveryBreaker => {}
@@ -510,6 +519,9 @@ impl Mechanism {
                 "a retry that could not resume says so in the prompt"
             }
             Self::ApiErrorResumeDrain => "the scheduled-retry drain resumes the session",
+            Self::BootReadmissionSessionResume => {
+                "boot re-admission resumes a mid-flight run's session"
+            }
             Self::HealingSessionResume => "AI healing resumes the original session",
             Self::PersonaFailureBreaker => "the failure breaker disables the persona",
             Self::NoDeliveryBreaker => "the no-delivery breaker disables the persona",
@@ -560,9 +572,10 @@ impl Mechanism {
             Self::TeamReviewReassign | Self::AutoAssigneeResolution | Self::QaReworkBounce => {
                 Dimension::Persona
             }
-            Self::WarmPoolSessionReuse | Self::ApiErrorResumeDrain | Self::HealingSessionResume => {
-                Dimension::Session
-            }
+            Self::WarmPoolSessionReuse
+            | Self::ApiErrorResumeDrain
+            | Self::BootReadmissionSessionResume
+            | Self::HealingSessionResume => Dimension::Session,
             Self::PersonaFailureBreaker
             | Self::NoDeliveryBreaker
             | Self::KnowledgeHintOverridesRetry => Dimension::Suppression,
@@ -833,6 +846,11 @@ impl Mechanism {
             Self::ApiErrorResumeDrain => &[Site {
                 file: "src/engine/execution.rs",
                 marker: "Some(sid) => Some(types::Continuation::SessionResume(sid))",
+                family: Some((Family::ContinuationProduced, 1)),
+            }],
+            Self::BootReadmissionSessionResume => &[Site {
+                file: "src/engine/execution.rs",
+                marker: "resume_pointers.get(&exec.id).map(|session_id|",
                 family: Some((Family::ContinuationProduced, 1)),
             }],
             Self::SessionLostContinuityHint => &[Site {

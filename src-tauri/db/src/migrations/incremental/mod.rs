@@ -44,6 +44,7 @@ mod e19_agent_manifest;
 mod e20_persona_run_paging_index;
 mod e21_chain_trace_ordering_index;
 mod e22_dev_notes;
+mod e23_model_requested;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -83,6 +84,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e20_persona_run_paging_index::run(conn)?;
     e21_chain_trace_ordering_index::run(conn)?;
     e22_dev_notes::run(conn)?;
+    e23_model_requested::run(conn)?;
 
     Ok(())
 }

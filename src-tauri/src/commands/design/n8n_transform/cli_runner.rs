@@ -485,7 +485,8 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     );
     let prompt_text = wrap_prompt_with_sections(&base_prompt);
 
-    let mut cli_args = prompt::build_resume_cli_args(claude_session_id);
+    // `None` profile: this path pins its own model on the next two lines.
+    let mut cli_args = prompt::build_resume_cli_args(claude_session_id, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 

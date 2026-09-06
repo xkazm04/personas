@@ -66,7 +66,13 @@ pub trait CliProvider: Send + Sync {
     ) -> CliArgs;
 
     /// Build CLI arguments to resume an existing session.
-    fn build_resume_args(&self, session_id: &str) -> CliArgs;
+    ///
+    /// `model_profile` is the same profile [`Self::build_execution_args`]
+    /// receives. It is a parameter and not an omission: the resume path used to
+    /// take the session id alone, so the model and effort the caller had already
+    /// decided were discarded and the resumed run fell back to the CLI's own
+    /// defaults.
+    fn build_resume_args(&self, session_id: &str, model_profile: Option<&ModelProfile>) -> CliArgs;
 
     /// Parse a single NDJSON line from stdout into a unified stream type.
     ///
@@ -96,8 +102,13 @@ pub trait CliProvider: Send + Sync {
     }
 
     /// Build CLI arguments for resume with prompt text embedded.
-    fn build_resume_args_with_prompt(&self, session_id: &str, _prompt_text: &str) -> CliArgs {
-        self.build_resume_args(session_id)
+    fn build_resume_args_with_prompt(
+        &self,
+        session_id: &str,
+        model_profile: Option<&ModelProfile>,
+        _prompt_text: &str,
+    ) -> CliArgs {
+        self.build_resume_args(session_id, model_profile)
     }
 }
 
