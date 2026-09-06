@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Rotation automatique activée",
     "usage_auto_rotate_threshold_aria": "Seuil de rotation automatique, pourcentage de la fenêtre de 5 heures",
     "usage_last_rotation": "Rotation automatique de {from} vers {to}",
+    "usage_accounts_remove_hint": "Oublier ce forfait — aucune utilisation n'a pu être lue pour lui",
     "usage_not_stored": "non enregistré",
     "usage_refresh": "Actualiser l'utilisation maintenant",
-    "usage_refresh_wait": "L'utilisation est mise en cache pendant cinq minutes ; nouvelle actualisation dans {time}",
-    "usage_accounts_remove_hint": "Oublier ce forfait — aucune utilisation n'a pu être lue pour lui"
+    "usage_refresh_wait": "L'utilisation est mise en cache pendant cinq minutes ; nouvelle actualisation dans {time}"
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Cycle de vie",
     "title": "Bloc-notes",
     "to_goals": "Transformer en objectifs",
+    "variant_journal": "Journal",
+    "variant_label": "Disposition",
+    "variant_split": "Vue partagée",
+    "variant_workbench": "Atelier",
     "suggestion_accept": "Accepter",
     "suggestion_answer_placeholder": "Répondez-lui…",
     "suggestion_answer_send": "Envoyer la réponse",

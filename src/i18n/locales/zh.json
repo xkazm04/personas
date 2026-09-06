@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "自动轮换已开启",
     "usage_auto_rotate_threshold_aria": "自动轮换阈值，5 小时窗口的百分比",
     "usage_last_rotation": "已自动从 {from} 切换到 {to}",
+    "usage_accounts_remove_hint": "忘记此计划——无法读取其用量",
     "usage_not_stored": "未保存",
     "usage_refresh": "立即刷新用量",
-    "usage_refresh_wait": "用量缓存五分钟；{time}后可再次刷新",
-    "usage_accounts_remove_hint": "忘记此计划——无法读取其用量"
+    "usage_refresh_wait": "用量缓存五分钟；{time}后可再次刷新"
   },
   "onboarding": {
     "adopt_button": "设置智能体",
@@ -21893,6 +21893,10 @@
     "timeline_title": "生命周期",
     "title": "记事本",
     "to_goals": "转化为目标",
+    "variant_journal": "日志",
+    "variant_label": "布局",
+    "variant_split": "分屏画布",
+    "variant_workbench": "工作台",
     "suggestion_accept": "接受",
     "suggestion_answer_placeholder": "回复她……",
     "suggestion_answer_send": "发送回复",

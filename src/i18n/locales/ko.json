@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "자동 전환 켜짐",
     "usage_auto_rotate_threshold_aria": "자동 전환 임계값, 5시간 창의 백분율",
     "usage_last_rotation": "{from}에서 {to}(으)로 자동 전환됨",
+    "usage_accounts_remove_hint": "이 플랜 삭제 — 사용량을 읽을 수 없습니다",
     "usage_not_stored": "저장되지 않음",
     "usage_refresh": "지금 사용량 새로고침",
-    "usage_refresh_wait": "사용량은 5분간 캐시됩니다. {time} 후 다시 새로고침할 수 있습니다",
-    "usage_accounts_remove_hint": "이 플랜 삭제 — 사용량을 읽을 수 없습니다"
+    "usage_refresh_wait": "사용량은 5분간 캐시됩니다. {time} 후 다시 새로고침할 수 있습니다"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",
@@ -21893,6 +21893,10 @@
     "timeline_title": "수명 주기",
     "title": "노트패드",
     "to_goals": "목표로 전환",
+    "variant_journal": "저널",
+    "variant_label": "레이아웃",
+    "variant_split": "분할 캔버스",
+    "variant_workbench": "워크벤치",
     "suggestion_accept": "수락",
     "suggestion_answer_placeholder": "그녀에게 답하기…",
     "suggestion_answer_send": "답변 보내기",

@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Авторотация включена",
     "usage_auto_rotate_threshold_aria": "Порог авторотации, процент 5-часового окна",
     "usage_last_rotation": "Автоматически переключено с {from} на {to}",
+    "usage_accounts_remove_hint": "Забыть этот план — для него не удалось прочитать использование",
     "usage_not_stored": "не сохранён",
     "usage_refresh": "Обновить использование сейчас",
-    "usage_refresh_wait": "Использование кэшируется на пять минут; следующее обновление через {time}",
-    "usage_accounts_remove_hint": "Забыть этот план — для него не удалось прочитать использование"
+    "usage_refresh_wait": "Использование кэшируется на пять минут; следующее обновление через {time}"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Жизненный цикл",
     "title": "Блокнот",
     "to_goals": "Превратить в цели",
+    "variant_journal": "Журнал",
+    "variant_label": "Раскладка",
+    "variant_split": "Разделённый холст",
+    "variant_workbench": "Верстак",
     "suggestion_accept": "Принять",
     "suggestion_answer_placeholder": "Ответить ей…",
     "suggestion_answer_send": "Отправить ответ",

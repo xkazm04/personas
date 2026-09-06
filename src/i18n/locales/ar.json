@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "التدوير التلقائي مفعّل",
     "usage_auto_rotate_threshold_aria": "حد التدوير التلقائي، نسبة من نافذة الخمس ساعات",
     "usage_last_rotation": "تم التبديل تلقائيًا من {from} إلى {to}",
+    "usage_accounts_remove_hint": "نسيان هذه الخطة — تعذّرت قراءة أي استخدام لها",
     "usage_not_stored": "غير محفوظ",
     "usage_refresh": "تحديث الاستخدام الآن",
-    "usage_refresh_wait": "يُخزَّن الاستخدام مؤقتًا لخمس دقائق؛ يمكن التحديث مجددًا خلال {time}",
-    "usage_accounts_remove_hint": "نسيان هذه الخطة — تعذّرت قراءة أي استخدام لها"
+    "usage_refresh_wait": "يُخزَّن الاستخدام مؤقتًا لخمس دقائق؛ يمكن التحديث مجددًا خلال {time}"
   },
   "onboarding": {
     "adopt_button": "إعداد الوكيل",
@@ -21893,6 +21893,10 @@
     "timeline_title": "دورة الحياة",
     "title": "المفكرة",
     "to_goals": "تحويل إلى أهداف",
+    "variant_journal": "يوميات",
+    "variant_label": "التخطيط",
+    "variant_split": "لوحة مقسّمة",
+    "variant_workbench": "منضدة عمل",
     "suggestion_accept": "قبول",
     "suggestion_answer_placeholder": "أجبها…",
     "suggestion_answer_send": "إرسال الإجابة",

@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Auto-Wechsel ist an",
     "usage_auto_rotate_threshold_aria": "Schwelle für Auto-Wechsel, Prozent des 5-Stunden-Fensters",
     "usage_last_rotation": "Automatisch von {from} zu {to} gewechselt",
+    "usage_accounts_remove_hint": "Diesen Plan vergessen — für ihn konnte keine Nutzung gelesen werden",
     "usage_not_stored": "nicht gespeichert",
     "usage_refresh": "Nutzung jetzt aktualisieren",
-    "usage_refresh_wait": "Die Nutzung wird fünf Minuten zwischengespeichert; erneut aktualisieren in {time}",
-    "usage_accounts_remove_hint": "Diesen Plan vergessen — für ihn konnte keine Nutzung gelesen werden"
+    "usage_refresh_wait": "Die Nutzung wird fünf Minuten zwischengespeichert; erneut aktualisieren in {time}"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Lebenszyklus",
     "title": "Notizblock",
     "to_goals": "In Ziele umwandeln",
+    "variant_journal": "Journal",
+    "variant_label": "Layout",
+    "variant_split": "Geteilte Ansicht",
+    "variant_workbench": "Werkbank",
     "suggestion_accept": "Annehmen",
     "suggestion_answer_placeholder": "Antworte ihr…",
     "suggestion_answer_send": "Antwort senden",

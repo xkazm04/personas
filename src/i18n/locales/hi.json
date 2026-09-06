@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "स्वतः बदलाव चालू है",
     "usage_auto_rotate_threshold_aria": "स्वतः बदलाव की सीमा, 5-घंटे की विंडो का प्रतिशत",
     "usage_last_rotation": "{from} से {to} पर स्वतः बदला गया",
+    "usage_accounts_remove_hint": "यह प्लान भूल जाएँ — इसके लिए कोई उपयोग नहीं पढ़ा जा सका",
     "usage_not_stored": "सहेजा नहीं गया",
     "usage_refresh": "उपयोग अभी ताज़ा करें",
-    "usage_refresh_wait": "उपयोग पाँच मिनट के लिए कैश रहता है; {time} में फिर से ताज़ा करें",
-    "usage_accounts_remove_hint": "यह प्लान भूल जाएँ — इसके लिए कोई उपयोग नहीं पढ़ा जा सका"
+    "usage_refresh_wait": "उपयोग पाँच मिनट के लिए कैश रहता है; {time} में फिर से ताज़ा करें"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",
@@ -21893,6 +21893,10 @@
     "timeline_title": "जीवनचक्र",
     "title": "नोटपैड",
     "to_goals": "गोल्स में बदलें",
+    "variant_journal": "जर्नल",
+    "variant_label": "लेआउट",
+    "variant_split": "स्प्लिट कैनवस",
+    "variant_workbench": "वर्कबेंच",
     "suggestion_accept": "स्वीकारें",
     "suggestion_answer_placeholder": "उसे जवाब दें…",
     "suggestion_answer_send": "जवाब भेजें",

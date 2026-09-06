@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Automatické střídání je zapnuté",
     "usage_auto_rotate_threshold_aria": "Práh automatického střídání, procenta 5hodinového okna",
     "usage_last_rotation": "Automaticky přepnuto z {from} na {to}",
+    "usage_accounts_remove_hint": "Zapomenout tento plán — nepodařilo se pro něj načíst žádné využití",
     "usage_not_stored": "neuloženo",
     "usage_refresh": "Obnovit využití nyní",
-    "usage_refresh_wait": "Využití se ukládá do mezipaměti na pět minut; další obnovení za {time}",
-    "usage_accounts_remove_hint": "Zapomenout tento plán — nepodařilo se pro něj načíst žádné využití"
+    "usage_refresh_wait": "Využití se ukládá do mezipaměti na pět minut; další obnovení za {time}"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Životní cyklus",
     "title": "Poznámkový blok",
     "to_goals": "Proměnit v cíle",
+    "variant_journal": "Deník",
+    "variant_label": "Rozvržení",
+    "variant_split": "Rozdělené plátno",
+    "variant_workbench": "Pracovní stůl",
     "suggestion_accept": "Přijmout",
     "suggestion_answer_placeholder": "Odpovědět jí…",
     "suggestion_answer_send": "Odeslat odpověď",

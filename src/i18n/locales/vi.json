@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Tự động xoay vòng đang bật",
     "usage_auto_rotate_threshold_aria": "Ngưỡng tự động xoay vòng, phần trăm của cửa sổ 5 giờ",
     "usage_last_rotation": "Đã tự động chuyển từ {from} sang {to}",
+    "usage_accounts_remove_hint": "Quên gói này — không đọc được mức dùng của nó",
     "usage_not_stored": "chưa lưu",
     "usage_refresh": "Làm mới mức dùng ngay",
-    "usage_refresh_wait": "Mức dùng được lưu đệm trong năm phút; làm mới lại sau {time}",
-    "usage_accounts_remove_hint": "Quên gói này — không đọc được mức dùng của nó"
+    "usage_refresh_wait": "Mức dùng được lưu đệm trong năm phút; làm mới lại sau {time}"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Vòng đời",
     "title": "Sổ ghi chú",
     "to_goals": "Chuyển thành mục tiêu",
+    "variant_journal": "Nhật ký",
+    "variant_label": "Bố cục",
+    "variant_split": "Canvas chia đôi",
+    "variant_workbench": "Bàn làm việc",
     "suggestion_accept": "Chấp nhận",
     "suggestion_answer_placeholder": "Trả lời cô ấy…",
     "suggestion_answer_send": "Gửi câu trả lời",

@@ -6732,10 +6732,10 @@
     "usage_auto_rotate_on": "Rotasi otomatis aktif",
     "usage_auto_rotate_threshold_aria": "Ambang rotasi otomatis, persen dari jendela 5 jam",
     "usage_last_rotation": "Dirotasi otomatis dari {from} ke {to}",
+    "usage_accounts_remove_hint": "Lupakan paket ini — tidak ada penggunaan yang dapat dibaca untuknya",
     "usage_not_stored": "belum disimpan",
     "usage_refresh": "Segarkan penggunaan sekarang",
-    "usage_refresh_wait": "Penggunaan disimpan dalam cache selama lima menit; segarkan lagi dalam {time}",
-    "usage_accounts_remove_hint": "Lupakan paket ini — tidak ada penggunaan yang dapat dibaca untuknya"
+    "usage_refresh_wait": "Penggunaan disimpan dalam cache selama lima menit; segarkan lagi dalam {time}"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -21893,6 +21893,10 @@
     "timeline_title": "Siklus hidup",
     "title": "Buku Catatan",
     "to_goals": "Ubah menjadi goals",
+    "variant_journal": "Jurnal",
+    "variant_label": "Tata letak",
+    "variant_split": "Kanvas terbagi",
+    "variant_workbench": "Meja Kerja",
     "suggestion_accept": "Terima",
     "suggestion_answer_placeholder": "Jawab dia…",
     "suggestion_answer_send": "Kirim jawaban",
