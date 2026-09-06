@@ -644,7 +644,8 @@ fn sync_charters(
         charter.spec.model_override = Some(model_id.to_string());
         charter.spec.recipe_ref = Some(RecipeRef {
             slug: item.slug.clone(),
-            version: item.spec.version.trim().to_string(),
+            // A draft recipe has no version; the slug alone is the pointer.
+            version: item.spec.version.clone().filter(|v| !v.trim().is_empty()),
         });
         if !charter.connectors.iter().any(|c| c == CODEBASE_CONNECTOR) {
             charter.connectors.insert(0, CODEBASE_CONNECTOR.to_string());
