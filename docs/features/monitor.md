@@ -96,24 +96,27 @@ the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
 **The Claude usage strip (2026-09-05, reshaped 2026-09-06).** A band between
-the board's header and its project columns, in three rows. The **title row**
-names the account the CLI is signed in as, under a subtle border; when that
-login is not among the stored plans it says *not stored* and offers to store
-it right there. The **controls row** holds a refresh button that is only live
-once the five-minute cache has elapsed (the "as of" stamp beside it), the
-auto-rotate toggle and threshold, and the last automatic rotation. The
-**body** is one aligned row per rolling rate-limit window — the **5-hour**
-session window and the **7-day** window, plus the per-family weekly windows
-(Opus, Sonnet) on accounts that report them. Each meter carries two
-dimensions: the fill is utilisation (brand tone, warning at 75%, error at
-90%, each non-ok state with an icon and label), and a vertical **marker** is
-the clock — it sits at the fraction of the window already elapsed and warms
-as the reset approaches (cool, then warning past 60%, then error past 85%).
-A **pace** glyph closes the row (flame ahead of the clock, snowflake behind,
-gauge on pace). Nothing on the rows is hover-only; the exact countdown rides
-in each row's accessible label. Usage is cached for five minutes in the
-module, so re-opening the Monitor paints the last read without re-fetching
-and without resetting the stamp. The source is Anthropic's OAuth usage endpoint — the same one
+the board's header and its project columns. The **title row** carries the
+label on the left and, on the right, the "as of" stamp with a refresh button
+that is only live once the five-minute cache has elapsed. Under it sit
+**five plan slots** of equal width: one card per Claude login, added one at
+a time until all five are filled; empty slots stay empty and keep their
+width, so the first plan is exactly as wide as the fifth will be. A card
+shows its **account** on the header line — aligned with its own meters,
+which is what a column is for — and beneath it one meter per rolling window:
+the **5-hour** session window and the **7-day** window. Each meter is
+labelled by the **whole units left** until that window resets (*3h*, *<1h*,
+*2d*, *<1d*), and carries two dimensions: the fill is utilisation (brand
+tone, warning at 75%, error at 90%), and a vertical **marker** is the clock —
+it sits at the fraction of the window already elapsed and warms as the reset
+approaches (cool, then warning past 60%, then error past 85%). A **pace**
+glyph closes the row (flame ahead of the clock, snowflake behind, gauge on
+pace). The exact countdown rides in each row's accessible label. Usage is
+cached for five minutes in the module, so re-opening the Monitor paints the
+last read without re-fetching and without resetting the stamp. Before any
+login is stored the live login occupies the first slot with a *Store* button
+on its header; that is the whole add flow — sign in with the CLI, and the
+card notices it is not stored yet. The source is Anthropic's OAuth usage endpoint — the same one
 the community usage monitors opt into — read with the Claude Code login
 already on the machine (`~/.claude/.credentials.json`, or
 `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
@@ -125,11 +128,12 @@ whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
 mode for operators who juggle more than one Claude subscription. *Store this
 login* captures the CLI's current login (the whole credentials file, encrypted
 with the app's master key, in the `claude_accounts` table) together with the
-account identity from Anthropic's profile endpoint. From then on the strip
-shows one row per stored plan, divided from the next, the active one on a
-highlighted ground — each with its 5-hour and 7-day meters (fill plus reset
-marker) and a pace glyph — and every non-active row has a **Switch** button
-behind a confirm. A plan is only offered for forgetting when no usage could
+account identity from Anthropic's profile endpoint. From then on each stored
+plan fills a slot — the active one on a highlighted ground, each with its
+5-hour and 7-day meters (fill plus reset marker) and a pace glyph — and
+every non-active card has a **Switch** button on its header behind a
+confirm. The auto-rotate toggle, threshold and last rotation sit in a
+controls row under the slots. A plan is only offered for forgetting when no usage could
 be read for it (a dead login, a rejected token); a plan that reads fine is
 not clutter. A switch refreshes
 the stored token if it is about to expire, takes Claude Code's own credential

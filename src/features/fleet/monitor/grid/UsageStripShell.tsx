@@ -3,30 +3,38 @@
 // Two jobs. It is the Suspense fallback while `UsageStrip`'s own chunk loads
 // (the strip carries the confirm dialog, the toggle, the async buttons — none
 // of which belong in the board's opening commit), and it is the frame the
-// loaded strip renders into, so the swap moves nothing. Same geometry, same
-// borders, same rows; the loaded strip fills the slots.
+// loaded strip renders into, so the swap moves nothing.
 //
 // The frame is three rows:
-//   1. TITLE — the label, and the account the CLI is signed in as, under a
-//      subtle border. The one line that says whose usage this is.
-//   2. CONTROLS — refresh, auto-rotate, the last rotation. Under the title,
-//      not off to the right, so the meters keep the full width.
-//   3. BODY — the meter rows (one login) or the plan rows (several).
+//   1. TITLE — the label on the left; the refresh control and its "as of"
+//      stamp on the right. Under a subtle border.
+//   2. SLOTS — five equal columns, one per plan. A plan is a small card:
+//      its account on top, its two meters beneath. One stored plan fills one
+//      slot; the operator adds the next four one at a time. Empty slots stay
+//      empty and keep their width, so a plan never stretches to a width it
+//      will not have once its neighbours arrive. The active plan's card is
+//      highlighted; the account name is INSIDE the card, aligned with its own
+//      meters, which is what a column layout is for.
+//   3. CONTROLS — auto-rotate and the last rotation, under the slots.
 
 import type { ReactNode } from 'react';
 import { Gauge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
-/** The single-login meter grid: label · meter · percent · pace. */
-export const METER_GRID = 'grid grid-cols-[2.5rem_minmax(6rem,1fr)_2.5rem_1rem] items-center gap-x-2';
+/** The strip is designed for this many plans; more would need a second row. */
+export const PLAN_SLOTS = 5;
+
+/** The five-column slot grid. */
+export const SLOT_GRID = 'grid grid-cols-5 gap-2';
+
+/** One plan card's meter row: time-left label · meter · percent · pace. */
+export const METER_GRID = 'grid grid-cols-[2rem_minmax(0,1fr)_2.25rem_0.875rem] items-center gap-x-1.5';
 
 export function StripFrame({
-  email, titleExtra, controls, children,
+  titleRight, controls, children,
 }: {
-  /** The signed-in account, or null while unknown. */
-  email: string | null;
-  /** Rides beside the email — e.g. "not stored · Store". */
-  titleExtra?: ReactNode;
+  /** Right end of the title row — refresh + stamp. */
+  titleRight?: ReactNode;
   controls?: ReactNode;
   children: ReactNode;
 }) {
@@ -43,26 +51,54 @@ export function StripFrame({
           <Gauge className="h-3 w-3" aria-hidden />
           {t.monitor.usage_title}
         </span>
-        <span className="min-w-0 truncate typo-caption text-foreground" data-testid="fleet-usage-live-email">
-          {email ?? <span className="inline-block h-[0.7em] w-32 rounded bg-primary/[0.06] align-middle" aria-hidden />}
+        <span className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
+          {titleRight}
         </span>
-        {titleExtra}
       </div>
+      <div className={`${SLOT_GRID} px-3 py-1.5`}>{children}</div>
       {controls && (
-        <div className="flex h-6 items-center gap-3 px-3 typo-caption text-foreground">
+        <div className="flex h-6 items-center gap-3 border-t border-border/60 px-3 typo-caption text-foreground">
           {controls}
         </div>
       )}
-      <div className="px-3 py-1.5">{children}</div>
     </div>
   );
 }
 
-/** Two static meter silhouettes, for the first read of the session. */
-export function GhostRows() {
+/** One slot's chrome: the card border, an optional header line, the rows. */
+export function PlanCard({
+  header, active = false, dim = false, children, ...rest
+}: {
+  header: ReactNode;
+  active?: boolean;
+  dim?: boolean;
+  children: ReactNode;
+} & Record<`data-${string}`, string | boolean | undefined>) {
+  return (
+    <div
+      className={`flex min-w-0 flex-col gap-1 rounded-input border px-2 py-1 ${
+        active ? 'border-primary/40 bg-primary/10' : 'border-border/60 bg-foreground/[0.015]'
+      } ${dim ? 'opacity-60' : ''}`}
+      {...rest}
+    >
+      <div className="flex h-4 min-w-0 items-center gap-1 typo-caption">{header}</div>
+      {children}
+    </div>
+  );
+}
+
+/** A ghost card: header bar + two meter silhouettes. */
+export function GhostCard() {
   const bar = 'rounded bg-primary/[0.06]';
   return (
-    <div aria-hidden className="flex flex-col gap-1 animate-fade-in" style={{ animationDelay: '150ms' }}>
+    <div
+      aria-hidden
+      className="flex min-w-0 flex-col gap-1 rounded-input border border-border/60 bg-foreground/[0.015] px-2 py-1 animate-fade-in"
+      style={{ animationDelay: '150ms' }}
+    >
+      <div className="flex h-4 items-center typo-caption">
+        <span className={`h-[0.7em] w-28 ${bar}`} />
+      </div>
       {[0, 1].map((i) => (
         <div key={i} className={`${METER_GRID} h-4`}>
           <span className={`h-[0.7em] w-5 ${bar} typo-caption`} />
@@ -75,11 +111,28 @@ export function GhostRows() {
   );
 }
 
-/** The chunk fallback: frame + ghost rows, no controls yet. */
+/** The slots that hold no plan: present, empty, the same width. */
+export function EmptySlots({ from }: { from: number }) {
+  return (
+    <>
+      {Array.from({ length: Math.max(0, PLAN_SLOTS - from) }, (_, i) => (
+        <div
+          key={from + i}
+          aria-hidden
+          className="rounded-input border border-dashed border-border/40"
+          data-testid="fleet-usage-empty-slot"
+        />
+      ))}
+    </>
+  );
+}
+
+/** The chunk fallback: frame + one ghost card + four empty slots. */
 export function UsageStripFallback() {
   return (
-    <StripFrame email={null}>
-      <GhostRows />
+    <StripFrame>
+      <GhostCard />
+      <EmptySlots from={1} />
     </StripFrame>
   );
 }

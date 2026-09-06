@@ -85,6 +85,22 @@ export function formatCountdown(ms: number, u: CountdownUnits): string {
   return `${mins}${u.minute}`;
 }
 
+/**
+ * The meter's short label: the WHOLE units left until the window resets, in
+ * the window's own unit — hours for the 5-hour window, days for the weekly
+ * ones — with "<1" once less than one unit remains. "3h" beside a bar says
+ * more than "5h" ever did: the window's length is fixed, its remaining time
+ * is the number that changes what you do next. Null without a reset.
+ */
+export function remainingLabel(w: ClaudeUsageWindow, now: number, u: Pick<CountdownUnits, 'day' | 'hour'>): string | null {
+  const { remainingMs } = windowProgress(w, now);
+  if (remainingMs === null) return null;
+  const unitMs = w.windowMs >= 24 * 3_600_000 ? 24 * 3_600_000 : 3_600_000;
+  const unit = unitMs === 3_600_000 ? u.hour : u.day;
+  const whole = Math.floor(remainingMs / unitMs);
+  return whole < 1 ? `<1${unit}` : `${whole}${unit}`;
+}
+
 /** The display order the strip uses; unknown keys sort last, stably. */
 const WINDOW_ORDER = ['five_hour', 'seven_day', 'seven_day_opus', 'seven_day_sonnet'];
 

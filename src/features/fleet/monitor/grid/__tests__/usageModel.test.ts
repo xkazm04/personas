@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
 import {
-  formatCountdown, meterTone, orderWindows, pace, windowProgress,
+  formatCountdown, meterTone, orderWindows, pace, remainingLabel, windowProgress,
 } from '../usageModel';
 
 const H = 3_600_000;
@@ -63,6 +63,23 @@ describe('formatCountdown', () => {
   it('says under a minute rather than 0m', () => {
     expect(formatCountdown(0, UNITS)).toBe('<1m');
     expect(formatCountdown(59_999, UNITS)).toBe('<1m');
+  });
+});
+
+describe('remainingLabel', () => {
+  const u = { day: 'd', hour: 'h' };
+  it('counts whole hours on the 5-hour window and whole days on the weekly one', () => {
+    expect(remainingLabel(win({ resetsAtMs: NOW + 3 * H + 59 * 60_000 }), NOW, u)).toBe('3h');
+    expect(remainingLabel(win({ resetsAtMs: NOW + 5 * H }), NOW, u)).toBe('5h');
+    const week = { windowMs: 7 * 24 * H };
+    expect(remainingLabel(win({ ...week, resetsAtMs: NOW + 2 * 24 * H + 23 * H }), NOW, u)).toBe('2d');
+    expect(remainingLabel(win({ ...week, resetsAtMs: NOW + 7 * 24 * H }), NOW, u)).toBe('7d');
+  });
+  it('says <1 once less than one unit remains, and null without a reset', () => {
+    expect(remainingLabel(win({ resetsAtMs: NOW + 59 * 60_000 }), NOW, u)).toBe('<1h');
+    expect(remainingLabel(win({ resetsAtMs: NOW - H }), NOW, u)).toBe('<1h');
+    expect(remainingLabel(win({ windowMs: 7 * 24 * H, resetsAtMs: NOW + 5 * H }), NOW, u)).toBe('<1d');
+    expect(remainingLabel(win({ resetsAtMs: null }), NOW, u)).toBeNull();
   });
 });
 
