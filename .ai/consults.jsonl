@@ -31,3 +31,9 @@
 {"ts":"2026-09-03T09:00:00Z","bundle":"software-engineering","subjects":["paginated-list-query","trace-rollup-and-attribution"],"techniques":["absent-status-passthrough"],"deviations":1}
 {"ts": "2026-09-04T21:19:19Z", "bundle": "software-engineering", "subjects": ["deployment-contract", "cicd-monitoring"], "techniques": ["liveness-scoped-polling", "remote-action-consent", "deployment-history"], "deviations": 2}
 {"ts": "2026-09-04T21:32:12Z", "bundle": "software-engineering", "subjects": ["wizard-flows", "mcp-tools"], "techniques": [], "deviations": 0}
+{"ts":"2026-09-05T11:51:58Z","bundle":"software-engineering","subjects":["draft-editing","hitl-approval","status-vocabulary","entity-lifecycle","app-shell"],"techniques":["debounced-save-groups","draft-model","gate-state-machines","status-color-mapping","archive-restore-semantics","shell-hosted-services"],"deviations":0}
+{"ts":"2026-09-05T15:25:51Z","bundle":"software-engineering","subjects":["self-healing","session-resume"],"techniques":["failure-diagnosis","strategy-selection"],"deviations":1}
+{"ts":"2026-09-05T15:25:51Z","bundle":"software-engineering","subjects":["agent-chaining"],"techniques":["cycle-and-depth-guards","stop-reason-ledgers"],"deviations":1}
+{"ts":"2026-09-05T15:25:51Z","bundle":"software-engineering","subjects":["scheduling"],"techniques":["schedule-observability","cooldown-and-debounce"],"deviations":1}
+{"ts": "2026-09-05T20:54:13+00:00", "bundle": "software-engineering", "subjects": ["health-checks"], "techniques": ["health-rollup", "three-state-outcomes"], "deviations": 1}
+{"ts": "2026-09-05T21:39:29+00:00", "bundle": "software-engineering", "subjects": ["table", "async-ui-states", "ui-controls"], "techniques": [], "deviations": 2}
