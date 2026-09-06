@@ -2,7 +2,7 @@
 
 **Status:** Shipped 2026-05-09 across 8 atomic commits (steps 1, 2, 3, 4, 4b, 5, 6, 7). Persona-editor UI shipped 2026-05-11 (`4c08b020`).
 **Pairs with:** [`ambient-context-fusion.md`](../../concepts/ambient-context-fusion.md), [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md), [`./athena-daemon-bridge.md`](./athena-daemon-bridge.md).
-**Source roots:** `src-tauri/src/engine/cli_session_awareness/{discovery,transcript,render}.rs`, `src-tauri/src/engine/cli_session_audit_repo.rs`, runner wiring in `engine/mod.rs::run_execution_with_ceiling` and `daemon/runtime.rs::inject_cli_session_for_daemon`. Editor UI in `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`.
+**Source roots (re-verified 2026-09-06):** `src-tauri/engine/src/cli_session_awareness/{mod,discovery,transcript,render}.rs` and `src-tauri/engine/src/cli_session_audit_repo.rs`: both now live in the extracted `engine` crate, not under `src-tauri/src/engine/`. Runner wiring in `src-tauri/src/engine/execution.rs::run_execution_with_ceiling` (`execution.rs:38`, injection at `:85-140`) and `src-tauri/src/daemon/runtime.rs::inject_cli_session_for_daemon` (`:349`, called from `daemon_tick` at `:197`). Editor UI in `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx:277-280`. Audit modal: `src/features/plugins/companion/sub_setup/SensorySignalsModal.tsx`; global toggle in `sub_setup/SetupPanel.tsx:245-250`.
 
 ---
 
@@ -27,7 +27,8 @@ Phase 5 v1 closed the third gap. The first two are reused — persona session co
 ```
 windowed-app process                          daemon process
 ─────────────────────                         ──────────────
-run_execution_with_ceiling                    run_one
+run_execution_with_ceiling                    daemon_tick
+  (engine/execution.rs)                       (daemon/runtime.rs)
   ├ ambient injection (Phase 3 c v2)          ├ ambient injection (Phase 3 c v3)
   └ CLI session injection (Phase 5 v1)        └ CLI session injection (Phase 5 v1)
        ↓                                              ↓
@@ -37,7 +38,7 @@ run_execution_with_ceiling                    run_one
     (in-memory global gate)                       cli_session_awareness_enabled (cross-process)
        ↓                                              ↓
     discovery::discover_active_session  ←──── ~/.claude/projects/<cwd>/*.jsonl
-    transcript::read_recent_turns(8)           (oldest jsonl whose mtime is within 10 min)
+    transcript::read_recent_turns(8)           (NEWEST jsonl whose mtime is within 10 min)
     render::render_cli_session_for_prompt
     ambient_context::prepend_ambient_to_system_prompt   (Phase 3 c v1 helper, reused)
        ↓
@@ -51,7 +52,7 @@ run_execution_with_ceiling                    run_one
 
 | Gate | Storage | Default | Set by |
 |---|---|---|---|
-| **Per-persona** `cli_awareness_enabled` | `personas` table column (BOOL, default 0) | OFF | Persona editor (future UI; column exists from step 4) or template adoption |
+| **Per-persona** `cli_awareness_enabled` | `personas` table column (`INTEGER NOT NULL DEFAULT 0`, added by `db/src/migrations/incremental/c01_plugin_tables.rs:693`) | OFF | Persona editor Settings tab (`PersonaSettingsTab.tsx:277`) or template adoption |
 | **Global** `cli_session_enabled` | In-memory on `AmbientContextFusion` AND persisted in `app_settings` (key `cli_session_awareness_enabled`) | OFF | SetupPanel desktop-awareness card → "Active Claude CLI session" toggle |
 
 The cross-process persistence is only needed for the global gate — the per-persona gate is on the persona row itself, which both runners read from the same DB. The global gate's persistence is what lets daemon-fired personas honor a user's "OFF" toggle even though the daemon can't see in-memory state.
@@ -89,7 +90,7 @@ turn_count      <how many turns were extracted (1..8)>
 read_at         <unix epoch seconds>
 ```
 
-The "What did Athena see?" modal surfaces these rows under a new filter chip. **Append-only** by design — there's no delete counterpart because the read already happened. The right privacy lever is the gate, not retroactive deletion.
+The "What did Athena see?" modal (`SensorySignalsModal.tsx`, `cli_session` filter chip at `:107`) surfaces these rows. **Append-only** by design — there's no delete counterpart because the read already happened. The right privacy lever is the gate, not retroactive deletion.
 
 TTL eviction: the same `AmbientSignalEvictionSubscription` that drops old `ambient_signal` rows also drops old `cli_session_read_audit` rows. 24h cutoff, 30-min cadence. One subscription, two evictions.
 

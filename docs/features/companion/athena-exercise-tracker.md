@@ -10,6 +10,36 @@
 > `athena-usecases.md` (constitution v41). When those docs and observed
 > behavior disagree, the behavior wins — note the delta in the session log.
 
+## Status (verified 2026-09-06)
+
+The checklist itself is still the live tracker; the **session log below is a
+historical record and many of its file:line citations no longer resolve.** The
+big companion source files were split into directories after these entries were
+written. Translation table for the paths this doc names:
+
+| Cited in the log | Where it is now |
+| --- | --- |
+| `companion/prompt.rs:1383` (`progress_addendum`) | `companion/prompt/addenda.rs:332` |
+| `companion/dispatcher.rs:361 / :387 / :405` | `companion/dispatcher/dispatch.rs`: `PROGRESS:` capture at `:102`, "multiple TTS lines, keeping first" at `:132`, the quick-reply cap at `:146` |
+| `companion/session.rs:695` | `companion/session/` (the turn body is `session/turn.rs`) |
+| `commands/companion/approvals.rs` | the directory `commands/companion/approvals/` (`approval_lifecycle.rs`, `approval_exec_core.rs`, ...) |
+| `CompanionPanel.tsx ~L2034` | the file no longer exists; the chat panel is `src/features/plugins/companion/chat/` |
+| `QuickReplies.tsx:28` | `src/features/plugins/companion/QuickReplies.tsx:27` (the 1-9 digit handler) |
+
+Numbers re-measured against the code:
+
+- **Quick-reply cap is still 6** (`dispatcher/dispatch.rs:146`, `quick_replies.len() < 6`), and digits 1-9 still fire chips (`QuickReplies.tsx:27`).
+- **Autonomous chain cap is still 20** (`MAX_AUTONOMOUS_CHAIN`, `session/origin.rs:29`), with a 15s continuation delay (`:23`).
+- **`compose_dashboard` is 9 widget kinds and `compose_cockpit` is 6**, as the Phase 4 checklist says, *in the constitution* (`templates/constitution.md:1251` and the dashboard section above it). The frontend registry that renders them is much larger: 29 kinds (`src/features/home/sub_cockpit/widgetRegistry.ts`).
+- **`CONSTITUTION_VERSION` is now 61** (`templates/mod.rs:508`), not the 43 the log's increment #1 bumped it to.
+- **The daemon still does not run the companion background-job worker.** The worker is spawned inside the windowed app (`commands/companion/mod.rs:116`); `personas-daemon` runs the trigger/event/execution loop only (`src-tauri/src/daemon/runtime.rs:1-14`). The "known limit" as written still holds.
+
+Log entries whose *outcome* is confirmed live on master:
+
+- Increment #3 (toolbar buttons to slash **action** presets): Daily Brief and Analyze Fleet are action presets in `Composer.tsx:136-145`, with the deterministic-command branch at `:206`.
+- The auto-react-after-approval mechanism: `spawn_proactive_turn_in(..., conversation_id)` plus the ownerless wrapper is `session/autonomy.rs:122` and `:183-193`, exactly as the last entry describes.
+- The multi-conversation work the last entry merged around has since shipped end to end (see `athena-multiconversation.md`).
+
 ## Legend
 
 - `[ ]` not started

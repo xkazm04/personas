@@ -1,6 +1,36 @@
 # Athena multi-conversation — many threads, one mind
 
-**Status:** design / impact analysis (not built). Author date 2026-07-05.
+**Status:** design / impact analysis, authored 2026-07-05. **Largely BUILT since; see the verification block below.**
+
+> ## Status (verified 2026-09-06)
+>
+> Phases 0 through 3 shipped; Phase 4 is partial. This document is kept as the design record; the sections below still describe the intended shape, but read them as "what was decided", not "what is missing".
+>
+> **Shipped:**
+> - **Conversation registry.** `src-tauri/src/companion/conversation.rs` holds `ConversationRow`, `list` / `create` / `rename` / `archive` / `mark_read`, `DEFAULT_CONVERSATION_ID = "default"` (`:26`) and `NOTICES_CONVERSATION_ID = "athena-notices"` (`:31`), exactly as §4.3 decided.
+> - **Schema.** All five `companion_session` `ALTER`s (`title`, `status`, `last_read_at`, `pinned`, `origin`) plus `companion_node.session_id`, the `idx_node_session_recent` index and the `session_id='default'` episode backfill are in `src-tauri/db/src/lib.rs:771-843`.
+> - **Episode scoping.** `episodic::list_recent` honors `session_id` (`src-tauri/src/companion/brain/episodic.rs:575-584`); facts/goals/doctrine stay global.
+> - **Per-conversation turn lock.** The single `TURN_LOCK` is gone; `TURN_LOCKS: HashMap<ConvId, Arc<Mutex<()>>>` with `turn_lock_for(conversation_id)` is at `src-tauri/src/companion/session/locks.rs:19-37`, and its doc comment records the unbounded-concurrency decision verbatim.
+> - **Per-conversation statics.** `INTERRUPTED_TURNS` / `ACTIVE_BUILD_TURNS` / `AUTONOMOUS_GENS` are all keyed maps (`session/interrupts.rs:19`, `:48`, `:108`); `cancel_pending_autonomy(conversation_id)` bumps only that thread's generation.
+> - **Tauri commands.** `companion_list_conversations` / `_create_` / `_rename_` / `_archive_` / `companion_mark_conversation_read` in `src-tauri/src/commands/companion/conversation.rs`.
+> - **Frontend store.** `companionStore.ts` carries `conversations: ConversationRow[]`, `activeConversationId`, `liveTurns[conversationId]`, `queuedByConversation` (`:290-300`, `:936-956`). Note the shape differs from §4.4's proposal: the store keeps a **conversation list plus per-conversation live-turn slices**, not a single `conversations: Record<id, ConversationState>` blob.
+> - **Switcher UI.** `src/features/plugins/companion/ConversationSwitcher.tsx` is the compact dropdown variant with the ● awaiting / ◐ working / ○ idle glyphs and unread counts, plus New / Rename / Archive.
+> - **Thread-roster prompt digest (Phase 3).** `conversation::roster_digest_for_prompt(user_db, session_id)` injected at `src-tauri/src/companion/prompt/build.rs:88-91`.
+> - **Proactive routing.** `session::spawn_proactive_turn_in(…, conversation_id)` routes a nudge into the owning thread; the ownerless wrapper `spawn_proactive_turn` targets `NOTICES_CONVERSATION_ID` (`session/autonomy.rs:122`, `:183-193`). The budget/dedupe economy stayed global as decided.
+> - **Forward-opens-a-new-thread (Phase 4).** `useForwardToAthena.ts:56` calls `companionCreateConversation(titleFromMessage(message), 'forwarded')`.
+>
+> **Not shipped:**
+> - **LLM auto-titling.** `companion_create_conversation` accepts an optional title and nothing generates one; a thread created from the "＋" (`ConversationSwitcher.tsx:81`) is created with no title and lists as "(untitled)". Only the forward path derives a title, and it does so by truncation, not by a `cli_text` summary.
+> - **The expanded left-rail switcher (§5, open question 3).** Only the compact dropdown exists; the component's own docstring calls itself "variant 1".
+> - **The orb thread-attention badge (§6).** The orb has an unread badge, but it counts *replies while minimized* globally (`companionStore.ts:823`, `AthenaOrbDecor.tsx:72`), not "threads that want you". There is no thread peek list.
+> - **Machine-health backpressure valve** (§4.2, always described as optional).
+> - **Per-conversation cost rollup** (§8 Phase 4).
+> - `DEFAULT_SESSION_ID` was **not** removed; it is still defined (`session/origin.rs:9`) and referenced at 54 sites in `src-tauri/src`. It now means "the migrated General thread", which is a legitimate use; the Phase 0 goal of deleting it was superseded.
+>
+> **Still open (unchanged from §9):** dictation target (open question 4) and auto-archive policy (open question 5) have no implementation either way.
+
+Author date 2026-07-05.
+
 **Problem owner ask:** the user can start several distinct tasks with Athena, but today
 they all pour into one chat window and one transcript, confusing both the user
 and Athena. We want **multiple concurrent conversations, each its own thread,
@@ -43,6 +73,10 @@ everything is hardwired to a single `DEFAULT_SESSION_ID = "default"`, one
 global `TURN_LOCK`. The code *anticipates* the change — the Tauri event contract
 already carries a (currently ignored) `sessionId`, and `session.rs:358` literally
 comments *"one lock suffices; key by session id if that changes."*
+
+> Stale reference, 2026-09-06: `companion/session.rs` is now the directory
+> `companion/session/`, and that comment is gone because the change it
+> anticipated was made. See `session/locks.rs:9-37`.
 
 So: **the singular-Athena half is free; the async/observability half is ~80%
 built; the net-new work is partitioning the thread layer** (transcript + CLI
@@ -272,7 +306,7 @@ activeConversationId: string;
 
 ## 5. UI — the chat window
 
-**Thread switcher — adaptive to the panel's two widths.** The `Header` left
+**Thread switcher — adaptive to the panel's two widths.** (2026-09-06: `CompanionPanel.tsx` no longer exists; the panel was split into `src/features/plugins/companion/chat/`, and the header is `chat/AthenaChatHeader.tsx`.) The `Header` left
 cluster (`CompanionPanel.tsx:547-566`) is layout-safe (the orb→panel morph is
 anchored bottom-left, so the header can grow). Recommendation:
 
@@ -400,6 +434,8 @@ aggregate-state model that already exists is the correct singular-Athena behavio
 ---
 
 ## 8. Phasing
+
+(2026-09-06: Phases 0-3 shipped; Phase 4 is partial; see the status block at the top for the per-item breakdown.)
 
 - **Phase 0 — invisible foundation.** Conversation table + `session_id` column +
   per-conv locks + `DEFAULT_SESSION_ID` removal, all still resolving to one

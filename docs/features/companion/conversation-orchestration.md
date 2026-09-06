@@ -2,6 +2,43 @@
 
 **Status:** Variants **A + B + C all shipped.** (Step 1 — removing the raw token stream — also shipped.) Follow-ups **D1 (always-on narration) + D2 (narration timeline)** shipped 2026-06-10.
 
+## Status (verified 2026-09-06)
+
+Everything below still describes shipped behaviour; two things moved and one
+went further than this doc records.
+
+- **`CompanionPanel` no longer exists.** The chat surface was split into
+  `src/features/plugins/companion/chat/` plus `CompanionPluginPage.tsx` /
+  `CompanionSidePanel.tsx`. Where this doc says "`CompanionPanel` scans
+  `streamingText`", read `chat/athenaChatVoice.ts`. The `PROGRESS:` beat
+  scanner is at `:104-125`, the ~2.5s ack at `:79-88`
+  (`voice_progress_ack`, tier 0), the ~30s silence heartbeat at `:91-99`
+  (`voice_progress_working`, tier 1), and `beatFiredRef` (a model beat
+  suppresses the generic Variant C filler) at `:60` / `:71`. Stream parsing and
+  the TodoWrite exclusion live in `chat/athenaChatStream.ts:85-99`, not in
+  `narrationTimeline.ts`.
+- **`src-tauri/src/companion/session.rs` is now the `session/` module
+  directory** (`cli.rs`, `stream.rs`, `turn.rs`, …). The `PROGRESS:` strip that
+  keeps beats out of the persisted final reply is
+  `session/stream.rs:26-42` plus `dispatcher/dispatch.rs:96-102`.
+- **Shipped beyond this doc: "continuous informing".** `run_cli` now takes a
+  `persist_progress` flag (`session/cli.rs:50-57`) and
+  `session/stream.rs::persist_stream_progress` (`:62`) writes each `PROGRESS:`
+  beat AND each confirmed-non-final prose segment as its own lightweight
+  assistant episode **at its real emission time**, instead of one end-of-turn
+  flush that stamped everything in the same millisecond. Beats therefore
+  survive a reload as `PROGRESS: …` assistant episodes, rendered as quiet
+  "aside" rows by `Bubble.tsx:101-110` and skipped by the conversation preview
+  (`chat/athenaChatPreview.ts:19`). It is off for build turns and
+  fleet-orchestration turns. This is the real end of "long pause then big
+  bang", and it postdates the D1/D2 entries below.
+- Unchanged and verified: `progress_addendum()` is always-on in every turn's
+  system prompt (`companion/prompt/addenda.rs:332`, appended at
+  `prompt/build.rs:127`); `NarrationLiveLog` / `NarrationTrail` in
+  `NarrationThread.tsx:70` / `:97` with `LIVE_MAX_ROWS = 5` at `:29`;
+  promotion into `narrationByEpisodeId` at `companionStore.ts:580` / `:1290`;
+  the `responding` phase in `extractStreamPhase.ts:26`.
+
 ## Shipped (D1 — narration unbundled from voice)
 
 The `PROGRESS:` grammar originally lived inside `prompt.rs`'s voice addendum, which meant **text-only users got no model-authored narration at all**, and proactive turns (spawned with `voice_enabled: false`) never narrated. It now lives in its own always-on `progress_addendum()` appended to every turn's system prompt — user, autonomous, and proactive alike. The copy is voice-agnostic (beats feed the visual timeline; voice playback layers on top when configured). The TTS grammar is unchanged and still voice-gated.
@@ -89,7 +126,7 @@ Pros: trivial; eliminates dead air; works even for pure-reasoning turns with no 
 
 Ship **A** as the foundation (real, event-driven status; small change to the existing stream parser + phase source), layer **C** as a cheap always-on "no dead air" guarantee (instant ack + spoken heartbeat reusing the slow-progress timer), and treat **B** as the richer follow-up once A+C prove the pacing model. A+C need no model-behavior changes and no new protocol; B is where the conversation becomes genuinely multi-beat.
 
-**Before implementing A/B:** confirm against the *pinned* CLI version what `content_block_*` / `thinking_delta` / `compaction_delta` events actually arrive (the inventory above is from current public docs; some are model/version-gated). The backend stream parser (`src-tauri/src/companion/session.rs`) and `extractStreamPhase` / `OperationalThread` are the integration points.
+**Before implementing A/B:** confirm against the *pinned* CLI version what `content_block_*` / `thinking_delta` / `compaction_delta` events actually arrive (the inventory above is from current public docs; some are model/version-gated). The backend stream parser (now `src-tauri/src/companion/session/stream.rs` + `session/cli.rs`) and `extractStreamPhase.ts` / `OperationalThread.tsx` are the integration points.
 
 ## Sources
 Researched 2026-05-23 against: Claude API "Streaming messages", "Fine-grained tool streaming", "Extended thinking" / "Adaptive thinking", "Compaction"; Claude Agent SDK "Streaming output"; Claude Code "Hooks reference" + changelog. Treat version-gated specifics (adaptive thinking, compaction deltas, effort levels) as "verify on our pinned version" rather than guaranteed.

@@ -1,17 +1,45 @@
 # Athena Orb — Floating Dockable Companion Overlay (Implementation Plan)
 
-**Status:** Planned — not yet implemented
+**Status:** Shipped. Steps 1, 2a, 2b, 2c and 3 are all live (checklists in §7). Verified 2026-09-06.
 **Author:** Design pass 2026-05-23
 **Scope:** Promote Athena out of the footer into a first-class, dockable overlay layer; add voice-in/voice-out without opening the chat; coexist with the traditional chat panel.
 **Decision:** Ship in **two steps** — (1) in-footer avatar + hold-to-talk, (2) floating dockable orb overlay. Voice input uses a **local STT engine** (no cloud audio), mirroring the Piper-TTS subprocess pattern.
 
 This plan is the concrete build-out of open question #1 ("Where does Athena live in the app? Floating companion?") from [`athena-interactive-avatar.md`](./athena-interactive-avatar.md). It assumes Layer A (the `AthenaAvatar` video component) as already-shipped foundation and stages Layer B (reactive glow) as an optional polish at the end.
 
+## Status (verified 2026-09-06)
+
+**Shipped.** Everything in §7's checklist is live, Step 1 included (its boxes were never
+ticked). Real anchors:
+
+- **Overlay layer**: `orb/AthenaOrbLayer.tsx` (portal to `document.body`, `z-50`, lifted to
+  `z-[210]` while an overlay is open), mounted at `src/App.tsx:425` inside an `OverlayIsland`
+  and idle-prefetched at `App.tsx:179-180`. The orb itself is `orb/AthenaOrb.tsx`.
+- **It is a DOM overlay in the single app webview, not a separate Tauri window.** There is no
+  second `WebviewWindow`; the orb is a React portal into `document.body` of the main window.
+- **Always-on sibling layer**: `orb/AthenaGuideLayer.tsx` (`z-[60]`, mounted at `App.tsx:426`)
+  hosts the guidance runner, the glow rings, the decision bubble and the decision driver. It
+  renders regardless of companion state, which is why the decision layer docks there.
+- **Footer avatar (Step 1)**: `CompanionFooterIcon.tsx:12,244` imports `AthenaAvatar` and
+  renders it at `size={20}`; hold-to-talk is the shared `useHoldToTalk()` at `:123`.
+- **Panel watermark**: `chat/AthenaChatPanel.tsx:102-107`, `fill` + `opacity-[0.05]`, `-z-10`.
+- **Local STT (Step 2c)**: `src-tauri/src/companion/stt/` (`mod.rs`, `whisper.rs`,
+  `catalog.rs`, `downloader.rs`, **`installer.rs`**) and **six** commands in
+  `src-tauri/src/commands/companion/stt.rs`.
+
+**Two names in the body below never shipped as written:** the persisted dock setting is
+`companionOrbPos: {x, y}` (normalized), not `companionOrbDock: {edge, x, y}`; and the orb's
+support modules are `athenaOrbDock.ts` / `athenaOrbGeometry.ts` / `athenaOrbGesture.ts` /
+`athenaOrbGlow.ts` / `athenaOrbPresence.ts` / `athenaOrbReactions.ts`, not the planned
+`useOrbDrag.ts` / `OrbCaption.tsx`. `CompanionPanel.tsx` is now `chat/AthenaChatPanel.tsx`
+plus ~45 sibling modules in `companion/chat/`, so every `CompanionPanel.tsx:<line>` citation
+below is stale as a path.
+
 ---
 
 ## 0. Goal
 
-Today the chat-initiation affordance is a generic lucide `<Bot>` icon in `DesktopFooter`'s right cluster (`CompanionFooterIcon.tsx:301`). Athena's real animated avatar (`AthenaAvatar.tsx`) exists but is only used as a 5%-opacity watermark behind the open chat panel (`CompanionPanel.tsx:208`).
+Today the chat-initiation affordance is a generic lucide `<Bot>` icon in `DesktopFooter`'s right cluster (`CompanionFooterIcon.tsx:301`). Athena's real animated avatar (`AthenaAvatar.tsx`) exists but is only used as a 5%-opacity watermark behind the open chat panel (`CompanionPanel.tsx:208`). *(Historical starting state. Both are now true differently: the footer renders `<AthenaAvatar size={20}>` at `CompanionFooterIcon.tsx:244`, and the watermark lives at `chat/AthenaChatPanel.tsx:102-107`.)*
 
 We want Athena to become a **living, movable presence**:
 
@@ -28,11 +56,11 @@ We want Athena to become a **living, movable presence**:
 | --- | --- | --- |
 | Animated avatar (idle/thinking video crossfade, `speaking` stubbed) | `AthenaAvatar.tsx` | Orb body — already supports circular (`size`) + `fill` modes |
 | State machine `closed \| collapsed \| open` | `companionStore.ts`, `types.ts` | Extend with `minimized` |
-| TTS out (ElevenLabs + Piper), pending playback, footer Play | `voicePlayback.ts`, `CompanionFooterIcon.tsx:303`, `companionStore.ts` (`pendingPlayback`) | Minimized-mode voice-out |
+| TTS out (ElevenLabs + Piper at the time of writing; **both descoped 2026-07-10**; the engines today are local Kokoro (default) and experimental Pocket TTS, `src-tauri/src/companion/tts/mod.rs:58-71`), pending playback, footer Play | `voicePlayback.ts`, `CompanionFooterIcon.tsx:303`, `companionStore.ts` (`pendingPlayback`) | Minimized-mode voice-out |
 | Voice in (browser Web Speech) | `useDictation.ts`, `Composer.tsx:54` | Fallback STT engine + the send wiring |
 | Send pipeline (optimistic bubble → stream → TTS) | `CompanionPanel.tsx` `send()` | Drive minimized-mode turns through the same path |
 | Settings slice + Voice tab | `companionPluginSlice.ts`, `sub_voice/VoicePanel.tsx` | Add orb + STT-engine settings |
-| Per-engine local-subprocess pattern (Piper) | `companion/tts/piper.rs`, `commands/companion/voice.rs` | Template for local STT engine |
+| Per-engine local-subprocess pattern (Piper at the time of writing; the surviving equivalents are `companion/tts/kokoro.rs` + `sherpa_engine.rs` + `pocket.rs`; `piper.rs` no longer exists) | `commands/companion/voice.rs` | Template for local STT engine |
 
 The footer icon work and the panel-state machine are the only places that need to learn a new concept; everything else is composition.
 
@@ -53,7 +81,7 @@ App root (src/App.tsx)
 ```
 
 - **Single instance, single video decode.** The orb and the panel watermark should not both mount a decoding `AthenaAvatar` at full size simultaneously; keep the orb at small `size` and the panel watermark at `opacity 0.05` (already cheap). Pause the orb's video via `IntersectionObserver`/visibility when the full panel is open over it.
-- **z-index ladder:** orb sits above app content and the footer (`z-40`) but **below** modals/command palette (`z-[60]+`). The open `CompanionPanel` is `z-[60]`; when the panel opens, the orb tucks behind it or morphs into it (see §5 transitions).
+- **z-index ladder (as shipped):** orb layer `z-50`, guide layer (glow rings, caption, decision bubble) `z-[60]`, chat panel `z-[60]`; the orb layer and the panel both lift to `z-[210]`/`z-[220]` while the Fleet grid or another overlay is open (`AthenaOrbLayer.tsx:196`, `AthenaChatPanel.tsx:84`). A portal-mode `BaseModal` sits at z-index 10000+ (`src/lib/ui/BaseModal.tsx:8-9,177-178`) and is deliberately above all of it, which is why guidance never rings anything inside a modal.
 - **Pointer discipline:** the layer is `pointer-events-none`; only the orb element itself opts back in. Never blocks clicks on app content.
 
 ---
@@ -70,13 +98,12 @@ export type CompanionState = 'closed' | 'collapsed' | 'minimized' | 'open';
 - `open` — full chat panel (existing).
 
 ### 3.2 New `companionStore` fields (UI-ephemeral, NOT persisted)
-- `orbListening: boolean` — mic is capturing for a voice turn.
-- `orbCaption: string | null` — transient line shown beside the orb (her latest spoken sentence / interim transcript).
-- Derive `avatarState` (`idle|thinking|speaking`) from existing `streaming` + a `isSpeaking` flag (the panel already computes `isSpeaking`; hoist it to the store so the orb can read it).
+- ~~`orbListening: boolean`~~ / ~~`orbCaption: string | null`~~: **neither shipped as store fields.** Listening state and the interim transcript come straight off the single `useHoldToTalk()` instance, which `AthenaOrbLayer` owns and passes to `AthenaOrb` as a `talk` prop (`AthenaOrb.tsx:71`).
+- ~~Hoist `isSpeaking` to the store~~: shipped instead as `orb/athenaOrbPresence.ts` (`useAthenaOrbPresence`), which derives the avatar state (including `speaking` and the `composing` clip) locally from talk state + playback.
 
 ### 3.3 New persisted settings (`companionPluginSlice.ts`)
 - `companionOrbEnabled: boolean` (default `true`) — master switch for the floating orb (separate from `companionFooterEnabled`).
-- `companionOrbDock: { edge: 'left'|'right'|'top'|'bottom'|'free'; x: number; y: number }` — last docked position (normalized 0..1 for `free`). Default bottom-right.
+- ~~`companionOrbDock: { edge; x; y }`~~: **shipped as `companionOrbPos: { x: number; y: number }`**, both normalized 0..1, default `{ x: 1, y: 0.82 }` (`companionPluginSlice.ts:167,293`). There is no persisted `edge`; snapping is derived at drop time in `orb/athenaOrbDock.ts`.
 - `companionSttEngine: 'browser' | 'whisper'` (default `'browser'` for back-compat; recommend `'whisper'` once a model is downloaded).
 - `companionSttModelId: string | null` — selected local whisper model (e.g. `ggml-base.en`).
 
@@ -149,7 +176,7 @@ Goal: immediate visible win and de-risk the avatar-in-button render before build
 
 ## 4. Local STT engine (replaces cloud-routed browser dictation)
 
-`useDictation` (Web Speech) cloud-routes audio to Microsoft on WebView2 — conflicts with the local-first rule (`feedback_credentials_stay_local`). Mirror the Piper-TTS approach: **subprocess isolation around a prebuilt whisper.cpp binary**, no ORT in-process (whisper.cpp uses its own ggml, so it also sidesteps the `ort` version conflict that forced Piper to subprocess).
+`useDictation` (Web Speech) cloud-routes audio to Microsoft on WebView2 — conflicts with the local-first rule (`feedback_credentials_stay_local`). Mirror the local-TTS-sidecar approach (Piper then; Kokoro/sherpa now): **subprocess isolation around a prebuilt whisper.cpp binary**, no ORT in-process (whisper.cpp uses its own ggml, so it also sidesteps the `ort` version conflict that forced Piper to subprocess).
 
 ### 4.1 Backend (`src-tauri/src/companion/stt/`)
 New module mirroring `companion/tts/`:
@@ -157,6 +184,8 @@ New module mirroring `companion/tts/`:
 - `stt/whisper.rs` — spawn `~/.personas/companion-stt/bin/whisper-cli(.exe)` (or `PERSONAS_WHISPER_BIN` override / PATH), pass the WAV temp file + model path, parse stdout transcript. Bounded timeout.
 - `stt/catalog.rs` — curated ggml whisper models (tiny/base/small, `.en` and multilingual) from `huggingface.co/ggerganov/whisper.cpp`, downloaded to `~/.personas/companion-stt/models/<id>.bin`. Reuse the Piper `downloader.rs` pattern (atomic `.partial` rename, progress on a `companion://stt-download` event channel).
 - New IPC in `commands/companion/voice.rs` (or a sibling `stt.rs`): `companion_stt_transcribe`, `companion_stt_engine_status`, `companion_stt_list_models`, `companion_stt_download_model`, `companion_stt_delete_model`. Run `node scripts/generate-command-names.mjs` after adding.
+
+  > Shipped in `commands/companion/stt.rs` with a **sixth** command, `companion_stt_install_engine`; see §8 Q2, which this resolves.
 
 **Why frontend sends WAV, not webm:** keeps the backend free of an ffmpeg dependency. The frontend captures via `getUserMedia` → `AudioContext` → downsample to 16 kHz mono PCM → encode WAV → base64. whisper.cpp consumes 16 kHz WAV directly.
 
@@ -192,10 +221,10 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 
 ## 7. Phasing checklist
 
-**Step 1 (½–1 day)**
-- [ ] Avatar replaces `<Bot>` in `CompanionFooterIcon` (state-driven).
-- [ ] Hold-to-talk gesture → shared `send()` → TTS reply.
-- [ ] i18n keys; doc-sync README touch.
+**Step 1 (½–1 day), shipped**
+- [x] Avatar replaces `<Bot>` in `CompanionFooterIcon` (state-driven), at `CompanionFooterIcon.tsx:244`.
+- [x] Hold-to-talk gesture → shared `send()` → TTS reply, via the shared `useHoldToTalk()` at `CompanionFooterIcon.tsx:123`.
+- [x] i18n keys; doc-sync README touch.
 
 **Step 2a — orb shell (shipped)**
 - [x] `CompanionState` gains `minimized`.
@@ -212,7 +241,7 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [x] Speaking glow — **now audio-reactive.** Centralized playback through one shared `AnalyserNode` (`audioLevel.ts`; `voicePlayback.play()` taps every `<audio>`); the orb's bloom opacity/scale track the live TTS level via an imperative `rAF` subscription (no React churn). Best-effort tap (degrades silently), static under reduced motion. This closes the §2.6 follow-up.
 
 **Step 2c — local on-device Whisper STT (shipped)**
-- [x] `companion/stt/` module (mod/whisper/catalog/downloader) + 5 IPC commands + command-names regen. Types hand-mirrored in `api/companion.ts` (no ts-rs needed — matches the Piper TTS convention).
+- [x] `companion/stt/` module (mod/whisper/catalog/downloader, **+ `installer.rs` added later**) + **6** IPC commands + command-names regen. Types hand-mirrored in `api/companion.ts` (no ts-rs needed — matches the Piper TTS convention).
 - [x] `useLocalDictation` (getUserMedia → 16k mono WAV in the renderer → `companion_stt_transcribe`) + `useSpeechInput` selector; `useHoldToTalk` routes through it so footer + orb pick up the engine choice.
 - [x] Voice tab `SttPanel` (engine selector, install status, model browser with download/select/delete + progress, browser cloud disclosure).
 - [x] Slice fields `companionSttEngine` / `companionSttModelId` (persisted).
@@ -227,7 +256,7 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 ## 8. Open questions / risks
 
 1. **Speaking clip.** `AthenaAvatar` stubs `speaking → idle`. A real talking loop noticeably sells voice mode — generate one offline (`athena-interactive-avatar.md` §2.1) before or during Step 2.
-2. **whisper.cpp binary distribution.** Like Piper, we ask the user to drop a prebuilt binary (or we bundle per-platform). Decide bundle-vs-install; bundling adds installer weight, install mirrors Piper's current UX.
+2. ~~**whisper.cpp binary distribution.**~~ **Resolved: one-click in-app install.** `companion/stt/installer.rs` downloads a pinned whisper.cpp release asset, extracts it and verifies it resolves, reusing the `InflightGuard` + `InstallProgress` shape of `tts/kokoro_installer.rs` so the frontend's `VoiceEngineInstallBlock` works unchanged. Windows-x64 only for now; other platforms still get the manual instructions.
 3. **Batch STT latency.** base.en on CPU is ~real-time-ish for short clips; small/medium are slower. Default to `base.en`; expose model size as the latency/accuracy lever.
 4. **Two avatar instances.** Ensure orb + panel-watermark don't double-decode; gate by state.
 5. **Discoverability.** A floating orb the user can dismiss needs a re-summon path — keep the footer control as the always-present anchor.
@@ -238,5 +267,5 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 ## Related
 - [`athena-interactive-avatar.md`](./athena-interactive-avatar.md) — the 3-layer avatar architecture this plan builds on (Layer A shipped; Layer B reactive glow staged here as §2.6).
 - [`README.md`](./README.md) — companion feature surface map.
-- `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `companionStore.ts`, `companionPluginSlice.ts`, `useDictation.ts`, `companion/tts/piper.rs` — primary touch points.
+- `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `companionStore.ts`, `companionPluginSlice.ts`, `useDictation.ts`: primary touch points. (`companion/tts/piper.rs` was listed here and no longer exists; the local-sidecar precedent is now `companion/tts/kokoro_installer.rs` / `sherpa_engine.rs`.)
 - Memory: `feedback_credentials_stay_local` — the local-first rule driving the local-STT choice.
