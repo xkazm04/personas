@@ -29,6 +29,7 @@ import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
 import { useNoteSuggestions } from './athena/noteSuggestions';
 import { markNotepadPhase } from './notepadTiming';
+import { prefetchMarkdownRenderer } from '@/features/shared/components/editors/DeferredMarkdown';
 import {
   archivedNotes as archivedNotesOf,
   atCap as atCapNow,
@@ -100,7 +101,14 @@ export default function NotepadOverlayHost() {
     markNotepadPhase('mount');
     // One frame after mount is the first moment the operator could have SEEN
     // the real pad; everything before it is work they were waiting through.
-    const raf = requestAnimationFrame(() => markNotepadPhase('paint'));
+    const raf = requestAnimationFrame(() => {
+      markNotepadPhase('paint');
+      // The pad is on screen and the operator is about to type. Warm the
+      // markdown chunk NOW, off the critical path, so the first preview toggle
+      // — and Athena's first suggestion block — render immediately instead of
+      // showing their raw-text fallback for a beat.
+      prefetchMarkdownRenderer();
+    });
     void load().finally(() => markNotepadPhase('notes'));
     listProjects()
       .then(setProjects)
