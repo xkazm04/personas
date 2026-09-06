@@ -20,7 +20,8 @@ her own production routing (`claude-opus-4-8@low`); its consumer is hers, not th
 | **retrieval, 200-chunk ceiling** | **0.89** | 16 | 0 | 0.00 | 0.00 | 3,253 | 0 |
 | hybrid verbatim | 0.87 | 5 | 10 | 0.07 | 0.05 | 1,912 | 0 |
 | compiled truth (page rewrite) | 0.84 | **3** | 13 | 0.07 | 0.08 | 1,632 | 3,434 |
-| athena | 0.80 | 12 | 2 | 0.07 | 0.01 | 1,603 | 1,341 |
+| athena (before the reconcile fix) | 0.80 | 12 | 2 | 0.07 | 0.01 | 1,603 | 1,341 |
+| **athena (after the reconcile fix)** | 0.82 | 13 | 2 | 0.14 | 0.01 | 1,628 | 1,352 |
 | write-time verdict | 0.78 | 4 | 3 | 0.14 | 0.02 | **918** | 7,341 |
 | athena in her own voice | 0.73 | 17 | 19 | 0.00 | 0.12 | 3,222 | 1,736 |
 
@@ -57,11 +58,19 @@ currently true and forgets why. Neither store shape wins outright, and a design 
 both needs the timeline as well as the summary — which is precisely the shape the page
 arm's own model prescribes and which Athena already has in her episodic tier.
 
-**2. The measured weakness in Athena is staleness, and it is a bug before it is a design.**
-She carries 12 stale answers where the two other distilling arms carry 3 and 4, and she lost
-**31 of 102 sleep cycles** to the reconcile timeout while they lost 1 of 1,026 and 0 of 480.
-A third of her consolidation never ran. Her 0.80 is therefore a floor, not a verdict, and
-the reconcile shortlist fix has to land before the comparison is fair.
+**2. The reconcile failures were a reliability defect, and fixing reliability bought
+reliability — not accuracy.** She lost 31 of 102 sleep cycles to the timeout; the shortlist
+fix took that to 1 of 76 and capped the prompt at 10k characters against a 33k peak. The
+prediction attached to that bug was that her 0.80 was a floor held down by a third of her
+consolidation never running. Measured: it was worth **two points** (0.80 to 0.82), not the
+seven she would need to reach the verbatim arms. The stale-answer count did not move
+(12 to 13).
+
+What the fix did buy sits exactly where consolidation should show: recall past 121 days of
+history went 0.74 to 0.94, recurring failure causes 0.72 to 0.88, procedures 0.70 to 0.90.
+Those are the classes that need the pass to have actually run. **The correction worth
+carrying is the first one: an operational failure inside a pipeline is not automatically an
+accuracy cost, and reading it as one sends the next fix at the wrong target.**
 
 **3. Her own voice is calibrated quiet.** Read by a neutral consumer her store gives 0.07
 false fire and 0.01 silent failure. Answering in her own production routing she gives 0.00
@@ -81,7 +90,7 @@ side, and it is a property of her instructions and effort rather than of her mem
 3. **The reconcile leg's parser is stricter than its model.** `oneshot::extract_json_span`
    slices first `{` to LAST `}`, so a self-correcting reply with two objects is one invalid
    span and the cycle dies.
-4. **The reconcile leg scans the store instead of shortlisting candidates.** The prompt grew
+4. **The reconcile leg scanned the store instead of shortlisting candidates** (fixed 2026-09-05). The prompt grew
    3k → 17k → 33k characters against a fixed 180 s timeout; 31 of 102 cycles died, first at
    day 71. Past its 200-fact truncation, ordered by importance then recency, the tail is
    never a candidate again — a coverage hole, not just a cost cap. Both halves went to the
@@ -122,9 +131,13 @@ three mechanisms and one metric, all of which are now arms or instruments here.
 
 ## Backlog
 
-- [ ] shortlist reconcile candidates per new item instead of scanning the active set under a
-      200-fact truncation (finding 4). Highest value; it is a corpus rule already, and until
-      it lands Athena's row is measured with a third of her consolidation missing.
+- [x] shortlist reconcile candidates per new item (finding 4). Landed 2026-09-05 as
+      `68829f2de` on `direction/memory-year-sim`: seeds are the facts the cycle wrote plus a
+      rotating two-fact sweep, four candidates each by a directional overlap normalised on
+      the smaller side. 31 of 102 cycle failures went to 1 of 76; the prompt is now set by
+      the write budget, not the store.
+- [ ] the preference class regressed with that fix (0.56 to 0.22, three probes of nine) while
+      every neighbouring class improved. It was already the weakest class before the change.
 - [ ] give recall the episodic timeline alongside the distilled facts on detail-bearing
       questions — the class table above says that is where both store shapes lose.
 - [ ] secondary sort key (episode id) at `brain/retrieval.rs:399` and `:510` (finding 2)
