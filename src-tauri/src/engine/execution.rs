@@ -554,6 +554,15 @@ impl ExecutionEngine {
     /// runnable context is reconstructed from the DB (the in-memory
     /// `queued_contexts` map does not survive a restart).
     ///
+    /// **Two populations arrive at this door, not one.** `queued` means
+    /// "never started" for a scheduled or event-triggered row — and it also
+    /// means "was mid-flight when the app died" for a row
+    /// [`Self::classify_stale_executions`] classified `resume_pending`, which
+    /// puts it BACK on the durable queue carrying `recovery_state` and the
+    /// `claude_session_id` it captured mid-stream. Status alone cannot tell
+    /// them apart, so this function reads the classifier's pointer
+    /// (`exec_repo_restart::queued_resume_pointers`) and branches on it.
+    ///
     /// Idempotent + crash-safe: re-admission reuses the existing row (the runner
     /// updates it in place), so a crash mid-recovery just leaves it `queued` for
     /// the next startup. Best-effort per row — a persona that was deleted, or a
@@ -568,6 +577,20 @@ impl ExecutionEngine {
                 return;
             }
         };
+        // The classifier's resume pointers for this same population. A read
+        // failure must not block re-admission: an empty map degrades to the
+        // old behaviour (everything runs fresh), which is the safe direction
+        // for availability and the unsafe one for replay, so it is logged.
+        let resume_pointers = match exec_repo_restart::queued_resume_pointers(&pool) {
+            Ok(m) => m,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "Failed to read resume pointers; re-admitting every queued row fresh",
+                );
+                std::collections::HashMap::new()
+            }
+        };
         if queued.is_empty() {
             tracing::debug!("No queued executions to re-admit");
             return;
@@ -575,6 +598,7 @@ impl ExecutionEngine {
 
         let total = queued.len();
         let mut readmitted = 0usize;
+        let mut resumed = 0usize;
         for exec in queued {
             // Load the persona; if it's gone, the queued row can never run.
             let persona = match persona_repo::get_by_id(&pool, &exec.persona_id) {
@@ -603,10 +627,31 @@ impl ExecutionEngine {
                 .as_deref()
                 .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
 
-            // Re-admit through the normal path. continuation = None: a queued
-            // row had not yet started a CLI session, so there is nothing to
-            // resume — it runs fresh. Errors (e.g. queue full) leave the row
-            // queued for a later attempt.
+            // Re-admit through the normal path, with the continuation the
+            // row's own position value implies:
+            //
+            // - `None` for a row that had not yet started a CLI session —
+            //   there is nothing to resume, so it runs fresh. This is the
+            //   population the comment here used to describe, and it is still
+            //   the common one.
+            // - `SessionResume(id)` for a row the restart classifier marked
+            //   `resume_pending` AND that holds a session id. Resuming
+            //   continues the CLI conversation instead of replaying the whole
+            //   prompt, which matters because personas has no tool-level
+            //   idempotency: a fresh replay re-executes every tool call the
+            //   interrupted run had already made.
+            //
+            // Errors (e.g. queue full) leave the row queued for a later attempt.
+            let continuation = resume_pointers.get(&exec.id).map(|session_id| {
+                tracing::info!(
+                    execution_id = %exec.id,
+                    "Re-admitting a resume_pending execution by resuming its CLI session",
+                );
+                types::Continuation::SessionResume(session_id.clone())
+            });
+            if continuation.is_some() {
+                resumed += 1;
+            }
             match self
                 .start_execution(
                     app.clone(),
@@ -615,7 +660,7 @@ impl ExecutionEngine {
                     persona,
                     tools,
                     input_data,
-                    None,
+                    continuation,
                 )
                 .await
             {
@@ -633,6 +678,7 @@ impl ExecutionEngine {
         tracing::info!(
             total = total,
             readmitted = readmitted,
+            resumed = resumed,
             "Re-admitted persisted queued executions after restart",
         );
     }
