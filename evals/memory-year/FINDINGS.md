@@ -21,7 +21,8 @@ her own production routing (`claude-opus-4-8@low`); its consumer is hers, not th
 | hybrid verbatim | 0.87 | 5 | 10 | 0.07 | 0.05 | 1,912 | 0 |
 | compiled truth (page rewrite) | 0.84 | **3** | 13 | 0.07 | 0.08 | 1,632 | 3,434 |
 | athena (before the reconcile fix) | 0.80 | 12 | 2 | 0.07 | 0.01 | 1,603 | 1,341 |
-| **athena (after the reconcile fix)** | 0.82 | 13 | 2 | 0.14 | 0.01 | 1,628 | 1,352 |
+| athena (after the reconcile fix) | 0.82 | 13 | 2 | 0.14 | 0.01 | 1,628 | 1,352 |
+| **athena (both tiers governed)** | **0.86** | 9 | 1 | 0.07 | 0.01 | 1,592 | 1,371 |
 | write-time verdict | 0.78 | 4 | 3 | 0.14 | 0.02 | **918** | 7,341 |
 | athena in her own voice | 0.73 | 17 | 19 | 0.00 | 0.12 | 3,222 | 1,736 |
 
@@ -72,7 +73,33 @@ Those are the classes that need the pass to have actually run. **The correction 
 carrying is the first one: an operational failure inside a pipeline is not automatically an
 accuracy cost, and reading it as one sends the next fix at the wrong target.**
 
-**3. Her own voice is calibrated quiet.** Read by a neutral consumer her store gives 0.07
+**3. The procedural tier had never been governed at all, and that was worth four points.**
+The year store retired 261 of 375 facts on schedule and **0 of 133 rules, ever**: nothing
+called procedural demotion, because the compress prompt asks for a supersedes link only on
+facts and the reconcile leg only judged facts. `procedural::write_rule` had working demotion
+wiring and no caller.
+
+That is worse than an ordinary tier bug, because the always-on lane injects six top rules
+into every turn regardless of the question — so the ungoverned tier was the one with the
+most standing. In the replayed store a rule from 17 January still said "be direct and blunt"
+in December, months after the user switched to casual and the corresponding fact was
+properly retired; a rule from 25 January still said "default to two-space indentation" after
+four-space superseded it, and that rule is what she answered from. The tier had also
+accumulated six near-duplicate small-talk rules and five near-duplicate task-reporting rules,
+all live, because nothing ever compared rules to each other.
+
+Rules now go through the same shortlist and the same leg call as facts (`Shortlistable`: a
+fact's subject is its key, a rule's is its trigger). Result: **68 of 131 rules retired**,
+accuracy 0.82 to 0.86, stale answers 13 to 9, reversals 0.91 to 0.93. She is now second on
+the ladder behind verbatim retrieval, at half its context.
+
+**Two things this fix did not do, stated plainly.** The preference class moved 0.22 to 0.44
+and did not return to the 0.56 it started at, so the stale-rule diagnosis was necessary and
+not sufficient — something else is wrong in that class. And **procedures regressed 0.90 to
+0.60** (four probes): the leg can now retire rules, and on a narrow class a few over-eager
+retirements cost more than the stale ones did. Both need a look before this branch merges.
+
+**4. Her own voice is calibrated quiet.** Read by a neutral consumer her store gives 0.07
 false fire and 0.01 silent failure. Answering in her own production routing she gives 0.00
 and 0.12: she never asserts where silence is right, and abstains on one answerable question
 in eight. That is the same finding as her collapse on failure causes, seen from the other
@@ -136,8 +163,15 @@ three mechanisms and one metric, all of which are now arms or instruments here.
       rotating two-fact sweep, four candidates each by a directional overlap normalised on
       the smaller side. 31 of 102 cycle failures went to 1 of 76; the prompt is now set by
       the write budget, not the store.
-- [ ] the preference class regressed with that fix (0.56 to 0.22, three probes of nine) while
-      every neighbouring class improved. It was already the weakest class before the change.
+- [x] the procedural tier was never governed (0 of 133 rules ever retired). Fixed 2026-09-06
+      as `1c5b88571`: rules shortlist and reconcile beside facts. 68 of 131 retired, +4 points.
+- [ ] preferences are still below where they started (0.56 -> 0.22 -> 0.44). Retiring stale
+      rules was not the whole cause; the remaining half is unidentified.
+- [ ] procedures regressed 0.90 -> 0.60 when rule retirement switched on. Check for
+      over-eager supersedes on the four failing probes before merging the branch.
+- [ ] one cycle in 76 still stalls (a 300s timeout on a prompt that size normally answers in
+      under a minute). Looks like an occasional hang, not a tight budget. Do not raise the
+      timeout again without evidence it is size-related.
 - [ ] give recall the episodic timeline alongside the distilled facts on detail-bearing
       questions — the class table above says that is where both store shapes lose.
 - [ ] secondary sort key (episode id) at `brain/retrieval.rs:399` and `:510` (finding 2)
