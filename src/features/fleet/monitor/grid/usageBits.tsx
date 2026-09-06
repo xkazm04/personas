@@ -1,6 +1,13 @@
-// usageBits — the small pieces both usage surfaces share: the meter bar, the
+// usageBits — the small pieces both usage surfaces share: the meter, the
 // pace glyph, the window label, the reason copy, and the local clock that
-// drives the countdowns. Pure presentation; the numbers come from usageModel.
+// drives the reset marker. Pure presentation; the numbers come from usageModel.
+//
+// THE METER CARRIES TWO DIMENSIONS. The fill is utilisation. The vertical
+// MARKER is the clock: it sits at the fraction of the window already elapsed,
+// and its colour warms as the reset approaches — cool early, warning past
+// 60%, hot past 85% — so "how close is the reset" is read off the same bar as
+// "how much is spent", with no sentence beside it. The exact countdown rides
+// in the row's accessible label.
 
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Flame, Gauge, Snowflake } from 'lucide-react';
@@ -11,7 +18,7 @@ import {
   formatCountdown, meterTone, pace, windowProgress, type MeterTone, type Pace,
 } from './usageModel';
 
-/** The countdown ticks locally between polls; a minute is its resolution. */
+/** The marker moves with the clock; 30s is the finest it needs. */
 const TICK_MS = 30_000;
 
 export const FILL: Record<MeterTone, string> = {
@@ -30,6 +37,24 @@ const PACE_TONE: Record<Pace, string> = {
   fast: 'text-status-warning',
   steady: 'text-foreground opacity-50',
   slow: 'text-status-info',
+};
+
+/** Marker warmth thresholds on the elapsed fraction. */
+export const MARKER_WARM_AT = 0.6;
+export const MARKER_HOT_AT = 0.85;
+
+export type MarkerWarmth = 'cool' | 'warm' | 'hot';
+
+export function markerWarmth(elapsedFrac: number): MarkerWarmth {
+  if (elapsedFrac >= MARKER_HOT_AT) return 'hot';
+  if (elapsedFrac >= MARKER_WARM_AT) return 'warm';
+  return 'cool';
+}
+
+const MARKER_FILL: Record<MarkerWarmth, string> = {
+  cool: 'bg-status-info',
+  warm: 'bg-status-warning',
+  hot: 'bg-status-error',
 };
 
 export function windowLabel(t: Translations, key: string): string {
@@ -80,6 +105,17 @@ export function countdownText(
   return tx(t.monitor.usage_resets_in, { time: formatCountdown(remainingMs, units) });
 }
 
+/** The full accessible sentence for one window: label, percent, reset, pace. */
+export function windowAria(
+  t: Translations,
+  tx: (s: string, v: Record<string, string | number>) => string,
+  w: ClaudeUsageWindow,
+  now: number,
+): string {
+  const p = pace(w, now);
+  return `${windowLabel(t, w.key)} ${Math.round(w.utilizationPct)}% · ${countdownText(t, tx, w, now)}${p ? ` · ${paceLabel(t, p)}` : ''}`;
+}
+
 /** Ticks only while the window is visible, re-stamped on re-show. */
 export function useUsageClock(): number {
   const visible = useDocumentVisibility();
@@ -93,25 +129,41 @@ export function useUsageClock(): number {
   return now;
 }
 
-/** The bar + percent, optionally with the warning/error icon and label. */
+/**
+ * The bar (utilisation fill + reset marker) and the percent, optionally with
+ * the warning/error icon and label. Renders two or three grid cells.
+ */
 export function MeterBar({
-  w, t, widthClass = 'w-full', showTone = true,
+  w, now, t, showTone = true,
 }: {
   w: ClaudeUsageWindow;
+  now: number;
   t: Translations;
-  widthClass?: string;
   showTone?: boolean;
 }) {
   const tone = meterTone(w.utilizationPct);
   const pct = Math.round(w.utilizationPct);
   const toneLabel = tone === 'error' ? t.monitor.usage_tone_error : t.monitor.usage_tone_warning;
+  const { elapsedFrac } = windowProgress(w, now);
+  const warmth = elapsedFrac === null ? null : markerWarmth(elapsedFrac);
   return (
     <>
-      <span aria-hidden className={`relative h-1.5 ${widthClass} overflow-hidden rounded-full bg-foreground/10`}>
+      <span
+        aria-hidden
+        className="relative h-2 w-full overflow-hidden rounded-full bg-foreground/10"
+        data-testid="fleet-usage-meter"
+        data-marker={warmth ?? 'none'}
+      >
         <span
           className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${FILL[tone]}`}
           style={{ width: `${pct}%` }}
         />
+        {elapsedFrac !== null && warmth && (
+          <span
+            className={`absolute inset-y-0 w-0.5 ring-1 ring-background transition-[left] duration-500 ${MARKER_FILL[warmth]}`}
+            style={{ left: `calc(${(elapsedFrac * 100).toFixed(2)}% - 1px)` }}
+          />
+        )}
       </span>
       <span className="typo-caption tabular-nums text-foreground text-right">{pct}%</span>
       {showTone && tone !== 'ok' && (

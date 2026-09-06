@@ -6731,7 +6731,11 @@
     "usage_auto_rotate_off": "自动轮换已关闭",
     "usage_auto_rotate_on": "自动轮换已开启",
     "usage_auto_rotate_threshold_aria": "自动轮换阈值，5 小时窗口的百分比",
-    "usage_last_rotation": "已自动从 {from} 切换到 {to}"
+    "usage_last_rotation": "已自动从 {from} 切换到 {to}",
+    "usage_not_stored": "未保存",
+    "usage_refresh": "立即刷新用量",
+    "usage_refresh_wait": "用量缓存五分钟；{time}后可再次刷新",
+    "usage_accounts_remove_hint": "忘记此计划——无法读取其用量"
   },
   "onboarding": {
     "adopt_button": "设置智能体",

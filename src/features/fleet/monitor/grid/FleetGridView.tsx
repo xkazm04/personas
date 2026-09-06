@@ -81,6 +81,7 @@
 // same channel cache the rail's Messages tab holds open — no extra IPC).
 
 import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { LayoutGrid, Users } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -98,12 +99,11 @@ import {
 import { normalizeName, type RailProjectFilter } from './rail/railFilter';
 import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
-import { ActivityRail } from './ActivityRail';
 import { useSystemStore } from '@/stores/systemStore';
 import { useFleetSessions } from './useFleetSessions';
 import { ColumnBody } from './ColumnBody';
 import { UngroupedTray } from './UngroupedTray';
-import { UsageStrip } from './UsageStrip';
+import { UsageStripFallback } from './UsageStripShell';
 import { BoardGhost, ColumnGhost } from './BoardGhost';
 import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
@@ -118,6 +118,13 @@ import {
 // restart, a flaky disk) must not cache its rejection forever.
 const FleetTerminalModal = lazyRetry(() => import('./FleetTerminalModal'));
 const SessionRecapModal = lazyRetry(() => import('./SessionRecapModal'));
+// The rail (its three feeds reach the unified triage queue, the dispatch
+// backlog and the channel modals — ~230 modules beyond the app shell) and the
+// usage strip (confirm dialog, toggle, async buttons) are chunks of their own:
+// the board's opening commit holds the tiles and the ghost frames only, and
+// each of these lands into a fallback that already occupies its footprint.
+const ActivityRail = lazyRetry(() => import('./ActivityRail'));
+const UsageStrip = lazyRetry(() => import('./UsageStrip'));
 
 /** Stage at which the tiles mount; the rail follows one frame later. */
 const TILES_STAGE = 1;
@@ -215,6 +222,7 @@ function FleetGridViewImpl({
 }: Props) {
   const { t, tx } = useTranslation();
   const stage = useStagedMount();
+  const reducedMotion = useReducedMotion() ?? false;
 
   // Channel bubbles for the personas on this board. The roster set is keyed
   // by the cards' ids so a roster change re-diffs, and nothing else does.
@@ -389,7 +397,9 @@ function FleetGridViewImpl({
         {!(isLoading && cards.length === 0) && <StateTally totals={totals} labels={stateLabels} />}
       </div>
 
-      <UsageStrip />
+      <Suspense fallback={<UsageStripFallback />}>
+        <UsageStrip />
+      </Suspense>
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -466,7 +476,17 @@ function FleetGridViewImpl({
                           the session's first paint the rows wait one frame
                           behind their own geometry-matched ghost. */}
                       {stage >= TILES_STAGE ? (
-                        <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
+                        // The tiles arrive with a short rise — data landing
+                        // reads as data landing, not as a ghost being swapped
+                        // for a board. Once per mount; reduced motion opts out.
+                        <motion.div
+                          className="flex min-h-0 flex-1 flex-col"
+                          initial={reducedMotion ? false : { opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.28, ease: 'easeOut' }}
+                        >
+                          <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
+                        </motion.div>
                       ) : (
                         <ColumnGhost rows={g.rows.length} />
                       )}
@@ -495,12 +515,14 @@ function FleetGridViewImpl({
         </div>
 
         {stage >= FINAL_STAGE ? (
-          <ActivityRail
-            feedTeams={feedTeams ?? []}
-            onOpenSpeaker={onOpenSpeaker}
-            filter={scope}
-            onClearFilter={clearScope}
-          />
+          <Suspense fallback={<RailPlaceholder />}>
+            <ActivityRail
+              feedTeams={feedTeams ?? []}
+              onOpenSpeaker={onOpenSpeaker}
+              filter={scope}
+              onClearFilter={clearScope}
+            />
+          </Suspense>
         ) : (
           <RailPlaceholder />
         )}

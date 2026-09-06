@@ -642,5 +642,9 @@
   "usage_auto_rotate_off": "自動切り替えはオフです",
   "usage_auto_rotate_on": "自動切り替えはオンです",
   "usage_auto_rotate_threshold_aria": "自動切り替えのしきい値（5 時間ウィンドウの割合）",
-  "usage_last_rotation": "{from} から {to} へ自動で切り替えました"
+  "usage_last_rotation": "{from} から {to} へ自動で切り替えました",
+  "usage_not_stored": "未保存",
+  "usage_refresh": "使用量を今すぐ更新",
+  "usage_refresh_wait": "使用量は5分間キャッシュされます。{time}後に再度更新できます",
+  "usage_accounts_remove_hint": "このプランを削除 — 使用量を読み取れませんでした"
 }

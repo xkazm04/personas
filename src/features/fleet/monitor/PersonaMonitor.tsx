@@ -11,10 +11,12 @@
 // A live-mode pop-up toggle sits at the right of the router. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
-import { memo, useState, useMemo, useEffect, useCallback } from 'react';
+import { memo, Suspense, useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, MessagesSquare, Bell, LayoutGrid, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
@@ -22,19 +24,43 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { useMonitorData } from './useMonitorData';
-import { MonitorDrawer } from './MonitorDrawer';
 import { useChannelWorkspace } from './channels';
-import { Stream } from './channels/Stream';
-import { ConversationBriefing } from './channels/ConversationBriefing';
-import { ChannelMap } from './channels/map/ChannelMap';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
 import { FleetGridView } from './grid/FleetGridView';
-import { QuickDispatchDock } from './grid/QuickDispatchDock';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
   type ProcessEntry, type DrawerSection,
 } from './monitorModel';
+
+// THE CHUNK BOUNDARIES SIT ONE LEVEL DEEPER THAN THE MONITOR.
+//
+// Measured 2026-09-06 by walking static imports from this file: 551 modules,
+// against the ~90 the app shell already holds. Almost all of the rest hangs
+// off five components that are not on screen when the Monitor opens onto
+// Activity — the drawer (366 modules, capabilities + reasoning trace), the
+// three channel surfaces (235–248 each), and the dispatch dock (117). Each
+// is its own chunk now, fetched the first time it is needed, behind a
+// fallback that holds its exact footprint: the dock's 36px bar, the
+// channel card's header ghost, nothing for a drawer that has not been
+// opened. The Activity board itself keeps only what it paints in frame one.
+const MonitorDrawer = lazyRetry(() => import('./MonitorDrawer').then((m) => ({ default: m.MonitorDrawer })));
+const Stream = lazyRetry(() => import('./channels/Stream'));
+const ConversationBriefing = lazyRetry(() =>
+  import('./channels/ConversationBriefing').then((m) => ({ default: m.ConversationBriefing })),
+);
+const ChannelMap = lazyRetry(() => import('./channels/map/ChannelMap'));
+const QuickDispatchDock = lazyRetry(() => import('./grid/QuickDispatchDock'));
+
+/** The dock's footprint while its chunk loads: the same 36px collapsed bar. */
+function DockPlaceholder() {
+  return <div aria-hidden className="h-9 flex-shrink-0 border-t border-border bg-foreground/[0.015]" />;
+}
+
+/** A channel surface's footprint while its chunk loads: header ghost, no body. */
+function SurfaceFallback() {
+  return <RouteChunkSkeleton showIcon showActions={false} showSubtitle={false} />;
+}
 
 interface PersonaMonitorProps {
   onClose: () => void;
@@ -489,18 +515,20 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   transition={{ type: 'spring', stiffness: 300, damping: 34 }}
                   className="absolute inset-x-0 top-0 z-20 max-h-full flex flex-col rounded-b-modal border-b border-x border-primary/15 bg-background shadow-elevation-4"
                 >
-                  <MonitorDrawer
-                    card={selectedCard}
-                    initialSection={selection.section}
-                    designContext={selectedPersona?.design_context ?? null}
-                    isProcessing={isProcessing}
-                    isReviewInFlight={isReviewInFlight}
-                    now={now}
-                    onReviewAction={handleDrawerReviewAction}
-                    onDispatchAction={handleDrawerDispatchAction}
-                    onMarkRead={handleDrawerMarkRead}
-                    onClose={closeDrawer}
-                  />
+                  <Suspense fallback={<SurfaceFallback />}>
+                    <MonitorDrawer
+                      card={selectedCard}
+                      initialSection={selection.section}
+                      designContext={selectedPersona?.design_context ?? null}
+                      isProcessing={isProcessing}
+                      isReviewInFlight={isReviewInFlight}
+                      now={now}
+                      onReviewAction={handleDrawerReviewAction}
+                      onDispatchAction={handleDrawerDispatchAction}
+                      onMarkRead={handleDrawerMarkRead}
+                      onClose={closeDrawer}
+                    />
+                  </Suspense>
                 </motion.div>
               </>
             )}
@@ -511,18 +539,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           <div className="h-full p-2 hud-atmosphere">
             {!hasChannels ? (
               channelEmpty
-            ) : view === 'timeline' ? (
-              <Stream
-                teams={workspaceTeams}
-                onToggle={toggle}
-                allOn={allOn}
-                onSetAll={setAll}
-                initialCallsign={drillCallsign}
-              />
-            ) : view === 'map' ? (
-              <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
             ) : (
-              <ConversationBriefing teams={workspaceTeams} personas={personas} bridges={bridges} />
+              <Suspense fallback={<SurfaceFallback />}>
+                {view === 'timeline' ? (
+                  <Stream
+                    teams={workspaceTeams}
+                    onToggle={toggle}
+                    allOn={allOn}
+                    onSetAll={setAll}
+                    initialCallsign={drillCallsign}
+                  />
+                ) : view === 'map' ? (
+                  <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
+                ) : (
+                  <ConversationBriefing teams={workspaceTeams} personas={personas} bridges={bridges} />
+                )}
+              </Suspense>
             )}
           </div>
         </div>
@@ -535,7 +567,9 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           on the one thing no Monitor view could do: start work. It sits at
           Monitor level rather than inside the Activity card so it is reachable
           from the Timeline, Conversations and the Map too. */}
-      <QuickDispatchDock />
+      <Suspense fallback={<DockPlaceholder />}>
+        <QuickDispatchDock />
+      </Suspense>
     </motion.div>
   );
 }

@@ -6731,7 +6731,11 @@
     "usage_auto_rotate_off": "التدوير التلقائي متوقف",
     "usage_auto_rotate_on": "التدوير التلقائي مفعّل",
     "usage_auto_rotate_threshold_aria": "حد التدوير التلقائي، نسبة من نافذة الخمس ساعات",
-    "usage_last_rotation": "تم التبديل تلقائيًا من {from} إلى {to}"
+    "usage_last_rotation": "تم التبديل تلقائيًا من {from} إلى {to}",
+    "usage_not_stored": "غير محفوظ",
+    "usage_refresh": "تحديث الاستخدام الآن",
+    "usage_refresh_wait": "يُخزَّن الاستخدام مؤقتًا لخمس دقائق؛ يمكن التحديث مجددًا خلال {time}",
+    "usage_accounts_remove_hint": "نسيان هذه الخطة — تعذّرت قراءة أي استخدام لها"
   },
   "onboarding": {
     "adopt_button": "إعداد الوكيل",

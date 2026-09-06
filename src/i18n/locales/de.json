@@ -6731,7 +6731,11 @@
     "usage_auto_rotate_off": "Auto-Wechsel ist aus",
     "usage_auto_rotate_on": "Auto-Wechsel ist an",
     "usage_auto_rotate_threshold_aria": "Schwelle für Auto-Wechsel, Prozent des 5-Stunden-Fensters",
-    "usage_last_rotation": "Automatisch von {from} zu {to} gewechselt"
+    "usage_last_rotation": "Automatisch von {from} zu {to} gewechselt",
+    "usage_not_stored": "nicht gespeichert",
+    "usage_refresh": "Nutzung jetzt aktualisieren",
+    "usage_refresh_wait": "Die Nutzung wird fünf Minuten zwischengespeichert; erneut aktualisieren in {time}",
+    "usage_accounts_remove_hint": "Diesen Plan vergessen — für ihn konnte keine Nutzung gelesen werden"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",

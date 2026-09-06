@@ -643,7 +643,11 @@
     "usage_auto_rotate_on": "Auto-rotate is on",
     "usage_auto_rotate_off": "Auto-rotate is off",
     "usage_auto_rotate_failed": "Could not save auto-rotate: {error}",
-    "usage_last_rotation": "Auto-rotated from {from} to {to}"
+    "usage_last_rotation": "Auto-rotated from {from} to {to}",
+    "usage_not_stored": "not stored",
+    "usage_refresh": "Refresh usage now",
+    "usage_refresh_wait": "Usage is cached for five minutes; refresh again in {time}",
+    "usage_accounts_remove_hint": "Forget this plan — no usage could be read for it"
   },
   "common": {
     "unknown_error": "Unknown error",

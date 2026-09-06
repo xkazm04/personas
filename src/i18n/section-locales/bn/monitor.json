@@ -642,5 +642,9 @@
   "usage_auto_rotate_off": "স্বয়ংক্রিয় পরিবর্তন বন্ধ",
   "usage_auto_rotate_on": "স্বয়ংক্রিয় পরিবর্তন চালু",
   "usage_auto_rotate_threshold_aria": "স্বয়ংক্রিয় পরিবর্তনের সীমা, ৫ ঘণ্টার উইন্ডোর শতাংশ",
-  "usage_last_rotation": "{from} থেকে {to}-এ স্বয়ংক্রিয়ভাবে পরিবর্তিত"
+  "usage_last_rotation": "{from} থেকে {to}-এ স্বয়ংক্রিয়ভাবে পরিবর্তিত",
+  "usage_not_stored": "সংরক্ষিত নয়",
+  "usage_refresh": "এখনই ব্যবহার রিফ্রেশ করুন",
+  "usage_refresh_wait": "ব্যবহার পাঁচ মিনিটের জন্য ক্যাশে থাকে; {time} পরে আবার রিফ্রেশ করুন",
+  "usage_accounts_remove_hint": "এই প্ল্যান ভুলে যান — এর জন্য কোনো ব্যবহার পড়া যায়নি"
 }

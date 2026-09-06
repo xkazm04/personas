@@ -6731,7 +6731,11 @@
     "usage_auto_rotate_off": "Rotación automática desactivada",
     "usage_auto_rotate_on": "Rotación automática activada",
     "usage_auto_rotate_threshold_aria": "Umbral de rotación automática, porcentaje de la ventana de 5 horas",
-    "usage_last_rotation": "Rotación automática de {from} a {to}"
+    "usage_last_rotation": "Rotación automática de {from} a {to}",
+    "usage_not_stored": "no guardado",
+    "usage_refresh": "Actualizar el uso ahora",
+    "usage_refresh_wait": "El uso se guarda en caché durante cinco minutos; vuelve a actualizar en {time}",
+    "usage_accounts_remove_hint": "Olvidar este plan: no se pudo leer ningún uso para él"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

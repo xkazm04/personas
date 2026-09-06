@@ -95,17 +95,25 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
-**The Claude usage strip (2026-09-05).** A thin band between the board's
-header and its project columns shows how much of the signed-in Claude
-subscription this machine has burned: one aligned row per rolling rate-limit
-window, stacked — the **5-hour** session window and the **7-day** window,
-plus the per-family weekly windows (Opus, Sonnet) on accounts that report
-them — each with its utilisation meter, percent, a **reset countdown**, and a
-**pace** glyph (a flame when utilisation runs ahead of the clock, a snowflake
-when it runs behind, a gauge when they agree; the name is in the row's
-accessible label). Nothing on the rows is hover-only. Meters turn warning at
-75% and error at 90%, and every non-ok state carries an icon and a label,
-never colour alone. The source is Anthropic's OAuth usage endpoint — the same one
+**The Claude usage strip (2026-09-05, reshaped 2026-09-06).** A band between
+the board's header and its project columns, in three rows. The **title row**
+names the account the CLI is signed in as, under a subtle border; when that
+login is not among the stored plans it says *not stored* and offers to store
+it right there. The **controls row** holds a refresh button that is only live
+once the five-minute cache has elapsed (the "as of" stamp beside it), the
+auto-rotate toggle and threshold, and the last automatic rotation. The
+**body** is one aligned row per rolling rate-limit window — the **5-hour**
+session window and the **7-day** window, plus the per-family weekly windows
+(Opus, Sonnet) on accounts that report them. Each meter carries two
+dimensions: the fill is utilisation (brand tone, warning at 75%, error at
+90%, each non-ok state with an icon and label), and a vertical **marker** is
+the clock — it sits at the fraction of the window already elapsed and warms
+as the reset approaches (cool, then warning past 60%, then error past 85%).
+A **pace** glyph closes the row (flame ahead of the clock, snowflake behind,
+gauge on pace). Nothing on the rows is hover-only; the exact countdown rides
+in each row's accessible label. Usage is cached for five minutes in the
+module, so re-opening the Monitor paints the last read without re-fetching
+and without resetting the stamp. The source is Anthropic's OAuth usage endpoint — the same one
 the community usage monitors opt into — read with the Claude Code login
 already on the machine (`~/.claude/.credentials.json`, or
 `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
@@ -118,9 +126,12 @@ mode for operators who juggle more than one Claude subscription. *Store this
 login* captures the CLI's current login (the whole credentials file, encrypted
 with the app's master key, in the `claude_accounts` table) together with the
 account identity from Anthropic's profile endpoint. From then on the strip
-shows one row per stored plan — the active one marked, each with its 5-hour
-and 7-day meters, the 5-hour reset countdown and a pace glyph — and every
-non-active row has a **Switch** button behind a confirm. A switch refreshes
+shows one row per stored plan, divided from the next, the active one on a
+highlighted ground — each with its 5-hour and 7-day meters (fill plus reset
+marker) and a pace glyph — and every non-active row has a **Switch** button
+behind a confirm. A plan is only offered for forgetting when no usage could
+be read for it (a dead login, a rejected token); a plan that reads fine is
+not clutter. A switch refreshes
 the stored token if it is about to expire, takes Claude Code's own credential
 lock directories (`<config>/.oauth_refresh.lock`, `~/.claude.lock`), replaces
 `~/.claude/.credentials.json` atomically, and patches `oauthAccount` in
@@ -158,6 +169,17 @@ settled empty state. Once the board has painted in a session, every later
 open is warm and renders complete in one commit. The terminal and recap
 modals are chunk-loaded on first use, so xterm is no longer part of opening
 the board.
+
+**The chunk boundaries sit deeper (2026-09-06).** Walking the Monitor's
+static imports gave 551 modules against the ~90 the app shell already holds,
+and almost all of the excess hung off components that are not on screen when
+the Monitor opens onto Activity: the drawer, the three channel surfaces, the
+dispatch dock, the Activity rail with its three feeds, and the usage strip's
+dialogs and controls. Each is now its own chunk behind a fallback that holds
+its exact footprint (the dock's bar, a header ghost for a channel card, the
+rail's width, the strip's frame with ghost meters). The eager Monitor graph is
+227 modules, 90 of them the shell's. The tiles rise into place with a short
+motion when they mount, so data landing reads as data landing.
 
 **Messages arrive on the event, not the poll (2026-09-02).** A persona's new
 report lights its tile the moment the row lands: the board listens on the same

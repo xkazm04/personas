@@ -6731,7 +6731,11 @@
     "usage_auto_rotate_off": "स्वतः बदलाव बंद है",
     "usage_auto_rotate_on": "स्वतः बदलाव चालू है",
     "usage_auto_rotate_threshold_aria": "स्वतः बदलाव की सीमा, 5-घंटे की विंडो का प्रतिशत",
-    "usage_last_rotation": "{from} से {to} पर स्वतः बदला गया"
+    "usage_last_rotation": "{from} से {to} पर स्वतः बदला गया",
+    "usage_not_stored": "सहेजा नहीं गया",
+    "usage_refresh": "उपयोग अभी ताज़ा करें",
+    "usage_refresh_wait": "उपयोग पाँच मिनट के लिए कैश रहता है; {time} में फिर से ताज़ा करें",
+    "usage_accounts_remove_hint": "यह प्लान भूल जाएँ — इसके लिए कोई उपयोग नहीं पढ़ा जा सका"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",

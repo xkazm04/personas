@@ -650,6 +650,10 @@ export type Translations = {
     usage_auto_rotate_off: string;
     usage_auto_rotate_failed: string;
     usage_last_rotation: string;
+    usage_not_stored: string;
+    usage_refresh: string;
+    usage_refresh_wait: string;
+    usage_accounts_remove_hint: string;
   };
   common: {
     unknown_error: string;

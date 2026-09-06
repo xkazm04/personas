@@ -1,27 +1,28 @@
 // AccountRows — the multi-plan mode of the usage strip: one row per stored
-// Claude login, the active one marked, each with its 5-hour and 7-day meters,
-// the 5-hour reset countdown, a pace glyph, and the one act a row has —
+// Claude login, divided from the next, the active one on a highlighted
+// ground, each with its 5-hour and 7-day meters (fill = spent, marker = the
+// clock, warming towards the reset), a pace glyph, and the one act a row has —
 // become the live login. A confirm sits in front of it because a switch
-// changes which plan the CLI's next message bills to, and the operator
-// offered to confirm rather than have it silent.
+// changes which plan the CLI's next message bills to.
 //
-// A quarantined row (dead refresh token) is dimmed and says "needs login";
-// it cannot be switched to until the operator runs `claude login` for it and
-// stores it again.
+// FORGETTING A PLAN is offered only where it is the honest act: a row whose
+// usage could not be read (a dead refresh token, an account the endpoint
+// rejects). A plan that reads fine is not clutter, it is a plan; the space it
+// takes is the point of the strip.
 
 import { useCallback, useState } from 'react';
-import { Check, ShieldOff, X } from 'lucide-react';
+import { Check, ShieldOff, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import { orderWindows } from './usageModel';
-import { countdownText, MeterBar, PaceGlyph, reasonLabel, windowLabel } from './usageBits';
+import { MeterBar, PaceGlyph, reasonLabel, windowAria, windowLabel } from './usageBits';
 
-/** slot · identity · 5h meter+% · 7d meter+% · reset · pace · action · forget */
+/** slot · identity · 5h label · meter · % · 7d label · meter · % · pace · action · forget */
 const ROW_GRID =
-  'grid grid-cols-[1.25rem_minmax(8rem,14rem)_1.5rem_5rem_2.5rem_1.5rem_5rem_2.5rem_minmax(0,1fr)_1rem_auto_1rem] items-center gap-x-2';
+  'grid grid-cols-[1.25rem_minmax(8rem,14rem)_1.5rem_minmax(4rem,1fr)_2.5rem_1.5rem_minmax(4rem,1fr)_2.5rem_1rem_auto_1rem] items-center gap-x-2';
 
 interface Props {
   accounts: ClaudeAccountView[];
@@ -49,23 +50,30 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
   }, [pending, onSwitch, onRemove]);
 
   return (
-    <div className="flex min-w-0 flex-col gap-1" data-testid="fleet-usage-accounts">
+    <div className="flex min-w-0 flex-col divide-y divide-border/60" data-testid="fleet-usage-accounts">
       {accounts.map((a) => {
         const windows = orderWindows(a.usage);
         const five = windows.find((w) => w.key === 'five_hour');
         const seven = windows.find((w) => w.key === 'seven_day');
         const quarantined = a.quarantineReason !== null;
+        const unreadable = quarantined || a.usageReason !== null;
         const name = a.displayName ? `${a.email} · ${a.displayName}` : a.email;
+        const aria = [
+          name,
+          five ? windowAria(t, tx, five, now) : null,
+          seven ? windowAria(t, tx, seven, now) : null,
+          quarantined ? t.monitor.usage_accounts_quarantined : a.usageReason ? reasonLabel(t, a.usageReason) : null,
+        ].filter(Boolean).join(' · ');
         return (
           <div
             key={a.id}
-            className={`${ROW_GRID} h-5 ${quarantined ? 'opacity-50' : ''}`}
+            className={`${ROW_GRID} -mx-1.5 h-6 px-1.5 ${a.isActive ? 'rounded-interactive bg-primary/10' : ''} ${quarantined ? 'opacity-60' : ''}`}
             data-testid="fleet-usage-account"
             data-account={a.id}
             data-active={a.isActive}
             data-quarantined={quarantined}
+            aria-label={aria}
           >
-            {/* The slot, and the active mark in place of it on the live row. */}
             <span className="typo-caption tabular-nums text-foreground opacity-60">
               {a.isActive ? (
                 <span className="inline-flex items-center text-primary" aria-label={t.monitor.usage_accounts_active}>
@@ -79,41 +87,36 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
               {name}
             </span>
 
-            {five && !quarantined ? (
+            {five && !unreadable ? (
               <>
                 <span className="typo-caption text-foreground opacity-60">{windowLabel(t, 'five_hour')}</span>
-                <MeterBar w={five} t={t} showTone={false} />
+                <MeterBar w={five} now={now} t={t} showTone={false} />
+              </>
+            ) : unreadable ? (
+              <>
+                <span />
+                <span className="col-span-5 truncate typo-caption">
+                  <Tooltip content={quarantined ? t.monitor.usage_accounts_quarantined_hint : reasonLabel(t, a.usageReason)}>
+                    <span className="inline-flex items-center gap-1 text-status-warning">
+                      <ShieldOff className="h-3 w-3" aria-hidden />
+                      {quarantined ? t.monitor.usage_accounts_quarantined : t.monitor.usage_unavailable}
+                    </span>
+                  </Tooltip>
+                </span>
               </>
             ) : (
               <><span /><span /><span /></>
             )}
-            {seven && !quarantined ? (
+            {!unreadable && (seven ? (
               <>
                 <span className="typo-caption text-foreground opacity-60">{windowLabel(t, 'seven_day')}</span>
-                <MeterBar w={seven} t={t} showTone={false} />
+                <MeterBar w={seven} now={now} t={t} showTone={false} />
               </>
             ) : (
               <><span /><span /><span /></>
-            )}
+            ))}
 
-            <span className="truncate typo-caption text-foreground opacity-60">
-              {quarantined ? (
-                <Tooltip content={t.monitor.usage_accounts_quarantined_hint}>
-                  <span className="inline-flex items-center gap-1 text-status-warning opacity-100">
-                    <ShieldOff className="h-3 w-3" aria-hidden />
-                    {t.monitor.usage_accounts_quarantined}
-                  </span>
-                </Tooltip>
-              ) : a.usageReason ? (
-                <Tooltip content={reasonLabel(t, a.usageReason)}>
-                  <span>{t.monitor.usage_unavailable}</span>
-                </Tooltip>
-              ) : five ? (
-                countdownText(t, tx, five, now)
-              ) : null}
-            </span>
-
-            {five && !quarantined ? <PaceGlyph w={five} now={now} t={t} /> : <span />}
+            {five && !unreadable ? <PaceGlyph w={five} now={now} t={t} /> : <span />}
 
             {a.isActive ? (
               <span className="typo-caption text-primary">{t.monitor.usage_accounts_active}</span>
@@ -132,15 +135,21 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
               </AsyncButton>
             )}
 
-            <button
-              type="button"
-              onClick={() => setPending({ kind: 'remove', account: a })}
-              aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: a.email })}
-              className="focus-ring inline-flex items-center justify-center rounded-interactive text-foreground opacity-40 hover:opacity-100"
-              data-testid="fleet-usage-remove"
-            >
-              <X className="h-3 w-3" aria-hidden />
-            </button>
+            {unreadable && !a.isActive ? (
+              <Tooltip content={t.monitor.usage_accounts_remove_hint}>
+                <button
+                  type="button"
+                  onClick={() => setPending({ kind: 'remove', account: a })}
+                  aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: a.email })}
+                  className="focus-ring inline-flex items-center justify-center rounded-interactive text-foreground opacity-50 hover:text-status-error hover:opacity-100"
+                  data-testid="fleet-usage-remove"
+                >
+                  <Trash2 className="h-3 w-3" aria-hidden />
+                </button>
+              </Tooltip>
+            ) : (
+              <span />
+            )}
           </div>
         );
       })}
