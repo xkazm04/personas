@@ -45,7 +45,12 @@ export function CharterRecipeBlocks({ charter }: CharterRecipeBlocksProps) {
       action={
         v3.recipeRef ? (
           <StatusBadge size="sm" accent="slate" pill className="font-mono">
-            <span data-testid="resp-recipe-ref">{`${v3.recipeRef.slug}@${v3.recipeRef.version}`}</span>
+            {/* A draft recipe carries no version, and the slug alone is its
+                whole identity - so the `@` appears only when there is
+                something after it to name. */}
+            <span data-testid="resp-recipe-ref">
+              {v3.recipeRef.version ? `${v3.recipeRef.slug}@${v3.recipeRef.version}` : v3.recipeRef.slug}
+            </span>
           </StatusBadge>
         ) : undefined
       }

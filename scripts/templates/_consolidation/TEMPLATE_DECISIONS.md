@@ -223,3 +223,12 @@ Columns: **UC** = use cases it declares, **Ref** = how many of those are backed 
 | Knowledge Base Review Cycle Manager | 3 | 3 |  |  |
 | Support Intelligence | 3 | 3 |  |  |
 | Support Escalation Engine | 2 | 2 |  |  |
+
+## 2026-09-07 — templates and presets are parked
+
+Operator decision: the recipe corpus is the starting line (every recipe unversioned, `status: draft`)
+and its usefulness is proven by long-running e2e cycles of an autonomous App Master, not by review.
+Templates (`scripts/templates/*.json`) and team presets (`_team_presets/`) stay exactly as they are and
+are IGNORED for now: no further consolidation, no re-authoring, no deletion, until the cycles have
+settled the responsibility and adoption design. The App Master is adopted headlessly from recipes,
+not from a template. Record: `docs/architecture/app-master-e2e.md`.

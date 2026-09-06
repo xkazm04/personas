@@ -52,8 +52,12 @@ export type ActivityKind = 'observe' | 'decide' | 'act' | 'deliver';
 /** `event | time | self_paced`. A recommendation; the adopter assigns the real trigger. */
 export type RecommendedTriggerKind = 'event' | 'time' | 'self_paced';
 
-/** `seed | maturing | proven`. */
-export type RecipeStatus = 'seed' | 'maturing' | 'proven';
+/**
+ * `draft | seed | maturing | proven`. `draft` is the starting line - unpromoted
+ * knowledge carrying no version, identified by its slug alone. A recipe receives
+ * its first version at the moment the operator promotes it out of `draft`.
+ */
+export type RecipeStatus = 'draft' | 'seed' | 'maturing' | 'proven';
 
 export const ACTIVITY_KINDS: readonly ActivityKind[] = ['observe', 'decide', 'act', 'deliver'];
 
@@ -109,9 +113,14 @@ export function readV3Fields(spec: unknown): CharterV3Fields {
 
   const out: CharterV3Fields = {};
 
+  // The slug is the whole pointer: a recipe on the starting line is `draft` and
+  // carries no version, so a ref with a slug and nothing else is well-formed and
+  // the common case. A version, when present, is kept; a malformed one is
+  // dropped rather than rendered, so no caller ever prints `slug@undefined`.
   const ref = s.recipeRef;
-  if (isRecord(ref) && nonEmptyString(ref.slug) && nonEmptyString(ref.version)) {
-    out.recipeRef = { slug: ref.slug.trim(), version: ref.version.trim() };
+  if (isRecord(ref) && nonEmptyString(ref.slug)) {
+    out.recipeRef = { slug: ref.slug.trim() };
+    if (nonEmptyString(ref.version)) out.recipeRef.version = ref.version.trim();
   }
 
   if (Array.isArray(s.activities)) {

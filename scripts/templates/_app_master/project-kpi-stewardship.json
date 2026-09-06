@@ -1,0 +1,143 @@
+{
+  "id": "c1baba85-17c6-4fb3-8852-2712bd214b26",
+  "slug": "project-kpi-stewardship",
+  "title": "Project KPI and coverage stewardship",
+  "status": "draft",
+  "path": "software_engineering/project-stewardship",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A project's context map, use cases and KPIs decay quietly: contexts nobody has scanned since the code moved, groups carrying no KPI at all, KPIs with a target and no measurement behind it, and a backlog that is either empty or full of items nobody has looked at in months. None of it announces itself, because each number lives on a different screen and no single reading puts them beside each other.",
+    "input": "The project's context map with the age of each scan, its use cases including the proposed ones, its KPIs with whatever measurements exist, and the current state of its backlog.",
+    "coreAction": "Keep the project's measurement loop honest and moving: read the coverage, decide which gap this cycle is worth closing, populate the backlog with concrete items that carry their evidence, get them executed through the delivery loop, and back-measure so every claim that something improved is a number that moved rather than a description of work done.",
+    "output": "A coverage reading anyone can re-derive, a backlog whose items each name the gap and the evidence behind them, measurements recorded against the KPIs those items claimed to move, and a short note saying what moved this cycle and what did not."
+  },
+  "activities": [
+    {
+      "id": "survey",
+      "label": "Read the coverage: scan age, groups without KPIs, KPIs never measured, backlog state",
+      "kind": "observe"
+    },
+    {
+      "id": "choose",
+      "label": "Decide which gap matters this cycle and which KPI proposals are worth a person's attention",
+      "kind": "decide"
+    },
+    {
+      "id": "populate",
+      "label": "Rescan or propose, and fill the backlog with items that carry their evidence",
+      "kind": "act"
+    },
+    {
+      "id": "handoff",
+      "label": "Hand the items to the delivery loop and follow each one to a result",
+      "kind": "act"
+    },
+    {
+      "id": "back-measure",
+      "label": "Record measurements against the KPIs those items claimed to move",
+      "kind": "observe"
+    },
+    {
+      "id": "report",
+      "label": "Write the stewardship note: coverage now against last cycle, what moved, what did not",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "coverage-is-a-number-not-an-impression",
+      "statement": "The project's coverage is a set of numbers anyone could check, not an impression of how things are going.",
+      "successCriteria": [
+        "Each cycle records the age of the newest scan, the groups with no KPI, the contexts with zero active KPI, and the KPIs never measured",
+        "A zero is recorded as a zero rather than left blank, so the next cycle can tell a measured nothing from an unvisited context",
+        "The reading is re-derivable from the project's own records without trusting the note that reported it"
+      ]
+    },
+    {
+      "id": "gaps-become-items-or-recorded-declines",
+      "statement": "Every gap the numbers name either becomes a backlog item or is written down as declined.",
+      "successCriteria": [
+        "Each item names the gap it closes and the evidence that the gap is real",
+        "A gap left alone this cycle carries the reason, so the next cycle does not re-derive the same decision",
+        "Items are scoped small enough that the delivery loop can take one on its own"
+      ]
+    },
+    {
+      "id": "no-kpi-carries-an-unmeasured-target",
+      "statement": "No KPI stands with a target behind which nobody has ever put a measurement.",
+      "successCriteria": [
+        "Every active KPI either has a measurement this cycle or is named as unmeasured with the reason",
+        "A KPI nothing can measure is retired or rebound rather than left standing as a target",
+        "Simulated values stay tagged as simulated and are never reported as observed"
+      ]
+    },
+    {
+      "id": "improvement-claims-rest-on-a-later-measurement",
+      "statement": "Every claim that something improved rests on a measurement taken after the work landed.",
+      "successCriteria": [
+        "A completed item's claimed KPI is measured again after the change and the result is recorded against it",
+        "A claim with no moved number is reported as unproven rather than as a win",
+        "The note compares this cycle's coverage with the last one rather than describing the work done"
+      ]
+    }
+  ],
+  "guidance": "Measure before claiming anything moved. Coverage is the first read, usually a wall of zeros: most contexts deserve no KPI, and recording that zero is the work, not a failure to find one. A KPI with a target and no measurement is a wish. Keep technical metrics few and skip anything a gate already enforces: a number the build already blocks on teaches nobody. Proposals go to a person, who owns which KPIs this project carries; measurements do not, and waiting to record one is how a loop stalls.",
+  "connectorTypes": [
+    "source_control"
+  ],
+  "connectorRoles": [
+    {
+      "role": "repository",
+      "type": "source_control",
+      "note": "the project whose map, use cases and KPIs are being stewarded"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "self_paced",
+    "rationale": "The loop derives its own cadence from what it reads: a map scanned last week needs nothing, a map six months old needs a rescan before any KPI on it means anything. A fixed schedule would run the same reading whether or not the project had moved, which is how a review turns into ceremony that everyone stops reading."
+  },
+  "personalizationNeeds": [
+    "Which project, and which parts of its map the adopter is willing to have rescanned, since a rescan rewrites rows other people are reading",
+    "What this project counts as a KPI worth a person's attention, because a metric that only proves the scan could run is the exact failure this work is calibrated against",
+    "How proposals reach a person here, since a KPI proposal is a decision somebody owns and a measurement is not",
+    "How stale a scan is allowed to get before a rescan is due, because the cadence of the whole loop is derived from that number rather than from a calendar",
+    "Which loop executes the items this one files, so the hand-off is to something real rather than to a backlog nobody reads"
+  ],
+  "dependencies": [
+    "a delivery loop already adopted somewhere on this project, since this work files items and follows them rather than implementing them itself"
+  ],
+  "examples": [
+    {
+      "title": "A registered local checkout as the source_control connector",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "builtin-codebase's get_contexts and get_context_detail give the map and the age of each scan, which is the whole first half of the coverage read, and create_idea files each gap as an item with its evidence attached rather than as a sentence in a report."
+    },
+    {
+      "title": "The quantities a Personas project already exposes",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The Factory surface already carries every number this reading needs: context count, group count, age of the newest scan, use cases with the proposed ones counted separately, active KPIs with proposals counted separately, contexts with zero active KPI, attainment as a percentage, and per-lane freshness reading full, incremental or skip against a fourteen day threshold. A live project pass over one large repository proposed eight technical KPIs and all eight were rejected, which is where the cap on technical metrics and the exclusion of anything a CI gate already enforces come from."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-07 App Master arc"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project whose measurement loop this cycle stewards."
+    },
+    {
+      "name": "focus_group",
+      "type": "text",
+      "required": false,
+      "description": "Optional context group to read first, by name. Empty = rank the whole map by scan age and unmeasured KPIs and take the worst."
+    }
+  ]
+}

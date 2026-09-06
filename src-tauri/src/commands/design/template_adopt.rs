@@ -2648,7 +2648,10 @@ pub(crate) fn charter_input_from_recipe(
     let spec = ResponsibilitySpec {
         input_schema: recipe.input_schema.clone(),
         source_recipe_id: Some(recipe.id.clone()),
-        source_recipe_version: Some(recipe.version.clone()).filter(|v| !v.is_empty()),
+        // Absent for a draft recipe, which is every recipe on the starting
+        // line — the charter records "adopted from a recipe with no version",
+        // not an empty one.
+        source_recipe_version: recipe.version.clone().filter(|v| !v.is_empty()),
         // The provenance pointer the trigger remap and
         // `retire_use_case_born_charters` key on — same contract as the v1/v2
         // shapes, stamped from whatever this payload calls itself.

@@ -11,8 +11,12 @@
  * `scripts/templates/_recipe_seeds.json` in place (override with `--seeds`):
  *   - the bundle's `version` goes 2 -> 3 (the compiled-in reader,
  *     `src-tauri/src/engine/recipe_seed.rs`, pins the accepted range and must
- *     move in the same change);
- *   - every `recipes[].prompt_template` becomes a v3 `RecipeSpec` payload;
+ *     move in the same change) — the BUNDLE version, which is not the recipe
+ *     `version` this file otherwise talks about;
+ *   - every `recipes[].prompt_template` becomes a v3 `RecipeSpec` payload,
+ *     landing on the starting line: `"status": "draft"` and NO `version` key
+ *     at all. A recipe earns its first version when the operator promotes it
+ *     out of draft, and until then its slug is its whole identity;
  *   - EVERY OTHER top-level seed field (`id`, `source_template_id`,
  *     `source_use_case_id`, `source_version`, `name`, `description`,
  *     `category`, `tags`, ...) is byte-identical, so the templates'
@@ -25,7 +29,7 @@
  *      REVIEWED object is used verbatim (normalized to the camelCase wire
  *      shape). This is the real content.
  *   2. everything else gets a MECHANICAL best-effort mapping and is stamped
- *      `"status": "seed"` + `"reviewNotes": "mechanical"`. A mechanical recipe
+ *      `"status": "draft"` + `"reviewNotes": "mechanical"`. A mechanical recipe
  *      is deliberately incomplete: it carries NO activities and NO
  *      personalization needs, because inventing them is fabrication and the
  *      contract would rather have an honest gap than a plausible one. It will
@@ -166,7 +170,9 @@ const CONNECTOR_INDEX = loadConnectorIndex(CONNECTORS_DIR);
 const categoriesOf = (name) => CATALOG.byName.get(name) ?? CATALOG.byName.get(String(name).toLowerCase()) ?? [];
 
 const ACTIVITY_KINDS = ['observe', 'decide', 'act', 'deliver'];
-const STATUSES = ['seed', 'maturing', 'proven'];
+const STATUSES = ['draft', 'seed', 'maturing', 'proven'];
+/** The one status that carries no version. Mirrors `RECIPE_DRAFT_STATUS` in Rust. */
+const DRAFT_STATUS = 'draft';
 const TRIGGER_KINDS = ['event', 'time', 'self_paced'];
 const MIN_ACTIVITIES = 3;
 const MAX_ACTIVITIES = 8;
@@ -179,14 +185,20 @@ const FORBIDDEN_TYPE = 'desktop';
  * Build the canonical v3 object with a FIXED key order. Every path into the
  * bundle goes through here, so mechanical and reviewed payloads serialize
  * identically-shaped and a re-run cannot reorder keys.
+ *
+ * `version` is the one field that may be ABSENT rather than empty: a draft
+ * recipe has none. It is spread in place rather than appended with the other
+ * optional keys, so a promoted recipe reads in the order the spec documents
+ * and an absent one simply omits the key without moving anything else.
  */
 function v3Object(fields) {
+  const version = typeof fields.version === 'string' && fields.version.trim() ? fields.version.trim() : undefined;
   const out = {
     id: fields.id,
     slug: fields.slug ?? '',
     title: fields.title ?? '',
-    version: fields.version ?? '0.1.0',
-    status: fields.status ?? 'seed',
+    ...(version ? { version } : {}),
+    status: fields.status ?? DRAFT_STATUS,
     path: fields.path ?? '',
     domain: fields.domain ?? '',
     description: {
@@ -375,6 +387,11 @@ function reviewedViolations(v3) {
   const errors = [];
   if (!v3.title) errors.push('title is empty');
   if (!STATUSES.includes(v3.status)) errors.push(`status '${v3.status}' is not one of: ${STATUSES.join(', ')}`);
+  // A version is what promotion out of `draft` confers, so the two fields are
+  // checked together. Same rule as `RecipeSpec::validation_errors` in Rust.
+  if (v3.status !== DRAFT_STATUS && !(typeof v3.version === 'string' && v3.version.trim())) {
+    errors.push(`status '${v3.status}' requires a version`);
+  }
   if (v3.activities.length < MIN_ACTIVITIES || v3.activities.length > MAX_ACTIVITIES) {
     errors.push(`activities has ${v3.activities.length} entries; the contract is ${MIN_ACTIVITIES} to ${MAX_ACTIVITIES}`);
   }
@@ -527,8 +544,9 @@ function mechanical(seed, v2) {
     id: str(v2.id),
     slug,
     title,
-    version: '0.1.0',
-    status: 'seed',
+    // The starting line: no version key, and `draft` until the operator
+    // promotes it. A mechanical recipe has certainly not earned one.
+    status: DRAFT_STATUS,
     path: `${domain}/${slug}`,
     domain,
     description: { need: '', input: '', coreAction, output: '' },

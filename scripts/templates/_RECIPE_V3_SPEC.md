@@ -28,8 +28,10 @@ Two layers, and the line between them is the whole design:
   "id": "<stable uuid, unchanged from v2>",
   "slug": "web-analytics-performance-review",      // kebab; registry folder name
   "title": "Web analytics performance review",     // AREA + ACTIVITY, unambiguous on its own
-  "version": "0.1.0",                              // semver; 0.x = seed knowledge, matures with use
-  "status": "seed",                                // seed | maturing | proven
+  // "version" is OPTIONAL and ABSENT while status is "draft". A draft recipe is
+  // identified by its slug alone. It earns its first version when the operator
+  // promotes it out of draft, and from then on: semver, 0.x = seed knowledge.
+  "status": "draft",                               // draft | seed | maturing | proven
   "path": "sales_marketing/web-analytics",         // <domain>/<topic> in the registry lane (<=10 dirs per level)
   "domain": "sales_marketing",                     // the closed 16-family vocabulary (unchanged)
 
@@ -66,6 +68,23 @@ Two layers, and the line between them is the whole design:
   "provenance": { "from_recipes": ["<v2 ids>"], "from_templates": ["<template ids>"], "source_template_id": "<v2 field>" }
 }
 ```
+
+### `status` and `version` - the starting line
+
+The `status` vocabulary is `draft | seed | maturing | proven`.
+
+`version` is **optional, and absent for as long as `status` is `draft`**. The whole corpus
+starts on that line: a draft recipe is knowledge nobody has yet promoted, and it is
+identified by its **slug alone**. A recipe leaves `draft` only when the operator promotes
+it, and that promotion is exactly when it receives its first version. So the two fields
+move together and the rule is one sentence:
+
+> a recipe with any status other than `draft` MUST carry a version; a `draft` recipe
+> carries none.
+
+`RecipeSpec::validate` enforces both halves. A charter minted from a draft recipe gets a
+`recipe_ref` with a slug and no version, and the UI renders the slug on its own rather
+than `slug@undefined`.
 
 ### The `activities` field is not the runbook we removed
 
@@ -135,7 +154,9 @@ must read unambiguously in a list of 200 recipes from every domain.
 4. Assign the trigger; default to `recommended_trigger.kind`.
 5. Compose the personalization questions from `personalization_needs` - generated for
    this adoption, never a stored form (operator directive a).
-6. Mint the charter with `recipe_ref: { slug, version }` so lessons can flow back.
+6. Mint the charter with `recipe_ref: { slug, version? }` so lessons can flow back. The
+   `version` is optional and is absent whenever the recipe is still a draft; the slug is
+   the pointer that always exists.
 
 ## Dual improvement
 

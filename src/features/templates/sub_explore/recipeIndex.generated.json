@@ -17,8 +17,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "04756772-500e-5f72-a401-dd57b66f7251",
@@ -39,8 +39,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
@@ -61,8 +61,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
@@ -81,8 +81,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
@@ -102,8 +102,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
@@ -124,8 +124,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
@@ -142,8 +142,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "136c0300-30bf-59af-a13d-4b55efb99489",
@@ -163,8 +163,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
@@ -181,8 +181,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
@@ -201,8 +201,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "1e3b8fa3-8146-510a-8294-21593e156389",
@@ -223,8 +223,8 @@
       "database"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
@@ -243,8 +243,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
@@ -265,8 +265,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
@@ -286,8 +286,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "228c0d05-6844-58e7-b815-97564ab21f53",
@@ -304,8 +304,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
@@ -322,8 +322,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
@@ -343,8 +343,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
@@ -361,8 +361,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
@@ -382,8 +382,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "2969b6b1-5462-573c-970e-832844526258",
@@ -402,8 +402,8 @@
       "voice_generation"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
@@ -425,8 +425,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
@@ -445,8 +445,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
@@ -466,8 +466,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
@@ -484,8 +484,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
@@ -502,8 +502,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
@@ -523,8 +523,8 @@
       "research"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
@@ -544,8 +544,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
@@ -567,8 +567,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
@@ -588,8 +588,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
@@ -609,8 +609,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
@@ -629,8 +629,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4a151e59-6b19-5164-8d66-867b66091542",
@@ -650,8 +650,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
@@ -672,8 +672,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
@@ -692,8 +692,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
@@ -712,8 +712,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
@@ -732,8 +732,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
@@ -752,8 +752,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
@@ -774,8 +774,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "590a0c44-7538-5080-9a35-870ed40d31e5",
@@ -795,8 +795,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5a0a2392-2d9d-552c-912c-734a6e531550",
@@ -813,8 +813,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
@@ -834,8 +834,8 @@
       "messaging"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
@@ -852,8 +852,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
@@ -872,8 +872,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
@@ -892,8 +892,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
@@ -912,8 +912,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
@@ -932,8 +932,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5e07793e-c964-590f-95dc-f72631789f48",
@@ -953,8 +953,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
@@ -973,8 +973,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
@@ -991,8 +991,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
@@ -1011,8 +1011,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
@@ -1031,8 +1031,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
@@ -1053,8 +1053,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
@@ -1073,8 +1073,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7458572a-4829-55a0-830b-336f16147659",
@@ -1093,8 +1093,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
@@ -1113,8 +1113,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
@@ -1133,8 +1133,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
@@ -1153,8 +1153,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
@@ -1171,8 +1171,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
@@ -1191,8 +1191,8 @@
       "cloud"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
@@ -1211,8 +1211,8 @@
       "cloud"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
@@ -1233,8 +1233,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
@@ -1254,8 +1254,8 @@
       "research"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
@@ -1277,8 +1277,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
@@ -1297,8 +1297,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
@@ -1318,8 +1318,8 @@
       "browser_automation"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
@@ -1339,8 +1339,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
@@ -1359,8 +1359,28 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "a4a5c339-896f-4836-b537-d982a622c92a",
+    "name": "Accepted idea delivery to the main branch",
+    "description": "An accepted idea that nobody carries to the main branch is a decision that never happened, and the work already exists in pieces that each own a different hand-off: one triages, one implements, one gives a test verdict, one releases. Nothing owns the item's identity from accepted to merged, nothing re-checks the idea against the code as it stands before building it, and nothing looks afterwards to see whether the change did what the idea claimed. Carry one accepted item all the way to a reviewable, verified change on the main branch: re-validate it against the current code with the authority to decline and say why, derive the checklist that will prove it done, implement it in an isolated branch, let the repository's own checks and tests be the standard, deliver a pull request or a ready branch where no hosted review surface exists, and after the merge check the claim the idea made.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/delivery",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
@@ -1380,8 +1400,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
@@ -1400,8 +1420,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
@@ -1421,8 +1441,8 @@
       "web_scraping"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
@@ -1439,8 +1459,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
@@ -1460,8 +1480,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
@@ -1480,8 +1500,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
@@ -1501,8 +1521,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
@@ -1522,8 +1542,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "bbace830-43f9-5583-b675-a71aa969127d",
@@ -1540,8 +1560,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
@@ -1560,8 +1580,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
@@ -1580,8 +1600,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
@@ -1600,8 +1620,28 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "c1baba85-17c6-4fb3-8852-2712bd214b26",
+    "name": "Project KPI and coverage stewardship",
+    "description": "A project's context map, use cases and KPIs decay quietly: contexts nobody has scanned since the code moved, groups carrying no KPI at all, KPIs with a target and no measurement behind it, and a backlog that is either empty or full of items nobody has looked at in months. None of it announces itself, because each number lives on a different screen and no single reading puts them beside each other. Keep the project's measurement loop honest and moving: read the coverage, decide which gap this cycle is worth closing, populate the backlog with concrete items that carry their evidence, get them executed through the delivery loop, and back-measure so every claim that something improved is a number that moved rather than a description of work done.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/project-stewardship",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c3722109-62e6-52eb-b796-1a501121766a",
@@ -1621,8 +1661,8 @@
       "storage"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
@@ -1641,8 +1681,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
@@ -1661,8 +1701,8 @@
       "development"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
@@ -1679,8 +1719,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
@@ -1697,8 +1737,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
@@ -1718,8 +1758,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
@@ -1740,8 +1780,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
@@ -1761,8 +1801,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
@@ -1779,8 +1819,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
@@ -1799,8 +1839,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
@@ -1819,8 +1859,8 @@
       "development"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "db563881-c358-5d0d-aab5-7a22573f050d",
@@ -1839,8 +1879,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
@@ -1860,8 +1900,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
@@ -1882,8 +1922,8 @@
       "vision"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
@@ -1902,8 +1942,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
@@ -1920,8 +1960,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
@@ -1941,8 +1981,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
@@ -1961,8 +2001,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
@@ -1982,8 +2022,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
@@ -2002,8 +2042,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
@@ -2022,8 +2062,8 @@
       "cloud"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
@@ -2042,8 +2082,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
@@ -2064,8 +2104,8 @@
       "database"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
@@ -2084,8 +2124,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
@@ -2105,8 +2145,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
@@ -2125,8 +2165,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
@@ -2146,8 +2186,8 @@
       "video_generation"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
@@ -2166,8 +2206,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
@@ -2187,8 +2227,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
@@ -2205,7 +2245,7 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   }
 ]
