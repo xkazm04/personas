@@ -29,7 +29,57 @@
 
 use std::collections::HashSet;
 
+use super::super::procedural::Procedural;
 use super::super::semantic::Fact;
+
+/// What the prefilter needs from a memory to shortlist it, so facts and
+/// procedural rules go through one implementation.
+///
+/// Both tiers are governed by the same leg for a reason the store made
+/// obvious: a retired fact and the rule distilled from the same sentence are
+/// the same belief, and retiring one while the other keeps full standing is
+/// how a value the user changed comes back with more authority than it ever
+/// had.
+pub(super) trait Shortlistable {
+    fn id(&self) -> &str;
+    fn scope(&self) -> &str;
+    /// The stable name of the thing this memory is about.
+    fn subject(&self) -> &str;
+    /// What it says about that subject.
+    fn claim(&self) -> &str;
+}
+
+impl Shortlistable for Fact {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn scope(&self) -> &str {
+        &self.scope
+    }
+    fn subject(&self) -> &str {
+        &self.key
+    }
+    fn claim(&self) -> &str {
+        &self.value
+    }
+}
+
+impl Shortlistable for Procedural {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn scope(&self) -> &str {
+        &self.scope
+    }
+    /// A rule's subject is its trigger: two rules that fire on the same
+    /// situation are candidates to be the same rule, whatever they then do.
+    fn subject(&self) -> &str {
+        &self.trigger
+    }
+    fn claim(&self) -> &str {
+        &self.behavior
+    }
+}
 
 /// Tokens too common to carry a signal; matching on them makes every fact look
 /// like every other fact, which is the failure mode a lexical prefilter has.
@@ -65,42 +115,84 @@ pub(super) fn directional_overlap(a: &HashSet<String>, b: &HashSet<String>) -> f
     a.intersection(b).count() as f32 / smaller as f32
 }
 
-/// One seed and the few existing facts it might duplicate or contradict.
-pub(super) struct Group<'a> {
-    pub(super) seed: &'a Fact,
-    pub(super) candidates: Vec<&'a Fact>,
+/// One seed and the few existing memories it might duplicate or contradict.
+pub(super) struct Group<'a, T> {
+    pub(super) seed: &'a T,
+    pub(super) candidates: Vec<&'a T>,
 }
 
 /// Rank `pool` against `seed` and keep the best `k`.
 ///
-/// An identical key in the same scope is the strongest duplicate signal this
-/// store has — two rows agreeing on `quill_framework` are about the same claim
-/// by construction — so it is scored as a certainty rather than left to token
-/// overlap, which would rank a long shared value above it.
-pub(super) fn candidates_for<'a>(seed: &Fact, pool: &[&'a Fact], k: usize) -> Vec<&'a Fact> {
-    let seed_text = format!("{} {}", seed.key, seed.value);
-    let seed_tokens = tokens(&seed_text);
-    let mut scored: Vec<(f32, &'a Fact)> = pool
+/// An identical subject in the same scope is the strongest duplicate signal
+/// this store has — two rows agreeing on `quill_framework`, or two rules with
+/// the same trigger, are about the same thing by construction — so it is
+/// scored as a certainty rather than left to token overlap, which would rank a
+/// long shared body above it.
+pub(super) fn candidates_for<'a, T: Shortlistable>(
+    seed: &T,
+    pool: &[&'a T],
+    k: usize,
+) -> Vec<&'a T> {
+    let seed_tokens = tokens(&format!("{} {}", seed.subject(), seed.claim()));
+    let mut scored: Vec<(f32, &'a T)> = pool
         .iter()
-        .filter(|f| f.id != seed.id && f.scope == seed.scope)
+        .filter(|f| f.id() != seed.id() && f.scope() == seed.scope())
         .map(|f| {
-            let score = if f.key == seed.key {
+            let score = if f.subject() == seed.subject() {
                 1.0
             } else {
-                directional_overlap(&seed_tokens, &tokens(&format!("{} {}", f.key, f.value)))
+                directional_overlap(
+                    &seed_tokens,
+                    &tokens(&format!("{} {}", f.subject(), f.claim())),
+                )
             };
             (score, *f)
         })
         .filter(|(score, _)| *score > 0.0)
         .collect();
-    // ties break on id so the shortlist is reproducible across runs: two facts
-    // written in the same second must not swap places between replays
+    // ties break on id so the shortlist is reproducible across runs: two
+    // memories written in the same second must not swap places between replays
     scored.sort_by(|a, b| {
         b.0.partial_cmp(&a.0)
             .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.1.id.cmp(&b.1.id))
+            .then_with(|| a.1.id().cmp(b.1.id()))
     });
     scored.into_iter().take(k).map(|(_, f)| f).collect()
+}
+
+/// Seeds plus their shortlists, for one tier. `written` is what this cycle
+/// wrote; the sweep adds a window that advances every cycle so the quiet tail
+/// is revisited on a schedule rather than never.
+pub(super) fn groups_for<'a, T: Shortlistable>(
+    pool: &'a [T],
+    written: &[String],
+    max_seeds: usize,
+    sweep_width: usize,
+    cycle_index: usize,
+    candidates: usize,
+) -> Vec<Group<'a, T>> {
+    let refs: Vec<&T> = pool.iter().collect();
+    let mut seed_ids: Vec<&str> = written
+        .iter()
+        .map(|s| s.as_str())
+        .filter(|id| pool.iter().any(|f| f.id() == *id))
+        .take(max_seeds)
+        .collect();
+    for i in sweep_window(pool.len(), cycle_index, sweep_width) {
+        let id = pool[i].id();
+        if !seed_ids.contains(&id) {
+            seed_ids.push(id);
+        }
+    }
+    seed_ids
+        .into_iter()
+        .filter_map(|id| pool.iter().find(|f| f.id() == id))
+        .map(|seed| Group {
+            seed,
+            candidates: candidates_for(seed, &refs, candidates),
+        })
+        .filter(|g| !g.candidates.is_empty())
+        .collect()
 }
 
 /// The rotating window that keeps the store swept.
@@ -208,6 +300,72 @@ mod tests {
         }
         let pool: Vec<&Fact> = owned.iter().collect();
         assert_eq!(candidates_for(&seed, &pool, 4).len(), 4);
+    }
+
+    fn rule(id: &str, scope: &str, trigger: &str, behavior: &str) -> Procedural {
+        Procedural {
+            id: id.to_string(),
+            scope: scope.to_string(),
+            trigger: trigger.to_string(),
+            behavior: behavior.to_string(),
+            importance: 3,
+            confidence: 0.8,
+            sources: vec!["ep_1".to_string()],
+            supersedes_id: None,
+            updated_at: "2025-01-01T00:00:00+00:00".to_string(),
+            file_path: String::new(),
+        }
+    }
+
+    /// The regression this tier was added for: a rule written in January that
+    /// applies a value the user changed in December must be shortlisted against
+    /// the rule that replaced it, or it keeps being followed.
+    #[test]
+    fn a_stale_rule_is_shortlisted_against_the_rule_that_replaced_it() {
+        let seed = rule(
+            "proc_new",
+            "chat",
+            "writing or formatting code for the operator without project-specific style guidance",
+            "default to four-space indentation",
+        );
+        let stale = rule(
+            "proc_old",
+            "chat",
+            "writing or formatting code for the operator without project-specific style guidance",
+            "default to two-space indentation",
+        );
+        let unrelated = rule(
+            "proc_other",
+            "chat",
+            "the operator sends casual small talk about the weather",
+            "acknowledge briefly and return to the task",
+        );
+        let pool = vec![&stale, &unrelated];
+        let picked = candidates_for(&seed, &pool, 2);
+        assert_eq!(
+            picked[0].id, "proc_old",
+            "the rule with the same trigger must come first"
+        );
+    }
+
+    #[test]
+    fn groups_seed_on_what_the_cycle_wrote_and_skip_seeds_with_no_neighbour() {
+        let written = vec![
+            fact("f_a", "project", "quill_framework", "FastAPI"),
+            fact(
+                "f_lonely",
+                "world",
+                "unrelated_topic",
+                "nothing like it exists",
+            ),
+        ];
+        let existing = fact("f_b", "project", "quill_framework", "Django");
+        let pool: Vec<Fact> = vec![written[0].clone(), written[1].clone(), existing];
+        let ids = vec!["f_a".to_string(), "f_lonely".to_string()];
+        let groups = groups_for(&pool, &ids, 8, 0, 0, 4);
+        assert_eq!(groups.len(), 1, "a seed with no candidate is not a group");
+        assert_eq!(groups[0].seed.id, "f_a");
+        assert_eq!(groups[0].candidates[0].id, "f_b");
     }
 
     #[test]

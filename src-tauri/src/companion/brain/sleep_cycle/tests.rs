@@ -1275,7 +1275,7 @@ fn untrusted_evidence_is_fenced_with_the_rules_outside_it() {
         seed: &facts[0],
         candidates: vec![&neighbour],
     }];
-    let r = build_reconcile_prompt(&groups);
+    let r = build_reconcile_prompt(&groups, &[]);
     assert!(r.find("RULES — non-negotiable").unwrap() < r.find("<untrusted_groups_").unwrap());
 }
 

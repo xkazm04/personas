@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use super::limits::RECONCILE_VALUE_CHARS;
 use super::parse::one_line;
 use super::shortlist;
-use crate::companion::brain::{episodic, semantic, taxonomy};
+use crate::companion::brain::{episodic, procedural, semantic, taxonomy};
 
 // ── Prompts ────────────────────────────────────────────────────────────────
 
@@ -130,37 +130,52 @@ pub(super) fn build_compress_prompt(
 }
 
 /// The reconcile prompt, built from shortlisted groups rather than from the
-/// whole store.
+/// whole store, and covering both tiers.
 ///
-/// One group is one fact this cycle wrote (or one drawn by the rotating sweep)
-/// together with the few existing entries closest to it. The prompt's size is
-/// therefore set by the cycle's own write budget and the per-seed shortlist,
-/// not by how much the user has ever told her: the same shape at forty facts
-/// and at forty thousand.
-pub(super) fn build_reconcile_prompt(groups: &[shortlist::Group<'_>]) -> String {
+/// One group is one memory this cycle wrote (or one drawn by the rotating
+/// sweep) together with the few existing entries closest to it. The prompt's
+/// size is therefore set by the cycle's own write budget and the per-seed
+/// shortlist, not by how much the user has ever told her: the same shape at
+/// forty facts and at forty thousand.
+///
+/// Rules are judged in the same call as facts because they carry the same
+/// beliefs. Governing only the fact tier left a rule from January still
+/// applying a preference the user changed in the spring, and rules are the
+/// tier the always-on lane injects into every turn.
+pub(super) fn build_reconcile_prompt(
+    fact_groups: &[shortlist::Group<'_, semantic::Fact>],
+    rule_groups: &[shortlist::Group<'_, procedural::Procedural>],
+) -> String {
     let mut p = String::new();
     p.push_str(
         "You are running the RECONCILE phase of Athena's nightly sleep cycle. Below are the \
-         facts this cycle just learned, each followed by the few existing entries closest to \
-         it. Your job is to find redundancy and conflict inside each group — nothing else.\n\n",
+         memories this cycle just learned, each followed by the few existing entries closest \
+         to it. FACT GROUPS hold things that ARE; RULE GROUPS hold things to DO. Your job is \
+         to find redundancy and conflict inside each group — nothing else.\n\n",
     );
     p.push_str(
         "RULES — non-negotiable:\n\
-         1. `supersede` means two entries say the SAME thing and the winner says it better or \
-         more currently. The loser is retired (it stops being retrieved; it is not deleted). \
-         Only pair ids that appear in the SAME group, and never an id with itself.\n\
-         2. `contradictions` means two entries cannot both be true. Do NOT try to resolve \
+         1. `supersede` (facts) and `supersede_rules` (rules) mean two entries say the SAME \
+         thing and the winner says it better or more currently. The loser is retired (it \
+         stops being retrieved; it is not deleted). Only pair ids that appear in the SAME \
+         group, never an id with itself, and never a fact id with a rule id.\n\
+         2. A rule whose behaviour applies a value that another rule in its group now applies \
+         differently is a supersede, not a contradiction: rules are instructions, and two \
+         live instructions for one trigger means the older one is still being followed.\n\
+         3. `contradictions` means two entries cannot both be true. Do NOT try to resolve \
          them — report the pair and what the conflict is. A human decides.\n\
-         3. Different facts about related things are NOT duplicates. Merging two distinct \
+         4. Different memories about related things are NOT duplicates. Merging two distinct \
          claims loses one of them permanently, so when in doubt, leave both.\n\
-         4. A group whose entries are all distinct is the common case. Empty arrays are a \
+         5. A group whose entries are all distinct is the common case. Empty arrays are a \
          valid, honest answer, and usually the right one.\n\
-         5. At most 8 supersedes are accepted.\n\n",
+         6. At most 8 supersedes are accepted in total, across both kinds.\n\n",
     );
     p.push_str(
         "OUTPUT — return ONLY this JSON object. No prose, no code fences.\n\n\
          {\n\
          \x20 \"supersede\": [{\"winner_id\":\"fact_…\", \"loser_id\":\"fact_…\", \
+         \"reason\":\"one sentence\"}],\n\
+         \x20 \"supersede_rules\": [{\"winner_id\":\"proc_…\", \"loser_id\":\"proc_…\", \
          \"reason\":\"one sentence\"}],\n\
          \x20 \"contradictions\": [{\"a_id\":\"fact_…\", \"b_id\":\"fact_…\", \"note\":\"what \
          conflicts\"}]\n\
@@ -169,11 +184,25 @@ pub(super) fn build_reconcile_prompt(groups: &[shortlist::Group<'_>]) -> String 
 
     p.push_str(UNTRUSTED_BANNER);
     let mut body = String::new();
-    for (n, g) in groups.iter().enumerate() {
-        body.push_str(&format!("GROUP {}\n", n + 1));
-        body.push_str(&render_fact_line("NEW  ", g.seed));
+    for (n, g) in fact_groups.iter().enumerate() {
+        body.push_str(&format!("FACT GROUP {}\n", n + 1));
+        body.push_str(&render_line(
+            "NEW  ",
+            &g.seed.id,
+            &g.seed.scope,
+            &g.seed.key,
+            &g.seed.value,
+        ));
         for c in &g.candidates {
-            body.push_str(&render_fact_line("     ", c));
+            body.push_str(&render_line("     ", &c.id, &c.scope, &c.key, &c.value));
+        }
+        body.push('\n');
+    }
+    for (n, g) in rule_groups.iter().enumerate() {
+        body.push_str(&format!("RULE GROUP {}\n", n + 1));
+        body.push_str(&render_rule("NEW  ", g.seed));
+        for c in &g.candidates {
+            body.push_str(&render_rule("     ", c));
         }
         body.push('\n');
     }
@@ -182,12 +211,19 @@ pub(super) fn build_reconcile_prompt(groups: &[shortlist::Group<'_>]) -> String 
     p
 }
 
-fn render_fact_line(prefix: &str, f: &semantic::Fact) -> String {
+fn render_line(prefix: &str, id: &str, scope: &str, subject: &str, claim: &str) -> String {
     format!(
-        "{prefix}- `{id}` [{scope}/{key}] {value}\n",
-        id = f.id,
-        scope = f.scope,
-        key = f.key,
-        value = one_line(&f.value, RECONCILE_VALUE_CHARS),
+        "{prefix}- `{id}` [{scope}/{subject}] {claim}\n",
+        claim = one_line(claim, RECONCILE_VALUE_CHARS),
+    )
+}
+
+fn render_rule(prefix: &str, r: &procedural::Procedural) -> String {
+    format!(
+        "{prefix}- `{id}` [{scope}] when {trigger} → {behavior}\n",
+        id = r.id,
+        scope = r.scope,
+        trigger = one_line(&r.trigger, RECONCILE_VALUE_CHARS / 2),
+        behavior = one_line(&r.behavior, RECONCILE_VALUE_CHARS),
     )
 }

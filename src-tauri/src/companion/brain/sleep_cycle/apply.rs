@@ -13,7 +13,7 @@ use super::limits::{
     CYCLE_IMPORTANCE, DEFAULT_CONFIDENCE, MAX_FACTS_PER_CYCLE, MAX_PROCEDURALS_PER_CYCLE,
     MAX_SUPERSEDES_PER_CYCLE,
 };
-use super::parse::{live_fact_scope, normalize_tag, one_line, str_field, str_opt};
+use super::parse::{live_fact_scope, live_rule_scope, normalize_tag, one_line, str_field, str_opt};
 use super::run::{CycleNotes, CycleStats};
 use crate::companion::brain::sim_clock;
 use crate::companion::brain::{procedural, semantic, taxonomy};
@@ -82,6 +82,85 @@ pub(super) fn apply_supersedes(
         stats.supersedes_applied += 1;
         notes.supersedes.push(format!(
             "`{winner}` now supersedes `{loser}`{}",
+            if reason.is_empty() {
+                String::new()
+            } else {
+                format!(" — {reason}")
+            }
+        ));
+    }
+    Ok(())
+}
+
+/// The same judgement, applied to the procedural tier.
+///
+/// It exists because retirement used to be a property of one tier only. Over a
+/// year-long replay 261 of 375 facts were retired on schedule and 0 of 133
+/// rules ever were, so a rule distilled from a superseded sentence kept full
+/// standing — and rules are injected into every turn by the always-on lane,
+/// which gave the stale reading MORE authority than the fact it came from.
+///
+/// Kept as a second function rather than folded into [`apply_supersedes`]
+/// because the two tiers have different liveness queries and different scope
+/// vocabularies, and one function that took a kind parameter would be two
+/// functions wearing a coat.
+pub(super) fn apply_rule_supersedes(
+    pool: &UserDbPool,
+    reply: &Value,
+    stats: &mut CycleStats,
+    notes: &mut CycleNotes,
+) -> Result<(), AppError> {
+    let Some(items) = reply.get("supersede_rules").and_then(|v| v.as_array()) else {
+        return Ok(());
+    };
+    let now = sim_clock::now().to_rfc3339();
+    for item in items {
+        if stats.supersedes_applied >= MAX_SUPERSEDES_PER_CYCLE {
+            stats.supersedes_dropped += 1;
+            continue;
+        }
+        let winner = str_field(item, "winner_id");
+        let loser = str_field(item, "loser_id");
+        let reason = str_field(item, "reason");
+        if winner.is_empty() || loser.is_empty() || winner == loser {
+            stats.supersedes_dropped += 1;
+            continue;
+        }
+        let (Some(ws), Some(ls)) = (
+            live_rule_scope(pool, &winner)?,
+            live_rule_scope(pool, &loser)?,
+        ) else {
+            stats.supersedes_dropped += 1;
+            notes.caveats.push(format!(
+                "Rule supersede skipped: `{winner}` → `{loser}` names a rule that is not live."
+            ));
+            continue;
+        };
+        if ws != ls {
+            stats.supersedes_dropped += 1;
+            notes.caveats.push(format!(
+                "Rule supersede skipped: `{winner}` ({ws}) and `{loser}` ({ls}) are in \
+                 different scopes."
+            ));
+            continue;
+        }
+
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        // The same forgetting semantics the fact tier uses: demotion, not
+        // deletion. The rule keeps its markdown and its provenance; what it
+        // loses is retrieval eligibility.
+        semantic::demote_superseded(&tx, &loser, &now)?;
+        tx.execute(
+            "UPDATE companion_procedural SET supersedes_id = ?1
+             WHERE id = ?2 AND supersedes_id IS NULL",
+            params![loser, winner],
+        )?;
+        tx.commit()?;
+
+        stats.rule_supersedes_applied += 1;
+        notes.supersedes.push(format!(
+            "rule `{winner}` now supersedes `{loser}`{}",
             if reason.is_empty() {
                 String::new()
             } else {
@@ -241,6 +320,7 @@ pub(super) fn apply_candidates(
                 },
             )?;
             apply_tags(pool, &id, &c.tags)?;
+            notes.written_procedural_ids.push(id.clone());
             stats.procedurals_applied += 1;
             notes.learned_procedurals.push(format!(
                 "**when {}** → {}",

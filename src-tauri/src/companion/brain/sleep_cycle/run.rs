@@ -113,6 +113,10 @@ pub(super) struct CycleStats {
     pub(super) staged_consumed: usize,
     pub(super) staged_malformed: usize,
     pub(super) supersedes_applied: usize,
+    /// Procedural supersedes, counted apart from fact supersedes: they share a
+    /// per-cycle budget but they retire different things, and a cycle that
+    /// retired four rules and no facts should not read as four facts.
+    pub(super) rule_supersedes_applied: usize,
     pub(super) supersedes_dropped: usize,
     pub(super) tags_proposed: usize,
     pub(super) prune_candidates: usize,
@@ -151,6 +155,10 @@ pub(super) struct CycleNotes {
     /// existing candidates AROUND each new fact instead of judging the whole
     /// store. A fact nobody wrote tonight is not a new duplicate risk.
     pub(super) written_fact_ids: Vec<String>,
+    /// Same hand-off for the procedural tier. Rules are shortlisted and judged
+    /// beside facts because a rule distilled from a superseded sentence is the
+    /// same stale belief wearing a trigger.
+    pub(super) written_procedural_ids: Vec<String>,
     pub(super) truncation: Option<String>,
     /// Non-fatal things that went sideways — a dropped candidate, an id that
     /// pointed at nothing. Surfaced so "dropped 3" in the stats has a why.
