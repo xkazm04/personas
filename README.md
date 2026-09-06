@@ -376,7 +376,7 @@ on every bind. The port is the first free one at or above `17400`; the token is 
 
 ```bash
 PORT=$(grep -o '"port"[^,]*' ~/.personas/local-http.json | grep -o '[0-9]*')
-TOKEN=$(grep -o '"token": *"[^"]*"' ~/.personas/local-http.json | sed 's/.*"\([^"]*\)"$//')
+TOKEN=$(grep -o '"token": *"[^"]*"' ~/.personas/local-http.json | sed 's/.*"\([^"]*\)"$/\1/')
 B="http://127.0.0.1:$PORT/dev-tools"; AUTH=(-H "X-Personas-Local-Token: $TOKEN")
 
 curl -s "${AUTH[@]}" "$B/projects"                      # list; match on root_path, not name
