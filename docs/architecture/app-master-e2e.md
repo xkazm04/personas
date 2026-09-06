@@ -152,7 +152,7 @@ seeded lazily on first read, not by adoption.
 | T2 | Two new recipes: `accepted-idea-delivery`, `project-kpi-stewardship` (v3, draft) | author (Opus) | done: `scripts/templates/_app_master/`, merged into the bundle under virtual owner `app-master` |
 | T3 | `ResponsibilitySpec.priority`, `pacing`; `set_persona_enabled` command; trigger fire path reads `responsibility_id` | builder (Opus) | pending |
 | T4 | Decision lane in the attention loop (Opus prompt, bounded JSON plan, capacity-aware dispatch) | builder (Opus) | pending |
-| T5 | Headless adoption route on the dev-tools bridge (idempotent) | builder (Opus) | pending |
+| T5 | Headless adoption route on the dev-tools bridge (idempotent) | builder (Opus) | done: `POST /dev-tools/app-master/adopt`, `GET /dev-tools/app-master/{project}`, command `adopt_app_master`; merged `535fc1552` + fix `24d7bc20f` |
 | T6 | `scripts/e2e/app-master-cycle.mjs` + evidence report | Director | written; runs once T3-T5 merge |
 
 **Build-time finding (T1):** the shared `CARGO_TARGET_DIR` across worktrees served stale
@@ -160,6 +160,13 @@ seeded lazily on first read, not by adoption.
 workspace-wide result from the shared target is suspect until the core crate is force-rebuilt
 (`touch` its model files). Every merge of this arc re-runs its gates in the main checkout.
 | T7 | Cycle 1 run over the three projects; improvement pass | Director | pending |
+| T8 | Seeder upgrades builtin payloads to the bundle (found by the first headless adoption: the 109 rows seeded in June still carried v2 payloads, so no slug resolved) | Director | built, `recipe_seed.rs` `InsertOutcome::Upgraded` + `SeedReport.upgraded` |
+
+**Build-time finding (T5, T8):** the shared cargo target is unsafe across worktrees building
+concurrently. Cargo's freshness check is mtime-based, so a crate compiled from one worktree's
+sources is reused by another worktree whose files are older: master's test build failed on
+fields that exist only in the loop worktree. Sequence builds, and `touch` the crate roots
+before trusting a build after a sibling worktree has compiled.
 
 ## 4. Cycle log
 

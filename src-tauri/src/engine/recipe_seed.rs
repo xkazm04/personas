@@ -129,6 +129,12 @@ pub struct SeedReport {
     pub created: i64,
     pub skipped_existing: i64,
     pub repaired: i64,
+    /// Builtin rows whose stored payload differed from the bundle's and were
+    /// overwritten with it. The bundle is the source of truth for system-owned
+    /// recipes; before 2026-09-07 the seeder never rewrote a payload, so the v3
+    /// corpus only ever reached fresh installs and a populated install kept its
+    /// June v2 payloads under v3 names.
+    pub upgraded: i64,
     pub failed: i64,
     /// Builtin rows the shipped bundle no longer carries, removed by
     /// `recipe_repo::retire_stale`. Before this existed the seeder only ever
@@ -178,6 +184,7 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
             Ok(InsertOutcome::Created) => report.created += 1,
             Ok(InsertOutcome::Existing) => report.skipped_existing += 1,
             Ok(InsertOutcome::Repaired) => report.repaired += 1,
+            Ok(InsertOutcome::Upgraded) => report.upgraded += 1,
             Err(e) => {
                 report.failed += 1;
                 tracing::warn!(error = %e, "recipe seed insert failed; continuing");
@@ -222,6 +229,7 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
         created = report.created,
         skipped_existing = report.skipped_existing,
         repaired = report.repaired,
+        upgraded = report.upgraded,
         retired = report.retired,
         failed = report.failed,
         "Recipe seed bundle applied"
@@ -239,6 +247,8 @@ enum InsertOutcome {
     Created,
     Existing,
     Repaired,
+    /// The stored payload was replaced by the bundle's.
+    Upgraded,
 }
 
 fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError> {
@@ -274,6 +284,29 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
         }
         if missing_builtin {
             recipe_repo::set_builtin(pool, &existing.id, true)?;
+        }
+        // The bundle owns a builtin row's payload. A row found by its source
+        // key is in the shipped bundle by definition, so when its stored
+        // payload differs from the bundle's it is stale (a v2 payload under a
+        // v3 bundle, or a recipe the corpus has since revised) and is
+        // replaced outright. Only the display name survives, because a
+        // rename is the one edit a builtin row can carry that the bundle
+        // cannot know about (the `stale_name` rule above). Until 2026-09-07
+        // nothing rewrote a payload, so a populated install kept every v2
+        // payload while carrying v3 names, and a slug lookup found nothing.
+        if existing.prompt_template != seed.prompt_template {
+            recipe_repo::update(
+                pool,
+                &existing.id,
+                UpdateRecipeInput {
+                    prompt_template: Some(seed.prompt_template.clone()),
+                    description: seed.description.clone(),
+                    tags: seed.tags.clone(),
+                    tool_requirements: seed.tool_requirements.clone(),
+                    ..Default::default()
+                },
+            )?;
+            return Ok(InsertOutcome::Upgraded);
         }
         // Model-tier refresh (builtin rows only): bring the per-capability
         // model_override/model_rationale up to the bundle's current tiering,
@@ -1021,5 +1054,49 @@ mod tests {
         // Idempotent: once in sync, nothing further is repaired.
         let again = seed_recipes_from_bundle(&pool).expect("second refresh pass ok");
         assert_eq!(again.repaired, 0, "no row needs refreshing once in sync");
+        assert_eq!(again.upgraded, 0, "no payload differs once in sync");
+    }
+
+    /// The bundle owns a builtin row's payload. A populated install whose row
+    /// still carries an older payload (the June v2 shape under a v3 bundle, or
+    /// a recipe the corpus revised since) is brought to the bundle's payload
+    /// on the next boot, and a rename the operator made survives it.
+    #[test]
+    fn a_builtin_row_with_a_stale_payload_is_upgraded_to_the_bundle() {
+        let pool = test_pool();
+        seed_recipes_from_bundle(&pool).expect("seed ok");
+        let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON).unwrap();
+        let first = &bundle.recipes[0];
+
+        recipe_repo::update(
+            &pool,
+            &first.id,
+            UpdateRecipeInput {
+                name: Some("Renamed by the operator".to_string()),
+                prompt_template: Some(
+                    r#"{"capability_summary":"a June v2 payload with no slug"}"#.to_string(),
+                ),
+                ..Default::default()
+            },
+        )
+        .expect("stale the row");
+
+        let pass = seed_recipes_from_bundle(&pool).expect("reseed ok");
+        assert_eq!(pass.upgraded, 1, "exactly the stale row is upgraded");
+        assert_eq!(pass.created, 0);
+
+        let row = recipe_repo::get_by_id(&pool, &first.id).expect("row");
+        assert_eq!(
+            row.prompt_template, first.prompt_template,
+            "payload is the bundle's"
+        );
+        assert_eq!(
+            row.name, "Renamed by the operator",
+            "a rename survives the upgrade"
+        );
+        assert!(row.is_builtin);
+
+        let again = seed_recipes_from_bundle(&pool).expect("third pass ok");
+        assert_eq!(again.upgraded, 0, "idempotent once in sync");
     }
 }
