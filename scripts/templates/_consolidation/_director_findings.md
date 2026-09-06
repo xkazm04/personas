@@ -774,3 +774,14 @@ losing template", which silently changes what adopting that template provides. I
 persona adopts recipes from the registry, where the identity is `slug@version` and
 sharing is the point. So: merges execute at migration time, once, under the new identity.
 Recorded here rather than done quietly.
+
+## 32. Committed
+
+- personas `6068e662c` (Recipe v3: corpus + backend + transform + generator/gate + UI + i18n), on top of
+  `1124754b5` `19b7327af` `97cb19d64` from this arc.
+- ai-registry `5e7a8652` (`recipes/` lane declared, gated, empty).
+- Gates at commit: all thirteen project checks green except `check:evidence`, which fails on
+  registry drift outside this change (a sibling split moved `quality-gates/ratchet-design.md`
+  into `metric-gates/`; this repo's local mirror is stale; `scripts/registry/mirror-paths.mjs`
+  is the named fix and is the operator's to run). tsc 0, eslint 0 errors, census 205 rules OK,
+  vitest 5307/5308 (the one failure is the pre-existing `presetSkills`).
