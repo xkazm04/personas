@@ -89,6 +89,11 @@ const GATES = {
   maxAccuracyDropPts: 2,
   hardFailClasses: ['restraint', 'gated_discipline'],
   minLatencyWinPct: 30,
+  /** Above this share of attempts lost to infra, a cell's comparison against
+   *  o-base is inconclusive rather than passing or failing: the excluded runs
+   *  are not random (slow/overloaded cells time out more), so the survivors
+   *  are the cell's easier attempts. */
+  maxExclusionRatePct: 20,
 };
 
 // ── args ─────────────────────────────────────────────────────────────────
@@ -500,8 +505,16 @@ function report() {
   const agg = {};
   for (const c of cells) {
     const mine = rows.filter((r) => r.cell === c);
+    // Infra exclusions are attributed to the cell that produced them. A
+    // run-wide count cannot show that the drops clustered in ONE cell, and a
+    // cell scored on its survivors is compared against a baseline scored on
+    // everything — a confound, not a measurement error: both arms are clean
+    // and the contrast is not.
+    const attempted = mine.length + infra.filter((r) => r.cell === c).length;
     agg[c] = {
       n: mine.length,
+      excluded: infra.filter((r) => r.cell === c).length,
+      exclRate: attempted ? (100 * infra.filter((r) => r.cell === c).length) / attempted : 0,
       passRate: pct(mine.filter((r) => r.pass).length, mine.length),
       p50First: pctl(mine.map((r) => r.firstTokenMs).filter((x) => x != null), 50),
       p50Total: pctl(mine.map((r) => r.totalMs).filter((x) => x != null), 50),
@@ -515,9 +528,10 @@ function report() {
     };
   }
 
-  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|\n`;
+  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | infra excluded | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|---|\n`;
   for (const c of cells) {
-    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
+    const ex = agg[c].excluded ? `${agg[c].excluded} (${agg[c].exclRate.toFixed(0)}% of attempts)` : '0';
+    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${ex} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
   }
   md += `\n## Accuracy by class (pass/runs)\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
   for (const c of cells) {
@@ -545,7 +559,22 @@ function report() {
       }
       const latWin = agg['o-base'].p50Total && agg[c].p50Total ? (100 * (agg['o-base'].p50Total - agg[c].p50Total)) / agg['o-base'].p50Total : null;
       const latOk = latWin != null && latWin >= GATES.minLatencyWinPct;
-      md += `### ${c} — ${promoted && latOk ? '✅ CERTIFIED (all classes + latency)' : promoted ? '🟡 quality parity, latency win < gate' : '❌ not certified'}\n\n${verdictLines.join('\n')}\n- latency: p50 ${fmtS(agg[c].p50Total)} vs ${fmtS(agg['o-base'].p50Total)} (${latWin == null ? '—' : `${latWin.toFixed(0)}% win`})\n\n`;
+      // A cell that lost too many attempts to infra is not "at parity" — the
+      // comparison did not happen. Say so in different words than a passing
+      // gate, because a caveat printed under a green verdict is read as the
+      // verdict. Re-run the cell; do not promote it and do not fail it.
+      const exclOk = agg[c].exclRate <= GATES.maxExclusionRatePct && agg['o-base'].exclRate <= GATES.maxExclusionRatePct;
+      const headline = !exclOk
+        ? `⚠️ INCONCLUSIVE — control failed, re-run (${agg[c].excluded} of ${agg[c].n + agg[c].excluded} attempts excluded, gate ${GATES.maxExclusionRatePct}%)`
+        : promoted && latOk
+          ? '✅ CERTIFIED (all classes + latency)'
+          : promoted
+            ? '🟡 quality parity, latency win < gate'
+            : '❌ not certified';
+      const exclNote = exclOk
+        ? ''
+        : `\n- **the surviving runs are not a random sample**: the excluded attempts are the ones that timed out or errored, so this cell's accuracy is computed over its easier runs and compared against a baseline scored over all of its own. The numbers below are printed for the re-run, not as a verdict.`;
+      md += `### ${c} — ${headline}\n\n${verdictLines.join('\n')}\n- latency: p50 ${fmtS(agg[c].p50Total)} vs ${fmtS(agg['o-base'].p50Total)} (${latWin == null ? '—' : `${latWin.toFixed(0)}% win`})${exclNote}\n\n`;
     }
   }
   md += `\n_LLM-judge prose scoring: not run (deliberate follow-up; results.jsonl carries turnText for an offline judge pass)._\n`;
