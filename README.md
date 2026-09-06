@@ -366,6 +366,35 @@ cursor; **click** copies the call-site path, **Alt+click** copies the literal
 element, and **Esc** exits. Full design + tuning notes live in
 **[docs/development/dev-inspector.md](./docs/development/dev-inspector.md)**.
 
+### Registering a project headlessly (dev-tools bridge)
+
+Every project the Factory manages is a row in `dev_projects`. You can create that row and
+run the context-map scan from a terminal or a script, without the GUI, through the loopback
+**dev-tools bridge** the running app exposes. The app must be running: the bridge lives inside
+its process, and it writes a handshake file `~/.personas/local-http.json` (`{pid, port, token}`)
+on every bind. The port is the first free one at or above `17400`; the token is mandatory.
+
+```bash
+PORT=$(grep -o '"port"[^,]*' ~/.personas/local-http.json | grep -o '[0-9]*')
+TOKEN=$(grep -o '"token": *"[^"]*"' ~/.personas/local-http.json | sed 's/.*"\([^"]*\)"$//')
+B="http://127.0.0.1:$PORT/dev-tools"; AUTH=(-H "X-Personas-Local-Token: $TOKEN")
+
+curl -s "${AUTH[@]}" "$B/projects"                      # list; match on root_path, not name
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/projects"   -d '{"name":"my-app","root_path":"/abs/path/to/my-app","description":"...","tech_stack":"..."}'
+#   -> the DevProject row (keep .id). Idempotent on root_path; writes .personas/project.json
+#      into the repo (commit it: it lets a moved checkout heal and refuses a clone collision).
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/scan-codebase"   -d '{"project_id":"<id>","root_path":".","delta_mode":false}'      # -> {"scan_id"}
+curl -s "${AUTH[@]}" "$B/scan-status/<scan_id>"         # poll; then export the artifacts:
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/export-context-map"   -d '{"project_id":"<id>"}'                             # context-map.json + CLAUDE.md block
+```
+
+`401` means a stale token (re-read the handshake), `403` a non-loopback `Host` header, `400`
+on create a `root_path` that does not exist. Project create, context scan, export and the
+repair routes are unattended; the use-case/KPI lanes (`/project-populate`) and passport
+onboarding (`/passport-onboard`) deliberately stop to ask the operator questions. Route table:
+`src-tauri/src/commands/infrastructure/dev_tools_http.rs`; identity rules:
+`src-tauri/db/src/project_identity.rs`; narrative: `docs/features/plugins/dev tools/cx-map.md`.
+
 ## Project Structure
 
 ```
