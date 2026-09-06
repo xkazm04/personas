@@ -1,6 +1,6 @@
 # Athena Guided Walkthroughs
 
-**Status:** Shipped 2026-05-26; **v2 2026-05-28** (unified+elevated highlight ring, caption progress-rail + Back + keyboard control, walkthrough completion CTAs, `point_at` "Take me there", labeled flash pulse).
+**Status:** Shipped 2026-05-26; **v2 2026-05-28** (unified+elevated highlight ring, caption progress-rail + Back + keyboard control, walkthrough completion CTAs, `point_at` "Take me there", labeled flash pulse). **Re-verified against code 2026-09-06**: everything below still holds; see "Generative Tours" for the sibling system added since, and the file map for paths that moved.
 **Scope:** A reusable engine that lets Athena *show* the user how to do something — her floating orb glides to each key area of the screen, the relevant element glows, and she narrates the step. First applied to persona creation.
 
 This is the "show me how" half of Athena's persona-creation help. The other half — "build it for me" — is the existing prefill / one-shot flow (`prefill_persona_create` / `build_oneshot`). When a user describes a persona, Athena can offer **both** via a choice card (`show_persona_creation_offer`).
@@ -54,7 +54,7 @@ The store is intentionally dumb — it holds raw state; the runner owns the regi
 | `highlightTestId?` | Element to ring this step. Omit for a pure narration beat (intro/outro). |
 | `orbAnchor?` | Where the orb parks: `auto` (most room) / `left` / `right` / `above` / `below` / `center`. |
 | `navigateRoute?` | Switch the sidebar route before the step. |
-| `preAction?` | An allow-listed app action (closed enum, not arbitrary callbacks) — `open_build_entry` / `open_credential_add`. |
+| `preAction?` | An allow-listed app action (closed enum, not arbitrary callbacks). Six today (`guidance/types.ts:17-23`): `open_build_entry`, `open_credential_add`, `open_trigger_builder`, `open_overview_incidents`, `open_goals_board`, `open_kpi_dashboard`. |
 | `dwellMs?` | Override the auto-advance dwell; default derives from narration length. |
 | `holdForClick?` | Wait for the user to click the highlighted element before advancing (a "your turn" beat). |
 
@@ -69,7 +69,7 @@ To make Athena explain another part of the app:
 1. **Add stable `data-testid`s** to the elements you want to point at. Prefer reusing existing testids. **They must be reachable by a `z-60` overlay** — do *not* target elements inside a `BaseModal` (z-10000+), or the glow renders behind the modal and the orb behind its backdrop. Point at always-visible surface elements instead. (This is why the persona_creation walkthrough rings the build *studio* and its sigil/toggle, not the composer modal's intent rows.)
 2. **Add narration keys** to `src/i18n/locales/en.json` under `plugins.companion.guide_*` (one per step) and regenerate i18n (`node scripts/i18n/gen-types.mjs && node scripts/i18n/split-locales.mjs`).
 3. **Add a registry entry** to `guidance/walkthroughs.ts` and list its topic in `GUIDANCE_TOPICS`.
-4. **Allow-list the topic in the backend** — add it to `GUIDED_TOPICS` in `src-tauri/src/companion/dispatcher.rs` so Athena's `start_guided_walkthrough` op accepts it (unknown topics are rejected with a warning).
+4. **Allow-list the topic in the backend** by adding it to `GUIDED_TOPICS` in `src-tauri/src/companion/dispatcher/catalog.rs:394` (the dispatcher is a module directory now, not a single file) so Athena's `start_guided_walkthrough` op accepts it (unknown topics are rejected with a warning at `dispatcher/dispatch.rs:1853-1857`).
 5. **Teach Athena when to use it** in `src-tauri/src/companion/templates/constitution.md` and bump `CONSTITUTION_VERSION`.
 
 If the step needs a surface opened first (so the anchor exists), add a new variant to the `GuidancePreAction` enum and handle it in `runPreAction`.
@@ -85,7 +85,7 @@ If the step needs a surface opened first (so the anchor exists), add a new varia
 | `point_at { anchor, narration }` | auto | Emits `companion://guide` `{ pointAt }`; rings one allow-listed anchor + narrates as a single-step **ad-hoc** walkthrough — no authored topic. `anchor` validated against `ANCHOR_IDS`. Use mid-conversation to just show *where* something is. |
 | `compose_walkthrough { title?, steps[] }` | auto | Emits `companion://guide` `{ composeWalkthrough }`; runs a **runtime-assembled** multi-step tour (2–6 steps, each an `{ anchor, narration }`). Every anchor validated; an unknown one voids the whole tour. Use for "show me around". |
 
-All bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `session.rs`; `CompanionPanel` listens and calls `startGuidance` (topic) or `startAdHocGuidance` (pointAt / composeWalkthrough). Constitution **v19** taught the first two; **v28** added `point_at`; **v29** added `compose_walkthrough`.
+All bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `src-tauri/src/companion/session/events.rs:37` (`GUIDE_EVENT`); the chat panel listens in `companion/chat/athenaChatNavigation.ts:105-121` and calls `startGuidance` (topic) or `startAdHocGuidance` (pointAt / composeWalkthrough). Constitution **v19** taught the first two; **v28** added `point_at`; **v29** added `compose_walkthrough`; `CONSTITUTION_VERSION` is **61** as of 2026-09-06 (`templates/mod.rs:508`).
 
 ## Ad-hoc pointing & the anchor catalog (`point_at`)
 
@@ -96,6 +96,39 @@ Mechanically a `point_at` is a **single-step ad-hoc walkthrough**: `companionSto
 `compose_walkthrough` is the **multi-step** sibling: same ad-hoc machinery, but `buildComposedWalkthrough(steps, title?)` maps an array of `{ anchor, narration }` into a multi-step `GuidanceWalkthrough`. The backend clamps the tour to `COMPOSE_MIN_STEPS..=COMPOSE_MAX_STEPS` (2–6) and rejects the whole tour if any step's anchor is off-catalog — a half-valid tour never runs. The runner's `lastAdHocRef` guard treats each freshly-composed walkthrough as a new run even though both reuse the `ADHOC_TOPIC` sentinel and start at step 0, so a second ad-hoc guidance call (point_at *or* compose) restarts cleanly instead of being swallowed as "same step".
 
 ---
+
+## Generative Tours: the sibling system (added 2026-07-30)
+
+Everything above is the **orb** guidance engine. A second, separately-built system now shares
+the vocabulary and must not be confused with it: **Generative Tours**, where Athena composes a
+tour at runtime that plays through the *onboarding* `GuidedTour` spotlight rather than the orb.
+
+| | Orb guidance (this doc) | Generative Tours |
+| --- | --- | --- |
+| Player | `useGuidanceRunner` + orb glide + `TrackedGlowRing` (non-dimming) | the onboarding `GuidedTour` / `TourSpotlight` (dims the screen) |
+| Content | authored registry (`walkthroughs.ts`) or runtime-assembled from the anchor catalog (`point_at` / `compose_walkthrough`) | composed by a one-shot Claude call at `companion_compose_tour` |
+| Anchor allow-list | `guidance/anchorCatalog.ts` → `generated_anchors.rs` (`scripts/generate-guidance-anchors.mjs`) | `generated_tour_anchors.rs` (`TOUR_TESTIDS`, `TOUR_SIDEBAR_SECTIONS`, `TOUR_SUBTAB_SETTERS`, `TOUR_TESTID_DYNAMIC_PREFIXES`), codegen'd by `scripts/docs/gen-tour-anchors.mjs` |
+| Persistence | none (ephemeral store state) | `companion_tours` in the **user** db (`src-tauri/db/src/lib.rs:1762-1776`) |
+| Entry point | `start_guided_walkthrough` / `point_at` / `compose_walkthrough` ops | the `show_walkthrough_offer` op → `walkthrough_offer` chat card → `WalkthroughOfferWidget`'s "Show me" |
+
+Mechanics worth knowing (`src-tauri/src/companion/tours.rs`):
+
+- `show_walkthrough_offer` accepts a topic **outside** `GUIDED_TOPICS`; such a topic is flagged
+  `generative: true` in the card config and routes to `compose_tour` instead of a registry
+  script. Free-text topics are capped at 120 chars (`dispatcher/dispatch.rs:1818-1826`).
+- Validation is **all-or-nothing**: one unknown spotlight anchor, sidebar section, or sub-tab
+  setter rejects the whole tour before it is persisted or played. Bounds are 1..12 steps,
+  <=6 sub-steps, <=600 chars of text, 150s compose timeout.
+- Each row stores the `manifest_hash` it was proven against; `list_tours` re-proves rows on
+  app upgrade and flips drifted ones to `status='stale'` rather than letting them break.
+- Composed tours render beside the built-in registry in Home -> Learning with an
+  `<AthenaComposedBadge variant="composed">` provenance badge; the frontend side is
+  `src/stores/slices/system/dynamicTours.ts` and
+  `src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx`.
+- **Known history:** the table's DDL originally ran against the main db while every query runs
+  on `UserDbPool`, so between 2026-07-30 and 2026-08-15 the feature never persisted a row. The
+  DDL now lives in `COMPANION_SCHEMA`; the empty table on older installs is deliberately left
+  in place.
 
 ## The `persona_creation` walkthrough
 
@@ -154,7 +187,7 @@ Not every highlight needs a whole walkthrough. When Athena *navigates* (`open_ro
 
 - `companionStore.flashHighlight(testId, { ms?, label? })` sets `flashHighlightTestId` (+ optional `flashHighlightLabel`) and schedules an auto-clear (a newer flash cancels the prior one's pending clear). It **skips while a walkthrough is active** so it never fights the guidance ring, and starting a walkthrough clears any pending flash. When a `label` is given, the flash ring renders a small primary chip above it ("Just composed") — the compose-cockpit/dashboard handlers pass it so a freshly-built surface announces itself; the plain navigate flash is unlabeled.
 - `TrackedGlowRing source="flash"` (in `AthenaGuideLayer`) renders the ring from `flashHighlightTestId` — the same primitive as the walkthrough ring, with a brighter, self-clearing `.athena-ring--flash` treatment. `pointer-events-none` and static under reduced motion.
-- Wiring lives in `CompanionPanel`: the `companion://navigate` handler flashes `ROUTE_FLASH_ANCHORS[route]` (only routes with a stable always-present container — `overview` → `overview-page`, `credentials` → `credential-manager`, `settings` → `settings-page`); the compose-cockpit/dashboard handlers flash `cockpit-panel` after switching to Home → Cockpit. No new op or backend change — it rides existing events.
+- Wiring lives in the chat panel's navigation module (`companion/chat/athenaChatNavigation.ts:41-45,81`, formerly `CompanionPanel`): the `companion://navigate` handler flashes `ROUTE_FLASH_ANCHORS[route]` (only routes with a stable always-present container — `overview` → `overview-page`, `credentials` → `credential-manager`, `settings` → `settings-page`); the compose-cockpit/dashboard handlers flash `cockpit-panel` after switching to Home → Cockpit. No new op or backend change — it rides existing events.
 
 ---
 
@@ -191,9 +224,11 @@ Bridge methods (`window.__TEST__`): `startGuidedWalkthrough(topic)`, `guidanceSt
 | Orb glide | `src/features/plugins/companion/orb/AthenaOrb.tsx` |
 | Element tracking (shared with TourSpotlight) | `src/hooks/utility/interaction/useTrackedElementRect.ts` |
 | Offer card | `src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx` |
-| Ops + allow-list | `src-tauri/src/companion/dispatcher.rs` |
-| Event emit | `src-tauri/src/companion/session.rs` (`GUIDE_EVENT`) |
-| Op teaching | `src-tauri/src/companion/templates/constitution.md` (v19) |
+| Ops + allow-list | `src-tauri/src/companion/dispatcher/catalog.rs` (`GUIDED_TOPICS`, `COMPOSE_MIN/MAX_STEPS`, the `ANCHOR_IDS` re-export) + `dispatcher/dispatch.rs` (the op handlers) |
+| Event emit | `src-tauri/src/companion/session/events.rs:37` (`GUIDE_EVENT`) |
+| Op teaching | `src-tauri/src/companion/templates/constitution.md` |
+| Guide-event listener | `src/features/plugins/companion/chat/athenaChatNavigation.ts` |
+| Generative Tours (sibling system) | `src-tauri/src/companion/tours.rs`, `commands/companion/tours.rs`, `src/stores/slices/system/dynamicTours.ts` |
 
 ## Related
 - [`README.md`](./README.md) — companion feature surface.

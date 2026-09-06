@@ -18,6 +18,7 @@ pub use super::dev::goals::*;
 pub use super::dev::ideas::*;
 pub use super::dev::kpis::*;
 pub use super::dev::milestones::*;
+pub use super::dev::notes::*;
 pub use super::dev::pipelines::*;
 pub use super::dev::portfolio::*;
 pub use super::dev::projects::*;

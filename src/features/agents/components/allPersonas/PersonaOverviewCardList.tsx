@@ -1,15 +1,16 @@
 import { memo } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { Calendar, Clock, Inbox, Plug, Star, Zap } from 'lucide-react';
+import { Calendar, Clock, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
-import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { BuildingBadge, StatusBadge, TrustScoreBar, rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { isPersonaBuilding } from './personaBuildStatus';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
@@ -19,7 +20,11 @@ async function copyDescription(text: string, t: { description_copied: string; co
   try {
     await copyText(text);
     addToast(t.description_copied, 'success');
-  } catch {
+  } catch (err) {
+    // The toast tells the user it failed; nothing told anyone WHY. A clipboard
+    // write can fail for reasons worth seeing (permission policy, a headless
+    // webview, a document that lost focus).
+    silentCatch('PersonaOverviewCardList:copyDescription')(err);
     addToast(t.copy_failed, 'error');
   }
 }
@@ -58,23 +63,13 @@ interface PersonaOverviewCardItemProps {
  *  - row action menu
  */
 export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
-  const { t } = useTranslation();
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     isDraft, connectorNamesMap, densityTokens = DENSITY_TOKENS.comfortable,
   } = props;
 
-  if (data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-          <Inbox className="w-5 h-5 text-foreground" />
-        </div>
-        <p className="typo-heading text-foreground">{t.agents.persona_list.no_personas_match}</p>
-      </div>
-    );
-  }
-
+  // Zero rows never reach this list: PersonaOverviewPage renders the shared
+  // empty state (filters vs. no personas) before choosing card or grid.
   return (
     <div className={`flex-1 overflow-y-auto px-3 py-2 ${densityTokens.cardGap}`}>
       {data.map((p) => (
@@ -96,6 +91,15 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
 }
 
 const EMPTY_CONNECTORS: string[] = [];
+
+/** The card's rendering of the shared accent rule (`rowAccentTone`). */
+const CARD_ACCENT_CLASS: Record<RowAccentTone, string> = {
+  building: 'border-l-violet-400',
+  draft: 'border-l-zinc-400',
+  failing: 'border-l-red-400',
+  degraded: 'border-l-amber-400',
+  healthy: 'border-l-emerald-400/60',
+};
 
 const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
   id,
@@ -130,11 +134,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
   const building = isPersonaBuilding(id, buildPersonaId, buildPhase);
   const draft = isDraft(p);
   const favorite = isFavorite(id);
-  const accent = building ? 'border-l-violet-400'
-    : draft ? 'border-l-zinc-400'
-    : health?.status === 'failing' ? 'border-l-red-400'
-    : health?.status === 'degraded' ? 'border-l-amber-400'
-    : 'border-l-emerald-400/60';
+  const accent = CARD_ACCENT_CLASS[rowAccentTone(building, draft, health)];
 
   return (
     <div
@@ -146,8 +146,15 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
       <div className={`flex items-start gap-3 ${densityTokens.cardPadding}`}>
         <button
           type="button"
+          // Same semantics as the desktop SelectCell: a checkbox whose
+          // accessible name is the persona and whose state is announced. The
+          // value it replaced ('Select' / 'Deselect') was the only hardcoded
+          // English aria-label left in this context, so on the mobile roster
+          // every row announced in English whatever the locale.
+          role="checkbox"
+          aria-checked={selected}
+          aria-label={p.name}
           onClick={() => onToggleSelect(id)}
-          aria-label={selected ? 'Deselect' : 'Select'}
           className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
             selected ? 'bg-primary/80 border-primary/60' : 'border-primary/30'
           }`}

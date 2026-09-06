@@ -16,14 +16,14 @@ interface AutomationActionStepProps {
 export function AutomationActionStep({
   elapsed, stageIndex, tailLines, outputLinesLength, tailRef, onCancel,
 }: AutomationActionStepProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div key="analyzing" className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between px-1">
         {elapsed >= 3 ? (
           <div className="flex items-center gap-1.5 typo-body text-foreground">
             <Clock className="w-3 h-3" />
-            <span>{t.agents.connectors.auto_elapsed.replace('{elapsed}', String(elapsed))}</span>
+            <span>{tx(t.agents.connectors.auto_elapsed, { elapsed })}</span>
           </div>
         ) : <div />}
         <span className="typo-body text-foreground">{t.agents.connectors.auto_typically}</span>

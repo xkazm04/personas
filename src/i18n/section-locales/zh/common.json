@@ -181,5 +181,16 @@
   "unsaved_title": "离开前保存更改？",
   "use_case_count_one": "{count} 个用例",
   "use_case_count_other": "{count} 个用例",
-  "value_placeholder": "值"
+  "value_placeholder": "值",
+  "md_bold": "加粗",
+  "md_bullet": "项目符号列表",
+  "md_checklist": "检查清单",
+  "md_code": "行内代码",
+  "md_h1": "标题 1",
+  "md_h2": "标题 2",
+  "md_h3": "标题 3",
+  "md_italic": "斜体",
+  "md_numbered": "编号列表",
+  "md_quote": "引用",
+  "md_toolbar": "格式设置"
 }

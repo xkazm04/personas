@@ -2437,7 +2437,11 @@
     "show_archived_personas": "আর্কাইভ করা পারসোনা দেখান",
     "show_only_favorites": "শুধু প্রিয়গুলো দেখান",
     "star_director_add": "Director-এর কোচিং স্কোপে যোগ করতে তারকা চিহ্নিত করুন",
-    "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।"
+    "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।",
+    "persona_count_one": "{count} পার্সোনা",
+    "persona_count_other": "{count} পার্সোনা",
+    "persona_count_filtered_one": "{total} এর মধ্যে {shown} পার্সোনা",
+    "persona_count_filtered_other": "{total} এর মধ্যে {shown} পার্সোনা"
   },
   "persona_overview": {
     "click_to_copy": "কপি করতে ক্লিক করুন",

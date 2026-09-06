@@ -13,10 +13,13 @@ import type { EditorTab } from '@/lib/types/types';
  * dependent tab. Only add entries where a genuine data dependency exists.
  */
 export const TAB_DIRTY_DEPENDENCIES: Partial<Record<EditorTab, string[]>> = {
-  // Model config changes invalidate use-case test results
-  'use-cases': ['model'],
-  // Design hub absorbs Prompt and Connectors save groups (former standalone tabs).
-  design: ['prompt', 'connectors'],
+  // The `model` save group (useEditorSave) has no tab of its own; its fields
+  // are edited under the Design hub, so that is where its dirty dot shows.
+  // Pinned by libs/__tests__/tabDirtyDependencies.test.ts against the ids that
+  // actually render and register: the previous entries named a tab that no
+  // longer renders (`use-cases`) and two groups nothing registers any more
+  // (`prompt`, `connectors`), so no dependency in the map could ever fire.
+  design: ['model'],
 };
 
 /** Human-readable labels for dirty-state tab identifiers.
@@ -32,9 +35,48 @@ export const TAB_LABELS: Record<string, string> = {
   model: 'Model',
 };
 
+/**
+ * The `agents.editor.tabs` catalog — one label per tab / save-group id the
+ * editor can report as dirty, keyed with underscores.
+ *
+ * Declared as a CLOSED type rather than taken as `Record<string, string>`: a
+ * cast to an open record deletes the generated key type, so an arm missing
+ * from every locale is invisible to the compiler AND to the locale-parity
+ * gates (which compare locales against each other, and would see the same
+ * hole in all fourteen).
+ */
+export interface EditorTabLabelCatalog {
+  use_cases: string;
+  prompt: string;
+  lab: string;
+  connectors: string;
+  design: string;
+  health: string;
+  settings: string;
+  model: string;
+}
+
+/**
+ * Translated label for one dirty-state tab identifier. It is the one place
+ * these labels are translated, and until this resolver existed the catalog had
+ * zero consumers while three call sites each rendered their own English:
+ * TAB_LABELS here, a capitalised id in the editor body, and a hardcoded toast
+ * in the switch guard.
+ */
+export function tabIdLabel(id: string, catalog?: EditorTabLabelCatalog): string {
+  const key = id.replace(/-/g, '_');
+  // `id` is an open runtime value (any registered dirty-group id), so the
+  // lookup is guarded by `in` before the index — that guard is the invariant
+  // the keyof assertion rests on. An id the catalog does not carry (e.g.
+  // 'notifications', registered by the channels surface) falls through to the
+  // English table and then to a humanized id, never to a raw machine token.
+  if (catalog && key in catalog) return catalog[key as keyof EditorTabLabelCatalog];
+  return TAB_LABELS[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
+}
+
 /** Convert a list of tab IDs to human-readable labels. */
-export function tabIdsToLabels(ids: string[]): string {
-  return ids.map((id) => TAB_LABELS[id] ?? id).join(', ');
+export function tabIdsToLabels(ids: string[], catalog?: EditorTabLabelCatalog): string {
+  return ids.map((id) => tabIdLabel(id, catalog)).join(', ');
 }
 
 /** Check whether a tab should show as dirty, considering both its own

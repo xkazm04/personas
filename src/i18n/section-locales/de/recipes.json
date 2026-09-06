@@ -66,7 +66,7 @@
   "new_recipe": "Neues Rezept",
   "no": "Nein",
   "no_executions": "Noch keine Ausführungen. Rezept im Test-Runner-Tab ausführen.",
-  "no_linked": "Noch keine Rezepte verknüpft. Klicken Sie \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Hinzufügen\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\", um Rezepte aus der Bibliothek zu verknüpfen.",
+  "no_linked": "Noch keine Rezepte verknüpft. Klicken Sie \"Hinzufügen\", um Rezepte aus der Bibliothek zu verknüpfen.",
   "no_match": "Keine passenden Rezepte",
   "no_match_hint": "Versuchen Sie einen anderen Suchbegriff.",
   "no_matching": "Keine passenden Rezepte gefunden.",

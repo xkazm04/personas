@@ -249,50 +249,10 @@ pub async fn run_consolidation(
     };
 
     // Parse and persist proposals.
-    let mut items_total = 0;
-    {
+    let persisted = {
         let conn = pool.get()?;
         let tx = conn.unchecked_transaction()?;
-        for raw in &envelope.proposals {
-            if !is_valid_kind(&raw.kind) {
-                tracing::warn!(kind = %raw.kind, "skipping consolidation proposal: invalid kind");
-                continue;
-            }
-            if !is_valid_scope(&raw.scope) {
-                tracing::warn!(scope = %raw.scope, "skipping consolidation proposal: invalid scope");
-                continue;
-            }
-            if raw.sources.is_empty() {
-                tracing::warn!(key = %raw.key, "skipping consolidation proposal: empty sources");
-                continue;
-            }
-            if raw.value.trim().is_empty() {
-                continue;
-            }
-            let item_id = format!("citem_{}", short_uuid());
-            let sources_json =
-                serde_json::to_string(&raw.sources).unwrap_or_else(|_| "[]".to_string());
-            tx.execute(
-                "INSERT INTO companion_consolidation_item
-                 (id, consolidation_id, kind, scope, fact_key, proposed_value, sources_json,
-                  importance, confidence, supersedes_id, rationale, status)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending')",
-                params![
-                    item_id,
-                    id,
-                    raw.kind,
-                    raw.scope,
-                    raw.key,
-                    raw.value,
-                    sources_json,
-                    raw.importance.clamp(1, 5),
-                    raw.confidence.clamp(0.0, 1.0),
-                    raw.supersedes_id,
-                    raw.rationale,
-                ],
-            )?;
-            items_total += 1;
-        }
+        let persisted = persist_proposals(&tx, &id, &envelope.proposals)?;
         let summary_text = envelope.summary.clone();
         let now2 = Utc::now().to_rfc3339();
         tx.execute(
@@ -302,11 +262,107 @@ pub async fn run_consolidation(
             params![now2, summary_text, id],
         )?;
         tx.commit()?;
-    }
+        persisted
+    };
 
-    tracing::info!(consolidation_id = %id, items = items_total, "consolidation pass completed");
+    tracing::info!(
+        consolidation_id = %id,
+        items = persisted.inserted,
+        skipped_rejected = persisted.skipped_rejected,
+        "consolidation pass completed"
+    );
 
     Ok(id)
+}
+
+/// What one persist pass did: how many proposals became `pending` items,
+/// and how many were dropped because the operator had already rejected
+/// that exact proposal.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Persisted {
+    pub inserted: usize,
+    pub skipped_rejected: usize,
+}
+
+/// Persist the model's proposals as `pending` review items.
+///
+/// **A proposal the operator already rejected is not asked again.** Before
+/// this check the pass had no memory of its own verdicts: `reject_item`
+/// only flipped a status, and the next pass - reading the same episodes
+/// under the same prompt - re-derived the same fact and put it back in the
+/// inbox, so a rejection lasted exactly one pass. The check is keyed on
+/// `(scope, fact_key, proposed_value)`: the VALUE is part of the identity on
+/// purpose. Rejecting "home_city = Brno" must not become "never propose
+/// home_city again" - a different value for the same key is a new question,
+/// and asking it once more costs one click, whereas silently dropping it
+/// costs a true fact.
+///
+/// Split out of `run_consolidation` so the rule is testable without an LLM
+/// call. Nothing here is validated beyond what the loop always checked; the
+/// review UI still decides what lands.
+fn persist_proposals(
+    tx: &rusqlite::Transaction<'_>,
+    consolidation_id: &str,
+    proposals: &[RawProposal],
+) -> Result<Persisted, AppError> {
+    let mut out = Persisted::default();
+    for raw in proposals {
+        if !is_valid_kind(&raw.kind) {
+            tracing::warn!(kind = %raw.kind, "skipping consolidation proposal: invalid kind");
+            continue;
+        }
+        if !is_valid_scope(&raw.scope) {
+            tracing::warn!(scope = %raw.scope, "skipping consolidation proposal: invalid scope");
+            continue;
+        }
+        if raw.sources.is_empty() {
+            tracing::warn!(key = %raw.key, "skipping consolidation proposal: empty sources");
+            continue;
+        }
+        if raw.value.trim().is_empty() {
+            continue;
+        }
+        let rejected_before: bool = tx.query_row(
+            "SELECT EXISTS(
+                 SELECT 1 FROM companion_consolidation_item
+                  WHERE status = 'rejected'
+                    AND scope = ?1 AND fact_key = ?2 AND proposed_value = ?3)",
+            params![raw.scope, raw.key, raw.value],
+            |r| r.get(0),
+        )?;
+        if rejected_before {
+            tracing::info!(
+                key = %raw.key,
+                scope = %raw.scope,
+                "skipping consolidation proposal: the operator rejected this exact proposal before"
+            );
+            out.skipped_rejected += 1;
+            continue;
+        }
+        let item_id = format!("citem_{}", short_uuid());
+        let sources_json = serde_json::to_string(&raw.sources).unwrap_or_else(|_| "[]".to_string());
+        tx.execute(
+            "INSERT INTO companion_consolidation_item
+             (id, consolidation_id, kind, scope, fact_key, proposed_value, sources_json,
+              importance, confidence, supersedes_id, rationale, status)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending')",
+            params![
+                item_id,
+                consolidation_id,
+                raw.kind,
+                raw.scope,
+                raw.key,
+                raw.value,
+                sources_json,
+                raw.importance.clamp(1, 5),
+                raw.confidence.clamp(0.0, 1.0),
+                raw.supersedes_id,
+                raw.rationale,
+            ],
+        )?;
+        out.inserted += 1;
+    }
+    Ok(out)
 }
 
 /// Apply a single pending consolidation item — writes the underlying
@@ -1662,6 +1718,96 @@ mod tests {
         LAST_LIFECYCLE_SWEEP.store(0, Ordering::Relaxed);
         maybe_run_lifecycle_sweep(&b.pool);
         assert_eq!(importance(&b, &id)?, 0, "the second sweep takes it out");
+        Ok(())
+    }
+
+    /// A rejected proposal is not asked again - and a new value for the
+    /// rejected key still is (block on the whole triple, never on the key
+    /// alone).
+    ///
+    /// Arm A is the pre-change behaviour and lives inside the test: the first
+    /// pass MUST insert, so a harness that inserted nothing for both arms
+    /// fails here instead of passing. Arm B is the rule under test.
+    #[test]
+    fn a_rejected_proposal_is_not_asked_again() -> Result<(), AppError> {
+        let b = brain()?;
+        let ep = episodic::append_episode(&b.pool, "s1", EpisodeRole::User, "I moved to Brno")?;
+        let proposal = |value: &str| RawProposal {
+            kind: "add".to_string(),
+            scope: "user".to_string(),
+            key: "home_city".to_string(),
+            value: value.to_string(),
+            sources: vec![ep.clone()],
+            importance: 3,
+            confidence: 0.9,
+            supersedes_id: None,
+            rationale: None,
+        };
+        let run = |pool: &UserDbPool, id: &str| -> Result<(), AppError> {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO companion_consolidation (id, triggered_at, status)
+                 VALUES (?1, ?2, 'running')",
+                params![id, Utc::now().to_rfc3339()],
+            )?;
+            Ok(())
+        };
+        let persist =
+            |pool: &UserDbPool, id: &str, p: &RawProposal| -> Result<Persisted, AppError> {
+                let conn = pool.get()?;
+                let tx = conn.unchecked_transaction()?;
+                let out = persist_proposals(&tx, id, std::slice::from_ref(p))?;
+                tx.commit()?;
+                Ok(out)
+            };
+
+        // Arm A: the first pass proposes it (the old behaviour, kept as the
+        // known-positive so the harness proves it can insert at all).
+        run(&b.pool, "cons_a")?;
+        let a = persist(&b.pool, "cons_a", &proposal("Brno"))?;
+        assert_eq!(
+            a,
+            Persisted {
+                inserted: 1,
+                skipped_rejected: 0
+            }
+        );
+
+        // The operator says no.
+        let item_id: String = b.pool.get()?.query_row(
+            "SELECT id FROM companion_consolidation_item WHERE consolidation_id = 'cons_a'",
+            [],
+            |r| r.get(0),
+        )?;
+        reject_item(&b.pool, &item_id)?;
+
+        // Arm B: the next pass re-derives the same fact and is not allowed to ask.
+        run(&b.pool, "cons_b")?;
+        let b_same = persist(&b.pool, "cons_b", &proposal("Brno"))?;
+        assert_eq!(
+            b_same,
+            Persisted {
+                inserted: 0,
+                skipped_rejected: 1
+            }
+        );
+
+        // A different value for the rejected key is a new question.
+        let b_new = persist(&b.pool, "cons_b", &proposal("Prague"))?;
+        assert_eq!(
+            b_new,
+            Persisted {
+                inserted: 1,
+                skipped_rejected: 0
+            }
+        );
+
+        let pending: i64 = b.pool.get()?.query_row(
+            "SELECT COUNT(*) FROM companion_consolidation_item WHERE status = 'pending'",
+            [],
+            |r| r.get(0),
+        )?;
+        assert_eq!(pending, 1, "only the new value waits for review");
         Ok(())
     }
 }

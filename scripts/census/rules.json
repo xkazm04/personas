@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 77,
-        "matches": 188
+        "files": 76,
+        "matches": 185
       },
       "floor": 4000
     },
@@ -242,8 +242,8 @@
         "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
       },
       "baseline": {
-        "files": 71,
-        "matches": 151
+        "files": 72,
+        "matches": 152
       },
       "floor": 900
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 68,
-        "matches": 68
+        "files": 66,
+        "matches": 66
       },
       "floor": 4000
     },
@@ -560,7 +560,7 @@
       },
       "baseline": {
         "files": 769,
-        "matches": 1842
+        "matches": 1841
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 334,
-        "matches": 747
+        "files": 328,
+        "matches": 741
       },
       "floor": 4000
     },
@@ -629,8 +629,8 @@
         }
       ],
       "baseline": {
-        "files": 76,
-        "matches": 114
+        "files": 74,
+        "matches": 112
       },
       "floor": 4000
     },
@@ -1027,8 +1027,8 @@
         "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
       },
       "baseline": {
-        "files": 44,
-        "matches": 304
+        "files": 45,
+        "matches": 305
       },
       "floor": 900
     },
@@ -1416,7 +1416,7 @@
       },
       "baseline": {
         "files": 521,
-        "matches": 1006
+        "matches": 1005
       },
       "floor": 2000
     },
@@ -1488,8 +1488,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 42
+        "files": 40,
+        "matches": 41
       },
       "floor": 4000
     },
@@ -3279,6 +3279,10 @@
         {
           "path": "src-tauri/src/engine/subscription/attention.rs",
           "reason": "AttentionSubscription::tick (:128) is the trait-required () adapter — ReactiveSubscription (subscription/traits.rs:37) fixes the signature for all 41 baselined impls, so this rule's LEGAL FIX (a return type) is unimplementable per-impl until the trait itself changes (the rule's designed end state). The cycle's outcome is NOT discarded: every pass lands durably in persona_attention_ledger (a 'started' row opened BEFORE the spawn, closed dispatched/enqueued/failed/panicked, typed refusal rows, per-tick aggregate narration) — the durable per-cycle producer record this rule's own consequence measurement found the app had exactly ONE of across 244 tables, and which no baselined production impl writes. Cost of the exemption: a regression stripping the ledger writes from this tick goes uncounted here - hand-verified 2026-09-01"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/claude_accounts/rotate.rs",
+          "reason": "ClaudeAccountRotateSubscription::tick (:192) is the trait-required () adapter — ReactiveSubscription fixes the signature, same as the attention.rs exclusion. The cycle's outcome is NOT discarded: a rotation lands durably in app settings (claude_accounts.last_rotation, read back by the strip and toasted on change) and every failure is logged at warn with the target; a disabled policy returns before any HTTP, which is the designed no-work outcome."
         }
       ],
       "baseline": {
@@ -5051,8 +5055,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 43,
-        "matches": 56
+        "files": 39,
+        "matches": 52
       },
       "floor": 4000
     },
@@ -5282,8 +5286,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 42,
-        "matches": 47
+        "files": 41,
+        "matches": 46
       },
       "floor": 4000
     },

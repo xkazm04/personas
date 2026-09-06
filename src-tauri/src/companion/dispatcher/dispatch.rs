@@ -25,6 +25,39 @@ use super::types::{
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
+/// Move a note that just produced a `show_ship_goals` card to `in_progress`.
+///
+/// Best-effort by design. The card is already validated and about to render;
+/// failing the whole op because a status stamp did not stick would cost the
+/// operator the decomposition to save a piece of bookkeeping. A note that is
+/// not `published` is left alone — `draft` means he never pressed the pad's
+/// "turn into goals" button (she reached for the note herself, which is
+/// allowed), and `in_progress` means a card is already out there.
+fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) {
+    use crate::db::models::NoteStatus;
+    let current = match crate::db::repos::dev_tools::get_note(db, note_id) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "notepad: could not read note for goals dispatch");
+            return;
+        }
+    };
+    if current.status != NoteStatus::Published {
+        return;
+    }
+    if let Err(e) = crate::db::repos::dev_tools::set_status(
+        db,
+        note_id,
+        NoteStatus::InProgress,
+        Some("athena_goals"),
+        Some(&format!("note:{note_id}")),
+        None,
+        None,
+    ) {
+        tracing::warn!(note_id, error = %e, "notepad: goals dispatch status stamp failed");
+    }
+}
+
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
 /// and return cleaned text + the list of created approvals.
 ///
@@ -1589,6 +1622,16 @@ pub fn dispatch_with_sys(
                     .and_then(|v| v.as_array())
                     .cloned()
                     .unwrap_or_default();
+                // Optional, and only ever set when the decomposition is of a
+                // Notepad note. An empty string is not a note id — treat it as
+                // absent rather than carrying "" into the card config.
+                let note_id = env
+                    .params
+                    .get("note_id")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string);
                 // Resolving the milestone, its project and that project's
                 // existing goals all need the system DB. Without it there is
                 // no way to tell a NEW goal from one that already exists, so
@@ -1636,12 +1679,85 @@ pub fn dispatch_with_sys(
                                 "milestone_id": plan.milestone_id,
                                 "milestone_name": plan.milestone_name,
                                 "rows": rows_json,
+                                // Present only when the decomposition came out
+                                // of a Notepad note. The confirm path carries
+                                // it back so the note can be stamped completed
+                                // with the goal ids it produced — without it
+                                // the pad has no way to learn that the thing it
+                                // dispatched actually landed.
+                                "note_id": note_id,
                             }),
                         });
+                        // The note is now IN FLIGHT: a card exists that will
+                        // create goals from it. Stamping the status here rather
+                        // than at confirm time is deliberate — the pad must
+                        // stop offering "turn into goals" the moment a card is
+                        // on screen, or a second card duplicates the first.
+                        if let Some(nid) = note_id.as_deref() {
+                            mark_note_in_flight(db, nid);
+                        }
                     }
                     Err(reason) => {
                         out.warnings
                             .push(format!("rejected show_ship_goals: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Suggestions INTO a note (2026-09-05).
+            //
+            // Fourth card op, and the only one whose consent surface is not
+            // only the chat: the same rows render as inline blocks inside the
+            // note, at the heading each one anchors to, where an edit to a
+            // document is actually judged. Each row is accepted, edited or
+            // rejected on its own (`notepad_resolve_suggestion`); there is no
+            // batch Confirm, because "apply all eight of her paragraphs" is not
+            // a decision anybody makes about their own writing.
+            //
+            // Fails CLOSED without the app database for the same reason
+            // `show_ship_goals` does: a rendered card whose Accept button
+            // writes into a note we could not prove exists is worse than no
+            // card and a warning she reads next turn.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_note_suggestions" => {
+                let note_id = env
+                    .params
+                    .get("note_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let rows = env
+                    .params
+                    .get("rows")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "show_note_suggestions could not be validated: the notepad is not \
+                         reachable from this turn. Tell the user rather than proposing edits."
+                            .into(),
+                    );
+                    continue;
+                };
+                match crate::commands::infrastructure::dev_tools::validate_note_suggestions(
+                    db, note_id, &rows,
+                ) {
+                    Ok(plan) => {
+                        out.chat_cards.push(ChatCard {
+                            kind: "note_suggestions".to_string(),
+                            title: env
+                                .params
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            config: plan.config(),
+                        });
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected show_note_suggestions: {reason}"));
                         cleaned_lines.push(line);
                         continue;
                     }
@@ -1944,6 +2060,7 @@ pub fn dispatch_with_sys(
                             "describe_ship_milestone" => {
                                 crate::companion::ship_ops::describe_ship_milestone(db, query)
                             }
+                            "describe_note" => crate::companion::note_ops::describe_note(db, query),
                             _ => list_teams(db, query),
                         },
                         None => format!(

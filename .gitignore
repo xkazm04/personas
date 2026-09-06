@@ -90,6 +90,7 @@ recordings/
 !.claude/codebase-context.md
 !.claude/codebase-context-overrides.md
 !.claude/codebase-stack.md
+!.claude/guide-sync-marker.json
 # Decision Mirror ledger: personal decision data, NEVER tracked — explicit
 # re-ignore so future whitelist additions above can't leak it.
 .claude/decision-ledger/
@@ -146,7 +147,7 @@ docs/plans/
 # Practice-harvest / promote handoff state. The app writes snapshot.json into a
 # member repo and agents write runs/<id>/result.json back; the ingest door then
 # stamps ingested.json. All of it is machine-local ingest state, never source.
-practice-harvest/
+/practice-harvest/
 
 # ts-rs default export dir. Bindings belong in src/lib/bindings/ (set via
 # src-tauri/build.rs TS_RS_EXPORT_DIR); a cargo invocation that misses that env
@@ -217,3 +218,27 @@ practice-harvest/
 /.claude/rules/ai-registry-llm-observability.md
 /.claude/rules/ai-registry-localization.md
 # END ai-registry linked skills
+
+# Raw ESLint JSON dumps. `eslint -f json -o lint-output.json` was committed twice
+# by accident (16.2 MB — the largest tracked file in the repo, larger than every
+# locale catalog). Nothing reads it; regenerate on demand.
+lint-output.json
+eslint-output.json
+
+# Archived harness / bench run bundles. The dated run dirs under docs/harness/
+# and the raw results/ + runs/ output of the benches are finished scan artifacts:
+# no gate reads them and no `evidence:` frontmatter cites them. Bench
+# DEFINITIONS (README, judge-prompt, fixtures, seeds, cards) stay tracked.
+# See docs/harness/ARCHIVED-RUNS.md.
+docs/harness/*-2026-*/
+docs/harness/perf-runs/
+docs/tests/clarify-bench/results/
+docs/tests/build-bench/results/
+docs/tests/core-bench/runs/
+docs/tests/model-bench/results/
+
+# One-off CLI e2e report (scripts/test drivers rewrite it per run)
+src/test/e2e/cli-e2e-report.json
+
+# Stale top-level build transcripts (build-lite.log, build-arm64.log, ...) are
+# already covered by *.log above; this note exists so nobody re-adds them.

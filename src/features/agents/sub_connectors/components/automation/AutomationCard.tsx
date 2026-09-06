@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
@@ -32,7 +33,7 @@ interface AutomationCardProps {
 export function AutomationCard({
   automation, onTest, onEdit, onToggleStatus, onDelete, isTesting, isTransitioning, testResult,
 }: AutomationCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
   const useCases = useSelectedPersonaCapabilities();
   const capabilityTitle = automation.useCaseId
@@ -76,7 +77,7 @@ export function AutomationCard({
                 {capabilityTitle}
               </StatusBadge>
             )}
-            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
+            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{tx(t.agents.connectors.auto_last_run, { time: formatRelativeTime(automation.lastTriggeredAt) })}</span>}
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
             {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
@@ -88,11 +89,10 @@ export function AutomationCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {automation.deploymentStatus === 'active' && (
-            <button type="button" onClick={() => onTest(automation.id)} disabled={isTesting}
-              title={isTesting ? 'Test is already running' : undefined}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
-              {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
-            </button>
+            <Button variant="secondary" size="sm" loading={isTesting} disabled={isTesting}
+              icon={<Activity className="w-3 h-3" />} onClick={() => onTest(automation.id)}>
+              {t.agents.connectors.auto_test}
+            </Button>
           )}
           {automation.deploymentStatus === 'draft' && (
             <button type="button" onClick={() => onEdit(automation.id)}

@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "Saya bisa melihat agen, eksekusi, dan memori Anda. Tanyakan apa saja, atau mulai dengan salah satu ini.",
     "welcome_title": "Apa yang bisa saya bantu hari ini?",
     "working": "Sedang bekerja…",
-    "you_label": "Anda"
+    "you_label": "Anda",
+    "note_suggestions_accept": "Terima",
+    "note_suggestions_accepted": "Ditambahkan ke catatan",
+    "note_suggestions_count_one": "1 saran untuk “{title}”",
+    "note_suggestions_count_other": "{count} saran untuk “{title}”",
+    "note_suggestions_empty": "Kartu ini tidak berisi saran.",
+    "note_suggestions_heading": "Saran untuk sebuah catatan",
+    "note_suggestions_open_pad": "Buka notepad untuk melihat di mana saran ini diterapkan.",
+    "note_suggestions_question_hint": "Jawab ini di catatan, atau di obrolan.",
+    "note_suggestions_reject": "Tolak",
+    "note_suggestions_rejected": "Diabaikan"
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",

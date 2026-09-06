@@ -1237,7 +1237,7 @@
     "analyzing": "Đang phân tích mẫu để tìm câu hỏi cấu hình…",
     "check_interval": "Khoảng thời gian kiểm tra",
     "check_interval_placeholder": "Mỗi 5 phút",
-    "cron_hint": "Ngôn ngữ tự nhiên (ví dụ: \\\\\\\"Mỗi ngày trong tuần lúc 9 giờ sáng\\\\\\\") hoặc cron (ví dụ: \\\\\\\"0 9 * * 1-5\\\\\\\")",
+    "cron_hint": "Ngôn ngữ tự nhiên (ví dụ: \"Mỗi ngày trong tuần lúc 9 giờ sáng\") hoặc cron (ví dụ: \"0 9 * * 1-5\")",
     "cron_placeholder": "Mỗi ngày trong tuần lúc 9 giờ sáng",
     "manual_hint": "Kích hoạt thủ công -- không cần cấu hình",
     "no_triggers": "Chưa chọn trình kích hoạt",

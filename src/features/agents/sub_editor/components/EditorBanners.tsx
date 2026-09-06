@@ -34,6 +34,7 @@ const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: str
 };
 
 function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss }: BannerPrimitiveProps) {
+  const { t } = useTranslation();
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (
@@ -48,7 +49,7 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
             {actions.map((action, index) => (
               <span key={index}>{action}</span>
             ))}
-            <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="w-7 h-7">
+            <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss} className="w-7 h-7">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -69,13 +70,15 @@ interface UnsavedBannerProps {
 export function UnsavedChangesBanner({
   visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss,
 }: UnsavedBannerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <BannerPrimitive
       visible={visible}
       colorScheme="amber"
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
-      message={`${t.agents.editor_ui.unsaved_changes}${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
+      message={changedSections.length > 0
+        ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
+        : t.agents.editor.unsaved_changes_generic}
       actions={[
         <Button key="save" variant="accent" accentColor="amber" size="sm" onClick={onSaveAndSwitch}>
           {t.agents.editor.save_and_switch}

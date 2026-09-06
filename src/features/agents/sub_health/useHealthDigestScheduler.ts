@@ -8,16 +8,29 @@ import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 const LAST_DIGEST_KEY = 'health_digest_last_run';
 const DIGEST_ENABLED_KEY = 'health_digest_enabled';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * How far in the future a stored stamp may sit before it is treated as
+ * corrupt. A stamp written while the clock was wrong (or in another zone's
+ * local time) would otherwise make `now - last < ONE_WEEK_MS` true for a week
+ * PAST the bogus moment — a stamp 30 days ahead silences the digest for 37.
+ * A day absorbs any zone or DST confusion; nothing legitimate is further out.
+ */
+const FUTURE_TOLERANCE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Parse a stored last-run timestamp. Returns `null` for any value that is
- * missing, empty, non-ISO, or produces a NaN when parsed — callers should
- * treat `null` as "never run" and overwrite with a fresh ISO string.
+ * missing, empty, non-ISO, produces a NaN when parsed, or lies more than
+ * {@link FUTURE_TOLERANCE_MS} ahead of `now` — callers should treat `null` as
+ * "never run" and overwrite with a fresh ISO string.
+ *
+ * Exported for unit tests.
  */
-function parseLastRunMs(raw: string | null | undefined): number | null {
+export function parseLastRunMs(raw: string | null | undefined, now: number = Date.now()): number | null {
   if (typeof raw !== 'string' || raw.length === 0) return null;
   const ms = new Date(raw).getTime();
-  return Number.isFinite(ms) ? ms : null;
+  if (!Number.isFinite(ms)) return null;
+  if (ms > now + FUTURE_TOLERANCE_MS) return null;
+  return ms;
 }
 
 /**
@@ -54,8 +67,8 @@ export function useHealthDigestScheduler() {
         // Guard against corrupt/legacy timestamp values: treat any non-ISO or unparseable
         // string as "never run" so we run once and immediately rewrite a valid ISO stamp,
         // instead of spamming the digest on every launch when `now - NaN` is always false.
-        const lastRunMs = parseLastRunMs(lastRunRaw);
         const now = Date.now();
+        const lastRunMs = parseLastRunMs(lastRunRaw, now);
 
         if (lastRunMs !== null && now - lastRunMs < ONE_WEEK_MS) {
           ran.current = true; // Not yet due — no retry needed
@@ -67,11 +80,12 @@ export function useHealthDigestScheduler() {
         if (abort.signal.aborted) return;
         if (!digest) {
           // Attempt failed (transient). Previously we returned without latching
-          // ran.current and the finally below released running.current — every
-          // subsequent re-render of the host component re-fired the effect,
-          // hammering the IPC layer in a tight retry storm. Treat one attempt
-          // per app session as the contract: if it failed, the user retries by
-          // restarting the app (or an explicit Settings 'Run digest now' button).
+          // ran.current and the finally below released running.current, so the
+          // next flip of `personasLoaded` (or a strict-mode remount) re-fired
+          // the effect and re-ran the whole digest. Treat one attempt per app
+          // session as the contract: if it failed, the user retries by
+          // restarting the app. (There is no "run digest now" control;
+          // NotificationSettings only exposes the enable/disable toggle.)
           ran.current = true;
           return;
         }

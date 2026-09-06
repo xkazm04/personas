@@ -43,11 +43,13 @@ mod e19_agent_manifest;
 // database already migrated by either side is unaffected.
 mod e20_persona_run_paging_index;
 mod e21_chain_trace_ordering_index;
+mod e22_dev_notes;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
 mod c03_fleet_and_workspaces;
 mod c04_milestones_and_autopilot;
+mod c05_claude_accounts;
 
 #[cfg(test)]
 mod tests;
@@ -80,6 +82,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e19_agent_manifest::run(conn)?;
     e20_persona_run_paging_index::run(conn)?;
     e21_chain_trace_ordering_index::run(conn)?;
+    e22_dev_notes::run(conn)?;
 
     Ok(())
 }
@@ -90,6 +93,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     c02_dev_goals_and_kpis::run(conn)?;
     c03_fleet_and_workspaces::run(conn)?;
     c04_milestones_and_autopilot::run(conn)?;
+    c05_claude_accounts::run(conn)?;
 
     Ok(())
 }

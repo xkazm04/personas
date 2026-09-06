@@ -94,6 +94,32 @@ the old console offered *is* the proposal card, so nothing was lost by deleting 
 Once running, the assignment speaks for itself in the conversation as a live **band** —
 step-progress strip, persona stack, rework badges, expandable per-step output, pause/resume.
 
+### Channel leader — who a directive goes to when you address nobody
+
+A plain remark in the conversation (no `@Name`) used to be injected into every member's
+next step and answered by nobody until something was running. Since 2026-09-05 a team
+with a **leader** routes it instead (`commands/teams/channel_leader.rs` + `team_channel.rs`):
+
+- **Who the leader is.** The first enabled member whose pipeline-position role is
+  `orchestrator` or `router` (`persona_team_members.role`, set on the canvas). A team of
+  workers has no leader and keeps the old whole-team inject.
+- **What the leader sees.** It is summoned ALONE, with a briefing in its input envelope
+  (`leaderBriefing`, `channelRole: "leader"`): the operating protocol (coordinate, don't do
+  the work; delegate by the exact `@Name` token; be terse; stop after dispatching;
+  re-evaluate on wake), the **roster** — every other enabled member with its semantic
+  role and headline capability — and the operator's **leader-only instructions**, read
+  from `persona_teams.team_config` JSON under `leader_instructions` (distinct from
+  `shared_instructions`, which every member already receives).
+- **Delegation from replies.** Any persona reply that `@`-mentions other members summons
+  them (never its own author); a member reply that mentions nobody wakes the leader to
+  re-evaluate; a leader reply that mentions nobody is terminal. The chain stops at
+  `MAX_DELEGATION_DEPTH` (3) and the stop leaves a visible row.
+- **The verdict record.** Every leader turn ends with a `VERDICT: action | no_action |
+  failed — reason` line, parsed and published as the `team.channel.leader_verdict` bus
+  event (payload: verdict, reason, directive/reply/execution ids). A reply without the
+  line is recorded as `unstated` — a finding about the leader, not silence by choice.
+  The Overview events list labels it "Team leader verdict".
+
 ### Watching a running assignment — Goals ▸ Missions
 
 > Retired 2026-07: the Studio's **Board** mode (`TeamAssignmentBoardFlightDeck`).

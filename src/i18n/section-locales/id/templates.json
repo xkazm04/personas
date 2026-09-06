@@ -1237,7 +1237,7 @@
     "analyzing": "Menganalisis templat untuk pertanyaan konfigurasi…",
     "check_interval": "Interval pemeriksaan",
     "check_interval_placeholder": "Setiap 5 menit",
-    "cron_hint": "Bahasa alami (mis. \\\\\\\"Setiap hari kerja jam 9 pagi\\\\\\\") atau cron (mis. \\\\\\\"0 9 * * 1-5\\\\\\\")",
+    "cron_hint": "Bahasa alami (mis. \"Setiap hari kerja jam 9 pagi\") atau cron (mis. \"0 9 * * 1-5\")",
     "cron_placeholder": "Setiap hari kerja jam 9 pagi",
     "manual_hint": "Dipicu secara manual -- tidak perlu konfigurasi",
     "no_triggers": "Tidak ada pemicu dipilih",

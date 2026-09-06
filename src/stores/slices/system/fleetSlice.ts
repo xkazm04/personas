@@ -12,6 +12,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { deepScanCommand, isAutoDeepScanEnabled, MAX_AUTO_DEEP_SCANS_PER_INGEST } from '@/lib/scanSweep';
 import { SCAN_MATCH_RULES } from '@/features/plugins/dev-tools/constants/scanMatchRules.gen';
 import { useToastStore } from '@/stores/toastStore';
+import { markNoteRunning, noteIdForSessionName } from '@/features/notepad/notepadStore';
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const normPath = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
@@ -262,6 +263,19 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
           lastActivityMs: BigInt(Date.now()),
         });
         get().fleetRecordTransition(session_id, state as FleetSessionState);
+        // A Notepad note published to Fleet has no way to learn that its
+        // session actually started: `companion_dispatch_fleet_plan` returns a
+        // message, not an id, and the run-artifact sweeper only sees the note
+        // once the skill has written `started.json`. This closes the gap
+        // between the spawn and the first artifact so the pad shows Running
+        // rather than Published for the first half-minute. The sweeper stays
+        // authoritative — `markNoteRunning` moves ONLY a published fleet note
+        // and is a no-op for everything else.
+        if (state === 'running') {
+          const name = get().fleetSessions.find((x) => x.id === session_id)?.name;
+          const noteId = noteIdForSessionName(name);
+          if (noteId) void markNoteRunning(noteId, session_id);
+        }
       },
     ).then((un) => flag.unlisten.push(un));
 

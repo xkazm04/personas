@@ -9,6 +9,11 @@ interface PersonaOverviewToolbarProps {
   onSearchChange: (value: string) => void;
   view: AgentListViewConfig;
   onViewChange: (next: AgentListViewConfig) => void;
+  /** Home-team filter id from the drop rail; `null` when unfiltered. */
+  groupFilter?: string | null;
+  /** Display name for `groupFilter` (team name, or the "no team" label). */
+  groupFilterLabel?: string | null;
+  onClearGroupFilter?: () => void;
 }
 
 interface Chip {
@@ -29,6 +34,9 @@ export function PersonaOverviewToolbar({
   onSearchChange,
   view,
   onViewChange,
+  groupFilter = null,
+  groupFilterLabel = null,
+  onClearGroupFilter,
 }: PersonaOverviewToolbarProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +94,17 @@ export function PersonaOverviewToolbar({
       onClear: () => onViewChange({ ...view, favoriteOnly: false }),
     });
   }
+  // The home team narrows the roster like any other filter, so it gets a chip
+  // like any other filter. Without one, a team filter was invisible: the strip
+  // showed nothing, and the only way back to the full roster was to find the
+  // drop rail again.
+  if (groupFilter !== null && groupFilterLabel && onClearGroupFilter) {
+    chips.push({
+      key: 'group',
+      label: groupFilterLabel,
+      onClear: onClearGroupFilter,
+    });
+  }
   if (search.trim()) {
     chips.push({
       key: 'search',
@@ -104,6 +123,10 @@ export function PersonaOverviewToolbar({
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          // A placeholder is not a label: it disappears on first keystroke and
+          // is not an accessible name in every AT/browser pair. The sibling
+          // search box in PersonaConfigPanel already carries an aria-label.
+          aria-label={t.agents.persona_list.search_personas}
           placeholder={t.agents.persona_list.search_personas}
           className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
         />

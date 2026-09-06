@@ -1648,3 +1648,241 @@ pub struct DevProjectWallSummary {
     /// returns them (order_index, created_at).
     pub milestones: Vec<DevMilestone>,
 }
+
+// ============================================================================
+// Notepad (dev_notes — the scratch-requirement pad and its dispatch handshake)
+// ============================================================================
+
+/// The five states a note can be in.
+///
+/// This is a **lifecycle**, not a label set: the pad, the dispatcher and the
+/// `/note-task` run's `result.json` all key off it, and the legal moves between
+/// states are the contract that keeps those three honest. The transition table
+/// lives in [`NoteStatus::can_transition_to`] and is enforced server-side by
+/// `notepad_set_status` — never in the UI, which is free to grey out a button
+/// but is never the thing that makes an illegal move impossible.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteStatus {
+    /// Being written. The ONLY status in which `body_md` and `project_id` are
+    /// editable — once a note is published, a CLI session may already be
+    /// reading `note.md` off disk, and editing the requirement underneath a
+    /// running agent is how a run silently answers a question nobody asked.
+    Draft,
+    /// Handed over: `note.md` is on disk and a dispatch is (or is about to be)
+    /// in flight.
+    Published,
+    /// A run has claimed it — the sweeper saw `started.json`.
+    InProgress,
+    /// A run reported back. `result_json` holds the report.
+    Completed,
+    /// Off the pad. Does not count against the note cap, and can be restored to
+    /// `Draft` when there is room.
+    Archived,
+}
+
+impl NoteStatus {
+    /// The wire/column token. Must stay identical to the `serde` rename and to
+    /// the `dev_notes.status` CHECK.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NoteStatus::Draft => "draft",
+            NoteStatus::Published => "published",
+            NoteStatus::InProgress => "in_progress",
+            NoteStatus::Completed => "completed",
+            NoteStatus::Archived => "archived",
+        }
+    }
+
+    /// Parse a column/wire token. `None` for anything outside the vocabulary —
+    /// callers decide whether that is a validation error or a skipped row.
+    pub fn parse(raw: &str) -> Option<NoteStatus> {
+        match raw {
+            "draft" => Some(NoteStatus::Draft),
+            "published" => Some(NoteStatus::Published),
+            "in_progress" => Some(NoteStatus::InProgress),
+            "completed" => Some(NoteStatus::Completed),
+            "archived" => Some(NoteStatus::Archived),
+            _ => None,
+        }
+    }
+
+    /// The transition table, verbatim from the notepad contract:
+    ///
+    /// | from | to |
+    /// |---|---|
+    /// | draft | published, archived |
+    /// | published | in_progress, completed, archived |
+    /// | in_progress | completed, archived |
+    /// | completed | archived |
+    /// | archived | draft (restore) |
+    ///
+    /// A no-op move (`x` to the same `x`) is NOT legal: `notepad_set_status`
+    /// stamps timestamps, and re-stamping `started_at` on a second
+    /// `in_progress` write would quietly rewrite when the run began.
+    pub fn can_transition_to(&self, next: NoteStatus) -> bool {
+        use NoteStatus::*;
+        matches!(
+            (self, next),
+            (Draft, Published)
+                | (Draft, Archived)
+                | (Published, InProgress)
+                | (Published, Completed)
+                | (Published, Archived)
+                | (InProgress, Completed)
+                | (InProgress, Archived)
+                | (Completed, Archived)
+                | (Archived, Draft)
+        )
+    }
+}
+
+/// One note. Mirrors `dev_notes` column-for-column.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevNote {
+    pub id: String,
+    /// The repo this note is about. NULL until the operator picks one — and
+    /// NULL again if that project is deleted (`ON DELETE SET NULL`), because
+    /// the thinking outlives the row it pointed at.
+    pub project_id: Option<String>,
+    pub title: String,
+    pub body_md: String,
+    pub status: NoteStatus,
+    pub order_index: i32,
+    /// 'fleet' | 'athena_goals' — where this note was handed to. NULL until a
+    /// dispatch happens.
+    pub dispatch_target: Option<String>,
+    /// `note:<id>` — the address the dispatcher stamps on the session name so
+    /// the sweeper can find the run that belongs to this note.
+    pub dispatch_key: Option<String>,
+    pub fleet_session_id: Option<String>,
+    /// Reserved for a future per-note agent binding; always NULL in v1.
+    pub agent_id: Option<String>,
+    /// JSON text. Fleet runs store the `result.json` body
+    /// (`{schema_version,status,summary,artifacts[]}`); an Athena goals
+    /// dispatch stores `{goal_ids: [...]}`.
+    pub result_json: Option<String>,
+    pub published_at: Option<String>,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub archived_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// What one sweeper pass did. Returned by `notepad_ingest_runs` so the pad can
+/// tell the operator something happened without a full refetch.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotepadIngestReport {
+    /// Notes flipped `published` to `in_progress` (a `started.json` appeared).
+    pub started: u32,
+    /// Notes flipped to `completed` by a `result.json` reporting success.
+    pub completed: u32,
+    /// Runs whose `result.json` reported `"failed"`. The note KEEPS its status
+    /// and gains `result_json` — a failed run is a report, not a completion.
+    pub failed: u32,
+}
+
+#[cfg(test)]
+mod notepad_tests {
+    use super::NoteStatus;
+
+    const ALL: [NoteStatus; 5] = [
+        NoteStatus::Draft,
+        NoteStatus::Published,
+        NoteStatus::InProgress,
+        NoteStatus::Completed,
+        NoteStatus::Archived,
+    ];
+
+    #[test]
+    fn as_str_and_parse_round_trip_every_variant() {
+        for s in ALL {
+            assert_eq!(NoteStatus::parse(s.as_str()), Some(s), "round trip {s:?}");
+        }
+        assert_eq!(NoteStatus::parse("published "), None);
+        assert_eq!(NoteStatus::parse("inProgress"), None);
+        assert_eq!(NoteStatus::parse(""), None);
+    }
+
+    /// The wire token IS the column token IS the serde rename. A drift here is
+    /// a CHECK-constraint failure at runtime, not a compile error.
+    #[test]
+    fn serde_token_matches_as_str() {
+        for s in ALL {
+            let json = serde_json::to_string(&s).unwrap();
+            assert_eq!(json, format!("\"{}\"", s.as_str()));
+        }
+    }
+
+    /// The WHOLE 5x5 table, asserted cell by cell — the nine legal moves and
+    /// the sixteen illegal ones, self-loops included.
+    #[test]
+    fn transition_table_is_exactly_the_contract() {
+        use NoteStatus::*;
+        let legal: [(NoteStatus, NoteStatus); 9] = [
+            (Draft, Published),
+            (Draft, Archived),
+            (Published, InProgress),
+            (Published, Completed),
+            (Published, Archived),
+            (InProgress, Completed),
+            (InProgress, Archived),
+            (Completed, Archived),
+            (Archived, Draft),
+        ];
+        let mut legal_seen = 0;
+        for from in ALL {
+            for to in ALL {
+                let expected = legal.contains(&(from, to));
+                assert_eq!(
+                    from.can_transition_to(to),
+                    expected,
+                    "{from:?} to {to:?} should be {}",
+                    if expected { "legal" } else { "illegal" }
+                );
+                if expected {
+                    legal_seen += 1;
+                }
+            }
+        }
+        assert_eq!(
+            legal_seen, 9,
+            "the table must have exactly nine legal moves"
+        );
+    }
+
+    /// Self-loops are illegal on purpose — see `can_transition_to`'s note on
+    /// timestamp re-stamping.
+    #[test]
+    fn no_status_can_transition_to_itself() {
+        for s in ALL {
+            assert!(!s.can_transition_to(s), "{s:?} to itself must be refused");
+        }
+    }
+
+    /// `archived` is the only sink and `draft` its only exit: every
+    /// non-archived status can reach `archived`, and nothing but `archived` can
+    /// reach `draft`.
+    #[test]
+    fn archived_is_the_sink_and_draft_its_only_exit() {
+        for s in ALL {
+            if s != NoteStatus::Archived {
+                assert!(
+                    s.can_transition_to(NoteStatus::Archived),
+                    "{s:?} must be able to archive"
+                );
+            }
+            assert_eq!(
+                s.can_transition_to(NoteStatus::Draft),
+                s == NoteStatus::Archived,
+                "only archived restores to draft (was {s:?})"
+            );
+        }
+    }
+}

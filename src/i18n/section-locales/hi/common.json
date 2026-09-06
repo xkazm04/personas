@@ -181,5 +181,16 @@
   "unsaved_title": "छोड़ने से पहले बदलाव सहेजें?",
   "use_case_count_one": "{count} उपयोग मामला",
   "use_case_count_other": "{count} उपयोग मामले",
-  "value_placeholder": "मान"
+  "value_placeholder": "मान",
+  "md_bold": "बोल्ड",
+  "md_bullet": "बुलेटेड सूची",
+  "md_checklist": "चेकलिस्ट",
+  "md_code": "इनलाइन कोड",
+  "md_h1": "शीर्षक 1",
+  "md_h2": "शीर्षक 2",
+  "md_h3": "शीर्षक 3",
+  "md_italic": "इटैलिक",
+  "md_numbered": "क्रमांकित सूची",
+  "md_quote": "उद्धरण",
+  "md_toolbar": "फ़ॉर्मेटिंग"
 }

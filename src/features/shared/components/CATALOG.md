@@ -179,6 +179,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | Component | What it's for |
 |---|---|
 | `ConfirmDestructiveModal` | Modal title, e. |
+| `ContextMenu` | Right-click menu: fixed positioning with viewport clamp, outside-click/Escape/scroll dismissal, arrow-key roving focus. |
 | `FilterBar` | _(add a `@catalog` tag)_ |
 | `FirstUseConsentModal` | _(add a `@catalog` tag)_ |
 | `QuickEditPopover` | QuickEditPopover — anchored inline-edit popover: header + arbitrary |

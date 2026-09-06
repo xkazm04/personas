@@ -104,6 +104,11 @@ export const ROUTE_DECISION_PRIORITY = 10;
  */
 export const OVERLAY_DISMISS_PRIORITY = 80;
 
+/** The notepad full-screen layer. Deliberately BELOW `OVERLAY_DISMISS_PRIORITY`
+ *  so a BaseModal / ConfirmDialog raised from inside the notepad takes Escape
+ *  first, and above the route-level decision handlers it covers. */
+export const NOTEPAD_LAYER_PRIORITY = 60;
+
 export interface AppKeyboardOptions {
   enabled?: boolean;
   /** Higher runs first. See the ladder above {@link AppKeyboardProvider}. */

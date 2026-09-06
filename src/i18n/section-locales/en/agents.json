@@ -2076,7 +2076,11 @@
     "show_active_personas": "Show active personas",
     "clear_search": "Clear search",
     "col_persona": "Persona",
-    "no_connectors_configured": "No connectors configured"
+    "no_connectors_configured": "No connectors configured",
+    "persona_count_one": "{count} persona",
+    "persona_count_other": "{count} personas",
+    "persona_count_filtered_one": "{shown} of {total} persona",
+    "persona_count_filtered_other": "{shown} of {total} personas"
   },
   "life": {
     "sub_core": "Core",

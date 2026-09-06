@@ -2437,7 +2437,11 @@
     "show_archived_personas": "Tampilkan persona yang diarsipkan",
     "show_only_favorites": "Tampilkan hanya favorit",
     "star_director_add": "Beri bintang untuk menambahkan ke cakupan pembinaan Director",
-    "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus."
+    "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus.",
+    "persona_count_one": "{count} persona",
+    "persona_count_other": "{count} persona",
+    "persona_count_filtered_one": "{shown} dari {total} persona",
+    "persona_count_filtered_other": "{shown} dari {total} persona"
   },
   "persona_overview": {
     "click_to_copy": "Klik untuk menyalin",

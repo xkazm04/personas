@@ -262,6 +262,15 @@ pub(super) const READ_OPS: &[&str] = &[
     // returns the single first blocking cause with its fix. Takes no query —
     // there is only one brain. See `companion::brain::health`.
     "describe_brain_health",
+    // The Notepad (2026-09-05). A note is a scratch requirement the operator
+    // writes in the pad; she can turn one into goals (`show_ship_goals` with a
+    // `note_id`) and propose edits back into it (`show_note_suggestions`), and
+    // both are decompositions of something she must have READ. Without this op
+    // the only way to get a note in front of her was to paste the body into the
+    // turn — stale the moment it is composed, and paid for every turn after.
+    // The answer also carries the project's OPEN milestone, which is the
+    // `milestone_id` the goals card needs. See `companion::note_ops`.
+    "describe_note",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when
@@ -313,9 +322,20 @@ pub(crate) const READ_OP_DETAIL_CHARS_SHIP: usize = 6000;
 pub(crate) fn read_op_detail_budget(action: &str) -> usize {
     match action {
         "describe_ship_milestone" => READ_OP_DETAIL_CHARS_SHIP,
+        "describe_note" => READ_OP_DETAIL_CHARS_NOTE,
         _ => READ_OP_DETAIL_CHARS,
     }
 }
+
+/// `describe_note`'s budget. Same reasoning as the Ship one above and the same
+/// discipline: the op caps its ONE unbounded input (the note body, at
+/// `note_ops::NOTE_BODY_CAP` = 4,000 characters) so a realistic answer plus its
+/// project/milestone header and its closing doctrine fit here with room to
+/// spare. 1,600 would guillotine the tail of any note longer than a paragraph
+/// — and the tail is where the "body edits only apply while it is a DRAFT"
+/// rule lives, which is the one line that stops her proposing edits that
+/// cannot be applied.
+pub(crate) const READ_OP_DETAIL_CHARS_NOTE: usize = 6000;
 
 /// Rows a single `list_teams` answer may carry.
 pub(super) const LIST_TEAMS_MAX_ROWS: usize = 25;

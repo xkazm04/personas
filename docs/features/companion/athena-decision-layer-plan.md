@@ -1,23 +1,62 @@
 # Athena Hands-Free Decision Layer (P3) — build spec
 
-**Status:** building 2026-05-30. The orb + voice + guided-walkthrough infra is ALREADY SHIPPED
+**Status:** built 2026-05-30. The orb + voice + guided-walkthrough infra is ALREADY SHIPPED
 (see [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) Steps 2a/2b/2c/3 +
 [`athena-guided-walkthroughs.md`](./athena-guided-walkthroughs.md)). This spec is the
 **decision/approval layer on top**: a voice-first, numbered-choice surface that lets the user
 clear approvals / human-reviews / incidents hands-free.
 
+## Status (verified 2026-09-06)
+
+**All seven slices shipped.** Real anchors:
+
+| Slice | Where it lives now |
+| --- | --- |
+| 1 store model | `companionStore.ts:679-683` (`pendingDecision`, `decisionExplained`) + `:1389-1406`; types in `companion/decision/types.ts` |
+| 2 bubble | `companion/orb/OrbDecisionBubble.tsx`, mounted in `orb/AthenaGuideLayer.tsx:49` |
+| 3 queue | `companion/decision/useDecisionQueue.ts` (+ the headless `DecisionDriver` mounted at `AthenaGuideLayer.tsx:52`) |
+| 4 explain / `0` | `companion/decision/resolveDecision.ts` (`explainDecision`) |
+| 5 `;` leader key | `orb/AthenaOrbLayer.tsx:124-190` |
+| 6 TTS on explain | `chat/athenaChatTriggers.ts:55-67` |
+| 7 spoken numbers | `companion/decision/parseSpokenDecision.ts`, branched in `useHoldToTalk.ts:108-120` |
+
+**Four things the spec below does not describe, because they landed after it was written:**
+
+1. **The queue is no longer gated.** Slice 3 specified a `companionHandsFreeDecisions`
+   opt-in, default off. The setting still exists (`companionPluginSlice.ts:225,301`,
+   toggled in `sub_setup/SetupPanel.tsx:48`) but the queue ignores it: the auto-surfacing
+   path is unconditional, and the settings now govern only how far Athena may act
+   *without* asking. Rationale is written into `useDecisionQueue.ts:397-406`.
+2. **A fourth source: `message_attention`.** `DecisionSource` is
+   `approval | human_review | incident | message_attention | adhoc`
+   (`decision/types.ts:28`); `messageAttentionToDecision` (`useDecisionQueue.ts:284`)
+   turns a triage-flagged report into a decision and marks it read via `markReportRead`.
+3. **A chat-side twin.** `decision/ChatDecisionCard.tsx` renders the same pending decision
+   with the same numbered options whenever the orb bubble cannot (the bubble docks against
+   the orb, which does not exist while the chat panel is open). Its visibility predicate is
+   the exact complement of the bubble's, so a decision always has exactly one surface.
+   Both resolve through the shared `resolveDecision.ts`.
+4. **Failure is surfaced in place.** `runDecisionOption` awaits `option.run()` and, on
+   failure, keeps the decision pending and sets `decisionError` (rendered by both surfaces)
+   instead of clearing the bubble. It records a `decision_resolved` UX signal on success.
+
+**Renamed since the spec:** `CompanionPanel.tsx` no longer exists as a file. The chat panel
+is `companion/chat/AthenaChatPanel.tsx` plus ~45 sibling modules in `companion/chat/`
+(it is still imported under the name `CompanionPanel` at `src/App.tsx:136`). Every
+`CompanionPanel.tsx:<line>` citation below is stale as a path.
+
 ## The goal (user's words, distilled)
-1. A **bubble above the orb** that shows text (markdown — bullets/bold) and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no"). TTS is **not** auto-spoken on surface — only on `0` (Explain/Recommend), see Slice 6. The **arrow/handle** between the bubble and the orb is a **show/hide toggle** (`athena-decision-toggle`): collapse the bubble down to a small source-iconned symbol chip (`athena-decision-expand`, with a pulse dot) that floats above the arrow, so a pending decision stays visible without occupying the screen; click the chip or the handle to re-open. A fresh decision always opens expanded.
+1. A **bubble above the orb** that shows text (markdown — bullets/bold) and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no"). TTS is **not** auto-spoken on surface — only on `0` (Explain/Recommend), see Slice 6. The **arrow/handle** between the bubble and the orb is a **show/hide toggle** (`athena-decision-toggle`): collapse the bubble down to a small source-iconned symbol chip (`athena-decision-expand`, with a pulse dot) that floats above the arrow, so a pending decision stays visible without occupying the screen; click the chip or the handle to re-open. A fresh decision always opens expanded. **Shipped with three states, not two:** full bubble, the collapsed chip, and a *fully hidden* 36px round restore peek dotted at the orb (`athena-decision-dismiss` X in the bubble's top-right collapses to it at `OrbDecisionBubble.tsx:334`; `athena-decision-restore` at `:191` brings it back). The minimize/expand handle is `athena-decision-toggle` at `:346` and the collapsed chip is `athena-decision-expand` at `:209`. The `0` affordance shipped as an icon-only lightbulb button (`athena-decision-option-0`), not a numbered chip.
 2. User answers by **clicking** an option OR by a **`;` leader-key then a digit** (numeric decision syntax). **`0` = Athena explains the options + gives her recommendation**, then re-asks.
 3. The same surface presents **proactive incidents** (open high/critical `audit_incidents` — the P2.5 thread) and **pending approvals / human-reviews** as these numbered decisions.
 4. Athena can **highlight/navigate** the app while asking (reuse the guided-walkthrough glide+glow).
 
 ## What's SHIPPED (reuse, do NOT rebuild) — verified anchors
-- Orb: `src/features/plugins/companion/orb/AthenaOrb.tsx` (renders only when `state==='minimized'`), `AthenaOrbLayer.tsx` (mounts the orb + owns the raw Cmd/Ctrl+Shift+A keydown at ~L43-69 + the single `useHoldToTalk()` instance), `AthenaGuideLayer.tsx` (ALWAYS-ON portal, `z-[60]`, hosts `useGuidanceRunner` + `TrackedGlowRing` + `GuideCaption`).
+- Orb: `src/features/plugins/companion/orb/AthenaOrb.tsx` (renders only when `state==='minimized'`), `AthenaOrbLayer.tsx` (mounts the orb + owns Cmd/Ctrl+Shift+A + the single `useHoldToTalk()` instance; as shipped this is a `useAppKeyboard` registration at `ROUTE_DECISION_PRIORITY`, not a raw `window` listener; see Slice 5), `AthenaGuideLayer.tsx` (ALWAYS-ON portal, `z-[60]`, hosts `useGuidanceRunner` + `TrackedGlowRing` + `GuideCaption`).
 - Walkthrough mechanism (reuse to "operate app while asking"): store actions `setOrbGuideTarget`, `setGuidanceHighlightTestId`, `flashHighlight` in `companionStore.ts` — independent of `activeWalkthrough`. `GuideCaption.tsx` is the structural template for a positioned, tailed, interactive bubble.
 - Numbered-chip primitive: `QuickReplies.tsx` (renders `{i+1}` badges, binds keyboard digits 1-9 via `parseInt(e.key)`; guards typing targets). Copy its chip render + digit idiom.
-- Voice OUT: `voicePlayback.ts` `synthesize(text, credentialId, voiceId, settings?, engine)` + `play(url)`. The orb does NOT own voice context — credential/voiceId/engine/settings live in `CompanionPanel.tsx` (`useTtsSettings()`, `voiceActive` at ~L1368-1372, `playProgressClip` ~L1391-1417 is a ready "speak this short text now" helper).
-- Voice IN: `useHoldToTalk.ts` (`{supported,talking,interimText,start,stop,abort}`; on session end calls `setVoiceTurnRequest(text)` at ~L99 → consumed by `CompanionPanel` effect ~L1637 → full chat turn, no panel). `useSpeechInput.ts` picks browser vs whisper.
+- Voice OUT: `voicePlayback.ts` `synthesize(text, credentialId, voiceId, settings?, engine)` + `play(url)`. The orb does NOT own voice context — credential/voiceId/engine/settings live in the chat panel. As shipped that is `chat/athenaChatVoice.ts` (`useTtsSettings()`, `voiceActive`, and `playProgressClip` at `athenaChatVoice.ts:150`, the ready "speak this short text now" helper).
+- Voice IN: `useHoldToTalk.ts` (`{supported,talking,interimText,start,stop,abort}`; on session end calls `setVoiceTurnRequest(text)` at `useHoldToTalk.ts:120` → consumed by a chat-panel effect → full chat turn, no panel). `useSpeechInput.ts` picks browser vs whisper.
 - Decision data sources (backend + api, all exist):
   - Approvals: `api/companion.ts` `companionListPendingApprovals()`, `companionApproveAction(id)`, `companionRejectAction(id, reason?)`; `PendingApproval = {id, action, rationale, paramsJson, humanReviewId, createdAt}`; store `approvals`/`setApprovals`/`removeApproval`; UI `ApprovalCard.tsx` (`actionLabel(t, action)` for human text). Event `companion://approvals`.
   - Human reviews: `api/overview/reviews.ts` `listManualReviews(personaId?, status?)`, `getPendingReviewCount()`, `updateManualReviewStatus(id, status, reviewerNotes?)`. Type `PersonaManualReview`. (No companion store array — fetch directly.)
@@ -52,12 +91,17 @@ export interface PendingDecision {
   recommendation?: string;     // spoken/shown on "0" (explain+recommend)
   detail?: string;             // longer explanation for "0"
   source: 'approval' | 'human_review' | 'incident' | 'adhoc';
+  // SHIPPED: `source` also carries 'message_attention', and the interface gained
+  // `payload?: string` (serialized context of the underlying row, handed to Athena
+  // as grounding for the `0` explain turn). See `decision/types.ts`.
   sourceRef?: string;          // approval id / review id / incident id
   highlightTestId?: string;    // optional: ring the element being asked about
   navigateRoute?: string;      // optional: take user to context first
 }
 ```
 Store fields (ephemeral, NOT persisted): `pendingDecision: PendingDecision | null`, `decisionExplained: boolean` (tracks whether "0" was used, to re-ask). Actions: `setPendingDecision(d)`, `clearPendingDecision()`, `markDecisionExplained()`. Mirror the existing ephemeral walkthrough setters. Unit test in `companion/__tests__/decisionStore.test.ts` (set/clear/explain transitions) — mirror `guidance.test.ts`.
+
+> Shipped as specified (`companionStore.ts:679-683`, `:1389-1406`), plus three fields the explain/failure work added later: `decisionError`, `explainComposing`, `explainComposeError`.
 
 ### Slice 2 — `OrbDecisionBubble` component (visual + click, no voice yet)
 `src/features/plugins/companion/orb/OrbDecisionBubble.tsx`. Mount it in `AthenaGuideLayer.tsx` (always-on portal), positioned ABOVE the orb (off `orbGuideTarget` / `companionOrbPos`, with a tail toward the orb — copy `GuideCaption`'s positioning + `rounded-card bg-background/95 border shadow-elevation-3` chrome). Renders nothing unless `pendingDecision != null`. Shows: `prompt`, then a numbered list of `options` as chips (copy `QuickReplies` chip render with `{i+1}` badge; `option.run()` on click → then `clearPendingDecision()`), plus a `0` "Explain / recommend" chip. On mount, if `state !== 'minimized'` promote it; if `navigateRoute`/`highlightTestId` set, call the guidance setters to take the user there + ring the element. Fully keyboard + click usable WITHOUT voice. i18n new keys under `plugins.companion.decision_*` (e.g. `decision_explain`, `decision_recommend_prefix`). doc-sync: README touch.
@@ -67,7 +111,9 @@ Store fields (ephemeral, NOT persisted): `pendingDecision: PendingDecision | nul
 - **approval** → prompt `actionLabel(t, action) + ': ' + rationale`; options [Approve→`companionApproveAction(id)`, Reject→`companionRejectAction(id)`]; recommendation from a simple heuristic (low-risk action → recommend approve; else explain); source `approval`, sourceRef id. On resolve → `removeApproval(id)` + apply any `clientAction`.
 - **incident** (proactive `incident_blocker`) → prompt = `message`; options [Resolve→open `IncidentDetailModal` via the existing `storeBus.emit('incidents:open-detail',{incidentId: triggerRef})` + navigate, Dismiss→`companionDismissProactive(id)`]; recommendation by severity; highlightTestId none (it navigates). source `incident`.
 - **human_review** → prompt = review title/description; options [Approve→`updateManualReviewStatus(id,'approved')`, Reject→`updateManualReviewStatus(id,'rejected')`, Open→navigate to the review inbox]; source `human_review`.
-Drive it from a single place (e.g. `AthenaGuideLayer` or a small `DecisionDriver` mounted next to it) that subscribes to `companion://approvals` + `companion://proactive` events + polls `getPendingReviewCount`, and calls `setPendingDecision` when idle. Keep it OFF by default behind a setting `companionHandsFreeDecisions` (persisted, default false) so it never surprises a user — the orb decision surface only activates when they opt in OR when they explicitly summon it.
+Drive it from a single place (e.g. `AthenaGuideLayer` or a small `DecisionDriver` mounted next to it) that subscribes to `companion://approvals` + `companion://proactive` events + polls `getPendingReviewCount`, and calls `setPendingDecision` when idle. ~~Keep it OFF by default behind a setting `companionHandsFreeDecisions` (persisted, default false).~~
+
+**Shipped differently, deliberately.** `DecisionDriver` is mounted in `AthenaGuideLayer.tsx:52` and the queue is **always active**. The gate was removed when the third notification dimension (footer popover / toasts) was deleted, because a gated queue would make pending approvals, incidents and reviews invisible outside their own pages. `companionHandsFreeDecisions` survives as a setting but no longer controls surfacing; it governs how far Athena may act *without* asking. The queue also re-fetches on every pump rather than polling `getPendingReviewCount` (it calls `listManualReviews(undefined, 'pending')` directly), and a **fourth** mapping exists: `message_attention` proactives → a decision whose resolve path calls `markReportRead`.
 
 ### Slice 4 — `0 = explain + recommend, then re-ask`
 When the user picks `0` (click or key), do NOT clear the decision: speak/show `recommendation` + `detail` (set `decisionExplained=true`), and keep the same `pendingDecision` so the numbered options remain. The bubble shows the recommendation text above the options after `0`.
@@ -86,13 +132,13 @@ widget renders the live decision options, so the user can resolve from the
 Cockpit. See [`../cockpit.md`](../cockpit.md) → "Explainer widgets".
 
 ### Slice 5 — `;` leader-key numeric syntax
-In `AthenaOrbLayer.tsx`'s raw keydown handler (next to the Shift+A block): a small leader state machine via `useRef`. When `pendingDecision != null` and the user presses `;` (and not in a typing target), arm a 2s window; the next `0-9` resolves: `1..n` → `options[n-1].run()` + clear; `0` → explain (slice 4). `Esc` disarms. Mirror the guard pattern from `QuickReplies`/`WorkspaceShortcuts` (skip when `tagName` INPUT/TEXTAREA or `isContentEditable`).
+In `AthenaOrbLayer.tsx` (next to the Shift+A block): a small leader state machine via `useRef`. **Shipped on the app keyboard registry (`useAppKeyboard` at `ROUTE_DECISION_PRIORITY`), not a raw `window` listener**, because the leader's `1`-`9` are the same digits the full-app triage deck binds, and with both on `window` one press fired both (`AthenaOrbLayer.tsx:124-190`). When `pendingDecision != null` and the user presses `;` (and not in a typing target), arm a 2s window; the next `0-9` resolves: `1..n` → `options[n-1].run()` + clear; `0` → explain (slice 4). `Esc` disarms. Mirror the guard pattern from `QuickReplies`/`WorkspaceShortcuts` (skip when `tagName` INPUT/TEXTAREA or `isContentEditable`).
 
 ### Slice 6 — TTS speaks ONLY the Explain/Recommend response
-The walkthrough narration is NOT spoken today. TTS does **not** auto-read the decision `prompt`/description when the bubble surfaces — that text is on-screen to read, and auto-reading a full review description over the user was noise. Athena speaks **only** when the user picks `0` (Explain/Recommend): a `CompanionPanel`-owned reaction watches `decisionExplained` and speaks the `recommendation` via `playProgressClip`, with markdown stripped first (`stripMarkdownForSpeech`) so she never reads `**`/`-`/`#` aloud. Best-effort; silent when voice off. The bubble itself renders `prompt`/`recommendation` as **markdown** (bullets + bold), so a well-formatted `request_review` description is legible in the bubble too.
+The walkthrough narration is NOT spoken today. TTS does **not** auto-read the decision `prompt`/description when the bubble surfaces — that text is on-screen to read, and auto-reading a full review description over the user was noise. Athena speaks **only** when the user picks `0` (Explain/Recommend): a chat-panel-owned reaction (shipped at `chat/athenaChatTriggers.ts:55-67`) watches `decisionExplained` and speaks the `recommendation` via `playProgressClip`, with markdown stripped first (`stripMarkdownForSpeech`) so she never reads `**`/`-`/`#` aloud. Best-effort; silent when voice off. The bubble itself renders `prompt`/`recommendation` as **markdown** (bullets + bold), so a well-formatted `request_review` description is legible in the bubble too.
 
 ### Slice 7 — spoken-number answering
-When `pendingDecision != null`, branch the STT result in `useHoldToTalk` (before `setVoiceTurnRequest` at ~L99): parse the transcript for a number word/digit (`"one"|"1"|… "zero"|"explain"|"yes"|"no"`). If it maps to an option (or 0), resolve the decision instead of firing a chat turn. Small pure `parseSpokenDecision(transcript, optionCount)` helper + unit test. If it doesn't parse to a decision answer, fall through to the normal chat turn.
+When `pendingDecision != null`, branch the STT result in `useHoldToTalk` (before `setVoiceTurnRequest`; shipped at `useHoldToTalk.ts:108-120`): parse the transcript for a number word/digit (`"one"|"1"|… "zero"|"explain"|"yes"|"no"`). If it maps to an option (or 0), resolve the decision instead of firing a chat turn. Small pure `parseSpokenDecision(transcript, optionCount)` helper + unit test. If it doesn't parse to a decision answer, fall through to the normal chat turn.
 
 ## Verification (every slice)
 - `npx tsc --noEmit` EXIT 0 (the primary oracle — run after EVERY slice).
@@ -106,3 +152,5 @@ When `pendingDecision != null`, branch the STT result in `useHoldToTalk` (before
 - Multi-persona orb decisions (Athena-only for now).
 - Live whisper interim number parsing (batch only — parse final transcript).
 - Replacing the existing ApprovalCard/ProactiveCard chat surfaces — the decision bubble is an ADDITIONAL hands-free surface, not a replacement.
+
+> Amended: `decision/ChatDecisionCard.tsx` was added later as the chat-side face of the *same* `pendingDecision`, rendered from `chat/AthenaChatAlerts.tsx:45`. It does not replace ApprovalCard/ProactiveCard; it covers the sources that had no chat card at all (human reviews, `adhoc`) for the window in which the orb, and therefore the bubble, is not on screen.

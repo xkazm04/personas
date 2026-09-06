@@ -643,7 +643,9 @@
       "schedule_missed_offline": "মিস হওয়া নির্ধারিত রান (অফলাইন)",
       "schedule_skipped_overlap": "শিডিউল এড়ানো হয়েছে (আগের রান চলছে)",
       "sla_breach_opened": "SLA লঙ্ঘন শুরু হয়েছে",
-      "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার"
+      "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার",
+      "schedule_paused_failure_rate": "সময়সূচী বিরতিতে (খুব বেশি রান ব্যর্থ হয়েছে)",
+      "team_channel_leader_verdict": "টিম লিডারের রায়"
     },
     "view_name_placeholder": "দৃশ্যের নাম (যেমন 'এই সপ্তাহের ব্যর্থ webhook')",
     "views_label": "দৃশ্য:"

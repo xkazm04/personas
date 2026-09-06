@@ -60,6 +60,16 @@ interface ListboxProps {
   renderSearchStatus?: (count: number) => string;
   /** Notified on every search keystroke (e.g. to log / telemeter). */
   onSearchChange?: (query: string) => void;
+  /** Portal mode only: flip the menu ABOVE the trigger when there is not
+   *  enough room below it. Off by default because a menu that can move is
+   *  harder to predict; turn it on wherever the trigger can sit near the
+   *  bottom of the viewport (a bottom action bar, a footer-anchored overlay),
+   *  where the alternative is a menu rendered off-screen. */
+  flipMenu?: boolean;
+  /** Portal mode only: the menu height `flipMenu` reasons about. Should be
+   *  the popup's max height, not its current one — the decision is made before
+   *  the menu has rendered. */
+  menuMaxHeight?: number;
 }
 
 export function Listbox({
@@ -76,6 +86,8 @@ export function Listbox({
   searchAriaLabel,
   renderSearchStatus,
   onSearchChange,
+  flipMenu = false,
+  menuMaxHeight = 320,
 }: ListboxProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -104,10 +116,23 @@ export function Listbox({
   // Non-portal click-outside (hook must run unconditionally).
   useClickOutside(containerRef, open && !portal, close);
 
-  // Portal positioning — anchor under the trigger, track scroll/resize.
-  // No flip-up: Listbox's portal mode has never needed it (ThemedSelect does).
-  const anchoredPos = useAnchoredPortalPosition(containerRef, open && portal, { gap: 4 });
-  const menuPos = anchoredPos ? { top: anchoredPos.top, left: anchoredPos.left, width: anchoredPos.width } : null;
+  // Portal positioning — anchor under the trigger, track scroll/resize, and
+  // (opt-in) flip above it when the space below cannot hold the menu. The flip
+  // is off by default: it changes where a menu appears, and every consumer that
+  // has room below should keep the one predictable position.
+  const anchoredPos = useAnchoredPortalPosition(containerRef, open && portal, {
+    gap: 4,
+    flip: flipMenu,
+    maxMenuHeight: menuMaxHeight,
+  });
+  const menuPos = anchoredPos
+    ? {
+        top: anchoredPos.top,
+        left: anchoredPos.left,
+        width: anchoredPos.width,
+        flipUp: anchoredPos.flipUp,
+      }
+    : null;
 
   // Reset focus index + search query when opening
   useEffect(() => {
@@ -202,7 +227,17 @@ export function Listbox({
         <div
           ref={menuRef}
           className={menuClassName ?? 'animate-fade-slide-in rounded-xl shadow-elevation-3 overflow-hidden'}
-          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, width: menuPos.width, zIndex: 9990 }}
+          style={{
+            position: 'fixed',
+            // Flipped, the menu is pinned by its BOTTOM edge to just above the
+            // trigger, so it grows upward instead of off the bottom of the
+            // window. Same idiom as ThemedSelect's filterable menu.
+            top: menuPos.flipUp ? undefined : menuPos.top,
+            bottom: menuPos.flipUp ? window.innerHeight - menuPos.top : undefined,
+            left: menuPos.left,
+            width: menuPos.width,
+            zIndex: 9990,
+          }}
           role="listbox"
           aria-label={ariaLabel}
         >

@@ -141,6 +141,10 @@ const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttentio
 // The component itself is cheap (no xterm) — it lazy-loads the terminal grid
 // on first open. DEV-only: the grid overlay is dev tooling.
 const FleetGridLayer = lazyRetry(() => import("@/features/plugins/fleet/FleetGridLayer"));
+// Notepad is an app-wide LAYER on the same pattern, but NOT dev-gated: the
+// notepad ships. The component is cheap (open/closed gate + the sweeper
+// listener) and lazy-loads the editor host on first open.
+const NotepadLayer = lazyRetry(() => import("@/features/notepad/NotepadLayer"));
 // Fleet's app-wide bootstrap (session listeners + snapshot + the Rust ticker
 // policy push). SEPARATE from FleetGridLayer on purpose and mounted UNGATED —
 // see the two mounts below and FleetBootstrap's own header.
@@ -433,6 +437,7 @@ export default function App() {
                       deleted the bootstrap from every shipped build; do not
                       re-fuse them. */}
                   {import.meta.env.DEV && <OverlayIsland name="fleet-grid"><FleetGridLayer /></OverlayIsland>}
+                  <OverlayIsland name="notepad"><NotepadLayer /></OverlayIsland>
                   <OverlayIsland name="fleet-bootstrap"><FleetBootstrap /></OverlayIsland>
                 </Suspense>
               </SilentErrorBoundary>

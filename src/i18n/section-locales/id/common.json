@@ -181,5 +181,16 @@
   "unsaved_title": "Simpan perubahan sebelum keluar?",
   "use_case_count_one": "{count} kasus penggunaan",
   "use_case_count_other": "{count} kasus penggunaan",
-  "value_placeholder": "Nilai"
+  "value_placeholder": "Nilai",
+  "md_bold": "Tebal",
+  "md_bullet": "Daftar berpoin",
+  "md_checklist": "Daftar centang",
+  "md_code": "Kode inline",
+  "md_h1": "Judul 1",
+  "md_h2": "Judul 2",
+  "md_h3": "Judul 3",
+  "md_italic": "Miring",
+  "md_numbered": "Daftar bernomor",
+  "md_quote": "Kutipan",
+  "md_toolbar": "Format"
 }

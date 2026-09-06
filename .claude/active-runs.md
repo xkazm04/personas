@@ -4,6 +4,61 @@
 
 - **[2026-09-06 11:29]**
 - **Paths:** `src-tauri/**` · `scripts/templates/transform-recipes-v2-to-v3.mjs` · `src/lib/bindings/**`
+
+### companion-docs-audit — Athena architecture reference + companion docs reality audit
+- **[2026-09-06 08:27]**
+- **Paths:** `docs/features/companion/**`
+- **Status:** started
+
+- **[2026-09-06 08:04]**
+- **Paths:** `src/features/notepad/**` · `src/i18n/**` · `src/features/home/**`
+- **Status:** started
+
+- **[2026-09-05 22:55]**
+- **Paths:** `src/features/agents/components/allPersonas/**`
+- **Status:** started
+
+- **[2026-09-05 22:30]**
+- **Paths:** `src/features/agents/sub_health/**`
+- **Status:** started
+
+- **[2026-09-05 21:39]**
+- **Paths:** `src/features/notepad/**` · `src/features/plugins/dev-tools/components/DevToolsProjectDropdown.tsx`
+- **Status:** started
+
+- **[2026-09-05 21:15]**
+- **Paths:** `src/features/agents/sub_editor/**` · `src/features/agents/sub_activity/**`
+- **Status:** started
+
+- **[2026-09-05 20:52]**
+- **Paths:** `src/features/agents/sub_design/DesignHub.tsx` · `src/features/agents/sub_design/components` · `src/features/agents/sub_design/index.ts` · `src/features/agents/sub_design/libs` · `src/features/agents/sub_design/components/DesignLifePanels.tsx` · `src/features/agents/sub_design/components/DesignSubtabPanels.tsx` · `src/features/agents/sub_design/libs/designStateHelpers.ts` · `src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx` · `src/features/agents/sub_tool_runner/components/ToolRunnerModal.tsx` · `src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx` · `src/features/agents/sub_tool_runner/components/__tests__` · `src/features/agents/sub_tool_runner/libs/useToolRunner.test.ts` · `src/features/agents/sub_tool_runner/libs/useToolRunner.ts` · `src/features/agents/sub_tool_runner/components` · `src/features/agents/sub_tool_runner/index.ts` · `src/features/agents/sub_tool_runner/libs`
+- **Status:** started
+
+- **[2026-09-05 20:16]**
+- **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **Status:** started
+
+- **[2026-09-05 18:53]**
+- **Paths:** `src/features/agents/sub_connectors/**`
+- **Status:** started
+
+- **[2026-09-05 18:13]**
+- **Paths:** `src/features/agents/components/allPersonas/**`
+- **Status:** started
+
+- **[2026-09-05 17:24]**
+- **Paths:** `src/features/agents/sub_health/**` · `.claude/scan-history/` · `.personas/memory-outbox.jsonl`
+### research-multica — C:/Program Files/Git/research on multica-ai/multica (multi-LLM CLI providers, agent teams)
+- **[2026-09-05 16:13]** Source: https://github.com/multica-ai/multica
+- **Paths:** `src-tauri/src/engine/**` · `src/features/teams/**` · `.claude/codebase-stack.md`
+- **Status:** started
+
+- **[2026-09-05 15:52]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/src/commands/fleet/**` · `src/api/fleet/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-05 13:48]**
+- **Paths:** `src/features/notepad/**` · `src/features/shared/chrome/DesktopFooter.tsx` · `src-tauri/src/commands/notepad*` · `src-tauri/db/**/notepad*`
 - **Status:** started
 
 - **[2026-09-04 23:20]**
@@ -602,6 +657,35 @@
 ### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
 
 ### recipe-v3-backend — Recipe v3 backend: RecipeSpec type, transform, adoption path, prompt render
+
+### notepad-perf-i18n-crash — Fix first-render whats_new_update crash; consolidate notepad to Workbench + cold-load perf instrumentation
+
+### scan-sweep-allpersonas — /scan-sweep --stabilize round 2: agents-components-allpersonas
+
+### scan-sweep-agent-health — /scan-sweep --stabilize round 1: agent-health
+
+### notepad-ux-fixes — Notepad UX pass: header offset, dropdown placement, open latency, project labels, motion, busy states
+
+### spark-notepad — Spark: notepad brainstorming module (footer icon, tabbed markdown notes, Athena suggestions, Fleet/goal dispatch)
+
+### research-multica — C:/Program Files/Git/research on multica-ai/multica (multi-LLM CLI providers, agent teams)
+- **[2026-09-05 16:13]** Source: https://github.com/multica-ai/multica
+- **Paths:** `src-tauri/src/engine/**` · `src/features/teams/**` · `.claude/codebase-stack.md`
+- **Status:** completed (commit: 15e597cbe on worktree-research-multica, unmerged)
+
+### scan-sweep-optimize-r6 — scan-sweep --optimize round 6: agents-editor
+
+### scan-sweep-optimize-r5 — /scan-sweep --optimize round 5: agents-design
+
+### scan-sweep-optimize-r4 — /scan-sweep --optimize round 4: agents-deployment
+
+### scan-sweep-optimize-r3 — /scan-sweep --optimize round 3: agents-connectors
+
+### scan-sweep-optimize-r2 — /scan-sweep --optimize round 2: agents-components-allpersonas
+
+### scan-sweep-optimize — C:/Program Files/Git/scan-sweep --optimize loop (registry skill), context by context
+
+### monitor-coldload-usage-bubbles — Monitor: staged cold paint, Claude usage strip, channel chat bubbles
 
 ### sweep-agents-design — scan-sweep --optimize: agents-design
 

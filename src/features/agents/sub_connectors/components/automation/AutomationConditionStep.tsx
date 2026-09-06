@@ -6,7 +6,7 @@ import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
-import { FALLBACK_OPTIONS } from '../../libs/useAutomationSetup';
+import { FALLBACK_OPTIONS, TIMEOUT_SECS_DEFAULT, TIMEOUT_SECS_MAX, TIMEOUT_SECS_MIN } from '../../libs/useAutomationSetup';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -43,7 +43,7 @@ export function AutomationConditionStep({
   showAdvanced, setShowAdvanced, inputSchema, setInputSchema,
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
@@ -77,9 +77,9 @@ export function AutomationConditionStep({
           )}
           {platform === 'github_actions' && githubRepo && (
             <div className="px-3 py-2.5 rounded-modal bg-primary/5 border border-primary/20">
-              <p className="typo-body text-foreground"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{t.agents.connectors.auto_github_hint.replace('{repo}', githubRepo ?? '')}</p>
+              <p className="typo-body text-foreground"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />{tx(t.agents.connectors.auto_github_hint, { repo: githubRepo ?? '' })}</p>
               {designResult.workflow_definition && !!(designResult.workflow_definition as Record<string, unknown>).event_type && (
-                <p className="typo-body text-foreground mt-1">{t.agents.connectors.auto_event_type.replace('{eventType}', String((designResult.workflow_definition as Record<string, unknown>).event_type))}</p>
+                <p className="typo-body text-foreground mt-1">{tx(t.agents.connectors.auto_event_type, { eventType: String((designResult.workflow_definition as Record<string, unknown>).event_type) })}</p>
               )}
             </div>
           )}
@@ -165,11 +165,13 @@ export function AutomationConditionStep({
               <div className="flex items-center gap-2 mt-1.5">
                 <NumberStepper
                   value={timeoutSecs}
-                  onChange={(v) => setTimeoutSecs(v ?? 30)}
-                  min={1}
-                  max={300}
+                  onChange={(v) => setTimeoutSecs(v ?? TIMEOUT_SECS_DEFAULT)}
+                  // The same bounds handleDeploy clamps to and timeoutSecsInvalid
+                  // checks -- the stepper used to cap at 300 while the hook allowed 3600.
+                  min={TIMEOUT_SECS_MIN}
+                  max={TIMEOUT_SECS_MAX}
                   step={1}
-                  defaultValue={30}
+                  defaultValue={TIMEOUT_SECS_DEFAULT}
                   ariaLabel={t.agents.connectors.auto_timeout}
                   suffix={t.agents.connectors.auto_seconds}
                 />

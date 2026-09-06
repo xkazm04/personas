@@ -19,6 +19,7 @@ import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./sli
 import * as Sentry from "@sentry/react";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";
+import { createNotepadSlice } from "./slices/system/notepadSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createDevicesSlice } from "./slices/network/devicesSlice";
 import { createRemoteJobsSlice } from "./slices/network/remoteJobsSlice";
@@ -43,6 +44,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createOnboardingSlice(...a),
       ...createDevToolsSlice(...a),
       ...createFleetSlice(...a),
+      ...createNotepadSlice(...a),
       ...createNetworkSlice(...a),
       ...createDevicesSlice(...a),
       ...createRemoteJobsSlice(...a),
@@ -72,6 +74,9 @@ export const useSystemStore = create<SystemStore>()(
         fleetStaleMinutes: state.fleetStaleMinutes,
         fleetFrozenMinutes: state.fleetFrozenMinutes,
         fleetActiveSessionId: state.fleetActiveSessionId,
+        // Which note you had open is a preference; whether the overlay was
+        // RAISED is not — see notepadSlice's header.
+        notepadActiveNoteId: state.notepadActiveNoteId,
         fleetTerminalFontSize: state.fleetTerminalFontSize,
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,
         fleetTerminalTheme: state.fleetTerminalTheme,
@@ -141,6 +146,14 @@ export const useSystemStore = create<SystemStore>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+
+        // Notepad: the persisted active-note id is a hint the store resolves
+        // on load (a deleted or archived note falls back to the first tab).
+        // Anything that is not a string is drift from an older shape — drop it
+        // rather than hand the tab strip a value it cannot match.
+        if (state.notepadActiveNoteId != null && typeof state.notepadActiveNoteId !== 'string') {
+          state.notepadActiveNoteId = null;
+        }
 
         // Sidebar schema drift: the 'goals' 1st-level section was rebranded
         // to 'teams' (Goals consolidated under Teams, 2026-06-05). Map the

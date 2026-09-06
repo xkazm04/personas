@@ -73,10 +73,18 @@ export function FavoriteCell({
   onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const label = isFavorite
+    ? t.agents.persona_list.star_director_remove
+    : t.agents.persona_list.star_director_add;
   return (
-    <Tooltip content={isFavorite ? t.agents.persona_list.star_director_remove : t.agents.persona_list.star_director_add}>
+    // The Tooltip wires aria-describedby, which is a DESCRIPTION - it does not
+    // give this icon-only button a name, so assistive tech announced a bare
+    // "button" on the roster's star control. The same string is the name.
+    <Tooltip content={label}>
       <button
         type="button"
+        aria-label={label}
+        aria-pressed={isFavorite}
         onClick={(e) => {
           e.stopPropagation();
           onToggle(persona.id);

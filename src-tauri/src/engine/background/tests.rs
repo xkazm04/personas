@@ -23,6 +23,29 @@ fn test_scheduler_state_initial() {
 // silently paused, diverging from the manual run path.
 // ========================================================================
 
+// ========================================================================
+// Failure-rate auto-pause: per-trigger, needs a meaningful sample, and a
+// pause is a >= comparison on the failed share.
+// ========================================================================
+
+#[test]
+fn failure_rate_needs_the_minimum_sample_before_it_can_pause() {
+    // 11 straight failures is 100% failed, but below the run floor.
+    assert!(!failure_rate_exceeded(0, FAILURE_MONITOR_MIN_RUNS - 1));
+    // At the floor the ratio decides.
+    assert!(failure_rate_exceeded(0, FAILURE_MONITOR_MIN_RUNS));
+}
+
+#[test]
+fn failure_rate_pauses_at_the_ratio_and_not_below() {
+    // 90 of 100 → exactly the threshold → pause.
+    assert!(failure_rate_exceeded(10, 90));
+    // 89 of 100 → under → keeps firing.
+    assert!(!failure_rate_exceeded(11, 89));
+    // A healthy schedule with a lot of history never trips.
+    assert!(!failure_rate_exceeded(500, 3));
+}
+
 #[test]
 fn schedule_over_budget_treats_zero_as_unlimited() {
     // 0.0 is a legal budget meaning "unlimited" — never over budget,

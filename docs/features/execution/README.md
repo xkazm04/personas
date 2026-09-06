@@ -395,6 +395,16 @@ This doc set covers pillar 3. For pillar 1 see
   aggregatable via `get_healing_effectiveness` (surfaced in the Overview → Health
   tab). Previously reverts were invisible — a reverted issue drops back to `open`
   and loses its `auto_fixed` flag.
+- **Poisoned-session guard (2026-09-05).** AI healing `--resume`s the failed
+  session. When the failure is baked into that conversation — an oversized
+  prompt, a context-window overflow, a `400 invalid_request_error` against the
+  transcript — every resume replays it identically, and the 2+-consecutive rule
+  then re-armed the healer. `error_taxonomy::is_resume_safe` (false only for
+  `Validation`) is consulted by `should_trigger_ai_healing`, so those failures
+  fall through to a manual issue instead. Scheduled retries only ever resumed on
+  5xx and were already safe; when such a retry finds no session id to resume it
+  now injects a `_resume_hint` continuity notice (`SESSION_LOST_CONTINUITY_HINT`)
+  so the fresh run checks for prior partial work instead of redoing it blind.
 
 ### Terminal status: the result line beats the exit code
 

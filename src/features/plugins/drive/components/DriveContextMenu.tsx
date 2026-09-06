@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import {
   ExternalLink,
   FolderOpen,
@@ -21,6 +20,10 @@ import type { DriveEntry } from "@/api/drive";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { isOcrEligible } from "../ocr/useOcr";
+import {
+  ContextMenu,
+  type ContextMenuItem,
+} from "@/features/shared/components/overlays/ContextMenu";
 
 export interface ContextMenuState {
   x: number;
@@ -51,6 +54,14 @@ interface Props {
   knowledgeAvailable: boolean;
 }
 
+/**
+ * Drive's file/folder right-click menu.
+ *
+ * The item SET is the interesting part and stays here; positioning, dismissal,
+ * dividers and keyboard navigation come from the shared `ContextMenu`. The
+ * rose divider above Delete survives as `separatorBefore` on a `danger` item —
+ * it fences off the destructive zone before the cursor lands on it.
+ */
 export function DriveContextMenu({
   state,
   drive,
@@ -71,222 +82,166 @@ export function DriveContextMenu({
   knowledgeAvailable,
 }: Props) {
   const { t } = useTranslation();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (!ref.current) return;
-      if (!ref.current.contains(e.target as Node)) onClose();
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 0);
-    document.addEventListener("keydown", esc);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [onClose]);
-
   const { entry } = state;
   const hasSelection = drive.selection.size > 0;
-  const paths = hasSelection
-    ? Array.from(drive.selection)
-    : entry
-    ? [entry.path]
-    : [];
+  const paths = hasSelection ? Array.from(drive.selection) : entry ? [entry.path] : [];
+  const multi = drive.selection.size > 1;
 
-  // Constrain within viewport
-  const maxX =
-    typeof window !== "undefined" ? window.innerWidth - 220 : state.x;
-  const maxY =
-    typeof window !== "undefined" ? window.innerHeight - 380 : state.y;
-  const x = Math.min(state.x, maxX);
-  const y = Math.min(state.y, maxY);
+  const items: ContextMenuItem[] = entry
+    ? [
+        {
+          id: "open",
+          label: t.plugins.drive.ctx_open,
+          icon: <ExternalLink className="w-3.5 h-3.5" />,
+          onSelect: () => onOpen(entry),
+        },
+        {
+          id: "reveal",
+          label: t.plugins.drive.ctx_reveal,
+          icon: <FolderOpen className="w-3.5 h-3.5" />,
+          onSelect: () => onReveal(entry),
+        },
+        {
+          id: "rename",
+          label: t.plugins.drive.ctx_rename,
+          icon: <Pencil className="w-3.5 h-3.5" />,
+          shortcut: "F2",
+          disabled: multi,
+          separatorBefore: true,
+          onSelect: () => onRename(entry),
+        },
+        {
+          id: "copy",
+          label: t.plugins.drive.ctx_copy,
+          icon: <Copy className="w-3.5 h-3.5" />,
+          shortcut: "Ctrl+C",
+          onSelect: () => drive.copySelection(),
+        },
+        {
+          id: "cut",
+          label: t.plugins.drive.ctx_cut,
+          icon: <Scissors className="w-3.5 h-3.5" />,
+          shortcut: "Ctrl+X",
+          onSelect: () => drive.cutSelection(),
+        },
+        // Paste lives in the entry context too — it always targets the current
+        // folder via pasteHere(), so it is relevant regardless of which row was
+        // right-clicked. Matches Finder / Explorer.
+        {
+          id: "paste",
+          label: t.plugins.drive.ctx_paste,
+          icon: <ClipboardPaste className="w-3.5 h-3.5" />,
+          shortcut: "Ctrl+V",
+          disabled: !drive.clipboard,
+          onSelect: () => drive.pasteHere(),
+        },
+        {
+          id: "copy-path",
+          label: t.plugins.drive.ctx_copy_path,
+          icon: <LinkIcon className="w-3.5 h-3.5" />,
+          onSelect: () => onCopyPath(entry),
+        },
+        ...(entry.kind === "file"
+          ? [
+              {
+                id: "sign",
+                label: t.plugins.drive.ctx_sign_file,
+                icon: <FileSignature className="w-3.5 h-3.5" />,
+                disabled: multi,
+                separatorBefore: true,
+                onSelect: () => onSignFile(entry),
+              },
+              {
+                id: "verify",
+                label: t.plugins.drive.ctx_verify_file,
+                icon: <ShieldCheck className="w-3.5 h-3.5" />,
+                disabled: multi,
+                onSelect: () => onVerifyFile(entry),
+              },
+              ...(isOcrEligible(entry.mime, entry.extension)
+                ? [
+                    {
+                      id: "extract",
+                      label: hasGemini
+                        ? t.plugins.drive.ctx_extract_text
+                        : t.plugins.drive.ctx_extract_text_no_gemini,
+                      icon: <ScanLine className="w-3.5 h-3.5" />,
+                      disabled: !hasGemini || multi,
+                      onSelect: () => onExtractText(entry),
+                    },
+                  ]
+                : []),
+            ]
+          : []),
+        ...(knowledgeAvailable
+          ? [
+              {
+                id: "kb-add",
+                label: t.plugins.drive.kb_add_to,
+                icon: <Brain className="w-3.5 h-3.5" />,
+                separatorBefore: true,
+                onSelect: () => onAddToKnowledge(entry),
+              },
+              {
+                id: "kb-open",
+                label: t.plugins.drive.kb_open,
+                icon: <Sparkles className="w-3.5 h-3.5" />,
+                onSelect: onOpenKnowledge,
+              },
+            ]
+          : []),
+        {
+          id: "delete",
+          label: t.plugins.drive.ctx_delete,
+          icon: <Trash2 className="w-3.5 h-3.5" />,
+          shortcut: "Del",
+          danger: true,
+          separatorBefore: true,
+          onSelect: () => onRequestDelete(paths),
+        },
+      ]
+    : [
+        {
+          id: "new-folder",
+          label: t.plugins.drive.ctx_new_folder,
+          icon: <FolderPlus className="w-3.5 h-3.5" />,
+          onSelect: onNewFolder,
+        },
+        {
+          id: "new-file",
+          label: t.plugins.drive.ctx_new_file,
+          icon: <FilePlus className="w-3.5 h-3.5" />,
+          onSelect: onNewFile,
+        },
+        {
+          id: "paste",
+          label: t.plugins.drive.ctx_paste,
+          icon: <ClipboardPaste className="w-3.5 h-3.5" />,
+          shortcut: "Ctrl+V",
+          disabled: !drive.clipboard,
+          separatorBefore: true,
+          onSelect: () => drive.pasteHere(),
+        },
+        ...(knowledgeAvailable
+          ? [
+              // Null entry = the open folder, which is the folder-scoped
+              // "ask across these documents" case.
+              {
+                id: "kb-add-folder",
+                label: t.plugins.drive.kb_add_folder,
+                icon: <Brain className="w-3.5 h-3.5" />,
+                separatorBefore: true,
+                onSelect: () => onAddToKnowledge(null),
+              },
+              {
+                id: "kb-open",
+                label: t.plugins.drive.kb_open,
+                icon: <Sparkles className="w-3.5 h-3.5" />,
+                onSelect: onOpenKnowledge,
+              },
+            ]
+          : []),
+      ];
 
-  const item = (
-    icon: React.ReactNode,
-    label: string,
-    onClick: () => void,
-    opts: { danger?: boolean; disabled?: boolean; shortcut?: string } = {},
-  ) => (
-    <button
-      type="button"
-      disabled={opts.disabled}
-      onClick={() => {
-        if (!opts.disabled) {
-          onClick();
-          onClose();
-        }
-      }}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-input mx-1 focus-ring ${
-        opts.disabled
-          ? "text-foreground opacity-40 cursor-not-allowed"
-          : opts.danger
-          ? "text-rose-200 hover:bg-gradient-to-r hover:from-rose-500/30 hover:to-rose-500/5 hover:text-rose-50"
-          : "text-foreground hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-cyan-500/5 hover:text-cyan-50"
-      }`}
-    >
-      <span className="w-3.5 h-3.5 flex-shrink-0">{icon}</span>
-      <span className="flex-1">{label}</span>
-      {opts.shortcut && (
-        <kbd className="ml-auto typo-caption text-foreground font-mono tracking-tight">
-          {opts.shortcut}
-        </kbd>
-      )}
-    </button>
-  );
-
-  // Tone-aware divider — the rose variant fences off the destructive
-  // zone (Delete) so the boundary reads before the user's cursor lands
-  // on it. Matches the rose separator in the header-pill bulk chips.
-  const divider = (tone: "neutral" | "danger" = "neutral") => (
-    <div
-      className={`my-1 mx-2 border-t ${tone === "danger" ? "border-rose-500/25" : "border-primary/15"}`}
-      aria-hidden
-    />
-  );
-
-  return (
-    <div
-      ref={ref}
-      className="fixed z-[9999] w-56 rounded-modal border border-primary/20 bg-background/95 backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6),0_0_30px_-8px_rgba(34,211,238,0.25)] py-1.5"
-      style={{ left: x, top: y }}
-    >
-      {entry ? (
-        <>
-          {item(
-            <ExternalLink className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_open,
-            () => onOpen(entry),
-          )}
-          {item(
-            <FolderOpen className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_reveal,
-            () => onReveal(entry),
-          )}
-          {divider()}
-          {item(
-            <Pencil className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_rename,
-            () => onRename(entry),
-            { shortcut: "F2", disabled: drive.selection.size > 1 },
-          )}
-          {item(
-            <Copy className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_copy,
-            () => drive.copySelection(),
-            { shortcut: "Ctrl+C" },
-          )}
-          {item(
-            <Scissors className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_cut,
-            () => drive.cutSelection(),
-            { shortcut: "Ctrl+X" },
-          )}
-          {/* Paste lives in the entry-context too — it always targets the
-              current folder via pasteHere(), so it's relevant regardless
-              of which row was right-clicked. Matches Finder / Explorer. */}
-          {item(
-            <ClipboardPaste className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_paste,
-            () => drive.pasteHere(),
-            { shortcut: "Ctrl+V", disabled: !drive.clipboard },
-          )}
-          {item(
-            <LinkIcon className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_copy_path,
-            () => onCopyPath(entry),
-          )}
-          {entry.kind === "file" && (
-            <>
-              {divider()}
-              {item(
-                <FileSignature className="w-3.5 h-3.5" />,
-                t.plugins.drive.ctx_sign_file,
-                () => onSignFile(entry),
-                { disabled: drive.selection.size > 1 },
-              )}
-              {item(
-                <ShieldCheck className="w-3.5 h-3.5" />,
-                t.plugins.drive.ctx_verify_file,
-                () => onVerifyFile(entry),
-                { disabled: drive.selection.size > 1 },
-              )}
-              {isOcrEligible(entry.mime, entry.extension) &&
-                item(
-                  <ScanLine className="w-3.5 h-3.5" />,
-                  hasGemini
-                    ? t.plugins.drive.ctx_extract_text
-                    : t.plugins.drive.ctx_extract_text_no_gemini,
-                  () => onExtractText(entry),
-                  { disabled: !hasGemini || drive.selection.size > 1 },
-                )}
-            </>
-          )}
-          {knowledgeAvailable && (
-            <>
-              {divider()}
-              {item(
-                <Brain className="w-3.5 h-3.5" />,
-                t.plugins.drive.kb_add_to,
-                () => onAddToKnowledge(entry),
-              )}
-              {item(
-                <Sparkles className="w-3.5 h-3.5" />,
-                t.plugins.drive.kb_open,
-                onOpenKnowledge,
-              )}
-            </>
-          )}
-          {divider("danger")}
-          {item(
-            <Trash2 className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_delete,
-            () => onRequestDelete(paths),
-            { danger: true, shortcut: "Del" },
-          )}
-        </>
-      ) : (
-        <>
-          {item(
-            <FolderPlus className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_new_folder,
-            onNewFolder,
-          )}
-          {item(
-            <FilePlus className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_new_file,
-            onNewFile,
-          )}
-          {divider()}
-          {item(
-            <ClipboardPaste className="w-3.5 h-3.5" />,
-            t.plugins.drive.ctx_paste,
-            () => drive.pasteHere(),
-            { shortcut: "Ctrl+V", disabled: !drive.clipboard },
-          )}
-          {knowledgeAvailable && (
-            <>
-              {divider()}
-              {/* Null entry = the open folder, which is the folder-scoped
-                  "ask across these documents" case. */}
-              {item(
-                <Brain className="w-3.5 h-3.5" />,
-                t.plugins.drive.kb_add_folder,
-                () => onAddToKnowledge(null),
-              )}
-              {item(
-                <Sparkles className="w-3.5 h-3.5" />,
-                t.plugins.drive.kb_open,
-                onOpenKnowledge,
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
+  return <ContextMenu x={state.x} y={state.y} onClose={onClose} items={items} />;
 }

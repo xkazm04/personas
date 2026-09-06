@@ -1,6 +1,15 @@
 # Autonomous signal economy — gap analysis & architecture
 
 **Status:** shipped 2026-06-10 (execution triage redesign + message triage v1).
+
+> **Status (verified 2026-09-06).** Everything below still matches the code, including every constant: `SCAN_LIMIT = 200` / `MAX_BATCH_CANDIDATES = 24` / `MAX_DIGEST_LINES = 6` / `MAX_TRIAGE_ATTEMPTS = 2` (`proactive/execution_review.rs:124,129,132,613`), `BATCH_LIMIT = 20` (`message_triage.rs:56`), `GLOBAL_DAILY_CAP = 12` with the per-kind caps 4/4/6/8/2 and `FALLBACK_KIND_CAP = 3` (`budget.rs:23-47`), and the baseline constants `MIN_SAMPLES = 8` / `WINDOW_DAYS = 30` / `SAMPLE_CAP = 500` / `REFRESH_HOURS = 24` / `DEVIATION_FACTOR = 1.5` (`baselines.rs:28-41`). Three things have changed since:
+>
+> - **Noticing and delivering were decoupled (2026-08-07).** Budget is no longer spent at insert time. `evaluate_with_extra_candidates` writes candidates as `queued` unconditionally and `release_pending` is the one place a row becomes `delivered`, gating each through the budget on every tick; rows that wait too long are aged to `expired` by `sweep_lifecycle` rather than replayed stale. The pre-change design stranded 20 rows permanently, the oldest for seven weeks, because a row that lost its budget claim stayed `queued` and the dedupe guard treated `queued` as blocking (`proactive/mod.rs:1-40`).
+> - **Engagement-modulated caps shipped (F4).** The static per-kind caps now adapt +/-1 to how the user actually responds over a trailing 30 days: dismissed >= 80% gives -1, engaged >= 60% gives +1, and nothing moves below `MODULATION_MIN_N = 5` samples (`budget.rs:52-112`). This closes the "A4 per-kind display" follow-up noted under C2 below: `companion_get_adaptations` (`commands/companion/observability.rs:337`) surfaces it, rendered as "What Athena adapts" in `src/features/plugins/companion/BrainViewer.tsx:804`.
+> - **Two more proactive legs exist** beyond the two documented here: `proactive/fleet_triggers.rs` (`fleet_failed`, `fleet_stale`, `fleet_op_completed`) and `proactive/backlog_triage.rs` (the user-invoked "Send to Athena" batch verdict over pending `dev_ideas`, on the `model_routing::MICRO` tier, fail-closed: an id with no verdict is REJECTED). Neither has a named per-kind cap, so both fall to `FALLBACK_KIND_CAP = 3`. Other kinds in the same position: `backlog_aging`, `cadence_due`, `on_this_day`, `ambient_match`, `goal_target_approaching`, `daily_rollup`.
+>
+> Path note: `proactive/execution_review.rs` etc. are correct, but sibling paths named elsewhere in this repo have moved: `companion/dispatcher.rs` and `companion/session.rs` are now directories.
+
 **Problem statement (from live use):** in autonomous mode Athena was "very
 inefficient in deciding when to report to the user and when to quietly process"
 — the chat filled with `[proactive: execution_review]` turns whose entire
@@ -119,8 +128,9 @@ The Messages counterpart of Athena's human-review resolution
   `athena_scheduled` unthrottled, fallback 3). `budget::try_consume(kind)` claims
   one global unit AND one per-kind unit atomically (rolls back the global
   increment if the per-kind cap blocks), counted in `companion_attention_budget`.
-  A noisy leg now exhausts only its own sub-budget. (Live-tuning overrides + an
-  A4 per-kind display are a follow-up.)
+  A noisy leg now exhausts only its own sub-budget. (The A4 per-kind display has
+  since SHIPPED as F4 engagement modulation; see the status block at the top;
+  live-tuning overrides have not.)
 - ~~**Severity registry**~~ — **SHIPPED (D1, direction 3).** Execution triage now
   flags deviation from each persona's *own* learned norm, not the global
   `EXPENSIVE_USD`/`SLOW_MS` constants. `proactive/baselines.rs` computes p50/p95

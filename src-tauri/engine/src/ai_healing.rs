@@ -99,6 +99,18 @@ pub fn should_trigger_ai_healing(
         return false;
     }
 
+    // Never trigger on a poisoned session. AI healing RESUMES the failed
+    // session (`spawn_healing_chain` → `--resume <session_id>`); when the
+    // failure is baked into that conversation — an oversized prompt, a
+    // context-window overflow, a 400 the API raised against the transcript
+    // itself — the healer replays the identical body and fails identically,
+    // then the 2+-consecutive rule below would re-arm it. The taxonomy is the
+    // one authority on which categories are poisoned; consult it, do not
+    // re-parse the message here.
+    if !personas_core::error_taxonomy::is_resume_safe(category) {
+        return false;
+    }
+
     // Incomplete state -- CLI ran but couldn't complete the task
     if execution_state == "incomplete" {
         return true;
@@ -680,6 +692,23 @@ mod tests {
             &FailureCategory::Timeout,
             "failed",
             2,
+        ));
+    }
+
+    /// A context-overflow / invalid-request failure classifies as Validation,
+    /// and resuming that session reproduces it deterministically. Neither the
+    /// 2+-consecutive rule nor the "incomplete" rule may re-arm the resume.
+    #[test]
+    fn test_should_not_trigger_on_poisoned_session() {
+        assert!(!should_trigger_ai_healing(
+            &FailureCategory::Validation,
+            "failed",
+            5,
+        ));
+        assert!(!should_trigger_ai_healing(
+            &FailureCategory::Validation,
+            "incomplete",
+            0,
         ));
     }
 

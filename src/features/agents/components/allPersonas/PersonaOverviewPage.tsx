@@ -11,6 +11,7 @@ import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/C
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
+import { rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -31,6 +32,15 @@ import { listDirectorScoreTrends } from '@/api/director';
 /** Top-level view of the All-Personas page: the persona list, or the
  *  effective-config resolution table (migrated from Settings → Config). */
 type PageTab = 'personas' | 'config';
+
+/** The grid's rendering of the shared accent rule (`rowAccentTone`). */
+const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
+  building: 'border-l-violet-400/60',
+  draft: 'border-l-zinc-400/40',
+  failing: 'border-l-red-400/60',
+  degraded: 'border-l-amber-400/60',
+  healthy: 'border-l-emerald-400/40',
+};
 
 export default function PersonaOverviewPage() {
   const { t, tx } = useTranslation();
@@ -124,6 +134,14 @@ export default function PersonaOverviewPage() {
     [teams],
   );
   const addToast = useToastStore((s) => s.addToast);
+  // Label for the home-team chip. `'__ungrouped__'` is the sentinel the drop
+  // rail and the filter pipeline share; a team whose row has not loaded yet
+  // falls back to nothing so the chip never renders a raw id.
+  const groupFilterLabel = useMemo(() => {
+    if (groupFilter === null) return null;
+    if (groupFilter === '__ungrouped__') return t.agents.persona_list.batch_move_to_ungrouped;
+    return teamNameById.get(groupFilter) ?? null;
+  }, [groupFilter, teamNameById, t.agents.persona_list.batch_move_to_ungrouped]);
   const handleBatchMoveToGroup = useCallback(
     async (homeTeamId: string | null) => {
       const ids = [...selectedIds];
@@ -134,7 +152,9 @@ export default function PersonaOverviewPage() {
         try {
           await applyPersonaOp(id, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
           ok += 1;
-        } catch {
+        } catch (err) {
+          // The partial toast reports the count; the breadcrumb keeps the cause.
+          silentCatch('PersonaOverviewPage:batchMoveToGroup')(err);
           failed += 1;
         }
       }
@@ -199,17 +219,28 @@ export default function PersonaOverviewPage() {
       : { ...prev, sortKey: key, sortDirection: 'asc' });
   }, []);
 
-  const hasActiveFilter =
-    view.statusFilter !== 'all' ||
-    view.healthFilter !== 'all' ||
-    view.connectorFilter !== 'all' ||
-    view.favoriteOnly ||
-    search.trim().length > 0;
-
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
     setSearch('');
+    setGroupFilter(null);
   }, []);
+
+  // The header count used to be a template literal with a hardcoded English
+  // "of" and a hand-rolled `s` plural, so 13 of the 14 locales rendered
+  // "3 of 12 personas" in English on the roster's own header.
+  const subtitle = useMemo(() => {
+    const plural = personas.length !== 1;
+    if (filteredData.length !== personas.length) {
+      return tx(
+        plural ? t.agents.persona_list.persona_count_filtered_other : t.agents.persona_list.persona_count_filtered_one,
+        { shown: filteredData.length, total: personas.length },
+      );
+    }
+    return tx(
+      plural ? t.agents.persona_list.persona_count_other : t.agents.persona_list.persona_count_one,
+      { count: personas.length },
+    );
+  }, [filteredData.length, personas.length, tx, t.agents.persona_list]);
 
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
@@ -223,7 +254,7 @@ export default function PersonaOverviewPage() {
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.agents.persona_list.all_personas}
-        subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} persona${personas.length !== 1 ? 's' : ''}`}
+        subtitle={subtitle}
         actions={pageTab === 'personas' ? (
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <PersonaOverviewBatchBar
@@ -260,7 +291,15 @@ export default function PersonaOverviewPage() {
             ]}
           />
           {pageTab === 'personas' && (
-            <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
+            <PersonaOverviewToolbar
+              search={search}
+              onSearchChange={setSearch}
+              view={view}
+              onViewChange={setView}
+              groupFilter={groupFilter}
+              groupFilterLabel={groupFilterLabel}
+              onClearGroupFilter={() => setGroupFilter(null)}
+            />
           )}
         </div>
 
@@ -274,8 +313,16 @@ export default function PersonaOverviewPage() {
 
         <DirectorPanel />
 
-        {filteredData.length === 0 && hasActiveFilter ? (
-          <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
+        {filteredData.length === 0 ? (
+          // Zero rows has two causes with two remedies: no personas at all
+          // (create one) vs. personas that the filters exclude (reset). An
+          // all-archived roster with no filter counts as the second - the
+          // archived toggle is the control that reveals them.
+          <PersonaOverviewEmptyState
+            reason={personas.length === 0 ? 'none' : 'filters'}
+            onResetFilters={handleResetFilters}
+            onCreate={() => setIsCreatingPersona(true)}
+          />
         ) : isMobile ? (
           <PersonaOverviewCardList
             data={filteredData}
@@ -294,13 +341,7 @@ export default function PersonaOverviewPage() {
             getRowKey={(p) => p.id}
             onRowClick={handleRowClick}
             isRowSelected={(p) => selectedIds.has(p.id)}
-            getRowAccent={(p) =>
-              isBuilding(p.id) ? 'border-l-violet-400/60'
-                : isDraft(p) ? 'border-l-zinc-400/40'
-                : healthMap[p.id]?.status === 'failing' ? 'border-l-red-400/60'
-                : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
-                : 'border-l-emerald-400/40'
-            }
+            getRowAccent={(p) => GRID_ACCENT_CLASS[rowAccentTone(isBuilding(p.id), isDraft(p), healthMap[p.id])]}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}

@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
 import { Trash2, Copy, Scissors } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  ContextMenu,
+  type ContextMenuItem,
+} from '@/features/shared/components/overlays/ContextMenu';
 
 interface ClipContextMenuProps {
   x: number;
@@ -11,6 +14,7 @@ interface ClipContextMenuProps {
   onClose: () => void;
 }
 
+/** Timeline-clip right-click menu, on the shared `ContextMenu` primitive. */
 export default function ClipContextMenu({
   x,
   y,
@@ -20,55 +24,42 @@ export default function ClipContextMenu({
   onClose,
 }: ClipContextMenuProps) {
   const { t } = useTranslation();
-  const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click or escape
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [onClose]);
-
-  const items = [
-    { icon: Copy, label: t.common.duplicate, action: onDuplicate },
-    ...(onSplit ? [{ icon: Scissors, label: t.media_studio.split ?? 'Split', action: onSplit }] : []),
-    { icon: Trash2, label: t.common.delete, action: onDelete, danger: true },
+  const items: ContextMenuItem[] = [
+    {
+      id: 'duplicate',
+      label: t.common.duplicate,
+      icon: <Copy className="w-3.5 h-3.5" />,
+      onSelect: onDuplicate,
+    },
+    ...(onSplit
+      ? [
+          {
+            id: 'split',
+            label: t.media_studio.split,
+            icon: <Scissors className="w-3.5 h-3.5" />,
+            onSelect: onSplit,
+          },
+        ]
+      : []),
+    {
+      id: 'delete',
+      label: t.common.delete,
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      danger: true,
+      separatorBefore: true,
+      onSelect: onDelete,
+    },
   ];
 
   return (
-    <div
-      ref={ref}
-      className="fixed z-[100] min-w-[140px] py-1 bg-background border border-primary/15 rounded-modal shadow-elevation-4 animate-fade-slide-in"
-      style={{ left: x, top: y }}
-    >
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isDanger = 'danger' in item && item.danger;
-        return (
-          <button
-            type="button"
-            key={item.label}
-            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-md transition-colors ${
-              isDanger
-                ? 'text-red-400 hover:bg-red-500/10'
-                : 'text-foreground hover:bg-secondary/40'
-            }`}
-            onClick={() => { item.action(); onClose(); }}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
+    <ContextMenu
+      x={x}
+      y={y}
+      onClose={onClose}
+      items={items}
+      widthClass="min-w-[140px]"
+      zIndex={100}
+    />
   );
 }

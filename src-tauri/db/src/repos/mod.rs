@@ -7,6 +7,7 @@ pub mod dev_run_checkpoints;
 pub mod dev_tools;
 pub mod dev_workspaces;
 pub mod execution;
+pub mod fleet_claude_accounts;
 pub mod fleet_decisions;
 pub mod fleet_sessions;
 pub mod lab;

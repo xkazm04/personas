@@ -5,6 +5,7 @@ import {
   mapOverallStatus,
   coerceIssueText,
   parseFeasibilityToHealthResult,
+  computeAggregateHealthScore,
   HEALTH_SCORING,
 } from './useHealthCheck';
 import type { DryRunIssue } from './types';
@@ -45,6 +46,17 @@ describe('makeIssueId', () => {
     const b = makeIssueId('persona-1', 'info', 'スケジュール未定義 ⏰');
     expect(a).toBe(b);
     expect(a).toMatch(/^hc_[0-9a-f]{16}$/);
+  });
+
+  it('keeps the exact hash the NUL-separated input has always produced', () => {
+    // Pinned from the tree BEFORE the raw NUL bytes in the template literal were
+    // rewritten as `unicode` escapes: the separator's VALUE is part of every id.
+    expect(makeIssueId('persona-1', 'error', 'Missing credential for slack')).toBe('hc_8314f1b023d77a13');
+  });
+
+  it('separates fields so a space in one field cannot alias a split in another', () => {
+    expect(makeIssueId('p', 'a b', 'c')).toBe('hc_fe57c4bbfad02177');
+    expect(makeIssueId('p', 'a', 'b c')).toBe('hc_2878c5c7fbe3c377');
   });
 });
 
@@ -192,5 +204,45 @@ describe('parseFeasibilityToHealthResult', () => {
     const result = parseFeasibilityToHealthResult(raw, persona, []);
     expect(result.status).toBe('ready');
     expect(result.issues).toEqual([]);
+  });
+});
+
+describe('computeAggregateHealthScore', () => {
+  function check(...severities: DryRunIssue['severity'][]) {
+    return { result: { issues: severities.map((s) => issue(s)) } };
+  }
+
+  it('does not let fleet size alone drive the score to zero', () => {
+    // 25 agents, each carrying a single info-level note ("no telemetry yet").
+    // Flattening every issue into one 100-point budget charged 25 x 2 = 50,
+    // so a fleet with nothing wrong graded "unhealthy". The aggregate is a
+    // mean of per-agent scores: each agent is at 98, so the fleet is at 98.
+    const fleet = Array.from({ length: 25 }, () => check('info'));
+    const { value, grade } = computeAggregateHealthScore(fleet);
+    expect(value).toBe(HEALTH_SCORING.maxScore - HEALTH_SCORING.infoPenalty);
+    expect(grade).toBe('healthy');
+  });
+
+  it('is independent of fleet size for an identically-healthy fleet', () => {
+    const small = computeAggregateHealthScore(Array.from({ length: 3 }, () => check('warning')));
+    const large = computeAggregateHealthScore(Array.from({ length: 60 }, () => check('warning')));
+    expect(large).toEqual(small);
+  });
+
+  it('still reaches the floor when every agent is broken', () => {
+    const fleet = Array.from({ length: 4 }, () => check('error', 'error', 'error', 'error'));
+    const { value, grade } = computeAggregateHealthScore(fleet);
+    expect(value).toBe(HEALTH_SCORING.minScore);
+    expect(grade).toBe('unhealthy');
+  });
+
+  it('averages a mixed fleet rather than summing its penalties', () => {
+    // one broken agent (4 errors -> 0) and three clean ones (100) -> 75.
+    const fleet = [check('error', 'error', 'error', 'error'), check(), check(), check()];
+    expect(computeAggregateHealthScore(fleet).value).toBe(75);
+  });
+
+  it('grades an empty fleet as healthy at max', () => {
+    expect(computeAggregateHealthScore([])).toEqual({ value: HEALTH_SCORING.maxScore, grade: 'healthy' });
   });
 });

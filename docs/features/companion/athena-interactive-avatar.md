@@ -1,9 +1,35 @@
 # Athena Interactive Avatar — Layered Architecture
 
-**Status:** Layer A Step 1 shipped; Layers B/C parked for later exploration
-**Author:** Design pass 2026-05-02; status updated 2026-05-09
+**Status:** Layer A shipped and grown; Layer B shipped in a reduced form (DOM/CSS bloom, no canvas, no particles); Layer C never started.
+**Author:** Design pass 2026-05-02; status updated 2026-05-09; **re-verified against code 2026-09-06**
 **Scope:** Persona avatar surface (Athena baseline), audio/cursor reactivity, UI chrome
-**Decision:** Document the three-layer approach. Layer A's crossfade prototype has shipped (`AthenaAvatar.tsx`). Layers B (reactive overlay) and C (Rive UI chrome) remain unshipped.
+**Decision:** Document the three-layer approach. Layer A's crossfade prototype has shipped (`AthenaAvatar.tsx`). Layer C (Rive UI chrome) remains unshipped.
+
+## Status (verified 2026-09-06)
+
+- **Layer A: shipped and larger than described.** `src/features/plugins/companion/AthenaAvatar.tsx`
+  (264 lines). `AthenaState` is `idle | thinking | speaking | composing`; the rendered
+  `ClipState` is `idle | thinking | message | shows` (`AthenaAvatar.tsx:36-59`). `speaking`
+  still falls back to the idle clip (no speaking clip exists). `composing`, added for the orb
+  decision `0` flow, maps to the `shows` presenting clip. `message` is a one-shot driven by a
+  `messageNonce` prop, never a sticky state.
+- **Layer B: shipped, but as DOM/CSS, not canvas or WebGL.** The audio-reactive part is real:
+  `companion/audioLevel.ts` wires every TTS `<audio>` that flows through `voicePlayback.play()`
+  into one shared `AnalyserNode`, and `orb/athenaOrbGlow.ts` (`useOrbAudioGlow`) subscribes at
+  frame rate and mutates the orb's bloom node directly, never through React state. What did
+  **not** ship: the `<canvas>` overlay, the particle system, cursor-proximity drift, the focus
+  pulse, and the chest-core anchor calibration of §3.3. Neither PixiJS nor three.js is a
+  dependency.
+- **Layer C: not started.** No Rive package is in `package.json`; `@rive-app/*` appears
+  nowhere in `src/`.
+
+**Asset drift.** The clips shipped under `_loop` names and are an order of magnitude smaller
+than §2.1 records. `public/athena/` today holds `athena_baseline.jpg` (476 KB),
+`athena_idle_loop.mp4` (111 KB), `athena_thinking_loop.mp4` (147 KB), `athena_message_loop.mp4`
+(158 KB), `athena_shows_loop.mp4` (220 KB), plus `athena_error_loop.mp4` (215 KB) and
+`athena_success_loop.mp4` (299 KB), which are **present but referenced by nothing in `src/`**.
+Per the component header they are 320x320, 12 fps, CRF 30, no audio, ping-ponged so the end
+blends back to the start pose.
 
 ## TL;DR
 
@@ -42,17 +68,20 @@ Rive's payoff is concentrated in the UI shell, not in Athena's body.
 
 ### 2.1 Asset library
 
-Today: `athena_idle.mp4`, `athena_thinking.mp4` (each ~1.4MB, locally bundled). Target library:
+~~Today: `athena_idle.mp4`, `athena_thinking.mp4` (each ~1.4MB, locally bundled).~~ **Shipped as
+`athena_idle_loop.mp4` (111 KB) and `athena_thinking_loop.mp4` (147 KB)**. See the status
+block above for the full inventory. Target library:
 
 | State | Trigger | Loop? | Notes |
 |---|---|---|---|
 | `idle` | default | yes | currently shipped |
 | `thinking` | persona is generating | yes | currently shipped |
 | `message` | reply finished (orb reaction) | one-shot | **shipped** — `athena_message_loop.mp4`; plays one loop then reverts to idle (see `AthenaAvatar`'s `messageNonce` one-shot + the orb's theme-colour border glow) |
-| `speaking` | TTS playback active | yes | needed (falls back to idle) |
+| `speaking` | TTS playback active | yes | still needed; `clipFor()` falls back to idle (`AthenaAvatar.tsx:57-59`) |
+| `composing` | Athena is preparing a visual explanation (orb decision `0`) | yes | **shipped** as `athena_shows_loop.mp4`; not in the original plan |
 | `greeting` | session start | no | one-shot, transitions back to idle |
-| `acknowledging` | task accepted | no | brief nod / glow pulse |
-| `dismissive` | task rejected / cancelled | no | optional, low priority |
+| `acknowledging` | task accepted | no | brief nod / glow pulse. `athena_success_loop.mp4` exists in `public/athena/` but is wired to nothing |
+| `dismissive` | task rejected / cancelled | no | optional, low priority. `athena_error_loop.mp4` exists in `public/athena/` but is wired to nothing |
 
 > **Resource discipline (shipped in `AthenaAvatar`):** only one clip plays at a time; playback pauses on `document.hidden` (no decode while backgrounded); `prefers-reduced-motion` mounts no `<video>` (static poster only). This addresses the §Part 7 "GPU thermals on laptops" risk for the always-mounted footer/orb avatars.
 
@@ -190,12 +219,14 @@ Component sketch (deferred):
 
 ## Part 6 — Open questions to resolve before implementing
 
-1. **Where does Athena live in the app?** Persona detail panel? Floating companion? Full-screen during voice? The container size and aspect ratio depend on this.
-2. **Does the avatar persist across routes?** If yes, the video element must survive route changes (portal'd to root) so the loop doesn't restart on navigation.
-3. **TTS pipeline.** Does the speaking-state trigger come from a local TTS engine or a cloud provider? Determines whether we have an `<audio>` element to tap with `AnalyserNode`.
+> **Resolved 1, 2, 3 and 6 (verified 2026-09-06); 4 and 5 are still open.**
+
+1. ~~**Where does Athena live in the app?**~~ **Resolved: a floating orb**, plus a 20px footer avatar and a `fill` watermark behind the chat panel. See [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md).
+2. ~~**Does the avatar persist across routes?**~~ **Resolved: yes.** `orb/AthenaOrbLayer.tsx` portals to `document.body` from `src/App.tsx:425`, outside the routed tree.
+3. ~~**TTS pipeline.**~~ **Resolved: local, and there is a real `<audio>` element.** The engines are local sidecars (Kokoro by default, Pocket TTS experimental; ElevenLabs and Piper were descoped 2026-07-10, `src-tauri/src/companion/tts/mod.rs:58-71`). `voicePlayback.play()` routes every element through the shared `AnalyserNode` in `companion/audioLevel.ts`, which is exactly the §3.4 tap.
 4. **Clip generation budget.** Is it acceptable to spend a one-time ~$5–15 generating a 20–30 clip library, or do we constrain to the existing 2 clips + procedural reactivity only?
 5. **Multi-persona future.** Athena is one persona. If every persona gets a custom avatar, the per-persona clip library scales linearly. Is the same architecture re-usable, or is Athena bespoke?
-6. **Accessibility.** Avatar must respect `prefers-reduced-motion` — disable crossfade, suppress particle drift, freeze on first frame of `idle`. Decide the fallback at design time.
+6. ~~**Accessibility.**~~ **Resolved, and stricter than proposed:** under `prefers-reduced-motion` `AthenaAvatar` mounts **no** `<video>` at all, just the static `athena_baseline.jpg` poster (`AthenaAvatar.tsx:211-215`), and the orb's audio-reactive glow is skipped entirely (`athenaOrbGlow.ts`).
 
 ---
 
@@ -224,7 +255,8 @@ If all four feel right, the full implementation is straightforward. If clip gene
 
 ## Related
 
-- `public/athena/athena_baseline.jpg` — baseline image
-- `public/athena/athena_idle.mp4`, `athena_thinking.mp4` — current clips
+- `public/athena/athena_baseline.jpg`: baseline image (also the reduced-motion poster)
+- `public/athena/athena_idle_loop.mp4`, `athena_thinking_loop.mp4`, `athena_message_loop.mp4`, `athena_shows_loop.mp4`: the wired clips
+- `src/features/plugins/companion/audioLevel.ts`, `orb/athenaOrbGlow.ts`: the shipped slice of Layer B
 - `.claude/skills/leonardo/SKILL.md` — image generation skill (used to produce the baseline)
 - Memory: `feedback_credentials_stay_local.md` — local-first constraint on cloud streaming services

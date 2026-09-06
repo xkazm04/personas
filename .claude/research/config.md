@@ -123,3 +123,6 @@ Authority: `.claude/CLAUDE.md`.
 
 ## Vetoes
 - "Langfuse REMOVED - don't re-suggest" (and any other "removed, don't re-suggest" memory).
+
+## Skill improvement log
+- 2026-09-05 (multica run): when the shared `src-tauri/target` is lock-held by a sibling session, build in a worktree-private `CARGO_TARGET_DIR` instead of waiting; `translate-merge.mjs` does not regenerate `src/i18n/generated/types.ts` — run `scripts/i18n/gen-types.mjs` before `tsc`. The overlay `## Gates` line still says "ten gates"; `.claude/CLAUDE.md` counts thirteen.

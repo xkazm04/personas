@@ -28,6 +28,7 @@ const SYSTEM_SKILLS = [
   'project-populate',
   'i18n-translate',
   'ship-milestone',
+  'note-task',
   ...readdirSync(srcRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name.startsWith('scan-'))
     .map((d) => d.name)

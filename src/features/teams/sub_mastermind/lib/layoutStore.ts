@@ -30,6 +30,7 @@
 //   * Every group / link / note carries an `author` (`'user' | 'athena'`), so
 //     hers can be told apart on the canvas and reverted without touching his.
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
+import { jsonOr, safeLocalGet as sharedLocalGet, safeLocalSet as sharedLocalSet } from '@/lib/safeLocalStorage';
 import { silentCatch } from '@/lib/silentCatch';
 
 import type { CanvasNote, GroupRect, LayoutAuthor, UserLink } from './types';
@@ -134,32 +135,14 @@ function emit(): void {
 
 // --- parsing / storage helpers ------------------------------------------------
 
-function safeLocalGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch (e) {
-    silentCatch('mastermind layout localStorage read')(e);
-    return null;
-  }
-}
-
-function safeLocalSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch (e) {
-    // best-effort — a full/blocked storage never breaks the canvas
-    silentCatch('mastermind layout localStorage write')(e);
-  }
-}
-
-function jsonOr<T>(raw: string | null, fallback: T): T {
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
+// The guarded storage helpers used to live here as private copies; they are
+// now the shared `@/lib/safeLocalStorage` (the wrapper client-state-persistence
+// Gaps #1 asked for). Bound to this store's telemetry sites so a failure still
+// says "mastermind layout".
+const safeLocalGet = (key: string) => sharedLocalGet(key, 'mastermind layout storage read');
+// best-effort — a full/blocked storage never breaks the canvas
+const safeLocalSet = (key: string, value: string) =>
+  sharedLocalSet(key, value, 'mastermind layout storage write');
 
 /** v1 → v2 attribution. Anything that is not literally `'athena'` — absent,
  *  misspelled, a number, an object — is the user's. Attribution can only ever

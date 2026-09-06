@@ -1,4 +1,5 @@
 pub mod assignments;
+pub(crate) mod channel_leader;
 pub mod deliberations;
 pub mod learning;
 pub mod team_channel;

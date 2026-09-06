@@ -181,5 +181,16 @@
   "unsaved_title": "¿Guardar cambios antes de salir?",
   "use_case_count_one": "{count} caso de uso",
   "use_case_count_other": "{count} casos de uso",
-  "value_placeholder": "Valor"
+  "value_placeholder": "Valor",
+  "md_bold": "Negrita",
+  "md_bullet": "Lista con viñetas",
+  "md_checklist": "Lista de tareas",
+  "md_code": "Código en línea",
+  "md_h1": "Título 1",
+  "md_h2": "Título 2",
+  "md_h3": "Título 3",
+  "md_italic": "Cursiva",
+  "md_numbered": "Lista numerada",
+  "md_quote": "Cita",
+  "md_toolbar": "Formato"
 }

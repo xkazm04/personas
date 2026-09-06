@@ -1252,7 +1252,17 @@
     "welcome_subtitle": "我可以查看你的智能体、执行情况和记忆。随时提问，或从以下内容开始。",
     "welcome_title": "今天有什么可以帮到你？",
     "working": "正在处理…",
-    "you_label": "你"
+    "you_label": "你",
+    "note_suggestions_accept": "接受",
+    "note_suggestions_accepted": "已添加到笔记",
+    "note_suggestions_count_one": "“{title}”有1条建议",
+    "note_suggestions_count_other": "“{title}”有{count}条建议",
+    "note_suggestions_empty": "此卡片没有任何建议。",
+    "note_suggestions_heading": "笔记建议",
+    "note_suggestions_open_pad": "打开记事本查看它们将应用到何处。",
+    "note_suggestions_question_hint": "在笔记中或在聊天中回答此问题。",
+    "note_suggestions_reject": "驳回",
+    "note_suggestions_rejected": "已驳回"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

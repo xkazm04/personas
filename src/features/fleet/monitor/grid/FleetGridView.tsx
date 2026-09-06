@@ -57,8 +57,31 @@
 // — CLICKABLE: it opens the session's live terminal. That asymmetry is the
 // point. A persona is a permanent member you inspect; a fleet session is a
 // process you talk to, and it dies when its task lands.
+//
+// ---------------------------------------------------------------------------
+// THREE THINGS THIS PASS ADDED
+//
+// THE COLD OPEN IS STAGED. Nothing ever enforced a delay on this board; the
+// delay was the first commit itself — the card, every tile, and the rail's
+// three feeds, all in one render behind a lazy chunk. `useStagedMount` now
+// paints the chrome in frame one (header, usage strip, column headers,
+// geometry-matched ghost rows, an empty rail of the persisted width), the
+// tiles in frame two, the rail in frame three — once per app session, since
+// every later mount is warm and would only be slowed by it. The two modals
+// are lazy: a terminal pane is not part of opening a board. And a Monitor
+// that opens before the roster exists gets the same chrome over `BoardGhost`
+// rather than a header-only skeleton in its place.
+//
+// THE USAGE STRIP sits between the header and the columns: the subscription's
+// 5-hour and 7-day windows, with reset countdowns and a pace verdict, read
+// from Anthropic's OAuth usage endpoint (`UsageStrip`).
+//
+// TILES SPEAK. A persona's channel line pops on its tile as a bubble for ten
+// seconds and leaves an unread mark behind (`useChannelBubbles`, fed by the
+// same channel cache the rail's Messages tab holds open — no extra IPC).
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { LayoutGrid, Users } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -76,15 +99,44 @@ import { normalizeName, type RailProjectFilter } from './rail/railFilter';
 import { PersonaTile } from './PersonaTile';
 import { SessionTile } from './SessionTile';
 import { ActivityRail } from './ActivityRail';
-import { FleetTerminalModal } from './FleetTerminalModal';
-import { SessionRecapModal } from './SessionRecapModal';
 import { useSystemStore } from '@/stores/systemStore';
 import { useFleetSessions } from './useFleetSessions';
 import { ColumnBody } from './ColumnBody';
 import { UngroupedTray } from './UngroupedTray';
+import { UsageStrip } from './UsageStrip';
+import { BoardGhost, ColumnGhost } from './BoardGhost';
+import { FINAL_STAGE, useStagedMount } from './useStagedMount';
+import { useChannelBubbles } from './useChannelBubbles';
+import { useRailWidth } from './rail/useRailWidth';
 import {
   TILE_W, TILE_H, SESSION_TILE_H, columnRows, type ColumnRow,
 } from './gridGeometry';
+
+// Both modals mount only when a session tile is clicked, and the terminal one
+// drags xterm along with it — neither belongs in the board's opening commit.
+// `lazyRetry`, not raw `lazy`: a chunk fetch that fails once (a dev server
+// restart, a flaky disk) must not cache its rejection forever.
+const FleetTerminalModal = lazyRetry(() => import('./FleetTerminalModal'));
+const SessionRecapModal = lazyRetry(() => import('./SessionRecapModal'));
+
+/** Stage at which the tiles mount; the rail follows one frame later. */
+const TILES_STAGE = 1;
+
+/**
+ * The rail's footprint while the rail itself waits a frame: the persisted
+ * width, so the columns do not shift when the real one lands.
+ */
+function RailPlaceholder() {
+  const rail = useRailWidth();
+  return (
+    <div
+      aria-hidden
+      className="flex min-h-0 flex-shrink-0 border-l border-border"
+      style={{ width: rail.width }}
+      data-testid="fleet-grid-rail-placeholder"
+    />
+  );
+}
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
@@ -107,6 +159,12 @@ interface Props {
   feedTeams?: FeedTeam[];
   /** Scope the Monitor's Timeline to one speaker (a Messages row click). */
   onOpenSpeaker?: (teamId: string, personaId: string) => void;
+  /**
+   * The first-ever read has not landed and there is nothing warm to show.
+   * The chrome renders regardless; only the board body ghosts — a settled
+   * empty state before the first read would be an empty-flash lie.
+   */
+  isLoading?: boolean;
 }
 
 /**
@@ -153,9 +211,23 @@ function SessionDivider({ label }: { label: string }) {
 }
 
 function FleetGridViewImpl({
-  cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker,
+  cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker, isLoading = false,
 }: Props) {
   const { t, tx } = useTranslation();
+  const stage = useStagedMount();
+
+  // Channel bubbles for the personas on this board. The roster set is keyed
+  // by the cards' ids so a roster change re-diffs, and nothing else does.
+  const personaIds = useMemo(() => new Set(cards.map((c) => c.personaId)), [cards]);
+  const { bubbles, unseen, acknowledge } = useChannelBubbles(feedTeams, personaIds);
+  // Opening a persona is the operator looking at it: its unread mark clears.
+  const handleSelect = useCallback(
+    (personaId: string, section: DrawerSection) => {
+      acknowledge(personaId);
+      onSelect(personaId, section);
+    },
+    [acknowledge, onSelect],
+  );
   // The session whose terminal is open. Held as the SESSION rather than its id:
   // the registry patches rows underneath an open modal on every state event, and
   // an id re-resolved per render would swap the pane's subject mid-read. The
@@ -271,13 +343,15 @@ function FleetGridViewImpl({
         key={c.personaId}
         card={c}
         selected={c.personaId === selectedPersonaId}
-        onSelect={onSelect}
+        onSelect={handleSelect}
         width={TILE_W}
         height={TILE_H}
         flash={focusNode === `p:${c.personaId}`}
+        bubble={bubbles.get(c.personaId) ?? null}
+        unseenChat={unseen.get(c.personaId) ?? 0}
       />
     ),
-    [selectedPersonaId, onSelect, focusNode],
+    [selectedPersonaId, handleSelect, focusNode, bubbles, unseen],
   );
 
   const renderSessionTile = useCallback(
@@ -311,12 +385,17 @@ function FleetGridViewImpl({
           <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
         </div>
         <span className="typo-title">{t.monitor.activity_mode}</span>
-        <StateTally totals={totals} labels={stateLabels} />
+        {/* Zeros before the first read would be a tally of nothing. */}
+        {!(isLoading && cards.length === 0) && <StateTally totals={totals} labels={stateLabels} />}
       </div>
+
+      <UsageStrip />
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {empty ? (
+          {isLoading && empty ? (
+            <BoardGhost />
+          ) : empty ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
               <div className="relative">
                 <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
@@ -383,8 +462,14 @@ function FleetGridViewImpl({
                           style={{ backgroundColor: colorWithAlpha(g.teamColor, 0.55) }}
                         />
                       </div>
-                      {/* Roster + sessions — one windowed stack of rows. */}
-                      <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
+                      {/* Roster + sessions — one windowed stack of rows. On
+                          the session's first paint the rows wait one frame
+                          behind their own geometry-matched ghost. */}
+                      {stage >= TILES_STAGE ? (
+                        <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
+                      ) : (
+                        <ColumnGhost rows={g.rows.length} />
+                      )}
                     </section>
                   ))}
                 </div>
@@ -409,16 +494,31 @@ function FleetGridViewImpl({
           )}
         </div>
 
-        <ActivityRail
-          feedTeams={feedTeams ?? []}
-          onOpenSpeaker={onOpenSpeaker}
-          filter={scope}
-          onClearFilter={clearScope}
-        />
+        {stage >= FINAL_STAGE ? (
+          <ActivityRail
+            feedTeams={feedTeams ?? []}
+            onOpenSpeaker={onOpenSpeaker}
+            filter={scope}
+            onClearFilter={clearScope}
+          />
+        ) : (
+          <RailPlaceholder />
+        )}
       </div>
 
-      <FleetTerminalModal session={openSession} onClose={closeSession} />
-      <SessionRecapModal session={recapSession} onClose={closeRecap} />
+      {/* Modals: chunk-loaded on first open. A null fallback is right here —
+          the trigger was a click on a tile, the modal's own shell paints as
+          soon as the chunk lands, and there is no chrome to hold in between. */}
+      {openSession && (
+        <Suspense fallback={null}>
+          <FleetTerminalModal session={openSession} onClose={closeSession} />
+        </Suspense>
+      )}
+      {recapSession && (
+        <Suspense fallback={null}>
+          <SessionRecapModal session={recapSession} onClose={closeRecap} />
+        </Suspense>
+      )}
     </div>
   );
 }

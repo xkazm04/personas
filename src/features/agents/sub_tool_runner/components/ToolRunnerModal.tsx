@@ -42,14 +42,14 @@ export function ToolRunnerModal({ isOpen, onClose, tools, personaId }: ToolRunne
               >
                 {t.agents.tool_runner.panel_title}
               </h3>
-              <p className="typo-body text-foreground/70">{t.agents.tool_runner.panel_subtitle}</p>
+              <p className="typo-body text-foreground">{t.agents.tool_runner.panel_subtitle}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground transition-colors shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>

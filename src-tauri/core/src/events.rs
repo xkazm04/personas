@@ -164,6 +164,13 @@ event_names! {
     // query per write and is impossible on DELETE, which is the unbind-a-goal
     // case the planner most needs to see.
     DEV_TOOLS_SHIP_CHANGED     => "dev-tools-ship-changed",
+    // Notepad: one note changed status behind the UI's back — the fleet
+    // stale ticker's notepad sweeper flipped it after reading a run's
+    // `started.json` / `result.json`. Payload `{noteId, status}`; the pad
+    // refetches just that note. Emitted ONLY by the sweeper: every other
+    // status move goes through `notepad_set_status`, whose caller already
+    // holds the updated row.
+    NOTEPAD_NOTE_CHANGED       => "notepad-note-changed",
     // The findings loop's SIGNAL events (docs/plans/dev-findings-loop.md). A sensor
     // raised a finding, or a verdict landed on one that shipped. Published on every
     // create_finding / set_finding_verify_state — i.e. from the repo, so no caller

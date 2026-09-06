@@ -217,7 +217,7 @@
   "relay_no_memories": "Noch keine geteilten Einträge.",
   "relay_shared_memory": "Geteiltes Gedächtnis",
   "relay_wire_listener": "Zuhörer hinzufügen",
-  "remove_confirm": "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{name}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" aus Team entfernen?",
+  "remove_confirm": "\"{name}\" aus Team entfernen?",
   "remove_from_team": "Aus Team entfernen",
   "removed_memories_one": "{count} entfernt",
   "removed_memories_other": "{count} entfernt",

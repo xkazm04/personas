@@ -181,5 +181,16 @@
   "unsaved_title": "Сохранить изменения перед выходом?",
   "use_case_count_one": "{count} сценарий использования",
   "use_case_count_other": "Сценариев использования: {count}",
-  "value_placeholder": "Значение"
+  "value_placeholder": "Значение",
+  "md_bold": "Жирный",
+  "md_bullet": "Маркированный список",
+  "md_checklist": "Чек-лист",
+  "md_code": "Встроенный код",
+  "md_h1": "Заголовок 1",
+  "md_h2": "Заголовок 2",
+  "md_h3": "Заголовок 3",
+  "md_italic": "Курсив",
+  "md_numbered": "Нумерованный список",
+  "md_quote": "Цитата",
+  "md_toolbar": "Форматирование"
 }

@@ -95,6 +95,70 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
+**The Claude usage strip (2026-09-05).** A thin band between the board's
+header and its project columns shows how much of the signed-in Claude
+subscription this machine has burned: one aligned row per rolling rate-limit
+window, stacked — the **5-hour** session window and the **7-day** window,
+plus the per-family weekly windows (Opus, Sonnet) on accounts that report
+them — each with its utilisation meter, percent, a **reset countdown**, and a
+**pace** glyph (a flame when utilisation runs ahead of the clock, a snowflake
+when it runs behind, a gauge when they agree; the name is in the row's
+accessible label). Nothing on the rows is hover-only. Meters turn warning at
+75% and error at 90%, and every non-ok state carries an icon and a label,
+never colour alone. The source is Anthropic's OAuth usage endpoint — the same one
+the community usage monitors opt into — read with the Claude Code login
+already on the machine (`~/.claude/.credentials.json`, or
+`CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
+nowhere else, and never crosses IPC. An install with no OAuth login (API-key
+users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
+whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
+
+**Several plans, one strip (2026-09-05).** The usage strip has a second
+mode for operators who juggle more than one Claude subscription. *Store this
+login* captures the CLI's current login (the whole credentials file, encrypted
+with the app's master key, in the `claude_accounts` table) together with the
+account identity from Anthropic's profile endpoint. From then on the strip
+shows one row per stored plan — the active one marked, each with its 5-hour
+and 7-day meters, the 5-hour reset countdown and a pace glyph — and every
+non-active row has a **Switch** button behind a confirm. A switch refreshes
+the stored token if it is about to expire, takes Claude Code's own credential
+lock directories (`<config>/.oauth_refresh.lock`, `~/.claude.lock`), replaces
+`~/.claude/.credentials.json` atomically, and patches `oauthAccount` in
+`~/.claude.json` key-scoped; the CLI picks it up on its next message with no
+restart. Before every read and switch the live file is synced back into the
+store for the account it belongs to, because refresh tokens rotate and a
+stale stored copy would die on first use. A stored login whose refresh token
+is dead is marked *Needs login* and cannot be switched to until `claude
+login` is run for it and it is stored again. **Auto-rotate** (off by default)
+switches to the coolest stored plan when the active one reaches a threshold
+on its 5-hour window — checked once a minute in the background whether or
+not the Monitor is open, with a five-minute cooldown, and only onto a plan
+that is under the threshold on both windows. The last automatic rotation is
+shown in the strip and toasted when it happens. macOS keeps its token in the
+Keychain, which this switcher does not reach; it is a Windows / Linux feature.
+
+**Tiles speak (2026-09-05).** When a persona posts in its team channel, its
+latest line slides in over its tile as a speech bubble and fades on its own
+after ten seconds; a small chat mark with a count stays on the tile until the
+operator opens that persona, which clears it. One bubble per persona — a
+second line inside the window replaces the first and restarts the clock. The
+bubbles are fed by the same channel cache the rail's Messages tab already
+holds open, so they cost no extra reads. Athena, the director, steps, events,
+memories and the operator's own directives never bubble — only a persona with
+something to say.
+
+**The cold open is staged (2026-09-05).** Opening the Monitor for the first
+time in a session used to commit the whole board at once — the card, every
+tile, and the rail's three feeds — behind a header-only skeleton. The board
+now paints its chrome first (header, usage strip, column headers, ghost rows
+the exact size of the tiles, and an empty rail of the persisted width), the
+tiles the next frame, and the rail the frame after; a Monitor opened before
+the roster exists shows the same chrome over a ghost board rather than a
+settled empty state. Once the board has painted in a session, every later
+open is warm and renders complete in one commit. The terminal and recap
+modals are chunk-loaded on first use, so xterm is no longer part of opening
+the board.
+
 **Messages arrive on the event, not the poll (2026-09-02).** A persona's new
 report lights its tile the moment the row lands: the board listens on the same
 `report-created` event the Overview report list uses (one shared

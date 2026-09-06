@@ -18,6 +18,17 @@ use super::healing_retry::{
 use super::*;
 use crate::utils::extract_panic_message;
 
+/// Continuity notice injected (as `_resume_hint`) when a retry was supposed to
+/// `--resume` the prior provider session but no session id was captured, so
+/// the run starts fresh instead. The model is told what it lost and where the
+/// prior attempt's partial work may already be, rather than being handed a
+/// first-attempt prompt and silently redoing (or contradicting) that work.
+pub(super) const SESSION_LOST_CONTINUITY_HINT: &str = "CONTINUITY NOTICE: this run is a \
+    retry of an earlier attempt whose conversation could not be resumed. You have no memory \
+    of that attempt. Before doing any work, inspect the working directory and any outputs \
+    already produced — partial progress from the earlier attempt may exist. Continue from \
+    whatever is already done; do not restart from scratch or overwrite completed work.";
+
 /// Run an execution with a hard engine-level timeout ceiling.
 ///
 /// Wraps `runner::run_execution` with `tokio::time::timeout` using
@@ -1531,7 +1542,16 @@ impl ExecutionEngine {
                             execution_id = %row.execution_id,
                             "scheduled_retries: api-error retry has no session id, restarting fresh",
                         );
-                        None
+                        // The run was MEANT to continue a conversation and
+                        // cannot. Say so to the model instead of restarting
+                        // silently: a fresh session that believes it is the
+                        // first attempt redoes work already on disk and
+                        // contradicts artifacts it cannot see. Continuity
+                        // notice adopted from multica's `ResumeExpected`
+                        // contract (`/research` 2026-09-05).
+                        Some(types::Continuation::PromptHint(
+                            SESSION_LOST_CONTINUITY_HINT.to_string(),
+                        ))
                     }
                 }
             } else {

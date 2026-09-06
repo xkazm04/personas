@@ -14,6 +14,7 @@ import MemoryDetailModal from '@/features/overview/sub_memories/components/Memor
 import { ReportDetailModal } from '@/features/overview/sub_reports/components/ReportDetailModal';
 import type { ActivityItem } from './activityTypes';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ActivityModalsProps {
   personaName: string;
@@ -28,7 +29,9 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [selectedReview, setSelectedReview] = useState<PersonaManualReview | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<PersonaReport | null>(null);
-  const [reviewProcessing, setReviewProcessing] = useState(false);
+  // Which verdict is in flight, so only the pressed control shows busy and
+  // the other one is merely held (a scalar flag lit neither and dimmed both).
+  const [reviewProcessing, setReviewProcessing] = useState<ManualReviewStatus | null>(null);
 
   const handleRowClick = useCallback((item: ActivityItem) => {
     switch (item.type) {
@@ -42,7 +45,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
 
   const handleReviewAction = useCallback(async (status: ManualReviewStatus, notes?: string) => {
     if (!selectedReview) return;
-    setReviewProcessing(true);
+    setReviewProcessing(status);
     try {
       await resolveReviewRow(selectedReview, status, notes);
       setSelectedReview(null);
@@ -55,7 +58,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
       toastCatch('activity:resolveReview')(err);
       onDataChanged();
     } finally {
-      setReviewProcessing(false);
+      setReviewProcessing(null);
     }
   }, [selectedReview, onDataChanged]);
 
@@ -115,22 +118,30 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             )}
             {selectedReview.status === 'pending' && (
               <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
-                <button
-                  type="button"
+                <Button
+                  variant="accent"
+                  accentColor="emerald"
+                  size="sm"
                   onClick={() => handleReviewAction('approved')}
-                  disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                  disabled={reviewProcessing !== null}
+                  loading={reviewProcessing === 'approved'}
+                  loadingLabel={t.agents.activity.approve}
+                  data-testid="activity-review-approve"
                 >
                   {t.agents.activity.approve}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="accent"
+                  accentColor="rose"
+                  size="sm"
                   onClick={() => handleReviewAction('rejected')}
-                  disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                  disabled={reviewProcessing !== null}
+                  loading={reviewProcessing === 'rejected'}
+                  loadingLabel={t.agents.activity.reject}
+                  data-testid="activity-review-reject"
                 >
                   {t.agents.activity.reject}
-                </button>
+                </Button>
               </div>
             )}
             {selectedReview.reviewer_notes && (
