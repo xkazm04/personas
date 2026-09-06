@@ -310,6 +310,14 @@ pub enum Mechanism {
     /// The deliberation moderator rewrites the agenda and picks the next
     /// speaker for the following round.
     DeliberationModeratorAgenda,
+    /// The fallback half of [`Self::ApiErrorResumeDrain`]: when the retry was
+    /// meant to resume a session and no session id was captured, the run
+    /// starts fresh **with a continuity notice prepended** instead of
+    /// silently. Registered separately from the drain because the two
+    /// branches act on different dimensions — the drain reuses a session, this
+    /// one changes the prompt — so a reader asking "what can alter the prompt
+    /// of this run" must find it under Prompt, not under Session.
+    SessionLostContinuityHint,
 
     // ---- Persona ----------------------------------------------------------
     /// The operator reassigns a reviewed step to a different persona.
@@ -347,7 +355,7 @@ pub enum Mechanism {
 impl Mechanism {
     /// Every mechanism. [`Self::assert_all_covered`] proves this covers the
     /// enum at compile time.
-    pub const ALL: [Mechanism; 45] = [
+    pub const ALL: [Mechanism; 46] = [
         Mechanism::ByomPolicySubstitution,
         Mechanism::FailoverCandidateModel,
         Mechanism::RemoteHttpEngineBypass,
@@ -384,6 +392,7 @@ impl Mechanism {
         Mechanism::SkillsSidecarPromptTrim,
         Mechanism::ClaudeMdProjection,
         Mechanism::DeliberationModeratorAgenda,
+        Mechanism::SessionLostContinuityHint,
         Mechanism::TeamReviewReassign,
         Mechanism::AutoAssigneeResolution,
         Mechanism::QaReworkBounce,
@@ -439,6 +448,7 @@ impl Mechanism {
                 Mechanism::SkillsSidecarPromptTrim => {}
                 Mechanism::ClaudeMdProjection => {}
                 Mechanism::DeliberationModeratorAgenda => {}
+                Mechanism::SessionLostContinuityHint => {}
                 Mechanism::TeamReviewReassign => {}
                 Mechanism::AutoAssigneeResolution => {}
                 Mechanism::QaReworkBounce => {}
@@ -496,6 +506,9 @@ impl Mechanism {
             Self::AutoAssigneeResolution => "an unassigned step's persona is auto-chosen",
             Self::QaReworkBounce => "a QA bounce re-dispatches a completed step",
             Self::WarmPoolSessionReuse => "warm-pool reuse converts a fresh run into a resume",
+            Self::SessionLostContinuityHint => {
+                "a retry that could not resume says so in the prompt"
+            }
             Self::ApiErrorResumeDrain => "the scheduled-retry drain resumes the session",
             Self::HealingSessionResume => "AI healing resumes the original session",
             Self::PersonaFailureBreaker => "the failure breaker disables the persona",
@@ -542,7 +555,8 @@ impl Mechanism {
             | Self::ResumeSuppressesRecallBlocks
             | Self::SkillsSidecarPromptTrim
             | Self::ClaudeMdProjection
-            | Self::DeliberationModeratorAgenda => Dimension::Prompt,
+            | Self::DeliberationModeratorAgenda
+            | Self::SessionLostContinuityHint => Dimension::Prompt,
             Self::TeamReviewReassign | Self::AutoAssigneeResolution | Self::QaReworkBounce => {
                 Dimension::Persona
             }
@@ -819,6 +833,11 @@ impl Mechanism {
             Self::ApiErrorResumeDrain => &[Site {
                 file: "src/engine/execution.rs",
                 marker: "Some(sid) => Some(types::Continuation::SessionResume(sid))",
+                family: Some((Family::ContinuationProduced, 1)),
+            }],
+            Self::SessionLostContinuityHint => &[Site {
+                file: "src/engine/execution.rs",
+                marker: "SESSION_LOST_CONTINUITY_HINT.to_string()",
                 family: Some((Family::ContinuationProduced, 1)),
             }],
             Self::HealingSessionResume => &[Site {
