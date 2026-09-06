@@ -3,7 +3,7 @@ date: 2026-09-04
 source: weave-os/router
 source_commit: 1699cf6
 project: personas
-status: proposed
+status: accepted
 kind: comparison-study
 peer: weave-os/router — an open-source Go model router for agentic systems
 points: 48
@@ -381,3 +381,7 @@ Not a courtesy list — each is a mechanism the router either lacks or states wi
 14. **A per-run prompt cache that states its own staleness.** *"Episodes are DELIBERATELY absent… The blob's episodic tail is at most `PREPARED_RUN_TTL` (5 min) stale, which is the accepted trade"* (`prepared_run_cache.rs:36-40`). §4.1.
 15. **A breaker with a documented exception that names the cascade it protects.** *"NEVER silently disable a TEAM MEMBER. Disabled members swallow the bus handoff (skip, no DLQ) and stall the whole team's cascade"* (`healing_retry.rs:439-447`).
 16. **A scope block that makes "we will not build this" reviewable.** `.ai/manifest.yaml:95-108`. Half the verdicts above are `keep ours` or `different forces` *because that block exists* — the router has no equivalent statement of what it declines to be.
+
+---
+
+**Accepted at the 7.7 gate, 2026-09-06** (operator multi-select review 2026-09-06). Ranked #1 (`model_requested` write-once) and #3 (restore `--model` and real effort on resume) go to branch `direction/acestep-0906-round1`; ranked #2 (enumerate what can change what serves) to `direction/acestep-0906-autonomy`. Ranked #4-#12 of the study were not selected at this gate and are neither accepted nor declined - the three-proposal cap applies to the study's ranked features, and the operator picked the study plus the standalone proposal, so #1-#3 were taken in rank order.
