@@ -309,10 +309,9 @@ Resolve these fields per capability, in this order:
 7. **input_schema** — array of `{{name, type, required, description}}` describing the payload the capability expects at runtime.
 8. **sample_input** — one canonical example payload matching `input_schema`.
 9. **tool_hints** — array of tool NAMES this capability uses (subset of the persona-wide tool pool).
-10. **use_case_flow** — `{{nodes: [...], edges: [...]}}` simple flow diagram. Nodes have `{{id, label, kind}}` (kind ∈ trigger|action|decision|output). Edges have `{{from, to, label?}}`.
-11. **error_handling** — per-capability override string, or empty to inherit `persona.error_handling`.
+10. **error_handling** — per-capability override string, or empty to inherit `persona.error_handling`.
 
-A capability is complete when all 11 fields have been resolved OR explicitly skipped. If a field genuinely does not apply (e.g. `event_subscriptions` for a standalone capability), emit `{{..., "value": [], "status": "resolved"}}`.
+A capability is complete when all 10 fields have been resolved OR explicitly skipped. If a field genuinely does not apply (e.g. `event_subscriptions` for a standalone capability), emit `{{..., "value": [], "status": "resolved"}}`.
 
 If a field is ambiguous, emit:
 ```
@@ -366,7 +365,7 @@ Once behavior_core + all capability envelopes + all persona_resolution fields ar
       "notification_channels": [...], "review_policy": {{...}},
       "memory_policy": {{...}}, "event_subscriptions": [...],
       "input_schema": [...], "sample_input": {{...}},
-      "tool_hints": [...], "use_case_flow": {{...}},
+      "tool_hints": [...],
       "error_handling": ""
     }}
   ],

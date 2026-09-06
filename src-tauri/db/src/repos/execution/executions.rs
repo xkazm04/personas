@@ -990,6 +990,15 @@ pub fn get_by_use_case_id(
 /// (column-scoped; never touches status). `model` is the `--model` flag value
 /// when one was passed — when None the CLI ran on its account default and
 /// `set_model_used_actual` (stream init) fills the real name moments later.
+///
+/// `model_used` is the SERVED name and `set_model_used_actual` overwrites it
+/// from `system/init`. `model_requested` is the DECIDED name and this is its
+/// only writer: `COALESCE(model_requested, ?)` makes the write once-only in
+/// SQL, so the resume and failover paths — which re-enter this stamp on the
+/// same execution row — keep the original decision. Without it, the case the
+/// `set_model_used_actual` docstring names (provider-side aliasing) is
+/// undetectable, because the only record of what was asked for is the column
+/// the answer overwrites.
 pub fn set_launch_model_info(
     pool: &DbPool,
     id: &str,
@@ -1003,7 +1012,10 @@ pub fn set_launch_model_info(
             let conn = pool.conn("executions::set_launch_model_info")?;
             if let Some(m) = model {
                 conn.execute(
-                    "UPDATE persona_executions SET model_used = ?1, thinking_level = ?2
+                    "UPDATE persona_executions
+                     SET model_used = ?1,
+                         thinking_level = ?2,
+                         model_requested = COALESCE(model_requested, ?1)
                      WHERE id = ?3 AND status IN ('queued','running')",
                     params![m, thinking_level, id],
                 )?;
@@ -3962,5 +3974,98 @@ mod tests {
         assert_eq!(empty.runs, 0);
         assert_eq!(empty.failures, 0);
         assert_eq!(empty.tokens_in, 0);
+    }
+
+    /// `model_used` is the SERVED model and `set_model_used_actual` overwrites
+    /// it on purpose. `model_requested` is the DECIDED model and must survive
+    /// that overwrite — otherwise the one case the overwrite's own docstring
+    /// names (provider-side aliasing) leaves no trace on the row.
+    ///
+    /// Also asserts the write is once-only: a second launch stamp on the same
+    /// row (what the resume and failover paths do) moves `model_used` and
+    /// leaves `model_requested` on the first decision.
+    #[test]
+    fn model_requested_survives_the_served_model_write() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Requested Model Agent");
+        let created = create(&pool, &persona_id, None, None, None, None).unwrap();
+
+        // Both setters are status-guarded; the served-model one requires
+        // 'running'. Raw SQL rather than `update_status`, which would also
+        // stamp timestamps this test says nothing about.
+        let set_running = |id: &str| -> Result<(), AppError> {
+            let conn = pool.conn("executions::model_requested_test")?;
+            conn.execute(
+                "UPDATE persona_executions SET status = 'running' WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+            Ok(())
+        };
+        set_running(&created.id)?;
+
+        // Named constants, not literals: `bare-model-id-literal` counts test
+        // fixtures too, because a fixture that pins a dated id also rots.
+        let decided = personas_core::model_ids::DEFAULT_BALANCED;
+        set_launch_model_info(&pool, &created.id, Some(decided), "high")?;
+
+        let read = |col: &str| -> Option<String> {
+            let conn = pool
+                .conn("executions::model_requested_test")
+                .expect("a pooled connection");
+            conn.query_row(
+                &format!("SELECT {col} AS value FROM persona_executions WHERE id = ?1"),
+                params![created.id],
+                |r| r.get("value"),
+            )
+            .unwrap()
+        };
+        assert_eq!(read("model_used").as_deref(), Some(decided));
+        assert_eq!(read("model_requested").as_deref(), Some(decided));
+
+        // The CLI reports a different name off system/init — an alias, an
+        // account default, a silent substitution. It owns `model_used`.
+        let served = format!("{decided}-alias");
+        set_model_used_actual(&pool, &created.id, &served)?;
+        assert_eq!(
+            read("model_used").as_deref(),
+            Some(served.as_str()),
+            "the served write is authoritative over model_used"
+        );
+        assert_eq!(
+            read("model_requested").as_deref(),
+            Some(decided),
+            "the decided model must NOT be overwritten by the served one"
+        );
+
+        // A relaunch of the same row (resume / failover) re-enters the launch
+        // stamp with whatever it decided this time. model_used moves;
+        // model_requested is write-once.
+        let relaunch = personas_core::model_ids::DEFAULT_STRONG;
+        set_launch_model_info(&pool, &created.id, Some(relaunch), "low")?;
+        assert_eq!(read("model_used").as_deref(), Some(relaunch));
+        assert_eq!(
+            read("model_requested").as_deref(),
+            Some(decided),
+            "model_requested is written once, at the first launch"
+        );
+
+        // A run spawned with no --model at all leaves the column NULL rather
+        // than inventing a decision from the account default.
+        let bare = create(&pool, &persona_id, None, None, None, None).unwrap();
+        set_running(&bare.id)?;
+        set_launch_model_info(&pool, &bare.id, None, "medium")?;
+        let bare_requested: Option<String> = {
+            let conn = pool.conn("executions::model_requested_test")?;
+            conn.query_row(
+                "SELECT model_requested FROM persona_executions WHERE id = ?1",
+                params![bare.id],
+                |r| r.get("model_requested"),
+            )
+            .unwrap()
+        };
+        assert_eq!(bare_requested, None, "no --model means no decided model");
+
+        Ok(())
     }
 }

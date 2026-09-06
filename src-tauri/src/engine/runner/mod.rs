@@ -1748,7 +1748,8 @@ pub async fn run_execution(
 
             // Build CLI args
             cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
-                let mut args = cli_provider.build_resume_args(session_id);
+                let mut args =
+                    cli_provider.build_resume_args(session_id, candidate_profile.as_ref());
                 if let Some(profile) = candidate_profile.as_ref() {
                     cli_provider.apply_provider_env(&mut args, profile);
                 }
@@ -1777,8 +1778,11 @@ pub async fn run_execution(
                 PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
                     cli_args =
                         if let Some(Continuation::SessionResume(ref session_id)) = continuation {
-                            let mut args = cli_provider
-                                .build_resume_args_with_prompt(session_id, &prompt_text);
+                            let mut args = cli_provider.build_resume_args_with_prompt(
+                                session_id,
+                                candidate_profile.as_ref(),
+                                &prompt_text,
+                            );
                             if let Some(profile) = candidate_profile.as_ref() {
                                 cli_provider.apply_provider_env(&mut args, profile);
                             }

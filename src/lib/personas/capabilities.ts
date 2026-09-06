@@ -306,8 +306,16 @@ function charterDimensions(r: PersonaResponsibility): GlyphDimension[] {
   const dims = new Set<GlyphDimension>();
   // Task is the universal "this charter does something" anchor.
   dims.add('task');
-  if (r.cadence.attentionEnabled || r.spec.suggestedTrigger) dims.add('trigger');
-  if (r.connectors.length > 0 || (r.spec.toolHints?.length ?? 0) > 0) dims.add('connector');
+  // `spec.suggestedTrigger` is gone with Recipe v3 (a recipe recommends a
+  // trigger KIND, it never carries a bound trigger). The cadence switch is
+  // what a charter actually holds.
+  if (r.cadence.attentionEnabled) dims.add('trigger');
+  if (
+    r.connectors.length > 0 ||
+    (r.spec.connectorTypes?.length ?? 0) > 0 ||
+    (r.spec.toolHints?.length ?? 0) > 0
+  )
+    dims.add('connector');
   if ((r.spec.notificationChannels?.length ?? 0) > 0) dims.add('message');
   if (specEventSubscriptions(r.spec).length > 0) dims.add('event');
   if (specMemoryEnabled(r.spec)) dims.add('memory');

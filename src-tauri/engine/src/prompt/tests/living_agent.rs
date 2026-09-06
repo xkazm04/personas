@@ -310,6 +310,99 @@ fn roster_renders_all_active_charters_and_skips_suspended() {
     assert!(!section.contains("Paused charter"), "suspended skipped");
 }
 
+/// Recipe v3: a charter adopted from a recipe carries the four-field
+/// description and the coarse activity sequence, and both reach the prompt —
+/// the roster leads with the CORE ACTION (the judgment at the centre) instead
+/// of the first outcome, and the focused render labels all four lines plus a
+/// branch-free "Shape of the work".
+#[test]
+fn a_recipe_born_charter_renders_its_description_and_activities() {
+    use personas_db::models::{RecipeActivity, RecipeDescription};
+
+    let mut c = charter("resp_v3", "Web analytics performance review");
+    c.spec.description = Some(RecipeDescription {
+        need: "Content decisions drift when nobody reads the numbers.".into(),
+        input: "Engagement for posts inside the review window.".into(),
+        core_action: "Compare against rolling baselines and say what changed.".into(),
+        output: "A shortlist of spikes and underperformers.".into(),
+    });
+    c.spec.activities = Some(vec![
+        RecipeActivity {
+            id: "collect".into(),
+            label: "Pull engagement for the window".into(),
+            kind: "observe".into(),
+        },
+        RecipeActivity {
+            id: "compare".into(),
+            label: "Compare against rolling baselines".into(),
+            kind: "decide".into(),
+        },
+    ]);
+
+    let roster = render_responsibilities(std::slice::from_ref(&c));
+    assert!(
+        roster.contains(
+            "- **Web analytics performance review** (docs) — Compare against rolling baselines and say what changed."
+        ),
+        "roster must lead with the core action: {roster}"
+    );
+    assert!(
+        !roster.contains("Docs match shipped behavior"),
+        "the outcome is the FALLBACK, not the headline, once a description exists"
+    );
+
+    let focused = render_responsibility_focused(&c);
+    assert!(focused
+        .contains("Why this work exists: Content decisions drift when nobody reads the numbers."));
+    assert!(focused.contains("What it starts from: Engagement for posts inside the review window."));
+    assert!(focused.contains(
+        "The judgment at its centre: Compare against rolling baselines and say what changed."
+    ));
+    assert!(focused
+        .contains("What exists when it is done well: A shortlist of spikes and underperformers."));
+    assert!(focused.contains("Shape of the work:\n- Pull engagement for the window\n"));
+    assert!(focused.contains("- Compare against rolling baselines\n"));
+    // The KINDS stay out of the prompt: they colour a diagram, they are not a
+    // state machine the model is meant to walk. Asserted over the "Shape of
+    // the work" BLOCK, not over the whole prompt — a substring search for
+    // "observe" also hits the scope line's "read/observe", which is how a test
+    // like this quietly measures the wrong thing.
+    let shape_block = focused
+        .split("Shape of the work:\n")
+        .nth(1)
+        .expect("shape block rendered")
+        .split("\n\n")
+        .next()
+        .expect("shape block is terminated");
+    for kind in ["observe", "decide", "act", "deliver"] {
+        assert!(
+            !shape_block.contains(kind),
+            "activity kind {kind} must not render: {shape_block:?}"
+        );
+    }
+    // The description block sits ahead of the outcomes, as the contract says.
+    let desc_at = focused
+        .find("Why this work exists")
+        .expect("description rendered");
+    let outcomes_at = focused
+        .find("Outcomes you are accountable for")
+        .expect("outcomes rendered");
+    assert!(desc_at < outcomes_at);
+}
+
+/// A charter with no recipe behind it renders exactly as before: no empty
+/// labelled lines, no orphan "Shape of the work" heading.
+#[test]
+fn a_charter_without_a_recipe_renders_unchanged() {
+    let c = charter("resp_plain", "Keep the docs honest");
+    let roster = render_responsibilities(std::slice::from_ref(&c));
+    assert!(roster.contains("- **Keep the docs honest** (docs) — Docs match shipped behavior"));
+
+    let focused = render_responsibility_focused(&c);
+    assert!(!focused.contains("Why this work exists"));
+    assert!(!focused.contains("Shape of the work"));
+}
+
 /// Focused run: `input_data._responsibility` = a charter id resolves against
 /// the passed slice and renders the FULL charter detail under
 /// `## Current Focus` — procedure, outcomes, connector allowlist, spec

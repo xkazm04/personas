@@ -44,6 +44,7 @@ mod backup;
 pub mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+pub mod connector_categories;
 pub mod damage;
 pub mod journal;
 // Relocated from `engine/` in crate-split step 4c. Each of these six is

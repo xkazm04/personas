@@ -4420,7 +4420,21 @@
       "list_add_placeholder": "Type an entry and press Enter",
       "run_now": "Run now",
       "run_started": "Started a run for \"{title}\".",
-      "run_failed": "Could not start the run."
+      "run_failed": "Could not start the run.",
+      "recipe_card_title": "Recipe",
+      "recipe_shape_label": "Shape of the work",
+      "recipe_shape_hint": "The kinds of activity this work moves through, in order. Not a runbook: there are no branches.",
+      "recipe_connectors_label": "Connectors",
+      "recipe_connector_unbound": "Not bound",
+      "recipe_connector_unbound_hint": "Nothing this charter reaches covers that connector type yet. Bind one on the Connector dimension.",
+      "recipe_connector_uncovered": "No connector covers this",
+      "recipe_connector_uncovered_hint": "The catalog carries no connector in that category, so there is nothing to bind. This charter needs a connector added to the catalog, or the recipe needs a different type.",
+      "recipe_connector_capability_unverified": "A bound connector matches the type. Whether it can do what this charter needs is not verified: the catalog does not declare capabilities.",
+      "recipe_dependencies_label": "Dependencies",
+      "activity_kind_observe": "Observe",
+      "activity_kind_decide": "Decide",
+      "activity_kind_act": "Act",
+      "activity_kind_deliver": "Deliver"
     }
   },
   "director": {

@@ -2,6 +2,9 @@
 
 ## Active
 
+- **[2026-09-06 11:29]**
+- **Paths:** `src-tauri/**` · `scripts/templates/transform-recipes-v2-to-v3.mjs` · `src/lib/bindings/**`
+
 ### companion-docs-audit — Athena architecture reference + companion docs reality audit
 - **[2026-09-06 08:27]**
 - **Paths:** `docs/features/companion/**`
@@ -66,7 +69,6 @@
 - **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
 - **Status:** started
 
-### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
 - **[2026-09-04 12:58]**
 - **Paths:** `scripts/templates/**` · `src/features/agents/sub_manifest/**` · `src/features/shared/components/editors/**` · `src/features/overview/sub_reports/**`
 - **Status:** started
@@ -651,6 +653,10 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
+
+### recipe-v3-backend — Recipe v3 backend: RecipeSpec type, transform, adoption path, prompt render
 
 ### notepad-perf-i18n-crash — Fix first-render whats_new_update crash; consolidate notepad to Workbench + cold-load perf instrumentation
 

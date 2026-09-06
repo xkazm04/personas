@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use personas_db::models::agent_ir::AgentIr;
+use personas_db::models::{CharterConnectorBinding, RecipeConnectorRole};
 
 // ============================================================================
 // Types
@@ -218,6 +219,112 @@ pub fn apply_credential_bindings_to_connectors(ir: &mut AgentIr, answers: &Adopt
             });
         }
     }
+}
+
+// ============================================================================
+// 3b. Recipe v3 — connector TYPE to bound-instance resolution
+// ============================================================================
+
+/// What resolving a v3 recipe's connector ROLES against the adopter's
+/// credential bindings produced.
+///
+/// A recipe declares roles over categories (`review_surface: source_control`);
+/// a charter holds bound instances (`github`). This is the crossing, and it is
+/// deliberately total: a role nobody bound is REPORTED, never guessed at. The
+/// charter's `connectors` allowlist is a runtime gate, so inventing an entry
+/// would widen a persona's reach on a coin flip.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ResolvedConnectorRoles {
+    /// Every role, in declaration order, with its bound connector or `None`.
+    /// Goes onto the charter at `spec.connector_bindings`.
+    pub bindings: Vec<CharterConnectorBinding>,
+}
+
+impl ResolvedConnectorRoles {
+    /// The distinct bound connectors, in role order — the charter's
+    /// `connectors` allowlist.
+    pub fn bound_connectors(&self) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for b in &self.bindings {
+            if let Some(c) = b.connector.as_deref() {
+                if !out.iter().any(|existing| existing == c) {
+                    out.push(c.to_string());
+                }
+            }
+        }
+        out
+    }
+
+    /// The roles nobody bound — the questions adoption still owes.
+    pub fn unresolved_roles(&self) -> Vec<&str> {
+        self.bindings
+            .iter()
+            .filter(|b| b.connector.is_none())
+            .map(|b| b.role.as_str())
+            .collect()
+    }
+}
+
+/// Resolve a v3 recipe's connector roles through
+/// [`AdoptionAnswers::credential_bindings`] (the seam that already existed for
+/// the connector-swap adjustment pass; it is keyed by role name, which IS the
+/// type name for a role-less recipe, so nothing about the existing shape
+/// changes).
+///
+/// Four ways a role resolves, in order:
+///   1. a binding keyed by the ROLE name (`"review_surface" -> "github"`);
+///   2. a binding keyed by the role's TYPE (`"source_control" -> "github"`) —
+///      the common case, where role and type are the same word anyway;
+///   3. a binding whose VALUE carries that category in the connector catalog
+///      (`"ai" -> "deepgram"` covers a `transcription` role, because
+///      deepgram's `categories` include it) — this is why the catalog's plural
+///      field is the vocabulary and the singular one is not;
+///   4. nothing, in which case the binding's `connector` stays `None`.
+///
+/// Two roles of the same type that share one type-keyed binding both resolve
+/// to that connector. That is honest rather than clever: the adopter said "use
+/// github for source control" and did not distinguish the roles.
+pub fn resolve_connector_roles(
+    roles: &[RecipeConnectorRole],
+    bindings: &HashMap<String, String>,
+) -> ResolvedConnectorRoles {
+    use personas_db::connector_categories::connector_has_category;
+
+    let lookup = |key: &str| -> Option<String> {
+        bindings
+            .get(key)
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+
+    let mut out = ResolvedConnectorRoles::default();
+    for role in roles {
+        let role_name = role.role.trim();
+        let ct = role.connector_type.trim();
+        if role_name.is_empty() || ct.is_empty() || ct == "desktop" {
+            continue;
+        }
+
+        let connector = lookup(role_name).or_else(|| lookup(ct)).or_else(|| {
+            let mut hits: Vec<&String> = bindings
+                .values()
+                .filter(|service| connector_has_category(service.trim(), ct))
+                .collect();
+            // `credential_bindings` is a HashMap, so iteration order is not
+            // stable. Sort so the same answers always mint the same charter —
+            // a non-deterministic allowlist would be a nightmare to diff.
+            hits.sort();
+            hits.first().map(|s| s.trim().to_string())
+        });
+
+        out.bindings.push(CharterConnectorBinding {
+            role: role_name.to_string(),
+            connector_type: ct.to_string(),
+            connector,
+        });
+    }
+    out
 }
 
 // ============================================================================
@@ -630,6 +737,152 @@ mod tests {
         substitute_variables(&mut ir, &answers);
         inject_configuration_section(&mut ir, &answers);
         assert_eq!(ir.system_prompt.unwrap(), "Original prompt.");
+    }
+
+    // -- Recipe v3 connector-role resolution --------------------------------
+
+    fn bindings(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    /// The role-less shape: one role per type, named after the type (what
+    /// `RecipeSpec::effective_roles` synthesizes).
+    fn flat(list: &[&str]) -> Vec<RecipeConnectorRole> {
+        list.iter()
+            .map(|t| RecipeConnectorRole {
+                role: t.to_string(),
+                connector_type: t.to_string(),
+                note: String::new(),
+            })
+            .collect()
+    }
+
+    fn role(name: &str, ty: &str) -> RecipeConnectorRole {
+        RecipeConnectorRole {
+            role: name.to_string(),
+            connector_type: ty.to_string(),
+            note: String::new(),
+        }
+    }
+
+    #[test]
+    fn a_type_bound_by_its_own_key_resolves_to_the_bound_service() {
+        let out = resolve_connector_roles(
+            &flat(&["transcription", "email"]),
+            &bindings(&[("transcription", "deepgram"), ("email", "gmail")]),
+        );
+        assert_eq!(
+            out.bound_connectors(),
+            vec!["deepgram".to_string(), "gmail".to_string()]
+        );
+        assert!(out.unresolved_roles().is_empty());
+    }
+
+    /// The catalog's plural `categories` earning its place: the questionnaire
+    /// bound `ai -> deepgram`, and deepgram's categories include
+    /// `transcription`, so the recipe's declared type is already covered.
+    #[test]
+    fn a_type_covered_by_an_existing_binding_resolves_through_the_catalog() {
+        let out =
+            resolve_connector_roles(&flat(&["transcription"]), &bindings(&[("ai", "deepgram")]));
+        assert_eq!(out.bound_connectors(), vec!["deepgram".to_string()]);
+        assert!(out.unresolved_roles().is_empty());
+    }
+
+    #[test]
+    fn an_unbound_role_is_reported_and_never_guessed_at() {
+        let out = resolve_connector_roles(
+            &flat(&["transcription", "analytics"]),
+            &bindings(&[("transcription", "deepgram")]),
+        );
+        assert_eq!(out.bound_connectors(), vec!["deepgram".to_string()]);
+        assert_eq!(out.unresolved_roles(), vec!["analytics"]);
+        // The unresolved role is STORED, not dropped — that is the difference
+        // between "still needs an answer" and "no allowlist".
+        assert_eq!(out.bindings.len(), 2);
+        assert!(out.bindings[1].connector.is_none());
+    }
+
+    #[test]
+    fn no_bindings_at_all_binds_nothing_and_reports_everything() {
+        let out = resolve_connector_roles(&flat(&["analytics", "social"]), &HashMap::new());
+        assert!(
+            out.bound_connectors().is_empty(),
+            "an empty allowlist means 'whatever the persona holds', not 'anything we guessed'"
+        );
+        assert_eq!(out.unresolved_roles(), vec!["analytics", "social"]);
+    }
+
+    #[test]
+    fn desktop_is_dropped_rather_than_reported_as_unresolved() {
+        let out = resolve_connector_roles(&flat(&["desktop", "  "]), &HashMap::new());
+        assert!(out.bindings.is_empty(), "got {:?}", out.bindings);
+    }
+
+    #[test]
+    fn two_roles_bound_to_the_same_service_produce_one_allowlist_entry() {
+        let out = resolve_connector_roles(
+            &[role("ai", "ai"), role("speech", "transcription")],
+            &bindings(&[("ai", "deepgram"), ("speech", "deepgram")]),
+        );
+        assert_eq!(out.bound_connectors(), vec!["deepgram".to_string()]);
+        assert_eq!(out.bindings.len(), 2, "both roles are still named");
+    }
+
+    /// The case the role amendment exists for: two connectors of ONE type in
+    /// different roles, bound separately by role name.
+    #[test]
+    fn two_roles_of_one_type_bind_independently_by_role_name() {
+        let roles = [
+            role("local_checkout", "source_control"),
+            role("review_surface", "source_control"),
+        ];
+        let out = resolve_connector_roles(
+            &roles,
+            &bindings(&[
+                ("local_checkout", "local_drive"),
+                ("review_surface", "github"),
+            ]),
+        );
+        assert_eq!(out.bindings[0].connector.as_deref(), Some("local_drive"));
+        assert_eq!(out.bindings[1].connector.as_deref(), Some("github"));
+
+        // ...and when only the TYPE is bound, both roles get it. The adopter
+        // did not distinguish them, so neither does the mint.
+        let out = resolve_connector_roles(&roles, &bindings(&[("source_control", "github")]));
+        assert_eq!(out.bindings[0].connector.as_deref(), Some("github"));
+        assert_eq!(out.bindings[1].connector.as_deref(), Some("github"));
+        assert_eq!(out.bound_connectors(), vec!["github".to_string()]);
+    }
+
+    /// A role-name binding beats a type-name binding for that role.
+    #[test]
+    fn the_role_key_wins_over_the_type_key() {
+        let out = resolve_connector_roles(
+            &[role("review_surface", "source_control")],
+            &bindings(&[("source_control", "gitlab"), ("review_surface", "github")]),
+        );
+        assert_eq!(out.bindings[0].connector.as_deref(), Some("github"));
+    }
+
+    /// `credential_bindings` is a HashMap; two runs over the same answers must
+    /// still mint the same allowlist.
+    #[test]
+    fn catalog_covering_is_deterministic_when_several_bindings_qualify() {
+        let map = bindings(&[
+            ("a", "deepgram"),
+            ("b", "assemblyai"),
+            ("c", "elevenlabs"),
+            ("d", "openai"),
+        ]);
+        let roles = flat(&["transcription"]);
+        let first = resolve_connector_roles(&roles, &map);
+        for _ in 0..25 {
+            assert_eq!(resolve_connector_roles(&roles, &map), first);
+        }
     }
 
     // -- Server-side validation (adoption-answers-server-validation) --------

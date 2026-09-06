@@ -1,0 +1,3392 @@
+{
+  "lane": "L2",
+  "reviewed": 27,
+  "recipes": [
+    {
+      "id": "2969b6b1-5462-573c-970e-832844526258",
+      "slug": "audio-briefing-production",
+      "title": "Audio briefing production",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/audio",
+      "domain": "creative_design",
+      "description": {
+        "need": "An approved script is not a listenable briefing, and hand editing every segment into one track is the step that stops briefings from shipping regularly.",
+        "input": "An approved multi segment script with host turns, a target runtime, and any pacing or intro material the adopter supplies.",
+        "core_action": "Synthesize each segment as speech, join the segments into one coherent track with deliberate pacing between them, and judge the result against the runtime the script promised before calling it finished.",
+        "output": "A single finished audio file whose pacing and length were verified, ready for a listen and a final decision rather than for further editing."
+      },
+      "activities": [
+        {
+          "id": "read-script",
+          "label": "Read the approved script and its segment structure",
+          "kind": "observe"
+        },
+        {
+          "id": "voice-choice",
+          "label": "Settle voice pairing and pacing against what has been approved before",
+          "kind": "decide"
+        },
+        {
+          "id": "synthesize",
+          "label": "Synthesize each segment as speech",
+          "kind": "act"
+        },
+        {
+          "id": "stitch",
+          "label": "Join segments into one track with the intended spacing",
+          "kind": "act"
+        },
+        {
+          "id": "verify",
+          "label": "Check the finished track against the promised runtime",
+          "kind": "decide"
+        },
+        {
+          "id": "deliver",
+          "label": "Hand over the finished file for a listen",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "clean-final-mp3",
+          "statement": "An approved script becomes a listenable, correctly paced final audio file without manual editing.",
+          "success_criteria": [
+            "Segment audio joins with natural pacing, verified by a duration check rather than by a successful render",
+            "The delivered file is ready for review, not a rough cut"
+          ]
+        }
+      ],
+      "guidance": "Turn an approved script into a finished audio file: synthesize each segment, join it into one coherent track, and verify the result actually sounds and runs right before calling it done. Learn from what gets approved; voice, pacing and hook preferences from approvals are worth remembering. Treat a failed duration check as a real defect rather than a formality, and when one segment fails, keep the rest and say which one is missing.",
+      "connector_types": [
+        "voice_generation"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "The work has one honest starting point, a person approving a script. Nothing here is worth doing on a clock, and nothing can be done before the approval exists."
+      },
+      "personalization_needs": [
+        "Which voices belong to which host role for this adopter, because the pairing is a taste decision the recipe cannot guess and it carries across every future briefing",
+        "How long a briefing should actually run and how much pacing silence the adopter wants between turns, since the duration check is meaningless without a target they chose",
+        "Whether a finished file should be delivered as a file, into a folder, or into a publishing queue, because that decides what done means"
+      ],
+      "dependencies": [
+        "ffmpeg"
+      ],
+      "input_schema": [
+        {
+          "name": "segment_silence_ms",
+          "type": "number",
+          "default": 300,
+          "min": 100,
+          "max": 1000,
+          "description": "Silence inserted between segments for pacing."
+        },
+        {
+          "name": "intro_music_path",
+          "type": "text",
+          "description": "Optional intro audio concatenated before the briefing."
+        }
+      ],
+      "examples": [
+        {
+          "title": "ElevenLabs as the speech connector",
+          "connector": "elevenlabs",
+          "connector_type": "voice_generation",
+          "notes": "Catalogued as ai plus voice_generation. Per segment synthesis with a stable voice id is what makes the host pairing reproducible across briefings; a changed voice id silently changes the show."
+        },
+        {
+          "title": "Deepgram as the speech connector",
+          "connector": "deepgram",
+          "connector_type": "voice_generation",
+          "notes": "Catalogued as ai, transcription and voice_generation. Chosen when the same installation already uses it for transcription; the transcription half is unused by this recipe."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "2969b6b1-5462-573c-970e-832844526258"
+        ],
+        "from_templates": [
+          "audio-briefing-host"
+        ],
+        "source_template_id": "audio-briefing-host"
+      },
+      "review_notes": "v2 listed connectors as voice_generation plus desktop. desktop is dropped by the v3 rule; voice_generation was already a catalog category and stays. The ffmpeg dependency is genuinely evidenced by the v2 error handling (FFmpeg missing produces an install instruction), so it is the one real dependency in this half of the lane. The v2 trigger was an internal event on briefing.script_approved; kept as event because the underlying fact is a human approval, not an internal pipeline hand off. The 300ms silence and the 25 percent duration tolerance stayed in input_schema and guidance respectively rather than in the description, since they are knobs and not the craft.",
+      "research_notes": "Read scripts/connectors/builtin/elevenlabs.json and deepgram.json. elevenlabs categories are ai and voice_generation; deepgram categories are ai, transcription and voice_generation, so a single voice_generation type resolves to both plus huggingface. No connector in the catalog performs audio concatenation, which is why ffmpeg is a dependency and not a connector_type.",
+      "superseded_by": []
+    },
+    {
+      "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
+      "slug": "audio-briefing-script-drafting",
+      "title": "Audio briefing script drafting",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/audio",
+      "domain": "creative_design",
+      "description": {
+        "need": "Source material read aloud verbatim does not hold a listener, and discovering that after paying for synthesis is the expensive way to find out.",
+        "input": "One piece of source material in whatever form it arrived, pasted text, a file, a fetched page, or another agent's output, plus the adopter's intent for what to emphasise.",
+        "core_action": "Find the headline finding, the facts that carry it, the tensions worth airing and the questions left open, then shape them into two host turns that pace correctly when spoken rather than when read.",
+        "output": "A structured script with a named host cast and turn by turn segments, held for a human decision before anything is synthesized."
+      },
+      "activities": [
+        {
+          "id": "read-source",
+          "label": "Read the source material through",
+          "kind": "observe"
+        },
+        {
+          "id": "distil",
+          "label": "Settle the headline finding, key facts, tensions and open questions",
+          "kind": "decide"
+        },
+        {
+          "id": "cast",
+          "label": "Choose the host pairing that fits the material",
+          "kind": "decide"
+        },
+        {
+          "id": "write",
+          "label": "Write turn by turn segments paced for speech",
+          "kind": "act"
+        },
+        {
+          "id": "present",
+          "label": "Present the outline, script and cast for a decision",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "source-becomes-script",
+          "statement": "Any source material becomes a structured, pacing aware two host script that survives human review before it costs anything to produce.",
+          "success_criteria": [
+            "The script captures headline finding, key facts, tensions and open questions from the source, not just a paraphrase",
+            "Nothing goes to audio synthesis without human approval first"
+          ]
+        }
+      ],
+      "guidance": "Distil whatever source material comes in into a two host script that actually holds together: a real headline, the facts that matter, the tensions worth exploring, and turns that pace well when spoken aloud. This is a drafting job, not a summarising one; the structure and pacing decisions are the value. Hold for approval before anything moves to paid synthesis, and when the same draft is turned down three times, the style is wrong rather than the attempt.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Sources arrive when the adopter has something worth briefing on. There is no external event and no calendar obligation; the persona works down what is waiting and stops when nothing is."
+      },
+      "personalization_needs": [
+        "What the adopter wants emphasised and what downplayed, in their own words, because the same source yields opposite scripts for a technical audience and an executive one",
+        "Who is listening, since host roles, vocabulary and how much context to restate all follow from the audience rather than from the source",
+        "How long a briefing should run, because pacing decisions are made against a target and a script written without one is untestable"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "briefing_style",
+          "type": "enum",
+          "options": [
+            "casual",
+            "formal",
+            "news",
+            "executive"
+          ],
+          "default": "casual",
+          "description": "Picks host roles: casual (curious explainer + sharp questioner), formal (domain expert + skeptical reviewer), news (anchor + reporter), executive (strategic summarizer + operational realist)."
+        },
+        {
+          "name": "target_duration_minutes",
+          "type": "number",
+          "default": 7,
+          "min": 3,
+          "max": 20,
+          "description": "Target runtime. Script auto-shrinks if it exceeds target by >20%."
+        },
+        {
+          "name": "briefing_intent",
+          "type": "textarea",
+          "description": "Free-text hints: what to emphasize, what to downplay, tone adjustments, audience. The persona reads this each run."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "5c57371e-abb1-5e5f-b57d-3f5ec30cce12"
+        ],
+        "from_templates": [
+          "audio-briefing-host"
+        ],
+        "source_template_id": "audio-briefing-host"
+      },
+      "review_notes": "v2 declared no connectors and that survives review: a source arrives as pasted text or a file in most runs, and the URL case degrades to asking for a paste rather than failing, so no connector type is load bearing. Trigger moved from manual to self_paced, which is the closest of the three v3 kinds to on demand work: the persona acts on sources that are waiting. The v2 pairing with Audio Production is preserved only through the approval event on the production side; this recipe stops at a reviewed script and claims nothing about synthesis.",
+      "research_notes": "No connector research was needed. Checked that no catalog category covers generic URL fetching in a way this recipe depends on: web_scraping exists (apify, bright-data, firecrawl) but the v2 source evidences a paste fallback rather than a scraping requirement, so adding it would be inventing a dependency.",
+      "superseded_by": []
+    },
+    {
+      "id": "c3722109-62e6-52eb-b796-1a501121766a",
+      "slug": "original-2d-art-curation",
+      "title": "Original 2D art generation and curation",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/visual-assets",
+      "domain": "creative_design",
+      "description": {
+        "need": "A generated art library grows into noise unless somebody decides what stays, and an agent that never learns from those decisions keeps producing the same rejected work.",
+        "input": "The subject matter and mood the curator wants explored, the history of what has already been made, and the reasons past work was turned down.",
+        "core_action": "Conceive a direction that has not been tried, generate work in it, and present each piece for an explicit keep or discard decision rather than assuming taste.",
+        "output": "A growing body of kept work, each piece recorded with what produced it, and a set of directions the curator has ruled out."
+      },
+      "activities": [
+        {
+          "id": "review-history",
+          "label": "Read what has already been made and what was turned down",
+          "kind": "observe"
+        },
+        {
+          "id": "conceive",
+          "label": "Settle on a direction that is not a restatement",
+          "kind": "decide"
+        },
+        {
+          "id": "generate",
+          "label": "Generate the work",
+          "kind": "act"
+        },
+        {
+          "id": "present",
+          "label": "Present each piece for a keep or discard decision",
+          "kind": "deliver"
+        },
+        {
+          "id": "record",
+          "label": "Record what produced a kept piece and why one was discarded",
+          "kind": "act"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "curated-body-of-work",
+          "statement": "There is a growing body of generated work that the person curating it actually wanted, and its direction moves with their taste.",
+          "success_criteria": [
+            "Every piece is presented for an explicit keep or discard decision before it is kept",
+            "Discarded work leaves a reason behind, and repeated reasons stop showing up in later work",
+            "New pieces are not restatements of pieces already made"
+          ]
+        }
+      ],
+      "guidance": "Conceive and generate work, then let the curator decide. The accountability is the direction over time, not any single image: a run that produces one piece worth keeping beats four near duplicates. Learn from what is turned down, especially when the reason repeats, and stop generating in that direction. Keep the record of what a kept piece was made from, because that is what makes the next one better.",
+      "connector_types": [
+        "image_generation",
+        "storage"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when there is a direction worth exploring that has not been tried, and pause when recent work is going unreviewed, since generating into a full review queue helps nobody. The v2 daily schedule was a delivery habit, not an obligation."
+      },
+      "personalization_needs": [
+        "The subject matter and mood the adopter wants explored, in their own words rather than from a menu, because a picked style label produces work that belongs to nobody",
+        "How much say the adopter wants over each piece, because that decides whether this is a curated feed or a supervised commission",
+        "Where kept work should live, since a gallery and a project folder imply different handling and different formats"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "art_subject",
+          "type": "textarea",
+          "description": "Free-text description of subject matter, themes, and mood. Examples: 'fantasy landscapes with magical creatures', 'abstract geometric art inspired by architecture'."
+        },
+        {
+          "name": "art_style",
+          "type": "enum",
+          "options": [
+            "digital_painting",
+            "watercolor",
+            "oil_painting",
+            "minimalist_vector",
+            "surrealist",
+            "photorealistic",
+            "pixel_art",
+            "ink_illustration",
+            "mixed_media"
+          ],
+          "default": "digital_painting",
+          "description": "Visual style for generated artwork. Refined over time from feedback."
+        },
+        {
+          "name": "color_mood",
+          "type": "enum",
+          "options": [
+            "vibrant_warm",
+            "cool_and_muted",
+            "monochrome",
+            "pastel",
+            "earth_tones",
+            "neon_and_bold",
+            "dark_and_moody",
+            "any"
+          ],
+          "default": "vibrant_warm",
+          "description": "Color mood guidance for the palette."
+        },
+        {
+          "name": "dimensions",
+          "type": "enum",
+          "options": [
+            "1024x1024",
+            "1024x768",
+            "1280x720",
+            "768x1024",
+            "512x512"
+          ],
+          "default": "1024x1024",
+          "description": "Image width by height. Larger sizes cost more credits."
+        },
+        {
+          "name": "variations_per_run",
+          "type": "number",
+          "default": 1,
+          "min": 1,
+          "max": 4,
+          "description": "Variations generated per cycle; best one is filed."
+        },
+        {
+          "name": "concept_history_depth",
+          "type": "number",
+          "default": 50,
+          "min": 10,
+          "max": 200,
+          "description": "How many past concepts to dedup against."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Leonardo AI as the image connector",
+          "connector": "leonardo-ai",
+          "connector_type": "image_generation",
+          "notes": "Catalogued as ai, image_generation and video_generation. Negative prompt support is what makes the repeated rejection reason actionable; a connector without it can only be steered positively."
+        },
+        {
+          "title": "Higgsfield as the image connector",
+          "connector": "higgsfield",
+          "connector_type": "image_generation",
+          "notes": "Catalogued as ai, image_generation and video_generation. Same shape as Leonardo for this recipe; the choice is a credit and style decision at adoption."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "c3722109-62e6-52eb-b796-1a501121766a"
+        ],
+        "from_templates": [
+          "autonomous-art-director"
+        ],
+        "source_template_id": "autonomous-art-director"
+      },
+      "review_notes": "Outcomes and guidance taken from the superseding Artist responsibility rather than the consolidation verdict, which said much the same thing in weaker terms. The designed responsibility adds a storage connector type the v2 recipe did not have, because it names where kept work lives as an open question; carried through. The v2 daily 10:00 cron is retired outright, and the pacing judgment it stood in for (pause when the review queue is full) moved into the trigger rationale where it belongs. The in app gallery is an installation detail and is now a personalization need, not part of the recipe.",
+      "research_notes": "Read leonardo-ai.json and higgsfield.json; both carry image_generation. gemini-vision also carries image_generation but is primarily a vision connector, so it is a poor default here. storage resolves to local-drive, google-drive, dropbox, onedrive, aws-s3 and others, which matches the designed responsibility's point that a gallery and a project folder are different handling.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Artist",
+          "Original 2D work, curated"
+        ]
+      ]
+    },
+    {
+      "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
+      "slug": "brand-visual-asset-production",
+      "title": "On brand visual asset production",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/visual-assets",
+      "domain": "creative_design",
+      "description": {
+        "need": "Surfaces ship with placeholder or stock visuals because making something that belongs to this specific product is slower than shipping without it.",
+        "input": "The written design brief, the surface that needs art and what it is for, and the accumulated record of which phrasings produced approved work and which were turned down.",
+        "core_action": "Compose the work from the brief rather than from scratch, judge it against the brief before showing it to anyone, and iterate a small fixed number of times rather than indefinitely.",
+        "output": "An asset that traces to the brief, in the format and size the surface needs, delivered where the project can actually use it, after a person has seen it."
+      },
+      "activities": [
+        {
+          "id": "read-brief",
+          "label": "Read the brief and the surface the asset is for",
+          "kind": "observe"
+        },
+        {
+          "id": "compose",
+          "label": "Compose the request from the brief and what has been approved before",
+          "kind": "decide"
+        },
+        {
+          "id": "generate",
+          "label": "Generate the asset",
+          "kind": "act"
+        },
+        {
+          "id": "self-judge",
+          "label": "Judge the result against the brief and iterate a bounded number of times",
+          "kind": "decide"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver to the surface in the format it needs, for a human decision",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "assets-belong-to-this-product",
+          "statement": "Surfaces that would otherwise ship with placeholder or generic visuals get work that belongs to this product.",
+          "success_criteria": [
+            "Every delivered asset traces to the brief, and where it departs from it the departure is deliberate and stated",
+            "Assets land where the project can actually use them, in the format and size that surface needs",
+            "Nothing is delivered without a human seeing it first"
+          ]
+        }
+      ],
+      "guidance": "Make the visual work the project needs and put it where the project can use it. Look for the surfaces that are still generic rather than waiting to be asked, and be honest when a surface does not need art. Judge your own output against the brief before showing it, and iterate a small number of times rather than indefinitely. When the work cannot reach the bar, ask for a reference instead of trying again.",
+      "connector_types": [
+        "development",
+        "image_generation",
+        "vision"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Watch for surfaces still carrying placeholder or stock visuals, new surfaces added without art, and requests waiting. Act on request immediately and on the seat's own initiative when the queue is clear."
+      },
+      "personalization_needs": [
+        "Which project surfaces are in scope, because an unbounded remit here produces work nobody asked for",
+        "What kinds of asset the adopter needs most, which shapes what the seat gets good at over time",
+        "How assets should reach the project, since a file in a folder and a committed change are different levels of trust"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "asset_request",
+          "type": "text",
+          "description": "What to create: hero image, social media card, icon set, UI illustration, background. Include dimensions / aspect ratio if specific."
+        },
+        {
+          "name": "asset_type",
+          "type": "enum",
+          "options": [
+            "hero",
+            "social_card",
+            "icon_set",
+            "background",
+            "illustration",
+            "brand_kit",
+            "mixed"
+          ],
+          "default": "mixed",
+          "description": "Shapes memory lookup and per-type prompt templates."
+        },
+        {
+          "name": "quality_threshold",
+          "type": "number",
+          "default": 7,
+          "min": 5,
+          "max": 10,
+          "description": "Minimum multimodal AI score before the asset proceeds to human review. Higher = more auto-iteration cycles."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The registered local codebase as the project connector",
+          "connector": "codebase",
+          "connector_type": "development",
+          "notes": "Catalogued as development, source_control and desktop. This is how the recipe finds which surfaces are still generic. Note that resolving development at adoption also offers github, gitlab and sentry, which are not the same thing as a local registered project; see the lane findings."
+        },
+        {
+          "title": "Gemini vision as the quality check",
+          "connector": "gemini-vision",
+          "connector_type": "vision",
+          "notes": "The only connector in the catalog carrying the vision category. The self judgement step degrades to human review alone when it is absent, which is a weaker recipe but not a broken one."
+        },
+        {
+          "title": "Leonardo AI as the image connector",
+          "connector": "leonardo-ai",
+          "connector_type": "image_generation",
+          "notes": "Catalogued as ai, image_generation and video_generation. Content policy refusals are a normal outcome here and should be reported with the blocked terms rather than retried blindly."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "e300b1db-400a-5b38-9a53-5f8cdcad95c2"
+        ],
+        "from_templates": [
+          "visual-brand-asset-factory"
+        ],
+        "source_template_id": "visual-brand-asset-factory"
+      },
+      "review_notes": "Outcomes, guidance, trigger and personalization needs all taken from the superseding Artist responsibility. One real departure: the designed responsibility says the seat should look for uncovered surfaces on its own initiative, which the v2 recipe never did (it was purely request driven). The v3 activities carry the designed behaviour, so this recipe is meaningfully wider than its v2 ancestor. The three iteration caps from v2 stayed as a bounded loop in guidance rather than as numbers, since the number is an adoption choice and the judgment is that the loop must be bounded at all.",
+      "research_notes": "Read codebase.json: categories development, source_control, desktop, and its declared surface is file access, context maps and idea or task management for registered local projects. vision has exactly one member, gemini-vision, so this connector_type is effectively a single vendor today; recorded as a lane finding rather than papered over.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Artist",
+          "On-brand assets delivered into the project"
+        ]
+      ]
+    },
+    {
+      "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
+      "slug": "product-design-brief-authoring",
+      "title": "Product design brief authoring",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/visual-assets",
+      "domain": "creative_design",
+      "description": {
+        "need": "Without one written description of how a product should look, every piece of visual work is judged against a different unstated standard and none of it composes.",
+        "input": "Whatever the adopter already has, an existing brief they wrote, the product's own code and surfaces, or nothing but the product itself.",
+        "core_action": "Name concrete colour roles, type treatment and layout direction rather than adjectives, taking the adopter's own brief verbatim where one exists and doing the extraction work only where one does not.",
+        "output": "One written brief, specific enough that two people would produce compatible work from it, reviewed by a human before anything is made from it."
+      },
+      "activities": [
+        {
+          "id": "find-source",
+          "label": "Establish where the brand direction can actually be read from",
+          "kind": "observe"
+        },
+        {
+          "id": "decide-verbatim",
+          "label": "Decide whether the adopter's own brief stands as written",
+          "kind": "decide"
+        },
+        {
+          "id": "author",
+          "label": "Write or complete the brief in concrete terms",
+          "kind": "act"
+        },
+        {
+          "id": "review",
+          "label": "Put the brief in front of a person before anything is made from it",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "one-usable-brief",
+          "statement": "There is one written description of how this product should look, specific enough that two people would produce compatible work from it.",
+          "success_criteria": [
+            "The brief names concrete colour roles, type treatment and layout direction rather than adjectives like premium or modern",
+            "It matches what the product's own code and surfaces actually do, or says explicitly where it is aspirational",
+            "It is reviewed by a human before anything is made from it"
+          ]
+        }
+      ],
+      "guidance": "Own the written brand direction that everything else is judged against. Derive it from what the product actually looks like where that exists, and accept the adopter's own brief verbatim when they have one rather than rewriting it. The failure mode is vagueness: a brief that cannot rule anything out is not a brief. Revise it when the product's real design drifts away from it, and never revise it silently.",
+      "connector_types": [
+        "development"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when the product's own design has moved away from what the brief says, or when work keeps being rejected on the same brief dimension, which means the brief is wrong rather than the work."
+      },
+      "personalization_needs": [
+        "Whether the adopter already has a brief to use as is, because rewriting someone's existing brand direction is a loss and the recipe's default is to extract",
+        "Which product or surface the brief governs, since one adopter may run several with different looks",
+        "What the product should feel like to its users, which cannot be read out of code and is the half extraction always misses"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "brief_source_intent",
+          "type": "text",
+          "description": "Where the brief should be extracted from: a local file or folder path, a registered codebase, or a pasted-in design.md."
+        },
+        {
+          "name": "brief_mode",
+          "type": "enum",
+          "options": [
+            "auto_from_codebase",
+            "user_pasted",
+            "on_demand"
+          ],
+          "default": "auto_from_codebase",
+          "description": "How Step 0 runs at build time. Auto-extract reads the source above; user-pasted accepts a brief verbatim; on-demand defers."
+        },
+        {
+          "name": "brief_content",
+          "type": "text",
+          "ui_component": "TextArea",
+          "required": false,
+          "description": "The user's own design.md / brand brief pasted verbatim (from Stitch, Figma, Gemini, or hand-written). Used as-is when brief_mode is 'I'll paste my own design.md'; ignored otherwise."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The registered local codebase as the extraction source",
+          "connector": "codebase",
+          "connector_type": "development",
+          "notes": "Catalogued as development, source_control and desktop. Theme files and stylesheets are what make the extraction concrete; when the project has none, the recipe falls back to asking the adopter rather than inventing colour roles."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "d9189ae3-df8a-5843-b174-86befb61a0ad"
+        ],
+        "from_templates": [
+          "visual-brand-asset-factory"
+        ],
+        "source_template_id": "visual-brand-asset-factory"
+      },
+      "review_notes": "Outcomes, guidance and trigger from the superseding Artist responsibility. The v2 recipe hardcoded a five section structure (empathy, sensory aesthetic, four role colour hierarchy, typography hierarchy, layout metaphor); the designed responsibility does not, and states the test differently and better, that the brief must be able to rule something out. I followed the designed responsibility and dropped the five section list from the outcome, keeping the concrete colour role and type treatment requirement it names. The v2 'runs once at build time' framing is gone: the designed trigger makes revision the normal case rather than the exception.",
+      "research_notes": "Checked whether a design category would be a better fit than development: design exists in the catalog (figma, canva, penpot) but the v2 recipe and the designed responsibility both read the brief out of the product's own code, not out of a design tool, so declaring design would promise a capability neither source evidences. Left at development and noted the option.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Artist",
+          "The design brief the work is held to"
+        ]
+      ]
+    },
+    {
+      "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
+      "slug": "feature-walkthrough-capture",
+      "title": "Feature walkthrough capture from the running app",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/video",
+      "domain": "creative_design",
+      "description": {
+        "need": "A feature nobody can watch has to be explained by hand every time, and a walkthrough recorded from a guessed script shows screens the app does not produce.",
+        "input": "The implementation of the feature to be shown, a running instance of the app, and whatever capture tooling exists on the machine.",
+        "core_action": "Read the code first so the walkthrough follows the path a real user takes, then drive that path live and pace the capture for a viewer rather than for the machine.",
+        "output": "A walkthrough artifact recorded against a known build, with any limitation of the available capture method stated in it rather than hidden."
+      },
+      "activities": [
+        {
+          "id": "read-implementation",
+          "label": "Read the implementation to establish the real user path",
+          "kind": "observe"
+        },
+        {
+          "id": "check-tooling",
+          "label": "Establish what capture the machine can actually do",
+          "kind": "observe"
+        },
+        {
+          "id": "plan",
+          "label": "Plan the walkthrough steps and their pacing",
+          "kind": "decide"
+        },
+        {
+          "id": "drive",
+          "label": "Drive the path in the running app and capture it",
+          "kind": "act"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver the artifact with its build and its stated limitations",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "walkthroughs-stay-current",
+          "statement": "Any feature worth showing has a current walkthrough that matches what the app does today.",
+          "success_criteria": [
+            "Each walkthrough records the build or commit it was captured against",
+            "A walkthrough whose screens no longer match the app is marked stale rather than served as current",
+            "A capture that failed produces a stated reason, never a silently empty file"
+          ]
+        },
+        {
+          "id": "grounded-in-the-code",
+          "statement": "The walkthrough follows the path a real user takes, grounded in the code that implements it.",
+          "success_criteria": [
+            "The steps shown correspond to the implemented flow rather than a guessed one",
+            "A limitation of the capture method available on the machine is stated in the artifact rather than hidden"
+          ]
+        }
+      ],
+      "guidance": "Own whether someone can watch the result and understand the feature. Read the implementation first so the walkthrough follows the real path rather than a guessed one, and pace the capture for a viewer rather than for the machine. When the capture method available on this machine cannot do what the walkthrough needs, deliver the lesser artifact with the limitation named instead of a broken one.",
+      "connector_types": [
+        "development",
+        "browser_automation"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when a feature has shipped without a walkthrough, when the screens in an existing one no longer match the app, or when the operator asks. A stale set is worked down over time rather than recaptured wholesale."
+      },
+      "personalization_needs": [
+        "Which app and which of its surfaces are worth recording, because recording everything produces a library nobody watches",
+        "Who the walkthrough is for, since an internal review capture, an operator memory aid and a public demo differ in pacing, annotation and whether commentary is needed at all",
+        "What capture tooling actually exists on this machine, because the artifact ceiling is set by the machine and the adopter should not be promised video where only screenshots are possible"
+      ],
+      "dependencies": [
+        "a running local instance of the app being demonstrated",
+        "playwright (optional; unlocks the video capture tier where it is present)"
+      ],
+      "input_schema": [
+        {
+          "name": "feature_prompt",
+          "type": "text",
+          "description": "What feature or workflow to demo. Freeform description the recorder uses to guide codebase analysis and walkthrough planning."
+        },
+        {
+          "name": "recording_mode",
+          "type": "enum",
+          "options": [
+            "auto-detect",
+            "screenshots",
+            "video"
+          ],
+          "default": "auto-detect",
+          "description": "Capture method. Auto-detect picks the best available tier on your system."
+        },
+        {
+          "name": "walkthrough_speed",
+          "type": "enum",
+          "options": [
+            "slow",
+            "normal",
+            "fast"
+          ],
+          "default": "normal",
+          "description": "Pacing of interactions. Slower produces clearer captures but takes longer."
+        },
+        {
+          "name": "viewport_width",
+          "type": "number",
+          "default": 1280,
+          "min": 800,
+          "max": 3840,
+          "description": "Browser viewport width in pixels."
+        },
+        {
+          "name": "viewport_height",
+          "type": "number",
+          "default": 800,
+          "min": 600,
+          "max": 2160,
+          "description": "Browser viewport height in pixels."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The registered local codebase as the grounding source",
+          "connector": "codebase",
+          "connector_type": "development",
+          "notes": "Catalogued as development, source_control and desktop. This is the half that makes the walkthrough correct rather than plausible; without it the recipe degrades to a scripted click through."
+        },
+        {
+          "title": "The desktop browser as the capture surface",
+          "connector": "desktop_browser",
+          "connector_type": "browser_automation",
+          "notes": "Catalogued as browser_automation and desktop. The desktop category is dropped by the v3 rule, so browser_automation is what adoption resolves; it also offers apify and bright-data, which drive remote browsers and cannot capture a locally running app. Adoption should prefer the local one here."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae"
+        ],
+        "from_templates": [
+          "demo-recorder"
+        ],
+        "source_template_id": "demo-recorder"
+      },
+      "review_notes": "Retitled to the designed responsibility's own title, which is already area plus activity and reads unambiguously in a mixed list. The v2 tier language (Tier 1 CDP screenshots, Tier 2 Game Bar, Tier 3 Playwright) is installation detail; the durable knowledge is that the ceiling is set by the machine and the limitation must be stated in the artifact, which is now an outcome criterion. The build or commit stamp is new against v2 and comes from the designed responsibility; it is the thing that makes staleness detectable at all.",
+      "research_notes": "Read desktop-browser.json (categories browser_automation, desktop) and codebase.json. Confirmed browser_automation has three members: desktop-browser, apify and bright-data. The latter two are remote scraping browsers, so the type is broader than this recipe can actually use; recorded in the example note rather than by inventing a narrower type.",
+      "superseded_by": [
+        [
+          "convert_A.json",
+          "Any",
+          "Feature walkthrough capture from the running app"
+        ]
+      ]
+    },
+    {
+      "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
+      "slug": "feature-announcement-video-production",
+      "title": "Feature announcement video production",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/video",
+      "domain": "creative_design",
+      "description": {
+        "need": "Shipped features go unannounced because a short video costs a script, a voice and a render, and getting any one of them wrong late means redoing all three.",
+        "input": "A description of the feature, who it benefits, and the accumulated record of which tone, style and pacing the adopter has approved before.",
+        "core_action": "Settle the script and visual strategy and get them approved before anything is synthesized or rendered, then keep rework scoped to the stage that was actually wrong.",
+        "output": "A short finished announcement video whose script and final render each passed a real human check."
+      },
+      "activities": [
+        {
+          "id": "read-feature",
+          "label": "Read the feature description and past approved taste",
+          "kind": "observe"
+        },
+        {
+          "id": "strategy",
+          "label": "Settle the script and the visual strategy together",
+          "kind": "decide"
+        },
+        {
+          "id": "approve-script",
+          "label": "Get the script approved before anything is spent",
+          "kind": "deliver"
+        },
+        {
+          "id": "voice",
+          "label": "Produce the voiceover",
+          "kind": "act"
+        },
+        {
+          "id": "compose",
+          "label": "Compose the final render",
+          "kind": "act"
+        },
+        {
+          "id": "deliver",
+          "label": "Present the render for the second decision",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "announcement-ships-reviewed",
+          "statement": "A feature description becomes a finished announcement video, with the script and the final render each getting a real human check before moving on.",
+          "success_criteria": [
+            "The script is approved before voiceover synthesis spends anything",
+            "A rejection routes back to the specific stage it affects, not a full restart"
+          ]
+        }
+      ],
+      "guidance": "Turn a feature description into a short announcement video: work out the script and visual strategy, get them approved, then produce the voiceover and compose the render for a second decision. Keep rework scoped; if only the voiceover is wrong, redo the voiceover rather than the whole pipeline. Treat the approval gates as real checkpoints rather than formalities, and when input is too thin to work from, ask before drafting.",
+      "connector_types": [
+        "voice_generation",
+        "video_generation"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The work becomes worth doing when a feature has shipped without an announcement. Nothing in the source evidences a release event this recipe can listen to, and a calendar would produce videos for weeks with nothing to announce."
+      },
+      "personalization_needs": [
+        "What the adopter's product sounds like when it announces something, since tone is the dimension rejections cluster on and it cannot be read from the feature description",
+        "Who the announcement is for, because the same feature is pitched differently to existing users and to prospects",
+        "Where the finished video is going, since a channel's length and aspect ratio constraints decide the script before the script is written"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "feature_description",
+          "type": "text",
+          "description": "What the feature is, who it benefits, and any specific points to highlight. More detail = better first draft."
+        },
+        {
+          "name": "duration",
+          "type": "enum",
+          "options": [
+            "15s",
+            "30s",
+            "60s",
+            "auto"
+          ],
+          "default": "30s",
+          "description": "Target duration. Auto lets the agent pick based on feature complexity."
+        },
+        {
+          "name": "style",
+          "type": "enum",
+          "options": [
+            "minimal",
+            "vibrant",
+            "dark_mode",
+            "branded"
+          ],
+          "default": "minimal",
+          "description": "Default visual style. The agent refines this from review feedback over time."
+        }
+      ],
+      "examples": [
+        {
+          "title": "ElevenLabs as the voiceover connector",
+          "connector": "elevenlabs",
+          "connector_type": "voice_generation",
+          "notes": "Catalogued as ai and voice_generation. Rate limits are the normal failure here and the honest response is a shorter script, not a retry loop."
+        },
+        {
+          "title": "Higgsfield as the composition connector",
+          "connector": "higgsfield",
+          "connector_type": "video_generation",
+          "notes": "Catalogued as ai, image_generation and video_generation. Renders are asynchronous, so the recipe has to poll and report a provider error rather than treat a slow render as a failure."
+        },
+        {
+          "title": "Leonardo AI as the composition connector",
+          "connector": "leonardo-ai",
+          "connector_type": "video_generation",
+          "notes": "The only other member of video_generation in the catalog. The category has exactly two members today, so this connector_type is narrow; see the lane findings."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "fc73b552-a9df-5fd9-b98d-722e9c8ec92c"
+        ],
+        "from_templates": [
+          "feature-video-creator"
+        ],
+        "source_template_id": "feature-video-creator"
+      },
+      "review_notes": "Not superseded by any designed responsibility, so outcomes and guidance come from the consolidation verdict. The v2 phrase 'the cloud provider' is a vendor shaped gap and became video_generation. No ffmpeg dependency here, unlike the audio recipe: composition happens at the provider, and nothing in the source evidences local rendering. The two stage review is the durable craft and stayed in the activities; the per stage iteration cap is an adoption knob and stayed out.",
+      "research_notes": "Read higgsfield.json and leonardo-ai.json. video_generation has exactly two members in the 134 connector catalog, both of which are also image generators, so an adopter resolving this type has a real but very small choice. Confirmed no dedicated video editing or composition connector exists.",
+      "superseded_by": []
+    },
+    {
+      "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+      "slug": "source-artifact-channel-repurposing",
+      "title": "Source artifact repurposing for channels",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/social-publishing",
+      "domain": "creative_design",
+      "description": {
+        "need": "Something published once reaches only the audience of the place it was published, and reformatting it by hand for every other channel is the work that quietly stops getting done.",
+        "input": "One published artifact in whatever form it exists, a video, an article, a transcript or pasted text, plus the written voice description for each channel in scope.",
+        "core_action": "Produce what each channel actually needs from the source, as a rewrite grounded in that channel's own voice description rather than the same text reformatted.",
+        "output": "One draft per channel in scope, each respecting that channel's constraints and voice, each waiting on its own separate approval."
+      },
+      "activities": [
+        {
+          "id": "resolve-source",
+          "label": "Resolve the source artifact into text worth working from",
+          "kind": "observe"
+        },
+        {
+          "id": "read-voices",
+          "label": "Read the voice description for each channel in scope",
+          "kind": "observe"
+        },
+        {
+          "id": "decide-fit",
+          "label": "Decide what each channel actually wants from this source",
+          "kind": "decide"
+        },
+        {
+          "id": "draft",
+          "label": "Write a channel specific draft rather than an excerpt",
+          "kind": "act"
+        },
+        {
+          "id": "present",
+          "label": "Present each draft for its own separate approval",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "one-source-many-channel-drafts",
+          "statement": "Something published once is present wherever its audience is, in a form that fits each place.",
+          "success_criteria": [
+            "Each draft respects its channel's own constraints and voice rather than being the same text reformatted",
+            "Nothing is published without an explicit approval for that specific channel",
+            "A channel whose voice description is missing is held back and named, rather than drafted generically"
+          ]
+        }
+      ],
+      "guidance": "Take a published piece and produce what each channel needs from it. A channel variant is a rewrite, not an excerpt, and it is grounded in that channel's own written voice rather than a generic house style. Approval is per channel, so one being turned down does not hold the others. When a draft cannot meet a channel's hard constraint, show the constraint failure alongside the draft rather than silently truncating it.",
+      "connector_types": [
+        "research",
+        "web_scraping"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Taken from the designed responsibility. The work begins when a source artifact is published; there is nothing to repurpose before that and no reason to look on a clock."
+      },
+      "personalization_needs": [
+        "Which channels are in scope, since drafting for a channel with no account is waste",
+        "Where source artifacts come from and whether their arrival should trigger this at all, because a channel feed and a manual paste are different levels of automation",
+        "What the adopter considers a source worth repurposing, since not everything published deserves a fan out"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "source_input",
+          "type": "text",
+          "description": "YouTube URL, blog URL, podcast transcript, or pasted text. The agent detects the input shape and dispatches to the right fetcher."
+        },
+        {
+          "name": "target_platforms",
+          "type": "text",
+          "description": "Comma-separated subset of `linkedin,x,blog,shortform`. Drafts are generated only for the listed platforms (and only if the platform's voice doc exists)."
+        },
+        {
+          "name": "max_drafts_per_run",
+          "type": "number",
+          "default": 4,
+          "min": 1,
+          "max": 4,
+          "description": "Cap on platform variants per run. Constrained to 4 to keep human review tractable."
+        }
+      ],
+      "examples": [
+        {
+          "title": "YouTube Data as the video source connector",
+          "connector": "youtube_data",
+          "connector_type": "research",
+          "notes": "Catalogued as social and research. Its declared surface is searching videos, channel statistics, playlists, comments and trending content. It does not declare caption or transcript retrieval, so a video source resolves to metadata plus whatever transcript the adopter supplies. The v2 recipe assumed captions were fetchable; that assumption is not supported by the catalog entry."
+        },
+        {
+          "title": "Firecrawl as the article source connector",
+          "connector": "firecrawl",
+          "connector_type": "web_scraping",
+          "notes": "Catalogued as web_scraping and research, which is why a single research type resolves both this and YouTube Data. Article sources behind a paywall degrade to asking the adopter to paste the text."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "b1c5780a-ff95-5663-b9e1-c42174b5daee"
+        ],
+        "from_templates": [
+          "content-cascade"
+        ],
+        "source_template_id": "content-cascade"
+      },
+      "review_notes": "Superseded jointly with Publish or Schedule by one designed responsibility, One artifact reaches the channels it should, which treats drafting and publishing as a single job. I kept them as two recipes because the lane requires all 27 ids present, and flagged the merge for the Director; if merged, this recipe's activities lead and the publishing recipe's activities finish the sequence, which stays linear and branch free. Departure from the designed responsibility: it declares five connectors (youtube_data, linkedin, x_twitter, notion, buffer) across both halves; I split them, giving the source side to this recipe and the destination side to the publishing one, because a recipe should not declare a type it never touches.",
+      "research_notes": "Read youtube-data.json. Its metadata summary is 'YouTube Data API v3 for searching videos, fetching channel statistics, retrieving playlists, comments, and trending content'; it declares no resources and no caption or transcript surface. This matters for correctness: the v2 error handling referenced 'empty captions across all input modes', a capability the catalogued connector does not claim. Recorded rather than assumed away. Also confirmed firecrawl (web_scraping, research), apify (web_scraping, automation, browser_automation) and bright-data (web_scraping, research, browser_automation) as the web_scraping members.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Content",
+          "One artifact reaches the channels it should"
+        ]
+      ]
+    },
+    {
+      "id": "5e07793e-c964-590f-95dc-f72631789f48",
+      "slug": "approved-draft-channel-publishing",
+      "title": "Approved draft channel publishing",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/social-publishing",
+      "domain": "creative_design",
+      "description": {
+        "need": "Approved work sits unpublished, and the person who approved it has no way to tell whether their decision reached the world.",
+        "input": "A draft that has been approved for one named channel, plus the adopter's preference for whether approved work goes live now or joins a queue.",
+        "core_action": "Carry the approved draft through to actually being live or scheduled on the channel it was approved for, and report what happened with a link or a time.",
+        "output": "The piece is live or queued on its channel, and the approval is confirmed with the artifact link or the scheduled time rather than disappearing."
+      },
+      "activities": [
+        {
+          "id": "read-approval",
+          "label": "Read the approval and the channel it names",
+          "kind": "observe"
+        },
+        {
+          "id": "route",
+          "label": "Match the destination to that channel's own posting shape",
+          "kind": "decide"
+        },
+        {
+          "id": "publish",
+          "label": "Publish or queue the piece",
+          "kind": "act"
+        },
+        {
+          "id": "confirm",
+          "label": "Confirm with the artifact link or the scheduled time",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "approved-work-actually-ships",
+          "statement": "An approved draft either goes live or scheduled, or its failure is surfaced with what to do about it.",
+          "success_criteria": [
+            "The destination matches the channel the draft was approved for, rather than one dispatch path applied to everything",
+            "A confirmation carrying the published link or the scheduled time always follows",
+            "A destination failure leaves the draft intact and says what to do about it, rather than dropping it or retrying against a different channel"
+          ]
+        }
+      ],
+      "guidance": "React to an approval by getting the draft where it was approved to go, matching the destination to the channel rather than applying one dispatch path to everything. Treat publication as part of the job rather than a separate step. Always confirm what happened and where, so an approval does not feel like it disappeared. When a destination fails, keep the draft and say what to do about it; never quietly reroute to another channel.",
+      "connector_types": [
+        "social",
+        "knowledge_base"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Taken from the designed responsibility. An approval is a real external event and the only honest starting point; publishing before it would defeat the gate and polling for it would add latency for nothing."
+      },
+      "personalization_needs": [
+        "Which channels the adopter actually posts to, since a destination with no account is a failure waiting for the first approval",
+        "Whether approved work publishes immediately or goes into a queue, which is a control preference rather than a configuration value",
+        "Who should be told when a publish fails, because the failure is only useful if it reaches the person who approved the draft"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "scheduling_preference",
+          "type": "enum",
+          "options": [
+            "immediate",
+            "buffer_queue"
+          ],
+          "default": "immediate",
+          "description": "Whether approved drafts publish immediately or schedule via Buffer."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Buffer as the scheduling destination",
+          "connector": "buffer",
+          "connector_type": "social",
+          "notes": "Catalogued as social and marketing. Its declared surface in this catalog is a profiles resource and a user healthcheck; the metadata summary is 'social media management for scheduling and publishing'. It declares no analytics or engagement resource, so a recipe that needs engagement numbers back cannot get them from this entry. Its profiles resource is what makes the queue destination selectable at adoption."
+        },
+        {
+          "title": "LinkedIn as a direct destination",
+          "connector": "linkedin",
+          "connector_type": "social",
+          "notes": "Catalogued as social only. A duplicate post is rejected rather than silently accepted, so a repeat publish needs an explicit confirmation rather than a retry."
+        },
+        {
+          "title": "X as a direct destination",
+          "connector": "x_twitter",
+          "connector_type": "social",
+          "notes": "Catalogued as social and research. A thread is several posts, so a partial failure is a real state: report which parts landed and hand back the rest rather than treating the whole thread as failed."
+        },
+        {
+          "title": "Notion as the long form destination",
+          "connector": "notion",
+          "connector_type": "knowledge_base",
+          "notes": "Catalogued as knowledge_base, database, documentation and productivity. Chosen as the blog style destination. It needs a target database that exists; a missing one is a setup failure and should halt only that channel."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "5e07793e-c964-590f-95dc-f72631789f48"
+        ],
+        "from_templates": [
+          "content-cascade"
+        ],
+        "source_template_id": "content-cascade"
+      },
+      "review_notes": "Four connector ids demoted here, the densest demotion in the lane: linkedin, x_twitter and buffer all to social, notion to knowledge_base. The v2 input_schema still names buffer_queue in an enum value; carried verbatim per the spec, but the Director should note that this is a connector id surviving inside a knob and it will read oddly once adoption binds a different social connector. Merge candidate with Source artifact repurposing, which shares its designed responsibility.",
+      "research_notes": "Read buffer.json in full. It declares one resource (profiles, with a list endpoint against api.bufferapp.com/1/profiles.json), a PAT auth field, and a healthcheck against the user endpoint. There is no engagement, analytics or updates resource. This directly corroborates the operator's own worked example, where Buffer was demoted out of an engagement reading recipe. Also read notion.json (four categories, knowledge_base primary) and confirmed linkedin is social only while x_twitter carries social and research.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Content",
+          "One artifact reaches the channels it should"
+        ]
+      ]
+    },
+    {
+      "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
+      "slug": "per-channel-voice-profiling",
+      "title": "Per channel writing voice profiling",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/social-publishing",
+      "domain": "creative_design",
+      "description": {
+        "need": "Drafts written without a written description of how this person sounds read like nobody, and the same correction gets made on every draft forever because nothing records it.",
+        "input": "A handful of the person's own best posts on one channel, and the corrections that have accumulated on drafts for that channel.",
+        "core_action": "Derive from real examples how they open, how long their sentences run, what words they never use and how they close, and write it down concretely enough that a draft can be checked against it.",
+        "output": "One written voice description per channel, derived from real work rather than adjectives, revised when corrections start clustering rather than repeated."
+      },
+      "activities": [
+        {
+          "id": "gather",
+          "label": "Gather the person's own best posts for one channel",
+          "kind": "observe"
+        },
+        {
+          "id": "extract",
+          "label": "Extract hooks, sentence rhythm, vocabulary and closing shape",
+          "kind": "decide"
+        },
+        {
+          "id": "write",
+          "label": "Write the description concretely enough to check a draft against",
+          "kind": "act"
+        },
+        {
+          "id": "review",
+          "label": "Put it in front of the person before drafts are made from it",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "voice-per-channel-survives-fanout",
+          "statement": "Drafts read as though the person wrote them, and read differently on each channel because each channel is different.",
+          "success_criteria": [
+            "Each channel has a written description of its voice, derived from real examples rather than adjectives",
+            "A change to one channel's voice does not leak into another's",
+            "Repeated corrections on the same dimension change the description rather than being corrected again"
+          ]
+        }
+      ],
+      "guidance": "Own the written description of how this person sounds on each channel: how they open, how long their sentences run, what words they never use, how they close. Derive it from their actual best work. When drafts keep getting corrected the same way, the description is wrong and should be revised rather than the correction repeated. Never generalise one channel's voice onto another, and say when the sample was too thin to be confident.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when corrections on a channel start clustering on one dimension, when a new channel is added, or when the person's own recent work has moved away from the description."
+      },
+      "personalization_needs": [
+        "Real examples of the person's own best posts per channel, which is the only usable input here and cannot be substituted with a style label",
+        "Which channels matter, since building a voice for a channel nobody posts to is waste",
+        "What the person considers off voice, which is often easier for them to state than what is on voice"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "target_platform",
+          "type": "enum",
+          "options": [
+            "linkedin",
+            "x",
+            "blog"
+          ],
+          "description": "Which platform's voice doc to build. Run once per platform; re-runnable per platform independently."
+        },
+        {
+          "name": "sample_posts",
+          "type": "text",
+          "description": "3-5 of your best posts on the target platform, separated by `---`. Either pasted directly or as a list of URLs the agent fetches."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896"
+        ],
+        "from_templates": [
+          "content-cascade"
+        ],
+        "source_template_id": "content-cascade"
+      },
+      "review_notes": "The designed responsibility declares no connectors and neither does v2, which survives review: sample posts arrive pasted, and the URL path degrades to a paste. The single largest change from v2 is the trigger. v2 called this a build time one shot that is 're-runnable when your voice evolves'; the designed responsibility makes revision the normal case and names the signal for it, corrections clustering on one dimension. That is a better recipe and I followed it. The v2 storage path inside design_context is an installation detail and is gone.",
+      "research_notes": "No connector research needed. Checked that no catalog category represents 'a person's own published posts' as a readable source; linkedin and x_twitter are publishing destinations in this corpus, and reading one's own posts back is not evidenced by either entry, which is why sample posts stay an adopter supplied input.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Content",
+          "A voice per channel that survives the fan-out"
+        ]
+      ]
+    },
+    {
+      "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
+      "slug": "newsletter-issue-curation",
+      "title": "Newsletter issue curation and delivery",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "creative_design/newsletters",
+      "domain": "creative_design",
+      "description": {
+        "need": "A newsletter assembled from whatever the feeds produced is a link dump, and subscribers stop opening it long before anyone notices the sources went stale.",
+        "input": "The sources the adopter follows, the record of what past issues already covered, and the editorial corrections reviewers have made before.",
+        "core_action": "Judge which items are actually worth a subscriber's attention, group what belongs together, and write real commentary saying why each matters rather than restating the headline.",
+        "output": "One edited issue that repeats nothing from a past issue, passes a human read, and reaches the subscriber list, with any source that has stopped working named."
+      },
+      "activities": [
+        {
+          "id": "scan",
+          "label": "Pull from the followed sources and note which failed",
+          "kind": "observe"
+        },
+        {
+          "id": "dedupe",
+          "label": "Drop what past issues already covered",
+          "kind": "act"
+        },
+        {
+          "id": "select",
+          "label": "Judge what is genuinely worth including and what is not",
+          "kind": "decide"
+        },
+        {
+          "id": "compose",
+          "label": "Group into sections and write the editorial commentary",
+          "kind": "act"
+        },
+        {
+          "id": "review",
+          "label": "Put the assembled issue in front of a human before it sends",
+          "kind": "deliver"
+        },
+        {
+          "id": "send",
+          "label": "Deliver to the subscriber list",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "issue-earns-the-send",
+          "statement": "Each issue is genuinely curated and deduplicated against past issues, and reads as edited content rather than a raw feed dump, before it reaches subscribers.",
+          "success_criteria": [
+            "Articles are scored and selected, not included wholesale",
+            "Every issue passes human review before send",
+            "No article repeats one already covered in a past issue"
+          ]
+        },
+        {
+          "id": "dead-sources-do-not-hide",
+          "statement": "A source that has stopped working is noticed rather than silently producing nothing.",
+          "success_criteria": [
+            "A source failing repeatedly is named in the issue rather than quietly contributing zero items",
+            "A thin period ships a short issue rather than padding to a target count"
+          ]
+        }
+      ],
+      "guidance": "Pull from the followed sources and keep only what would actually change something for a reader; most published items are noise and the accountability is the ratio, not the volume. Deduplicate rigorously against past issues. Write commentary that says why an item matters in terms of the reader's work, because an item filed without that is a link nobody opens. Nothing reaches the subscriber list without a human read first.",
+      "connector_types": [
+        "web_scraping",
+        "email"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The designed ingest responsibilities pace to how fast each source actually publishes, which differs per source. An issue is worth sending when there is enough worth reading, and the v2 weekly cron was a subscriber expectation the adopter sets on the charter rather than an obligation on the craft."
+      },
+      "personalization_needs": [
+        "Which sources the adopter follows and which they gave up on, since a stale source list is worse than none",
+        "What the adopter's readers are watching for, because relevance here is entirely a function of what they are working on",
+        "Who the subscriber list is and how it is held, since delivery is the one step that cannot be undone",
+        "The editorial voice the commentary should carry, which reviewers will otherwise correct issue after issue"
+      ],
+      "dependencies": [
+        "a subscriber list the chosen email connector is able to send to"
+      ],
+      "input_schema": [
+        {
+          "name": "max_articles_per_issue",
+          "type": "number",
+          "default": 10,
+          "min": 3,
+          "max": 25,
+          "description": "Max articles per issue. Fewer allowed if quality candidates are scarce."
+        },
+        {
+          "name": "source_scan_depth",
+          "type": "number",
+          "default": 7,
+          "min": 1,
+          "max": 30,
+          "description": "Days back to scan. High-priority sources exempt from the age filter."
+        },
+        {
+          "name": "editorial_tone",
+          "type": "enum",
+          "options": [
+            "analytical",
+            "conversational",
+            "executive",
+            "technical",
+            "casual"
+          ],
+          "default": "analytical",
+          "description": "Writing voice for headlines, commentary, and section intros."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Firecrawl as the source reader",
+          "connector": "firecrawl",
+          "connector_type": "web_scraping",
+          "notes": "Catalogued as web_scraping and research. Covers both the feed case and the page case the designed responsibilities separate; a page that only changed its markup is not a new item, which is the judgment the connector cannot make for you."
+        },
+        {
+          "title": "Resend or SendGrid as the delivery connector",
+          "connector": "resend",
+          "connector_type": "email",
+          "notes": "Catalogued as email, alongside sendgrid, gmail, microsoft-outlook and hubspot. A list send and a personal mail send are different products; adoption should check that the chosen connector actually holds the subscriber list rather than assuming any email connector will do."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "99d7c2b2-f602-553e-a508-4ff143713b2e"
+        ],
+        "from_templates": [
+          "newsletter-curator"
+        ],
+        "source_template_id": "newsletter-curator"
+      },
+      "review_notes": "The largest departure in the lane, stated plainly. The three superseding Harvester responsibilities (Feed ingest, Page and site ingest, Inbox ingest) are all domain product_project and all end at making an item visible in a backlog; none of them curates, writes, assembles or sends a newsletter. Applied as authoritative they would delete the recipe rather than reshape it. I took from them what genuinely governs the first half (relevance over volume, dedupe across sources, a failing source is a reportable fact, say why an item matters) and kept the consolidation verdict's outcome for the second half, which nothing in the designed corpus covers. The second outcome here is assembled from Feed ingest's third success criterion. Inbox ingest's email trigger is not carried: an inbound mail source is a different intake and folding it in would put a branch in the activities.",
+      "research_notes": "Confirmed email membership: gmail, resend, sendgrid, microsoft-outlook, hubspot and the google workspace template, six connectors. None of them declares a subscriber list resource in the catalog, which is why the list is stated as a dependency rather than assumed to come with the connector. web_scraping members are apify, bright-data and firecrawl.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Harvester",
+          "Feed ingest"
+        ],
+        [
+          "convert_B.json",
+          "Harvester",
+          "Page and site ingest"
+        ],
+        [
+          "convert_B.json",
+          "Harvester",
+          "Inbox ingest"
+        ]
+      ]
+    },
+    {
+      "id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
+      "slug": "conversion-experiment-significance-watch",
+      "title": "Conversion experiment significance watch",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/conversion-optimization",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "An experiment called early is worse than no experiment, because the wrong variant then ships with the authority of a measurement behind it.",
+        "input": "The ledger of in flight experiments with their start dates, per arm counts and target metric, and the guardrails the adopter set for what earns a verdict.",
+        "core_action": "Decide for each experiment whether it has actually earned a verdict yet, watching for signs the measurement itself is broken, and propose what to do rather than doing it.",
+        "output": "Each in flight experiment carries a current, defensible classification, and every promote, revert or archive sits as a proposal a person can accept or refuse."
+      },
+      "activities": [
+        {
+          "id": "read-state",
+          "label": "Read the current state of every in flight experiment",
+          "kind": "observe"
+        },
+        {
+          "id": "guardrails",
+          "label": "Check each against sample size and duration before computing anything",
+          "kind": "decide"
+        },
+        {
+          "id": "classify",
+          "label": "Classify what has earned a verdict and what is still running",
+          "kind": "decide"
+        },
+        {
+          "id": "sanity",
+          "label": "Flag results the arithmetic itself argues against",
+          "kind": "decide"
+        },
+        {
+          "id": "propose",
+          "label": "Put each promote, revert or archive up as a proposal",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "no-premature-calls",
+          "statement": "No experiment is called a winner or loser before it has actually earned that call statistically.",
+          "success_criteria": [
+            "An experiment below the configured sample size or minimum duration is left running, never classified early.",
+            "A split imbalance or a mathematically inconsistent result, such as a negative lift reading as a win, is flagged as suspicious rather than acted on."
+          ]
+        },
+        {
+          "id": "no-silent-traffic-changes",
+          "statement": "Nobody's live traffic changes without a person having approved it.",
+          "success_criteria": [
+            "Every promote, revert or archive action sits in review before the backend is called; refusals are recorded as learning rather than retried silently."
+          ]
+        }
+      ],
+      "guidance": "Own knowing the true state of every in flight experiment and proposing what to do about it, never quietly acting on the site yourself. Apply the sample size and duration guardrails before calling a winner, and watch for signs the maths itself is broken, an imbalanced split or a statistically winning result with negative lift. Route every promote, revert or archive to the person running the program before it touches production.",
+      "connector_types": [
+        "analytics"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "An experiment reaches significance on its own traffic, not on a calendar. Look when enough new data has accumulated to plausibly change a verdict, and less often once every experiment is well below its guardrails. The v2 Monday cron was a reporting habit shared across three capabilities."
+      },
+      "personalization_needs": [
+        "What the adopter counts as conversion here, since the whole verdict is computed against one metric and the wrong one produces confident nonsense",
+        "How much traffic the site actually gets, because a sample size guardrail set without it either never fires or never holds",
+        "Which changes the seat may propose and how consequential a live traffic change is considered here, which sets how cautious the classification should be"
+      ],
+      "dependencies": [
+        "an experimentation backend able to split traffic and report per arm counts"
+      ],
+      "input_schema": [
+        {
+          "name": "min_sample_size",
+          "type": "number",
+          "default": 1000,
+          "min": 100,
+          "max": 100000,
+          "description": "Minimum visitors per arm before significance is computed. Lower = faster but noisier."
+        },
+        {
+          "name": "min_duration_days",
+          "type": "number",
+          "default": 7,
+          "min": 1,
+          "max": 60,
+          "description": "Minimum experiment duration before a winner can be called, regardless of sample size."
+        },
+        {
+          "name": "significance_threshold",
+          "type": "number",
+          "default": 0.05,
+          "min": 0.01,
+          "max": 0.1,
+          "description": "p-value threshold for the two-proportion z-test. 0.05 is the scientific default."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Humbalytics as the experimentation backend",
+          "connector": "humbalytics",
+          "connector_type": "analytics",
+          "notes": "Its catalog summary is web analytics with built in A/B experimentation that rewrites page content without redeploying code. It is the one connector in the catalog that supplies both halves this recipe needs, the per arm counts and the deployment surface."
+        },
+        {
+          "title": "PostHog as the experimentation backend",
+          "connector": "posthog",
+          "connector_type": "analytics",
+          "notes": "Catalogued as analytics and monitoring; its summary names feature flags and A/B testing. A projects resource is declared, so adoption can pick which project the experiments live in."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff"
+        ],
+        "from_templates": [
+          "autonomous-cro-experiment-runner"
+        ],
+        "source_template_id": "autonomous-cro-experiment-runner"
+      },
+      "review_notes": "Not superseded, so outcomes and guidance are the consolidation verdict's, lightly reworded to remove em dashes. The v2 recipe referred to an unnamed 'experimentation backend'; research showed the analytics category genuinely contains connectors that do this, so the type is honest and the dependency line names the capability rather than a vendor. The RUNNING, WINNER, LOSER, INCONCLUSIVE vocabulary is installation detail and did not survive into the description; the judgment that an unearned verdict is a defect did.",
+      "research_notes": "Read humbalytics.json and posthog.json. humbalytics summary: 'Humbalytics web analytics with built-in A/B experimentation, traffic attribution, heat maps, and scroll-depth tracking. Runs experiments that dynamically rewrite page content without redeploying code.' posthog summary: 'PostHog product analytics, feature flags, session replay, and A/B testing', declaring a projects resource. There is no experimentation category in the catalog, so analytics is the correct and only legal type; recorded as a lane finding since it also resolves to read only connectors like mixpanel that cannot deploy a variant.",
+      "superseded_by": []
+    },
+    {
+      "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
+      "slug": "conversion-variant-hypothesis-proposals",
+      "title": "Conversion variant hypothesis proposals",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/conversion-optimization",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Pages underperform quietly, and the ideas offered for them are usually generic best practice that would apply to any site and therefore explains nothing about this one.",
+        "input": "Per page conversion rates against their own rolling baselines, the pages the adopter has allowed to be experimented on, and the record of which kinds of change have been accepted or refused before.",
+        "core_action": "Rank pages by how far below their own baseline they sit and write a small number of hypotheses specific to what is actually underperforming on each, each naming what it expects to move.",
+        "output": "A short set of testable proposals, each citing the page's specific gap and its expected effect, waiting on a person to choose which run."
+      },
+      "activities": [
+        {
+          "id": "read-performance",
+          "label": "Read per page conversion against each page's own baseline",
+          "kind": "observe"
+        },
+        {
+          "id": "rank",
+          "label": "Rank pages by how far below baseline they sit",
+          "kind": "decide"
+        },
+        {
+          "id": "filter",
+          "label": "Set aside pages out of scope and change categories already refused",
+          "kind": "decide"
+        },
+        {
+          "id": "hypothesise",
+          "label": "Write hypotheses specific to each page's actual gap",
+          "kind": "act"
+        },
+        {
+          "id": "propose",
+          "label": "Present them for a person to choose from",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "credible-hypotheses",
+          "statement": "Every underperforming page gets a small set of testable hypotheses grounded in its actual numbers, not generic advice.",
+          "success_criteria": [
+            "Each proposal names the page's specific conversion gap against baseline",
+            "Each proposal states expected lift and the metric it targets",
+            "No page gets more than the configured cap of hypotheses per run"
+          ]
+        },
+        {
+          "id": "nothing-ships-unreviewed",
+          "statement": "No experiment reaches the live site without a human choosing to run it.",
+          "success_criteria": [
+            "Every proposal sits in human review before deployment",
+            "Only approved proposals reach the experimentation backend"
+          ]
+        }
+      ],
+      "guidance": "Prioritise pages by how far below baseline they sit, and keep hypotheses specific to what is actually underperforming rather than reusable boilerplate. State expected lift honestly, including when it is a rough estimate. Never propose against a page the adopter placed out of bounds. Nothing here should ever deploy without a person choosing to; the job ends at a proposal a reviewer can accept or refuse with confidence.",
+      "connector_types": [
+        "analytics"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Proposals are worth writing when the performance reading has moved enough to argue for something new, and when the existing experiments are not already saturating the pages in scope. A weekly clock produces proposals into a full queue."
+      },
+      "personalization_needs": [
+        "Which pages may be experimented on at all, since checkout and legal pages are usually out of bounds and the cost of getting that wrong is not recoverable",
+        "What the adopter is trying to move on each page, because the same copy change is an improvement against one metric and a regression against another",
+        "Which kinds of change the adopter has already refused, so the same category is not proposed a fourth time"
+      ],
+      "dependencies": [
+        "an experimentation backend able to split traffic and report per arm counts"
+      ],
+      "input_schema": [
+        {
+          "name": "max_new_variants_per_run",
+          "type": "number",
+          "default": 3,
+          "min": 1,
+          "max": 10,
+          "description": "Cap on new variant proposals per run to avoid interaction effects on the same page."
+        },
+        {
+          "name": "target_pages",
+          "type": "text",
+          "description": "Comma-separated URL paths allowed for experimentation (e.g. `/, /pricing, /features`). Pages NOT in this list are never touched. Legal/checkout pages should be excluded."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Humbalytics as the analytics and experimentation source",
+          "connector": "humbalytics",
+          "connector_type": "analytics",
+          "notes": "Supplies both the per page conversion reading this recipe proposes from and the deployment surface an accepted proposal lands on, which is why one connector_type covers the whole loop here."
+        },
+        {
+          "title": "A read only analytics connector",
+          "connector": "mixpanel",
+          "connector_type": "analytics",
+          "notes": "Catalogued as analytics only. It can supply the underperformance reading but cannot deploy an accepted variant, so an adoption resolving analytics to it needs a second binding for the deployment half or the recipe stops at the proposal."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "c6d64e9e-419a-5c90-bac2-a3f2d7039a87"
+        ],
+        "from_templates": [
+          "autonomous-cro-experiment-runner"
+        ],
+        "source_template_id": "autonomous-cro-experiment-runner"
+      },
+      "review_notes": "Not superseded; outcomes and guidance from the consolidation verdict. The v2 15 percent below baseline threshold is a knob and left the description, but the judgment behind it, rank against each page's own baseline rather than a fixed target, is in the activities and the guidance. The excluded pages rule was in v2 error handling only; promoted into guidance and a personalization need because it is the one irreversible mistake this recipe can make.",
+      "research_notes": "Same catalog reading as the significance watch. Confirmed the analytics category has eight members: duckdb, formbricks, humbalytics, metabase, mixpanel, posthog, redash, twilio-segment. Only humbalytics and posthog evidence any experimentation capability, so the type is broad relative to what this recipe needs; recorded in an example note rather than narrowed by invention.",
+      "superseded_by": []
+    },
+    {
+      "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
+      "slug": "conversion-experiment-program-digest",
+      "title": "Conversion experiment program digest",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/conversion-optimization",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "An optimisation program that only communicates when something wins leaves its owner unable to tell a quiet period from a stalled one.",
+        "input": "The current state of every experiment, the verdicts reached since the last digest, the proposals waiting, and what was archived without reaching significance.",
+        "core_action": "Compose one honest account of where the whole program stands, including the uncertainty, rather than reporting only the parts that look like progress.",
+        "output": "One briefing covering what is running, what came back, what is proposed and what was archived, delivered whether or not the period was eventful."
+      },
+      "activities": [
+        {
+          "id": "gather",
+          "label": "Gather the program's current state and everything decided since the last look",
+          "kind": "observe"
+        },
+        {
+          "id": "judge",
+          "label": "Judge how much confidence each result actually carries",
+          "kind": "decide"
+        },
+        {
+          "id": "compose",
+          "label": "Compose the account at the depth the reader asked for",
+          "kind": "act"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver it whether or not the period was eventful",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "program-status-always-visible",
+          "statement": "Whoever owns conversion optimisation has a complete view of every experiment, win and proposal, whether or not anything got reviewed.",
+          "success_criteria": [
+            "The briefing goes out even when there is nothing significant to report",
+            "In flight experiments, results, new proposals and inconclusive archives are all represented",
+            "An early or weakly supported result is presented with its uncertainty rather than as a finding"
+          ]
+        }
+      ],
+      "guidance": "Compose the program's status in one place: what is running, what came back significant, what is proposed next, and what got archived as inconclusive. Deliver it regardless of how eventful the period was, because visibility is the job rather than news. Keep the summary honest about uncertainty rather than overselling early results, and when the account cannot be assembled, say so plainly instead of shipping a confident empty one.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The digest is worth composing when the program has moved, and its rhythm is a delivery preference the adopter sets on the charter. The v2 Monday cron was shared across three capabilities that no longer need to share a clock."
+      },
+      "personalization_needs": [
+        "Who reads this and what decision they make from it, because an executive summary and a working document are different artifacts",
+        "How the adopter wants to be told, since a briefing that arrives where they do not look is not visibility",
+        "What quiet looks like for this program, so that an uneventful period reads as reassurance rather than as a broken watch"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "report_depth",
+          "type": "enum",
+          "options": [
+            "executive",
+            "standard",
+            "deep"
+          ],
+          "default": "standard",
+          "description": "Executive: top-line only. Standard: tables + per-experiment detail. Deep: + per-page variant history."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "244bbdd0-9a0e-5851-8cf1-10ae2727fe32"
+        ],
+        "from_templates": [
+          "autonomous-cro-experiment-runner"
+        ],
+        "source_template_id": "autonomous-cro-experiment-runner"
+      },
+      "review_notes": "Retitled away from 'Combined CRO Report', which named an internal composition rather than an area and an activity. v2 declared no connectors and the delivery channel was the app's own message surface, which is not a connector; connector_types stays empty rather than inventing messaging. This is one of three siblings from the same template that shared a single cron; with all three now self_paced, the sharing is gone and the Director should note that the digest is the only one of the three whose rhythm the adopter genuinely has an opinion about.",
+      "research_notes": "No connector research applied. Confirmed against the catalog that the in app message surface used by v2 has no connector entry, so declaring messaging or notifications here would have been an invented dependency.",
+      "superseded_by": []
+    },
+    {
+      "id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
+      "slug": "website-conversion-gap-audit",
+      "title": "Website conversion gap audit",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/conversion-optimization",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "A site can look finished and still lose every visitor at the same place, and a list of everything imperfect tells the owner nothing about which gap is costing them.",
+        "input": "The properties the operator sells from, what each page was supposed to achieve, the score history of previous passes, and the findings already declined.",
+        "core_action": "Judge each category by what the gap costs in visitors or ranking position rather than in taste, comparing the site against what it itself scored last time.",
+        "output": "A prioritised set of open findings, each with a severity that means the same thing it did on the first pass, a raised date and a decision, with declined ones still visible as declined."
+      },
+      "activities": [
+        {
+          "id": "fetch",
+          "label": "Read the target property and the pages that carry the conversion",
+          "kind": "observe"
+        },
+        {
+          "id": "score",
+          "label": "Score each category against what it costs in visitors or position",
+          "kind": "decide"
+        },
+        {
+          "id": "compare",
+          "label": "Compare against this site's own previous scores rather than a benchmark",
+          "kind": "decide"
+        },
+        {
+          "id": "prioritise",
+          "label": "Rank open findings by cost and carry forward what was declined",
+          "kind": "act"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver the findings for a decision on each",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "no-unaddressed-costly-gap",
+          "statement": "The properties the operator sells from carry no known, unaddressed gap that costs a visitor or a ranking position.",
+          "success_criteria": [
+            "Every open finding has a severity, a decision from the operator, and the date it was first raised",
+            "A finding that was accepted and fixed disappears from the next pass instead of being raised again",
+            "Movement in a category can be traced to a specific change that was made"
+          ]
+        },
+        {
+          "id": "severity-stays-stable",
+          "statement": "Severity means the same thing on the hundredth audit as it did on the first.",
+          "success_criteria": [
+            "A critical finding always names what it costs in visitors or position, not in taste",
+            "Findings the operator declined stay visible as declined rather than being silently re-raised or dropped"
+          ]
+        }
+      ],
+      "guidance": "Own whether the site converts and ranks, not whether it looks good. Judge each category by what it costs in visitors or position, and keep severity honest so that critical still means critical after a hundred passes. Compare the site against what it itself scored last time rather than a generic benchmark. Escalate anything that needs a product or content decision instead of guessing at intent, and treat a site that is down or blocking you as a finding rather than a failed run.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when the site has changed since the last look, when a finding raised earlier should now be verifiably fixed, or when a category has gone long enough unexamined that its score is stale."
+      },
+      "personalization_needs": [
+        "Which properties count, and what winning looks like on each of them, whether signups, traffic or position on named queries, because severity is meaningless until the persona knows what the page was supposed to achieve",
+        "Which findings the operator has already decided not to act on, since without this the same declined gap returns every pass and the report loses credibility",
+        "How much of the site is rendered on the server, because structural analysis of a client rendered page misses forms and proof that exist at runtime and the audit must state that limit rather than score them zero"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "target_url",
+          "type": "text",
+          "description": "Full URL of the website to audit (e.g. https://example-hvac.com)."
+        },
+        {
+          "name": "business_type",
+          "type": "enum",
+          "options": [
+            "hvac",
+            "plumbing",
+            "landscaping",
+            "roofing",
+            "electrical",
+            "auto_repair",
+            "cleaning",
+            "pest_control",
+            "painting",
+            "general_contractor",
+            "other"
+          ],
+          "default": "hvac",
+          "description": "Type of local service business. Drives industry-specific benchmarks."
+        },
+        {
+          "name": "audit_depth",
+          "type": "enum",
+          "options": [
+            "quick",
+            "standard",
+            "deep"
+          ],
+          "default": "standard",
+          "description": "Quick = homepage only. Standard = homepage + key subpages. Deep = all discoverable pages."
+        },
+        {
+          "name": "min_severity",
+          "type": "enum",
+          "options": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ],
+          "default": "low",
+          "description": "Only include findings at or above this severity level."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "26b39db7-df93-55ed-b2c5-a0c20c46c9d1"
+        ],
+        "from_templates": [
+          "website-conversion-audit"
+        ],
+        "source_template_id": "website-conversion-audit"
+      },
+      "review_notes": "A real departure from v2, taken deliberately because the designed responsibility is a better recipe. v2 audited a client's site for a local service business and prioritised by revenue impact using industry benchmarks; the designed responsibility audits the operator's own properties and explicitly compares against the site's own previous scores rather than a benchmark. I followed the designed responsibility for outcomes, guidance, trigger and personalization. The consequence is that the business_type input schema, carried verbatim as the spec requires, now describes a benchmark set the guidance no longer leans on. The Director should decide whether that knob survives the transform.",
+      "research_notes": "Both v2 and the designed responsibility declare no connectors, and the catalog supports that: fetching a public page is an agent capability, not a connection. Considered adding web_scraping for the bot protection case that v2 error handling names, and declined, because neither source evidences a scraping connector and adding one would promise a capability the recipe does not have.",
+      "superseded_by": [
+        [
+          "convert_A.json",
+          "Web marketer",
+          "Standing conversion and ranking audit of the operator's own properties"
+        ]
+      ]
+    },
+    {
+      "id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
+      "slug": "competitor-positioning-comparison",
+      "title": "Competitor conversion and positioning comparison",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/conversion-optimization",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "A snapshot of where competitors stand today says nothing about which direction anyone is moving, and a comparison scored on a different yardstick than the home site means nothing at all.",
+        "input": "The named competitors that actually compete for the same decision, the ledger of what each has claimed before with first seen dates, and the same scoring categories used on the operator's own property.",
+        "core_action": "Read what has changed since the last look, a feature that appeared, pricing that moved, a claim withdrawn, and score it on the identical categories so the comparison is honest.",
+        "output": "A comparison reporting movement rather than only current state, saying plainly where a competitor is simply better and which competitors have stopped moving."
+      },
+      "activities": [
+        {
+          "id": "read-competitors",
+          "label": "Read each named competitor's current public position",
+          "kind": "observe"
+        },
+        {
+          "id": "diff",
+          "label": "Establish what moved since the last look and when it first appeared",
+          "kind": "decide"
+        },
+        {
+          "id": "score",
+          "label": "Score on the identical categories used on the home property",
+          "kind": "decide"
+        },
+        {
+          "id": "report",
+          "label": "Report the movement, including where a competitor is simply better",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "movement-not-snapshot",
+          "statement": "The operator knows what competitors shipped since the last look and how his own position moved against them.",
+          "success_criteria": [
+            "Every competitor claim carries a first seen date so movement is visible rather than implied",
+            "A comparison reports what changed since the previous comparison, not only current state",
+            "A competitor that has stopped moving is reported as such rather than quietly dropped",
+            "A competitor that could not be reached is named as unreached, never silently omitted"
+          ]
+        }
+      ],
+      "guidance": "Track competitors as a moving picture rather than a snapshot. What matters is the delta since the last look: a feature that appeared, pricing that moved, a claim that was withdrawn. Score them on the same categories used on the operator's own property so the comparison is honest. Say plainly where a competitor is simply better, and never pad a comparison to make the home side look good.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Competitors ship on their own schedule, so watch for evidence that something moved, a changed page, a release note, a pricing change, and look then."
+      },
+      "personalization_needs": [
+        "Which competitors actually compete for the same decision, and why the operator picked them, because a list chosen by market category tracks the wrong companies and produces confident irrelevance",
+        "Which features or claims the operator considers his ground to defend, since movement matters only relative to what he is trying to win and everything else is trivia",
+        "How the operator wants a competitor who is genuinely ahead described, because a comparison nobody trusts to say so is not read twice"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "competitor_urls",
+          "type": "text",
+          "description": "Comma-separated competitor URLs for side-by-side comparison."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "cee0f180-00d5-5ce0-be9e-75a9e05387ad"
+        ],
+        "from_templates": [
+          "website-conversion-audit"
+        ],
+        "source_template_id": "website-conversion-audit"
+      },
+      "review_notes": "The designed responsibility is substantially wider than v2 and I followed it. v2 was a comparison section appended to an audit run, alive only when competitor URLs were configured; the designed responsibility owns a standing competitor ledger with first seen dates and reports movement rather than state. That turns a dependent add on into a recipe that stands alone, which is why it now has its own trigger rather than running alongside the audit. The unreachable competitor criterion is carried from the v2 error handling because it is a real honesty rule the designed responsibility does not state.",
+      "research_notes": "No connectors are declared by either source and none is needed; reading a competitor's public pages is an agent capability. Checked whether the research category would fit and declined: its members are academic and market data sources (arxiv, pubmed, semantic-scholar, news_api, alpha-vantage, kalshi) plus scraping connectors, none of which this recipe is evidenced to require.",
+      "superseded_by": [
+        [
+          "convert_A.json",
+          "Web marketer",
+          "Competitor feature and positioning movement"
+        ]
+      ]
+    },
+    {
+      "id": "4a151e59-6b19-5164-8d66-867b66091542",
+      "slug": "community-trend-digest",
+      "title": "Community discussion trend digest",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/community-channels",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "The communities where a product's users talk about it move faster than anyone can read, and a digest that pads itself to look consistent teaches its readers to skip it.",
+        "input": "The communities the adopter follows, the index of posts already covered, and the corrections reviewers have made to past digests.",
+        "core_action": "Cluster genuinely new discussion into the few themes that actually ran, label the sentiment honestly, and ship fewer themes on a quiet day rather than stretching thin material.",
+        "output": "A short themed digest of what those communities actually discussed, delivered where the team reads, saying plainly when there was nothing."
+      },
+      "activities": [
+        {
+          "id": "fetch",
+          "label": "Pull recent activity from the followed communities",
+          "kind": "observe"
+        },
+        {
+          "id": "dedupe",
+          "label": "Drop what previous digests already covered",
+          "kind": "act"
+        },
+        {
+          "id": "cluster",
+          "label": "Cluster the remainder into the themes that genuinely ran",
+          "kind": "decide"
+        },
+        {
+          "id": "label",
+          "label": "Label sentiment and decide what is worth a reader's attention",
+          "kind": "decide"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver the digest, or say plainly that there was nothing",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "real-themes-not-padding",
+          "statement": "The digest reflects what the followed communities actually discussed in the period, never padded to look busier than it was.",
+          "success_criteria": [
+            "The digest ships fewer clusters on a quiet day rather than stretching thin content to hit the configured maximum",
+            "A period with no new discussion still ships a one line note rather than going silent"
+          ]
+        }
+      ],
+      "guidance": "Turn raw community activity into themed clusters with sentiment a team can actually use, never manufacturing volume to look consistent. Deduplicate against what has already been covered so themes reflect genuinely new discussion, and respect the content boundaries the team set. When review is enabled, let the reasons a digest was rejected shape the next one rather than treating each as a one off.",
+      "connector_types": [
+        "social",
+        "messaging"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Communities are busy on their own rhythm. Look when enough new discussion has accumulated to form a theme, and less often on quiet sources. The v2 daily 09:00 cron was a standup habit, which is a delivery preference for the charter."
+      },
+      "personalization_needs": [
+        "Which communities the adopter actually follows and what they are watching for there, because relevance in a community digest is entirely a function of the reader's current work",
+        "Where the digest should land and who is expected to act on it, since a digest posted where nobody looks is not a digest",
+        "What the adopter considers out of bounds to surface, which is a judgment about their own team rather than a content filter setting"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "subreddits",
+          "type": "text",
+          "description": "Comma-separated subreddit names (no /r/ prefix). The agent fetches top posts from each on every run."
+        },
+        {
+          "name": "time_window",
+          "type": "enum",
+          "options": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "year",
+            "all"
+          ],
+          "default": "day",
+          "description": "Maps directly to social platform's `t=` query parameter. Match to the digest cadence (daily cron + day window, weekly cron + week window)."
+        },
+        {
+          "name": "posts_per_subreddit",
+          "type": "number",
+          "default": 25,
+          "min": 5,
+          "max": 100,
+          "description": "Top posts pulled from each subreddit before dedup and clustering. Higher = richer themes, more API budget."
+        },
+        {
+          "name": "max_clusters",
+          "type": "number",
+          "default": 6,
+          "min": 1,
+          "max": 12,
+          "description": "Max thematic clusters per digest. Agent ships fewer on quiet days and never pads."
+        },
+        {
+          "name": "slack_channel",
+          "type": "text",
+          "description": "Target messaging channels (include leading `#`). The bot must already be invited (`/invite @YourBot`)."
+        },
+        {
+          "name": "include_nsfw",
+          "type": "boolean",
+          "default": false,
+          "description": "Include posts flagged over_18 by social platform. Default off."
+        },
+        {
+          "name": "human_review_enabled",
+          "type": "boolean",
+          "default": false,
+          "description": "When true, the digest is submitted for manual_review before delivery; rejections persist to memory as tone calibration."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Reddit as the community source",
+          "connector": "reddit",
+          "connector_type": "social",
+          "notes": "Catalogued as social and research; its summary is fetching subreddit posts, comments and trends through the Reddit OAuth API. Rate limiting is the normal failure and the honest response is a shorter digest, not an abandoned one."
+        },
+        {
+          "title": "Slack as the delivery channel",
+          "connector": "slack",
+          "connector_type": "messaging",
+          "notes": "Catalogued as messaging. A channel the bot has not been invited to is a setup failure, not a delivery failure: hold the digest locally and say so rather than recording it as delivered."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "4a151e59-6b19-5164-8d66-867b66091542"
+        ],
+        "from_templates": [
+          "reddit-trend-digest"
+        ],
+        "source_template_id": "reddit-trend-digest"
+      },
+      "review_notes": "The v2 title was literally 'social platform Trend Digest', a vendor substitution artifact from an earlier de-branding pass. Retitled to name the area and the activity. Both v2 connector entries (social, messaging) were already catalog categories and stay. The input_schema is carried verbatim as the spec requires and it still says subreddits and slack_channel, so two connector ids survive inside knob names; flagged for the Director because this is the one place in the lane where the verbatim rule and the connector agnostic rule pull against each other.",
+      "research_notes": "Read reddit.json: categories social and research, summary 'Reddit social network for fetching subreddit posts, comments, and trends via the Reddit OAuth API', no declared resources. Confirmed the social category has seven members (buffer, linkedin, linkedin-ads, meta-ads, reddit, x_twitter, youtube-data), so this connector_type resolves widely; several of those are publishing or advertising connectors rather than discussion sources, which adoption has to judge.",
+      "superseded_by": []
+    },
+    {
+      "id": "5a0a2392-2d9d-552c-912c-734a6e531550",
+      "slug": "content-source-health-tracking",
+      "title": "Content source health tracking",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/community-channels",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "A source that has quietly stopped yielding anything looks identical to a quiet one, so dead entries stay on a follow list forever and spend budget every pass.",
+        "input": "The outcome of each fetch against each followed source, and the record of when each last produced something usable.",
+        "core_action": "Distinguish a source that is quiet from a source that is broken by requiring a clear run of failures before saying anything, then recommend removal rather than continuing to poll.",
+        "output": "Each followed source carries a current health state, and a source that has been failing long enough is named for removal in the next digest."
+      },
+      "activities": [
+        {
+          "id": "observe",
+          "label": "Record the outcome of each fetch against each source",
+          "kind": "observe"
+        },
+        {
+          "id": "assess",
+          "label": "Decide whether the pattern is quiet or broken",
+          "kind": "decide"
+        },
+        {
+          "id": "flag",
+          "label": "Raise a source whose failures have become a clear pattern",
+          "kind": "act"
+        },
+        {
+          "id": "recommend",
+          "label": "Carry a removal recommendation into the next digest",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "dead-sources-surfaced",
+          "statement": "A source that has stopped yielding usable content long enough to be dead weight gets flagged for removal instead of silently wasting fetch budget forever.",
+          "success_criteria": [
+            "A source failing repeatedly enough to be a pattern raises a health signal and a removal recommendation in the next digest",
+            "A single failure or a genuinely quiet period does not raise anything"
+          ]
+        }
+      ],
+      "guidance": "Track whether each followed source is still worth fetching, as a background responsibility to the digest rather than a job of its own. Record outcomes per source and only call a source unhealthy once the pattern is clear, then recommend removal rather than silently continuing to poll something dead. A corrupted health record is safe to start again from empty; the history is useful but not critical.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "The only thing this recipe reacts to is a fetch outcome, which is a real observable event produced by whichever recipe is doing the fetching. There is nothing to look at between fetches and nothing a clock would add."
+      },
+      "personalization_needs": [
+        "How many failures the adopter considers a pattern rather than an outage, because being too eager here removes a source that was merely down for an afternoon",
+        "Who decides whether a flagged source is actually removed, since this recipe recommends and does not prune",
+        "Which sources the adopter considers load bearing, because a high value source failing deserves an interruption while a marginal one deserves a line in a digest"
+      ],
+      "dependencies": [],
+      "input_schema": [],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "5a0a2392-2d9d-552c-912c-734a6e531550"
+        ],
+        "from_templates": [
+          "reddit-trend-digest"
+        ],
+        "source_template_id": "reddit-trend-digest"
+      },
+      "review_notes": "v2 had no input schema at all, so input_schema is an empty array rather than a fabricated one. connector_types stays empty: this recipe observes fetches another recipe performs and opens no connection itself, which is honest but does mean it cannot stand alone at adoption. That coupling is worth the Director's attention, because it is the only recipe in the lane whose value depends on another recipe being adopted alongside it. The three consecutive failures threshold left the outcome text and became a judgment about a clear pattern, with the number as a personalization need.",
+      "research_notes": "No connector research applicable. Noted that the designed Harvester Feed ingest responsibility carries the same accountability as one of its success criteria, 'a feed that has stopped working is noticed rather than silently producing nothing', which corroborates this recipe as real craft even though the lane file records no supersession for it.",
+      "superseded_by": []
+    },
+    {
+      "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
+      "slug": "free-promotion-surface-discovery",
+      "title": "Free promotion surface discovery",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/community-channels",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Lists of places to promote a product are generic by default, which means they fit any product and are therefore worth nothing to this one.",
+        "input": "What the product genuinely does, read from its own materials rather than assumed, and the record of which surfaces were tried, accepted or found to be noise.",
+        "core_action": "Find the specific forums, communities, newsletters and directories where this product's actual users already gather, offering few and specific rather than many and plausible.",
+        "output": "A small set of candidate surfaces, each justified by what the product does, none of them already tried or already rejected."
+      },
+      "activities": [
+        {
+          "id": "ground",
+          "label": "Read what the product actually is from its own materials",
+          "kind": "observe"
+        },
+        {
+          "id": "recall",
+          "label": "Set aside surfaces already tried and categories already rejected",
+          "kind": "decide"
+        },
+        {
+          "id": "search",
+          "label": "Look for where this product's users already gather",
+          "kind": "act"
+        },
+        {
+          "id": "justify",
+          "label": "Judge each candidate on fit rather than audience size",
+          "kind": "decide"
+        },
+        {
+          "id": "present",
+          "label": "Present a small set for a good or bad decision on each",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "surfaces-fit-this-product",
+          "statement": "The product is present in the places its actual audience already gathers, found by looking rather than by guessing.",
+          "success_criteria": [
+            "Each suggested surface is justified by what the product does, not by generic popularity",
+            "Surfaces already tried are not suggested again",
+            "Surfaces that turned out to be noise stop appearing, and the categories they belong to are suppressed"
+          ]
+        }
+      ],
+      "guidance": "Find the forums, communities, newsletters and directories where this product's actual users already are. Ground the search in what the product genuinely does, read from its own materials, because the failure mode here is generic suggestions that fit any product. Offer few and specific rather than many and plausible. Take the tagging of good and bad seriously; a category rejected twice should not come back a third time.",
+      "connector_types": [
+        "development"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when the product's own description has changed enough to open new surfaces, or when the accepted set has been exhausted, and slow down as memory maps the obvious ground because the tenth pass over the same niche finds nothing."
+      },
+      "personalization_needs": [
+        "What the product is in the adopter's own words, since a description scraped from a repository is often stale or internal",
+        "Which communities are off limits, because posting in the wrong place costs more than the visibility is worth",
+        "Whether the adopter wants suggestions only, or wants drafted approaches too"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "discovery_count",
+          "type": "string",
+          "default": "Leave up to LLM",
+          "enum": [
+            "Leave up to LLM",
+            "3",
+            "5",
+            "8",
+            "12"
+          ],
+          "description": "Target candidate sources per week. 'Leave up to LLM' sizes to signal density: more when the codebase reveals a fresh niche, fewer when memory has already mapped the obvious surfaces."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The registered local codebase as the grounding source",
+          "connector": "codebase",
+          "connector_type": "development",
+          "notes": "Catalogued as development, source_control and desktop. The README and package metadata are what make a suggestion specific to this product; when they are missing or stale the recipe should ask the adopter rather than fall back to generic benchmarks, which is where the designed responsibility is stricter than the v2 error handling."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "c83283bc-126d-5512-a0a3-50a962cbffa5"
+        ],
+        "from_templates": [
+          "web-marketing"
+        ],
+        "source_template_id": "web-marketing"
+      },
+      "review_notes": "Outcomes, guidance, trigger and personalization needs from the designed Web marketer responsibility. Its rejection threshold is stricter than v2's (a category rejected twice rather than three times) and I followed the designed responsibility. The v2 recipe also relied on an agent web search tool; that is a tool rather than a connector and it does not become a connector_type. The input_schema is carried verbatim and still says 'per week', which is a cadence assumption inside a knob now that the trigger is self paced.",
+      "research_notes": "Read codebase.json: development, source_control, desktop, with file access and context map surfaces. Considered adding research as a second type, since discovery of communities plausibly needs a search connector and reddit, bright-data and news_api all carry it. Declined because neither v2 nor the designed responsibility declares it, and the recipe already works from agent web search plus the codebase; adding it would promise a binding the source does not evidence.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Web marketer",
+          "Places to be seen that cost nothing"
+        ]
+      ]
+    },
+    {
+      "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
+      "slug": "web-content-performance-review",
+      "title": "Web content performance review",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/web-analytics",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Movement in a product's own numbers goes unnoticed until it is too late to act on, and a table of metrics with no interpretation is not a read on anything.",
+        "input": "The product's own metrics for the period, the rolling baseline each page is normally measured against, and the anomalies already raised and still open.",
+        "core_action": "Judge each move against what this product normally does rather than a fixed threshold, allowing a wider band for low volume pages, and end in a proposal or an explicit nothing worth doing.",
+        "output": "A grounded read on what moved and why it matters, with each anomaly stated against the baseline it deviated from, and a next step or a clear statement that there is none."
+      },
+      "activities": [
+        {
+          "id": "read-period",
+          "label": "Read the period's metrics and how complete they are",
+          "kind": "observe"
+        },
+        {
+          "id": "baseline",
+          "label": "Compare each move against that page's own rolling baseline",
+          "kind": "decide"
+        },
+        {
+          "id": "rank",
+          "label": "Rank what is worth attention and set aside routine variance",
+          "kind": "decide"
+        },
+        {
+          "id": "narrate",
+          "label": "Explain what the movement means rather than restating it",
+          "kind": "act"
+        },
+        {
+          "id": "deliver",
+          "label": "Deliver the read ending in a proposal or an explicit nothing",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "movement-noticed-and-explained",
+          "statement": "Movement in the product's numbers is noticed while it can still be acted on, and explained rather than only reported.",
+          "success_criteria": [
+            "A move is stated against the baseline it deviated from",
+            "A quiet period produces no report and no doubt that the watch is running",
+            "An anomaly already raised is not raised again on the next look"
+          ]
+        },
+        {
+          "id": "numbers-become-a-next-step",
+          "statement": "Numbers turn into a next step.",
+          "success_criteria": [
+            "Each analysis ends in a proposal or an explicit nothing worth doing",
+            "A proposal names what it expects to change so it can be measured later"
+          ]
+        }
+      ],
+      "guidance": "Own what the numbers mean for what to do next, not the production of a report. A move only matters against what this product normally does, and low volume pages need a wider band before anything is called an anomaly. Anything worth acting on becomes a proposal, and anything not worth acting on stays quiet. Say clearly when the data itself is incomplete rather than reporting through the gap.",
+      "connector_types": [
+        "database"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Look when the data plausibly moved: enough new data to judge, a change that shipped and should now be visible, or an open anomaly still unexplained. A partial period is extended rather than rescanned."
+      },
+      "personalization_needs": [
+        "Which database holds these metrics and what a normal period looks like there, because anomaly detection without a learned normal is a threshold guess dressed up as analysis",
+        "What the operator counts as success for this content, since the same traffic drop is a problem on one page and irrelevant on another",
+        "Which pages carry enough traffic to be judged at all, so that low volume noise does not dominate the read"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "report_period_days",
+          "type": "number",
+          "default": 7,
+          "min": 1,
+          "max": 30,
+          "description": "Reporting window length."
+        },
+        {
+          "name": "top_n_content",
+          "type": "number",
+          "default": 10,
+          "min": 3,
+          "max": 50,
+          "description": "How many content URLs appear in Top Performers / Underperformers."
+        },
+        {
+          "name": "anomaly_threshold_percent",
+          "type": "number",
+          "default": 25,
+          "min": 10,
+          "max": 100,
+          "description": "Percentage deviation from EWMA baseline that flags an anomaly. Content <200 weekly views uses 2x this."
+        },
+        {
+          "name": "min_pageviews_for_inclusion",
+          "type": "number",
+          "default": 50,
+          "min": 0,
+          "max": 1000,
+          "description": "URLs below this period-total are excluded from rankings + anomaly detection."
+        },
+        {
+          "name": "key_metrics",
+          "type": "enum",
+          "options": [
+            "page_views",
+            "session_duration",
+            "bounce_rate",
+            "all"
+          ],
+          "default": "all",
+          "description": "Which metrics the report emphasizes."
+        },
+        {
+          "name": "anomaly_review_mode",
+          "type": "enum",
+          "options": [
+            "flag_in_report_only",
+            "manual_review_on_high_severity",
+            "manual_review_on_any_anomaly"
+          ],
+          "default": "manual_review_on_high_severity",
+          "description": "Whether anomalies trigger a manual review request alongside the report."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Postgres as the metrics store",
+          "connector": "postgres",
+          "connector_type": "database",
+          "notes": "Catalogued as database. The recipe reads the product's own tables rather than a vendor analytics API, which is what lets it compare against a learned normal instead of a platform's own baseline."
+        },
+        {
+          "title": "DuckDB as the metrics store",
+          "connector": "duckdb",
+          "connector_type": "database",
+          "notes": "Catalogued as database and analytics, the only connector carrying both. Useful when the metrics are held as files rather than in a server."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "7329af31-cd20-5e2d-9c1a-ae10787a016a"
+        ],
+        "from_templates": [
+          "content-performance-reporter"
+        ],
+        "source_template_id": "content-performance-reporter"
+      },
+      "review_notes": "Retitled deliberately to echo the operator's own worked example, area plus activity with the cadence removed. Two responsibilities supersede this recipe and I used only one. 'Reading the product's own metrics database' is the right one and is authoritative here. 'Authoring a finding into a candidate that can actually be judged' is a domain software_engineering responsibility about the shape of a backlog item; it is generic downstream craft that also supersedes an L1 recipe, and folding it in would make this recipe about backlog hygiene rather than about reading metrics. Departure recorded rather than silently taken. The v2 EWMA alpha and four week window are installation detail; the judgment that the comparison is against a learned normal is in the outcome.",
+      "research_notes": "Confirmed the database category has sixteen members including postgres, supabase, neon, mongodb, planetscale, convex, duckdb, redis, upstash and the app's own personas-database and operations-database entries. duckdb is the only one also carrying analytics. No vendor web analytics connector is implied here: the designed responsibility says 'the product's own metrics database', which is why the type is database and not analytics.",
+      "superseded_by": [
+        [
+          "convert_A.json",
+          "Harvester",
+          "Authoring a finding into a candidate that can actually be judged"
+        ],
+        [
+          "convert_A.json",
+          "Harvester",
+          "Reading the product's own metrics database"
+        ]
+      ]
+    },
+    {
+      "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+      "slug": "content-metrics-anomaly-check",
+      "title": "Content metrics anomaly check",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/web-analytics",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Waiting for the end of a period to discover something moved wastes the half of the period in which it could still have been acted on.",
+        "input": "Partial period metrics, the trajectory the baseline says the period should be on by this point, and the anomalies already raised.",
+        "core_action": "Compare where the numbers actually are against where the baseline says they should be by now, and say nothing at all when they are tracking normally.",
+        "output": "Silence when the period is normal, and a named deviation with its magnitude when it is not."
+      },
+      "activities": [
+        {
+          "id": "read-partial",
+          "label": "Read the period so far",
+          "kind": "observe"
+        },
+        {
+          "id": "expect",
+          "label": "Derive where the baseline says the period should be by now",
+          "kind": "decide"
+        },
+        {
+          "id": "judge",
+          "label": "Decide whether the gap is a deviation or routine variance",
+          "kind": "decide"
+        },
+        {
+          "id": "raise",
+          "label": "Raise only what is worth acting on, and stay silent otherwise",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "silent-when-normal",
+          "statement": "The team only hears from this check when something has actually moved off the expected trajectory.",
+          "success_criteria": [
+            "Partial period metrics are compared against a baseline derived expectation, not a raw threshold",
+            "No alert fires when the period is tracking normally",
+            "An anomaly already raised is not raised again on the next look"
+          ]
+        }
+      ],
+      "guidance": "Check whether metrics are tracking where the baseline says they should be, and say nothing when they are. The value here is restraint: only surface a deviation worth acting on, not routine variance. Keep the baseline itself trustworthy so that silence actually means normal, and treat a data source that is unavailable as a reason to stay quiet rather than a reason to raise noise.",
+      "connector_types": [
+        "database"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility that supersedes this recipe and the full performance review together. Look when enough new data has accumulated to judge, which is exactly what the v2 Wednesday and Friday cron was approximating."
+      },
+      "personalization_needs": [
+        "What a normal partial period looks like for this product, since the whole check is a comparison against an expectation the adopter's own history has to supply",
+        "How much deviation is worth interrupting someone for, because a check that is too eager is worse than no check",
+        "How the adopter wants to be reached when something has moved, given that the normal outcome of this recipe is silence"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "anomaly_threshold_percent",
+          "type": "number",
+          "default": 25,
+          "min": 10,
+          "max": 100,
+          "description": "Percentage deviation from expected partial-week trajectory that flags an anomaly."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Postgres as the metrics store",
+          "connector": "postgres",
+          "connector_type": "database",
+          "notes": "Catalogued as database. This recipe should share whatever store the full performance review reads, because a mid period check against a different source cannot use the same baseline."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "d872e8c7-ca52-517a-99aa-08ff353d7b0a"
+        ],
+        "from_templates": [
+          "content-performance-reporter"
+        ],
+        "source_template_id": "content-performance-reporter"
+      },
+      "review_notes": "The strongest merge candidate in the lane and it needs a Director decision. This recipe and the web content performance review are superseded by the SAME designed responsibility, and under a self paced trigger the mid period check is not a separate job; it is the pacing note of the review. It exists as its own recipe only because the review was pinned to a Monday cron. I kept both because the lane requires all 27 ids, and I did not absorb one into the other because absorption is the Director's call, not mine. If they merge, the surviving outcome is 'movement noticed while it can still be acted on' and this recipe's silence criterion becomes one of its success criteria.",
+      "research_notes": "Same database catalog reading as the performance review. No additional connector research applied; the v2 recipe and the designed responsibility both declare database and nothing else.",
+      "superseded_by": [
+        [
+          "convert_A.json",
+          "Harvester",
+          "Reading the product's own metrics database"
+        ]
+      ]
+    },
+    {
+      "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+      "slug": "paid-organic-performance-scan",
+      "title": "Paid and organic channel performance scan",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/web-analytics",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Paid and organic performance sit in separate dashboards, so nobody reads them together and the findings that only exist between them are never found.",
+        "input": "Campaign metrics from the advertising side, site metrics from the analytics side, and the rolling baseline each is normally measured against.",
+        "core_action": "Read both channels against what is normal for this account rather than against last period alone, and report degradation honestly when one source is unavailable.",
+        "output": "One honest read on whether performance is improving, stable or declining, at the depth asked for, that the rest of the marketing work can build on."
+      },
+      "activities": [
+        {
+          "id": "pull-paid",
+          "label": "Read the paid side for the period",
+          "kind": "observe"
+        },
+        {
+          "id": "pull-organic",
+          "label": "Read the organic side for the same period",
+          "kind": "observe"
+        },
+        {
+          "id": "compare",
+          "label": "Compare both against their own rolling baselines",
+          "kind": "decide"
+        },
+        {
+          "id": "flag",
+          "label": "Flag what moved beyond normal variation",
+          "kind": "decide"
+        },
+        {
+          "id": "report",
+          "label": "Report the read, naming any source that was unavailable",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "both-channels-read-together",
+          "statement": "Paid and organic performance are read together against a rolling baseline, so a normal fluctuation is distinguishable from a real change.",
+          "success_criteria": [
+            "Movements are reported against a rolling baseline rather than against the previous period alone",
+            "If one platform is unavailable, the other channel's read still happens and the outage is named rather than hidden by an empty report",
+            "The read stops at observation; it does not propose changes itself"
+          ]
+        }
+      ],
+      "guidance": "Read paid and organic together, because the interesting findings live between them. Report movement against what is normal for this account rather than against last period alone. This responsibility observes and reports; the changes it argues for belong to whoever proposes them. When one side is unavailable, say so and process the other rather than shipping a report that looks complete and is not.",
+      "connector_types": [
+        "advertising",
+        "analytics"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Act when enough has changed to be worth reading, which for most accounts is slower than weekly and for a live campaign is faster. The v2 Monday cron was shared across three sibling capabilities rather than earned by any of them."
+      },
+      "personalization_needs": [
+        "What the adopter is trying to move, because a signup goal and a revenue goal make opposite readings of the same numbers",
+        "What counts as a meaningful amount of money here, which sets the floor for what is worth reporting at all",
+        "How fast this account actually moves, since the pacing of the read is the whole difference between a useful signal and constant noise"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "report_depth",
+          "type": "enum",
+          "options": [
+            "executive",
+            "standard",
+            "deep"
+          ],
+          "default": "standard",
+          "description": "Executive: top-line only. Standard: tables + WoW deltas + flagged metrics. Deep: +per-keyword + per-page breakdowns."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Google Ads as the paid source",
+          "connector": "google-ads",
+          "connector_type": "advertising",
+          "notes": "Catalogued as advertising and marketing; its summary is campaign management through the Google Ads REST API, so it supplies both spend and campaign performance. The advertising category also holds meta-ads and linkedin-ads, which report the same shape for different channels."
+        },
+        {
+          "title": "PostHog or Mixpanel as the organic source",
+          "connector": "posthog",
+          "connector_type": "analytics",
+          "notes": "Catalogued as analytics and monitoring. Any analytics connector can supply the organic side; what matters at adoption is that it can report per page, since a site level number cannot be compared against a per page baseline."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "b921e672-5496-5cdd-9ec1-57e3ca6e4624"
+        ],
+        "from_templates": [
+          "web-marketing"
+        ],
+        "source_template_id": "web-marketing"
+      },
+      "review_notes": "One of three recipes superseded by the single designed responsibility 'Where the spend and the traffic are actually going', which treats reading, cannibalization and proposing as one job. I split its outcome across the three, giving this recipe the baseline reading criterion, the cannibalization watch the wasted spend criterion, and the proposals recipe the evidence and estimate criterion, so that no criterion is claimed twice and none is lost. The Director should decide whether the three merge back. The v2 'does not propose changes' boundary is preserved as an explicit success criterion because it is what keeps the three separable at all.",
+      "research_notes": "Read google-ads.json (advertising, marketing; campaign management via the Google Ads REST API, no declared resources) and posthog.json. Confirmed advertising has three members: google-ads, linkedin-ads, meta-ads, all of which also carry marketing. Checked whether any analytics connector declares per page reporting in the catalog; none declares resources at that level, so the per page requirement is stated as an adoption check rather than as a catalog fact.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Web marketer",
+          "Where the spend and the traffic are actually going"
+        ]
+      ]
+    },
+    {
+      "id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
+      "slug": "paid-organic-cannibalization-watch",
+      "title": "Paid and organic keyword cannibalization watch",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/web-analytics",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Money is spent bidding on terms the site already wins organically, and because the two numbers live in different systems nobody ever puts them side by side.",
+        "input": "The keywords currently being paid for with their spend, and the organic ranking positions for those same keywords.",
+        "core_action": "Cross reference the two and judge where the paid spend is buying traffic that was already arriving, putting a number on what that is costing.",
+        "output": "Each overlapping keyword flagged with the money it is plausibly wasting, and the boundary cases sent for a person to judge rather than asserted."
+      },
+      "activities": [
+        {
+          "id": "read-paid",
+          "label": "Read which keywords are being paid for and what they cost",
+          "kind": "observe"
+        },
+        {
+          "id": "read-organic",
+          "label": "Read the organic position for those same keywords",
+          "kind": "observe"
+        },
+        {
+          "id": "cross",
+          "label": "Judge where paid spend is buying traffic already arriving",
+          "kind": "decide"
+        },
+        {
+          "id": "quantify",
+          "label": "Put a number on what each overlap is costing",
+          "kind": "act"
+        },
+        {
+          "id": "surface",
+          "label": "Surface the clear cases and route the boundary ones for judgment",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "wasted-spend-surfaced",
+          "statement": "Spend on terms that already win organically is identified with the amount it is costing.",
+          "success_criteria": [
+            "Every flagged keyword includes the calculated savings estimate, not just a flag",
+            "When organic rank sits exactly at the boundary or the paid and organic paths cannot be cleanly separated, the finding routes to a person instead of being asserted as certain",
+            "Nothing is flagged when only one of the two sides has data, since there is nothing to conclude from one side alone"
+          ]
+        }
+      ],
+      "guidance": "Catch real overlap between paid spend and organic ranking and put a number on what is at stake. Only conclude when both sides are actually present; one side alone supports nothing. Treat boundary cases, a rank sitting exactly at the cutoff or attribution that cannot be cleanly separated, as judgment calls for a person rather than certainties to assert. The number is the point: a flag without it cannot be acted on.",
+      "connector_types": [
+        "advertising",
+        "analytics"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility that also covers the performance scan. Overlap changes when bids or rankings change, which is slower than weekly for a stable account and faster during a live campaign."
+      },
+      "personalization_needs": [
+        "Which keywords the adopter is deliberately defending with paid spend even though they rank, since some overlap is a decision rather than a mistake",
+        "What counts as a meaningful amount of money here, which decides whether a small overlap is worth naming at all",
+        "How the adopter separates paid from organic conversion, because the estimate is only as honest as that separation"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "report_depth",
+          "type": "enum",
+          "options": [
+            "executive",
+            "standard",
+            "deep"
+          ],
+          "default": "standard",
+          "description": "Same depth selector as the performance scan, which keeps the combined briefing consistent."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Google Ads as the paid side",
+          "connector": "google-ads",
+          "connector_type": "advertising",
+          "notes": "Catalogued as advertising and marketing. Supplies the keyword level spend this recipe needs; a channel whose connector reports only campaign level spend cannot support a keyword level overlap finding."
+        },
+        {
+          "title": "An analytics connector as the organic side",
+          "connector": "humbalytics",
+          "connector_type": "analytics",
+          "notes": "Catalogued as analytics, with traffic attribution named in its summary. The organic ranking half is the harder binding: nothing in the catalog is a dedicated search ranking connector, so adoption has to establish where ranking positions actually come from."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "41e87ce8-6c73-5361-b10a-81b5978bb176"
+        ],
+        "from_templates": [
+          "web-marketing"
+        ],
+        "source_template_id": "web-marketing"
+      },
+      "review_notes": "Shares its designed responsibility with the performance scan and the optimization proposals; carries the wasted spend criterion from it, with the two honesty rules (only conclude with both sides present, route boundary cases to a person) taken from the consolidation verdict, which states them better than the responsibility does. The v2 top-3 organic threshold left the outcome and became a boundary the adopter sets, because the judgment that matters is what to do at the boundary rather than where the boundary is.",
+      "research_notes": "Searched the connector catalog for any search ranking or SEO position source. There is none: no connector declares search console, rank tracking or SERP position data, and the closest categories (analytics, research, web_scraping) do not evidence it. This is the one place in the lane where the recipe needs a capability the catalog cannot supply, and it is recorded as a lane finding rather than papered over with a plausible looking type.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Web marketer",
+          "Where the spend and the traffic are actually going"
+        ]
+      ]
+    },
+    {
+      "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+      "slug": "marketing-optimization-proposals",
+      "title": "Marketing optimization proposals",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/web-analytics",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "Marketing advice that would apply to any account regardless of its data is not doing anything, and a list too long to evaluate is refused wholesale rather than judged.",
+        "input": "The findings from the performance read, the record of which categories of change have been accepted or refused before, and the outcomes of the ones that were taken.",
+        "core_action": "Turn the reading into a small number of specific changes worth making, each carrying the data point that argues for it and an honest estimate of what it is worth.",
+        "output": "A short list a person can actually evaluate, each item with its evidence, its priority and its expected effect, and nothing at all in a genuinely quiet period."
+      },
+      "activities": [
+        {
+          "id": "read-findings",
+          "label": "Read what the performance scan actually found",
+          "kind": "observe"
+        },
+        {
+          "id": "filter",
+          "label": "Set aside categories the adopter has repeatedly refused",
+          "kind": "decide"
+        },
+        {
+          "id": "select",
+          "label": "Choose the few changes genuinely worth making",
+          "kind": "decide"
+        },
+        {
+          "id": "argue",
+          "label": "Attach the data point and the expected effect to each",
+          "kind": "act"
+        },
+        {
+          "id": "propose",
+          "label": "Present a list short enough to be judged item by item",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "grounded-in-real-performance-data",
+          "statement": "Each proposed change carries the data that argues for it and an estimate of what it is worth.",
+          "success_criteria": [
+            "Each proposal cites the specific data point that motivated it",
+            "Proposals are capped to a size the reviewer can actually evaluate each time",
+            "A quiet period produces no proposals rather than filler",
+            "Nothing enters the backlog without a person accepting it"
+          ]
+        }
+      ],
+      "guidance": "Ground every proposal in a specific finding from the performance read; a suggestion that would apply to any account regardless of its data is not doing its job. Keep the list to a size a person can actually evaluate rather than dumping every plausible idea. State priority and expected impact honestly, including uncertainty, and be willing to propose nothing. Learn from which proposals get taken and stop proposing into refused categories.",
+      "connector_types": [
+        "advertising",
+        "analytics"
+      ],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Taken from the designed responsibility. Proposals are worth writing when the reading has moved enough to argue for something new. A fixed cadence guarantees proposals in periods that did not earn any, which is exactly the filler the outcome forbids."
+      },
+      "personalization_needs": [
+        "What the adopter is trying to move, because a proposal is only credible against a goal they actually hold",
+        "Which changes the seat may make and which need approval, since spend changes are consequential and the boundary is theirs to draw",
+        "Which categories of change have already been refused and why, so the same suggestion is not made a fourth time"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "proposal_count",
+          "type": "string",
+          "default": "Leave up to LLM",
+          "enum": [
+            "Leave up to LLM",
+            "3",
+            "5",
+            "6",
+            "8",
+            "10"
+          ],
+          "description": "Target proposals per week. 'Leave up to LLM' sizes to signal density: aim 5-8 when data is rich, fewer when thin. A numeric string pins the count (cast to int at runtime)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Google Ads as the paid evidence source",
+          "connector": "google-ads",
+          "connector_type": "advertising",
+          "notes": "Catalogued as advertising and marketing. A proposal about bidding or budget is only checkable later if the same connector can report the outcome, which is why the evidence source and the measurement source should be the same binding."
+        },
+        {
+          "title": "An analytics connector as the organic evidence source",
+          "connector": "posthog",
+          "connector_type": "analytics",
+          "notes": "Catalogued as analytics and monitoring. Landing page and keyword proposals need per page evidence; a connector reporting only site totals supports the priority but not the specific citation the outcome requires."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "e0ae5617-752a-5ab1-82e8-da0c7311d617"
+        ],
+        "from_templates": [
+          "web-marketing"
+        ],
+        "source_template_id": "web-marketing"
+      },
+      "review_notes": "Third of the three recipes sharing 'Where the spend and the traffic are actually going'; carries its evidence and estimate criterion plus its willingness to propose nothing in a quiet period, which the v2 recipe did not have (v2 targeted 5 to 8 proposals per week regardless). That is the most substantive improvement the designed corpus makes to this recipe and it is now an outcome criterion. The input_schema still says 'per week' and 'aim 5-8', carried verbatim; the Director should note the tension between that knob and the outcome that forbids filler.",
+      "research_notes": "Same advertising and analytics catalog reading as the performance scan. Noted that both this recipe and the scan bind the same two types, which is what makes their merge into one responsibility natural: they read the same data and differ only in whether the output stops at observation.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Web marketer",
+          "Where the spend and the traffic are actually going"
+        ]
+      ]
+    },
+    {
+      "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+      "slug": "form-lead-intake-and-scoring",
+      "title": "Form lead intake and scoring",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/lead-handling",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "A form submission that is recorded twice, scored against a generic rubric, or not recorded at all costs a real opportunity, and none of those failures announce themselves.",
+        "input": "Submissions arriving from the forms the adopter runs, the record of who is already known, and the adopter's own account of what makes a lead worth attention.",
+        "core_action": "Work out who this is and whether they matter, judged against how this business actually sells rather than a generic rubric, and record it exactly once whether or not they have been seen before.",
+        "output": "One record per person, carrying a defensible judgment of how promising they are and why, with a returning enquirer recognised as a return rather than as a new arrival."
+      },
+      "activities": [
+        {
+          "id": "receive",
+          "label": "Take in the submission and everything it says",
+          "kind": "observe"
+        },
+        {
+          "id": "identify",
+          "label": "Establish whether this person is already known",
+          "kind": "decide"
+        },
+        {
+          "id": "judge",
+          "label": "Judge how promising they are against how this business sells",
+          "kind": "decide"
+        },
+        {
+          "id": "record",
+          "label": "Write the record exactly once, or update the existing one",
+          "kind": "act"
+        },
+        {
+          "id": "hand-off",
+          "label": "Make the judgment and its reasoning available to whoever acts next",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "every-submission-recorded-once",
+          "statement": "Every form submission is recorded and judged exactly once, even when the same person submits twice.",
+          "success_criteria": [
+            "A new submission is scored against the calibrated model and written with a touchpoint count",
+            "A returning lead is recognised as a re-engagement rather than a fresh submission",
+            "The same response is never processed twice even when more than one delivery path sees it"
+          ]
+        },
+        {
+          "id": "judgment-is-stated-not-just-scored",
+          "statement": "What makes a lead worth attention is said, not only scored.",
+          "success_criteria": [
+            "Each record carries the reasoning behind its judgment, not only a number",
+            "A lead that cannot be written to the record store is held somewhere recoverable and raised, never lost"
+          ]
+        }
+      ],
+      "guidance": "Take a submission, work out who this is and whether they matter, and record it once. Calibrate the judgment to how this business actually sells rather than to a generic rubric, and recognise when someone already known has come back rather than treating them as new. Say what makes a lead worth attention rather than only scoring it. If the record store is at capacity or refusing writes, do not lose the lead; hold it somewhere recoverable and raise the alarm.",
+      "connector_types": [
+        "forms",
+        "crm"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Taken from the designed responsibility. A submission is a real external event and the work has no meaning before one arrives. The v2 two minute polling safety net was compensating for an unreliable door, which the designed corpus treats as a separate reconciliation responsibility rather than as this recipe's cadence."
+      },
+      "personalization_needs": [
+        "Which forms are in scope and what each one asks, because the questions determine what can be judged at all",
+        "What makes a lead worth the adopter's attention, in their words rather than as a score threshold",
+        "Where the record of record actually lives, since the store decides what a duplicate means and what happens when a write is refused"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "sales_motion",
+          "type": "enum",
+          "options": [
+            "self_serve_plg",
+            "inside_sales_smb",
+            "enterprise_high_acv",
+            "hybrid_plg_sales_assist"
+          ],
+          "default": "inside_sales_smb",
+          "description": "Calibrates scoring weights and urgency thresholds per sales motion."
+        },
+        {
+          "name": "target_form_ids",
+          "type": "text",
+          "description": "Comma-separated form tool IDs or names scoped to this pipeline."
+        },
+        {
+          "name": "personalization_depth",
+          "type": "enum",
+          "options": [
+            "light",
+            "moderate",
+            "score_tiered",
+            "full"
+          ],
+          "default": "score_tiered",
+          "description": "Controls how deeply form responses shape the welcome email (see uc_welcome)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Tally as the form connector",
+          "connector": "tally",
+          "connector_type": "forms",
+          "notes": "Catalogued as forms only; its summary is a form builder collecting responses through the Tally API. The forms category has exactly two members, tally and formbricks, so this connector_type is narrow."
+        },
+        {
+          "title": "Formbricks as the form connector",
+          "connector": "formbricks",
+          "connector_type": "forms",
+          "notes": "Catalogued as forms and analytics. The analytics half is not used by this recipe; it is a survey and in app feedback product, so the shape of what arrives differs from a contact form and the judgment has to account for that."
+        },
+        {
+          "title": "Airtable as the record store",
+          "connector": "airtable",
+          "connector_type": "crm",
+          "notes": "This is a known mismatch, not a recommendation. The v2 recipe's own error handling wrote to Airtable, but Airtable is catalogued as spreadsheet, database and project_management and carries no crm category, so an adoption resolving crm will never be offered it. An adopter whose CRM is really a base should bind database instead. See the lane findings."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "d45de649-64f6-5cbc-9482-5da7e27f37ce"
+        ],
+        "from_templates": [
+          "lead-capture-pipeline"
+        ],
+        "source_template_id": "lead-capture-pipeline"
+      },
+      "review_notes": "Three responsibilities supersede this recipe and only one governs it. 'Leads arriving through a form' is authoritative and supplies the outcome, the trigger and the personalization needs. 'Leads arriving by mail' is a different intake with a different door and belongs to a recipe this lane does not contain. 'Nobody who reached out is dropped' is a self paced reconciliation responsibility, and it is the honest home for the v2 polling safety net; I did not fold it in, because a recipe that both listens for an event and sweeps for missed ones has a branch in it, which the spec forbids. The result is that retiring the polling safety net leaves a real gap in the surviving corpus, recorded as a lane finding. Departure from the designed responsibility: it declares four connectors covering the whole cluster (forms, crm, email, messaging); this recipe declares only the two it actually touches.",
+      "research_notes": "Read tally.json (forms), formbricks.json (forms, analytics) and airtable.json. Confirmed the crm category has four members: attio, hubspot, monday and pipedrive. Airtable is not among them despite being the store the v2 recipe actually wrote to, which is a genuine adoption trap worth the Director's attention. Also confirmed forms has only two members, so a lead pipeline whose form vendor is neither has no legal binding for this type.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Leads arriving through a form"
+        ],
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Leads arriving by mail"
+        ],
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Nobody who reached out is dropped"
+        ]
+      ]
+    },
+    {
+      "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+      "slug": "lead-welcome-email-drafting",
+      "title": "Lead welcome email drafting",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/lead-handling",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "One template sent to everyone reads as a template to everyone, and the person who wrote three sentences about their problem learns immediately that nobody read them.",
+        "input": "A newly judged lead with the reasoning behind that judgment, what they actually wrote, and the adopter's rule for which cases a person should see before anything sends.",
+        "core_action": "Match the reply to how ready this person actually is, drawing on what they wrote rather than substituting a name into a template.",
+        "output": "A first reply that reflects the person who sent it, sent or held for approval according to the boundary the adopter set."
+      },
+      "activities": [
+        {
+          "id": "read-lead",
+          "label": "Read the lead, what they wrote, and how promising they were judged",
+          "kind": "observe"
+        },
+        {
+          "id": "pitch",
+          "label": "Decide how direct the reply should be for this person",
+          "kind": "decide"
+        },
+        {
+          "id": "draft",
+          "label": "Draft a reply grounded in what they actually said",
+          "kind": "act"
+        },
+        {
+          "id": "gate",
+          "label": "Hold for approval where the adopter's boundary says to",
+          "kind": "decide"
+        },
+        {
+          "id": "send",
+          "label": "Send, and record that it went",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "reply-reflects-the-person",
+          "statement": "A new lead's first reply reflects what they actually wrote and how ready they are, rather than a single template with a name substituted.",
+          "success_criteria": [
+            "A low intent enquiry gets something useful and low pressure; a high intent one gets a direct next step",
+            "The reply draws on the content of their submission, not only on their tier",
+            "No reply claims something about the product that is not true"
+          ]
+        },
+        {
+          "id": "the-approval-boundary-holds",
+          "statement": "The cases the adopter wants to see before they go out do not go out without being seen.",
+          "success_criteria": [
+            "Replies in the gated set wait for a person, and the rest do not wait for no reason",
+            "A reply that could not be sent is queued and named rather than silently dropped"
+          ]
+        }
+      ],
+      "guidance": "Draft and send a first reply tuned to how ready the lead actually is: something useful and low pressure for an early enquiry, a direct next step for a serious one. The judgment is in the reply, so someone who wrote three sentences about their problem should not get what someone who typed a name gets. Respect the approval boundary the adopter drew, and never claim something about the product that is not true.",
+      "connector_types": [
+        "email"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Taken from the designed responsibility. The reply is owed the moment a lead is captured, and its value decays quickly; a clock would send it after the moment it was worth having."
+      },
+      "personalization_needs": [
+        "Whether replies send automatically or wait for approval, and whether that differs by how promising the lead is, which is a trust boundary rather than a setting",
+        "What is actually true about the product and what may be offered, since this recipe writes on the adopter's behalf to someone they have never met",
+        "Who a serious lead should be handed to and how they should be named in the reply, because a personal note from nobody in particular is worse than an honest general one"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "welcome_email_gate",
+          "type": "enum",
+          "options": [
+            "none",
+            "on_fire_only",
+            "hot_and_on_fire",
+            "all_tiers"
+          ],
+          "default": "none",
+          "description": "Which tiers hold the welcome email for human approval before send."
+        },
+        {
+          "name": "personalization_depth",
+          "type": "enum",
+          "options": [
+            "light",
+            "moderate",
+            "score_tiered",
+            "full"
+          ],
+          "default": "score_tiered",
+          "description": "Depth of form-response use in the welcome email."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Gmail as the sending connector",
+          "connector": "gmail",
+          "connector_type": "email",
+          "notes": "Catalogued as email. Sending as a person rather than as a system is what makes a direct reply credible; the trade is that per account daily limits are real and a queued send has to be visible rather than silent."
+        },
+        {
+          "title": "Resend or SendGrid as the sending connector",
+          "connector": "resend",
+          "connector_type": "email",
+          "notes": "Catalogued as email. Better throughput and deliverability reporting than a personal mailbox, at the cost of the reply looking like it came from a system. Which trade is right is an adoption decision, not a recipe decision."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87"
+        ],
+        "from_templates": [
+          "lead-capture-pipeline"
+        ],
+        "source_template_id": "lead-capture-pipeline"
+      },
+      "review_notes": "Superseded jointly with the intake recipe by 'Leads arriving through a form', whose reply criterion is the authoritative one and is stronger than v2's: the reply must reflect what they wrote, not merely match their tier. I carried that and kept the tier ladder only as the shape of the judgment rather than as four fixed templates. The 'never claim something untrue' rule comes straight from the designed responsibility and has no v2 equivalent; it is the most important line in the recipe. The second outcome is mine, drawn from the v2 approval gate, because the designed responsibility names the approval question only as a personalization need.",
+      "research_notes": "Confirmed the email category has six members: gmail, resend, sendgrid, microsoft-outlook, hubspot and the google workspace oauth template. hubspot carries crm, marketing and email together, which means a single hubspot binding could satisfy both this recipe's email type and the intake recipe's crm type; worth surfacing at adoption rather than binding two connectors by default.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Leads arriving through a form"
+        ],
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Leads arriving by mail"
+        ]
+      ]
+    },
+    {
+      "id": "136c0300-30bf-59af-a13d-4b55efb99489",
+      "slug": "high-intent-lead-alerting",
+      "title": "High intent lead alerting",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "sales_marketing/lead-handling",
+      "domain": "sales_marketing",
+      "description": {
+        "need": "A lead worth a person's time is only worth it while it is still fresh, and an alert that arrives without context makes the person go and reconstruct it themselves.",
+        "input": "A lead that has just been judged promising, the reasoning behind that judgment, and the adopter's rule for which cases are worth interrupting someone over.",
+        "core_action": "Get the lead in front of whoever should act with enough context to act well, and reserve the more intrusive route for the cases that genuinely earn it.",
+        "output": "The right person knows about the lead while it is still fresh, with the reasoning, the signals and a way straight into the record."
+      },
+      "activities": [
+        {
+          "id": "receive",
+          "label": "Take in the newly judged lead and its reasoning",
+          "kind": "observe"
+        },
+        {
+          "id": "threshold",
+          "label": "Decide whether this one is worth interrupting anyone over",
+          "kind": "decide"
+        },
+        {
+          "id": "compose",
+          "label": "Compose the alert so the reader can act without going to look",
+          "kind": "act"
+        },
+        {
+          "id": "route",
+          "label": "Send it where that person actually is, escalating only where earned",
+          "kind": "deliver"
+        }
+      ],
+      "outcomes": [
+        {
+          "id": "promising-leads-reach-a-person-fast",
+          "statement": "A lead judged worth attention reaches a person while the submission is still fresh in their mind.",
+          "success_criteria": [
+            "The notification carries the reasoning behind the judgment, the signals that drove it, and a link straight into the record",
+            "The most promising cases additionally reach the assigned person directly rather than only a shared channel",
+            "A delivery failure never silently drops a promising lead; it falls back or queues and says so"
+          ]
+        }
+      ],
+      "guidance": "Catch a lead the moment it is judged promising and get it in front of whoever should act, with the context to act well: why it scored as it did, what the buying signals were, and a way straight into the record. The most promising ones deserve more than a shared channel; reach the assigned person directly with a suggested approach. Guard the threshold, because an alert channel that cries wolf stops being read.",
+      "connector_types": [
+        "messaging",
+        "crm"
+      ],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Taken from the designed responsibility. The alert is worth exactly as much as its freshness, so it fires when a lead is judged and never on a schedule."
+      },
+      "personalization_needs": [
+        "Which cases are actually worth interrupting someone over, in the adopter's own terms, because this is the setting that decides whether the channel keeps being read",
+        "Where the people who act on leads actually are, and who owns which kind of lead, since a shared channel and a direct message are different levels of interruption",
+        "What context that person needs to act without going to look it up, which differs by how their sales conversation usually opens"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "alert_threshold",
+          "type": "enum",
+          "options": [
+            "on_fire_81_plus",
+            "hot_and_on_fire_61_plus",
+            "warm_plus_31_plus",
+            "all_tiers"
+          ],
+          "default": "hot_and_on_fire_61_plus",
+          "description": "Minimum tier that triggers a messaging-channel alert."
+        },
+        {
+          "name": "channel_routing",
+          "type": "text",
+          "description": "Either a single channel or a tier to channel mapping (e.g., `on_fire:#sales-hot, hot:#sales-pipeline`)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Slack as the alert channel",
+          "connector": "slack",
+          "connector_type": "messaging",
+          "notes": "Catalogued as messaging. Supports both a shared channel and a direct message, which is what makes the two tier routing in this recipe possible with one binding. A channel that does not exist should fall back rather than drop the alert."
+        },
+        {
+          "title": "Microsoft Teams or Telegram as the alert channel",
+          "connector": "microsoft-teams",
+          "connector_type": "messaging",
+          "notes": "Catalogued as messaging. The messaging category has ten members including discord, telegram, twilio-sms and crisp; several are one way notification surfaces where a direct message to an assigned person is not available, which weakens the escalation half of this recipe."
+        },
+        {
+          "title": "HubSpot as the record the alert links into",
+          "connector": "hubspot",
+          "connector_type": "crm",
+          "notes": "Catalogued as crm, marketing and email. The link straight into the record is the difference between an alert that can be acted on and one that starts a search, so the crm binding here should be the same one the intake recipe writes to."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": [
+          "136c0300-30bf-59af-a13d-4b55efb99489"
+        ],
+        "from_templates": [
+          "lead-capture-pipeline"
+        ],
+        "source_template_id": "lead-capture-pipeline"
+      },
+      "review_notes": "Third of the three lead recipes under 'Leads arriving through a form', carrying its speed criterion. The v2 tier vocabulary (Hot, On Fire) is installation language and left the description; the durable judgment is that the threshold is a trust decision and that the escalation route must be reserved. crm is added to the v2 connector list because the deep link into the record is an outcome criterion here and cannot be delivered without that binding, which v2 assumed without declaring. Merge candidate with the other two lead recipes.",
+      "research_notes": "Confirmed messaging membership: slack, discord, microsoft-teams, telegram, twilio-sms, crisp, local-messaging, slack-webhook, teams-webhook and discord-webhook. The webhook variants also carry notifications and are one way, which is why the example notes flag that the direct message half of this recipe is not available on every legal binding of its own declared type.",
+      "superseded_by": [
+        [
+          "convert_B.json",
+          "Digital Clone",
+          "Leads arriving through a form"
+        ]
+      ]
+    }
+  ],
+  "topics_used": {
+    "creative_design/audio": 2,
+    "creative_design/visual-assets": 3,
+    "creative_design/video": 2,
+    "creative_design/social-publishing": 3,
+    "creative_design/newsletters": 1,
+    "sales_marketing/conversion-optimization": 5,
+    "sales_marketing/community-channels": 3,
+    "sales_marketing/web-analytics": 5,
+    "sales_marketing/lead-handling": 3
+  },
+  "lane_findings": [
+    "Nineteen superseded recipes map onto only eleven distinct designed responsibilities, and four of those are many to one. 'Where the spend and the traffic are actually going' supersedes three recipes (paid-organic-performance-scan, paid-organic-cannibalization-watch, marketing-optimization-proposals); 'Leads arriving through a form' supersedes three (form-lead-intake-and-scoring, lead-welcome-email-drafting, high-intent-lead-alerting); 'One artifact reaches the channels it should' supersedes two (source-artifact-channel-repurposing, approved-draft-channel-publishing); 'Reading the product's own metrics database' supersedes two (web-content-performance-review, content-metrics-anomaly-check). I kept all 27 ids as instructed and split each responsibility's outcome criteria across its recipes so no criterion is claimed twice and none is lost. Whether these become four recipes or twelve is a Director decision this lane cannot make on its own.",
+    "The strongest single merge candidate is content-metrics-anomaly-check into web-content-performance-review. Under a self_paced trigger the mid period check is not a separate job; it is the pacing note of the review. It existed as its own recipe only because the review was pinned to a Monday cron, and both are superseded by the same designed responsibility. If the corpus keeps both, the corpus is keeping a cron artifact after retiring the cron.",
+    "Retiring the polling safety net on form-lead-intake-and-scoring opens a real gap. The designed corpus puts that work in a separate self_paced responsibility ('Nobody who reached out is dropped') that has no surviving recipe in this lane or, as far as this lane can see, anywhere. Folding it back into the intake recipe would put a branch in the activities, which the spec forbids. Either a new recipe carries it or the corpus knowingly ships an event only intake with no reconciliation.",
+    "There is no search ranking or SEO position connector anywhere in the 134 connector catalog. paid-organic-cannibalization-watch needs organic ranking positions to function at all and no category (analytics, research, web_scraping) evidences that data. This is the one place in the lane where a recipe requires a capability the catalog cannot supply. Recorded rather than papered over with a plausible looking type.",
+    "There is no experimentation category, so the three conversion optimization recipes resolve to analytics. That is legal and honest, because humbalytics ('runs experiments that dynamically rewrite page content without redeploying code') and posthog ('feature flags... A/B testing') genuinely provide it. But analytics has eight members and six of them are read only, so an adopter can resolve the type to mixpanel and end up with a recipe that can read underperformance and never deploy a variant. Adoption needs to distinguish the read binding from the deploy binding, or the catalog needs a narrower category.",
+    "Airtable is not a crm connector. The v2 lead pipeline wrote its lead records to Airtable (its own error handling names Airtable 422 and 402 responses), but Airtable is catalogued as spreadsheet, database and project_management, so an adoption resolving crm will be offered attio, hubspot, monday and pipedrive and never the store the recipe was actually built against. This is a concrete adoption trap created by the demotion rule and it will not be visible from the recipe alone.",
+    "'codebase' has no category that means what it means. Three recipes in this lane read the operator's own registered local project (brand-visual-asset-production, product-design-brief-authoring, free-promotion-surface-discovery, plus feature-walkthrough-capture). The connector is catalogued as development, source_control and desktop; desktop is banned by the spec, and development also resolves to github, gitlab and sentry, which are hosted services rather than a local registered project. Every adoption of these four recipes will be offered three wrong answers alongside the right one.",
+    "Two connector_types in this lane have almost no members. vision has exactly one (gemini-vision) and video_generation has exactly two (higgsfield, leonardo-ai), both of which are also image generators. forms has two (tally, formbricks). A type with one member is a vendor lock wearing a category's clothes, and the adoption promise that a type resolves to a choice does not hold there.",
+    "Zero recipes in this lane take a time trigger. Twenty are self_paced and seven are event. Every cron in the v2 sources (daily 10:00, daily 09:00 UTC, Monday 09:00 shared across three capabilities, Wednesday and Friday noon, weekly 08:00) turned out to be a delivery preference or a proxy for 'look when enough has changed'. This matches the finding in section 21 exactly and extends it to a third independent lane.",
+    "The 'carry input_schema verbatim' rule collides with the no em dash house rule in eight places, all inside v2 knob descriptions. I rewrote those eight sentences rather than swapping the character, per the operator's stated preference, and kept every name, type, option, default and bound unchanged. The affected recipes are original-2d-art-curation, product-design-brief-authoring, website-conversion-gap-audit, community-trend-digest, free-promotion-surface-discovery, paid-organic-cannibalization-watch, marketing-optimization-proposals and high-intent-lead-alerting. The Director should confirm this reading of verbatim.",
+    "Connector ids and cadences survive inside carried input_schema knobs even where the recipe around them is now connector and trigger agnostic. approved-draft-channel-publishing has an enum option literally named buffer_queue; community-trend-digest has knobs named subreddits and slack_channel and a time_window description that instructs the reader to match a cron; free-promotion-surface-discovery and marketing-optimization-proposals both say 'per week'. The v2 to v3 transform will need a knob renaming pass or these will read as contradictions the first time someone binds a different connector.",
+    "The YouTube Data connector does not declare caption or transcript retrieval. Its catalog summary covers searching videos, channel statistics, playlists, comments and trending content. The v2 source-artifact-repurposing recipe assumed captions were fetchable (its error handling names 'empty captions across all input modes'). Any adoption that binds a video source to this recipe gets metadata, not a transcript, unless the adopter supplies one.",
+    "The Buffer catalog entry corroborates the operator's own worked example precisely. It declares one resource (profiles), a PAT field and a user healthcheck, and its summary is scheduling and publishing. There is no engagement or analytics resource, so any recipe that reads engagement numbers back from Buffer would be claiming a capability this catalog does not carry. Buffer is a publishing destination in this corpus and nothing else.",
+    "newsletter-issue-curation is the one recipe in the lane whose superseding responsibilities would delete it. The three Harvester ingest responsibilities (Feed, Page and site, Inbox) are all domain product_project and all end at making an item visible in a backlog; none curates, writes, assembles or sends an issue. Applied as authoritative they replace a newsletter with a reading list. I took the ingest half from them and kept the consolidation verdict for the editorial half, and the Director should decide whether the newsletter is a job the roster still wants or whether the Harvester ingest responsibilities are the real survivors.",
+    "website-conversion-gap-audit changed subject under its designed responsibility and its input_schema no longer matches. v2 audited a client's local service business website against industry benchmarks; the designed responsibility audits the operator's own properties against their own previous scores. The business_type enum (hvac, plumbing, roofing and so on) is carried verbatim per the spec but now describes a benchmark set the guidance explicitly does not lean on. Either the knob goes or the responsibility was mis-assigned.",
+    "content-source-health-tracking cannot stand alone at adoption. It declares no connector types because it observes fetches another recipe performs, which is honest but means adopting it without community-trend-digest yields nothing. It is the only recipe in the lane with that dependency, and the v3 shape has no field to express it. Worth a Director decision on whether recipes may declare a companion."
+  ]
+}

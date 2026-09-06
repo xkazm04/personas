@@ -6,7 +6,7 @@ source: librarian/sources/2026-09-04-pi-agent-toolkit.md
 technique: job-coordination/in-flight-is-a-position
 stage: boot re-admission — `src-tauri/src/engine/execution.rs::requeue_persisted_executions`
 size: 3 files / ~90 lines / S
-status: proposed
+status: accepted
 kind: coverage
 ---
 
@@ -124,3 +124,7 @@ Note that `recovery_state` and `restart_count` currently appear nowhere in
 `src/` or `bindings/`, and `list_unresolved_recoveries` /
 `count_legacy_restart_failures` have zero call sites — so nobody can see these
 rows today. Surfacing them is arguably the cheaper first move.
+
+---
+
+**Accepted at the 7.7 gate, 2026-09-06** (operator multi-select review 2026-09-06). Executed on branch `direction/acestep-0906-round1` together with the study's ranked #1 and #3, which name the same file.

@@ -1514,6 +1514,12 @@ mod tests {
         for field in GATED_CAPABILITY_FIELDS {
             assert!(is_gated_field(field), "{field} should be gated");
         }
+        // `use_case_flow` is retired (Recipe v3: the branchy node/edge runbook
+        // is gone, and `activities` on the recipe replaces the readable part
+        // of it). The build prompt no longer asks for it. It stays in this
+        // list rather than leaving it: an OLD session's stored payload can
+        // still carry the field, and arriving as a `capability_resolution`
+        // for a non-gated field must remain harmless rather than a hard error.
         for field in ["input_schema", "tool_hints", "use_case_flow", "tools", ""] {
             assert!(!is_gated_field(field), "{field} should NOT be gated");
         }

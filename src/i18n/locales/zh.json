@@ -2556,7 +2556,21 @@
       "suspend": "暂停",
       "transition_unavailable_hint": "启用和暂停章程功能尚不可用，但停用功能可用。",
       "trigger_attention": "关注循环",
-      "trigger_every_minutes": "每 {minutes} 分钟"
+      "trigger_every_minutes": "每 {minutes} 分钟",
+      "activity_kind_act": "执行",
+      "activity_kind_decide": "决策",
+      "activity_kind_deliver": "交付",
+      "activity_kind_observe": "观察",
+      "recipe_card_title": "配方",
+      "recipe_connector_capability_unverified": "已绑定的连接器类型匹配。但它能否满足该职责的需求尚未验证：目录未声明能力信息。",
+      "recipe_connector_unbound": "未绑定",
+      "recipe_connector_unbound_hint": "该职责可触及的范围内尚无覆盖此连接器类型的项。请在连接器维度中绑定一个。",
+      "recipe_connector_uncovered": "没有连接器覆盖此项",
+      "recipe_connector_uncovered_hint": "目录中没有该类别的连接器，因此无可绑定对象。该职责需要向目录添加连接器，或改用其他类型的配方。",
+      "recipe_connectors_label": "连接器",
+      "recipe_dependencies_label": "依赖项",
+      "recipe_shape_hint": "工作按顺序经过的活动类型。这不是运行手册：没有分支。",
+      "recipe_shape_label": "工作流程"
     },
     "role_card": {
       "assign": "分配",

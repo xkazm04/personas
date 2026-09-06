@@ -29,12 +29,14 @@ pub fn seed_builtin_data(
 
     // Stage B Phase 2.4 — seed the recipe catalog from the embedded
     // bundle so adoption of recipe_ref-shaped templates works on a
-    // fresh install. Idempotent: existing rows are left untouched.
+    // fresh install. Idempotent: existing rows keep their content, and
+    // builtin rows the bundle no longer carries are retired (`retired`).
     match engine::recipe_seed::seed_recipes_from_bundle(pool) {
         Ok(report) => tracing::info!(
             total = report.total,
             created = report.created,
             skipped = report.skipped_existing,
+            retired = report.retired,
             failed = report.failed,
             "Recipe catalog seeded from bundle"
         ),

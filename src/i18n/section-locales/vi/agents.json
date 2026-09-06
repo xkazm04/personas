@@ -2550,7 +2550,21 @@
     "suspend": "Tạm dừng",
     "transition_unavailable_hint": "Chưa thể kích hoạt hoặc tạm dừng một điều lệ. Nhưng có thể ngừng hoạt động (Retire).",
     "trigger_attention": "Vòng lặp chú ý",
-    "trigger_every_minutes": "Mỗi {minutes} phút"
+    "trigger_every_minutes": "Mỗi {minutes} phút",
+    "activity_kind_act": "Hành động",
+    "activity_kind_decide": "Quyết định",
+    "activity_kind_deliver": "Giao",
+    "activity_kind_observe": "Quan sát",
+    "recipe_card_title": "Công thức",
+    "recipe_connector_capability_unverified": "Một trình kết nối đã gắn khớp với loại này. Việc nó có thể làm được điều mà điều lệ này cần hay không thì chưa được xác minh: danh mục không khai báo năng lực.",
+    "recipe_connector_unbound": "Chưa gắn",
+    "recipe_connector_unbound_hint": "Chưa có gì mà điều lệ này chạm tới bao phủ loại trình kết nối đó. Hãy gắn một trình kết nối ở chiều Trình kết nối.",
+    "recipe_connector_uncovered": "Không có trình kết nối nào bao phủ điều này",
+    "recipe_connector_uncovered_hint": "Danh mục không có trình kết nối nào thuộc hạng mục đó, nên không có gì để gắn. Điều lệ này cần một trình kết nối được thêm vào danh mục, hoặc công thức cần một loại khác.",
+    "recipe_connectors_label": "Trình kết nối",
+    "recipe_dependencies_label": "Phụ thuộc",
+    "recipe_shape_hint": "Các loại hoạt động mà công việc này trải qua, theo thứ tự. Đây không phải là quy trình vận hành: không có nhánh rẽ.",
+    "recipe_shape_label": "Hình dạng công việc"
   },
   "role_card": {
     "assign": "Gán",

@@ -2550,7 +2550,21 @@
     "suspend": "Aussetzen",
     "transition_unavailable_hint": "Das Aktivieren und Aussetzen einer Charta ist noch nicht möglich. Das Stilllegen schon.",
     "trigger_attention": "Aufmerksamkeitsschleife",
-    "trigger_every_minutes": "Alle {minutes} Min."
+    "trigger_every_minutes": "Alle {minutes} Min.",
+    "activity_kind_act": "Handeln",
+    "activity_kind_decide": "Entscheiden",
+    "activity_kind_deliver": "Liefern",
+    "activity_kind_observe": "Beobachten",
+    "recipe_card_title": "Rezept",
+    "recipe_connector_capability_unverified": "Ein gebundener Connector passt zum Typ. Ob er leisten kann, was dieser Auftrag benötigt, ist nicht überprüft: Der Katalog gibt keine Fähigkeiten an.",
+    "recipe_connector_unbound": "Nicht gebunden",
+    "recipe_connector_unbound_hint": "Nichts, was dieser Auftrag erreicht, deckt diesen Connector-Typ bisher ab. Binden Sie einen auf der Connector-Dimension.",
+    "recipe_connector_uncovered": "Kein Connector deckt dies ab",
+    "recipe_connector_uncovered_hint": "Der Katalog enthält keinen Connector dieser Kategorie, es gibt also nichts zu binden. Diesem Auftrag muss ein Connector im Katalog hinzugefügt werden, oder das Rezept braucht einen anderen Typ.",
+    "recipe_connectors_label": "Connectors",
+    "recipe_dependencies_label": "Abhängigkeiten",
+    "recipe_shape_hint": "Die Arten von Aktivität, die diese Arbeit durchläuft, der Reihe nach. Kein Ablaufplan: Es gibt keine Verzweigungen.",
+    "recipe_shape_label": "Form der Arbeit"
   },
   "role_card": {
     "assign": "Zuweisen",

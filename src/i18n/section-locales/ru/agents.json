@@ -2550,7 +2550,21 @@
     "suspend": "Приостановить",
     "transition_unavailable_hint": "Активация и приостановка устава пока недоступны, а отзыв уже доступен.",
     "trigger_attention": "Цикл внимания",
-    "trigger_every_minutes": "Каждые {minutes} мин"
+    "trigger_every_minutes": "Каждые {minutes} мин",
+    "activity_kind_act": "Действие",
+    "activity_kind_decide": "Решение",
+    "activity_kind_deliver": "Доставка",
+    "activity_kind_observe": "Наблюдение",
+    "recipe_card_title": "Рецепт",
+    "recipe_connector_capability_unverified": "Привязанный коннектор соответствует типу. Может ли он делать то, что нужно этому мандату, не проверено: каталог не объявляет возможности.",
+    "recipe_connector_unbound": "Не привязан",
+    "recipe_connector_unbound_hint": "Ничто из того, что охватывает этот мандат, пока не покрывает этот тип коннектора. Привяжите один в измерении Коннектор.",
+    "recipe_connector_uncovered": "Ни один коннектор не покрывает это",
+    "recipe_connector_uncovered_hint": "В каталоге нет коннектора этой категории, поэтому привязывать нечего. Этому мандату нужен коннектор, добавленный в каталог, либо рецепту нужен другой тип.",
+    "recipe_connectors_label": "Коннекторы",
+    "recipe_dependencies_label": "Зависимости",
+    "recipe_shape_hint": "Виды деятельности, через которые проходит эта работа, по порядку. Это не инструкция по эксплуатации: здесь нет ветвлений.",
+    "recipe_shape_label": "Форма работы"
   },
   "role_card": {
     "assign": "Назначить",

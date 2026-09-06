@@ -2556,7 +2556,21 @@
       "suspend": "Suspender",
       "transition_unavailable_hint": "Todavía no es posible activar ni suspender una carta. Retirarla sí.",
       "trigger_attention": "Bucle de atención",
-      "trigger_every_minutes": "Cada {minutes} min"
+      "trigger_every_minutes": "Cada {minutes} min",
+      "activity_kind_act": "Actuar",
+      "activity_kind_decide": "Decidir",
+      "activity_kind_deliver": "Entregar",
+      "activity_kind_observe": "Observar",
+      "recipe_card_title": "Receta",
+      "recipe_connector_capability_unverified": "Un conector vinculado coincide con el tipo. No está verificado si puede hacer lo que este mandato necesita: el catálogo no declara capacidades.",
+      "recipe_connector_unbound": "Sin vincular",
+      "recipe_connector_unbound_hint": "Nada de lo que alcanza este mandato cubre todavía ese tipo de conector. Vincula uno en la dimensión Conector.",
+      "recipe_connector_uncovered": "Ningún conector cubre esto",
+      "recipe_connector_uncovered_hint": "El catálogo no tiene ningún conector en esa categoría, así que no hay nada que vincular. Este mandato necesita que se añada un conector al catálogo, o la receta necesita un tipo distinto.",
+      "recipe_connectors_label": "Conectores",
+      "recipe_dependencies_label": "Dependencias",
+      "recipe_shape_hint": "Los tipos de actividad por los que pasa este trabajo, en orden. No es un manual de procedimientos: no hay ramificaciones.",
+      "recipe_shape_label": "Forma del trabajo"
     },
     "role_card": {
       "assign": "Asignar",

@@ -13,6 +13,9 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::error::AppError;
+use crate::models::recipe::{
+    CharterConnectorBinding, RecipeActivity, RecipeDescription, RecipeRef,
+};
 
 /// Lifecycle of a responsibility — the typed twin of the DB CHECK on
 /// `persona_responsibilities.status`. The transition door
@@ -62,7 +65,7 @@ impl FromStr for ResponsibilityStatus {
 }
 
 /// One outcome a responsibility exists to produce, with its acceptance bar.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponsibilityOutcome {
@@ -290,18 +293,68 @@ pub struct ResponsibilitySpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub model_rationale: Option<String>,
-    /// The authored step flow, kept as evidence behind `procedure`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub use_case_flow: Option<serde_json::Value>,
     /// Whether the source shipped this capability on by default; the charter's
     /// own `status` governs at runtime.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub enabled_by_default: Option<bool>,
+    // ---- Recipe v3 adoption provenance -----------------------------------
+    // The charter is the ADOPTED instance of a recipe. These four fields are
+    // what adoption copies off the `RecipeSpec` so the charter can be read,
+    // drawn and improved without re-fetching the registry artifact.
+    /// The recipe this charter was minted from, so a lesson learned here can
+    /// be proposed back into the registry artifact (slug + version).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
-    pub suggested_trigger: Option<serde_json::Value>,
+    pub recipe_ref: Option<RecipeRef>,
+    /// The recipe's four-field description (need / input / core action /
+    /// output), copied at adoption.
+    ///
+    /// Structured rather than folded into `procedure` because the prompt
+    /// renderer labels the four lines and the roster shows `core_action` on
+    /// its own; flattening them into prose here would make both of those
+    /// string-scraping, which is how the v1 `description` blob got unreadable
+    /// in the first place.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub description: Option<RecipeDescription>,
+    /// The recipe's coarse activity sequence, copied at adoption for display.
+    /// A COPY on purpose: the charter must still render after the recipe moves
+    /// or its version is superseded.
+    ///
+    /// `Option<Vec<_>>` rather than a `Vec` with `skip_serializing_if`, and the
+    /// same for the three v3 lists below. The wire rule is that an unadopted
+    /// field must be ABSENT, never `[]` — and a bare `Vec` would still export
+    /// as a REQUIRED TypeScript array while being omitted from the JSON, i.e.
+    /// a binding that promises the frontend something the wire does not
+    /// deliver. The `Option` makes the generated type `activities?: …`, which
+    /// is what is actually true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub activities: Option<Vec<RecipeActivity>>,
+    /// The connector CATEGORIES the recipe declared — what this charter was
+    /// adopted from, kept whole. The bound instances live on the charter's own
+    /// `connectors`; which role got which instance is
+    /// [`Self::connector_bindings`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub connector_types: Option<Vec<String>>,
+    /// One entry per connector ROLE the recipe declared, with the concrete
+    /// connector adoption bound to it or `None` for "nobody bound this yet".
+    ///
+    /// This is the readable answer to "what does this charter still need?",
+    /// and it is why an unbound role is stored rather than dropped: the flat
+    /// pair (`connector_types`, `connectors`) cannot express two roles of the
+    /// same type, nor tell an empty allowlist ("whatever the persona holds")
+    /// apart from an unanswered question.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub connector_bindings: Option<Vec<CharterConnectorBinding>>,
+    /// Things that must be installed or verified before the first run.
+    /// RECORDED here, never installed by the mint — see the adoption path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub dependencies: Option<Vec<String>>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.

@@ -68,6 +68,20 @@
 //! same [`Action::CompanionMaster`] key; kept as a thin wrapper for callers that
 //! only have a `DbPool` and want the master bool directly.
 //!
+//! # The other registry in this crate
+//!
+//! This module's read-site registry answers *"may this autonomous action run?"*
+//! — a configuration question, and every [`Action`] maps to an allow-listed
+//! `app_settings` key and an App master rung.
+//!
+//! [`crate::serving_overrides`] copies the pattern for a different question:
+//! *"what can change which model, prompt, persona or session actually serves a
+//! run?"* Those mechanisms have no settings key and no rung, which is why they
+//! are a sibling enum rather than more [`Action`] variants — folding them in
+//! would break [`Action::global_key`] and [`Action::required_rung`], both total
+//! matches by design. If you are looking for the list of things that can change
+//! a run out from under the operator, it is there, not here.
+//!
 //! # Legacy keys (quarantined, no longer read)
 //!
 //! `autonomous_message_triage` and `autonomous_review_triage` were folded into

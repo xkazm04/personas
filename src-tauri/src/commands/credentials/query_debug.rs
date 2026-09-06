@@ -473,7 +473,9 @@ async fn run_query_debug(params: RunParams) {
                 );
 
                 let resume_result = if let Some(ref sid) = session_id {
-                    let mut resume_args = prompt::build_resume_cli_args(sid);
+                    // No model decision on this path — the query-debug retry rides
+                    // whatever the original session was already on.
+                    let mut resume_args = prompt::build_resume_cli_args(sid, None);
                     resume_args.args.push("--max-turns".to_string());
                     resume_args.args.push("1".to_string());
 

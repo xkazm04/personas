@@ -1,0 +1,1745 @@
+{
+  "lane": "L3",
+  "reviewed": 21,
+  "recipes": [
+    {
+      "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+      "slug": "cloud-billing-access-failure-alerting",
+      "title": "Cloud billing access failure alerting",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/spend-and-budget",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "A spend watch that cannot read billing looks exactly like a spend watch that found nothing wrong, so an outage quietly becomes weeks of unmeasured cost.",
+        "input": "A failed or incomplete read of the billing source, carrying the reason it failed and whatever partial data came back.",
+        "core_action": "Name the specific failure mode, expired credentials, a rate limit, a partial period, or an empty billing response, and give the next step for that provider rather than a generic error notice.",
+        "output": "An alert the credential owner can act on today, plus a record of how often this failure mode has recurred."
+      },
+      "activities": [
+        { "id": "read-failure", "label": "Read the failure reason and any partial data from the billing check", "kind": "observe" },
+        { "id": "classify", "label": "Classify the failure as credential, rate limit, partial period, or empty response", "kind": "decide" },
+        { "id": "weigh-recurrence", "label": "Weigh whether this failure mode has recurred often enough to need a permanent fix", "kind": "decide" },
+        { "id": "compose", "label": "Compose the alert with provider-specific next steps", "kind": "act" },
+        { "id": "raise", "label": "Raise it to whoever owns the billing credential", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "blind-spots-explained",
+          "statement": "When the billing check cannot see real data, the reason and the fix are in the alert, not a mystery.",
+          "success_criteria": [
+            "The alert names the specific cause: expired credentials, rate limit, partial data, or empty billing",
+            "Provider-specific troubleshooting steps are included, not a generic 'check your API key'"
+          ]
+        },
+        {
+          "id": "blindness-not-read-as-safety",
+          "statement": "An unreachable billing source is reported as blindness rather than read as safety.",
+          "success_criteria": [
+            "A period the agent could not read is reported as unmeasured, never as normal",
+            "A failure mode seen repeatedly is raised as a standing problem rather than restated as new each time"
+          ]
+        }
+      ],
+      "guidance": "When the billing check comes back blind, make the reason understood immediately rather than discovered next month when the numbers still look wrong. Diagnose the specific failure mode and give steps for that provider, not a generic error. This is a credential-health job as much as an alerting one. Silence must mean measured and normal, never unmeasured, so treat a recurring failure type as worth flagging for a permanent fix rather than alerting on it forever.",
+      "connector_types": ["cloud"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "The work exists only when a billing read fails, and it has a short window in which the credential can be repaired before the next reporting period is lost. Nothing is gained by pacing or scheduling it."
+      },
+      "personalization_needs": [
+        "Which provider and account the billing credential covers, because the troubleshooting steps are entirely provider-specific and a generic message is what this recipe exists to replace",
+        "Who owns the credential and can actually fix it, because an alert delivered to someone without provider access is noise",
+        "How long a blind period is tolerable before it should be escalated rather than reported, because the answer differs between a hobby account and a production bill"
+      ],
+      "dependencies": [],
+      "input_schema": [],
+      "examples": [
+        {
+          "title": "AWS as the cloud connector",
+          "connector": "aws_cloud",
+          "connector_type": "cloud",
+          "notes": "Cost queries fail with an authorization error distinct from a plain credential expiry: Cost Explorer needs ce:GetCostAndUsage, which is not implied by general read-only or by the catalog credential's STS GetCallerIdentity healthcheck. A working credential that cannot read cost is a real and common failure mode here, and the alert should say so rather than reporting expired credentials."
+        },
+        {
+          "title": "Google Cloud as the cloud connector",
+          "connector": "gcp_cloud",
+          "connector_type": "cloud",
+          "notes": "GCP exposes no direct cost query comparable to Cost Explorer; detailed cost comes from the billing export into BigQuery. The failure mode is therefore usually a missing or stale export rather than a broken credential, and troubleshooting should point at the export rather than at the key."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f"],
+        "from_templates": ["budget-spending-monitor"],
+        "source_template_id": "budget-spending-monitor"
+      },
+      "review_notes": "Departs from the superseding responsibility on one point, deliberately. convert_A 'Spend measurement and threshold watch' folds this recipe together with the weekly report and the threshold tracker into a single time-triggered responsibility. As a standalone v3 recipe this one is event-shaped: it does nothing until a read fails, so a time trigger would sample for a condition that arrives on its own. Its outcomes are the verdict's plus the responsibility's 'blindness rather than safety' claim, which is the sharper statement of the same idea. Connector type taken from the responsibility (cloud), not from the v2 row, which listed none despite the work being wholly about one provider's billing surface. v2 carried no input schema.",
+      "research_notes": "Read scripts/connectors/builtin/aws-cloud.json and gcp-cloud.json: both declare categories ['cloud'] and nothing else, no events and no resources, and their healthcheck_config probes identity (STS GetCallerIdentity, Cloud Resource Manager projects.get) rather than billing. The catalog therefore cannot tell an adopter whether a cloud credential can read cost at all. Confirmed externally that AWS gates Cost Explorer behind its own ce:GetCostAndUsage permission, separate from the AWS billing managed policies people assume cover it (docs.aws.amazon.com/cost-management/latest/userguide/ce-access.html and ce-api.html), and that Google Cloud has no equivalent cost query endpoint, requiring the native billing export to BigQuery instead. Both facts are recorded as examples rather than dependencies here because the failing read belongs to the recipes that do the reading.",
+      "superseded_by": [["convert_A.json", "DevOps Guardian", "Spend measurement and threshold watch"]]
+    },
+
+    {
+      "id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
+      "slug": "cloud-cost-and-resource-reporting",
+      "title": "Cloud cost and resource reporting",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/spend-and-budget",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "Cloud cost drifts in small per-service increments that no single invoice line explains, so a rise is normally discovered at the invoice and then cannot be attributed to anything.",
+        "input": "Per-service billing and resource usage for the closed period, plus the rolling per-service baseline from earlier periods.",
+        "core_action": "Compare each service against its own baseline, decide which moves are worth naming and which are the expected consequence of a change that was made on purpose, and report the whole picture either way.",
+        "output": "A report of what the operation cost this period, which services moved, and what is behind each move, delivered whether or not anything is wrong."
+      },
+      "activities": [
+        { "id": "pull", "label": "Pull the period's billing and per-service resource usage", "kind": "observe" },
+        { "id": "compare", "label": "Compare each service against its own rolling baseline", "kind": "decide" },
+        { "id": "attribute", "label": "Attribute each meaningful move to a service, an account, or a deliberate change", "kind": "decide" },
+        { "id": "flag", "label": "Flag threshold breaches, step changes, and newly appearing services", "kind": "act" },
+        { "id": "report", "label": "Deliver the report and say plainly when part of the period could not be read", "kind": "deliver" },
+        { "id": "rebase", "label": "Fold the period into the baseline so the next comparison is against fresh data", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "spend-surprises-caught-early",
+          "statement": "A cost spike, a newly appearing paid service, or a budget breach is known within one reporting period of happening, not discovered at the next invoice.",
+          "success_criteria": [
+            "Every period produces a report even when nothing is wrong, so silence is never mistaken for 'nobody checked'.",
+            "A service whose move the configured sensitivity considers worth flagging is named individually, not buried in the total.",
+            "An unreachable billing source is reported as blindness rather than read as safety."
+          ]
+        },
+        {
+          "id": "rises-are-attributable",
+          "statement": "A rise in cost can always be attributed to something.",
+          "success_criteria": [
+            "Every reported move names the services or accounts behind it",
+            "A rise that follows a deliberate change the adopter made is recognised as expected rather than flagged as an anomaly"
+          ]
+        }
+      ],
+      "guidance": "Own the answer to what this operation costs and why the number moved. Deliver the report every period regardless of outcome, and let the configured sensitivity rather than personal judgment alone decide what counts as worth a flag. Judge a rise by whether it bought anything: a new service appearing deserves a sentence, an expected increase after a deliberate change does not. When billing access fails, still deliver a report that says so rather than delivering nothing.",
+      "connector_types": ["cloud"],
+      "recommended_trigger": {
+        "kind": "time",
+        "rationale": "The calendar is load-bearing rather than habitual here: per-service totals and deltas are only defined against a closed billing period, and the baseline this report compares against needs regular samples to exist at all. Align the period to the provider's billing cycle rather than to a working week."
+      },
+      "personalization_needs": [
+        "Which provider and account this covers, and what a normal period costs for this operation, because a threshold with no sense of normal produces either constant alarms or none",
+        "What size of move is worth interrupting the adopter for, because the same percentage is noise in one account and a crisis in another",
+        "Which recent changes were deliberate, because a rise that bought something should not be reported in the same voice as one that did not"
+      ],
+      "dependencies": [
+        "Billing read access on the cloud account, verified separately from general access: on AWS this is the ce:GetCostAndUsage permission for Cost Explorer, on Google Cloud a configured billing export to BigQuery"
+      ],
+      "input_schema": [
+        {
+          "name": "spending_threshold",
+          "type": "number",
+          "default": 500,
+          "description": "Spending threshold for the period, in the configured currency. Alerts fire when total spend exceeds this value. Free parameter, adjustable without rebuild via {{param.spending_threshold}}."
+        },
+        {
+          "name": "currency",
+          "type": "enum",
+          "options": ["USD", "EUR", "GBP", "CAD", "AUD", "Other"],
+          "default": "USD",
+          "description": "Display currency for alert formatting. Does not convert; uses the provider's native billing currency."
+        },
+        {
+          "name": "sensitivity",
+          "type": "enum",
+          "options": ["conservative", "balanced", "aggressive"],
+          "default": "balanced",
+          "description": "Conservative: threshold breach only. Balanced: adds service spikes above 50 percent and new-service detection. Aggressive: adds spikes above 25 percent and sustained multi-day acceleration."
+        }
+      ],
+      "examples": [
+        {
+          "title": "AWS as the cloud connector",
+          "connector": "aws_cloud",
+          "connector_type": "cloud",
+          "notes": "Cost Explorer's GetCostAndUsage returns per-service grouping directly, which is what makes the per-service table cheap here. It needs the ce:GetCostAndUsage permission, which the catalog credential's identity healthcheck does not exercise, so a credential can pass adoption and still be unable to read cost."
+        },
+        {
+          "title": "Google Cloud as the cloud connector",
+          "connector": "gcp_cloud",
+          "connector_type": "cloud",
+          "notes": "There is no cost query endpoint to call. Per-service cost comes from the billing export into BigQuery, so adoption has to verify the export exists and is current, and the report is only as fresh as that export."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["8da6a5c2-b3d4-564b-bce3-13d6fe886089"],
+        "from_templates": ["budget-spending-monitor"],
+        "source_template_id": "budget-spending-monitor"
+      },
+      "review_notes": "Title loses 'Weekly'; the v2 body's 'weekly Monday 9:00 AM' was habitual and the trigger rationale is now the billing period, which is the reason the superseding responsibility actually gives for a time trigger. Outcomes are the verdict's, extended with the responsibility's attribution claim and its blindness clause, both of which are stronger than anything the v2 row carried. Kept separate from the threshold watch (8b2b3e0b) even though one responsibility supersedes both: this one always speaks and the other only speaks on a breach, and merging them would lose the 'a quiet period still produces a report' criterion that is the whole point of this one. Input schema carried from v2 with its em dashes and arrows rewritten out per house rule; names, types, defaults and options are untouched.",
+      "research_notes": "Same catalog read as ed6cfd3a. The dependency line is grounded, not assumed: AWS documents Cost Explorer access as its own permission set (docs.aws.amazon.com/cost-management/latest/userguide/ce-access.html), and Google Cloud has no cost-query endpoint of the Cost Explorer shape, so programmatic per-service cost comes from the BigQuery billing export. That difference is why the dependency is phrased per provider rather than as one generic 'billing access' line.",
+      "superseded_by": [["convert_A.json", "DevOps Guardian", "Spend measurement and threshold watch"]]
+    },
+
+    {
+      "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
+      "slug": "cloud-spend-threshold-watch",
+      "title": "Cloud spend threshold watch",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/spend-and-budget",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "A budget is breached in the middle of a billing period, but nobody finds out until reconciliation, by which point the spend is already committed.",
+        "input": "Month-to-date spend, the current run rate, the configured threshold, and which breach windows are already open.",
+        "core_action": "Project the likely end-of-period total from the run rate and judge the trajectory rather than today's number, then stay quiet unless the projection or the actual crosses the threshold.",
+        "output": "One alert per breach window, naming what is driving the projection, and silence the rest of the time."
+      },
+      "activities": [
+        { "id": "sample", "label": "Sample month-to-date spend and the current run rate", "kind": "observe" },
+        { "id": "project", "label": "Project the end-of-period total from the run rate", "kind": "decide" },
+        { "id": "judge", "label": "Judge whether actual or projected spend crosses the threshold, and whether this window is already open", "kind": "decide" },
+        { "id": "alert", "label": "Raise one alert naming the services driving the trajectory", "kind": "act" },
+        { "id": "hold-window", "label": "Hold the breach window open so the same breach is not reported again", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "budget-breach-known-same-period",
+          "statement": "Whoever owns the cloud bill learns about a budget breach while the period is still running, not at month-end reconciliation.",
+          "success_criteria": [
+            "A single alert fires the first time month-to-date or projected spend crosses the threshold.",
+            "No alert fires on a day already covered by an unresolved breach window.",
+            "A threshold crossing is reported with the driver named, not the number alone."
+          ]
+        },
+        {
+          "id": "quiet-means-measured",
+          "statement": "A quiet period produces no message and no doubt that the watch is still running.",
+          "success_criteria": [
+            "No message is produced merely to prove the watch is alive",
+            "A sample that could not be taken degrades the projection and is said out loud rather than silently skipped"
+          ]
+        }
+      ],
+      "guidance": "Watch spend against the configured threshold and stay quiet as long as the trajectory is fine. The job is judgment about trajectory, not just today's number: project the likely end-of-period total from the run rate before deciding whether to speak up. One alert per breach window is enough, because repeating it trains people to ignore it. A sample you could not take is a gap in the projection, not a normal reading.",
+      "connector_types": ["cloud"],
+      "recommended_trigger": {
+        "kind": "time",
+        "rationale": "One of the few genuine calendar obligations in this lane. Month-to-date spend only means anything against a billing month, and a run-rate projection does not exist without regular samples inside that month. The cadence is set by the provider's billing cycle, not by a working rhythm."
+      },
+      "personalization_needs": [
+        "The threshold and the billing period it applies to, because a projection is meaningless without the period boundary it projects toward",
+        "What size of daily move counts as a spike worth breaking silence for, because the source hard-coded a fixed percentage that is noise in one account and a crisis in another",
+        "Whether a breach should be raised once or re-raised as it worsens, because the answer changes whether the alert stays trusted"
+      ],
+      "dependencies": [
+        "Billing read access on the cloud account, verified separately from general access: on AWS the ce:GetCostAndUsage permission, on Google Cloud a configured billing export to BigQuery"
+      ],
+      "input_schema": [
+        {
+          "name": "spending_threshold",
+          "type": "number",
+          "default": 500,
+          "description": "Spending threshold for the period, in the configured currency. Alerts fire when total spend exceeds this value. Free parameter, adjustable without rebuild via {{param.spending_threshold}}."
+        },
+        {
+          "name": "currency",
+          "type": "enum",
+          "options": ["USD", "EUR", "GBP", "CAD", "AUD", "Other"],
+          "default": "USD",
+          "description": "Display currency for alert formatting. Does not convert; uses the provider's native billing currency."
+        }
+      ],
+      "examples": [
+        {
+          "title": "AWS as the cloud connector",
+          "connector": "aws_cloud",
+          "connector_type": "cloud",
+          "notes": "Cost Explorer data lags real usage by up to a day and is itself estimated until the period closes, so an early-in-period projection is built on estimates twice over. Say so in the alert rather than presenting the projection as measured."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf"],
+        "from_templates": ["budget-spending-monitor"],
+        "source_template_id": "budget-spending-monitor"
+      },
+      "review_notes": "Title loses 'Daily'; the daily sample is a mechanism the adopter tunes, not the identity of the work, and the v2 title encoded it. Kept the verdict's title change to 'Cloud Spend Threshold Tracker' in spirit but made the area explicit. Outcomes take the verdict's breach-window pair and add the responsibility's 'a quiet period produces no message and no doubt' claim, which is what distinguishes this recipe from the always-reporting one beside it. This is one of the two time triggers in the lane the operator himself argued for on budget-spending-monitor.",
+      "research_notes": "No new external lookup beyond the AWS and GCP billing access facts recorded on the two sibling spend recipes. The Cost Explorer estimation lag noted in the example is from the AWS Cost Management documentation reached through the same access docs; flagged as an example rather than an outcome because it is provider-specific.",
+      "superseded_by": [["convert_A.json", "DevOps Guardian", "Spend measurement and threshold watch"]]
+    },
+
+    {
+      "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+      "slug": "weighted-decision-analysis-and-checkpoint-review",
+      "title": "Weighted decision analysis and checkpoint review",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/decisions",
+      "domain": "general_professional",
+      "description": {
+        "need": "A hard choice gets made on the criteria that were loudest that day, with nothing written down that could later prove it wrong, so nobody can tell afterwards whether it worked.",
+        "input": "A decision the requester brings, the options as they see them, the constraints, and any earlier decisions of a similar shape already on record.",
+        "core_action": "Force the alternatives into the open, weigh them on criteria the requester recognises rather than generic ones, and get a kill criterion and a checkpoint written while they are still willing to name one.",
+        "output": "A scored comparison with stated risks and mitigations, a recorded checkpoint with success metrics and a kill criterion, and later a verdict at that checkpoint saying what actually happened."
+      },
+      "activities": [
+        { "id": "clarify", "label": "Ask what actually matters here before building anything", "kind": "observe" },
+        { "id": "research", "label": "Research each option, including how it could fail", "kind": "observe" },
+        { "id": "weigh", "label": "Score the options against criteria the requester agreed carry weight", "kind": "decide" },
+        { "id": "risk", "label": "State each risk with a mitigation rather than a mention", "kind": "decide" },
+        { "id": "commit-checkpoint", "label": "Record the checkpoint, the success metric, and the kill criterion", "kind": "act" },
+        { "id": "return", "label": "Bring the decision back at its checkpoint with what actually happened", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "defensible-choice",
+          "statement": "A hard choice gets structured before it is made, with what would prove it wrong written down at the time.",
+          "success_criteria": [
+            "Options are compared on criteria the requester agreed carry weight",
+            "Every decision records a checkpoint and a kill criterion",
+            "A single option is reframed against doing nothing rather than analysed alone",
+            "Risks carry a stated mitigation, not just a mention"
+          ]
+        },
+        {
+          "id": "no-decision-forgotten",
+          "statement": "No decision is made and then forgotten.",
+          "success_criteria": [
+            "A decision reaching its checkpoint comes back with what actually happened",
+            "The verdict at a checkpoint is recorded so a later similar decision can use it"
+          ]
+        }
+      ],
+      "guidance": "Own both the decision and its aftermath. Before the choice, force the alternatives into the open, weigh them on criteria the requester recognises, and get the kill criterion written while they are still willing to name one. A well-built matrix on the wrong criteria is worse than a rough one on the right criteria. After the choice, be the memory that brings it back and asks whether it worked. Never decide for them, and never let a checkpoint pass in silence.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "Two moments, neither of them on a calendar: when the requester brings a decision, and separately when a recorded decision reaches the point where its outcome should be visible. The second is what makes this self-paced rather than purely on demand, since nobody remembers to ask for it."
+      },
+      "personalization_needs": [
+        "What kinds of decision the requester wants this help with and what they consider their own business, because structured analysis offered where it was not wanted reads as friction and gets abandoned",
+        "Which criteria they actually weigh, read from decisions they have already made, because a generic matrix produces a defensible answer they do not believe",
+        "How long a checkpoint should be for the kinds of decision they bring, because the source fixed it at fourteen days and that fits some choices and not others"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "decision_context",
+          "type": "text",
+          "description": "Free-form description of the decision. Ideally two to four sentences including the options, the constraints, and what is at stake."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["3615618f-ff53-57d3-ba9b-a51cd0fdc286"],
+        "from_templates": ["daily-standup-compiler"],
+        "source_template_id": "daily-standup-compiler"
+      },
+      "review_notes": "Outcomes and guidance taken from the superseding responsibility, which is materially stronger than the v2 verdict: it adds 'a single option is reframed against doing nothing' and the whole second outcome about the aftermath, neither of which the v2 row had. One departure: the responsibility is filed under domain product_project on the Director seat, while the lane roster and the consolidation verdict both place this recipe in general_professional. Kept general_professional so the lane counts hold; the domain is worth a Director decision because the same responsibility supersedes two recipes that sit in different domains. Also generalised the requester from the operator, since a registry recipe is held by anyone.",
+      "research_notes": "No external lookup was warranted: the work is judgment, has no connector, and the source names no vendor. Checked the connector catalog anyway for anything decision-shaped and found nothing, which is why connector_types is empty rather than nearest-fit.",
+      "superseded_by": [["convert_A.json", "Director", "Decision support and holding him to his own checkpoints"]]
+    },
+
+    {
+      "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
+      "slug": "cross-project-progress-briefing",
+      "title": "Cross-project progress briefing",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/digests",
+      "domain": "general_professional",
+      "description": {
+        "need": "Someone running several projects at once loses the picture of which ones moved and which quietly stopped, and reconstructing it by hand costs more attention than the answer is worth.",
+        "input": "Observable activity per project, the state of the requester's stated goals, the work still pending, and what was reported in the last briefing.",
+        "core_action": "Report the difference since the last briefing rather than the current state, leading with the uncomfortable item, and ground every claim in something observable rather than in an earlier summary.",
+        "output": "One short readable message fusing what changed, where the goals stand, and a prioritised set of actions, with anything unreadable named as unread."
+      },
+      "activities": [
+        { "id": "read-sources", "label": "Read each project's own activity from the sources the requester named", "kind": "observe" },
+        { "id": "delta", "label": "Work out what changed since the last briefing, including what did not move", "kind": "decide" },
+        { "id": "rank", "label": "Rank what deserves attention today over what is merely recent", "kind": "decide" },
+        { "id": "fuse", "label": "Fuse research, goal progress and pending work into one message", "kind": "act" },
+        { "id": "deliver", "label": "Deliver it, naming any project that could not be read", "kind": "deliver" },
+        { "id": "record", "label": "Record what was reported so the next briefing is a delta", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "one-actionable-read",
+          "statement": "The requester always knows which of their projects moved, which stalled, and what that means for what they do next, from one message.",
+          "success_criteria": [
+            "A briefing reports change since the last briefing rather than restating current state",
+            "A project with no movement is named as stalled rather than omitted",
+            "Nothing is reported twice as though it were new",
+            "It ends with a prioritised set of actions, not just a status dump"
+          ]
+        },
+        {
+          "id": "claims-are-grounded",
+          "statement": "Every claim in a briefing is grounded in something observable.",
+          "success_criteria": [
+            "A project that cannot be read is reported as unread rather than assumed quiet",
+            "Claims trace to real activity rather than to a summary of an earlier summary"
+          ]
+        }
+      ],
+      "guidance": "Own the requester's picture of their own operation. A briefing is worth sending when it would change what they do next and worth withholding when it would not. Lead with the uncomfortable item: one project that has not moved is more useful than three that have. Keep it to one focused message, since the value is in the fusing. Ground every claim in something observable, and say plainly when a project could not be read at all.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of daily at seven in the morning was habit, not obligation: nothing about a briefing is defined by a calendar boundary. Speak when there is a difference worth acting on, and respect the requester's working hours rather than a fixed hour."
+      },
+      "personalization_needs": [
+        "Which projects are in scope and where progress on each is actually observable, because without a real source the briefing degrades into restating what it was told, which is the failure mode of every standup report",
+        "What the requester counts as movement, a commit, a shipped milestone, a conversation, or a decision, because it differs per project and the persona will otherwise report activity rather than progress",
+        "When they are willing to be interrupted, because self-paced work without a boundary chooses its own moment and eventually chooses a bad one"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "briefing_sources",
+          "type": "source_definition",
+          "description": "Where the research half of the briefing pulls from. JSON payload describing one or more sources (local folder, registered codebase, database credential, or URL list). The persona reads these at each run and grounds findings in them, giving it long-term ground truth instead of ad-hoc keyword guesses."
+        },
+        {
+          "name": "briefing_intent",
+          "type": "text",
+          "description": "The requester's long-term goal for the briefing and how the persona should work with the attached sources. Free-form textarea, for example: 'Keep me on top of AI-agent tooling; emphasize launch announcements, pricing changes, and open-source releases over thinkpieces. Dedupe across sources. When a source surfaces something tied to my goals, push it above industry noise.'"
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["e5bf4917-2ab4-5e5d-b184-41f8ef4461c6"],
+        "from_templates": ["daily-standup-compiler"],
+        "source_template_id": "daily-standup-compiler"
+      },
+      "review_notes": "Title drops 'Personal', which said nothing, in favour of the area the responsibility actually names. Outcomes and guidance from the superseding responsibility, which supplies the delta discipline and the grounding claim the v2 verdict lacked; the verdict's 'fuses research, goal progress and pending work' and 'ends with a prioritised set of actions' are folded into the first outcome so nothing from the verdict is lost. connector_types is empty because both the v2 row and the responsibility name none: the sources arrive through the briefing_sources input, which is a per-adoption description of folders, codebases and URLs rather than a catalog connector. That is worth a Director look, because a source_definition input is a second, parallel binding mechanism to connector_types and v3 has not decided which one owns it.",
+      "research_notes": "Searched the connector catalog for anything matching the briefing_sources shape (a mixed bag of local folder, codebase, database and URL list) and found no single category that covers it; the nearest individual connectors are codebase (development, source_control, desktop) and local_drive. Left connector_types empty rather than nearest-fitting three categories the source does not evidence.",
+      "superseded_by": [["convert_A.json", "Director", "Cross project progress read"]]
+    },
+
+    {
+      "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
+      "slug": "goal-accountability-and-idea-triage-review",
+      "title": "Goal accountability and idea triage review",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/goals-and-reviews",
+      "domain": "general_professional",
+      "description": {
+        "need": "Goals die quietly rather than being abandoned on purpose, captured ideas pile up unreviewed, and decisions that were supposed to be revisited never are.",
+        "input": "Each active goal with its observed activity and deadline, the ideas captured since the last review, and the decisions whose checkpoints have come due.",
+        "core_action": "Give an honest trend read on each goal from observed activity rather than from what was said last time, distinguish a goal that is behind from one that has been abandoned, and clear the idea queue instead of letting it grow.",
+        "output": "A review stating where each goal really stands, a triaged idea queue, and the verdict on any decision that reached its checkpoint."
+      },
+      "activities": [
+        { "id": "read-activity", "label": "Read observed activity against each active goal", "kind": "observe" },
+        { "id": "trend", "label": "Judge each goal's trend, including whether it has been abandoned rather than delayed", "kind": "decide" },
+        { "id": "triage", "label": "Triage the captured ideas into accepted, rejected, or deferred", "kind": "decide" },
+        { "id": "surface-checkpoints", "label": "Surface decisions that reached their checkpoint and state whether the metric was hit", "kind": "act" },
+        { "id": "name-patterns", "label": "Name a repeated slip as a pattern rather than reporting it as new", "kind": "act" },
+        { "id": "deliver", "label": "Deliver the review and offer closure on anything genuinely abandoned", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "honest-goal-trajectory",
+          "statement": "A goal never quietly dies: its status is honest and drift is reported while there is still time to act.",
+          "success_criteria": [
+            "Each goal carries a trend and the date of its last real activity, not just a status label",
+            "A goal moving to at risk is reported when it moves rather than at the next review",
+            "A goal that has been abandoned is offered for closure rather than carried forever"
+          ]
+        },
+        {
+          "id": "ideas-and-decisions-get-revisited",
+          "statement": "Ideas captured during the period are actually triaged, and a decision does not get made once and quietly forgotten.",
+          "success_criteria": [
+            "Ideas captured since the last review are triaged rather than left in a pile",
+            "Decisions reaching their checkpoint are surfaced automatically",
+            "The review states whether the original success metric was hit"
+          ]
+        }
+      ],
+      "guidance": "Own honesty about the goals, including the ones the requester would rather not look at. Status comes from observed activity rather than from what was said at the last check-in. Distinguish a goal that is behind from one that has been abandoned, and offer to close the second. Triage the captured ideas rather than letting them accumulate, since a backlog nobody reviews is the same as no backlog. When a goal keeps slipping, name the pattern out loud instead of reporting each slip as though it were the first.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of Sunday at six in the evening is the clearest habitual cadence in the lane: nothing about a goal's status is defined by the week boundary. Act when a goal changes status, when it has been quiet long enough that the quiet is itself the story, or when enough ideas have accumulated to be worth one pass."
+      },
+      "personalization_needs": [
+        "What the current goals are and what evidence would show progress on each, because a goal with no observable evidence can only be tracked by asking, which is the thing this recipe exists to avoid",
+        "How direct the requester wants the persona to be about a stalled goal, because accountability softened into politeness stops working and accountability that ignores the preference gets switched off",
+        "What counts as an idea worth capturing at all, because the triage queue is only as useful as what was allowed into it"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "content_type",
+          "type": "enum",
+          "options": ["work_only", "work_and_personal", "everything_captured"],
+          "default": "work_and_personal",
+          "description": "Scope of ideas to triage. Work-only is faster; everything_captured is thorough but longer."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["149395d5-a987-55b6-a6ce-c953f3ed11a1"],
+        "from_templates": ["daily-standup-compiler"],
+        "source_template_id": "daily-standup-compiler"
+      },
+      "review_notes": "Title loses 'Weekly'. Two designed responsibilities supersede this one recipe, 'Goal accountability' and the checkpoint half of 'Decision support', so the outcomes are drawn from both: the first outcome is the goal-accountability responsibility almost as written, the second fuses the verdict's idea-triage criterion with the decision-checkpoint claim. Deliberately kept as one recipe rather than split, because the v2 work is a single sitting and splitting it would create a checkpoint-surfacing recipe that duplicates the decision recipe beside it. Domain kept general_professional against the responsibility's product_project, same call and same reasoning as 3615618f.",
+      "research_notes": "None needed; no connector, no vendor, no external fact in the source. Confirmed against the catalog that no category exists for a goal or idea store, so the empty connector_types is a real absence rather than an unresolved id.",
+      "superseded_by": [
+        ["convert_A.json", "Director", "Goal accountability"],
+        ["convert_A.json", "Director", "Decision support and holding him to his own checkpoints"]
+      ]
+    },
+
+    {
+      "id": "1e3b8fa3-8146-510a-8294-21593e156389",
+      "slug": "correspondence-drafting-and-reply-review",
+      "title": "Correspondence drafting and reply review",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/correspondence",
+      "domain": "general_professional",
+      "description": {
+        "need": "Replies written on someone's behalf either sound generic enough to be noticed or need so much editing that they save nothing, and there is no safe path from assisted to unattended.",
+        "input": "An inbound message flagged as needing a reply, the conversation history with that contact, and the style profile learned from previous drafts to them.",
+        "core_action": "Compose the reply in that specific recipient's voice, then route it through human review until that contact has earned enough consecutive unedited approvals to graduate, with some categories never graduating regardless of record.",
+        "output": "A sent reply that reads like the person would have written it, and a style profile that needed fewer edits than the last one."
+      },
+      "activities": [
+        { "id": "load-profile", "label": "Load the recipient's style profile and the conversation context", "kind": "observe" },
+        { "id": "compose", "label": "Compose a draft matching that recipient's voice", "kind": "act" },
+        { "id": "gate", "label": "Decide whether this contact and this category may skip review", "kind": "decide" },
+        { "id": "review", "label": "Route to human review, or send when the contact has graduated", "kind": "deliver" },
+        { "id": "learn", "label": "Fold every human edit back into the style profile", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "replies-sound-like-the-person",
+          "statement": "A reply sent on the user's behalf reads like something they would actually have written to that specific recipient.",
+          "success_criteria": [
+            "The style profile used for a draft reflects that recipient's own history, not a generic voice.",
+            "A human-edited draft updates the style profile so the next draft to that recipient needs fewer edits."
+          ]
+        },
+        {
+          "id": "trust-is-earned-not-assumed",
+          "statement": "Auto-send is only ever reached by a contact whose drafts have proven reliable, and never for the categories that should always have eyes on them.",
+          "success_criteria": [
+            "A contact only reaches auto-send after the configured run of unedited approvals.",
+            "Safety-excluded categories such as financial, legal, first contact, or emotionally sensitive always route to human review regardless of graduation status."
+          ]
+        }
+      ],
+      "guidance": "Compose each reply in the recipient's own voice using what has been learned about how the user actually writes to them, then route it through human review until that contact has earned enough consecutive unedited approvals to graduate. Some categories never graduate regardless of track record. Every edit the human makes should sharpen the style profile for next time, which is the only reason the review step pays for itself.",
+      "connector_types": ["email", "messaging", "database"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "The work is defined by one inbound message needing a reply, and the v2 row already listens for exactly that event from the triage recipe beside it. A reply has a freshness window, so pacing it would cost the thing it exists to protect."
+      },
+      "personalization_needs": [
+        "Which channels and accounts the persona may reply from, because sending as someone is the least recoverable action available here",
+        "How many consecutive unedited approvals should count as graduation, because the source fixed it at twenty and the right number depends entirely on how much a wrong send costs",
+        "Which categories must never graduate, because an exclusion the persona has to infer takes several bad sends to learn",
+        "Samples of how the user actually writes to different kinds of contact, because a style profile with no starting point spends its first weeks being wrong"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "auto_send_threshold",
+          "type": "enum",
+          "options": ["10", "20", "30", "never"],
+          "default": "20",
+          "description": "Consecutive unedited approvals required before auto-send."
+        },
+        {
+          "name": "safety_exclusions",
+          "type": "enum",
+          "options": ["financial_legal_only", "first_message_to_new_contact", "emotional_sensitive", "all_of_above"],
+          "default": "all_of_above",
+          "description": "Which categories are permanently excluded from auto-send."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The built-in database as the profile store",
+          "connector": "personas_database",
+          "connector_type": "database",
+          "notes": "Style profiles are keyed by platform and contact id, so the store needs per-key read-modify-write rather than append. The built-in database was chosen in the source because the profiles are personal and should not leave the machine, which is a reason worth carrying to any other database chosen at adoption."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["1e3b8fa3-8146-510a-8294-21593e156389"],
+        "from_templates": ["digital-clone"],
+        "source_template_id": "digital-clone"
+      },
+      "review_notes": "Not superseded by any designed responsibility; outcomes and guidance are the consolidation verdict's, which are already in v3 voice. Title takes the verdict's rename and makes the area explicit, since 'Draft and Review' says nothing in a list of two hundred. personas_database demoted to the database category with the id kept as an example; email and messaging were already generic category names and stay.",
+      "research_notes": "Read scripts/connectors/builtin/personas-database.json: categories ['database','storage'], no declared resources or events, no healthcheck. Confirmed the email category resolves to gmail, microsoft_outlook, resend, sendgrid, hubspot and the Google Workspace OAuth template, and messaging to ten connectors including slack, telegram, discord and personas_messages, so both types resolve to real send-capable options at adoption. Note for the Director: nothing in the catalog distinguishes a connector that can send from one that can only read, and this recipe needs send.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
+      "slug": "inbound-message-triage-across-channels",
+      "title": "Inbound message triage across channels",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/correspondence",
+      "domain": "general_professional",
+      "description": {
+        "need": "Messages arrive across several channels at once, and anything that needs a reply is as likely to be missed in the quiet channel as in the loud one.",
+        "input": "New messages from every connected channel, plus the per-channel position the last pass reached.",
+        "core_action": "Log each message once, classify its urgency and intent well enough that the reply-needed flag can be trusted by whatever acts on it, and keep going on the channels that still work when one fails.",
+        "output": "A logged, classified record of everything that arrived, with the ones needing a reply flagged, and a warning through a working channel when one stops working."
+      },
+      "activities": [
+        { "id": "collect", "label": "Collect new messages from each connected channel", "kind": "observe" },
+        { "id": "dedupe", "label": "Reject exact duplicates without noise", "kind": "decide" },
+        { "id": "classify", "label": "Classify urgency, intent and key entities", "kind": "decide" },
+        { "id": "flag", "label": "Flag which messages need a reply", "kind": "act" },
+        { "id": "hand-off", "label": "Hand each classified message to whatever drafts or answers it", "kind": "deliver" },
+        { "id": "report-outage", "label": "Report a channel that could not be read through one that still works", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "nothing-arrives-unseen",
+          "statement": "Every inbound message across connected channels is logged and correctly assessed for whether it needs a reply.",
+          "success_criteria": [
+            "Each new message is logged once, classified by urgency and intent, and flagged if it needs a reply",
+            "A channel auth failure does not silently stop triage; the user is alerted through a channel that still works",
+            "An exact duplicate is rejected without producing a second record or a second notification"
+          ]
+        }
+      ],
+      "guidance": "Own making sure nothing arriving across the connected channels goes unseen or misjudged. Classify each message's urgency and intent well enough that the reply-needed flag is trustworthy, since whatever drafts the reply depends entirely on it. If one channel's credentials fail, keep triaging the others and make sure the user finds out through one that still works. Reject exact duplicates without noise rather than surfacing them as new.",
+      "connector_types": ["email", "messaging", "database"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "Triage exists because a message arrived, which is a real external event with a freshness window. Where a bound channel cannot push, adoption falls back to a poll, but that is a limitation of the channel rather than a property of the work."
+      },
+      "personalization_needs": [
+        "Which channels and accounts are in scope, because reading more than was intended is the one unrecoverable mistake available here",
+        "What urgency means for this person, because a classification calibrated to someone else produces a reply-needed flag nothing downstream should trust",
+        "Which senders or categories should never be surfaced at all, because filtering after classification still means the message was read"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "monitored_channels",
+          "type": "enum",
+          "options": ["all_connected", "email_only", "chat_only"],
+          "default": "all_connected",
+          "description": "Which channel set to include in triage."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Local messaging as a channel",
+          "connector": "personas_messages",
+          "connector_type": "messaging",
+          "notes": "The only connector in the catalog that declares an inbound event at all (Message Received), so it is the one channel where this recipe is genuinely event-driven rather than polled. Every other messaging and email connector in the catalog declares no events, which is why the trigger rationale has to name the poll fallback."
+        },
+        {
+          "title": "The built-in database as the message log",
+          "connector": "personas_database",
+          "connector_type": "database",
+          "notes": "Duplicate rejection in the source rides on a unique constraint over the external message id rather than on application logic, which is what makes the 'logged once' criterion cheap to hold. Any database chosen at adoption should carry the same constraint."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["eff0d838-88c1-5121-8377-48e59da49b5a"],
+        "from_templates": ["digital-clone"],
+        "source_template_id": "digital-clone"
+      },
+      "review_notes": "Not superseded. Outcomes and guidance from the verdict, with the duplicate-rejection clause promoted from the guidance prose into a success criterion because it is checkable. Title takes the verdict's 'Personal Inbound Message Triage' but drops 'Personal', which is an adoption property rather than part of the craft. Kept as a separate recipe from the drafting one beside it: the v2 pair is a genuine two-step pipeline where the second step is optional, and merging them would make triage impossible to adopt without also adopting reply-sending.",
+      "research_notes": "Walked all 134 connector JSON files for declared events. Exactly one messaging or email connector declares any: local-messaging.json ('Message Received'). gmail.json, microsoft-outlook.json, slack.json, telegram.json and discord.json declare events: []. This is a real constraint on the event trigger and is recorded in the example rather than hidden, since an adopter binding gmail here will be polling whatever the recipe recommends.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+      "slug": "correspondence-activity-digest",
+      "title": "Correspondence activity digest",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/digests",
+      "domain": "general_professional",
+      "description": {
+        "need": "Whoever runs an assisted-reply pipeline cannot tell whether it is keeping pace without opening every channel, and the thing most worth knowing, how much is still waiting on a human, is the thing least visible.",
+        "input": "Message volume, draft throughput, the pending approval queue, contacts approaching auto-send, and each channel's health, over the period since the last digest.",
+        "core_action": "Assemble a calm status readout that answers whether replies are keeping pace and where attention is needed, without ever requiring an action to be useful.",
+        "output": "A per-channel snapshot naming pending approvals and contacts near graduation, not only volume counts."
+      },
+      "activities": [
+        { "id": "gather", "label": "Gather volume, throughput and queue depth for the period", "kind": "observe" },
+        { "id": "health", "label": "Read each channel's health separately rather than in aggregate", "kind": "observe" },
+        { "id": "assess", "label": "Assess whether replies are keeping pace and who is close to graduating", "kind": "decide" },
+        { "id": "compose", "label": "Compose the readout at the configured level of detail", "kind": "act" },
+        { "id": "deliver", "label": "Deliver it as information, with nothing in it that demands a response", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "whole-pipeline-at-a-glance",
+          "statement": "The person running this does not have to open every channel to know whether replies are keeping pace and where attention is needed.",
+          "success_criteria": [
+            "The digest states pending approvals and contacts near graduation, not just volume counts.",
+            "Channel health is visible per channel, not only in aggregate.",
+            "The digest is useful without requiring any action to be taken on it."
+          ]
+        }
+      ],
+      "guidance": "Give a calm snapshot of how the correspondence pipeline is doing: volume, how much is still waiting on a human, who is about to graduate to auto-send, and whether any channel looks unhealthy. This is a status readout, not a decision point, so it should never require action to be useful and should never manufacture urgency to justify itself. Per-channel health matters more than the totals, because an aggregate hides the channel that stopped.",
+      "connector_types": ["database"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of every four hours is habit with nothing behind it: no boundary in this work is defined by a clock. Speak when enough has accumulated that one readout saves a round of checking, and stay quiet when the picture has not changed."
+      },
+      "personalization_needs": [
+        "How much detail is wanted, because the same digest is a reassurance at one length and an interruption at another",
+        "What 'keeping pace' means for this pipeline, because a pending queue that is normal for one volume is a backlog at another",
+        "Whether an unhealthy channel should wait for the digest or interrupt immediately, because those are two different pieces of work and only one of them is this recipe"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "digest_detail",
+          "type": "enum",
+          "options": ["concise_counts", "per_channel_breakdown", "full_with_highlights"],
+          "default": "per_channel_breakdown",
+          "description": "How verbose the digest should be."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The built-in database as the activity store",
+          "connector": "personas_database",
+          "connector_type": "database",
+          "notes": "The digest is entirely a read over what triage and drafting already wrote, so it binds the same database those two bound and never touches a channel itself. Worth preserving at adoption: pointing this recipe at a channel connector would make it re-read messages it has no reason to see."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["5437968e-d364-578c-a4f2-8ccd41dac357"],
+        "from_templates": ["digital-clone"],
+        "source_template_id": "digital-clone"
+      },
+      "review_notes": "Title loses 'Periodic', which encoded the four-hour default. Not superseded; outcomes and guidance from the verdict, with the 'useful without requiring action' clause promoted from the guidance into a criterion. This is the thinnest recipe in the lane and the one I would put in front of the operator as a delete candidate: it reports on the other two digital-clone recipes and has no standalone need, which is the 'universal step rather than a separable responsibility' shape from findings section 15. Kept because the lane brief says all 21 survive as proposals and the call is his.",
+      "research_notes": "No external lookup warranted. Confirmed personas_database carries categories ['database','storage'] so the demotion to database is exact rather than nearest-fit.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
+      "slug": "email-inbox-attention-digest",
+      "title": "Email inbox attention digest",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/digests",
+      "domain": "general_professional",
+      "description": {
+        "need": "Reading every unread message to find the few that matter costs more attention than the messages themselves, and a digest ranked by recency does not save any of it.",
+        "input": "Unread messages in the window since the last pass, the sender importance model learned so far, and the record of what has already been surfaced.",
+        "core_action": "Rank by a real signal, who the reader actually answers combined with what the message says, and surface a short accurate list rather than a complete one.",
+        "output": "A priority-tiered digest of what genuinely needs the reader, and nothing at all when nothing does."
+      },
+      "activities": [
+        { "id": "scan", "label": "Read the unread set since the last pass", "kind": "observe" },
+        { "id": "score", "label": "Score each message on sender history and content together", "kind": "decide" },
+        { "id": "select", "label": "Select what actually needs the reader and drop the rest", "kind": "decide" },
+        { "id": "tier", "label": "Tier the selection so the most urgent cannot be missed", "kind": "act" },
+        { "id": "deliver", "label": "Deliver the digest, or stay silent when nothing qualifies", "kind": "deliver" },
+        { "id": "learn", "label": "Update the importance model from what the reader actually answered", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "important-mail-surfaces",
+          "statement": "The reader sees the mail that needs them and is not made to look at the rest.",
+          "success_criteria": [
+            "Anything needing a reply or a decision is surfaced before it goes stale",
+            "Messages are ranked by a real signal, sender history plus content, not by recency",
+            "Nothing is surfaced twice",
+            "The importance model reflects the reader's corrections rather than a fixed rule"
+          ]
+        },
+        {
+          "id": "a-quiet-inbox-produces-quiet",
+          "statement": "A quiet inbox produces quiet.",
+          "success_criteria": [
+            "No digest is produced merely to show the watch is running",
+            "A period where nothing was read, because access failed, is reported as unread rather than as empty"
+          ]
+        }
+      ],
+      "guidance": "Own the reader's attention rather than their inbox. The measure is whether they can act on what was surfaced and safely ignore everything else, so a short accurate list beats a complete one. Learn importance from who they actually answer rather than from what they say matters. Priority tiers should make the most urgent items impossible to miss. When nothing needs them, say nothing, and never manufacture a digest to prove the watch is alive.",
+      "connector_types": ["email"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of daily at seven is habitual; no boundary in an inbox is defined by a calendar. Act when the unread set holds something that would change what the reader does next, or when enough has accumulated that one pass saves them a visit, and respect their working hours."
+      },
+      "personalization_needs": [
+        "Which mailbox and which accounts are in scope, because reading more than was intended is the one unrecoverable mistake available here",
+        "Who the reader always answers, because the importance model needs a starting point or its first weeks are noise and it stops being trusted",
+        "What they never want surfaced, because an exclusion the persona has to infer takes many wrong digests to learn"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        { "name": "lookback_hours", "type": "number", "default": 12, "min": 4, "max": 72 },
+        { "name": "max_digest_emails", "type": "number", "default": 10, "min": 3, "max": 25 },
+        { "name": "vip_boost_multiplier", "type": "number", "default": 2, "min": 1, "max": 5 }
+      ],
+      "examples": [
+        {
+          "title": "Gmail as the email connector",
+          "connector": "gmail",
+          "connector_type": "email",
+          "notes": "Gmail's own labels are the natural scope boundary and the catalog connector exposes a labels resource, so 'which mailbox is in scope' can be answered concretely at adoption rather than left to a prompt. It declares no events, so this recipe reads on its own schedule regardless of the trigger chosen."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["6cde4c09-5287-53aa-8f38-dfa12d817e88"],
+        "from_templates": ["email-morning-digest"],
+        "source_template_id": "email-morning-digest"
+      },
+      "review_notes": "Outcomes and guidance from the superseding responsibility, which is sharper than the verdict on the point that matters: the verdict framed this as surfacing important mail, the responsibility frames it as owning attention, and adds the whole 'a quiet inbox produces quiet' outcome that the v2 row contradicted by emitting an inbox_zero event. The verdict's ranking and tiering criteria are folded into the first outcome. The v2 title said 'Email Digest', which is ambiguous in a list containing three other digests in this lane alone.",
+      "research_notes": "Read gmail.json: categories ['email'], one resource (labels), no events, healthcheck against the OAuth userinfo endpoint. The email category resolves to six connectors (gmail, microsoft_outlook, resend, sendgrid, hubspot, google_workspace_oauth_template), of which resend and sendgrid are send-only transactional providers with no inbox to read. Recorded here because connector_types alone cannot express 'an email connector that can read incoming mail', and adoption offering all six would offer at least two that cannot do this work.",
+      "superseded_by": [["convert_A.json", "Any", "Inbox triage into what actually needs the operator"]]
+    },
+
+    {
+      "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
+      "slug": "congressional-stock-disclosure-coverage",
+      "title": "Congressional stock disclosure coverage",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/investing",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "Disclosure filings arrive on their own schedule and in bursts, so anyone watching them by hand either checks constantly or misses the window in which a filing still means something.",
+        "input": "Public disclosure filings since the last covered date, the reader's declared sectors and holdings, and the record of which filings were already reported.",
+        "core_action": "Advance a cursor over filings rather than rescanning a fixed window, match them against the declared sectors and holdings, and treat an unusual concentration in one sector as the finding rather than any single filing.",
+        "output": "A report covering a stated window with no gap since the previous one, naming the filings that plausibly matter and any sector-level pattern behind them."
+      },
+      "activities": [
+        { "id": "advance", "label": "Advance the cursor over filings published since the last covered date", "kind": "observe" },
+        { "id": "match", "label": "Match filings against declared sectors and holdings", "kind": "decide" },
+        { "id": "pattern", "label": "Judge whether one sector is seeing unusual concentration", "kind": "decide" },
+        { "id": "report", "label": "Report matched filings and any sector pattern", "kind": "act" },
+        { "id": "state-coverage", "label": "State the window covered, and name any window left uncovered by an outage", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "coverage-without-watching",
+          "statement": "Disclosures touching the reader's holdings and sectors are seen without them watching the filings.",
+          "success_criteria": [
+            "Each report covers a stated window with no gap since the previous one",
+            "A filing already reported is not reported again",
+            "A source outage is reported as an uncovered window rather than passed off as no activity",
+            "Findings are filtered to the declared watchlist and sectors rather than reporting every filing"
+          ]
+        },
+        {
+          "id": "patterns-over-filings",
+          "statement": "An unusual concentration of filings in one sector is called out as the finding, not buried under the individual trades that make it up.",
+          "success_criteria": [
+            "Sector-level movement is reported against a rolling baseline rather than in absolute counts",
+            "Usefulness feedback from the reader tightens the next pass's filters rather than being logged and ignored"
+          ]
+        }
+      ],
+      "guidance": "Own the coverage of disclosures in the sectors the reader follows. Filings arrive on their own schedule and in bursts, so the job is completeness across time rather than a report on a chosen day. Match against the watchlist and declared sectors rather than reporting every filing, because the value is relevance and not volume. An unusual concentration in one sector says more than any single filing. When a source cannot be reached, say the window is uncovered instead of implying nothing happened.",
+      "connector_types": [],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 weekly cadence was habitual and actively wrong for the work: filings arrive in bursts and a fixed weekly window either rescans nothing or misses a burst. Act when new filings are plausibly available, and sooner when the uncovered window since the last successful scan has grown."
+      },
+      "personalization_needs": [
+        "Which sectors and holdings make a filing relevant, because unfiltered disclosure volume is large enough to be useless",
+        "Which chamber and which filing types are in scope, because Senate and House disclosures live in different systems with different shapes and an adopter who expects both will otherwise get one",
+        "What the reader will do with a match, because a filing that changes nothing they hold is trivia rather than a signal"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "sectors",
+          "type": "text",
+          "description": "Sectors of interest (comma-separated) driving which disclosures get surfaced."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["34e9138a-1af0-5323-bbac-712d396d6f50"],
+        "from_templates": ["financial-stocks-signaller"],
+        "source_template_id": "financial-stocks-signaller"
+      },
+      "review_notes": "Outcomes and guidance from the superseding responsibility, with the verdict's relevance-filtering criterion folded into the first outcome and its sector-pattern point promoted to a second outcome, since the responsibility states it in prose only. connector_types is empty and that is a real finding rather than an omission: neither the v2 row nor the responsibility names a connector, and the sources are public web pages. Named vendors from the v2 description (Capitol Trades, Senate EFD) are deliberately not carried into the recipe body; a specific source is exactly the kind of concrete knowledge that belongs in examples, and I have left them out entirely rather than record a source I could not verify is still the right one.",
+      "research_notes": "Checked whether any catalog category could carry this. The research category resolves to alpha_vantage, arxiv, bright_data, firecrawl, kalshi, news_api, pubmed, reddit, semantic_scholar, x_twitter and youtube_data; none is a disclosure source, and two (bright_data, firecrawl) are generic scrapers that would be an adoption choice rather than something the recipe evidences. Externally: the Senate's electronic filing system is at efdsearch.senate.gov and publishes no official API, serving periodic transaction reports as HTML behind a CSRF-protected terms acceptance, which is why every third-party tracker in this space is a scraper; House filings live separately at the Clerk's disclosure site. That shape is a real adoption hazard (fair-use terms, brittle HTML, no stable identifiers for the 'already reported' criterion) and is why the second personalization need asks which chamber is in scope.",
+      "superseded_by": [["convert_A.json", "Investor", "Congressional disclosure coverage"]]
+    },
+
+    {
+      "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+      "slug": "under-covered-equity-discovery-by-sector",
+      "title": "Under-covered equity discovery by sector",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/investing",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "Screens produce names that clear a mechanical filter and nothing more, so the output looks like research while carrying no thesis anyone could argue with.",
+        "input": "The reader's declared sectors, coverage and technical data for the candidate pool, recent news for each candidate, and the thresholds as the reader's earlier verdicts have moved them.",
+        "core_action": "Require all three legs, thin coverage, a technical case, and a real catalyst, and treat two out of three as a rejection rather than a weaker recommendation.",
+        "output": "A small number of candidates each stating its coverage, its technical case and its catalyst, plus the stated reason every rejected name was rejected."
+      },
+      "activities": [
+        { "id": "pool", "label": "Assemble the candidate pool from the declared sectors", "kind": "observe" },
+        { "id": "read-signals", "label": "Read coverage, technicals and recent news for each candidate", "kind": "observe" },
+        { "id": "require-three", "label": "Require thin coverage, a technical case and a real catalyst together", "kind": "decide" },
+        { "id": "surface", "label": "Surface the survivors with all three legs stated", "kind": "act" },
+        { "id": "explain-rejections", "label": "Record why each rejected candidate was rejected", "kind": "deliver" },
+        { "id": "retune", "label": "Move the thresholds from the reader's repeated verdicts", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "real-candidates",
+          "statement": "Names worth a second look surface before they are widely covered, with the reason they qualified.",
+          "success_criteria": [
+            "Each candidate states its coverage, its technical case and its catalyst, not just one factor",
+            "A candidate rejected for insufficient data is never promoted as a find",
+            "Rejected candidates carry a stated reason so the thresholds can be tuned",
+            "Repeated verdicts from the reader move the thresholds rather than being logged and ignored"
+          ]
+        },
+        {
+          "id": "no-filler-in-quiet-periods",
+          "statement": "A quiet period produces nothing rather than a stretched thesis.",
+          "success_criteria": [
+            "A pass that finds no three-legged candidate reports none",
+            "No name is surfaced on two legs described more enthusiastically"
+          ]
+        }
+      ],
+      "guidance": "Own finding the few names worth attention in the sectors the reader follows. A candidate needs all three legs: thin coverage, a technical case, and a real catalyst. Two out of three is a rejection rather than a weaker recommendation. Report why candidates were filtered out, since that is how the reader learns whether the filter is set right. Stay within the declared sectors rather than drifting toward whatever looks exciting, and never stretch a thesis to fill a quiet period.",
+      "connector_types": ["finance", "research"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 weekly cadence was habitual. Look when something plausibly changed in the covered sectors, a catalyst, a coverage change, or a move against a quiet baseline, and accept that a period with nothing to say produces nothing."
+      },
+      "personalization_needs": [
+        "Which sectors the reader actually follows and why, because the candidate pool is defined by this and nothing else, and a generic pool produces confident irrelevance",
+        "What they mean by under-covered in their own terms, because coverage thresholds differ enormously by market and the persona should not pick one silently",
+        "Whether this is research only, because the recipe must know it is never placing an order and the adopter must have said so rather than assumed it"
+      ],
+      "dependencies": [
+        "A market data plan whose request limits cover the candidate pool: three or more calls per candidate per pass means a small free quota caps the pool rather than the thresholds doing it"
+      ],
+      "input_schema": [
+        {
+          "name": "sectors",
+          "type": "text",
+          "description": "Sectors of interest (comma-separated) driving candidate pool."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Alpha Vantage as the market data connector",
+          "connector": "alpha_vantage",
+          "connector_type": "finance",
+          "notes": "Serves pre-calculated technical indicators and a news sentiment endpoint on the free tier, so both the technical leg and the catalyst leg are one call each rather than a local calculation over price history. The constraint is volume, not capability: the free tier is roughly 25 requests a day at 5 a minute, which at three calls per candidate caps a pass at a handful of names. Analyst coverage, the third leg, is not something this connector returns, so the coverage test has to come from somewhere else."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["90eeee84-f53f-5467-b795-be8ba315fed7"],
+        "from_templates": ["financial-stocks-signaller"],
+        "source_template_id": "financial-stocks-signaller"
+      },
+      "review_notes": "alpha_vantage demoted to its two catalog categories, finance and research, with the id kept as an example. Both are carried rather than just finance, because the catalyst leg is a news read and research is the category that covers it. Outcomes and guidance from the superseding responsibility; the verdict's rejection-reason criterion is folded into the first outcome and the responsibility's 'never stretch a thesis to fill a quiet period' is promoted to a second outcome because it is the criterion a reviewer could actually check. The verdict's note that this is not a merge candidate with the disclosure scan is agreed with and both are kept.",
+      "research_notes": "Read scripts/connectors/builtin/alpha-vantage.json: name alpha_vantage, categories ['finance','research'], no declared resources or events, healthcheck against the MARKET_STATUS function. Externally confirmed that Alpha Vantage serves RSI and MACD as pre-calculated indicator endpoints and a news-with-sentiment endpoint on the free tier, and that the free tier is limited to about 25 requests per day and 5 per minute, with paid plans lifting the daily cap and raising the per-minute rate. That limit is what the dependency line is about; it is a real adoption blocker for a wide candidate pool and nothing in the catalog surfaces it. Also confirmed the connector returns no analyst-coverage figure, which means the recipe's first leg has no evidenced source, and I have said so in the example rather than inventing one.",
+      "superseded_by": [["convert_A.json", "Investor", "Under covered opportunity discovery"]]
+    },
+
+    {
+      "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
+      "slug": "watchlist-technical-signal-digest",
+      "title": "Watchlist technical signal digest",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/investing",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "Indicator readings on a watchlist produce a verdict per ticker and no reasoning, so nobody can tell afterwards whether the method worked or whether one lucky call carried it.",
+        "input": "Price history and indicator readings for each watchlist ticker over the closed period, recent news for each, and the existing simulated position ledger.",
+        "core_action": "State a signal only when the indicators behind it agree enough to justify it, report the disagreement when they do not, and never fabricate a figure for a ticker the sources could not cover.",
+        "output": "A short digest of defensible calls with their reasoning attached, and a simulated track record that keeps the losing calls in it."
+      },
+      "activities": [
+        { "id": "fetch", "label": "Fetch price history, indicators and news per watchlist ticker for the closed period", "kind": "observe" },
+        { "id": "composite", "label": "Weigh technical readings against news per the configured weighting", "kind": "decide" },
+        { "id": "resolve", "label": "Decide where the indicators agree enough to justify a call and where they conflict", "kind": "decide" },
+        { "id": "state", "label": "State each call with its indicators, and mark uncovered tickers as data unavailable", "kind": "act" },
+        { "id": "review", "label": "Put the digest in front of a human before anything becomes a tracked position", "kind": "deliver" },
+        { "id": "record", "label": "Fold reviewed decisions into the running simulated record", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "signals-grounded-in-real-data",
+          "statement": "Every call the reader sees traces back to real technical and news data for that ticker, never a fabricated number.",
+          "success_criteria": [
+            "Every signal states the indicators behind it and where they disagree",
+            "A ticker with no data in either the primary or fallback source is marked data unavailable, never given a synthesized signal",
+            "Every reviewed decision persists as a simulated position whose running result is visible in the next digest"
+          ]
+        },
+        {
+          "id": "the-record-stays-honest",
+          "statement": "The simulated record stays honest enough to be evidence about the method.",
+          "success_criteria": [
+            "Losing calls remain in the record",
+            "A period with nothing worth saying produces a short digest rather than manufactured signals"
+          ]
+        }
+      ],
+      "guidance": "Own turning noise into a small number of defensible calls. A signal is worth stating only when the indicators behind it agree enough to justify it, and disagreement is itself worth reporting. Weight technical readings against news per the configured setting, and fall back to search only when the primary data source is unavailable, never inventing a number. Every signal goes through human review before it becomes a tracked position. Keep the record honest, including the calls that went badly, because its only value is as evidence about the method.",
+      "connector_types": ["finance", "research"],
+      "recommended_trigger": {
+        "kind": "time",
+        "rationale": "One of the few genuine calendar obligations in this lane. Period indicators are only defined once the period has closed, so an earlier digest reports a partial bar and the call it produces is not the call the data supports. Align the period to the trading week rather than to a chosen weekday."
+      },
+      "personalization_needs": [
+        "Which tickers are on the list and why each earned its place, because a signal is only actionable against a position or an intent the reader actually has",
+        "The reader's horizon and risk appetite, because the same indicator reading is a buy on one horizon and noise on another",
+        "Whether this is research only, because the persona must know it is never placing an order and the adopter must have said so rather than assumed it"
+      ],
+      "dependencies": [
+        "A market data plan whose per-minute and per-day request limits cover the watchlist: this recipe makes several calls per ticker per period, so a small free quota limits the watchlist size rather than the reader doing it"
+      ],
+      "input_schema": [
+        {
+          "name": "watchlist",
+          "type": "text",
+          "description": "Comma-separated ticker symbols to track (AAPL, MSFT, NVDA and so on)."
+        },
+        {
+          "name": "signal_weighting",
+          "type": "enum",
+          "options": ["technical", "news", "balanced"],
+          "default": "balanced",
+          "description": "How to weight technical indicators against news sentiment in the composite score."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Alpha Vantage as the market data connector",
+          "connector": "alpha_vantage",
+          "connector_type": "finance",
+          "notes": "Price history, RSI, MACD and news sentiment are each separate calls, so a ten-ticker watchlist is roughly forty calls per period. Against a free tier of about 25 requests a day at 5 a minute, that does not fit, and the failure is silent partial coverage rather than an error, which is exactly the condition the data-unavailable criterion exists to catch. Verify the plan at adoption, not at the first digest."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["3fd414ff-d43a-5df7-8e85-f0b5882601c8"],
+        "from_templates": ["financial-stocks-signaller"],
+        "source_template_id": "financial-stocks-signaller"
+      },
+      "review_notes": "Title loses 'Weekly Signal Fetcher' entirely: 'fetcher' named the mechanism and 'weekly' named the cadence, and neither is the work. This is one of three time triggers in the lane, and the only one the operator did not argue for himself; it is granted on the responsibility's own reasoning, which is that a period indicator is undefined before the period closes. That is a genuine calendar obligation rather than a habit, and it is worth noting it is the same argument the operator made for the billing month. Outcomes and guidance from the responsibility; the verdict's data-unavailable and simulated-trade criteria are the same claims and are folded in.",
+      "research_notes": "Same alpha-vantage.json read and the same external confirmation as 90eeee84: pre-calculated RSI and MACD endpoints and a news sentiment endpoint on the free tier, roughly 25 requests per day and 5 per minute free, no daily cap on paid plans. The per-ticker call arithmetic in the example is derived from that, and it is the reason the dependency is stated in terms of watchlist size rather than as a generic 'needs an API key'.",
+      "superseded_by": [["convert_A.json", "Investor", "Watchlist signal digest and the record it builds"]]
+    },
+
+    {
+      "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
+      "slug": "product-idea-harvesting-from-codebase-and-web",
+      "title": "Product idea harvesting from codebase and web",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "product_project/ideation",
+      "domain": "product_project",
+      "description": {
+        "need": "Idea harvesting that is not grounded in the product produces plausible-sounding candidates that do not fit what the product is, and triaging them costs more than they are worth.",
+        "input": "The bound codebase's actual domain and stack where one is connected, public web sources, and any connected chat or knowledge base, plus the record of which categories keep getting rejected.",
+        "core_action": "Read what the product actually is before searching, so candidates are plausible for this product rather than generic, and skip vague or meta content instead of passing volume through to triage.",
+        "output": "A small number of concrete candidates a person can triage, each traceable to where it came from, delivered even when no chat or knowledge base is connected."
+      },
+      "activities": [
+        { "id": "ground", "label": "Read the bound codebase for the product's real domain and stack", "kind": "observe" },
+        { "id": "mine", "label": "Mine the web, and any connected chat or knowledge base, for candidates that fit", "kind": "observe" },
+        { "id": "filter", "label": "Skip vague and meta content rather than passing it through", "kind": "decide" },
+        { "id": "weigh-history", "label": "Drop categories the reader has repeatedly rejected", "kind": "decide" },
+        { "id": "extract", "label": "Write each candidate concretely enough to be triaged", "kind": "act" },
+        { "id": "queue", "label": "Hand the candidates to triage with their source attached", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "grounded-not-generic",
+          "statement": "Harvested ideas actually fit what this product is and could plausibly become, because they are grounded in its real codebase and stack.",
+          "success_criteria": [
+            "Candidates are seeded from the bound codebase's actual domain and stack when one is connected",
+            "Vague or meta candidates are skipped rather than passed through to triage",
+            "Each candidate carries the source it came from"
+          ]
+        },
+        {
+          "id": "never-goes-silent",
+          "statement": "The harvest still delivers something useful even when no chat or knowledge base source is connected.",
+          "success_criteria": [
+            "Web and codebase research alone produce candidates when messaging and knowledge base sources are absent",
+            "A missing chat or knowledge base connector is never treated as a failure"
+          ]
+        }
+      ],
+      "guidance": "Ground candidates in what the product actually is, reading the codebase before searching the web so results are plausible rather than generic. Skip vague or meta content rather than passing volume through to triage. Learn from acceptance patterns per category and stop mining categories that keep getting rejected. A missing chat or knowledge base connector should never stop the harvest; web and codebase research alone are enough to deliver value.",
+      "connector_types": ["development", "messaging", "knowledge_base"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 weekly cadence was habitual. There is no boundary here that a calendar defines, and a fixed cadence forces a harvest on a week when nothing changed. Act when the product or its sources have plausibly moved, and when the triage queue has room."
+      },
+      "personalization_needs": [
+        "Which codebase is the product, because this is the only thing that makes a candidate plausible rather than generic, and the recipe degrades to a web search without it",
+        "Which chat channels and knowledge base spaces are in scope, because these are optional inputs and reading the wrong ones is a privacy problem rather than a quality one",
+        "What the reader has already decided against, because a category rejected three times should stop appearing and the persona cannot infer that in its first passes"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "sources",
+          "type": "text",
+          "description": "Which sources to harvest from (messaging channels, knowledge base databases, URL queue). Connectors skipped at adoption are excluded."
+        },
+        {
+          "name": "content_types",
+          "type": "enum",
+          "options": ["articles_only", "articles_and_videos", "articles_videos_and_discussions"],
+          "default": "articles_and_videos",
+          "description": "What kinds of content to consider when scanning sources."
+        },
+        {
+          "name": "ideas_per_source",
+          "type": "number",
+          "default": 5,
+          "min": 1,
+          "max": 20,
+          "description": "Maximum number of candidates extracted per source per scan."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The codebase connector as the grounding source",
+          "connector": "codebase",
+          "connector_type": "development",
+          "notes": "Declares categories development, source_control and desktop. Only development is carried here: source_control would resolve to github and gitlab, which answer a different question (what changed) than the one this recipe asks (what is this product), and desktop is never a recipe-level type."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["20ed97c9-0baf-53b4-bc99-71ddf808010d"],
+        "from_templates": ["idea-harvester"],
+        "source_template_id": "idea-harvester"
+      },
+      "review_notes": "Not superseded; outcomes and guidance are the verdict's. The v2 connectors array is empty and that is wrong on its own evidence: the procedure says 'read the codebase (if connected)' and 'if messaging / knowledge-base connectors are also connected', and the verdict's first outcome makes the bound codebase load-bearing. I have therefore filled connector_types from what the procedure and the verdict evidence rather than from the empty array, and named the derivation here. Web access is treated as ambient, like desktop, and is not a connector type.",
+      "research_notes": "Read scripts/connectors/builtin/codebase.json and codebases.json: both name codebase-shaped connectors with categories ['development','source_control','desktop']. The development category resolves to five connectors, source_control to six. Chose development alone and recorded why in the example. Confirmed knowledge_base resolves to eight connectors including notion, confluence, obsidian and the built-in vector store, and messaging to ten, so both optional inputs have real resolutions at adoption.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+      "slug": "content-feed-intake-for-curation",
+      "title": "Content feed intake for curation",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/knowledge-curation",
+      "domain": "general_professional",
+      "description": {
+        "need": "A feed sweep that reprocesses what it has already seen, or that dumps an unbounded batch into curation, costs more in reprocessing and quota than the new items are worth.",
+        "input": "The configured feeds, the record of items already processed, and the age and volume caps.",
+        "core_action": "Deduplicate and age-filter before anything reaches curation, and respect the per-run cap so the most recent items win when a feed floods.",
+        "output": "A bounded set of genuinely new, recent items handed to curation, and per-feed yield figures showing which feeds are worth keeping."
+      },
+      "activities": [
+        { "id": "sweep", "label": "Sweep the configured feeds for items", "kind": "observe" },
+        { "id": "dedupe", "label": "Drop anything already processed", "kind": "decide" },
+        { "id": "age-filter", "label": "Drop items older than the configured age", "kind": "decide" },
+        { "id": "cap", "label": "Keep the most recent items up to the per-run cap", "kind": "act" },
+        { "id": "hand-off", "label": "Hand the survivors to curation and record per-feed yield", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "feeds-stay-current",
+          "statement": "New items from configured feeds enter the curation pipeline promptly, without reprocessing what was already seen.",
+          "success_criteria": [
+            "Items are deduplicated and age-filtered before entering curation",
+            "Per-run volume stays within the configured cap",
+            "When a feed produces more than the cap, the most recent items win rather than an arbitrary subset"
+          ]
+        }
+      ],
+      "guidance": "Deduplicate and age-filter before handing items to curation, and respect the per-run cap so quota stays predictable. The judgment that matters, whether this is worth a knowledge base page and how it should be summarised and cross-referenced, belongs to the curation work itself rather than to this intake step. Keep per-feed yield so a feed that never produces anything worth keeping can be retired rather than swept forever.",
+      "connector_types": ["knowledge_base"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of daily at eight in the morning was habit. Feeds fill at their own rate, so act when enough new items have plausibly accumulated to be worth a pass, and skip a pass entirely when they have not."
+      },
+      "personalization_needs": [
+        "Which feeds are in scope and what each is for, because a feed that was added once and never yields anything is pure cost",
+        "How stale an item may be and still be worth curating, because the answer differs completely between news and reference material"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "max_article_age_days",
+          "type": "number",
+          "default": 7,
+          "min": 1,
+          "max": 90,
+          "description": "Articles older than this from feeds are skipped. Does not affect manual URL submission."
+        },
+        {
+          "name": "batch_size",
+          "type": "number",
+          "default": 20,
+          "min": 1,
+          "max": 100,
+          "description": "Maximum number of new articles to curate per scan. When feeds produce more, the most recent win."
+        },
+        {
+          "name": "feed_urls",
+          "type": "text",
+          "description": "One feed URL per line. Seeded from the stored feed configuration and overridable per run."
+        }
+      ],
+      "examples": [],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["fb223f0f-dd00-5f3e-bbec-4ba12a58b430"],
+        "from_templates": ["research-knowledge-curator"],
+        "source_template_id": "research-knowledge-curator"
+      },
+      "review_notes": "THIS RECIPE IS A STANDING MERGE, not a survivor. The consolidation verdict is merge_into 7baf2513 (Content Curation) and I agree with it: the two exist to do the same job and differ only in how the content arrives, which is what a trigger already expresses. I have written the full v3 object because the lane brief requires all 21 present, but the Director should fold it into knowledge-base-content-curation and drop this id rather than publish both. If it is kept, note that its own guidance disclaims the only judgment in it, which is the clearest possible argument that it is a step rather than a responsibility. Input schema carried from v2 with prose punctuation normalised; feed_urls lost its reference to a state file path, which is an installation detail rather than a knob.",
+      "research_notes": "No external lookup. Checked whether the catalog carries any feed or RSS category: it does not, and the nearest connectors (news_api under research, apify and firecrawl under web_scraping and research) are not what this recipe reads. Feeds are plain URLs, which is why connector_types carries only the knowledge_base destination that the v2 row named.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+      "slug": "knowledge-base-content-curation",
+      "title": "Knowledge base content curation",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/knowledge-curation",
+      "domain": "general_professional",
+      "description": {
+        "need": "Content saved without judgment turns a knowledge base into a pile: everything is in there, nothing is findable later, and the same source has three pages.",
+        "input": "One or more pieces of content arriving either as a submitted URL or from a scheduled feed sweep, the controlled taxonomy, and the existing pages it might connect to.",
+        "core_action": "Judge whether the content is actually worth adding, then write a summary at the depth a later reader needs and find the cross-references that make the page discoverable rather than merely filed.",
+        "output": "A structured page with a layered summary, tags from the controlled taxonomy, and real cross-references, or nothing at all when the content was not worth a page."
+      },
+      "activities": [
+        { "id": "fetch", "label": "Fetch the submitted or swept content", "kind": "observe" },
+        { "id": "judge-worth", "label": "Judge whether this is worth a page at all, and whether it duplicates one", "kind": "decide" },
+        { "id": "summarise", "label": "Write the layered summary at the depth a later reader needs", "kind": "act" },
+        { "id": "tag", "label": "Tag against the controlled taxonomy, extending it only when nothing fits", "kind": "act" },
+        { "id": "connect", "label": "Find the cross-references that make the page discoverable later", "kind": "act" },
+        { "id": "publish", "label": "Create the page and record the source as processed", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "worth-being-in-the-kb",
+          "statement": "Everything that enters the knowledge base through curation is genuinely worth being there: summarized well, tagged, and connected to what is already there.",
+          "success_criteria": [
+            "Every curated page carries a layered summary, tags, and any real cross-references, not just a raw copy",
+            "Duplicate or near-duplicate content is caught rather than creating a second page for the same source",
+            "A new tag is added to the controlled taxonomy only when nothing existing fits, not per page"
+          ]
+        }
+      ],
+      "guidance": "Judge whether a piece of content is actually worth adding, not just whether it can be fetched and summarised. Write a genuinely useful layered summary and find the cross-references that make the page discoverable later rather than merely filed. This covers content arriving either from a submitted URL or from a scheduled feed sweep: the intake differs, the judgment about what belongs in the knowledge base does not. Extend the taxonomy sparingly, because sprawl is what the audit beside this one exists to clean up.",
+      "connector_types": ["knowledge_base"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "The work starts when content arrives, whether that is a person submitting a URL or a feed sweep producing new items, and it has nothing to do until then. Self-paced would be wrong because the recipe cannot choose its own moment when the input is somebody else's submission."
+      },
+      "personalization_needs": [
+        "Which taxonomy dimensions matter and how strictly the controlled vocabulary should be held, because the difference between a useful taxonomy and sprawl is entirely this decision",
+        "What a later reader will be looking for, because it determines the depth the summary is written to and nothing else does",
+        "Which knowledge base and which space, because curation writes and a wrong destination is expensive to unwind"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "urls",
+          "type": "text",
+          "description": "One or more URLs to curate. Newline-separated for batches."
+        },
+        {
+          "name": "curation_intent",
+          "type": "text",
+          "description": "Free-form textarea: what taxonomy dimensions matter most, how to weigh entities, what tone for summaries (academic, pragmatic, skeptical). Read at each run."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Notion as the knowledge base connector",
+          "connector": "notion",
+          "connector_type": "knowledge_base",
+          "notes": "Declares both a databases and a top-level pages resource, so the destination question at adoption is genuinely two questions, and tagging maps onto database properties rather than free text. It also carries the database and documentation categories, which is why it appears as an option for recipes that are not curation at all."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["7baf2513-9711-552b-8c64-f4ca2a01d421", "fb223f0f-dd00-5f3e-bbec-4ba12a58b430"],
+        "from_templates": ["research-knowledge-curator"],
+        "source_template_id": "research-knowledge-curator"
+      },
+      "review_notes": "This is the merge survivor. Title takes the verdict's rename from 'Manual Curation' to content curation and adds the area, since the work is no longer manual-only. provenance.from_recipes carries both ids so the merge is visible in the artifact rather than only in this note. The v2 phrase 'three-tier summary' is generalised to a layered summary: three tiers is an implementation choice the source made, not a claim about the craft, and a recipe that fixes it prevents an adopter from choosing two or four. Trigger is event rather than self_paced because the input is somebody else's submission; that is the one place in this lane where an on-demand recipe is best expressed as an event.",
+      "research_notes": "Read notion.json (categories knowledge_base, database, documentation, productivity; resources databases and top-level pages), confluence.json and obsidian.json. The knowledge_base category resolves to eight connectors, of which two (obsidian, desktop_obsidian) are local file stores with no page identity of the kind cross-referencing assumes and one (personas_vector_db) is a vector store with no page concept at all. Recorded because connector_types alone will offer an adopter three options here that cannot hold a cross-referenced page, and the adoption research pass is where that has to be caught.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
+      "slug": "knowledge-base-curation-audit",
+      "title": "Knowledge base curation audit",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "general_professional/knowledge-curation",
+      "domain": "general_professional",
+      "description": {
+        "need": "A curated knowledge base degrades in ways nobody notices from inside it: pages nothing links to, and a taxonomy that has sprawled past the point where its tags mean anything.",
+        "input": "The current page and tag graph, and the same measurements from earlier audits.",
+        "core_action": "Find orphaned pages and near-duplicate tags, read them against earlier audits so a trend is visible, and propose rather than apply.",
+        "output": "A report of orphans, consolidation opportunities and curation health with a trend, from which a person decides what to change."
+      },
+      "activities": [
+        { "id": "walk", "label": "Walk the page and tag graph", "kind": "observe" },
+        { "id": "find-orphans", "label": "Identify pages nothing links to and near-duplicate tags", "kind": "decide" },
+        { "id": "trend", "label": "Read the findings against earlier audits so sprawl is visible as a trend", "kind": "decide" },
+        { "id": "propose", "label": "Propose consolidations without applying any of them", "kind": "act" },
+        { "id": "report", "label": "Deliver the report, naming any section that could not run", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "kb-stays-tidy",
+          "statement": "Orphaned pages and taxonomy sprawl in the knowledge base are surfaced for the owner to act on, and the base does not quietly degrade over time.",
+          "success_criteria": [
+            "Orphaned pages and consolidation opportunities are identified and reported with a trend against prior audits",
+            "No merge or structural change happens without the owner applying it themselves",
+            "A section that could not run is named and skipped rather than failing the whole report"
+          ]
+        }
+      ],
+      "guidance": "Surface the upkeep the owner would otherwise never notice: orphaned pages, taxonomy that has sprawled past usefulness, and how curation health is trending. This is informational only, so never merge, delete or restructure anything automatically; the owner decides and applies changes themselves. If part of the audit cannot run, skip that section and say so rather than failing the whole report.",
+      "connector_types": ["knowledge_base"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of Friday at six in the evening is habit with nothing behind it. Sprawl accumulates with curation volume rather than with the calendar, so audit when enough has been added since the last audit for the picture to have changed."
+      },
+      "personalization_needs": [
+        "What counts as an orphan in this base, because a deliberately standalone reference page is not the same as a page nobody finished connecting",
+        "How much tag sprawl the owner will tolerate before it is worth reporting, because a strict controlled vocabulary and a loose one both work and only one of them wants this report weekly"
+      ],
+      "dependencies": [],
+      "input_schema": [],
+      "examples": [
+        {
+          "title": "Notion as the knowledge base connector",
+          "connector": "notion",
+          "connector_type": "knowledge_base",
+          "notes": "Orphan detection needs the whole page set, and the catalog connector exposes top-level pages rather than a full graph, so the audit's completeness depends on what the credential can enumerate. A partial enumeration reads as orphans that are not orphans, which is why the report has to be able to skip a section and say so."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["b8e9e785-0c7f-5fe3-ba7b-186969b2b984"],
+        "from_templates": ["research-knowledge-curator"],
+        "source_template_id": "research-knowledge-curator"
+      },
+      "review_notes": "Title takes the verdict's rename and loses 'Weekly'. Not superseded; outcomes and guidance are the verdict's, with the skip-a-section clause promoted from guidance into a criterion. Agreed with the verdict's note that this is not a duplicate of the persona memory health audit (ba138faf), which audits a persona's own memory layers rather than a user's knowledge base content. v2 carried no input schema, which is correct here: the audit has no knobs worth exposing and adding some would be inventing configuration the source does not evidence.",
+      "research_notes": "Same notion.json read as the curation recipe. The point recorded in the example is real and specific: notion.json declares a 'pages: Top-level pages' resource, not a full page enumeration, so an orphan audit bound to it is working from whatever the token can reach. Nothing in the catalog expresses that limit, which is why the recipe carries a criterion about partial runs rather than assuming completeness.",
+      "superseded_by": []
+    },
+
+    {
+      "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+      "slug": "revenue-movement-report-and-prediction-calibration",
+      "title": "Revenue movement report and prediction calibration",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/revenue",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "A revenue report that never checks its own predictions repeats the same mistakes every period, and a report nobody can reconcile against the payment provider is not evidence of anything.",
+        "input": "Payment and subscription movement for the period, the account health scores predicted last period, and what actually happened to those accounts.",
+        "core_action": "State what moved and which products or accounts are behind it, then measure last period's predictions against reality and move the scoring weights from that precision and recall rather than from opinion.",
+        "output": "A report of revenue movement, health distribution and prediction accuracy together, and a recorded weight adjustment the next period's scoring will use."
+      },
+      "activities": [
+        { "id": "pull", "label": "Pull the period's payment and subscription movement", "kind": "observe" },
+        { "id": "attribute", "label": "Attribute each movement to products or accounts", "kind": "decide" },
+        { "id": "score-predictions", "label": "Measure last period's health predictions against what actually happened", "kind": "decide" },
+        { "id": "recalibrate", "label": "Adjust the scoring weights from that precision and recall, and record the adjustment", "kind": "act" },
+        { "id": "reconcile", "label": "Reconcile the figures against the provider and state any gap rather than smoothing it", "kind": "act" },
+        { "id": "deliver", "label": "Deliver movement, distribution and accuracy in one report", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "report-and-model-both-improve",
+          "statement": "The revenue report is trustworthy, and the health or churn prediction model that feeds it gets measurably better every period it runs.",
+          "success_criteria": [
+            "The report states revenue movement, health distribution, and prediction accuracy together.",
+            "Scoring weights are adjusted from precision and recall, and the adjustment is recorded, not silent."
+          ]
+        },
+        {
+          "id": "movement-is-attributable-and-reconciled",
+          "statement": "The reader can tell where revenue moved and why without opening the payment dashboard.",
+          "success_criteria": [
+            "Each report states the movement and the products or accounts behind it",
+            "Figures reconcile with the payment provider, and any gap is stated rather than smoothed",
+            "A step change is reported when it appears rather than held until the period boundary"
+          ]
+        }
+      ],
+      "guidance": "Own the reader's understanding of their own revenue. Movement matters more than totals: what grew, what churned, what failed to collect, and which of those is a trend rather than one period. Deliver the movement alongside an honest read on how well the last period's health predictions held up, then move the scoring weights from that precision and recall. The report without the calibration would just repeat the same prediction mistakes next period. State the gaps instead of smoothing them.",
+      "connector_types": ["finance", "messaging", "email"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The billing month is a real anchor for totals, so a period summary belongs near a month boundary, but it is an anchor rather than an obligation: a step change should be reported when it appears rather than waiting for the boundary. That combination is exactly what self-paced expresses and what a time trigger would prevent."
+      },
+      "personalization_needs": [
+        "Which payment account and which products count as revenue here, because test data, refunds and internal transfers otherwise read as movement that never happened",
+        "What size of move the reader considers meaningful, because without it every fluctuation is reported and the report becomes background noise",
+        "Who receives the report and at what depth, because the same figures are a summary for one audience and an audit trail for another"
+      ],
+      "dependencies": [
+        "A way to derive recurring revenue from subscription and invoice data, because payment providers expose the underlying subscriptions and invoices but no recurring-revenue figure to read"
+      ],
+      "input_schema": [
+        {
+          "name": "finance_recipients",
+          "type": "text",
+          "description": "Comma-separated email addresses for the detailed periodic report."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Stripe as the payments connector",
+          "connector": "stripe",
+          "connector_type": "finance",
+          "notes": "There is no MRR endpoint to call. Recurring revenue has to be computed from the Subscriptions and Invoices APIs, which means the waterfall (new, expansion, contraction, churn) is the recipe's own arithmetic and its correctness is the recipe's problem, not the provider's. This is why the report carries a reconciliation criterion: the only check on that arithmetic is whether it agrees with what the provider says was collected."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6"],
+        "from_templates": ["revenue-intelligence-copilot"],
+        "source_template_id": "revenue-intelligence-copilot"
+      },
+      "review_notes": "Title loses 'Monthly', per the operator's own rule that a title encoding a cadence loses it; the billing month survives in the trigger rationale where it belongs. Outcomes fuse the verdict's calibration-loop outcome, which the superseding responsibility does not have, with the responsibility's attribution and reconciliation claims, which the verdict does not have. That is a deliberate departure: the responsibility 'Reading what the payments say about the business' merges this recipe with the payment scan and drops the calibration loop entirely, and the verdict explicitly kept this recipe separate from a near-duplicate monthly report because of that loop. Dropping it would lose the only thing distinguishing this recipe in the corpus. stripe demoted to finance; the v2 row's messaging and email were already generic category names and stay as delivery types.",
+      "research_notes": "Read stripe.json: categories ['finance','ecommerce'], one resource (products), no declared events, healthcheck against the account endpoint. Externally confirmed there is no MRR endpoint in the Stripe API and that recurring revenue is computed from subscription data, which is what the dependency line records. Also confirmed the finance category resolves to alpha_vantage, harvest, kalshi, lemonsqueezy, ramp and stripe, three of which (alpha_vantage, kalshi, harvest) are not payment processors at all, so this connector_type is broader than the recipe needs and adoption will have to narrow it by hand.",
+      "superseded_by": [["convert_A.json", "Web marketer", "Reading what the payments say about the business"]]
+    },
+
+    {
+      "id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
+      "slug": "payment-event-scoring-for-churn-and-expansion",
+      "title": "Payment event scoring for churn and expansion",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "finance_accounting/revenue",
+      "domain": "finance_accounting",
+      "description": {
+        "need": "An account sliding toward churn, or ready to expand, is visible in payment behaviour long before it shows up in a business review, and a failed payment has a short window in which it can still be recovered.",
+        "input": "Payment and subscription events as they arrive, customer context from the CRM where one is bound, and the current per-account scores and open alert windows.",
+        "core_action": "Turn each event into a movement in that account's risk and readiness scores, decide whether the movement crosses a band worth telling someone about, and separate a transient failure the provider will retry from one that needs a person.",
+        "output": "One alert per real crossing, naming the factors behind it, with duplicates inside the window suppressed and resolved failures closed."
+      },
+      "activities": [
+        { "id": "receive", "label": "Receive payment and subscription events as they arrive", "kind": "observe" },
+        { "id": "enrich", "label": "Enrich with CRM context where one is bound, degrading gracefully when not", "kind": "observe" },
+        { "id": "score", "label": "Move the account's churn risk and expansion readiness scores", "kind": "decide" },
+        { "id": "judge-crossing", "label": "Judge whether a band was crossed and whether this window is already open", "kind": "decide" },
+        { "id": "separate-failures", "label": "Separate a transient collection failure from one that needs a person", "kind": "decide" },
+        { "id": "raise", "label": "Raise the crossing with its factors, or close a failure that resolved on retry", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "risk-and-expansion-known-fast",
+          "statement": "An account sliding toward churn or ready for expansion is known within minutes of the signal appearing, not discovered at the next business review.",
+          "success_criteria": [
+            "Every threshold crossing, a churn-risk band change or an expansion score clearing its bar, fires on its own rather than waiting for a batch report.",
+            "A customer under thirty days old is scored at low confidence rather than treated as equally reliable as an established account.",
+            "A duplicate alert for the same account inside the configured window is suppressed."
+          ]
+        },
+        {
+          "id": "no-revenue-lost-to-a-quiet-failure",
+          "statement": "Revenue is not lost to a payment that failed quietly.",
+          "success_criteria": [
+            "A failure is raised once with its cause and attempt count rather than on every retry",
+            "A failure that resolves on retry is closed rather than left open",
+            "Repeated failures on one account are reported as a pattern"
+          ]
+        }
+      ],
+      "guidance": "Turn raw payment events into account-level risk and opportunity signals someone can trust. Blend CRM context in when available, but degrade to payment-only scoring with the gap flagged rather than blocking. Separate a transient failure the provider will retry from one that needs a person, and involve anyone only for the second, reported in the provider's own terms. Suppress duplicates inside the window so one volatile period does not restate the same finding. Never contact a customer on the adopter's behalf unless they have explicitly said that is wanted.",
+      "connector_types": ["finance", "crm"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "A payment event is a real external event with a short recovery window, so the recipe wakes on it rather than pacing itself. The v2 row's five-minute poll was an approximation of this, not a preference: it exists because polling was the only mechanism available, and it should be replaced by the provider's own event delivery where that exists."
+      },
+      "personalization_needs": [
+        "Whether the adopter wants any customer contact at all from this work, because the source template sent retention email automatically and that is a decision they have not made and must not be made for them",
+        "Which accounts and products are in scope, because test and internal accounts otherwise produce scores and alerts for movement that never happened",
+        "What band crossing is worth an interruption, because the same score movement is a crisis in a small book of accounts and noise in a large one"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "alert_threshold",
+          "type": "enum",
+          "options": ["conservative", "balanced", "aggressive"],
+          "default": "balanced",
+          "description": "Conservative means only red-zone alerts. Balanced adds green to yellow and yellow to red transitions. Aggressive adds any twenty-point jump."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Stripe as the payments connector",
+          "connector": "stripe",
+          "connector_type": "finance",
+          "notes": "The failed-collection half maps cleanly: the invoice payment failure event carries an attempt count that increments across the provider's own retry schedule, and the invoice stays open while retries continue. That is what makes 'raise once with the attempt count, close on recovery' implementable rather than aspirational. A hard decline the provider cannot retry without a new payment method is the case that actually needs a person, and it is distinguishable from a soft one."
+        },
+        {
+          "title": "A CRM as the enrichment source",
+          "connector": "hubspot",
+          "connector_type": "crm",
+          "notes": "The CRM is optional by design here. It supplies account age and segment, which is what the low-confidence rule for young accounts keys on; without it that rule has to fall back to the payment record's own first-seen date, which is later and therefore more conservative."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["295d0871-6f35-5c8c-b728-5e87c145c72f"],
+        "from_templates": ["revenue-intelligence-copilot"],
+        "source_template_id": "revenue-intelligence-copilot"
+      },
+      "review_notes": "Two designed responsibilities supersede this one recipe and they disagree on trigger: 'Reading what the payments say' is self_paced, 'Failed collection watch' is event. Resolved in favour of event, because the period-reading half is the recipe beside this one (06f8a9ba) and what is left here is entirely reactive. Outcomes take the verdict's fast-signal outcome and the failed-collection responsibility's outcome whole; the responsibility's personalization need about customer contact is carried verbatim in substance because it is the sharpest thing either source says about this work. stripe demoted to finance, crm was already a catalog category and stays.",
+      "research_notes": "Read stripe.json (categories finance, ecommerce; no declared events). Externally confirmed the invoice payment failure webhook carries an attempt count that increments across the provider's retry schedule, that the invoice remains open while retries are pending, and that a hard decline cannot be retried without a new payment method, which is the transient-versus-needs-a-person distinction this recipe turns on. Also checked the crm category: four connectors (attio, hubspot, monday, pipedrive), all of which can supply account age and segment, so the enrichment type resolves cleanly. Note for the Director: stripe declares no events in the catalog, so nothing in the connector data supports the event trigger this recipe recommends; the events exist in the provider and not in our catalog, which is a gap worth closing before adoption tries to wire one.",
+      "superseded_by": [
+        ["convert_A.json", "Web marketer", "Reading what the payments say about the business"],
+        ["convert_A.json", "Web marketer", "Failed collection watch"]
+      ]
+    },
+
+    {
+      "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+      "slug": "survey-insight-report-delivery",
+      "title": "Survey insight report delivery",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "product_project/customer-feedback",
+      "domain": "product_project",
+      "description": {
+        "need": "A completed feedback analysis that nobody receives, or that leaves the baseline untouched, means the next analysis compares against stale ground and the work is done twice.",
+        "input": "A completed analysis with its themes, sentiment, anomalies and confidence, and the baselines the next comparison will use.",
+        "core_action": "Turn the analysis into something a person receives and can act on, raising priority when a high-severity anomaly is present, then move the baselines so the next comparison is against fresh ground.",
+        "output": "A delivered report, an updated baseline, and an explicit statement when this run is establishing baseline rather than comparing to one."
+      },
+      "activities": [
+        { "id": "read-analysis", "label": "Read the completed analysis and its confidence", "kind": "observe" },
+        { "id": "prioritise", "label": "Decide the report's priority from anomaly severity", "kind": "decide" },
+        { "id": "compose", "label": "Compose the report, flagging low-confidence extractions for a human", "kind": "act" },
+        { "id": "deliver", "label": "Deliver it, and archive it where the adopter asked", "kind": "deliver" },
+        { "id": "rebase", "label": "Update the baselines so the next comparison is against fresh data", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "findings-reach-the-team-and-the-baseline",
+          "statement": "A completed analysis becomes both a report the team sees and an updated baseline the next analysis compares against.",
+          "success_criteria": [
+            "Every completed analysis produces a delivered report.",
+            "Baselines such as themes, sentiment and score history update after every report so the next comparison is against fresh data, not stale.",
+            "A first run says plainly that it is establishing baseline rather than comparing to nothing."
+          ]
+        },
+        {
+          "id": "filed-as-something-actionable",
+          "statement": "What people said turns into work someone can pick up, instead of a chart nobody acts on.",
+          "success_criteria": [
+            "Each filed item names the theme, roughly how many respondents raised it, and what changing it would fix",
+            "A theme already filed grows in weight rather than producing a duplicate item",
+            "Nothing is filed that cannot be phrased as a change someone could make"
+          ]
+        }
+      ],
+      "guidance": "Turn analysis output into a report the team actually receives, escalating priority when a high-severity anomaly is present, and archive it where the adopter asked. Do not file an item you cannot phrase as a change someone could make, and let a theme already filed grow in weight rather than producing a duplicate. Update the rolling baselines afterward so the next comparison reflects reality rather than a stale reference point. A first run should say plainly that it is establishing baseline.",
+      "connector_types": ["database", "knowledge_base"],
+      "recommended_trigger": {
+        "kind": "event",
+        "rationale": "This is the second half of a two-step pipeline and does nothing until an analysis completes; the v2 row already listens for exactly that. Pacing it would mean waking to find no analysis waiting, and scheduling it would mean reporting whatever the last analysis happened to leave behind."
+      },
+      "personalization_needs": [
+        "What the adopter wants the output to be, an item in a backlog, an entry in a knowledge base, or both, because the report is written differently for each",
+        "Who the respondents are, because the same complaint from a trial user and a paying one deserves different weight in what gets filed",
+        "What severity is worth escalating the whole report for, because an escalation that fires on every run stops meaning escalation"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "report_delivery",
+          "type": "enum",
+          "options": ["in_app_only", "in_app_plus_notion", "email_digest", "slack_summary"],
+          "default": "in_app_only",
+          "description": "Primary delivery channel or channels for the report."
+        },
+        {
+          "name": "flag_low_confidence",
+          "type": "boolean",
+          "default": true,
+          "description": "Flag low-confidence theme extractions for human review before inclusion."
+        }
+      ],
+      "examples": [
+        {
+          "title": "A knowledge base as the archive destination",
+          "connector": "notion",
+          "connector_type": "knowledge_base",
+          "notes": "Archiving is optional and the recipe must work without it, so the knowledge base is a destination rather than a requirement. Where one is bound, filing a theme as a page rather than a message is what makes the 'a theme already filed grows in weight' criterion cheap, because the page is a stable place for it to grow."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["eadf1ac7-ecca-55a5-8cb6-76d68e80283a"],
+        "from_templates": ["survey-insights-analyzer"],
+        "source_template_id": "survey-insights-analyzer"
+      },
+      "review_notes": "Title takes the verdict's rename. Outcomes fuse the verdict's delivery-and-baseline outcome with the superseding responsibility's 'work someone can pick up' outcome, which reframes the whole recipe: the v2 row delivered a report, the responsibility says the point is a filed item somebody could act on. Kept both rather than choosing, because the baseline update is real work the responsibility does not mention and the actionability bar is a real claim the verdict does not make. One departure from the responsibility: it merges this recipe with the analysis one beside it into a single self-paced responsibility, and I have kept them separate because the v2 pipeline's two halves have different triggers (this one is event-driven off the first) and merging them would lose that. The input schema's report_delivery options name specific vendors, which is exactly what v3 removes elsewhere; carried verbatim per instruction and flagged here as the one place in the lane where a vendor name survives inside a knob.",
+      "research_notes": "Checked the report_delivery enum against the catalog: in_app maps to personas_messages (messaging, notifications), notion to knowledge_base, email_digest to the email category, slack_summary to slack under messaging. All four resolve, which means this enum is a hand-rolled connector binding living inside an input schema, predating connector_types and duplicating it. Recorded rather than fixed, because rewriting a knob is a corpus decision rather than a lane one.",
+      "superseded_by": [["convert_B.json", "Any", "Backlog from what respondents actually said"]]
+    },
+
+    {
+      "id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
+      "slug": "survey-response-theme-and-sentiment-analysis",
+      "title": "Survey response theme and sentiment analysis",
+      "version": "0.1.0",
+      "status": "seed",
+      "path": "product_project/customer-feedback",
+      "domain": "product_project",
+      "description": {
+        "need": "Feedback read one batch at a time turns a loud response into a trend and a quietly recurring one into nothing, and a thin batch read eagerly produces a confident conclusion the data does not support.",
+        "input": "New responses since the last read, the questions they answered, and the rolling baselines for themes, sentiment and score history across prior periods.",
+        "core_action": "Read for themes rather than scores, weight by how many said it and how consistently, and buffer rather than analyse when the batch is too thin to mean anything.",
+        "output": "A read on themes, sentiment and score trend against the account's own history, with anomalies distinguished from normal variance and thin samples named as thin."
+      },
+      "activities": [
+        { "id": "collect", "label": "Collect responses since the last read and normalise them", "kind": "observe" },
+        { "id": "gate-volume", "label": "Buffer rather than analyse when the batch is too thin to conclude anything", "kind": "decide" },
+        { "id": "read-themes", "label": "Read for themes, weighting by how many said it and how consistently", "kind": "decide" },
+        { "id": "compare", "label": "Compare against the rolling baselines from prior periods, not just the last one", "kind": "decide" },
+        { "id": "flag", "label": "Flag anomalies, and route high ambiguity or a schema mismatch to review", "kind": "act" },
+        { "id": "hand-off", "label": "Hand the analysis and its confidence to whatever reports it", "kind": "deliver" }
+      ],
+      "outcomes": [
+        {
+          "id": "feedback-signal-not-noise",
+          "statement": "A real shift in sentiment, theme or score is caught against the account's own history, not against an arbitrary universal bar.",
+          "success_criteria": [
+            "Analysis only runs once the configured minimum response count is reached; below that, responses buffer rather than producing a thin, misleading read.",
+            "Results are compared against the configured number of trailing periods, not just the immediate prior one.",
+            "A rising theme is distinguishable from a loud one, because the reading is against prior periods and not just this batch."
+          ]
+        },
+        {
+          "id": "ambiguity-routed-not-guessed",
+          "statement": "The report never ships a conclusion the responses did not support.",
+          "success_criteria": [
+            "High ambiguity or a schema mismatch routes to review before the report ships, not after",
+            "A sample too thin to conclude anything is said to be thin rather than reported with a number"
+          ]
+        }
+      ],
+      "guidance": "Turn new responses into a trustworthy read on themes, sentiment and score trend, buffering rather than analysing prematurely when volume is too thin to mean anything. Read for themes rather than scores: a theme that recurs quietly across periods usually matters more than a single furious response. Compare against rolling baselines from memory so a real anomaly is distinguished from normal variance. High ambiguity or a schema mismatch is a reason to route to review before the report ships, not after.",
+      "connector_types": ["database"],
+      "recommended_trigger": {
+        "kind": "self_paced",
+        "rationale": "The v2 default of daily at nine was habitual, and worse, it conflicts with the recipe's own minimum-response rule: a fixed schedule wakes to find nothing to do most days. Act when enough new responses have accumulated to say something the last pass could not, which is a judgment about signal and not a fixed count."
+      },
+      "personalization_needs": [
+        "Where the responses live and what the questions were, because a theme only means something against the question that was asked",
+        "Who the respondents are, because the same complaint from a trial user and a paying one deserves different weight",
+        "What counts as enough responses to conclude anything here, because the configured minimum is a floor and the real answer depends on how varied the population is"
+      ],
+      "dependencies": [],
+      "input_schema": [
+        {
+          "name": "min_responses_for_analysis",
+          "type": "number",
+          "default": 10,
+          "min": 5,
+          "max": 500,
+          "description": "Minimum new responses before triggering a full analysis. Below this, responses buffer."
+        },
+        {
+          "name": "trend_comparison_periods",
+          "type": "number",
+          "default": 4,
+          "min": 2,
+          "max": 52,
+          "description": "Prior periods to include in rolling averages and trend comparisons."
+        }
+      ],
+      "examples": [
+        {
+          "title": "The built-in database as the response store",
+          "connector": "personas_database",
+          "connector_type": "database",
+          "notes": "The recipe reads responses and writes baselines to the same store, so a read-only database binding fails at the second half rather than the first, which is a confusing failure to debug. Adoption should check write access, not just connectivity."
+        }
+      ],
+      "lessons": [],
+      "provenance": {
+        "from_recipes": ["555079dd-836b-532f-a6ad-802a6c1cfdd7"],
+        "from_templates": ["survey-insights-analyzer"],
+        "source_template_id": "survey-insights-analyzer"
+      },
+      "review_notes": "Title says what the work is; 'Process and Analyze' names neither an area nor an activity. Outcomes fuse the verdict's signal outcome with the responsibility's 'rising theme versus loud theme' criterion, and promote the verdict's ambiguity-routing clause from guidance into a second outcome because it is checkable. Trigger follows the responsibility (self_paced) and against the v2 daily schedule, which the recipe's own minimum-response rule contradicts. Kept separate from the delivery recipe beside it for the reason given there. The responsibility lists knowledge_base among its connectors; that belongs to the delivery half and is carried there, not here, because this recipe reads responses and writes baselines and never touches a knowledge base.",
+      "research_notes": "Read personas-database.json (categories database, storage). Also checked the forms category, which resolves to tally and formbricks: those are the obvious real-world source of survey responses and formbricks additionally carries analytics. I have NOT added forms to connector_types, because both the v2 row and the superseding responsibility name a database and neither evidences a form connector, and inventing one would be exactly the house-rule violation the spec warns about. Recording it here so the Director can decide whether the corpus wants a forms type on this recipe, which would be a content decision rather than a demotion.",
+      "superseded_by": [["convert_B.json", "Any", "Backlog from what respondents actually said"]]
+    }
+  ],
+
+  "topics_used": {
+    "spend-and-budget": 3,
+    "revenue": 2,
+    "investing": 3,
+    "digests": 3,
+    "decisions": 1,
+    "goals-and-reviews": 1,
+    "correspondence": 2,
+    "knowledge-curation": 3,
+    "ideation": 1,
+    "customer-feedback": 2
+  },
+
+  "lane_findings": [
+    "Connector demotions in this lane: alpha_vantage to finance and research (2 recipes), stripe to finance (2), personas_database to database (4), codebase to development (1). Already-generic ids kept as types: cloud (3), email (3), messaging (3), knowledge_base (5), crm (1), database where v2 already said it. Every id resolved to a real catalog category; none needed a nearest-fit compromise and none is left dangling. No v2 row in this lane carried desktop, so nothing was dropped for that reason, but codebase carries desktop among its three categories and only development was taken.",
+    "Trigger split: 3 time, 6 event, 12 self_paced. The three time triggers are cloud-cost-and-resource-reporting and cloud-spend-threshold-watch, both on the operator's own budget-spending-monitor reasoning that month-to-date spend is undefined outside a billing month and a projection needs regular samples, and watchlist-technical-signal-digest, where a period indicator is undefined before the period closes so an earlier digest reports a partial bar. Everything else that arrived carrying a cron lost it: daily at seven, daily at eight, daily at nine, Sunday at six, Friday at six, every four hours, every five minutes and four separate weeklies were all habitual and are now self_paced or event.",
+    "The catalog cannot answer the questions adoption actually asks. Across 134 connector files the categories vocabulary is rich (48 distinct values) but capability data is nearly empty: stripe declares one resource and no events, aws_cloud and gcp_cloud declare neither, and exactly one messaging or email connector in the whole catalog (personas_messages) declares an inbound event. So connector_types resolves an adopter to a set of candidates and tells them nothing about whether a candidate can do the work. Three recipes here recommend an event trigger against connectors that declare no events. The spec's adoption step 2 (research the chosen connector and adjust) is therefore not an enhancement, it is the only thing standing between a resolved type and a broken charter.",
+    "Categories are too coarse in one direction that matters here. finance resolves to alpha_vantage, harvest, kalshi, lemonsqueezy, ramp and stripe: a market data API, a time tracker, a prediction market, and three payment surfaces. A revenue recipe and a stock-signal recipe both correctly carry finance and would be offered each other's connectors. Similarly email resolves to resend and sendgrid, which cannot read an inbox, alongside gmail which can. Worth considering whether v3 needs a second axis (reads versus writes, or a narrower subtype) or whether that belongs entirely in the adoption research pass.",
+    "Three recipes carry a hidden second binding mechanism that predates connector_types and duplicates it. cross-project-progress-briefing has a source_definition input describing folders, codebases, databases and URL lists; survey-insight-report-delivery has a report_delivery enum whose four options are in_app, notion, email and slack. Both are connector choices living inside input_schema. Carried verbatim as instructed, but a v3 corpus that removes vendor names from connectors and leaves them inside knobs has only moved the problem.",
+    "One recipe in the lane is a standing merge and one is a delete candidate. content-feed-intake-for-curation (fb223f0f) already carries a merge_into verdict pointing at knowledge-base-content-curation, which I agree with and have reflected in the survivor's provenance; publishing both would put two recipes in the corpus that differ only by how content arrives. correspondence-activity-digest (5437968e) is not superseded and has no standalone need: it reports on the two recipes beside it. Both calls are the operator's.",
+    "Three designed responsibilities in this lane each supersede more than one recipe, and in every case I kept the recipes separate rather than collapsing them to match. Spend measurement covers three (a report that always speaks, a watch that speaks only on breach, and an alert that speaks only on blindness, with three different triggers). Reading what the payments say covers two, and merging them would drop the calibration loop the verdict explicitly preserved this recipe for. Backlog from what respondents said covers two halves of one pipeline with different triggers. The responsibilities are the right shape for a persona seat; they are not always the right shape for a registry artifact, and this is the seam between the two designs.",
+    "Two recipes are filed under a different domain than their superseding responsibility. weighted-decision-analysis-and-checkpoint-review and goal-accountability-and-idea-triage-review sit in general_professional per the lane roster and the consolidation verdicts, while convert_A's Director responsibilities file the same work under product_project. Kept general_professional so the lane counts hold, but the disagreement is real and one of the two sources should be corrected rather than both shipped.",
+    "House rule versus verbatim carry: v2 input_schema descriptions contain em dashes, arrows and multiplication signs. Names, types, defaults, options, min and max are carried untouched; the prose inside description was rewritten to remove the forbidden characters, since the output must contain none. Flagged so the Director can decide whether the transform script normalises these at the corpus level rather than per lane.",
+    "Two lane-wide voice changes, applied consistently. First, the designed responsibilities are written about one named operator (he, him); a registry recipe is held by anyone, so those are generalised to the requester, the reader or the adopter without changing a claim. Second, implementation specifics that were choices rather than craft are generalised: three-tier summary becomes layered summary, fourteen-day checkpoint becomes a checkpoint whose length is a personalization need, twenty consecutive approvals stays in the input schema where it belongs but is named as a personalization need in prose."
+  ]
+}

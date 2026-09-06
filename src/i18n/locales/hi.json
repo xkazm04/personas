@@ -2556,7 +2556,21 @@
       "suspend": "निलंबित करें",
       "transition_unavailable_hint": "किसी चार्टर को सक्रिय या निलंबित करना अभी संभव नहीं है। रिटायर करना संभव है।",
       "trigger_attention": "अटेंशन लूप",
-      "trigger_every_minutes": "हर {minutes} मिनट"
+      "trigger_every_minutes": "हर {minutes} मिनट",
+      "activity_kind_act": "कार्रवाई",
+      "activity_kind_decide": "निर्णय",
+      "activity_kind_deliver": "डिलीवरी",
+      "activity_kind_observe": "निरीक्षण",
+      "recipe_card_title": "रेसिपी",
+      "recipe_connector_capability_unverified": "बाउंड कनेक्टर टाइप से मेल खाता है। यह ज़िम्मेदारी जिस काम की मांग करती है, वह कनेक्टर कर सकता है या नहीं, यह सत्यापित नहीं है: कैटलॉग क्षमताएं घोषित नहीं करता।",
+      "recipe_connector_unbound": "बाउंड नहीं",
+      "recipe_connector_unbound_hint": "इस ज़िम्मेदारी की पहुंच में अभी इस कनेक्टर टाइप को कवर करने वाला कुछ नहीं है। कनेक्टर आयाम में एक बाइंड करें।",
+      "recipe_connector_uncovered": "कोई कनेक्टर इसे कवर नहीं करता",
+      "recipe_connector_uncovered_hint": "कैटलॉग में इस श्रेणी का कोई कनेक्टर नहीं है, इसलिए बाइंड करने के लिए कुछ नहीं है। इस ज़िम्मेदारी को कैटलॉग में जोड़ा गया कनेक्टर चाहिए, या किसी अलग टाइप की रेसिपी चाहिए।",
+      "recipe_connectors_label": "कनेक्टर",
+      "recipe_dependencies_label": "निर्भरताएं",
+      "recipe_shape_hint": "इस काम से क्रम में गुजरने वाली गतिविधियों के प्रकार। यह कोई रनबुक नहीं है: इसमें कोई शाखा नहीं है।",
+      "recipe_shape_label": "काम की रूपरेखा"
     },
     "role_card": {
       "assign": "असाइन करें",

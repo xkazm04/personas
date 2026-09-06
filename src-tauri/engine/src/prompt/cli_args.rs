@@ -278,17 +278,25 @@ pub(super) fn build_cli_args_inner(
 
 /// Build CLI arguments to resume an existing Claude session.
 /// Uses `--resume <id>` instead of `-p -` to continue a prior conversation.
-pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
-    build_resume_cli_args_with_trace(claude_session_id, None)
+///
+/// `model_profile` is the SAME profile the fresh path receives — including a
+/// failover candidate's model substitution. Pass `None` only where the caller
+/// genuinely has no model decision to carry (the chat/debug resume paths).
+pub fn build_resume_cli_args(
+    claude_session_id: &str,
+    model_profile: Option<&ModelProfile>,
+) -> CliArgs {
+    build_resume_cli_args_with_trace(claude_session_id, model_profile, None)
 }
 
 /// Like [`build_resume_cli_args`], but also injects a W3C `TRACEPARENT` env
 /// var so the resumed session stays linked to the originating trace.
 pub fn build_resume_cli_args_with_trace(
     claude_session_id: &str,
+    model_profile: Option<&ModelProfile>,
     trace: Option<&personas_core::trace::W3cTraceContext>,
 ) -> CliArgs {
-    let mut cli_args = build_resume_cli_args_inner(claude_session_id);
+    let mut cli_args = build_resume_cli_args_inner(claude_session_id, model_profile);
     if let Some(t) = trace {
         cli_args
             .env_overrides
@@ -302,7 +310,10 @@ pub fn build_resume_cli_args_with_trace(
     cli_args
 }
 
-pub(super) fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
+pub(super) fn build_resume_cli_args_inner(
+    claude_session_id: &str,
+    model_profile: Option<&ModelProfile>,
+) -> CliArgs {
     let (command, mut args) = base_cli_setup();
 
     args.extend([
@@ -319,8 +330,37 @@ pub(super) fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
 
     // Pin effort on resume too — keeps continued sessions on the same effort
     // policy as their initial run regardless of CLI version drift.
+    //
+    // This comment used to sit above `args.push(DEFAULT_EFFORT.to_string())`,
+    // which is the opposite of what it claims: a persona or lab run whose
+    // profile asked for `high` was silently downgraded to `medium` the moment
+    // it was resumed, and the comment told every reader the pin was working.
+    // `resolve_effort` is the same resolver the fresh path uses, so the two
+    // paths now cannot disagree.
     args.push("--effort".to_string());
-    args.push(DEFAULT_EFFORT.to_string());
+    args.push(resolve_effort(model_profile));
+
+    // Model — the decision the resume path used to discard. The runner computes
+    // a candidate profile per failover rung (`runner/mod.rs`, the failover
+    // loop) and, before this, handed the resume builder nothing, so a resumed
+    // run reverted to the CLI's account default no matter what personas had
+    // decided — and personas only learned what served afterwards, from
+    // `system/init`. Same shape as the fresh path's model block, deliberately:
+    // an empty string is not a model and emits no flag.
+    //
+    // NOT restored here: `--max-budget-usd`, `--max-turns` and
+    // `--allowedTools`. Those come off the PERSONA, not the profile, and each
+    // carries a semantic question a resume raises and a fresh run does not (is
+    // the budget the whole conversation's or this continuation's?). Left for a
+    // separate change rather than decided silently inside this one.
+    if let Some(profile) = model_profile {
+        if let Some(ref model) = profile.model {
+            if !model.is_empty() {
+                args.push("--model".to_string());
+                args.push(model.clone());
+            }
+        }
+    }
 
     CliArgs {
         command,

@@ -4427,6 +4427,20 @@ export type Translations = {
       run_now: string;
       run_started: string;
       run_failed: string;
+      recipe_card_title: string;
+      recipe_shape_label: string;
+      recipe_shape_hint: string;
+      recipe_connectors_label: string;
+      recipe_connector_unbound: string;
+      recipe_connector_unbound_hint: string;
+      recipe_connector_uncovered: string;
+      recipe_connector_uncovered_hint: string;
+      recipe_connector_capability_unverified: string;
+      recipe_dependencies_label: string;
+      activity_kind_observe: string;
+      activity_kind_decide: string;
+      activity_kind_act: string;
+      activity_kind_deliver: string;
     };
   };
   director: {

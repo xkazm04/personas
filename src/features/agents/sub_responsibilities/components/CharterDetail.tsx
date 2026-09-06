@@ -11,6 +11,7 @@ import { getDimLabels, type PersonaCapability } from '@/lib/personas/capabilitie
 import { CharterStatusLadder, type CharterStatus } from './CharterStatusLadder';
 import { CharterRunButton } from './CharterRunButton';
 import { CharterParametersCard } from './CharterParametersCard';
+import { CharterRecipeBlocks } from './CharterRecipeBlocks';
 import { CharterEditor } from './CharterEditor';
 import { resolveCharterSigilBody } from './sigil/charterSigilBodies';
 import type { CharterPatch } from './sigil/dimEditorShell';
@@ -106,6 +107,11 @@ export function CharterDetail({
                 {resolveCharterSigilBody(openDim, { charter, onPatch })}
               </SectionCard>
             )}
+
+            {/* Renders null for a pre-v3 charter, which carries none of the four
+                v3 spec fields. Placed above the parameters because the shape of
+                the work is what a reader orients on before its knobs. */}
+            <CharterRecipeBlocks charter={charter} />
 
             <CharterParametersCard charter={charter} onPatch={onPatch} />
 

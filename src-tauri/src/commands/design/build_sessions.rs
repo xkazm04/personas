@@ -2756,17 +2756,19 @@ pub async fn promote_build_draft_inner(
     // user's configured values AND its required_connectors point to the concrete connectors
     // the user picked (so the matrix shows the right services and runtime credential
     // resolution finds the right vault entries).
-    if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) =
-            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
-        {
-            crate::engine::adoption_answers::substitute_variables(&mut ir, &answers);
-            crate::engine::adoption_answers::inject_configuration_section(&mut ir, &answers);
-            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
-                &mut ir, &answers,
-            );
-            tracing::info!(persona_id = %persona_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for promotion");
-        }
+    // Parsed once and kept: the charter mint below needs the same
+    // `credential_bindings` to resolve a v3 recipe's connector TYPES into the
+    // charter's bound connector allowlist. Before Recipe v3 this binding was
+    // scoped to the `if let` and the mint could not see it.
+    let adoption_answers: Option<crate::engine::adoption_answers::AdoptionAnswers> = session
+        .adoption_answers
+        .as_deref()
+        .and_then(|raw| serde_json::from_str(raw).ok());
+    if let Some(answers) = adoption_answers.as_ref() {
+        crate::engine::adoption_answers::substitute_variables(&mut ir, answers);
+        crate::engine::adoption_answers::inject_configuration_section(&mut ir, answers);
+        crate::engine::adoption_answers::apply_credential_bindings_to_connectors(&mut ir, answers);
+        tracing::info!(persona_id = %persona_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for promotion");
     }
 
     // kp hires only: narrow the tool AND connector sets to the surface the hire
@@ -3016,6 +3018,7 @@ pub async fn promote_build_draft_inner(
         &state.db,
         &persona_id,
         &use_cases.structured,
+        adoption_answers.as_ref(),
     )?;
     let charter_ids: Vec<String> = minted_charters.iter().map(|r| r.id.clone()).collect();
 

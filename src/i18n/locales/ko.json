@@ -2556,7 +2556,21 @@
       "suspend": "일시 중단",
       "transition_unavailable_hint": "책무의 활성화 및 일시 중단은 아직 사용할 수 없습니다. 폐기는 가능합니다.",
       "trigger_attention": "어텐션 루프",
-      "trigger_every_minutes": "{minutes}분마다"
+      "trigger_every_minutes": "{minutes}분마다",
+      "activity_kind_act": "실행",
+      "activity_kind_decide": "결정",
+      "activity_kind_deliver": "전달",
+      "activity_kind_observe": "관찰",
+      "recipe_card_title": "레시피",
+      "recipe_connector_capability_unverified": "바인딩된 커넥터는 유형이 일치합니다. 이 책무가 필요로 하는 작업을 수행할 수 있는지는 확인되지 않았습니다. 카탈로그에 기능 정보가 정의되어 있지 않습니다.",
+      "recipe_connector_unbound": "바인딩 안 됨",
+      "recipe_connector_unbound_hint": "이 책무가 접근하는 범위에는 아직 해당 커넥터 유형을 지원하는 항목이 없습니다. 커넥터 차원에서 하나를 바인딩하세요.",
+      "recipe_connector_uncovered": "이를 지원하는 커넥터가 없음",
+      "recipe_connector_uncovered_hint": "카탈로그에 해당 카테고리의 커넥터가 없어 바인딩할 대상이 없습니다. 이 책무에는 카탈로그에 커넥터를 추가하거나 다른 유형의 레시피가 필요합니다.",
+      "recipe_connectors_label": "커넥터",
+      "recipe_dependencies_label": "의존성",
+      "recipe_shape_hint": "이 작업이 순서대로 거치는 활동의 종류입니다. 런북이 아닙니다. 분기가 없습니다.",
+      "recipe_shape_label": "작업의 흐름"
     },
     "role_card": {
       "assign": "할당",

@@ -2550,7 +2550,21 @@
     "suspend": "تعليق",
     "transition_unavailable_hint": "تفعيل الميثاق أو تعليقه غير متاح بعد. أمّا جعله متقاعدًا فمتاح.",
     "trigger_attention": "حلقة الانتباه",
-    "trigger_every_minutes": "كل {minutes} دقيقة"
+    "trigger_every_minutes": "كل {minutes} دقيقة",
+    "activity_kind_act": "تنفيذ",
+    "activity_kind_decide": "قرار",
+    "activity_kind_deliver": "تسليم",
+    "activity_kind_observe": "مراقبة",
+    "recipe_card_title": "وصفة",
+    "recipe_connector_capability_unverified": "الموصل المرتبط يطابق هذا النوع. أما قدرته على تنفيذ ما يحتاجه هذا الميثاق فغير مؤكدة: الكتالوج لا يحدد القدرات.",
+    "recipe_connector_unbound": "غير مرتبط",
+    "recipe_connector_unbound_hint": "لا يوجد ضمن نطاق هذا الميثاق ما يغطي هذا النوع من الموصلات بعد. اربط واحدًا من بُعد الموصل.",
+    "recipe_connector_uncovered": "لا يوجد موصل يغطي هذا",
+    "recipe_connector_uncovered_hint": "لا يحتوي الكتالوج على موصل من هذه الفئة، لذا لا يوجد ما يمكن ربطه. يحتاج هذا الميثاق إلى إضافة موصل إلى الكتالوج، أو إلى وصفة من نوع مختلف.",
+    "recipe_connectors_label": "الموصلات",
+    "recipe_dependencies_label": "التبعيات",
+    "recipe_shape_hint": "أنواع الأنشطة التي يمر بها هذا العمل، بالترتيب. هذا ليس دليل تشغيل: لا توجد فروع.",
+    "recipe_shape_label": "شكل العمل"
   },
   "role_card": {
     "assign": "إسناد",

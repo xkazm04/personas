@@ -1,983 +1,2211 @@
 [
-{
-"id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
-"name": "Approval Workflow",
-"description": "Sequential approval chain: manager then admin (configurable). Sends approval notifications, handles approve/deny/return-for-info responses, enforces timeout reminders at halfway marks and escalates on full timeout. High-privilege requests a",
-"category": "workflow",
-"sourceTemplateId": "access-request-manager",
-"tags": "[\"acce",
-"toolCount": 0
-},
-{
-"id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
-"name": "Audit & Reporting",
-"description": "Compile audit digests and compliance reports. Daily summary: requests received, approved, denied, escalated, expired, average time-to-approval. Weekly summary identifies bottleneck approvers. On-demand compliance report shows grants within ",
-"category": "reporting",
-"sourceTemplateId": "access-request-manager",
-"tags": "[\"acce",
-"toolCount": 0
-},
-{
-"id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
-"name": "Request Intake & Triage",
-"description": "Poll the configured inbox for new access request emails, parse structured fields, validate completeness, deduplicate against recent requests, classify privilege level, and create the immutable audit record. Emits the received event to kick ",
-"category": "ingestion",
-"sourceTemplateId": "access-request-manager",
-"tags": "[\"acce",
-"toolCount": 0
-},
-{
-"id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
-"name": "Contract Intake and Analysis",
-"description": "Pulls an incoming contract (email tags/folders or webhook), extracts text, identifies the contract type, and runs the six-pass structured analysis: key terms, financials, obligations, risk assessment, red flags, market comparison. Produces ",
-"category": "analysis",
-"sourceTemplateId": "ai-contract-reviewer",
-"tags": "[\"ai-c",
-"toolCount": 0
-},
-{
-"id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
-"name": "Deadline Reminder Sweep",
-"description": "Daily scan of all tracked contract deadlines — renewal dates, termination notice windows, obligation due dates, warranty expirations. Sends tiered reminders at 30 / 14 / 7 days via email (to submitter + configured recipients) and messaging ",
-"category": "notifications",
-"sourceTemplateId": "ai-contract-reviewer",
-"tags": "[\"ai-c",
-"toolCount": 0
-},
-{
-"id": "04756772-500e-5f72-a401-dd57b66f7251",
-"name": "knowledge base Publish and Risk Alert",
-"description": "Converts the structured review record into a knowledge base pages with full sections, sends the email summary to the submitter, and fires a messaging alert when red flag count meets the high-risk threshold. Updates the contract log and dead",
-"category": "reporting",
-"sourceTemplateId": "ai-contract-reviewer",
-"tags": "[\"ai-c",
-"toolCount": 0
-},
-{
-"id": "2969b6b1-5462-573c-970e-832844526258",
-"name": "Audio Production",
-"description": "On approved script, synthesize each segment via TTS, stitch with 300ms silences via ffmpeg, verify duration, and deliver the MP3 for final review. On approval, save hook/voice/pacing preferences to memory.",
-"category": "content",
-"sourceTemplateId": "audio-briefing-host",
-"tags": "[\"audi",
-"toolCount": 0
-},
-{
-"id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
-"name": "Script Drafting",
-"description": "Distill any source (pasted text, file, URL, upstream agent output) into a structured two-host script: headline finding, key facts, tensions, implications, open questions, then turn-by-turn segments with strict pacing. Human approves before ",
-"category": "content",
-"sourceTemplateId": "audio-briefing-host",
-"tags": "[\"audi",
-"toolCount": 0
-},
-{
-"id": "c3722109-62e6-52eb-b796-1a501121766a",
-"name": "Generate + Curate",
-"description": "Conceive a unique art concept, generate via image AI, save to the in-app 2D gallery, present for human approval. On approval tags update + memory saves; on rejection the asset is deleted and rejection patterns update. Default daily 10:00 — ",
-"category": "content",
-"sourceTemplateId": "autonomous-art-director",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
-"name": "In-Flight Experiment Significance Watch",
-"description": "Check every in-flight experiment against sample-size + duration guardrails and the significance threshold. Classify as RUNNING, WINNER, LOSER, or INCONCLUSIVE and prepare promote/revert/archive proposals for human review. Default weekly — f",
-"category": "analysis",
-"sourceTemplateId": "autonomous-cro-experiment-runner",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
-"name": "New Variant Proposals",
-"description": "Identify underperforming pages (conversion rate > 15% below baseline) and generate up to max_new_variants_per_run hypotheses per page. Each carries category, expected lift, and target metric. Routed through human review; approved ones deplo",
-"category": "strategy",
-"sourceTemplateId": "autonomous-cro-experiment-runner",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
-"name": "Combined CRO Report",
-"description": "Compose and deliver the combined weekly CRO briefing — executive summary, in-flight experiments table, significant results, new proposals, inconclusive archives. Delivered regardless of review outcomes so the user always has visibility. Def",
-"category": "communication",
-"sourceTemplateId": "autonomous-cro-experiment-runner",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
-"name": "Support Digest",
-"description": "Posts a messaging summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket. Default daily 9 AM — final cadence set at the trigger-composition",
-"category": "development",
-"sourceTemplateId": "autonomous-issue-resolver",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
-"name": "Stale Issue Triage & Resolution",
-"description": "Polls Jira for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches knowledge base + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering",
-"category": "development",
-"sourceTemplateId": "autonomous-issue-resolver",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
-"name": "Issue Health Report",
-"description": "Comprehensive report covering auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, stale-issue trends, and week-over-week comparison against the prior report. Default Monday 9 AM — final cadence set at the trigg",
-"category": "development",
-"sourceTemplateId": "autonomous-issue-resolver",
-"tags": "[\"auto",
-"toolCount": 0
-},
-{
-"id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
-"name": "Billing API Recovery Alerts",
-"description": "Listens for `budget.access.failure` from the weekly check and delivers a targeted Messages alert explaining why the agent is blind this week — expired credentials, rate limit, partial data, or empty billing — with provider-specific troubles",
-"category": "notifications",
-"sourceTemplateId": "budget-spending-monitor",
-"tags": "[\"budg",
-"toolCount": 0
-},
-{
-"id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
-"name": "Weekly Cost & Resource Report",
-"description": "Pull last-7-day billing, compute WoW deltas against the rolling baseline, evaluate against the spending threshold, and alert via Messages ONLY if anomaly conditions are met — threshold breach, >50% service spike, new service appearance, or ",
-"category": "analysis",
-"sourceTemplateId": "budget-spending-monitor",
-"tags": "[\"budg",
-"toolCount": 0
-},
-{
-"id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
-"name": "Daily Threshold Tracker",
-"description": "Every day, pull month-to-date spend plus today's run-rate, project the end-of-period total, and compare against the threshold. Stay SILENT when under budget; send a single concise alert via Messages ONLY when MTD or the projection crosses t",
-"category": "monitoring",
-"sourceTemplateId": "budget-spending-monitor",
-"tags": "[\"budg",
-"toolCount": 0
-},
-{
-"id": "5e07793e-c964-590f-95dc-f72631789f48",
-"name": "Publish or Schedule Approved Draft",
-"description": "Listens to `review_decision.approved` events from this persona, reads the approved draft from the event's context_data, and dispatches it to the platform-specific destination connector — native LinkedIn post, X thread, Notion blog page, or ",
-"category": "content",
-"sourceTemplateId": "content-cascade",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
-"name": "Source Artifact Repurposing",
-"description": "Accepts a source artifact (YouTube URL, blog URL, podcast transcript, or pasted text) and produces platform-tuned drafts for each enabled target platform — LinkedIn long-form, X/Twitter thread, blog summary, and short-form video script idea",
-"category": "content",
-"sourceTemplateId": "content-cascade",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
-"name": "Per-Platform Voice Profile Build",
-"description": "Builds a voice doc per target platform from 3-5 of your best example posts. Captures hook patterns, sentence-length signature, vocabulary do's/don'ts, hook→body→CTA structure, and platform constraints. Stored in `design_context.design_files",
-"category": "content",
-"sourceTemplateId": "content-cascade",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
-"name": "Mid-Week Anomaly Check",
-"description": "Silent-unless-something-moved checkpoint. Compares partial-week metrics against expected trajectory derived from baselines. Alerts on deviations, silent when normal. Default Wednesday + Friday noon — final cadence set at the trigger-composi",
-"category": "content",
-"sourceTemplateId": "content-performance-reporter",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
-"name": "Weekly Performance Report",
-"description": "Compile the weekly report: WoW deltas, composite-scored rankings, anomaly detection against 4-week EWMA baselines, trend narrative, editorial recommendations. Default Monday 09:00 — final cadence set at the trigger-composition step.",
-"category": "content",
-"sourceTemplateId": "content-performance-reporter",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
-"name": "legal platform Event Processing",
-"description": "Real-time webhook handler for legal platform envelope events. Fetches full envelope context, upserts into spreadsheet (envelope_id as idempotency key), posts messaging notifications to event-appropriate channels, and tracks signer velocity ",
-"category": "integration",
-"sourceTemplateId": "contract-lifecycle-use-case",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
-"name": "Unsigned Contract Reminders",
-"description": "Daily sweep that finds unsigned contracts past the remind threshold and applies the escalation ladder: polite signer reminder (capped at 3) → direct messages + email to contract owner → manual_review escalation at 14+ days. Default daily we",
-"category": "notifications",
-"sourceTemplateId": "contract-lifecycle-use-case",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
-"name": "Renewal Monitoring",
-"description": "Weekly scan for contracts with renewal dates inside the configured lookahead window. Fires tiered notifications: 60d informational → 30d reminder → 14d urgent. Per-contract notification state prevents duplicates. Default weekly Monday; fina",
-"category": "notifications",
-"sourceTemplateId": "contract-lifecycle-use-case",
-"tags": "[\"cont",
-"toolCount": 0
-},
-{
-"id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
-"name": "Ask a Question",
-"description": "Receive a natural-language question via messaging, resolve follow-up context, generate safe SELECT SQL, execute against the database, deliver formatted result with the SQL and metadata. Event-listen on incoming messages.",
-"category": "analytics",
-"sourceTemplateId": "conversational-database-analyst",
-"tags": "[\"conv",
-"toolCount": 0
-},
-{
-"id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
-"name": "Schema Refresh",
-"description": "Daily schema introspection with change detection. Updates the cache and notifies when new tables, altered columns, or dropped entities appear. Cadence is managed at the trigger-composition step; default daily 2am.",
-"category": "maintenance",
-"sourceTemplateId": "conversational-database-analyst",
-"tags": "[\"conv",
-"toolCount": 0
-},
-{
-"id": "02383179-2da1-5a73-a4c3-51be0a31eb72",
-"name": "Weekly Query Digest",
-"description": "Weekly rollup of question activity — most-asked patterns, most-queried tables, execution stats, rejection rate, suggestions for saved queries. Cadence is managed at the trigger-composition step; default Monday 9am.",
-"category": "analytics",
-"sourceTemplateId": "conversational-database-analyst",
-"tags": "[\"conv",
-"toolCount": 0
-},
-{
-"id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
-"name": "Decision Support",
-"description": "On-demand structured decision analysis. User invokes with a decision context (e.g., 'hire full-time editor vs Fiverr freelancers'). Agent asks clarifying questions, researches each option, builds a weighted matrix, identifies risks and miti",
-"category": "strategy",
-"sourceTemplateId": "daily-standup-compiler",
-"tags": "[\"dail",
-"toolCount": 0
-},
-{
-"id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
-"name": "Personal Briefing",
-"description": "Consolidated briefing that fuses niche intelligence research (grounded in user-defined sources and goals) + goal progress check-in + pending work accountability + prioritized action plan. One focused, readable message. Cadence is managed at",
-"category": "personal_productivity",
-"sourceTemplateId": "daily-standup-compiler",
-"tags": "[\"dail",
-"toolCount": 0
-},
-{
-"id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
-"name": "Weekly Review",
-"description": "Weekly retrospective. Reviews each active goal's weekly trend and surfaces next-week focus. Triages the week's captured ideas (accept to backlog / reject / defer). Surfaces decisions reaching their 14-day checkpoint. Cadence is managed at t",
-"category": "personal_productivity",
-"sourceTemplateId": "daily-standup-compiler",
-"tags": "[\"dail",
-"toolCount": 0
-},
-{
-"id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
-"name": "Anomaly Response",
-"description": "On critical breach, capture evidence, correlate metrics, hypothesize root cause, escalate with a full incident report and remediation options. Event-chained off the monitoring loop.",
-"category": "monitoring",
-"sourceTemplateId": "database-performance-monitor",
-"tags": "[\"data",
-"toolCount": 0
-},
-{
-"id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
-"name": "Continuous Monitoring",
-"description": "Scheduled metric collection, baseline building during the silent learning period, then active monitoring with direction-aware thresholds. Cadence is managed at the trigger-composition step; default every 5 minutes.",
-"category": "monitoring",
-"sourceTemplateId": "database-performance-monitor",
-"tags": "[\"data",
-"toolCount": 0
-},
-{
-"id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
-"name": "Code-Aware Demo Recording",
-"description": "Analyze the codebase to plan a walkthrough, execute it in a live browser, and deliver annotated screenshots or video with optional commentary. Tier 1 (CDP screenshots) always works; Tier 2 (Game Bar) and Tier 3 (Playwright) upgrade automati",
-"category": "content",
-"sourceTemplateId": "demo-recorder",
-"tags": "[\"demo",
-"toolCount": 0
-},
-{
-"id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
-"name": "Backlog Scan",
-"description": "Scan the registered codebase for improvement candidates: TODOs / FIXMEs / HACK comments, portfolio-health hotspots, risk-matrix flags, deprecated dependency usage, architectural gaps from cross-project analysis. Compose each finding as a st",
-"category": "development",
-"sourceTemplateId": "dev-clone",
-"tags": "[\"dev-",
-"toolCount": 0
-},
-{
-"id": "328df264-fffa-55ca-b666-85e2ed37c19e",
-"name": "Implementation & PR Lifecycle",
-"description": "Event-listen on accepted triage decisions. For each accepted item: understand affected code, plan the diff, create a branch, apply changes, run tests (3 iteration max), commit, create PR via GitHub. Reacts to PR review comments via webhook ",
-"category": "development",
-"sourceTemplateId": "dev-clone",
-"tags": "[\"dev-",
-"toolCount": 0
-},
-{
-"id": "95f66218-cd55-503c-8a7d-0c544e54378a",
-"name": "Release Management",
-"description": "Gathers merged PRs since the last release, drafts release notes grouped by category, runs the full test suite, and presents the release candidate to the human for approval. On approval: tag via Git, emit release-accepted event. On rejection",
-"category": "development",
-"sourceTemplateId": "dev-clone",
-"tags": "[\"dev-",
-"toolCount": 0
-},
-{
-"id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
-"name": "Triage Pipeline",
-"description": "Event-listen on dev-clone.backlog.candidate. Presents each candidate to the human with accept / reject / defer actions. Rejection reasons persist in memory so similar candidates stop surfacing. Accept fans out to uc_implementation via event",
-"category": "review",
-"sourceTemplateId": "dev-clone",
-"tags": "[\"dev-",
-"toolCount": 0
-},
-{
-"id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
-"name": "Database Health Check",
-"description": "Runs read-only health queries against the configured database (connection pool, slow queries, table growth, replication lag, bloat, failed migrations). Compares against baselines. If the database is unreachable, surfaces that as its own Cri",
-"category": "analysis",
-"sourceTemplateId": "devops-guardian",
-"tags": "[\"devo",
-"toolCount": 0
-},
-{
-"id": "590a0c44-7538-5080-9a35-870ed40d31e5",
-"name": "Deploy Regression Correlation",
-"description": "Lists deployments in the scan window and cross-references timestamps with error spikes detected by the error scan. A deploy within 2 hours of a >20% error-rate jump is flagged as a regression with commit SHA, author, and rollback hint. Defa",
-"category": "analysis",
-"sourceTemplateId": "devops-guardian",
-"tags": "[\"devo",
-"toolCount": 0
-},
-{
-"id": "db563881-c358-5d0d-aab5-7a22573f050d",
-"name": "Application Error Scan",
-"description": "Pulls unresolved errors from the monitoring provider for the last N hours, classifies severity (Critical / High / Medium / Low) using data + memory, flags new error types and regressions, and contributes the application-errors section to th",
-"category": "analysis",
-"sourceTemplateId": "devops-guardian",
-"tags": "[\"devo",
-"toolCount": 0
-},
-{
-"id": "7458572a-4829-55a0-830b-336f16147659",
-"name": "Infrastructure Metrics Scan",
-"description": "Pulls CPU, memory, error rate, latency percentile, and availability metrics from the monitoring provider; compares against 7-day baseline; flags anomalies. Contributes the infrastructure section to the combined briefing. Default daily 8 AM ",
-"category": "analysis",
-"sourceTemplateId": "devops-guardian",
-"tags": "[\"devo",
-"toolCount": 0
-},
-{
-"id": "1e3b8fa3-8146-510a-8294-21593e156389",
-"name": "Draft and Review",
-"description": "For each inbound message that needs a reply, loads the recipient's style profile + conversation context, composes a draft that matches the profile exactly, and routes through human review — or auto-sends if the contact has graduated. Update",
-"category": "review",
-"sourceTemplateId": "digital-clone",
-"tags": "[\"digi",
-"toolCount": 0
-},
-{
-"id": "eff0d838-88c1-5121-8377-48e59da49b5a",
-"name": "Inbound Triage",
-"description": "Polls all connected channels for new inbound messages, logs each to the local database, classifies by urgency/intent/key entities, and flags which messages need a reply. Emits one event per message so the draft capability can pick it up.",
-"category": "automation",
-"sourceTemplateId": "digital-clone",
-"tags": "[\"digi",
-"toolCount": 0
-},
-{
-"id": "5437968e-d364-578c-a4f2-8ccd41dac357",
-"name": "Periodic Digest",
-"description": "Aggregates activity across channels into a periodic summary: message volume, draft throughput, pending approvals, contacts near graduation, and channel health. Default every 4 hours — final cadence set at the trigger-composition step.",
-"category": "monitoring",
-"sourceTemplateId": "digital-clone",
-"tags": "[\"digi",
-"toolCount": 0
-},
-{
-"id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
-"name": "Email Digest",
-"description": "Fetches unread email from the configured lookback window, ranks messages using a composite sender + content signal score, summarises the top N, and delivers a priority-tiered digest notification. Default daily 7am — final cadence set at the",
-"category": "productivity",
-"sourceTemplateId": "email-morning-digest",
-"tags": "[\"emai",
-"toolCount": 0
-},
-{
-"id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
-"name": "Feature Announcement Video",
-"description": "Produce a short announcement video from a feature description: generate script + visual strategy, human-approve the script, generate voiceover via TTS, compose the final video via the cloud provider, human-approve the render. Route rejectio",
-"category": "content",
-"sourceTemplateId": "feature-video-creator",
-"tags": "[\"feat",
-"toolCount": 0
-},
-{
-"id": "34e9138a-1af0-5323-bbac-712d396d6f50",
-"name": "Congressional Disclosure Scan",
-"description": "Scan Capitol Trades (with Senate EFD fallback) for politician stock disclosures in the user's sectors of interest over the last 7 days. Match against the watchlist and surface unusual sector patterns. Route findings to review — 'useful' tag",
-"category": "research",
-"sourceTemplateId": "financial-stocks-signaller",
-"tags": "[\"fina",
-"toolCount": 0
-},
-{
-"id": "90eeee84-f53f-5467-b795-be8ba315fed7",
-"name": "Sector Gem Discovery",
-"description": "Find under-covered names in the user's sectors of interest: low analyst coverage + strong technicals + recent news catalyst. Emit a gem event per candidate and a filter event per rejection reason. Route to review — useful/not-useful tags ad",
-"category": "research",
-"sourceTemplateId": "financial-stocks-signaller",
-"tags": "[\"fina",
-"toolCount": 0
-},
-{
-"id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
-"name": "Weekly Signal Fetcher",
-"description": "Fetch weekly OHLCV + RSI + MACD + news for every ticker on the user's watchlist, compute a composite Buy/Sell/Hold signal, emit strong-outcome events, and route the signal table to human review. Reviewed decisions persist as simulated trade",
-"category": "analysis",
-"sourceTemplateId": "financial-stocks-signaller",
-"tags": "[\"fina",
-"toolCount": 0
-},
-{
-"id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
-"name": "Codebase Feasibility Analysis",
-"description": "For each accepted idea, run a feasibility pass against the registered codebase: related code search, effort estimate from affected surface, benefit call. Produce the structured backlog record and emit it so downstream backlog systems (or a ",
-"category": "analysis",
-"sourceTemplateId": "idea-harvester",
-"tags": "[\"idea",
-"toolCount": 0
-},
-{
-"id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
-"name": "Idea Harvesting",
-"description": "Weekly scan across configured sources (messaging channels, knowledge base pages, Google Alerts, pasted URL queue). Extract 3-10 concrete candidates per source. Skip vague/meta content. Emit one event per candidate; candidates land in the tr",
-"category": "research",
-"sourceTemplateId": "idea-harvester",
-"tags": "[\"idea",
-"toolCount": 0
-},
-{
-"id": "bbace830-43f9-5583-b675-a71aa969127d",
-"name": "Triage Pipeline",
-"description": "For each harvested idea, present to the human with accept/reject affordance. Every decision becomes memory training data so future harvests weight categories accordingly. Accepted ideas trigger the codebase-analysis capability; rejected one",
-"category": "review",
-"sourceTemplateId": "idea-harvester",
-"tags": "[\"idea",
-"toolCount": 0
-},
-{
-"id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
-"name": "Incident Intake & Classification",
-"description": "Captures a new incident report with full detail, runs fuzzy-match duplicate detection against open incidents from the last 2 hours, classifies severity by impact (S1/S2/S3/S4), generates the structured record with escalation deadline and up",
-"category": "operations",
-"sourceTemplateId": "incident-logger",
-"tags": "[\"inci",
-"toolCount": 0
-},
-{
-"id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
-"name": "Post-Incident Review",
-"description": "For resolved S1 and S2 incidents, waits a configurable settling period (default 24 hours) then generates a structured post-mortem: summary, timeline, impact, root cause, response metrics, action items, lessons learned. Queries memory for re",
-"category": "review",
-"sourceTemplateId": "incident-logger",
-"tags": "[\"inci",
-"toolCount": 0
-},
-{
-"id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
-"name": "Lifecycle Tracking & Escalation",
-"description": "Maintains the live status board for every open incident: processes status updates into the timeline, resets escalation timers, enforces severity-based update cadences, auto-closes stale S4 items, and requests human closure confirmation when",
-"category": "operations",
-"sourceTemplateId": "incident-logger",
-"tags": "[\"inci",
-"toolCount": 0
-},
-{
-"id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
-"name": "Monthly Deep Audit",
-"description": "Everything the weekly audit does, plus a cross-article contradiction pass over compiled wiki articles (title family clustering + body disagreement detection). More expensive than the weekly pass; opt-in. Cadence is managed at the trigger-co",
-"category": "maintenance",
-"sourceTemplateId": "knowledge-base-health-auditor",
-"tags": "[\"know",
-"toolCount": 0
-},
-{
-"id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
-"name": "Weekly Health Audit",
-"description": "Run all three audit modes (persona memories, vector KBs, optional Obsidian vault), cap findings per category, queue every issue via manual_review with severity + recommended action, deliver a single checklist summary, and persist trend tota",
-"category": "maintenance",
-"sourceTemplateId": "knowledge-base-health-auditor",
-"tags": "[\"know",
-"toolCount": 0
-},
-{
-"id": "136c0300-30bf-59af-a13d-4b55efb99489",
-"name": "Sales Alert",
-"description": "Event-listen on `sales.lead.captured` where score ≥ `alert_threshold`. Posts rich formatted messaging layout notification with score breakdown, buying signals, and CRM deep-link. For On Fire leads, additionally DMs the assigned rep with ful",
-"category": "communication",
-"sourceTemplateId": "lead-capture-pipeline",
-"tags": "[\"lead",
-"toolCount": 0
-},
-{
-"id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
-"name": "Submission Intake & Scoring",
-"description": "Receives form tool submissions (webhook primary, polling safety net). Dedups against `processed_responses.json`, scores 0-100 on the 4-factor model calibrated to `sales_motion`, classifies tier, updates/creates CRM record with touchpoints c",
-"category": "intake",
-"sourceTemplateId": "lead-capture-pipeline",
-"tags": "[\"lead",
-"toolCount": 0
-},
-{
-"id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
-"name": "Personalized Welcome Email",
-"description": "Event-listen on `sales.lead.captured`. Drafts and sends a tier-appropriate personalized welcome email via email. Cold/Warm = resource-focused low-pressure. Hot = value-prop with soft call CTA. On Fire = personal from assigned rep with direc",
-"category": "outreach",
-"sourceTemplateId": "lead-capture-pipeline",
-"tags": "[\"lead",
-"toolCount": 0
-},
-{
-"id": "478fab0f-0db5-59d2-a84d-0471660e9791",
-"name": "Lean Sweep",
-"description": "Runs the configured static-analysis CLI in the registered codebase, parses the JSON report, creates backlog ideas for each finding, deduplicates against prior sweeps, and posts a one-line summary. Default cadence is daily 8am — final cadenc",
-"category": "development",
-"sourceTemplateId": "lean-codebase-sentinel",
-"tags": "[\"lean",
-"toolCount": 0
-},
-{
-"id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
-"name": "Newsletter Issue Curation",
-"description": "Fetch configured RSS feeds and web sources, deduplicate against past issues, score and select top articles, group into thematic sections, write editorial commentary, assemble responsive HTML, pass through human review, and deliver via SMTP ",
-"category": "content",
-"sourceTemplateId": "newsletter-curator",
-"tags": "[\"news",
-"toolCount": 0
-},
-{
-"id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
-"name": "Scan & Enrich Implementation Opportunities",
-"description": "Weekly scan across configured email senders. Extracts URLs, enriches each via web fetch (with web_search fallback), classifies into new_connector / api_version / tooling, computes relevance from topic-preference memory. Cadence is managed a",
-"category": "research",
-"sourceTemplateId": "product-scout",
-"tags": "[\"prod",
-"toolCount": 0
-},
-{
-"id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
-"name": "Triage",
-"description": "Presents each discovered candidate to the human for accept/reject. Accepted items emit to downstream implementation agents; rejected items capture a reason and train topic preferences. Event-chained on `scout.opportunity.discovered`.",
-"category": "review",
-"sourceTemplateId": "product-scout",
-"tags": "[\"prod",
-"toolCount": 0
-},
-{
-"id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
-"name": "Baseline Refresh",
-"description": "Scheduled capability. Recalculates anomaly baselines (order-value mean / stdev, signup rate, field distributions) from the last 30 days of Supabase data. Keeps detection thresholds current as business patterns evolve. Default every 6 hours ",
-"category": "development",
-"sourceTemplateId": "real-time-database-watcher",
-"tags": "[\"real",
-"toolCount": 0
-},
-{
-"id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
-"name": "Event Routing & Anomaly Detection",
-"description": "Webhook-driven capability. Parses each Supabase row event, classifies by table + operation, enriches via REST fetches, posts formatted messaging layout cards to topic-specific messaging channels, sends welcome / confirmation emails via emai",
-"category": "development",
-"sourceTemplateId": "real-time-database-watcher",
-"tags": "[\"real",
-"toolCount": 0
-},
-{
-"id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
-"name": "Weekly Digest",
-"description": "Scheduled capability. Compiles the week's activity across all monitored tables with week-over-week deltas and posts a formatted messaging layout digest to the operations summary channel. Default Monday 09:00 local — final cadence set at the",
-"category": "development",
-"sourceTemplateId": "real-time-database-watcher",
-"tags": "[\"real",
-"toolCount": 0
-},
-{
-"id": "4a151e59-6b19-5164-8d66-867b66091542",
-"name": "social platform Trend Digest",
-"description": "Fetch top posts from configured subreddits, dedup against a 30-day seen-posts index, cluster into themes with sentiment labels, assemble messaging-flavored markdown, and post to the configured channel. Default daily 09:00 UTC — final cadenc",
-"category": "analysis",
-"sourceTemplateId": "reddit-trend-digest",
-"tags": "[\"redd",
-"toolCount": 0
-},
-{
-"id": "5a0a2392-2d9d-552c-912c-734a6e531550",
-"name": "Source Health Tracker",
-"description": "Track per-subreddit fetch health in `state/source_health.json`. After 3 consecutive failures, emit `reddit.source.unhealthy` and include a header line in the next digest recommending removal. Runs inline with uc_digest on every fetch.",
-"category": "analysis",
-"sourceTemplateId": "reddit-trend-digest",
-"tags": "[\"redd",
-"toolCount": 0
-},
-{
-"id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
-"name": "Feed Scanning",
-"description": "Scheduled scan of configured RSS/Atom feeds. Deduplicates, age-filters, and runs each new item through the curation pipeline. Caps per run to keep API usage predictable. Cadence is managed at the trigger-composition step; default daily 8am.",
-"category": "curation",
-"sourceTemplateId": "research-knowledge-curator",
-"tags": "[\"rese",
-"toolCount": 0
-},
-{
-"id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
-"name": "Manual Curation",
-"description": "User submits one or more URLs; persona fetches, summarizes, tags, discovers cross-references, and creates a structured KB page for each. Trigger is manual — invoked on demand.",
-"category": "curation",
-"sourceTemplateId": "research-knowledge-curator",
-"tags": "[\"rese",
-"toolCount": 0
-},
-{
-"id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
-"name": "Weekly Maintenance",
-"description": "Weekly audit: orphaned-page detection, taxonomy consolidation suggestions, curation stats. Doesn't mutate automatically — surfaces suggestions via Messages for human action. Cadence is managed at the trigger-composition step; default Friday",
-"category": "maintenance",
-"sourceTemplateId": "research-knowledge-curator",
-"tags": "[\"rese",
-"toolCount": 0
-},
-{
-"id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
-"name": "Alert & Outreach",
-"description": "Event-driven: on threshold crossings posts contextual messaging alerts (channel + owner DM) and drafts personalized email outreach (retention for churn, consultative upgrade for expansion) with 14-day suppression. Persists predictions and o",
-"category": "communication",
-"sourceTemplateId": "revenue-intelligence-copilot",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
-"id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
-"name": "Monthly Revenue Report & Calibration",
-"description": "Compiles the month's MRR waterfall from Stripe, health distribution from local state, and prediction accuracy from the log. Adjusts scoring weights based on precision/recall. Delivers a comprehensive report to the messaging channel #revenue",
-"category": "reporting",
-"sourceTemplateId": "revenue-intelligence-copilot",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
-"id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
-"name": "Payment Event Scan & Scoring",
-"description": "Polls Stripe for payment events, enriches with CRM customer context, computes churn risk and expansion readiness scores, and detects threshold crossings. Emits downstream events for alerting and outreach. Default every 5 minutes — final cad",
-"category": "analysis",
-"sourceTemplateId": "revenue-intelligence-copilot",
-"tags": "[\"reve",
-"toolCount": 0
-},
-{
-"id": "95cfab27-c6a7-5aa1-9da4-546992542379",
-"name": "Classify and Route",
-"description": "Receives webhook payloads, classifies source/event/priority via three-tier logic, loads the matching routing rule, transforms the payload for each destination, and fan-outs. Logs every event for traceability.",
-"category": "automation",
-"sourceTemplateId": "router",
-"tags": "[\"rout",
-"toolCount": 0
-},
-{
-"id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
-"name": "Manage Rules",
-"description": "Parses natural-language rule updates from the user ('Route Shopify to #ecommerce'), rewrites `routing_rules.json`, and confirms the diff. The rules take effect on the next webhook.",
-"category": "configuration",
-"sourceTemplateId": "router",
-"tags": "[\"rout",
-"toolCount": 0
-},
-{
-"id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
-"name": "Sentry Issue Scan",
-"description": "Queries Sentry for unresolved issues in scoped projects over the lookback window, filters by severity threshold, applies memory to auto-deprioritize known-noise patterns, and emits qualified issues to the root-cause capability. Default dail",
-"category": "monitoring",
-"sourceTemplateId": "sentry-production-monitor",
-"tags": "[\"sent",
-"toolCount": 0
-},
-{
-"id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
-"name": "Codebase Root Cause Analysis",
-"description": "For each qualified issue, fetches the latest event for the full stack trace, reads source code at the error location across scoped codebases, traces cross-project callers, classifies root cause, and composes a Jira-format report with 3 rank",
-"category": "analysis",
-"sourceTemplateId": "sentry-production-monitor",
-"tags": "[\"sent",
-"toolCount": 0
-},
-{
-"id": "14a1f250-19f9-524e-b031-1da3bce5e684",
-"name": "Skill-Update Issue Writer",
-"description": "Event-driven capability. Subscribes to `review_decision.approved` (filtered to this persona's own reviews). Fetches the review's context_data via IPC callback, builds a unified diff, and POSTs an issue to GitHub or GitLab (selected by issue",
-"category": "development",
-"sourceTemplateId": "skill-librarian",
-"tags": "[\"skil",
-"toolCount": 0
-},
-{
-"id": "c1422775-da51-512b-a3bd-de049b2c3f82",
-"name": "Skill Audit & Proposal",
-"description": "Scheduled + manual capability. Diffs codebase since last_scan_at, reads every `.claude/skills/<slug>/SKILL.md`, computes per-slug usage from `Skill-Ref:` commit markers, and surfaces up to `max_proposals_per_run` edit or retirement proposal",
-"category": "development",
-"sourceTemplateId": "skill-librarian",
-"tags": "[\"skil",
-"toolCount": 0
-},
-{
-"id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
-"name": "Daily Escalation Digest",
-"description": "Queries knowledge base for today's escalations plus 7-day history, compiles stats (counts, tier breakdown, top offenders, avg breach duration, WoW trend), and emails a styled HTML digest to the support lead. Default weekdays 6 PM — final ca",
-"category": "support",
-"sourceTemplateId": "support-escalation-engine",
-"tags": "[\"supp",
-"toolCount": 0
-},
-{
-"id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
-"name": "SLA Breach Watch & Escalation",
-"description": "Polls support platform for tickets approaching or past SLA, classifies severity by tier, enriches with repeat-offender + agent-overload patterns, posts formatted messaging layout escalations to the messaging channel (DM to lead on Critical)",
-"category": "support",
-"sourceTemplateId": "support-escalation-engine",
-"tags": "[\"supp",
-"toolCount": 0
-},
-{
-"id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
-"name": "Deliver Report",
-"description": "Composes the structured insight report from analysis results and delivers via in-app messaging, optionally archiving to knowledge base. Updates baselines so the next run's trend comparison is accurate.",
-"category": "reporting",
-"sourceTemplateId": "survey-insights-analyzer",
-"tags": "[\"surv",
-"toolCount": 0
-},
-{
-"id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
-"name": "Process and Analyze",
-"description": "Queries the database for new responses, validates and normalizes, runs sentiment + theme + NPS analysis, compares against rolling baselines, and flags anomalies. Default daily 09:00 — final cadence set at the trigger-composition step.",
-"category": "analysis",
-"sourceTemplateId": "survey-insights-analyzer",
-"tags": "[\"surv",
-"toolCount": 0
-},
-{
-"id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
-"name": "Code Linking",
-"description": "After acceptance, searches the chosen source-control provider for PRs and commits mentioning the ADR, presents candidate links for confirmation, and writes confirmed references into the knowledge base pages. Cross-references related or supe",
-"category": "automation",
-"sourceTemplateId": "technical-decision-tracker",
-"tags": "[\"tech",
-"toolCount": 0
-},
-{
-"id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
-"name": "Decision Intake",
-"description": "Manual-trigger intake that validates, enriches, and documents a new technical decision as a structured ADR in knowledge base with alternatives analysis and stakeholder sign-off.",
-"category": "automation",
-"sourceTemplateId": "technical-decision-tracker",
-"tags": "[\"tech",
-"toolCount": 0
-},
-{
-"id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
-"name": "Review Cycle",
-"description": "Periodic review of accepted ADRs: checks whether constraints still hold, presents a review batch with Reaffirm / Re-evaluate / Deprecate options, archives stale deprecated decisions. Default weekly Monday 09:00 — final cadence set at the tr",
-"category": "automation",
-"sourceTemplateId": "technical-decision-tracker",
-"tags": "[\"tech",
-"toolCount": 0
-},
-{
-"id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
-"name": "Brand Asset Generation",
-"description": "Load the design.md brief, compose a prompt from the design DNA + memory layer, generate images via the image AI, evaluate with the multimodal AI in a quality loop (max 3 cycles), deliver via Messages, and gate on human review (max 3 iterati",
-"category": "content",
-"sourceTemplateId": "visual-brand-asset-factory",
-"tags": "[\"visu",
-"toolCount": 0
-},
-{
-"id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
-"name": "Design Brief Generation",
-"description": "Produce the structured design.md brief (five sections: empathy, sensory aesthetic, four-role color hierarchy, typography hierarchy, layout metaphor + do's/don'ts) stored at `design_context.design_files['design.md']`. Runs once at persona bu",
-"category": "content",
-"sourceTemplateId": "visual-brand-asset-factory",
-"tags": "[\"visu",
-"toolCount": 0
-},
-{
-"id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
-"name": "Paid-Organic Cannibalization Watch",
-"description": "Cross-reference paid keyword bids with organic ranking positions. When a keyword already ranks top-3 organically, the paid spend is likely cannibalizing — surface with calculated weekly savings opportunity.",
-"category": "analysis",
-"sourceTemplateId": "web-marketing",
-"tags": "[\"web-",
-"toolCount": 0
-},
-{
-"id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
-"name": "Free Promotion Source Discovery",
-"description": "Discovers free promotion surfaces — forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists — grounded in the app's own codebase README + package metadata so suggestions actually match what the pr",
-"category": "growth",
-"sourceTemplateId": "web-marketing",
-"tags": "[\"web-",
-"toolCount": 0
-},
-{
-"id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
-"name": "Optimization Proposals",
-"description": "Turn the performance scan into 5-8 specific, actionable optimization proposals. Each carries data-grounded rationale, expected impact estimate, and priority. Presented for human review; accepted items enter the user's backlog via the emitte",
-"category": "strategy",
-"sourceTemplateId": "web-marketing",
-"tags": "[\"web-",
-"toolCount": 0
-},
-{
-"id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
-"name": "Cross-Channel Performance Scan",
-"description": "Weekly scan of paid campaign and organic analytics metrics. Computes WoW deltas against a 4-week rolling baseline and produces the performance section of the Monday briefing. Does not propose changes — hands off to uc_optimization_proposals",
-"category": "analysis",
-"sourceTemplateId": "web-marketing",
-"tags": "[\"web-",
-"toolCount": 0
-},
-{
-"id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
-"name": "Competitor Comparison",
-"description": "Score competitor URLs with the same 8-category weighted system and produce a side-by-side comparison section appended to the audit report. Highlights where the target beats competitors and where it falls behind. Only runs when competitor UR",
-"category": "analysis",
-"sourceTemplateId": "website-conversion-audit",
-"tags": "[\"webs",
-"toolCount": 0
-},
-{
-"id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
-"name": "Website Conversion Audit",
-"description": "Fetch a target URL and key subpages, score 8 conversion categories, classify gaps by severity (Critical/High/Medium/Low), produce a prioritized gap report with revenue-impact framing, deliver via Messages, and learn from valuable/not-valuab",
-"category": "analysis",
-"sourceTemplateId": "website-conversion-audit",
-"tags": "[\"webs",
-"toolCount": 0
-},
-{
-"id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
-"name": "Error Classification",
-"description": "AI-classifies each ingested error across four dimensions: category (one of 7), root cause (pattern + dependency + temporal correlation), impact (blast radius + severity), and remediation (specific actionable fix). Stores classification back",
-"category": "analysis",
-"sourceTemplateId": "workflow-error-intelligence",
-"tags": "[\"work",
-"toolCount": 0
-},
-{
-"id": "228c0d05-6844-58e7-b815-97564ab21f53",
-"name": "Error Event Ingestion",
-"description": "Subscribes to platform error events from every persona and polls the execution API every 10 minutes to catch silent failures. Normalizes each error into a structured record, deduplicates within a 1-hour window, and appends to the 90-day rol",
-"category": "monitoring",
-"sourceTemplateId": "workflow-error-intelligence",
-"tags": "[\"work",
-"toolCount": 0
-},
-{
-"id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
-"name": "Cross-Workflow Pattern Detection",
-"description": "Runs four pattern checks on each classified error: recurring (same pattern 3+ in 1h), cascading (dependent persona fails within 15m), time-based clustering, service-wide outage (3+ personas on same service in 30m). Sends real-time critical ",
-"category": "analysis",
-"sourceTemplateId": "workflow-error-intelligence",
-"tags": "[\"work",
-"toolCount": 0
-},
-{
-"id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
-"name": "Daily Digest & Weekly Reliability Report",
-"description": "Compiles the daily error digest (totals, per-persona, per-category, trending, top remediation) and the weekly reliability report (error rate per persona, MTTR by category, week-over-week delta, top 3 recommendations, dependency risk map). P",
-"category": "reporting",
-"sourceTemplateId": "workflow-error-intelligence",
-"tags": "[\"work",
-"toolCount": 0
-},
-{
-"id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
-"name": "Codebase Coverage Scan",
-"description": "Scheduled scan of the registered codebase. Reads memory for prior coverage progress, picks the next lowest-coverage / untested module, writes the missing tests, validates them with run_tests, and persists updated coverage progress to memory",
-"category": "development",
-"sourceTemplateId": "qa-guardian",
-"tags": "[\"qa-g",
-"toolCount": 0
-},
-{
-"id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
-"name": "Codebase Bug Hunt",
-"description": "Scheduled scan of the registered codebase for likely defects (null/None derefs, missing error handling, unhandled edge cases, resource leaks, security gaps). Reads memory for already-reported issues to avoid duplicates, files each new findi",
-"category": "development",
-"sourceTemplateId": "qa-guardian",
-"tags": "[\"qa-g",
-"toolCount": 0
-},
-{
-"id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
-"name": "Scheduled Architecture Review",
-"description": "Periodic architectural health review of the registered codebase: scan the current architecture, trace cross-module impacts, and produce a concise ADR (context / decision / consequences) plus a story-pointed task breakdown. Reads memory for ",
-"category": "development",
-"sourceTemplateId": "solution-architect",
-"tags": "[\"solu",
-"toolCount": 0
-},
-{
-"id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
-"name": "Idea Architecture Analysis",
-"description": "On-demand architectural evaluation of a proposed change or accepted idea: assess fit against the existing architecture, surface risks and trade-offs, and produce an implementation plan (ADR + scoped, story-pointed tasks) ready for a deliver",
-"category": "development",
-"sourceTemplateId": "solution-architect",
-"tags": "[\"solu",
-"toolCount": 0
-},
-{
-"id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
-"name": "Release Automation",
-"description": "When a change merges, applies semantic-versioning rules (MAJOR/MINOR/PATCH) to the merged commits, bumps the version file, prepends a categorized changelog entry, drafts release notes, and tags the release. Records each version decision in ",
-"category": "development",
-"sourceTemplateId": "release-manager",
-"tags": "[\"rele",
-"toolCount": 0
-},
-{
-"id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
-"name": "On-Demand Security Scan",
-"description": "Comprehensive security audit of the registered codebase: dependency-vulnerability analysis, secret/credential detection, and risky-pattern analysis (auth bypasses, PII handling, injection). Findings are severity-ranked with concrete remedia",
-"category": "security",
-"sourceTemplateId": "security-sentinel",
-"tags": "[\"secu",
-"toolCount": 0
-},
-{
-"id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
-"name": "PR Test + Merge",
-"description": "Reactive review of a pull request Dev Clone opened: check out the PR branch in an isolated git worktree, run the project's tests there, then — per the team's standards/branching policy — enable GitHub native auto-merge (pass + automerge), a",
-"category": "development",
-"sourceTemplateId": "qa-guardian",
-"tags": "[\"qa-g",
-"toolCount": 0
-}
+  {
+    "id": "02383179-2da1-5a73-a4c3-51be0a31eb72",
+    "name": "Data assistant quality review from real traffic",
+    "description": "An assistant answering questions against data gets better by impression or not at all. Individual bad answers get noticed and forgotten, so the same failure keeps happening and nobody can say whether last month's fix worked. Group failures by cause rather than reporting single cases, separate a prompt problem from a data problem from a code problem because the fix differs, and come back to measure what actually shipped.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-access",
+    "sourceTemplateId": "conversational-database-analyst",
+    "tags": [
+      "conversational-database-analyst",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "04756772-500e-5f72-a401-dd57b66f7251",
+    "name": "Contract review publication and risk alert",
+    "description": "A completed contract review that only exists inside the reviewer helps nobody. The submitter chases for a verdict, and legal either hears about every routine contract or about none of the risky ones. Decide who this finding is for: publish it where contract records already live, give the submitter a verdict they can act on, and pull legal in only when severity or flag count crosses the line the team drew.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/contracts",
+    "sourceTemplateId": "ai-contract-reviewer",
+    "tags": [
+      "ai-contract-reviewer",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "email",
+      "messaging"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+    "name": "Revenue movement report and prediction calibration",
+    "description": "A revenue report that never checks its own predictions repeats the same mistakes every period, and a report nobody can reconcile against the payment provider is not evidence of anything. State what moved and which products or accounts are behind it, then measure last period's predictions against reality and move the scoring weights from that precision and recall rather than from opinion.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/revenue",
+    "sourceTemplateId": "revenue-intelligence-copilot",
+    "tags": [
+      "revenue-intelligence-copilot",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "finance",
+      "messaging",
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
+    "name": "Access grant audit and compliance reporting",
+    "description": "When somebody asks why an access grant was approved, the answer is usually reconstructed by hand from logs, months late, by whoever still remembers. Approval bottlenecks stay invisible in the same way, buried inside an average. Turn one ledger into both the periodic account and any point in time compliance answer, so the two can never disagree, and name the approvers who are slowing the chain instead of letting an average hide them.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/compliance-monitoring",
+    "sourceTemplateId": "access-request-manager",
+    "tags": [
+      "access-request-manager",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+    "name": "Support issue disposition account",
+    "description": "Whoever is accountable for a support queue cannot tell from the tracker whether it was handled or merely touched. Without a short account they either open the tracker themselves or stop asking. Say what happened to the issues that were touched, reconciled against the source rather than against local state, and pick the few worth naming instead of counting everything.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/service-health",
+    "sourceTemplateId": "autonomous-issue-resolver",
+    "tags": [
+      "autonomous-issue-resolver",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "ticketing",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
+    "name": "Issue source coverage and triage",
+    "description": "A reported issue that nobody looked at again is indistinguishable from one that was handled. Over time the tracker fills with things that are old rather than things that are open, and nobody trusts it enough to read it. Judge whether each issue holds real work, attach a solution already known to work rather than restating the problem, and decide which issues need a person, reading tone and priority together rather than priority alone.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/ticket-handling",
+    "sourceTemplateId": "autonomous-issue-resolver",
+    "tags": [
+      "autonomous-issue-resolver",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "ticketing",
+      "knowledge_base",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
+    "name": "Open incident vigilance and escalation",
+    "description": "Incidents are rarely abandoned deliberately; they go quiet, and without something watching the quiet a serious one sits untouched while a trivial one stays open forever. Decide from the state of the board itself which incidents have been silent longer than their severity allows, and escalate with growing force rather than repeating the same nudge.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/incident-response",
+    "sourceTemplateId": "incident-logger",
+    "tags": [
+      "incident-logger",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "136c0300-30bf-59af-a13d-4b55efb99489",
+    "name": "High intent lead alerting",
+    "description": "A lead worth a person's time is only worth it while it is still fresh, and an alert that arrives without context makes the person go and reconstruct it themselves. Get the lead in front of whoever should act with enough context to act well, and reserve the more intrusive route for the cases that genuinely earn it.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/lead-handling",
+    "sourceTemplateId": "lead-capture-pipeline",
+    "tags": [
+      "lead-capture-pipeline",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging",
+      "crm"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
+    "name": "Goal accountability and idea triage review",
+    "description": "Goals die quietly rather than being abandoned on purpose, captured ideas pile up unreviewed, and decisions that were supposed to be revisited never are. Give an honest trend read on each goal from observed activity rather than from what was said last time, distinguish a goal that is behind from one that has been abandoned, and clear the idea queue instead of letting it grow.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/goals-and-reviews",
+    "sourceTemplateId": "daily-standup-compiler",
+    "tags": [
+      "daily-standup-compiler",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
+    "name": "Approved maintenance issue filing",
+    "description": "A maintenance proposal that a person approves and that then goes nowhere is worse than never proposing it, because the approval felt like the work getting done. Turn the approval into a real, findable issue carrying what a maintainer needs to act, and never lose the decision to an API failure.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "skill-librarian",
+    "tags": [
+      "skill-librarian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "1e3b8fa3-8146-510a-8294-21593e156389",
+    "name": "Correspondence drafting and reply review",
+    "description": "Replies written on someone's behalf either sound generic enough to be noticed or need so much editing that they save nothing, and there is no safe path from assisted to unattended. Compose the reply in that specific recipient's voice, then route it through human review until that contact has earned enough consecutive unedited approvals to graduate, with some categories never graduating regardless of record.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/correspondence",
+    "sourceTemplateId": "digital-clone",
+    "tags": [
+      "digital-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email",
+      "messaging",
+      "database"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+    "name": "Lead welcome email drafting",
+    "description": "One template sent to everyone reads as a template to everyone, and the person who wrote three sentences about their problem learns immediately that nobody read them. Match the reply to how ready this person actually is, drawing on what they wrote rather than substituting a name into a template.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/lead-handling",
+    "sourceTemplateId": "lead-capture-pipeline",
+    "tags": [
+      "lead-capture-pipeline",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
+    "name": "Product idea harvesting from codebase and web",
+    "description": "Idea harvesting that is not grounded in the product produces plausible-sounding candidates that do not fit what the product is, and triaging them costs more than they are worth. Read what the product actually is before searching, so candidates are plausible for this product rather than generic, and skip vague or meta content instead of passing volume through to triage.",
+    "category": "project_management",
+    "domain": "product_project",
+    "path": "product_project/ideation",
+    "sourceTemplateId": "idea-harvester",
+    "tags": [
+      "idea-harvester",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "development",
+      "messaging",
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
+    "name": "Stack-grounded implementation opportunity research",
+    "description": "Nobody reads release feeds for the dependencies they actually run, so upstream changes that would matter arrive as a surprise while a generic developer news feed produces nothing but noise. Read the stack first so relevance is grounded in what is actually depended on, then prefer a few findings that would change something over broad coverage.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/work-intake",
+    "sourceTemplateId": "product-scout",
+    "tags": [
+      "product-scout",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "228c0d05-6844-58e7-b815-97564ab21f53",
+    "name": "Agent platform error ingestion",
+    "description": "Some agent failures announce themselves and some just stop, and a record built only from the announcements is missing exactly the failures nobody noticed. Catch failures both ways at once and normalise them into one record shape, deciding what is genuinely a repeat of something already recorded rather than a second failure.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "workflow-error-intelligence",
+    "tags": [
+      "workflow-error-intelligence",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "time",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
+    "name": "Conversion experiment program digest",
+    "description": "An optimisation program that only communicates when something wins leaves its owner unable to tell a quiet period from a stalled one. Compose one honest account of where the whole program stands, including the uncertainty, rather than reporting only the parts that look like progress.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/conversion-optimization",
+    "sourceTemplateId": "autonomous-cro-experiment-runner",
+    "tags": [
+      "autonomous-cro-experiment-runner",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+    "name": "Issue handling trend review",
+    "description": "A count of resolved issues says nothing about whether the queue is getting better. Without a comparison nobody can tell a good period from a bad one, and the same totals get restated until they stop being read. Compare rather than count: state what moved since the last account, and be explicit about which figure came from the live source and which from local state.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/service-health",
+    "sourceTemplateId": "autonomous-issue-resolver",
+    "tags": [
+      "autonomous-issue-resolver",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "ticketing",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
+    "name": "Website conversion gap audit",
+    "description": "A site can look finished and still lose every visitor at the same place, and a list of everything imperfect tells the owner nothing about which gap is costing them. Judge each category by what the gap costs in visitors or ranking position rather than in taste, comparing the site against what it itself scored last time.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/conversion-optimization",
+    "sourceTemplateId": "website-conversion-audit",
+    "tags": [
+      "website-conversion-audit",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
+    "name": "Payment event scoring for churn and expansion",
+    "description": "An account sliding toward churn, or ready to expand, is visible in payment behaviour long before it shows up in a business review, and a failed payment has a short window in which it can still be recovered. Turn each event into a movement in that account's risk and readiness scores, decide whether the movement crosses a band worth telling someone about, and separate a transient failure the provider will retry from one that needs a person.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/revenue",
+    "sourceTemplateId": "revenue-intelligence-copilot",
+    "tags": [
+      "revenue-intelligence-copilot",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "finance",
+      "crm"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "2969b6b1-5462-573c-970e-832844526258",
+    "name": "Audio briefing production",
+    "description": "An approved script is not a listenable briefing, and hand editing every segment into one track is the step that stops briefings from shipping regularly. Synthesize each segment as speech, join the segments into one coherent track with deliberate pacing between them, and judge the result against the runtime the script promised before calling it finished.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/audio",
+    "sourceTemplateId": "audio-briefing-host",
+    "tags": [
+      "audio-briefing-host",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "voice_generation"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+    "name": "Unsigned contract signature chasing",
+    "description": "A contract sitting unsigned costs whatever it was going to be worth, and chasing it is a relationship: too few nudges and it dies quietly, too many and the counterparty stops reading anything you send. Judge when a signer has waited long enough to be nudged again given how they normally respond, and when chasing has stopped working and the contract belongs to a person instead.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/deadlines",
+    "sourceTemplateId": "contract-lifecycle-use-case",
+    "tags": [
+      "contract-lifecycle-use-case",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "spreadsheet",
+      "forms",
+      "email",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
+    "name": "Code change implementation and review follow-through",
+    "description": "An accepted item that turns into a change nobody can review, or a review comment that gets coded around rather than answered, costs more than the item was worth. Make the change scoped to what was accepted and let the repository's own checks be the standard, then answer review feedback the way a careful engineer would, escalating objections to the approach rather than patching them away.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/code-review",
+    "sourceTemplateId": "dev-clone",
+    "tags": [
+      "dev-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
+    "name": "Live database question answering",
+    "description": "People who need a number wait for whoever can write the query, and the person who can write it spends their week writing them. Opening the database directly instead trades one problem for a worse one. Decide what is actually being asked, whether it can be answered safely inside the agreed boundary, and refuse with a reason rather than guessing or quietly narrowing it.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-access",
+    "sourceTemplateId": "conversational-database-analyst",
+    "tags": [
+      "conversational-database-analyst",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
+    "name": "Congressional stock disclosure coverage",
+    "description": "Disclosure filings arrive on their own schedule and in bursts, so anyone watching them by hand either checks constantly or misses the window in which a filing still means something. Advance a cursor over filings rather than rescanning a fixed window, match them against the declared sectors and holdings, and treat an unusual concentration in one sector as the finding rather than any single filing.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/investing",
+    "sourceTemplateId": "financial-stocks-signaller",
+    "tags": [
+      "financial-stocks-signaller",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+    "name": "Weighted decision analysis and checkpoint review",
+    "description": "A hard choice gets made on the criteria that were loudest that day, with nothing written down that could later prove it wrong, so nobody can tell afterwards whether it worked. Force the alternatives into the open, weigh them on criteria the requester recognises rather than generic ones, and get a kill criterion and a checkpoint written while they are still willing to name one.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/decisions",
+    "sourceTemplateId": "daily-standup-compiler",
+    "tags": [
+      "daily-standup-compiler",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
+    "name": "Watchlist technical signal digest",
+    "description": "Indicator readings on a watchlist produce a verdict per ticker and no reasoning, so nobody can tell afterwards whether the method worked or whether one lucky call carried it. State a signal only when the indicators behind it agree enough to justify it, report the disagreement when they do not, and never fabricate a figure for a ticker the sources could not cover.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/investing",
+    "sourceTemplateId": "financial-stocks-signaller",
+    "tags": [
+      "financial-stocks-signaller",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "finance",
+      "research"
+    ],
+    "recommendedTrigger": "time",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
+    "name": "Database anomaly incident diagnosis",
+    "description": "A serious database deviation reaches a person as an alarm and nothing else, so the first hour goes into reconstructing evidence that has already stopped existing. Capture the evidence while it is still there, correlate what moved together, and offer a hypothesis carrying the confidence it actually deserves rather than the confidence that would be reassuring.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/incident-response",
+    "sourceTemplateId": "database-performance-monitor",
+    "tags": [
+      "database-performance-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+    "name": "Support request SLA watch and escalation",
+    "description": "Somebody who asked for help is waiting, and nobody knows it. A breach discovered after the fact is only a report; the same information an hour earlier would have been a save. Judge which requests are entering their risk window before they breach, and which genuinely need a person, since escalating everything is as bad as escalating nothing.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/sla",
+    "sourceTemplateId": "support-escalation-engine",
+    "tags": [
+      "support-escalation-engine",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "support",
+      "messaging",
+      "email",
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
+    "name": "Paid and organic keyword cannibalization watch",
+    "description": "Money is spent bidding on terms the site already wins organically, and because the two numbers live in different systems nobody ever puts them side by side. Cross reference the two and judge where the paid spend is buying traffic that was already arriving, putting a number on what that is costing.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/web-analytics",
+    "sourceTemplateId": "web-marketing",
+    "tags": [
+      "web-marketing",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "advertising",
+      "analytics"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
+    "name": "Decision record rot watch",
+    "description": "A decision stays presented as current long after the thing it assumed stopped being true, and the reader who arrives at the old record has no way to tell. Watch the assumptions rather than the dates, and never silently reaffirm: if nothing has changed, say that nothing has changed.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "technical-decision-tracker",
+    "tags": [
+      "technical-decision-tracker",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
+    "name": "Codebase static analysis sweep",
+    "description": "Dead code, duplication and eroded module boundaries are cheap to find with a tool and expensive to maintain forever, and the tool's output dies in a terminal instead of becoming work. Run the tool faithfully and turn its output into work one finding at a time, without scoring or summarising past what it actually found, and learn which unreferenced code is deliberate.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "lean-codebase-sentinel",
+    "tags": [
+      "lean-codebase-sentinel",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "4a151e59-6b19-5164-8d66-867b66091542",
+    "name": "Community discussion trend digest",
+    "description": "The communities where a product's users talk about it move faster than anyone can read, and a digest that pads itself to look consistent teaches its readers to skip it. Cluster genuinely new discussion into the few themes that actually ran, label the sentiment honestly, and ship fewer themes on a quiet day rather than stretching thin material.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/community-channels",
+    "sourceTemplateId": "reddit-trend-digest",
+    "tags": [
+      "reddit-trend-digest",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "social",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
+    "name": "Contract envelope event sync",
+    "description": "A contract tracker that is updated by hand is out of date by definition, and the gap is invisible: a contract stalled at review looks the same as one merely open, and a decline is discovered when somebody asks. Reconstruct the true sequence when events arrive twice or out of order, write the tracker so it says what is actually true, and decide which changes are worth interrupting someone over.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/contracts",
+    "sourceTemplateId": "contract-lifecycle-use-case",
+    "tags": [
+      "contract-lifecycle-use-case",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "forms",
+      "spreadsheet",
+      "messaging"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
+    "name": "Access request intake and triage",
+    "description": "Access requests arrive as ordinary messages among everything else, so the same ask gets entered twice, or read once and forgotten, and the record of who asked for what stops being something anyone would defend. Decide what each message is really asking for, whether it has already been captured, and how much privilege it carries, because that classification is what later decides whether a person has to say yes.",
+    "category": "operations",
+    "domain": "operations_logistics",
+    "path": "operations_logistics/intake",
+    "sourceTemplateId": "access-request-manager",
+    "tags": [
+      "access-request-manager",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
+    "name": "Technical decision capture",
+    "description": "Consequential choices get made in conversation and never written down, so a year later nobody can tell what constraint forced the decision or what the alternatives were, and the choice gets relitigated from scratch. Establish the constraint that forced the choice and the alternatives that lost, pushing back when what arrives is too thin to be useful later rather than filing it anyway.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "technical-decision-tracker",
+    "tags": [
+      "technical-decision-tracker",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+    "name": "Correspondence activity digest",
+    "description": "Whoever runs an assisted-reply pipeline cannot tell whether it is keeping pace without opening every channel, and the thing most worth knowing, how much is still waiting on a human, is the thing least visible. Assemble a calm status readout that answers whether replies are keeping pace and where attention is needed, without ever requiring an action to be useful.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/digests",
+    "sourceTemplateId": "digital-clone",
+    "tags": [
+      "digital-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
+    "name": "Survey response theme and sentiment analysis",
+    "description": "Feedback read one batch at a time turns a loud response into a trend and a quietly recurring one into nothing, and a thin batch read eagerly produces a confident conclusion the data does not support. Read for themes rather than scores, weight by how many said it and how consistently, and buffer rather than analyse when the batch is too thin to mean anything.",
+    "category": "project_management",
+    "domain": "product_project",
+    "path": "product_project/customer-feedback",
+    "sourceTemplateId": "survey-insights-analyzer",
+    "tags": [
+      "survey-insights-analyzer",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
+    "name": "Contract renewal window watch",
+    "description": "Renewal clocks run whether anyone is watching or not. A contract auto renews on terms nobody re-negotiated, or lapses because the notice window closed while it was still on somebody's list. Judge which windows are close enough to act on, raise them while a decision is still possible, and keep a current answer to what renews next and what has changed since the last time anyone asked.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/deadlines",
+    "sourceTemplateId": "contract-lifecycle-use-case",
+    "tags": [
+      "contract-lifecycle-use-case",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "spreadsheet",
+      "messaging",
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "590a0c44-7538-5080-9a35-870ed40d31e5",
+    "name": "Deploy regression correlation",
+    "description": "When errors jump, whoever is on call starts from zero on the question that matters most, which is what changed just before, and the answer is sitting in the deploy list nobody cross referenced. Decide which error jumps are close enough to a deploy to be named as its regression, and which are merely near it in time and must be labelled as no more than possibly related.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "devops-guardian",
+    "tags": [
+      "devops-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "cloud",
+      "monitoring"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5a0a2392-2d9d-552c-912c-734a6e531550",
+    "name": "Content source health tracking",
+    "description": "A source that has quietly stopped yielding anything looks identical to a quiet one, so dead entries stay on a follow list forever and spend budget every pass. Distinguish a source that is quiet from a source that is broken by requiring a clear run of failures before saying anything, then recommend removal rather than continuing to poll.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/community-channels",
+    "sourceTemplateId": "reddit-trend-digest",
+    "tags": [
+      "reddit-trend-digest",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
+    "name": "Database performance baseline monitoring",
+    "description": "A database degrades against its own normal long before it crosses any generic threshold, so a team watching fixed numbers either misses the degradation or is trained by false alarms to ignore the ones that matter. Judge each sample against what this database actually does at this hour of this day, and decide whether a move is worth a glance, worth waking someone, or worth nothing at all.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "database-performance-monitor",
+    "tags": [
+      "database-performance-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "time",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
+    "name": "Audio briefing script drafting",
+    "description": "Source material read aloud verbatim does not hold a listener, and discovering that after paying for synthesis is the expensive way to find out. Find the headline finding, the facts that carry it, the tensions worth airing and the questions left open, then shape them into two host turns that pace correctly when spoken rather than when read.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/audio",
+    "sourceTemplateId": "audio-briefing-host",
+    "tags": [
+      "audio-briefing-host",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
+    "name": "Codebase architecture review",
+    "description": "Structural problems cost the most and announce themselves the least, and by the time an eroded boundary or an unowned subsystem is obvious it is an incident rather than a proposal. Read for the structural problems that will cost most later and decide which few are worth competing with product work, treating settled decisions as constraints rather than as things to reopen.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "solution-architect",
+    "tags": [
+      "solution-architect",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
+    "name": "Idea architecture and feasibility verdict",
+    "description": "An idea reaches a ranking queue carrying only its own enthusiasm, so whoever ranks it has to work out for themselves who it helps, what it costs and whether the architecture even allows it. Add the judgement the idea is missing from both the product and the architectural side, being willing to conclude that it should not be done and saying why in terms a later scan can respect.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "solution-architect",
+    "tags": [
+      "solution-architect",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
+    "name": "Release record and version bump",
+    "description": "A version number chosen from the wording of a commit message is a claim about compatibility that nobody checked, and a changelog written afterwards is written from memory. Choose the version step from what the change actually does to callers rather than from how it was described, and keep version, changelog and notes consistent with that choice.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/release",
+    "sourceTemplateId": "release-manager",
+    "tags": [
+      "release-manager",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
+    "name": "Codebase security scan",
+    "description": "A generic vulnerability list is read once and ignored afterwards, because it names problems without naming what to do about them or which ones actually matter here. Treat dependency vulnerabilities, exposed secrets and risky code patterns as three genuinely different questions, and rank what is found by real severity with a fix a developer could apply without further research.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "security-sentinel",
+    "tags": [
+      "security-sentinel",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5e07793e-c964-590f-95dc-f72631789f48",
+    "name": "Approved draft channel publishing",
+    "description": "Approved work sits unpublished, and the person who approved it has no way to tell whether their decision reached the world. Carry the approved draft through to actually being live or scheduled on the channel it was approved for, and report what happened with a link or a time.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/social-publishing",
+    "sourceTemplateId": "content-cascade",
+    "tags": [
+      "content-cascade",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "social",
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
+    "name": "Conversion experiment significance watch",
+    "description": "An experiment called early is worse than no experiment, because the wrong variant then ships with the authority of a measurement behind it. Decide for each experiment whether it has actually earned a verdict yet, watching for signs the measurement itself is broken, and propose what to do rather than doing it.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/conversion-optimization",
+    "sourceTemplateId": "autonomous-cro-experiment-runner",
+    "tags": [
+      "autonomous-cro-experiment-runner",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "analytics"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
+    "name": "Post-incident review and prevention proposals",
+    "description": "The only lasting product of an incident is what was learned from it, and that evaporates within days unless somebody writes it while responders can still correct it. Write an honest account of what happened, preferring a stated unknown cause to a plausible invented one, and decide when a cause has returned often enough that another review is the wrong response.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/incident-response",
+    "sourceTemplateId": "incident-logger",
+    "tags": [
+      "incident-logger",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
+    "name": "Email inbox attention digest",
+    "description": "Reading every unread message to find the few that matter costs more attention than the messages themselves, and a digest ranked by recency does not save any of it. Rank by a real signal, who the reader actually answers combined with what the message says, and surface a short accurate list rather than a complete one.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/digests",
+    "sourceTemplateId": "email-morning-digest",
+    "tags": [
+      "email-morning-digest",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
+    "name": "Agent reliability reporting",
+    "description": "Whether a fleet of agents is getting more or less reliable is usually a feeling formed from whichever incident was most recent, which is exactly the wrong basis for deciding what to fix. Turn the record into per agent error rate and time to resolution with movement against the previous window, and rank the recommendations rather than listing the errors.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "workflow-error-intelligence",
+    "tags": [
+      "workflow-error-intelligence",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
+    "name": "Support escalation pattern review",
+    "description": "A support function that only reports its escalations absorbs the same pain forever. The cause that produced fifty tickets is described fifty times and fixed never. Name the causes behind recurring escalations rather than restating the escalations, decide which have a fixable root, and file those as work instead of reporting them again.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/service-health",
+    "sourceTemplateId": "support-escalation-engine",
+    "tags": [
+      "support-escalation-engine",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "support",
+      "knowledge_base",
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
+    "name": "Web content performance review",
+    "description": "Movement in a product's own numbers goes unnoticed until it is too late to act on, and a table of metrics with no interpretation is not a read on anything. Judge each move against what this product normally does rather than a fixed threshold, allowing a wider band for low volume pages, and end in a proposal or an explicit nothing worth doing.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/web-analytics",
+    "sourceTemplateId": "content-performance-reporter",
+    "tags": [
+      "content-performance-reporter",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "7458572a-4829-55a0-830b-336f16147659",
+    "name": "Infrastructure metrics scan",
+    "description": "Infrastructure usually fails by drifting away from its own recent normal, not by crossing a memorable round number, so a watch built on absolute thresholds sees the failure late or not at all. Compare each metric against its own baseline instead of a shared static threshold, and let past triage decisions decide how loudly a familiar deviation is reported.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "devops-guardian",
+    "tags": [
+      "devops-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "monitoring"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
+    "name": "Production error issue filter",
+    "description": "Root cause analysis is expensive per issue, so anything that reaches it must be worth investigating; a filter that passes everything makes the analysis step useless. Apply the occurrence floor and the learned noise patterns to decide which issues are worth an investigation, without forming an opinion about what caused them.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "sentry-production-monitor",
+    "tags": [
+      "sentry-production-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "monitoring"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+    "name": "Knowledge base content curation",
+    "description": "Content saved without judgment turns a knowledge base into a pile: everything is in there, nothing is findable later, and the same source has three pages. Judge whether the content is actually worth adding, then write a summary at the depth a later reader needs and find the cross-references that make the page discoverable rather than merely filed.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/knowledge-curation",
+    "sourceTemplateId": "research-knowledge-curator",
+    "tags": [
+      "research-knowledge-curator",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
+    "name": "Access request approval chain",
+    "description": "A request nobody decided looks exactly like one that was denied, and the person waiting cannot tell which. Left alone, silence becomes the way privileged access gets granted. Carry each request to an explicit approved, denied or escalated verdict, judging when a quiet approver has become an escalation and holding anything high privilege for a person to say yes out loud.",
+    "category": "operations",
+    "domain": "operations_logistics",
+    "path": "operations_logistics/approvals",
+    "sourceTemplateId": "access-request-manager",
+    "tags": [
+      "access-request-manager",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+    "name": "Work candidate triage gate",
+    "description": "Anything that generates candidates will eventually generate more than anyone can absorb, and without one gate the low value ones are either built or silently dropped, both of which are worse than a decision. Give a person enough context to accept, reject or defer without further digging, and turn what they decide into a signal the upstream source learns from.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/work-intake",
+    "sourceTemplateId": "dev-clone",
+    "tags": [
+      "dev-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
+    "name": "Cloud spend threshold watch",
+    "description": "A budget is breached in the middle of a billing period, but nobody finds out until reconciliation, by which point the spend is already committed. Project the likely end-of-period total from the run rate and judge the trajectory rather than today's number, then stay quiet unless the projection or the actual crosses the threshold.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/spend-and-budget",
+    "sourceTemplateId": "budget-spending-monitor",
+    "tags": [
+      "budget-spending-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "cloud"
+    ],
+    "recommendedTrigger": "time",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
+    "name": "Cloud cost and resource reporting",
+    "description": "Cloud cost drifts in small per-service increments that no single invoice line explains, so a rise is normally discovered at the invoice and then cannot be attributed to anything. Compare each service against its own baseline, decide which moves are worth naming and which are the expected consequence of a change that was made on purpose, and report the whole picture either way.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/spend-and-budget",
+    "sourceTemplateId": "budget-spending-monitor",
+    "tags": [
+      "budget-spending-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "cloud"
+    ],
+    "recommendedTrigger": "time",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
+    "name": "Database row change watch",
+    "description": "Row level change streams are almost entirely the product working correctly, so a watch that relays them all trains its audience to ignore it and hides the few changes that should never have happened. Judge which changes are genuinely off against what this data normally does, and decide who, if anyone, needs to hear about each one and in how much detail.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "real-time-database-watcher",
+    "tags": [
+      "real-time-database-watcher",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging",
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+    "name": "Under-covered equity discovery by sector",
+    "description": "Screens produce names that clear a mechanical filter and nothing more, so the output looks like research while carrying no thesis anyone could argue with. Require all three legs, thin coverage, a technical case, and a real catalyst, and treat two out of three as a rejection rather than a weaker recommendation.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/investing",
+    "sourceTemplateId": "financial-stocks-signaller",
+    "tags": [
+      "financial-stocks-signaller",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "finance",
+      "research"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
+    "name": "Webhook classification and routing",
+    "description": "Incoming events arrive in every shape from every system, and without one door that classifies and fans them out they either reach nobody or reach everybody. Classify the payload accurately enough that the right rule applies, transform it for each destination it names, and treat losing an event as the one unacceptable outcome.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/event-routing",
+    "sourceTemplateId": "router",
+    "tags": [
+      "router",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging",
+      "knowledge_base",
+      "spreadsheet",
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
+    "name": "Release candidate review and approval",
+    "description": "Merged work either sits unreleased for no reason anybody could state, or gets tagged on a day of the week whether or not the suite is green and whether or not there is anything worth shipping. Decide whether what has accumulated is worth releasing at all, prove it against the whole suite rather than the individual changes, and take it to a person to approve.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/release",
+    "sourceTemplateId": "dev-clone",
+    "tags": [
+      "dev-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
+    "name": "Feature walkthrough capture from the running app",
+    "description": "A feature nobody can watch has to be explained by hand every time, and a walkthrough recorded from a guessed script shows screens the app does not produce. Read the code first so the walkthrough follows the path a real user takes, then drive that path live and pace the capture for a viewer rather than for the machine.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/video",
+    "sourceTemplateId": "demo-recorder",
+    "tags": [
+      "demo-recorder",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "development",
+      "browser_automation"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
+    "name": "Newsletter issue curation and delivery",
+    "description": "A newsletter assembled from whatever the feeds produced is a link dump, and subscribers stop opening it long before anyone notices the sources went stale. Judge which items are actually worth a subscriber's attention, group what belongs together, and write real commentary saying why each matters rather than restating the headline.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/newsletters",
+    "sourceTemplateId": "newsletter-curator",
+    "tags": [
+      "newsletter-curator",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "web_scraping",
+      "email"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
+    "name": "Database anomaly baseline refresh",
+    "description": "Anomaly detection is only as honest as the baseline behind it, and a baseline computed once quietly turns every ordinary business change into an anomaly and every real anomaly into normal. Recompute the distributions detection depends on from what the business has actually been doing recently, and decide whether the new numbers are trustworthy enough to replace the old ones.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "real-time-database-watcher",
+    "tags": [
+      "real-time-database-watcher",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
+    "name": "Database activity digest",
+    "description": "A team that only ever sees individual database events has no sense of direction, and cannot tell a bad week from a normal one until something breaks. Turn the period's activity into one account that shows direction of change rather than a table of totals, and decide what a reader would actually act on.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "real-time-database-watcher",
+    "tags": [
+      "real-time-database-watcher",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
+    "name": "Codebase latent defect hunt",
+    "description": "The defects a careful reader would catch are found by users instead, because nobody has the time to read the code the way a reviewer would. Read like a reviewer and judge which of the things that look wrong are genuinely likely to break, filing few and real rather than many and speculative.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "qa-guardian",
+    "tags": [
+      "qa-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+    "name": "Source artifact repurposing for channels",
+    "description": "Something published once reaches only the audience of the place it was published, and reformatting it by hand for every other channel is the work that quietly stops getting done. Produce what each channel actually needs from the source, as a rewrite grounded in that channel's own voice description rather than the same text reformatted.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/social-publishing",
+    "sourceTemplateId": "content-cascade",
+    "tags": [
+      "content-cascade",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "research",
+      "web_scraping"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
+    "name": "Agent platform error classification",
+    "description": "A raw failure record tells nobody what to do, and a forced classification into the nearest familiar bucket is worse than admitting the failure is new. Give the failure a category, a cause, a blast radius and a specific remediation, or say honestly that it is uncategorised rather than fitting it to the nearest bucket.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "workflow-error-intelligence",
+    "tags": [
+      "workflow-error-intelligence",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+    "name": "Knowledge base contradiction audit",
+    "description": "Two articles covering the same ground and saying different things are both individually healthy: neither is stale, neither is orphaned. A per document audit cannot see the problem, and whoever reads one of them gets a confident wrong answer. Cluster articles that appear to cover the same ground, compare their bodies for genuine disagreement, and hand every pair to a person rather than deciding which one is right.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-quality",
+    "sourceTemplateId": "knowledge-base-health-auditor",
+    "tags": [
+      "knowledge-base-health-auditor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
+    "name": "Knowledge base curation audit",
+    "description": "A curated knowledge base degrades in ways nobody notices from inside it: pages nothing links to, and a taxonomy that has sprawled past the point where its tags mean anything. Find orphaned pages and near-duplicate tags, read them against earlier audits so a trend is visible, and propose rather than apply.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/knowledge-curation",
+    "sourceTemplateId": "research-knowledge-curator",
+    "tags": [
+      "research-knowledge-curator",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+    "name": "Paid and organic channel performance scan",
+    "description": "Paid and organic performance sit in separate dashboards, so nobody reads them together and the findings that only exist between them are never found. Read both channels against what is normal for this account rather than against last period alone, and report degradation honestly when one source is unavailable.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/web-analytics",
+    "sourceTemplateId": "web-marketing",
+    "tags": [
+      "web-marketing",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "advertising",
+      "analytics"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+    "name": "Memory and knowledge base health audit",
+    "description": "The layers an agent remembers through decay quietly: notes go stale, documents orphan from the code they described, articles start disagreeing with each other. Nothing fails, and trust in the whole system erodes instead. Find drift, staleness, orphans and contradiction, rank the findings by severity and recency, and hand every one to a person with a recommended action, never mutating a layer itself.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-quality",
+    "sourceTemplateId": "knowledge-base-health-auditor",
+    "tags": [
+      "knowledge-base-health-auditor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "bbace830-43f9-5583-b675-a71aa969127d",
+    "name": "Harvested idea triage",
+    "description": "A harvested idea that goes straight into feasibility analysis spends real effort before anyone has said it is wanted. Put the idea to a person for accept or reject before any analysis effort is spent on it, and let repeated rejections in a category suppress future harvesting of that category.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/work-intake",
+    "sourceTemplateId": "idea-harvester",
+    "tags": [
+      "idea-harvester",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
+    "name": "Codebase test coverage advance",
+    "description": "The parts of a codebase that would hurt most if they broke are usually the parts nobody got round to testing, and a coverage percentage says nothing about which parts those are. Pick the next area actually worth covering rather than the one that moves the percentage most, write tests in the conventions already present, and prove they pass.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "qa-guardian",
+    "tags": [
+      "qa-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+    "name": "Pull request test verdict",
+    "description": "A change reaches the main branch on the strength of somebody's belief that the tests would pass, and the one time that belief is wrong is the time it matters. Run the change in isolation from anyone else's working tree and let the real result, not assumption, decide between approving, asking for changes, and handing it on with the failure named.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/code-review",
+    "sourceTemplateId": "qa-guardian",
+    "tags": [
+      "qa-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
+    "name": "Skill library audit and proposal",
+    "description": "A library of written procedures drifts away from the code it describes and accumulates entries nobody has used in months, and neither drift nor disuse announces itself. Turn genuine drift or genuine disuse into a proposal a person can approve or reject, capped tightly enough that the review queue stays readable.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "skill-librarian",
+    "tags": [
+      "skill-librarian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c3722109-62e6-52eb-b796-1a501121766a",
+    "name": "Original 2D art generation and curation",
+    "description": "A generated art library grows into noise unless somebody decides what stays, and an agent that never learns from those decisions keeps producing the same rejected work. Conceive a direction that has not been tried, generate work in it, and present each piece for an explicit keep or discard decision rather than assuming taste.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/visual-assets",
+    "sourceTemplateId": "autonomous-art-director",
+    "tags": [
+      "autonomous-art-director",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "image_generation",
+      "storage"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
+    "name": "Conversion variant hypothesis proposals",
+    "description": "Pages underperform quietly, and the ideas offered for them are usually generic best practice that would apply to any site and therefore explains nothing about this one. Rank pages by how far below their own baseline they sit and write a small number of hypotheses specific to what is actually underperforming on each, each naming what it expects to move.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/conversion-optimization",
+    "sourceTemplateId": "autonomous-cro-experiment-runner",
+    "tags": [
+      "autonomous-cro-experiment-runner",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "analytics"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
+    "name": "Free promotion surface discovery",
+    "description": "Lists of places to promote a product are generic by default, which means they fit any product and are therefore worth nothing to this one. Find the specific forums, communities, newsletters and directories where this product's actual users already gather, offering few and specific rather than many and plausible.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/community-channels",
+    "sourceTemplateId": "web-marketing",
+    "tags": [
+      "web-marketing",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "development"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
+    "name": "Per channel writing voice profiling",
+    "description": "Drafts written without a written description of how this person sounds read like nobody, and the same correction gets made on every draft forever because nothing records it. Derive from real examples how they open, how long their sentences run, what words they never use and how they close, and write it down concretely enough that a draft can be checked against it.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/social-publishing",
+    "sourceTemplateId": "content-cascade",
+    "tags": [
+      "content-cascade",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
+    "name": "Competitor conversion and positioning comparison",
+    "description": "A snapshot of where competitors stand today says nothing about which direction anyone is moving, and a comparison scored on a different yardstick than the home site means nothing at all. Read what has changed since the last look, a feature that appeared, pricing that moved, a claim withdrawn, and score it on the identical categories so the comparison is honest.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/conversion-optimization",
+    "sourceTemplateId": "website-conversion-audit",
+    "tags": [
+      "website-conversion-audit",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
+    "name": "Database schema picture refresh",
+    "description": "Anything answering questions about a database works from a cached picture of its structure. When the real database moves and the picture does not, the answers stay confident and become wrong, which is worse than failing. Decide whether a fresh read is trustworthy enough to replace what is held, since a bad read that overwrites a good picture does more damage than a stale one.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-access",
+    "sourceTemplateId": "conversational-database-analyst",
+    "tags": [
+      "conversational-database-analyst",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
+    "name": "Revenue signal alerting and outreach",
+    "description": "Money that was going to arrive and did not, and accounts drifting toward leaving or ready to grow, all fail quietly. The window in which any of them can still be acted on is short, and by the time it shows up in a revenue report it has closed. Separate a signal that will resolve on its own from one that needs a person, raise it once with its cause in the provider's own terms, and never contact a customer on the operator's behalf unless he has explicitly said that is wanted.",
+    "category": "operations",
+    "domain": "customer_support",
+    "path": "customer_support/retention",
+    "sourceTemplateId": "revenue-intelligence-copilot",
+    "tags": [
+      "revenue-intelligence-copilot",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "finance",
+      "messaging",
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+    "name": "Form lead intake and scoring",
+    "description": "A form submission that is recorded twice, scored against a generic rubric, or not recorded at all costs a real opportunity, and none of those failures announce themselves. Work out who this is and whether they matter, judged against how this business actually sells rather than a generic rubric, and record it exactly once whether or not they have been seen before.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/lead-handling",
+    "sourceTemplateId": "lead-capture-pipeline",
+    "tags": [
+      "lead-capture-pipeline",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "forms",
+      "crm"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
+    "name": "Scouted opportunity triage",
+    "description": "A discovered opportunity that goes straight to an implementation agent spends build effort on something nobody asked for. Put the opportunity to a person with enough context to decide, and let the rejection reasons train which topics stop being surfaced.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/work-intake",
+    "sourceTemplateId": "product-scout",
+    "tags": [
+      "product-scout",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+    "name": "Content metrics anomaly check",
+    "description": "Waiting for the end of a period to discover something moved wastes the half of the period in which it could still have been acted on. Compare where the numbers actually are against where the baseline says they should be by now, and say nothing at all when they are tracking normally.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/web-analytics",
+    "sourceTemplateId": "content-performance-reporter",
+    "tags": [
+      "content-performance-reporter",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
+    "name": "Product design brief authoring",
+    "description": "Without one written description of how a product should look, every piece of visual work is judged against a different unstated standard and none of it composes. Name concrete colour roles, type treatment and layout direction rather than adjectives, taking the adopter's own brief verbatim where one exists and doing the extraction work only where one does not.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/visual-assets",
+    "sourceTemplateId": "visual-brand-asset-factory",
+    "tags": [
+      "visual-brand-asset-factory",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "development"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "db563881-c358-5d0d-aab5-7a22573f050d",
+    "name": "Application error scan",
+    "description": "An error list that shows the same dismissed pattern every day teaches its readers to skim, and the one new error that matters goes past unread with the rest. Classify each error's severity from the data and from the triage history together, so a signature dismissed repeatedly quietly drops without anyone having to dismiss it again.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "devops-guardian",
+    "tags": [
+      "devops-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "monitoring"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+    "name": "Marketing optimization proposals",
+    "description": "Marketing advice that would apply to any account regardless of its data is not doing anything, and a list too long to evaluate is refused wholesale rather than judged. Turn the reading into a small number of specific changes worth making, each carrying the data point that argues for it and an honest estimate of what it is worth.",
+    "category": "marketing",
+    "domain": "sales_marketing",
+    "path": "sales_marketing/web-analytics",
+    "sourceTemplateId": "web-marketing",
+    "tags": [
+      "web-marketing",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "advertising",
+      "analytics"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
+    "name": "On brand visual asset production",
+    "description": "Surfaces ship with placeholder or stock visuals because making something that belongs to this specific product is slower than shipping without it. Compose the work from the brief rather than from scratch, judge it against the brief before showing it to anyone, and iterate a small fixed number of times rather than indefinitely.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/visual-assets",
+    "sourceTemplateId": "visual-brand-asset-factory",
+    "tags": [
+      "visual-brand-asset-factory",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "development",
+      "image_generation",
+      "vision"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
+    "name": "Codebase feasibility analysis",
+    "description": "Effort and benefit estimates made without opening the code are guesses that read like facts, and a backlog built from them is a backlog nobody can plan against. Let the code actually found, or its absence, drive the effort and benefit call, marking feasibility unknown rather than low when the search returns nothing.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "idea-harvester",
+    "tags": [
+      "idea-harvester",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
+    "name": "Cross-project progress briefing",
+    "description": "Someone running several projects at once loses the picture of which ones moved and which quietly stopped, and reconstructing it by hand costs more attention than the answer is worth. Report the difference since the last briefing rather than the current state, leading with the uncomfortable item, and ground every claim in something observable rather than in an earlier summary.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/digests",
+    "sourceTemplateId": "daily-standup-compiler",
+    "tags": [
+      "daily-standup-compiler",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
+    "name": "Decision record to code linking",
+    "description": "A decision record that cannot be traced to the change that implemented it becomes a document nobody trusts, and a change that quietly contradicts a standing decision is invisible. Confirm a candidate link before recording it, because a wrong link is worse than a missing one, and raise a change that contradicts a standing decision rather than filing it as support for that decision.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "technical-decision-tracker",
+    "tags": [
+      "technical-decision-tracker",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
+    "name": "Cross-workflow error pattern detection",
+    "description": "One outage arrives as a dozen unrelated looking alerts across a dozen agents, and whoever is on call spends the first stretch working out that it is one thing. Recognise when separate failures are one thing, whether by repetition, by cascade, by clustering in time, or by a shared service, and decide whether an active pattern has changed enough to be worth saying again.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "workflow-error-intelligence",
+    "tags": [
+      "workflow-error-intelligence",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "messaging"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+    "name": "Survey insight report delivery",
+    "description": "A completed feedback analysis that nobody receives, or that leaves the baseline untouched, means the next analysis compares against stale ground and the work is done twice. Turn the analysis into something a person receives and can act on, raising priority when a high-severity anomaly is present, then move the baselines so the next comparison is against fresh ground.",
+    "category": "project_management",
+    "domain": "product_project",
+    "path": "product_project/customer-feedback",
+    "sourceTemplateId": "survey-insights-analyzer",
+    "tags": [
+      "survey-insights-analyzer",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database",
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
+    "name": "Incident capture and classification",
+    "description": "One event usually gets reported several times by several people, and severity gets argued down once the pressure passes, so the record of what happened stops matching what happened. Decide whether this is a new incident or another report of one already open, and set severity from impact on real users or real work rather than from the tone of the report.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/incident-response",
+    "sourceTemplateId": "incident-logger",
+    "tags": [
+      "incident-logger",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "monitoring"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+    "name": "Cloud billing access failure alerting",
+    "description": "A spend watch that cannot read billing looks exactly like a spend watch that found nothing wrong, so an outage quietly becomes weeks of unmeasured cost. Name the specific failure mode, expired credentials, a rate limit, a partial period, or an empty billing response, and give the next step for that provider rather than a generic error notice.",
+    "category": "finance",
+    "domain": "finance_accounting",
+    "path": "finance_accounting/spend-and-budget",
+    "sourceTemplateId": "budget-spending-monitor",
+    "tags": [
+      "budget-spending-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "cloud"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
+    "name": "Contract intake and risk analysis",
+    "description": "Contracts get signed on the strength of whoever had time to read them. Unfavourable terms, missing protections and clauses that are out of line with what this counterparty has signed before go unmentioned because nobody compared. Judge the contract on terms, money, obligations and risk, with this counterparty's own prior contracts as the market baseline, and refuse to analyse a document that is unreadable, partial, or an amendment whose original is missing.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/contracts",
+    "sourceTemplateId": "ai-contract-reviewer",
+    "tags": [
+      "ai-contract-reviewer",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
+    "name": "Inbound message triage across channels",
+    "description": "Messages arrive across several channels at once, and anything that needs a reply is as likely to be missed in the quiet channel as in the loud one. Log each message once, classify its urgency and intent well enough that the reply-needed flag can be trusted by whatever acts on it, and keep going on the channels that still work when one fails.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/correspondence",
+    "sourceTemplateId": "digital-clone",
+    "tags": [
+      "digital-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email",
+      "messaging",
+      "database"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
+    "name": "Codebase improvement backlog scan",
+    "description": "The work a codebase most needs is written down inside it, in markers, hotspots and deprecated calls that nobody reads, and it never reaches the place where work is chosen. Decide what is genuinely worth fixing and describe each one well enough that a person can accept or reject it in seconds, without implementing anything.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "dev-clone",
+    "tags": [
+      "dev-clone",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
+    "name": "Contract obligation and deadline watch",
+    "description": "A contract's consequences are carried by dates that live inside it: notice windows, obligation due dates, warranty expiries. Nobody re-reads a signed contract to find them, so they arrive as surprises. Decide which dates are close enough to matter, how urgent each has become, and who can actually act, without raising the same date at the same urgency twice.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/deadlines",
+    "sourceTemplateId": "ai-contract-reviewer",
+    "tags": [
+      "ai-contract-reviewer",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "email",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+    "name": "Content feed intake for curation",
+    "description": "A feed sweep that reprocesses what it has already seen, or that dumps an unbounded batch into curation, costs more in reprocessing and quota than the new items are worth. Deduplicate and age-filter before anything reaches curation, and respect the per-run cap so the most recent items win when a feed floods.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/knowledge-curation",
+    "sourceTemplateId": "research-knowledge-curator",
+    "tags": [
+      "research-knowledge-curator",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
+    "name": "Feature announcement video production",
+    "description": "Shipped features go unannounced because a short video costs a script, a voice and a render, and getting any one of them wrong late means redoing all three. Settle the script and visual strategy and get them approved before anything is synthesized or rendered, then keep rework scoped to the stage that was actually wrong.",
+    "category": "content",
+    "domain": "creative_design",
+    "path": "creative_design/video",
+    "sourceTemplateId": "feature-video-creator",
+    "tags": [
+      "feature-video-creator",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "voice_generation",
+      "video_generation"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
+    "name": "Database health check",
+    "description": "A connection pool filling up, a slow query count climbing, or replication falling behind is a performance indicator for days before it is an outage, and nobody looks until it is the outage. Compare each health signal against its own recent history rather than a fixed number, and decide which movements are worth reporting and which are the database working normally.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "devops-guardian",
+    "tags": [
+      "devops-guardian",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "database"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
+    "name": "Source-grounded error root cause analysis",
+    "description": "A root cause report written from the stack trace alone restates what the reader already has, and the person triaging still has to open the code themselves. Read the actual code at the error location, trace who calls it, and decide which of several plausible causes the evidence supports, ranking the resolutions by what each would cost.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/error-triage",
+    "sourceTemplateId": "sentry-production-monitor",
+    "tags": [
+      "sentry-production-monitor",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "monitoring",
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  },
+  {
+    "id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
+    "name": "Event routing rule management",
+    "description": "Routing rules are edited in a file by hand or not at all, so they drift from what anyone actually wants and conflicts between them are discovered by an event going to the wrong place. Translate the instruction into a correct rule, catch when it conflicts with one already configured, and ask one clarifying question rather than guessing.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/event-routing",
+    "sourceTemplateId": "router",
+    "tags": [
+      "router",
+      "derived"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [],
+    "recommendedTrigger": "event",
+    "version": "0.1.0",
+    "status": "seed"
+  }
 ]

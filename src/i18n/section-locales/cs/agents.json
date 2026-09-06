@@ -2550,7 +2550,21 @@
     "suspend": "Pozastavit",
     "transition_unavailable_hint": "Aktivace a pozastavení charty zatím není možné. Zrušení ano.",
     "trigger_attention": "Smyčka pozornosti",
-    "trigger_every_minutes": "Každých {minutes} min"
+    "trigger_every_minutes": "Každých {minutes} min",
+    "activity_kind_act": "Jednat",
+    "activity_kind_decide": "Rozhodnout",
+    "activity_kind_deliver": "Doručit",
+    "activity_kind_observe": "Pozorovat",
+    "recipe_card_title": "Recept",
+    "recipe_connector_capability_unverified": "Svázaný konektor odpovídá typu. Zda dokáže to, co toto pověření vyžaduje, není ověřeno: katalog nedeklaruje žádné schopnosti.",
+    "recipe_connector_unbound": "Nesvázáno",
+    "recipe_connector_unbound_hint": "Nic, k čemu se toto pověření vztahuje, zatím nepokrývá tento typ konektoru. Svažte jej v dimenzi Konektor.",
+    "recipe_connector_uncovered": "Žádný konektor to nepokrývá",
+    "recipe_connector_uncovered_hint": "Katalog neobsahuje žádný konektor v této kategorii, takže není co svázat. Toto pověření potřebuje buď přidat konektor do katalogu, nebo recept potřebuje jiný typ.",
+    "recipe_connectors_label": "Konektory",
+    "recipe_dependencies_label": "Závislosti",
+    "recipe_shape_hint": "Druhy činnosti, kterými tato práce prochází, v pořadí. Není to provozní postup: nejsou zde žádné větve.",
+    "recipe_shape_label": "Tvar práce"
   },
   "role_card": {
     "assign": "Přiřadit",

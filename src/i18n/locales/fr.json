@@ -2556,7 +2556,21 @@
       "suspend": "Suspendre",
       "transition_unavailable_hint": "L'activation et la suspension d'une charte ne sont pas encore possibles. Le retrait, si.",
       "trigger_attention": "Boucle d'attention",
-      "trigger_every_minutes": "Toutes les {minutes} min"
+      "trigger_every_minutes": "Toutes les {minutes} min",
+      "activity_kind_act": "Agir",
+      "activity_kind_decide": "Décider",
+      "activity_kind_deliver": "Livrer",
+      "activity_kind_observe": "Observer",
+      "recipe_card_title": "Recette",
+      "recipe_connector_capability_unverified": "Un connecteur associé correspond à ce type. Sa capacité à faire ce que cette charte exige n'est pas vérifiée : le catalogue ne déclare aucune capacité.",
+      "recipe_connector_unbound": "Non associé",
+      "recipe_connector_unbound_hint": "Rien de ce que cette charte couvre ne prend en charge ce type de connecteur pour l'instant. Associez-en un sur la dimension Connecteur.",
+      "recipe_connector_uncovered": "Aucun connecteur ne couvre cela",
+      "recipe_connector_uncovered_hint": "Le catalogue ne contient aucun connecteur dans cette catégorie, il n'y a donc rien à associer. Cette charte a besoin qu'un connecteur soit ajouté au catalogue, ou la recette a besoin d'un type différent.",
+      "recipe_connectors_label": "Connecteurs",
+      "recipe_dependencies_label": "Dépendances",
+      "recipe_shape_hint": "Les types d'activité que ce travail traverse, dans l'ordre. Ce n'est pas un mode opératoire : il n'y a pas d'embranchements.",
+      "recipe_shape_label": "Forme du travail"
     },
     "role_card": {
       "assign": "Assigner",

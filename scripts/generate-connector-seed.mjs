@@ -64,6 +64,8 @@ const files = readdirSync(CONNECTORS_DIR)
   .sort();
 
 const entries = [];
+/** Every distinct value seen in any connector's plural `categories`. */
+const allCategories = new Set();
 
 for (const file of files) {
   const raw = readFileSync(join(CONNECTORS_DIR, file), 'utf-8');
@@ -79,6 +81,17 @@ for (const file of files) {
     ? JSON.stringify(c.resources)
     : null;
 
+  // The plural `categories` is the connector catalog's real type vocabulary
+  // (deepgram = ai + transcription + voice_generation); the singular
+  // `category` is one coarse bucket. Recipe v3 declares connector TYPES
+  // against this vocabulary, so Rust needs it — until 2026-09 the generator
+  // dropped it and it existed only in TypeScript.
+  const categories = Array.isArray(c.categories) && c.categories.length > 0
+    ? c.categories
+    : [c.category ?? 'general'];
+  for (const cat of categories) allCategories.add(cat);
+  const categoriesLiteral = `&[${categories.map((cat) => rustRawStr(cat)).join(', ')}]`;
+
   entries.push(
     `        BuiltinConnector {
             id: ${rustRawStr(c.id)},
@@ -87,6 +100,7 @@ for (const file of files) {
             color: ${rustRawStr(c.color)},
             icon_url: ${rustRawStr(c.icon_url ?? '')},
             category: ${rustRawStr(c.category ?? 'general')},
+            categories: ${categoriesLiteral},
             fields: ${rustRawStr(fields)},
             healthcheck_config: ${healthcheck ? `Some(${rustRawStr(healthcheck)})` : 'None'},
             services: ${rustRawStr(services)},
@@ -106,7 +120,12 @@ pub struct BuiltinConnector {
     pub label: &'static str,
     pub color: &'static str,
     pub icon_url: &'static str,
+    /// The one coarse bucket the picker groups by.
     pub category: &'static str,
+    /// Every type tag the connector answers to (the JSON's plural
+    /// "categories"). This is the vocabulary a Recipe v3 connector_types
+    /// entry must come from; see personas_db::connector_categories.
+    pub categories: &'static [&'static str],
     pub fields: &'static str,
     pub healthcheck_config: Option<&'static str>,
     pub services: &'static str,
@@ -116,6 +135,12 @@ pub struct BuiltinConnector {
     /// None when the connector has no user-pickable sub-resources.
     pub resources: Option<&'static str>,
 }
+
+/// Every distinct connector category in the catalog, sorted. The closed
+/// vocabulary a Recipe v3 connector_types entry is validated against.
+pub const KNOWN_CONNECTOR_CATEGORIES: &[&str] = &[
+${[...allCategories].sort().map((cat) => `    ${rustRawStr(cat)},`).join('\n')}
+];
 
 pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
 ${entries.join(',\n')}

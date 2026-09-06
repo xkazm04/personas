@@ -41,8 +41,8 @@ impl CliProvider for ClaudeProvider {
         prompt::build_cli_args(persona, model_profile)
     }
 
-    fn build_resume_args(&self, session_id: &str) -> CliArgs {
-        prompt::build_resume_cli_args(session_id)
+    fn build_resume_args(&self, session_id: &str, model_profile: Option<&ModelProfile>) -> CliArgs {
+        prompt::build_resume_cli_args(session_id, model_profile)
     }
 
     fn parse_stream_line(&self, line: &str) -> (StreamLineType, Option<String>) {

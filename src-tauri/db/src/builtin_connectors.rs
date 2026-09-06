@@ -7,7 +7,12 @@ pub struct BuiltinConnector {
     pub label: &'static str,
     pub color: &'static str,
     pub icon_url: &'static str,
+    /// The one coarse bucket the picker groups by.
     pub category: &'static str,
+    /// Every type tag the connector answers to (the JSON's plural
+    /// "categories"). This is the vocabulary a Recipe v3 connector_types
+    /// entry must come from; see personas_db::connector_categories.
+    pub categories: &'static [&'static str],
     pub fields: &'static str,
     pub healthcheck_config: Option<&'static str>,
     pub services: &'static str,
@@ -18,6 +23,60 @@ pub struct BuiltinConnector {
     pub resources: Option<&'static str>,
 }
 
+/// Every distinct connector category in the catalog, sorted. The closed
+/// vocabulary a Recipe v3 connector_types entry is validated against.
+pub const KNOWN_CONNECTOR_CATEGORIES: &[&str] = &[
+    r##"advertising"##,
+    r##"ai"##,
+    r##"analytics"##,
+    r##"automation"##,
+    r##"bi"##,
+    r##"browser_automation"##,
+    r##"cache"##,
+    r##"calendar"##,
+    r##"ci_cd"##,
+    r##"cloud"##,
+    r##"containers"##,
+    r##"crm"##,
+    r##"database"##,
+    r##"design"##,
+    r##"desktop"##,
+    r##"development"##,
+    r##"devops"##,
+    r##"documentation"##,
+    r##"ecommerce"##,
+    r##"email"##,
+    r##"finance"##,
+    r##"forms"##,
+    r##"image_generation"##,
+    r##"integration"##,
+    r##"knowledge_base"##,
+    r##"marketing"##,
+    r##"messaging"##,
+    r##"model_hosting"##,
+    r##"monitoring"##,
+    r##"notifications"##,
+    r##"observability"##,
+    r##"personalization"##,
+    r##"productivity"##,
+    r##"project_management"##,
+    r##"research"##,
+    r##"scheduling"##,
+    r##"social"##,
+    r##"source_control"##,
+    r##"spreadsheet"##,
+    r##"storage"##,
+    r##"support"##,
+    r##"ticketing"##,
+    r##"time_tracking"##,
+    r##"transcription"##,
+    r##"vector_search"##,
+    r##"video_generation"##,
+    r##"vision"##,
+    r##"voice_generation"##,
+    r##"web_scraping"##,
+];
+
 pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
     BuiltinConnector {
         id: r##"builtin-airtable"##,
@@ -26,6 +85,11 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#18BFFF"##,
         icon_url: r##"/icons/connectors/airtable.svg"##,
         category: r##"spreadsheet"##,
+        categories: &[
+            r##"spreadsheet"##,
+            r##"database"##,
+            r##"project_management"##,
+        ],
         fields: r##"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"pat...","helpText":"Generate at airtable.com/create/tokens","sensitive":true},{"key":"base_id","label":"Base ID","type":"text","required":false,"placeholder":"appXXXXXXXXXXXXXX","helpText":"Optional: restrict to a specific base","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.airtable.com/v0/meta/whoami","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via whoami endpoint"}"##,
@@ -46,6 +110,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#222832"##,
         icon_url: r##"/icons/connectors/alpha-vantage.svg"##,
         category: r##"finance"##,
+        categories: &[r##"finance"##, r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"YOUR_API_KEY","helpText":"Claim your free API key at alphavantage.co/support/#api-key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={{api_key}}","method":"GET","headers":{},"description":"Validates API key via Alpha Vantage Market Status endpoint"}"##,
@@ -64,6 +129,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#D4A27F"##,
         icon_url: r##"/icons/connectors/anthropic.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"monitoring"##],
         fields: r##"[{"key":"admin_api_key","label":"Admin API Key","type":"password","required":true,"placeholder":"sk-ant-admin...","helpText":"Anthropic Console -> Settings -> Organization -> Admin keys. Grants usage/cost read access for the org.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"method":"GET","url":"https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=2026-01-01T00:00:00Z&limit=1","headers":{"x-api-key":"{{admin_api_key}}","anthropic-version":"2023-06-01"},"expect_status":200}"##,
@@ -82,6 +148,11 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#246DFF"##,
         icon_url: r##"/icons/connectors/apify.svg"##,
         category: r##"web_scraping"##,
+        categories: &[
+            r##"web_scraping"##,
+            r##"automation"##,
+            r##"browser_automation"##,
+        ],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"apify_api_xxxxxxxxxxxx","helpText":"Found in Apify Console → Settings → Integrations → API tokens"}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.apify.com/v2/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via /users/me"}"##,
@@ -100,6 +171,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F97316"##,
         icon_url: r##"/icons/connectors/arcade.svg"##,
         category: r##"integration"##,
+        categories: &[r##"integration"##],
         fields: r##"[{"key":"api_key","label":"Arcade API key","type":"password","required":true,"placeholder":"arc_...","helpText":"From your Arcade dashboard -> Settings -> API keys","sensitive":true},{"key":"gateway_url","label":"Gateway URL","type":"url","required":false,"placeholder":"https://api.arcade.dev/v1/mcp","helpText":"Override the default Arcade MCP gateway URL. Leave blank unless you use a self-hosted Arcade instance.","sensitive":false},{"key":"organization","label":"Organization","type":"text","required":false,"placeholder":"acme","helpText":"Optional Arcade organization slug.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.arcade.dev/v1/health","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates Arcade API key via the public health endpoint. Note: the Arcade health endpoint may evolve -- verify with https://docs.arcade.dev/ before relying on this connector for production personas."}"##,
@@ -118,6 +190,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#B31B1B"##,
         icon_url: r##"/icons/connectors/arxiv.svg"##,
         category: r##"research"##,
+        categories: &[r##"research"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"http://export.arxiv.org/api/query?search_query=all:test&max_results=1","method":"GET","headers":{},"description":"Validates arXiv API access with a test query"}"##,
@@ -136,6 +209,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F06A6A"##,
         icon_url: r##"/icons/connectors/asana.svg"##,
         category: r##"project_management"##,
+        categories: &[r##"project_management"##],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"1/12345:abcdef...","helpText":"From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://app.asana.com/api/1.0/users/me","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}"},"description":"Validates personal access token via Asana users/me endpoint"}"##,
@@ -156,6 +230,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4F46E5"##,
         icon_url: r##"/icons/connectors/attio.svg"##,
         category: r##"crm"##,
+        categories: &[r##"crm"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to Attio -> Settings -> Developers -> API Access -> Generate a new token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.attio.com/v2/self","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Attio /v2/self endpoint"}"##,
@@ -176,6 +251,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF9900"##,
         icon_url: r##"/icons/connectors/aws-s3.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##],
         fields: r##"[{"key":"access_key_id","label":"Access Key ID","type":"text","required":true,"placeholder":"AKIA...","helpText":"From AWS IAM -> Users -> Security credentials -> Access keys","sensitive":true},{"key":"secret_access_key","label":"Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same IAM access key creation page","sensitive":true},{"key":"region","label":"Region","type":"text","required":true,"placeholder":"us-east-1","helpText":"Default AWS region for API calls","sensitive":false},{"key":"account_id","label":"Account ID","type":"text","required":false,"placeholder":"123456789012","helpText":"12-digit AWS account ID. Found in the top-right menu of the AWS Console.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://sts.{{region}}.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15","method":"GET","headers":{"Authorization":"AWS4-HMAC-SHA256 {{access_key_id}}"},"description":"Validates AWS credentials via STS GetCallerIdentity"}"##,
@@ -194,6 +270,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#569A31"##,
         icon_url: r##"/icons/connectors/aws-s3.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##],
         fields: r##"[{"key":"access_key_id","label":"Access Key ID","type":"text","required":true,"placeholder":"AKIA...","helpText":"From AWS IAM -> Users -> Security credentials -> Access keys","sensitive":true},{"key":"secret_access_key","label":"Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same IAM access key creation page","sensitive":true},{"key":"region","label":"Region","type":"text","required":true,"placeholder":"us-east-1","helpText":"AWS region for your S3 bucket","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://s3.{{region}}.amazonaws.com/","method":"GET","headers":{"Authorization":"AWS4-HMAC-SHA256 {{access_key_id}}"},"description":"Validates S3 credentials via bucket listing"}"##,
@@ -212,6 +289,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D4"##,
         icon_url: r##"/icons/connectors/azure-devops.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##],
         fields: r##"[{"key":"client_id","label":"Application (Client) ID","type":"text","required":true,"placeholder":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx","helpText":"From Azure Portal -> App registrations -> your app -> Overview","sensitive":false},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From Azure Portal -> App registrations -> your app -> Certificates & secrets","sensitive":true},{"key":"tenant_id","label":"Directory (Tenant) ID","type":"text","required":true,"placeholder":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx","helpText":"From Azure Portal -> Azure Active Directory -> Overview","sensitive":false},{"key":"subscription_id","label":"Subscription ID","type":"text","required":true,"placeholder":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx","helpText":"From Azure Portal -> Subscriptions -> select your subscription","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://management.azure.com/subscriptions/{{subscription_id}}?api-version=2022-12-01","method":"GET","headers":{"Authorization":"Bearer {{client_secret}}"},"description":"Validates Azure credentials by querying subscription metadata"}"##,
@@ -230,6 +308,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D7"##,
         icon_url: r##"/icons/connectors/azure-devops.svg"##,
         category: r##"source_control"##,
+        categories: &[r##"source_control"##, r##"ci_cd"##, r##"devops"##],
         fields: r##"[{"key":"pat","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at dev.azure.com/{org}/_usersSettings/tokens. Must include 'User Profile (read)' scope (so the picker can list your orgs) plus the work scopes your agents need (Code, Work Items, Build, etc.). Use the plain 'Azure DevOps' connector for narrow PATs that don't include identity scope.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.1","method":"GET","headers":{"Authorization":"Basic {{base64(:pat)}}","Accept":"application/json"},"description":"Validates PAT via Azure DevOps accounts endpoint (lists orgs the PAT has access to)"}"##,
@@ -250,6 +329,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D7"##,
         icon_url: r##"/icons/connectors/azure-devops.svg"##,
         category: r##"source_control"##,
+        categories: &[r##"source_control"##, r##"ci_cd"##, r##"devops"##],
         fields: r##"[{"key":"organization","label":"Organization","type":"text","required":true,"placeholder":"my-org","helpText":"Your Azure DevOps organization name (from dev.azure.com/{organization})","sensitive":false},{"key":"pat","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1","method":"GET","headers":{"Authorization":"Basic {{base64(:pat)}}"},"description":"Validates PAT via Azure DevOps projects endpoint"}"##,
@@ -270,6 +350,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#E21E29"##,
         icon_url: r##"/icons/connectors/backblaze-b2.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##],
         fields: r##"[{"key":"application_key_id","label":"Application Key ID","type":"text","required":true,"placeholder":"","helpText":"From Backblaze -> App Keys -> Add a New Application Key","sensitive":true},{"key":"application_key","label":"Application Key","type":"password","required":true,"placeholder":"","helpText":"Shown once when creating the key -- copy immediately","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.backblazeb2.com/b2api/v3/b2_authorize_account","method":"GET","headers":{"Authorization":"Basic {{base64(application_key_id:application_key)}}"},"description":"Validates credentials via B2 authorize_account endpoint"}"##,
@@ -288,6 +369,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#E5484D"##,
         icon_url: r##"/icons/connectors/betterstack.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Better Stack Dashboard -> Settings -> API tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://uptime.betterstack.com/api/v2/monitors","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via monitors endpoint"}"##,
@@ -306,6 +388,11 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00B6FF"##,
         icon_url: r##"/icons/connectors/bright_data.svg"##,
         category: r##"web_scraping"##,
+        categories: &[
+            r##"web_scraping"##,
+            r##"research"##,
+            r##"browser_automation"##,
+        ],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Bright Data Dashboard -> Account Settings -> API Tokens. The same token powers SERP API, Web Unlocker, Web Scraper API, Scraping Browser, and Proxies.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.brightdata.com/customer/balance","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates the API token by reading the customer account balance"}"##,
@@ -324,6 +411,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#168EEA"##,
         icon_url: r##"/icons/connectors/buffer.svg"##,
         category: r##"social"##,
+        categories: &[r##"social"##, r##"marketing"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer -> Settings -> Apps -> Access Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.bufferapp.com/1/user.json?access_token={{access_token}}","method":"GET","headers":{},"description":"Validates access token via Buffer user endpoint"}"##,
@@ -344,6 +432,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#292929"##,
         icon_url: r##"/icons/connectors/cal-com.svg"##,
         category: r##"scheduling"##,
+        categories: &[r##"scheduling"##, r##"calendar"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"cal_live_...","helpText":"Generate at cal.com/settings/developer/api-keys","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.cal.com/v2/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","cal-api-version":"2024-08-13"},"description":"Validates API key via Cal.com /v2/me endpoint"}"##,
@@ -362,6 +451,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#006BFF"##,
         icon_url: r##"/icons/connectors/calendly.svg"##,
         category: r##"scheduling"##,
+        categories: &[r##"scheduling"##, r##"calendar"##],
         fields: r##"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"Generate at calendly.com/integrations/api_webhooks","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.calendly.com/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates token via Calendly users/me endpoint"}"##,
@@ -380,6 +470,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00C4CC"##,
         icon_url: r##"/icons/connectors/canva.svg"##,
         category: r##"design"##,
+        categories: &[r##"design"##, r##"image_generation"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"CNV...","helpText":"Generate at canva.com/developers -> Your Apps -> Generate Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.canva.com/rest/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Canva /users/me endpoint"}"##,
@@ -398,6 +489,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#343434"##,
         icon_url: r##"/icons/connectors/circleci.svg"##,
         category: r##"ci_cd"##,
+        categories: &[r##"ci_cd"##, r##"devops"##],
         fields: r##"[{"key":"personal_token","label":"Personal API Token","type":"password","required":true,"placeholder":"CCIPAT_...","helpText":"From CircleCI -> User Settings -> Personal API Tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://circleci.com/api/v2/me","method":"GET","headers":{"Circle-Token":"{{personal_token}}"},"description":"Validates token via CircleCI me endpoint"}"##,
@@ -416,6 +508,11 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7B68EE"##,
         icon_url: r##"/icons/connectors/clickup.svg"##,
         category: r##"project_management"##,
+        categories: &[
+            r##"project_management"##,
+            r##"documentation"##,
+            r##"time_tracking"##,
+        ],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"pk_...","helpText":"From ClickUp Settings -> Apps -> API Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.clickup.com/api/v2/user","method":"GET","headers":{"Authorization":"{{api_key}}"},"description":"Validates API key via user endpoint"}"##,
@@ -436,6 +533,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#03A9F4"##,
         icon_url: r##"https://cdn.simpleicons.org/clockify/03A9F4"##,
         category: r##"time_tracking"##,
+        categories: &[r##"time_tracking"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Found in Clockify -> Profile Settings -> API","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.clockify.me/api/v1/user","method":"GET","headers":{"X-Api-Key":"{{api_key}}"},"description":"Validates API key via Clockify /user endpoint"}"##,
@@ -454,6 +552,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F38020"##,
         icon_url: r##"/icons/connectors/cloudflare-r2.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##],
         fields: r##"[{"key":"account_id","label":"Account ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare dashboard -> Overview -> Account ID (right sidebar)","sensitive":true},{"key":"access_key_id","label":"R2 Access Key ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare -> R2 -> Manage R2 API Tokens","sensitive":true},{"key":"secret_access_key","label":"R2 Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same R2 API Token creation page","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.cloudflare.com/client/v4/accounts/{{account_id}}/r2/buckets","method":"GET","headers":{"Authorization":"Bearer {{secret_access_key}}"},"description":"Validates R2 credentials via bucket listing"}"##,
@@ -472,6 +571,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F38020"##,
         icon_url: r##"/icons/connectors/cloudflare.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.cloudflare.com/client/v4/user/tokens/verify","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via Cloudflare token verify endpoint"}"##,
@@ -490,6 +590,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6366F1"##,
         icon_url: r##"/icons/connectors/codebase.svg"##,
         category: r##"development"##,
+        categories: &[r##"development"##, r##"source_control"##, r##"desktop"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"read_file","label":"Read File"},{"toolName":"list_files","label":"List Files"},{"toolName":"search_code","label":"Search Code"},{"toolName":"get_contexts","label":"Get Context Map"},{"toolName":"get_context_detail","label":"Get Context Detail"},{"toolName":"list_ideas","label":"List Ideas"},{"toolName":"create_idea","label":"Create Idea"},{"toolName":"update_idea_status","label":"Triage Idea"},{"toolName":"list_tasks","label":"List Tasks"},{"toolName":"create_task","label":"Create Task"},{"toolName":"create_branch","label":"Create Branch"},{"toolName":"apply_diff","label":"Apply Diff"},{"toolName":"run_tests","label":"Run Tests"},{"toolName":"get_git_status","label":"Get Git Status"},{"toolName":"commit_changes","label":"Commit Changes"}]"##,
@@ -506,6 +607,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#8B5CF6"##,
         icon_url: r##"/icons/connectors/codebases.svg"##,
         category: r##"development"##,
+        categories: &[r##"development"##, r##"source_control"##, r##"desktop"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"list_projects","label":"List Projects"},{"toolName":"get_project_summary","label":"Get Project Summary"},{"toolName":"read_file","label":"Read File"},{"toolName":"list_files","label":"List Files"},{"toolName":"search_code","label":"Search Code"},{"toolName":"get_contexts","label":"Get Context Map"},{"toolName":"get_context_detail","label":"Get Context Detail"},{"toolName":"get_cross_project_map","label":"Get Cross-Project Map"},{"toolName":"analyze_cross_impact","label":"Analyze Cross-Project Impact"},{"toolName":"search_across_projects","label":"Search Across Projects"},{"toolName":"get_dependency_graph","label":"Get Dependency Graph"},{"toolName":"list_ideas","label":"List Ideas"},{"toolName":"create_idea","label":"Create Idea"},{"toolName":"create_idea_batch","label":"Create Ideas (Multi-Project)"},{"toolName":"update_idea_status","label":"Triage Idea"},{"toolName":"list_tasks","label":"List Tasks"},{"toolName":"create_task","label":"Create Task"},{"toolName":"create_branch","label":"Create Branch"},{"toolName":"apply_diff","label":"Apply Diff"},{"toolName":"run_tests","label":"Run Tests"},{"toolName":"get_git_status","label":"Get Git Status"},{"toolName":"commit_changes","label":"Commit Changes"},{"toolName":"get_portfolio_health","label":"Get Portfolio Health"},{"toolName":"get_tech_radar","label":"Get Tech Radar"},{"toolName":"get_risk_matrix","label":"Get Risk Matrix"}]"##,
@@ -522,6 +624,11 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#172B4D"##,
         icon_url: r##"/icons/connectors/confluence.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[
+            r##"knowledge_base"##,
+            r##"documentation"##,
+            r##"productivity"##,
+        ],
         fields: r##"[{"key":"domain","label":"Atlassian Domain","type":"text","required":true,"placeholder":"your-company.atlassian.net","helpText":"Your Confluence Cloud domain (without https://)","sensitive":true},{"key":"email","label":"Account Email","type":"text","required":true,"placeholder":"you@company.com","helpText":"The email address for your Atlassian account","sensitive":true},{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From id.atlassian.com/manage-profile/security/api-tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://{{domain}}/wiki/rest/api/space?limit=1","method":"GET","headers":{"Authorization":"Basic {{base64(email:api_token)}}","Accept":"application/json"},"description":"Validates credentials via Confluence spaces endpoint"}"##,
@@ -542,6 +649,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F97316"##,
         icon_url: r##"/icons/connectors/convex.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"deployment_url","label":"Deployment URL","type":"url","required":true,"placeholder":"https://your-app-123.convex.cloud","helpText":"From Convex Dashboard -> Settings -> URL","sensitive":true},{"key":"deploy_key","label":"Deploy Key","type":"password","required":true,"placeholder":"prod:...","helpText":"From Convex Dashboard -> Settings -> Deploy Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{deployment_url}}/version","method":"GET","headers":{},"description":"Validates Convex deployment URL is reachable"}"##,
@@ -560,6 +668,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4B60F5"##,
         icon_url: r##"/icons/connectors/crisp.svg"##,
         category: r##"support"##,
+        categories: &[r##"support"##, r##"messaging"##],
         fields: r##"[{"key":"token_id","label":"Token ID","type":"text","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Identifier","sensitive":true},{"key":"token_key","label":"Token Key","type":"password","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.crisp.chat/v1/website","method":"GET","headers":{"Authorization":"Basic {{base64(token_id:token_key)}}","X-Crisp-Tier":"plugin"},"description":"Validates API token via Crisp website list endpoint"}"##,
@@ -578,6 +687,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#13EF93"##,
         icon_url: r##"/icons/connectors/deepgram.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"transcription"##, r##"voice_generation"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"dg_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","helpText":"Create in Deepgram Console → API Keys → Create new API Key"}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.deepgram.com/v1/projects","method":"GET","headers":{"Authorization":"Token {{api_key}}"},"description":"Validates API key via list projects"}"##,
@@ -596,6 +706,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/chrome.svg"##,
         category: r##"browser_automation"##,
+        categories: &[r##"browser_automation"##, r##"desktop"##],
         fields: r##"[{"key":"binary_path","label":"Browser Path","type":"text","required":false,"placeholder":"chrome","helpText":"Auto-detected. Path to Chrome, Edge, or Lightpanda binary.","sensitive":true},{"key":"cdp_port","label":"DevTools Port","type":"text","required":false,"placeholder":"9222","helpText":"Chrome DevTools Protocol port (default: 9222)","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -612,6 +723,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#2496ED"##,
         icon_url: r##"/icons/connectors/docker.svg"##,
         category: r##"containers"##,
+        categories: &[r##"containers"##, r##"devops"##, r##"desktop"##],
         fields: r##"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"docker","helpText":"Path to Docker binary. Auto-detected if left blank.","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"docker_list_containers","label":"List Containers"},{"toolName":"docker_list_images","label":"List Images"},{"toolName":"docker_start","label":"Start Container"},{"toolName":"docker_stop","label":"Stop Container"},{"toolName":"docker_logs","label":"Container Logs"},{"toolName":"docker_exec","label":"Exec in Container"},{"toolName":"docker_compose_up","label":"Compose Up"},{"toolName":"docker_compose_down","label":"Compose Down"}]"##,
@@ -628,6 +740,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7C3AED"##,
         icon_url: r##"/icons/connectors/obsidian.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[r##"knowledge_base"##, r##"productivity"##, r##"desktop"##],
         fields: r##"[{"key":"vault_path","label":"Vault Path","type":"text","required":false,"placeholder":"~/Documents/MyVault","helpText":"Path to your Obsidian vault. Auto-detected if left blank.","sensitive":true},{"key":"api_port","label":"Local REST API Port","type":"text","required":false,"placeholder":"27124","helpText":"Port for the Obsidian Local REST API plugin (optional)","sensitive":true},{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"","helpText":"API key for the Local REST API plugin (optional)","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"obsidian_list_notes","label":"List Notes"},{"toolName":"obsidian_read_note","label":"Read Note"},{"toolName":"obsidian_write_note","label":"Write Note"},{"toolName":"obsidian_search","label":"Search Notes"},{"toolName":"obsidian_vault_structure","label":"Vault Structure"},{"toolName":"obsidian_append","label":"Append to Note"}]"##,
@@ -644,6 +757,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0080FF"##,
         icon_url: r##"/icons/connectors/digitalocean.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##],
         fields: r##"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"dop_v1_...","helpText":"Generate at cloud.digitalocean.com/account/api/tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.digitalocean.com/v2/account","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates token via account endpoint"}"##,
@@ -662,6 +776,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#5865F2"##,
         icon_url: r##"/icons/connectors/discord.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##, r##"messaging"##],
         fields: r##"[{"key":"webhook_url","label":"Channel Webhook URL","type":"password","required":true,"placeholder":"https://discord.com/api/webhooks/000000000000000000/...","helpText":"From the target Discord channel: Edit Channel -> Integrations -> Webhooks -> New Webhook -> Copy Webhook URL.","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -678,6 +793,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#5865F2"##,
         icon_url: r##"/icons/connectors/discord.svg"##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##],
         fields: r##"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"","helpText":"From Discord Developer Portal -> Bot -> Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://discord.com/api/v10/users/@me","method":"GET","headers":{"Authorization":"Bot {{bot_token}}"},"description":"Validates bot token via Discord users/@me endpoint"}"##,
@@ -698,6 +814,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0061FF"##,
         icon_url: r##"/icons/connectors/dropbox.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"sl.u...","helpText":"From Dropbox App Console -> Generate Access Token (or use OAuth flow)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.dropboxapi.com/2/users/get_current_account","method":"POST","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Dropbox current account endpoint"}"##,
@@ -718,6 +835,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FFC107"##,
         icon_url: r##"/icons/connectors/duckdb.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##, r##"analytics"##],
         fields: r##"[{"key":"database_path","label":"Database Path","type":"text","required":true,"placeholder":"/path/to/data.duckdb","helpText":"File path to the DuckDB database (or :memory: for in-memory)","sensitive":true},{"key":"motherduck_token","label":"MotherDuck Token","type":"password","required":false,"placeholder":"eyJ...","helpText":"Optional: MotherDuck service token for cloud-hosted DuckDB","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -734,6 +852,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/elevenlabs.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"voice_generation"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Generate at elevenlabs.io → Profile → API Keys","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.elevenlabs.io/v1/user/subscription","method":"GET","headers":{"xi-api-key":"{{api_key}}"},"description":"Validates API key via ElevenLabs /user/subscription endpoint"}"##,
@@ -754,6 +873,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F24E1E"##,
         icon_url: r##"/icons/connectors/figma.svg"##,
         category: r##"design"##,
+        categories: &[r##"design"##],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"figd_...","helpText":"From Figma -> Settings -> Personal Access Tokens -> Generate","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.figma.com/v1/me","method":"GET","headers":{"X-Figma-Token":"{{personal_access_token}}"},"description":"Validates personal access token via Figma me endpoint"}"##,
@@ -772,6 +892,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F97316"##,
         icon_url: r##"/icons/connectors/firecrawl.svg"##,
         category: r##"web_scraping"##,
+        categories: &[r##"web_scraping"##, r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"fc-...","helpText":"From Firecrawl -> Dashboard -> API Keys. Required for all scrape, crawl, and extract endpoints.","sensitive":true},{"key":"api_base_url","label":"API Base URL","type":"url","required":false,"placeholder":"https://api.firecrawl.dev/v1","helpText":"Defaults to the Firecrawl cloud endpoint. Override for self-hosted deployments.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{api_base_url|https://api.firecrawl.dev/v1}}/team/credit-usage","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via the team credit-usage endpoint"}"##,
@@ -790,6 +911,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7B3FE4"##,
         icon_url: r##"/icons/connectors/fly-io.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##, r##"devops"##],
         fields: r##"[{"key":"api_key","label":"API Token","type":"password","required":true,"placeholder":"fo1_...","helpText":"Generate via `flyctl tokens create org` or at fly.io/dashboard -> Account -> Access Tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.machines.dev/v1/apps","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates token via Machines API apps list"}"##,
@@ -808,6 +930,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00C4B8"##,
         icon_url: r##"/icons/connectors/formbricks.svg"##,
         category: r##"forms"##,
+        categories: &[r##"forms"##, r##"analytics"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to Formbricks -> Settings -> API Keys -> Add API Key","sensitive":true},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://app.formbricks.com","helpText":"Your Formbricks instance URL (defaults to formbricks.com cloud)","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|https://app.formbricks.com}}/api/v1/me","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates API key via Formbricks /me endpoint"}"##,
@@ -826,6 +949,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/google.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##],
         fields: r##"[{"key":"service_account_json","label":"Service Account Key (JSON)","type":"password","required":true,"placeholder":"{\"type\": \"service_account\", ...}","helpText":"Full JSON key file content from GCP Console -> IAM -> Service Accounts -> Keys","sensitive":true},{"key":"project_id","label":"Project ID","type":"text","required":true,"placeholder":"my-project-123","helpText":"GCP project ID (not project name). Found in the project selector or dashboard.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://cloudresourcemanager.googleapis.com/v1/projects/{{project_id}}","method":"GET","headers":{"Authorization":"Bearer {{service_account_json}}"},"description":"Validates GCP credentials by listing project metadata"}"##,
@@ -844,6 +968,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/gemini-vision.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"vision"##, r##"image_generation"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"AIza...","helpText":"From Google AI Studio (aistudio.google.com) -> Get API Key","sensitive":true},{"key":"model","label":"Model","type":"select","required":false,"options":["gemini-3.5-flash","gemini-2.5-flash","gemini-2.5-pro"],"helpText":"Gemini 3 Flash Preview is the latest. 2.5 Flash has generous free tier (1,500 req/day). Pro is most accurate.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://generativelanguage.googleapis.com/v1beta/models?key={{api_key}}","method":"GET","description":"Lists available Gemini models to validate the API key"}"##,
@@ -862,6 +987,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6B7280"##,
         icon_url: r##"/icons/connectors/webhook.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##],
         fields: r##"[{"key":"webhook_url","label":"Webhook URL","type":"password","required":true,"placeholder":"https://example.com/hooks/personas","helpText":"Any HTTPS endpoint that accepts POST with a JSON body. Personas sends `{ text, event }` where `event` is the full PersonaEvent payload.","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -878,6 +1004,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#2088FF"##,
         icon_url: r##"/icons/connectors/github.svg"##,
         category: r##"ci_cd"##,
+        categories: &[r##"ci_cd"##, r##"automation"##, r##"devops"##],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens -- needs 'repo' and 'workflow' scopes","sensitive":true},{"key":"default_repo","label":"Default Repository","type":"text","required":false,"placeholder":"owner/repo","helpText":"Optional: default repository for workflow dispatches","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"##,
@@ -896,6 +1023,12 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1F2937"##,
         icon_url: r##"/icons/connectors/github.svg"##,
         category: r##"source_control"##,
+        categories: &[
+            r##"source_control"##,
+            r##"development"##,
+            r##"ci_cd"##,
+            r##"devops"##,
+        ],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens with required scopes","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"##,
@@ -916,6 +1049,12 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FC6D26"##,
         icon_url: r##"/icons/connectors/gitlab.svg"##,
         category: r##"source_control"##,
+        categories: &[
+            r##"source_control"##,
+            r##"development"##,
+            r##"ci_cd"##,
+            r##"devops"##,
+        ],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"glpat-...","helpText":"Generate at GitLab > Settings > Access Tokens with api scope","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://gitlab.com/api/v4/user","method":"GET","headers":{"PRIVATE-TOKEN":"{{personal_access_token}}"},"description":"Validates PAT via GitLab user endpoint"}"##,
@@ -936,6 +1075,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#EA4335"##,
         icon_url: r##"/icons/connectors/gmail.svg"##,
         category: r##"email"##,
+        categories: &[r##"email"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"##,
@@ -956,6 +1096,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/google-ads.svg"##,
         category: r##"advertising"##,
+        categories: &[r##"advertising"##, r##"marketing"##],
         fields: r##"[{"key":"developer_token","label":"Developer Token","type":"password","required":true,"placeholder":"aBcDeFgHiJkLmNoPqRs","helpText":"Find at ads.google.com → Tools & Settings → API Center","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"##,
@@ -974,6 +1115,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/google-calendar.svg"##,
         category: r##"calendar"##,
+        categories: &[r##"calendar"##, r##"scheduling"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"##,
@@ -994,6 +1136,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1FA463"##,
         icon_url: r##"/icons/connectors/google-drive.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##, r##"productivity"##],
         fields: r##"[{"key":"default_folder_id","label":"Default Folder ID (optional)","type":"text","required":false,"placeholder":"1a2B3c4D5e6F7g8H9i0J","helpText":"Drive folder ID where personas will save generated artifacts by default. Leave blank to let each persona specify its own. Find the ID in the folder URL: drive.google.com/drive/folders/<ID>."}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/drive/v3/about?fields=user,storageQuota","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Fetches the authenticated user's Drive profile and quota — verifies OAuth token and drive.file scope."}"##,
@@ -1014,6 +1157,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/google-gemini.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"AIza...","helpText":"From Google AI Studio (aistudio.google.com) -> Get API Key","sensitive":true},{"key":"model","label":"Model","type":"select","required":false,"options":["gemini-3.5-flash","gemini-2.5-pro","gemini-2.5-flash","gemini-1.5-pro"],"helpText":"Gemini 3 Flash Preview is the latest. 2.5 Flash has a generous free tier (1,500 req/day). 2.5 Pro is the most accurate. 1.5 Pro kept for long-context workloads."}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://generativelanguage.googleapis.com/v1beta/models?key={{api_key}}","method":"GET","description":"Lists available Gemini models to validate the API key"}"##,
@@ -1032,6 +1176,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#34A853"##,
         icon_url: r##"/icons/connectors/google-sheets.svg"##,
         category: r##"spreadsheet"##,
+        categories: &[r##"spreadsheet"##, r##"database"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"##,
@@ -1050,6 +1195,12 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4285F4"##,
         icon_url: r##"/icons/connectors/google.svg"##,
         category: r##"productivity"##,
+        categories: &[
+            r##"productivity"##,
+            r##"email"##,
+            r##"storage"##,
+            r##"calendar"##,
+        ],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"##,
@@ -1068,6 +1219,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#C49A6C"##,
         icon_url: r##"/icons/connectors/granola.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[r##"knowledge_base"##, r##"productivity"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"grn_...","helpText":"Create in Granola: Settings -> Connectors -> API keys -> Create new key. Requires a Business or Enterprise plan; Enterprise admins must enable API access for members.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://public-api.granola.ai/v1/notes?limit=1","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates the API key by listing one note via the notes endpoint"}"##,
@@ -1086,6 +1238,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FA5D00"##,
         icon_url: r##"/icons/connectors/harvest.svg"##,
         category: r##"time_tracking"##,
+        categories: &[r##"time_tracking"##, r##"finance"##],
         fields: r##"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"Create at id.getharvest.com/developers","sensitive":true},{"key":"account_id","label":"Account ID","type":"text","required":true,"placeholder":"1234567","helpText":"Shown next to your token at id.getharvest.com/developers","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.harvestapp.com/v2/users/me","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Harvest-Account-Id":"{{account_id}}","User-Agent":"Personas Desktop (https://personas.app)"},"description":"Validates PAT via Harvest /v2/users/me endpoint"}"##,
@@ -1104,6 +1257,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F1A208"##,
         icon_url: r##"/icons/connectors/helicone.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##, r##"ai"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"sk-helicone-...","helpText":"From Helicone -> Settings -> API Keys. The sk-helicone-... value. Sent as a Bearer token.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.helicone.ai/v1/request/query","method":"POST","headers":{"Authorization":"Bearer {{api_key}}","Content-Type":"application/json"},"body":"{\"filter\":\"all\",\"limit\":1,\"offset\":0}","description":"Validates the API key via the request query endpoint"}"##,
@@ -1122,6 +1276,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#5B5FFF"##,
         icon_url: r##"/icons/connectors/higgsfield.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"image_generation"##, r##"video_generation"##],
         fields: r##"[{"key":"key_id","label":"Key ID","type":"text","required":true,"placeholder":"hf_kid_...","helpText":"From cloud.higgsfield.ai/api-keys -- the left half of your KEY_ID:KEY_SECRET pair.","sensitive":false},{"key":"key_secret","label":"Key Secret","type":"password","required":true,"placeholder":"hf_sec_...","helpText":"From cloud.higgsfield.ai/api-keys -- the right half of the pair. Treat like a password.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://platform.higgsfield.ai/v1/me","method":"GET","headers":{"Authorization":"Key {{key_id}}:{{key_secret}}"},"description":"Validates the KEY_ID:KEY_SECRET pair against Higgsfield. If /v1/me returns 404 verify the canonical health endpoint with the official SDK at github.com/higgsfield-ai/higgsfield-js."}"##,
@@ -1140,6 +1295,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF7A59"##,
         icon_url: r##"/icons/connectors/hubspot.svg"##,
         category: r##"crm"##,
+        categories: &[r##"crm"##, r##"marketing"##, r##"email"##],
         fields: r##"[{"key":"access_token","label":"Private App Access Token","type":"password","required":true,"placeholder":"pat-...","helpText":"From HubSpot -> Settings -> Integrations -> Private Apps -> Create","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.hubapi.com/crm/v3/objects/contacts?limit=1","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via HubSpot contacts endpoint"}"##,
@@ -1160,6 +1316,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FFD21E"##,
         icon_url: r##"/icons/connectors/huggingface.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"voice_generation"##, r##"model_hosting"##],
         fields: r##"[{"key":"api_key","label":"Access Token","type":"password","required":true,"placeholder":"hf_...","helpText":"Create at huggingface.co → Settings → Access Tokens (a read token is enough)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://huggingface.co/api/whoami-v2","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates the access token via the Hugging Face whoami endpoint"}"##,
@@ -1180,6 +1337,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7C3AED"##,
         icon_url: r##"/icons/connectors/humbalytics.svg"##,
         category: r##"analytics"##,
+        categories: &[r##"analytics"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"hb_...","helpText":"From Humbalytics -> Settings -> API Keys. Used for read-only analytics queries and experiment control.","sensitive":true},{"key":"property_id","label":"Property ID","type":"text","required":true,"placeholder":"prop_...","helpText":"The property identifier for the site you are tracking. Find it in Humbalytics -> Property Settings.","sensitive":false},{"key":"api_base_url","label":"API Base URL","type":"url","required":false,"placeholder":"https://api.humbalytics.com/v1","helpText":"Defaults to the Humbalytics cloud endpoint. Override only for self-hosted or staging deployments.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{api_base_url|https://api.humbalytics.com/v1}}/properties/{{property_id}}","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key and property access via the property metadata endpoint"}"##,
@@ -1198,6 +1356,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0052CC"##,
         icon_url: r##"/icons/connectors/jira.svg"##,
         category: r##"project_management"##,
+        categories: &[r##"project_management"##, r##"ticketing"##],
         fields: r##"[{"key":"domain","label":"Atlassian Domain","type":"text","required":true,"placeholder":"your-company.atlassian.net","helpText":"Your Jira Cloud domain (without https://)","sensitive":true},{"key":"email","label":"Account Email","type":"text","required":true,"placeholder":"you@company.com","helpText":"The email address for your Atlassian account","sensitive":true},{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From id.atlassian.com/manage-profile/security/api-tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://{{domain}}/rest/api/3/myself","method":"GET","headers":{"Authorization":"Basic {{base64(email:api_token)}}","Accept":"application/json"},"description":"Validates credentials via Jira myself endpoint"}"##,
@@ -1218,6 +1377,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4DE4B2"##,
         icon_url: r##"/icons/connectors/kalshi.svg"##,
         category: r##"finance"##,
+        categories: &[r##"finance"##, r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"a952bcbe-ec3b-...","helpText":"From Kalshi Settings → API Keys. Optional — public market data is accessible without auth."}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://trading-api.kalshi.com/trade-api/v2/exchange/status","method":"GET","headers":{},"description":"Checks Kalshi exchange status (public endpoint, no auth required)"}"##,
@@ -1236,6 +1396,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6C47FF"##,
         icon_url: r##"/icons/connectors/knock.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##],
         fields: r##"[{"key":"api_key","label":"Secret API Key","type":"password","required":true,"placeholder":"sk_...","helpText":"From Knock dashboard -> Developers -> API Keys -> Secret key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.knock.app/v1/users?page_size=1","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Knock users list endpoint"}"##,
@@ -1254,6 +1415,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#326CE5"##,
         icon_url: r##"/icons/connectors/kubernetes.svg"##,
         category: r##"containers"##,
+        categories: &[r##"containers"##, r##"cloud"##, r##"devops"##],
         fields: r##"[{"key":"api_server","label":"API Server URL","type":"url","required":true,"placeholder":"https://my-cluster.example.com:6443","helpText":"Kubernetes API server URL (find with: kubectl cluster-info)","sensitive":true},{"key":"token","label":"Bearer Token","type":"password","required":true,"placeholder":"eyJhbGciOi...","helpText":"Service account token (find with: kubectl create token <sa-name>)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{api_server}}/api","method":"GET","headers":{"Authorization":"Bearer {{token}}"},"description":"Validates token via Kubernetes API versions endpoint"}"##,
@@ -1272,6 +1434,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0A60FF"##,
         icon_url: r##"/icons/connectors/langfuse.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##, r##"ai"##],
         fields: r##"[{"key":"public_key","label":"Public Key","type":"text","required":true,"placeholder":"pk-lf-...","helpText":"From Langfuse -> Settings -> API Keys. The pk-lf-... value.","sensitive":false},{"key":"secret_key","label":"Secret Key","type":"password","required":true,"placeholder":"sk-lf-...","helpText":"From Langfuse -> Settings -> API Keys, paired with the public key. The sk-lf-... value.","sensitive":true},{"key":"host","label":"Host","type":"url","required":false,"placeholder":"https://cloud.langfuse.com","helpText":"Defaults to EU cloud (cloud.langfuse.com). Use https://us.cloud.langfuse.com for US, or your self-hosted URL.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{host|https://cloud.langfuse.com}}/api/public/projects","method":"GET","headers":{"Authorization":"Basic {{base64(public_key:secret_key)}}"},"description":"Validates the public/secret key pair via the projects endpoint (Basic auth)"}"##,
@@ -1290,6 +1453,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1C3C3C"##,
         icon_url: r##"/icons/connectors/langsmith.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##, r##"ai"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"lsv2_pt_...","helpText":"From LangSmith -> Settings -> API Keys. The lsv2_... value. Sent as the x-api-key header.","sensitive":true},{"key":"base_url","label":"API URL","type":"url","required":false,"placeholder":"https://api.smith.langchain.com","helpText":"Defaults to US (api.smith.langchain.com). Use https://eu.api.smith.langchain.com for the EU region, or your self-hosted URL.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|https://api.smith.langchain.com}}/sessions?limit=1","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates the API key via the tracing projects (sessions) endpoint"}"##,
@@ -1308,6 +1472,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FFC233"##,
         icon_url: r##"/icons/connectors/lemonsqueezy.svg"##,
         category: r##"ecommerce"##,
+        categories: &[r##"ecommerce"##, r##"finance"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.lemonsqueezy.com/v1/users/me","method":"GET","headers":{"Accept":"application/vnd.api+json","Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Lemon Squeezy /users/me endpoint"}"##,
@@ -1326,6 +1491,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6C3AEF"##,
         icon_url: r##"/icons/connectors/leonardo-ai.svg"##,
         category: r##"ai"##,
+        categories: &[r##"ai"##, r##"image_generation"##, r##"video_generation"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Generate at app.leonardo.ai/api-access","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://cloud.leonardo.ai/api/rest/v1/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Leonardo AI /me endpoint"}"##,
@@ -1344,6 +1510,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#5E6AD2"##,
         icon_url: r##"/icons/connectors/linear.svg"##,
         category: r##"project_management"##,
+        categories: &[r##"project_management"##, r##"ticketing"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"lin_api_...","helpText":"From Linear -> Settings -> API -> Personal API keys","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.linear.app/graphql","method":"POST","headers":{"Authorization":"{{api_key}}","Content-Type":"application/json"},"body":"{\"query\":\"{ viewer { id } }\"}","description":"Validates API key via Linear GraphQL viewer query"}"##,
@@ -1364,6 +1531,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0A66C2"##,
         icon_url: r##"/icons/connectors/linkedin-ads.svg"##,
         category: r##"advertising"##,
+        categories: &[r##"advertising"##, r##"marketing"##, r##"social"##],
         fields: r##"[{"key":"account_urn","label":"Ad Account URN","type":"text","required":true,"placeholder":"urn:li:sponsoredAccount:123456789","helpText":"Your sponsored account URN. Find at Campaign Manager → Account Asset → the numeric ID after /accounts/, wrap as urn:li:sponsoredAccount:<ID>."},{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"78abcdef1234","helpText":"LinkedIn OAuth 2.0 Client ID from your Developer App."},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"sensitive":true,"placeholder":"••••••••••••••••","helpText":"LinkedIn OAuth 2.0 Client Secret. Keep private — used to exchange auth codes for access tokens."}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.linkedin.com/rest/adAccounts/{{account_id}}","method":"GET","headers":{"Authorization":"Bearer {{access_token}}","LinkedIn-Version":"202410","X-Restli-Protocol-Version":"2.0.0"},"description":"Fetches the ad account record — verifies OAuth token scopes and account permissions."}"##,
@@ -1382,6 +1550,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0A66C2"##,
         icon_url: r##"/icons/connectors/linkedin.svg"##,
         category: r##"social"##,
+        categories: &[r##"social"##],
         fields: r##"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"86abc123def456","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab","sensitive":true},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.linkedin.com/v2/userinfo","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates OAuth token via LinkedIn userinfo endpoint"}"##,
@@ -1400,6 +1569,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0EA5E9"##,
         icon_url: r##"/illustrations/logo-v1-geometric-nobg.png"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1416,6 +1586,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#8B5CF6"##,
         icon_url: r##""##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##, r##"notifications"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"send_notification","label":"Send Notification"},{"toolName":"send_message","label":"Send Message"}]"##,
@@ -1432,6 +1603,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6366F1"##,
         icon_url: r##"/icons/connectors/mcp_gateway.svg"##,
         category: r##"integration"##,
+        categories: &[r##"integration"##],
         fields: r##"[{"key":"label","label":"Gateway label","type":"text","required":true,"placeholder":"Research tools","helpText":"A short label to identify this bundle (e.g. 'Research tools', 'Customer support stack'). Members are managed via the gateway settings panel.","sensitive":false}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1448,6 +1620,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1877F2"##,
         icon_url: r##"/icons/connectors/meta-ads.svg"##,
         category: r##"advertising"##,
+        categories: &[r##"advertising"##, r##"marketing"##, r##"social"##],
         fields: r##"[{"key":"ad_account_id","label":"Ad Account ID","type":"text","required":true,"placeholder":"act_1234567890","helpText":"Your Meta Ads account ID, including the 'act_' prefix. Find it in Ads Manager → top-left account selector."},{"key":"app_id","label":"App ID","type":"text","required":true,"placeholder":"1234567890123456","helpText":"Meta App ID from developers.facebook.com → your app → Settings → Basic."},{"key":"app_secret","label":"App Secret","type":"password","required":true,"sensitive":true,"placeholder":"••••••••••••••••","helpText":"Meta App Secret. Keep this private — it authenticates your app to the Graph API."}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.facebook.com/v19.0/me/adaccounts?limit=1","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Lists ad accounts accessible by the OAuth token — verifies scopes and token validity."}"##,
@@ -1466,6 +1639,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#509EE3"##,
         icon_url: r##"/icons/connectors/metabase.svg"##,
         category: r##"bi"##,
+        categories: &[r##"bi"##, r##"analytics"##],
         fields: r##"[{"key":"base_url","label":"Metabase Base URL","type":"url","required":true,"placeholder":"https://metabase.example.com","helpText":"Your Metabase instance root URL. For self-hosted: https://metabase.example.com. For Metabase Cloud: https://your-tenant.metabaseapp.com. Do NOT include /api at the end.","sensitive":false},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"mb_...","helpText":"Admin Settings -> Authentication -> API Keys -> Create API Key. Requires Pro/Enterprise or self-hosted instance.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url}}/api/user/current","method":"GET","headers":{"X-API-Key":"{{api_key}}"},"description":"Validates API Key via current-user endpoint"}"##,
@@ -1484,6 +1658,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D4"##,
         icon_url: r##"/icons/connectors/microsoft-calendar.svg"##,
         category: r##"calendar"##,
+        categories: &[r##"calendar"##, r##"scheduling"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"##,
@@ -1504,6 +1679,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#217346"##,
         icon_url: r##"/icons/connectors/microsoft-excel.svg"##,
         category: r##"spreadsheet"##,
+        categories: &[r##"spreadsheet"##, r##"database"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"##,
@@ -1522,6 +1698,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D4"##,
         icon_url: r##"/icons/connectors/microsoft-outlook.svg"##,
         category: r##"email"##,
+        categories: &[r##"email"##, r##"calendar"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"##,
@@ -1542,6 +1719,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#6264A7"##,
         icon_url: r##"/icons/connectors/microsoft-teams.svg"##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"##,
@@ -1562,6 +1740,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7856FF"##,
         icon_url: r##"/icons/connectors/mixpanel.svg"##,
         category: r##"analytics"##,
+        categories: &[r##"analytics"##],
         fields: r##"[{"key":"service_account_username","label":"Service Account Username","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Organization Settings -> Service Accounts","sensitive":true},{"key":"service_account_secret","label":"Service Account Secret","type":"password","required":true,"placeholder":"","helpText":"The secret paired with the service account username","sensitive":true},{"key":"project_id","label":"Project ID","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Project ID","sensitive":true},{"key":"project_token","label":"Project Token","type":"password","required":false,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Access Keys -> Project Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://mixpanel.com/api/app/me","method":"GET","headers":{"Authorization":"Basic {{base64(service_account_username:service_account_secret)}}"},"description":"Validates service account via Mixpanel app/me endpoint"}"##,
@@ -1582,6 +1761,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF3D57"##,
         icon_url: r##"/icons/connectors/monday.svg"##,
         category: r##"project_management"##,
+        categories: &[r##"project_management"##, r##"crm"##],
         fields: r##"[{"key":"api_key_v2","label":"API v2 Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"From monday.com -> Avatar -> Developers -> My Access Tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.monday.com/v2","method":"POST","headers":{"Authorization":"{{api_key_v2}}","Content-Type":"application/json"},"body":"{\"query\":\"{ me { id } }\"}","description":"Validates API token via Monday GraphQL endpoint"}"##,
@@ -1602,6 +1782,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#47A248"##,
         icon_url: r##"/icons/connectors/mongodb.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"mongodb+srv://user:password@cluster.xxxxx.mongodb.net/dbname","helpText":"MongoDB connection URI from Atlas or your self-hosted instance","sensitive":true},{"key":"database_name","label":"Database Name","type":"text","required":false,"placeholder":"mydb","helpText":"Default database to connect to (can also be in connection string)","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1618,6 +1799,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#EA4B71"##,
         icon_url: r##"/icons/connectors/n8n.svg"##,
         category: r##"automation"##,
+        categories: &[r##"automation"##, r##"integration"##],
         fields: r##"[{"key":"base_url","label":"Instance URL","type":"url","required":true,"placeholder":"https://your-instance.n8n.cloud","helpText":"Your n8n instance URL (cloud or self-hosted)","sensitive":false},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"n8n_api_...","helpText":"Generate at Settings -> API -> Create API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url}}/api/v1/workflows?limit=1","method":"GET","headers":{"X-N8N-API-KEY":"{{api_key}}"},"description":"Validates API key by listing workflows"}"##,
@@ -1636,6 +1818,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00E699"##,
         icon_url: r##"/icons/connectors/neon.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Neon Console -> Account Settings -> API Keys -> Generate","sensitive":true},{"key":"connection_string","label":"Connection String","type":"password","required":false,"placeholder":"postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname","helpText":"Optional: PostgreSQL connection string for direct database access","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://console.neon.tech/api/v2/projects","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Neon projects endpoint"}"##,
@@ -1656,6 +1839,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00C7B7"##,
         icon_url: r##"/icons/connectors/netlify.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##, r##"devops"##],
         fields: r##"[{"key":"access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"From Netlify -> User Settings -> Applications -> Personal Access Tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.netlify.com/api/v1/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Netlify user endpoint"}"##,
@@ -1676,6 +1860,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#CF212B"##,
         icon_url: r##"/icons/connectors/news-api.svg"##,
         category: r##"research"##,
+        categories: &[r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"abc123def456...","helpText":"From newsapi.org → Get API Key (free tier: 100 requests/day)"}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://newsapi.org/v2/top-headlines/sources","method":"GET","headers":{"X-Api-Key":"{{api_key}}"},"description":"Validates API key by fetching news sources"}"##,
@@ -1694,6 +1879,12 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/notion.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[
+            r##"knowledge_base"##,
+            r##"database"##,
+            r##"documentation"##,
+            r##"productivity"##,
+        ],
         fields: r##"[{"key":"api_key","label":"Integration Token","type":"password","required":true,"placeholder":"ntn_...","helpText":"Create an internal integration at notion.so/my-integrations","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.notion.com/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","Notion-Version":"2022-06-28"},"description":"Validates integration token via users/me endpoint"}"##,
@@ -1714,6 +1905,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF4981"##,
         icon_url: r##"/icons/connectors/novu.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Novu dashboard -> Settings -> API Keys","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.novu.co/v1/environments/me","method":"GET","headers":{"Authorization":"ApiKey {{api_key}}"},"description":"Validates API key via Novu environment endpoint"}"##,
@@ -1732,6 +1924,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#317F6E"##,
         icon_url: r##"/icons/connectors/ntfy.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##],
         fields: r##"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://ntfy.sh","helpText":"Your ntfy server URL (defaults to ntfy.sh public server)","sensitive":false},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"tk_...","helpText":"Optional -- only needed for access-controlled topics","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|https://ntfy.sh}}/v1/health","method":"GET","headers":{},"description":"Validates ntfy server availability via health endpoint"}"##,
@@ -1750,6 +1943,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7C3AED"##,
         icon_url: r##"/icons/connectors/obsidian.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[r##"knowledge_base"##, r##"vector_search"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"vault_search","label":"Search Vault"},{"toolName":"vault_outgoing_links","label":"Get Outgoing Links"},{"toolName":"vault_backlinks","label":"Get Backlinks"},{"toolName":"vault_list_orphans","label":"List Orphan Notes"},{"toolName":"vault_list_mocs","label":"List Maps of Content"},{"toolName":"vault_stats","label":"Get Vault Stats"},{"toolName":"vault_append_daily_note","label":"Append to Daily Note"},{"toolName":"vault_write_meeting_note","label":"Write Meeting Note"}]"##,
@@ -1766,6 +1960,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#7C3AED"##,
         icon_url: r##"/icons/connectors/obsidian.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[r##"knowledge_base"##, r##"productivity"##],
         fields: r##"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://127.0.0.1:27124","helpText":"URL of your Obsidian Local REST API server (defaults to https://127.0.0.1:27124)","sensitive":false},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Find in Obsidian Settings > Local REST API > API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|https://127.0.0.1:27124}}/","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Obsidian Local REST API root endpoint"}"##,
@@ -1784,6 +1979,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0078D4"##,
         icon_url: r##"/icons/connectors/onedrive.svg"##,
         category: r##"storage"##,
+        categories: &[r##"storage"##, r##"productivity"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me/drive","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me/drive endpoint"}"##,
@@ -1802,6 +1998,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0EA5E9"##,
         icon_url: r##""##,
         category: r##"database"##,
+        categories: &[r##"database"##, r##"observability"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1818,6 +2015,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0D1117"##,
         icon_url: r##"/icons/connectors/penpot.svg"##,
         category: r##"design"##,
+        categories: &[r##"design"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at your Penpot instance -> Profile -> Access Tokens","sensitive":true},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://design.penpot.app","helpText":"Your Penpot instance URL (defaults to penpot.app cloud)","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|https://design.penpot.app}}/api/rpc/command/get-profile","method":"GET","headers":{"Authorization":"Token {{access_token}}"},"description":"Validates access token via Penpot get-profile endpoint"}"##,
@@ -1836,6 +2034,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#06B6D4"##,
         icon_url: r##""##,
         category: r##"database"##,
+        categories: &[r##"database"##, r##"storage"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1852,6 +2051,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#017737"##,
         icon_url: r##"/icons/connectors/pipedrive.svg"##,
         category: r##"crm"##,
+        categories: &[r##"crm"##],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"Go to Pipedrive -> Settings -> Personal preferences -> API -> Your personal API token","sensitive":true},{"key":"domain","label":"Company Domain","type":"text","required":true,"placeholder":"yourcompany","helpText":"Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://{{domain}}.pipedrive.com/api/v1/users/me?api_token={{api_token}}","method":"GET","headers":{},"description":"Validates API token via Pipedrive /users/me endpoint"}"##,
@@ -1872,6 +2072,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/planetscale.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"service_token_id","label":"Service Token ID","type":"text","required":true,"placeholder":"","helpText":"From PlanetScale -> Organization -> Settings -> Service Tokens","sensitive":true},{"key":"service_token","label":"Service Token","type":"password","required":true,"placeholder":"","helpText":"The service token secret paired with the token ID","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.planetscale.com/v1/organizations","method":"GET","headers":{"Authorization":"{{service_token_id}}:{{service_token}}"},"description":"Validates service token via PlanetScale organizations endpoint"}"##,
@@ -1890,6 +2091,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#336791"##,
         icon_url: r##"/icons/connectors/postgres.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"postgresql://user:password@host:5432/dbname","helpText":"Full PostgreSQL connection URI including credentials","sensitive":true},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/db separately instead of connection string","sensitive":false},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"5432","helpText":"PostgreSQL port (default 5432)","sensitive":false},{"key":"database","label":"Database","type":"text","required":false,"placeholder":"mydb","helpText":"Database name","sensitive":false},{"key":"username","label":"Username","type":"text","required":false,"placeholder":"postgres","helpText":"Database user","sensitive":true},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Database password","sensitive":true},{"key":"ssl_mode","label":"SSL Mode","type":"text","required":false,"placeholder":"prefer","helpText":"SSL mode: disable, allow, prefer, require, verify-ca, verify-full","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -1906,6 +2108,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F9BD2B"##,
         icon_url: r##"/icons/connectors/posthog.svg"##,
         category: r##"analytics"##,
+        categories: &[r##"analytics"##, r##"monitoring"##],
         fields: r##"[{"key":"personal_api_key","label":"Personal API Key","type":"password","required":true,"placeholder":"phx_...","helpText":"From PostHog -> Settings -> Personal API Keys","sensitive":true},{"key":"project_api_key","label":"Project API Key","type":"password","required":false,"placeholder":"phc_...","helpText":"Optional: project token for event ingestion","sensitive":true},{"key":"host","label":"Host","type":"url","required":false,"placeholder":"https://us.posthog.com","helpText":"Defaults to us.posthog.com. Use eu.posthog.com for EU cloud.","sensitive":false}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{host|https://us.posthog.com}}/api/projects/","method":"GET","headers":{"Authorization":"Bearer {{personal_api_key}}"},"description":"Validates personal API key via projects endpoint"}"##,
@@ -1926,6 +2129,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#326599"##,
         icon_url: r##"/icons/connectors/pubmed.svg"##,
         category: r##"research"##,
+        categories: &[r##"research"##],
         fields: r##"[{"key":"api_key","label":"NCBI API Key","type":"password","required":false,"placeholder":"Optional - raises rate limit to 10 req/sec","helpText":"Register at ncbi.nlm.nih.gov/account/ to get an API key. Without a key: 3 req/sec.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi?db=pubmed&retmode=json","method":"GET","headers":{},"description":"Validates PubMed E-utilities access via database info endpoint"}"##,
@@ -1944,6 +2148,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0B0D0E"##,
         icon_url: r##"/icons/connectors/railway.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##, r##"devops"##],
         fields: r##"[{"key":"api_key","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"Create an account-level token at railway.app/account/tokens","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://backboard.railway.com/graphql/v2","method":"POST","headers":{"Authorization":"Bearer {{api_key}}","Content-Type":"application/json"},"body":"{\"query\":\"query { me { email } }\"}","description":"Validates token via GraphQL me query"}"##,
@@ -1962,6 +2167,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FFCD1C"##,
         icon_url: r##"/icons/connectors/ramp.svg"##,
         category: r##"finance"##,
+        categories: &[r##"finance"##],
         fields: r##"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"ramp_id_...","helpText":"From Ramp Developer Portal -> Apps -> your app -> Credentials","sensitive":true},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From Ramp Developer Portal -> Apps -> your app -> Credentials","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.ramp.com/developer/v1/users","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates OAuth token via Ramp users endpoint"}"##,
@@ -1980,6 +2186,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF7964"##,
         icon_url: r##"/icons/connectors/redash.svg"##,
         category: r##"bi"##,
+        categories: &[r##"bi"##, r##"analytics"##],
         fields: r##"[{"key":"base_url","label":"Redash Base URL","type":"url","required":true,"placeholder":"https://app.redash.io/your-slug","helpText":"Your Redash instance root URL. For Redash Cloud: https://app.redash.io/{workspace-slug}. For self-hosted: https://redash.example.com. Do NOT include /api at the end.","sensitive":false},{"key":"api_key","label":"User API Key","type":"password","required":true,"placeholder":"","helpText":"From your Redash user profile page (top-right avatar -> Edit Profile -> API Key). Prefer per-query API keys for production.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url}}/api/queries?page_size=1","method":"GET","headers":{"Authorization":"Key {{api_key}}"},"description":"Validates User API Key by listing a single query"}"##,
@@ -1998,6 +2205,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF4500"##,
         icon_url: r##"/icons/connectors/reddit.svg"##,
         category: r##"social"##,
+        categories: &[r##"social"##, r##"research"##],
         fields: r##"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"abc123-_xyz","helpText":"From reddit.com/prefs/apps -> your app -> the string under 'web app' or 'installed app'","sensitive":true},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From reddit.com/prefs/apps -> your app -> 'secret' (leave blank for installed-app type)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://oauth.reddit.com/api/v1/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}","User-Agent":"personas-desktop:builtin-reddit:v1.0 (by /u/personas_app)"},"description":"Validates OAuth token via Reddit /api/v1/me endpoint"}"##,
@@ -2016,6 +2224,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#DC382D"##,
         icon_url: r##"/icons/connectors/redis.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##, r##"cache"##],
         fields: r##"[{"key":"connection_url","label":"Connection URL","type":"password","required":true,"placeholder":"redis://default:password@host:6379","helpText":"Redis connection URL (redis:// or rediss:// for TLS)","sensitive":true},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/password separately","sensitive":false},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"6379","helpText":"Redis port (default 6379)","sensitive":false},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Redis AUTH password","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -2032,6 +2241,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/resend.svg"##,
         category: r##"email"##,
+        categories: &[r##"email"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"re_...","helpText":"From Resend Dashboard -> API Keys -> Create API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.resend.com/domains","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Resend domains endpoint"}"##,
@@ -2050,6 +2260,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1857B6"##,
         icon_url: r##"/icons/connectors/semantic-scholar.svg"##,
         category: r##"research"##,
+        categories: &[r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"Optional - raises rate limit","helpText":"Request at semanticscholar.org/product/api. Free tier works without a key (100 req/5min).","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.semanticscholar.org/graph/v1/paper/search?query=test&limit=1","method":"GET","headers":{},"description":"Validates Semantic Scholar API access with a test search"}"##,
@@ -2068,6 +2279,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#1A82E2"##,
         icon_url: r##"/icons/connectors/sendgrid.svg"##,
         category: r##"email"##,
+        categories: &[r##"email"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"SG....","helpText":"From SendGrid -> Settings -> API Keys -> Create API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.sendgrid.com/v3/scopes","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via SendGrid scopes endpoint"}"##,
@@ -2086,6 +2298,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#362D59"##,
         icon_url: r##"/icons/connectors/sentry.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##, r##"development"##],
         fields: r##"[{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"sntrys_...","helpText":"Generate at sentry.io/settings/auth-tokens/","sensitive":true},{"key":"organization_slug","label":"Organization Slug","type":"text","required":true,"placeholder":"my-org","helpText":"Your Sentry organization slug from the URL","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://sentry.io/api/0/organizations/{{organization_slug}}/","method":"GET","headers":{"Authorization":"Bearer {{auth_token}}"},"description":"Validates auth token via organization endpoint"}"##,
@@ -2106,6 +2319,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#038387"##,
         icon_url: r##"/icons/connectors/sharepoint.svg"##,
         category: r##"knowledge_base"##,
+        categories: &[r##"knowledge_base"##, r##"storage"##, r##"productivity"##],
         fields: r##"[]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"##,
@@ -2126,6 +2340,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4A154B"##,
         icon_url: r##"/icons/connectors/slack.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##, r##"messaging"##],
         fields: r##"[{"key":"webhook_url","label":"Incoming Webhook URL","type":"password","required":true,"placeholder":"https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX","helpText":"From the Slack app's Incoming Webhooks page. The URL itself is the secret — anyone who has it can post to the configured channel.","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -2142,6 +2357,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4A154B"##,
         icon_url: r##"/icons/connectors/slack.svg"##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##],
         fields: r##"[{"key":"bot_token","label":"Bot User OAuth Token","type":"password","required":true,"placeholder":"xoxb-...","helpText":"From Slack App -> OAuth & Permissions -> Bot User OAuth Token. For inbound (a persona that replies in a channel) add the channels:history, groups:history and chat:write scopes.","sensitive":true},{"key":"user_token","label":"User OAuth Token (optional)","type":"password","required":false,"placeholder":"xoxp-...","helpText":"Optional. Only needed for Real-Time Search of private channels / DMs and for the Slack MCP server. From OAuth & Permissions -> User OAuth Token (xoxp-...) with the search:read.* scopes.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://slack.com/api/auth.test","method":"GET","headers":{"Authorization":"Bearer {{bot_token}}"},"description":"Validates bot token via Slack auth.test endpoint"}"##,
@@ -2162,6 +2378,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#635BFF"##,
         icon_url: r##"/icons/connectors/stripe.svg"##,
         category: r##"finance"##,
+        categories: &[r##"finance"##, r##"ecommerce"##],
         fields: r##"[{"key":"api_key","label":"Secret Key","type":"password","required":true,"placeholder":"sk_live_... or sk_test_...","helpText":"Find at dashboard.stripe.com/apikeys. Use restricted keys where possible.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.stripe.com/v1/account","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates key via account endpoint"}"##,
@@ -2182,6 +2399,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#3ECF8E"##,
         icon_url: r##"/icons/connectors/supabase.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##],
         fields: r##"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard -> Settings -> API","sensitive":true},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access","sensitive":true},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"For server-side admin access (bypasses RLS)","sensitive":true},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Supavisor pooler URL for direct database access","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"},"description":"Validates Supabase connection via REST endpoint with anon key"}"##,
@@ -2200,6 +2418,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#3CCF91"##,
         icon_url: r##"/icons/connectors/tally.svg"##,
         category: r##"forms"##,
+        categories: &[r##"forms"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to tally.so -> Settings -> Integrations -> API -> Generate access token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.tally.so/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Tally /me endpoint"}"##,
@@ -2218,6 +2437,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#4B53BC"##,
         icon_url: r##"/icons/connectors/microsoft-teams.svg"##,
         category: r##"notifications"##,
+        categories: &[r##"notifications"##, r##"messaging"##],
         fields: r##"[{"key":"webhook_url","label":"Incoming Webhook URL","type":"password","required":true,"placeholder":"https://outlook.office.com/webhook/...","helpText":"From the target channel: ... menu -> Connectors -> Incoming Webhook -> Configure. Teams emits a MessageCard payload by default.","sensitive":true}]"##,
         healthcheck_config: None,
         services: r##"[]"##,
@@ -2234,6 +2454,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#26A5E4"##,
         icon_url: r##"/icons/connectors/telegram.svg"##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##],
         fields: r##"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"123456:ABC-DEF...","helpText":"From @BotFather on Telegram -> /newbot or /token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.telegram.org/bot{{bot_token}}/getMe","method":"GET","headers":{},"description":"Validates bot token via Telegram getMe endpoint"}"##,
@@ -2252,6 +2473,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#E57CD8"##,
         icon_url: r##"https://cdn.simpleicons.org/toggltrack/E57CD8"##,
         category: r##"time_tracking"##,
+        categories: &[r##"time_tracking"##],
         fields: r##"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Toggl Track -> Profile -> Profile settings -> API Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.track.toggl.com/api/v9/me","method":"GET","headers":{"Authorization":"Basic {{base64(api_token:api_token)}}","Content-Type":"application/json"},"description":"Validates API token via Toggl Track /me endpoint using HTTP Basic auth"}"##,
@@ -2270,6 +2492,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#0EA5E9"##,
         icon_url: r##"/icons/connectors/tracklight.svg"##,
         category: r##"monitoring"##,
+        categories: &[r##"monitoring"##, r##"ai"##],
         fields: r##"[{"key":"base_url","label":"Server URL","type":"url","required":true,"placeholder":"http://localhost:8787","helpText":"Where your self-hosted LightTrack API is reachable. Defaults to http://localhost:8787 (override with LIGHTTRACK_BIND). Use your Cloud Run / server URL for a hosted deployment.","sensitive":false},{"key":"api_key","label":"Project API Key","type":"password","required":true,"placeholder":"lt_...","helpText":"A per-project ingest/query key (lt_<prefix>_<secret>). Create one with `lt keys create` or the admin key. Sent as an Authorization: Bearer header.","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url|http://localhost:8787}}/health","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates the server is reachable via the /health endpoint (returns ok)"}"##,
@@ -2288,6 +2511,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#52BD94"##,
         icon_url: r##"/icons/connectors/twilio.svg"##,
         category: r##"analytics"##,
+        categories: &[r##"analytics"##],
         fields: r##"[{"key":"write_key","label":"Write Key","type":"password","required":true,"placeholder":"","helpText":"From Segment -> Sources -> your source -> Settings -> API Keys","sensitive":true},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"","helpText":"Optional: for Config API access (workspace-level)","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.segment.io/v1/batch","method":"POST","headers":{"Authorization":"Basic {{base64(write_key:)}}","Content-Type":"application/json"},"description":"Validates write key via Segment batch endpoint"}"##,
@@ -2306,6 +2530,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#F22F46"##,
         icon_url: r##"/icons/connectors/twilio.svg"##,
         category: r##"messaging"##,
+        categories: &[r##"messaging"##, r##"notifications"##],
         fields: r##"[{"key":"account_sid","label":"Account SID","type":"text","required":true,"placeholder":"AC...","helpText":"From Twilio Console -> Account -> Account SID","sensitive":true},{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"","helpText":"From Twilio Console -> Account -> Auth Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}.json","method":"GET","headers":{"Authorization":"Basic {{base64(account_sid:auth_token)}}"},"description":"Validates credentials via Twilio account endpoint"}"##,
@@ -2326,6 +2551,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#A78BFA"##,
         icon_url: r##"/illustrations/logo-v1-geometric-nobg.png"##,
         category: r##"personalization"##,
+        categories: &[r##"personalization"##],
         fields: r##"[{"key":"twin_profile_id","label":"Twin Profile","type":"select","required":true,"placeholder":"Pick a twin from the Twin plugin","helpText":"Which Twin profile this binding points to. Create or edit profiles in the Twin plugin under Profiles.","sensitive":false}]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"get_identity","label":"Get Twin Identity"},{"toolName":"get_tone","label":"Get Channel Tone"},{"toolName":"get_system_prompt","label":"Assemble System Prompt Fragment"},{"toolName":"recall_memory","label":"Recall Memory (RAG)"},{"toolName":"recall_recent_messages","label":"Recent Conversations"},{"toolName":"record_interaction","label":"Log Outgoing Message"},{"toolName":"lookup_relationship","label":"Lookup Person/Relationship"},{"toolName":"ingest_observation","label":"Add Note to Brain"},{"toolName":"synthesize_speech","label":"Speak as Me (ElevenLabs)"},{"toolName":"get_voice_profile","label":"Get Voice Profile"}]"##,
@@ -2342,6 +2568,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#00E9A3"##,
         icon_url: r##"/icons/connectors/upstash.svg"##,
         category: r##"database"##,
+        categories: &[r##"database"##, r##"cache"##],
         fields: r##"[{"key":"redis_url","label":"REST URL","type":"url","required":true,"placeholder":"https://xxx.upstash.io","helpText":"From Upstash Console -> Database -> Details -> REST API -> URL","sensitive":true},{"key":"redis_token","label":"REST Token","type":"password","required":true,"placeholder":"","helpText":"From Upstash Console -> Database -> Details -> REST API -> Token","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{redis_url}}/ping","method":"GET","headers":{"Authorization":"Bearer {{redis_token}}"},"description":"Validates REST token via Upstash Redis PING command"}"##,
@@ -2360,6 +2587,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#8B5CF6"##,
         icon_url: r##"/icons/connectors/vector-db.svg"##,
         category: r##"vector_search"##,
+        categories: &[r##"vector_search"##, r##"knowledge_base"##, r##"database"##],
         fields: r##"[]"##,
         healthcheck_config: None,
         services: r##"[{"toolName":"kb_semantic_search","label":"Semantic Search"},{"toolName":"kb_list_documents","label":"List Documents"},{"toolName":"kb_ingest_text","label":"Ingest Text"}]"##,
@@ -2376,6 +2604,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/vercel.svg"##,
         category: r##"cloud"##,
+        categories: &[r##"cloud"##, r##"devops"##],
         fields: r##"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Vercel -> Settings -> Tokens -> Create","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.vercel.com/v2/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Vercel user endpoint"}"##,
@@ -2396,6 +2625,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#96588A"##,
         icon_url: r##"/icons/connectors/woocommerce.svg"##,
         category: r##"ecommerce"##,
+        categories: &[r##"ecommerce"##],
         fields: r##"[{"key":"base_url","label":"Store URL","type":"url","required":true,"placeholder":"https://yourstore.com","helpText":"Your WooCommerce store URL (must have HTTPS enabled)","sensitive":false},{"key":"consumer_key","label":"Consumer Key","type":"text","required":true,"placeholder":"ck_...","helpText":"From WooCommerce -> Settings -> Advanced -> REST API -> Add Key","sensitive":true},{"key":"consumer_secret","label":"Consumer Secret","type":"password","required":true,"placeholder":"cs_...","helpText":"From the same REST API key page","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"{{base_url}}/wp-json/wc/v3/system_status?consumer_key={{consumer_key}}&consumer_secret={{consumer_secret}}","method":"GET","headers":{},"description":"Validates API keys via WooCommerce system status endpoint"}"##,
@@ -2414,6 +2644,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#000000"##,
         icon_url: r##"/icons/connectors/x-twitter.svg"##,
         category: r##"social"##,
+        categories: &[r##"social"##, r##"research"##],
         fields: r##"[{"key":"bearer_token","label":"Bearer Token","type":"password","required":true,"placeholder":"AAAAAAAAAAAAAAAAAAAAAxxxxxxxx","helpText":"App-only Bearer Token from X Developer Portal → your project → Keys and tokens"}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.twitter.com/2/users/by/username/x","method":"GET","headers":{"Authorization":"Bearer {{bearer_token}}"},"description":"Validates Bearer Token via public user lookup"}"##,
@@ -2432,6 +2663,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF0000"##,
         icon_url: r##"/icons/connectors/youtube-data.svg"##,
         category: r##"social"##,
+        categories: &[r##"social"##, r##"research"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX","helpText":"Create in Google Cloud Console → APIs & Services → Credentials → Create credentials → API key (enable YouTube Data API v3 first)"}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://www.googleapis.com/youtube/v3/search?part=snippet&q=test&maxResults=1&key={{api_key}}","method":"GET","headers":{},"description":"Validates API key via a small search query"}"##,
@@ -2450,6 +2682,7 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         color: r##"#FF4A00"##,
         icon_url: r##"/icons/connectors/zapier.svg"##,
         category: r##"automation"##,
+        categories: &[r##"automation"##, r##"integration"##],
         fields: r##"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From zapier.com/app/developer -> API Key","sensitive":true}]"##,
         healthcheck_config: Some(
             r##"{"endpoint":"https://api.zapier.com/v1/profiles/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Zapier profiles endpoint"}"##,
