@@ -104,7 +104,12 @@ pub(super) const CYCLE_IMPORTANCE: i32 = 3;
 pub(super) const DEFAULT_CONFIDENCE: f32 = 0.7;
 
 pub(super) const COMPRESS_TIMEOUT: Duration = Duration::from_secs(300);
-pub(super) const RECONCILE_TIMEOUT: Duration = Duration::from_secs(180);
+/// Matched to [`COMPRESS_TIMEOUT`] since the leg began judging both tiers in
+/// one call. 180s was sized when it judged facts alone; measured on a year-long
+/// replay the two-tier call peaks around 113s, which left too little headroom
+/// for an ordinary slow response. A timeout is a bound on patience, not a
+/// bound on cost - the shortlist is what bounds cost, and it is unchanged.
+pub(super) const RECONCILE_TIMEOUT: Duration = Duration::from_secs(300);
 
 pub(super) const PHASE_COMPRESS: &str = "compress";
 pub(super) const PHASE_RECONCILE: &str = "reconcile";
