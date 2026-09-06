@@ -22,3 +22,4 @@
 {"ts":"2026-09-03T00:00:00Z","bundle":"software-engineering","subjects":["companion-identity","agent-memory"],"techniques":["constitution-self-model-split","anchored-identity-diffs","disk-truth-db-index","memory-governance","coverage-instrumentation","probe-without-write-back"],"deviations":0}
 {"ts": "2026-09-04T21:19:19Z", "bundle": "software-engineering", "subjects": ["deployment-contract", "cicd-monitoring"], "techniques": ["liveness-scoped-polling", "remote-action-consent", "deployment-history"], "deviations": 2}
 {"ts": "2026-09-04T21:32:12Z", "bundle": "software-engineering", "subjects": ["wizard-flows", "mcp-tools"], "techniques": [], "deviations": 0}
+{"ts":"2026-09-06T00:00:00Z","bundle":"software-engineering","subjects":["agent-instruction-files","mcp-tools"],"techniques":[],"deviations":1}
