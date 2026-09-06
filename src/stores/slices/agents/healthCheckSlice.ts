@@ -5,7 +5,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import {
   computeAggregateHealthScore,
   makeIssueId,
-} from "@/features/agents/sub_health/useHealthCheck";
+} from "@/features/agents/sub_health/healthScoring";
 import type {
   PersonaHealthCheck,
   AgentHealthDigest,

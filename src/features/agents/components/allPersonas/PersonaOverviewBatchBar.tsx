@@ -4,7 +4,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 
 interface PersonaOverviewBatchBarProps {
   count: number;
@@ -35,19 +34,27 @@ export function PersonaOverviewBatchBar({
     useShallow((s) => ({ teams: s.teams, fetchTeams: s.fetchTeams })),
   );
   const [menuOpen, setMenuOpen] = useState(false);
-  const [moving, setMoving] = useState(false);
+  // One busy flag for every async bulk action (move / archive / restore): a
+  // second click while the first is in flight used to fire the handler
+  // again - only the move had a guard. Delete opens a confirm modal and
+  // needs none.
+  const [busy, setBusy] = useState(false);
+  /** Synchronous double-submit gate; `busy` above is only the paint. */
+  const inFlight = useRef(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Load teams once when the move-to-group action is available. `onMoveToGroup`
-    // is a capability gate, but its *identity* changes as selection/teams change
-    // (the page rebuilds it from `teams`, which fetchTeams itself updates).
-    // Including it in the deps caused an infinite render loop:
-    //   fetchTeams → set({teams}) → page rebuilds onMoveToGroup → this effect
-    //   re-ran → fetchTeams → … Depend only on the stable store action.
-    if (onMoveToGroup) void fetchTeams();
+    // Load teams only when the menu is actually opened and the store has
+    // none yet. The old mount-time fetch ran even while this bar rendered
+    // null (count === 0), so every roster mount issued the teams IPC pair
+    // twice - once here, once from PersonaGroupDropRail, which is the
+    // surface that owns keeping the list warm. `onMoveToGroup`'s identity
+    // changes with selection/teams, so it stays out of the deps (an earlier
+    // version looped: fetchTeams -> set({teams}) -> page rebuilds the
+    // callback -> effect -> fetchTeams -> ...).
+    if (menuOpen && onMoveToGroup && teams.length === 0) void fetchTeams();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTeams]);
+  }, [menuOpen, teams.length, fetchTeams]);
 
   // Close menu on outside click + Escape.
   useEffect(() => {
@@ -75,15 +82,29 @@ export function PersonaOverviewBatchBar({
 
   if (count === 0) return null;
 
-  const handleMove = async (homeTeamId: string | null) => {
-    if (!onMoveToGroup) return;
-    setMoving(true);
-    setMenuOpen(false);
+  const guarded = async (run: () => Promise<void> | void) => {
+    // The gate is the REF, not the state. `busy` is what paints `disabled` /
+    // `aria-busy`, but React commits it a render later, so two clicks dispatched
+    // before that render both close over `busy === false` and both run. Under
+    // Testing Library that never shows, because fireEvent flushes a render
+    // between clicks; in a browser a fast double-click is one frame. The ref is
+    // written synchronously at click time, which is the same thing AsyncButton
+    // does internally (AsyncButton.tsx:38-46).
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
     try {
-      await onMoveToGroup(homeTeamId);
+      await run();
     } finally {
-      setMoving(false);
+      inFlight.current = false;
+      setBusy(false);
     }
+  };
+
+  const handleMove = (homeTeamId: string | null) => {
+    if (!onMoveToGroup) return;
+    setMenuOpen(false);
+    void guarded(() => onMoveToGroup(homeTeamId));
   };
 
   return (
@@ -95,7 +116,7 @@ export function PersonaOverviewBatchBar({
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            disabled={moving}
+            disabled={busy}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 transition-colors disabled:opacity-50"
@@ -118,7 +139,7 @@ export function PersonaOverviewBatchBar({
                   key={g.id}
                   type="button"
                   role="menuitem"
-                  onClick={() => void handleMove(g.id)}
+                  onClick={() => handleMove(g.id)}
                   className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/60 transition-colors text-left"
                 >
                   <span
@@ -132,7 +153,7 @@ export function PersonaOverviewBatchBar({
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => void handleMove(null)}
+                onClick={() => handleMove(null)}
                 className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/60 transition-colors text-left"
               >
                 <span className="w-2 h-2 rounded-full bg-foreground/30 flex-shrink-0" />
@@ -142,32 +163,29 @@ export function PersonaOverviewBatchBar({
           )}
         </div>
       )}
-      {/* Archive and restore each walk the selection one IPC call at a time,
-          so `onClick={() => void fn()}` let a second click re-run the whole
-          batch. AsyncButton takes the promise-returning handler directly and
-          holds a synchronous in-flight guard, which is the same protection the
-          set-home-team trigger above already had. */}
       {onArchive && (
-        <AsyncButton
-          variant="accent"
-          accentColor="amber"
-          size="sm"
-          icon={<Archive className="w-3.5 h-3.5" />}
-          onClick={() => Promise.resolve(onArchive())}
+        <button
+          type="button"
+          onClick={() => void guarded(onArchive)}
+          disabled={busy}
+          aria-busy={busy}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition-colors disabled:opacity-50"
         >
+          <Archive className="w-3.5 h-3.5" />
           {t.agents.persona_list.batch_archive}
-        </AsyncButton>
+        </button>
       )}
       {onRestore && (
-        <AsyncButton
-          variant="accent"
-          accentColor="emerald"
-          size="sm"
-          icon={<ArchiveRestore className="w-3.5 h-3.5" />}
-          onClick={() => Promise.resolve(onRestore())}
+        <button
+          type="button"
+          onClick={() => void guarded(onRestore)}
+          disabled={busy}
+          aria-busy={busy}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors disabled:opacity-50"
         >
+          <ArchiveRestore className="w-3.5 h-3.5" />
           {t.agents.persona_list.batch_restore}
-        </AsyncButton>
+        </button>
       )}
       <button
         type="button"

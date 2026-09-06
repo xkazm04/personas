@@ -9,8 +9,9 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { DEFAULT_VIEW_CONFIG, hasActiveListFilter, type AgentListViewConfig } from './viewConfig';
+import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
 import { isPersonaBuilding } from './personaBuildStatus';
+import { rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -31,6 +32,15 @@ import { listDirectorScoreTrends } from '@/api/director';
 /** Top-level view of the All-Personas page: the persona list, or the
  *  effective-config resolution table (migrated from Settings → Config). */
 type PageTab = 'personas' | 'config';
+
+/** The grid's rendering of the shared accent rule (`rowAccentTone`). */
+const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
+  building: 'border-l-violet-400/60',
+  draft: 'border-l-zinc-400/40',
+  failing: 'border-l-red-400/60',
+  degraded: 'border-l-amber-400/60',
+  healthy: 'border-l-emerald-400/40',
+};
 
 export default function PersonaOverviewPage() {
   const { t, tx } = useTranslation();
@@ -143,10 +153,7 @@ export default function PersonaOverviewPage() {
           await applyPersonaOp(id, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
           ok += 1;
         } catch (err) {
-          // The toast reports HOW MANY failed; without this it never reported
-          // WHY any of them did. A bulk home-team move can fail N times in a
-          // row and leave no breadcrumb anywhere - the count is a symptom, not
-          // a diagnosis.
+          // The partial toast reports the count; the breadcrumb keeps the cause.
           silentCatch('PersonaOverviewPage:batchMoveToGroup')(err);
           failed += 1;
         }
@@ -211,11 +218,6 @@ export default function PersonaOverviewPage() {
       ? { ...prev, sortDirection: prev.sortDirection === 'asc' ? 'desc' : 'asc' }
       : { ...prev, sortKey: key, sortDirection: 'asc' });
   }, []);
-
-  // One definition of "is anything narrowing the roster", shared with the
-  // toolbar's chip strip. It counts `groupFilter`, which the filter pipeline
-  // has always applied and this check never asked about.
-  const hasActiveFilter = hasActiveListFilter(view, search, groupFilter);
 
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
@@ -311,8 +313,16 @@ export default function PersonaOverviewPage() {
 
         <DirectorPanel />
 
-        {filteredData.length === 0 && hasActiveFilter ? (
-          <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
+        {filteredData.length === 0 ? (
+          // Zero rows has two causes with two remedies: no personas at all
+          // (create one) vs. personas that the filters exclude (reset). An
+          // all-archived roster with no filter counts as the second - the
+          // archived toggle is the control that reveals them.
+          <PersonaOverviewEmptyState
+            reason={personas.length === 0 ? 'none' : 'filters'}
+            onResetFilters={handleResetFilters}
+            onCreate={() => setIsCreatingPersona(true)}
+          />
         ) : isMobile ? (
           <PersonaOverviewCardList
             data={filteredData}
@@ -331,13 +341,7 @@ export default function PersonaOverviewPage() {
             getRowKey={(p) => p.id}
             onRowClick={handleRowClick}
             isRowSelected={(p) => selectedIds.has(p.id)}
-            getRowAccent={(p) =>
-              isBuilding(p.id) ? 'border-l-violet-400/60'
-                : isDraft(p) ? 'border-l-zinc-400/40'
-                : healthMap[p.id]?.status === 'failing' ? 'border-l-red-400/60'
-                : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
-                : 'border-l-emerald-400/40'
-            }
+            getRowAccent={(p) => GRID_ACCENT_CLASS[rowAccentTone(isBuilding(p.id), isDraft(p), healthMap[p.id])]}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}
