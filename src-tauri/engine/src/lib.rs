@@ -151,6 +151,7 @@ pub mod safe_json;
 pub mod scope_enforcement;
 #[cfg(feature = "scraper")]
 pub mod scraper;
+pub mod serving_overrides;
 pub mod session_pool;
 pub mod shared_event_local_relay;
 pub mod skill_scratchpad;
