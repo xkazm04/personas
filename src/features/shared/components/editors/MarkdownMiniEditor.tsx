@@ -47,7 +47,7 @@ import {
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { DeferredMarkdown } from './DeferredMarkdown';
 import { toggleHeading, toggleList, toggleWrap, type EditResult, type ListKind } from './markdownEdits';
 
 /** Matches a list line and splits it into indent, marker, and content. */
@@ -291,7 +291,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
     if (readOnly) {
       return (
         <div data-testid={testId} aria-label={ariaLabel} className={containerClassName}>
-          <MarkdownRenderer content={value} className={previewClassName ?? className} />
+          <DeferredMarkdown content={value} className={previewClassName ?? className} />
         </div>
       );
     }
@@ -341,7 +341,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
         <div className={preview === 'split' ? 'flex-1 min-h-0 grid grid-cols-2 gap-4' : 'flex-1 min-h-0 flex flex-col gap-2'}>
           {textarea}
           {showPreview && (
-            <MarkdownRenderer
+            <DeferredMarkdown
               content={value}
               className={previewClassName ?? 'overflow-y-auto'}
             />
@@ -357,5 +357,5 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
  * bullet list looks identical here and in Athena's chat.
  */
 export function MarkdownMiniView({ content, className }: { content: string; className?: string }) {
-  return <MarkdownRenderer content={content} className={className} />;
+  return <DeferredMarkdown content={content} className={className} />;
 }

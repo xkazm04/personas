@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import NotepadShell from './NotepadShell';
 import { NotepadOverlayHostLazy, notepadHostImport } from './notepadHostChunk';
 import { startNotepadListeners } from './notepadStore';
+import { markNotepadPhase } from './notepadTiming';
 
 /**
  * App-wide host for the notepad overlay.
@@ -43,6 +44,34 @@ export default function NotepadLayer() {
     // main-thread time from the screen the operator IS looking at.
     return idlePrefetch([notepadHostImport], { initialDelayMs: 4000 });
   }, []);
+
+  // FREEZE THE BACKGROUND while the pad is up.
+  //
+  // Be precise about what this buys, because it is easy to oversell: it does
+  // NOT make the pad open faster — the open cost is the chunk and two IPC
+  // reads, and neither runs in the app underneath. What it removes is the work
+  // the covered app keeps doing WHILE the pad is up: layout, paint and style
+  // for a full screen of tiles, tickers and charts nobody can see, on a
+  // surface whose whole job is to stay responsive under a typing hand.
+  //
+  // `content-visibility: hidden` and not `display: none`: the subtree keeps
+  // its layout state, so closing the pad restores scroll positions and sizes
+  // instead of recomputing them. The title bar sits OUTSIDE #main-content and
+  // stays live (the window controls must work), and the pad itself is portaled
+  // to <body>, so neither is affected.
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+    if (!main || !open) return;
+    const previous = main.style.contentVisibility;
+    main.style.contentVisibility = 'hidden';
+    return () => {
+      main.style.contentVisibility = previous;
+    };
+  }, [open]);
+
+  if (open) markNotepadPhase('layer');
+
+  if (open) markNotepadPhase('layer');
 
   if (!open) return null;
 

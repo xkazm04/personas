@@ -1,8 +1,8 @@
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import type { NotePatch } from '../notepadStore';
-import type { NoteActions } from '../notepadActions';
+import type { NotePatch } from './notepadStore';
+import type { NoteActions } from './notepadActions';
 
 /**
  * One Athena suggestion attached to a note. Shape mirrors the card config in

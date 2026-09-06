@@ -3,9 +3,9 @@ import { FolderGit2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
 
-import { NoteHeader } from '../parts/NoteHeader';
-import { NoteStatusTimeline } from '../parts/NoteStatusTimeline';
-import { SuggestionSlot } from '../parts/SuggestionSlot';
+import { NoteHeader } from './parts/NoteHeader';
+import { NoteStatusTimeline } from './parts/NoteStatusTimeline';
+import { SuggestionSlot } from './parts/SuggestionSlot';
 import type { NoteBodyProps } from './types';
 
 /** Parse the sweeper's `result_json` for a human-readable summary. */

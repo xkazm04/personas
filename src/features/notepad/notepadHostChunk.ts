@@ -10,8 +10,17 @@
 import { lazyRetry } from '@/lib/lazyRetry';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { markNotepadPhase } from './notepadTiming';
+
 /** The one import specifier for the overlay host. */
-const importHost = () => import('./NotepadOverlayHost');
+const importHost = () =>
+  import('./NotepadOverlayHost').then((mod) => {
+    // Fires on the FIRST resolution only (the instrument ignores repeats), so
+    // a warm open records no chunk cost — which is the honest reading: there
+    // was none.
+    markNotepadPhase('chunk');
+    return mod;
+  });
 
 /** What `NotepadLayer` renders once the pad is raised. */
 export const NotepadOverlayHostLazy = lazyRetry(importHost);

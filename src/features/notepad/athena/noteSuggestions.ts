@@ -17,7 +17,7 @@ import { useMemo } from 'react';
 
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
-import type { NoteSuggestion } from '../variants/types';
+import type { NoteSuggestion } from '../types';
 
 /** The card kind the dispatcher emits for `show_note_suggestions`. */
 export const NOTE_SUGGESTIONS_KIND = 'note_suggestions';

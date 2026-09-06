@@ -10,7 +10,7 @@ import {
 } from '@/features/notepad/athena/noteSuggestions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { refetchNote } from '@/features/notepad/notepadStore';
-import type { NoteSuggestion } from '@/features/notepad/variants/types';
+import type { NoteSuggestion } from '@/features/notepad/types';
 import { toastCatch } from '@/lib/silentCatch';
 
 const KIND_ICON: Record<NoteSuggestion['kind'], typeof FilePlus2> = {

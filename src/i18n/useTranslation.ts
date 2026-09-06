@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import type { Translations } from './generated/types';
+import { SECTION_SHAPES } from './generated/sectionShapes';
 import { buildPseudoBundle, isPseudoActive } from './pseudoLocale';
 import {
   ALL_I18N_SECTIONS,
@@ -277,12 +278,32 @@ function deepMergeSection(base: unknown, override: unknown): unknown {
 // component with real data the instant the chunk resolves.
 const EMPTY_SECTION_FALLBACK: Record<string, never> = Object.freeze({});
 
+/**
+ * The fallback for a section whose chunk has not landed.
+ *
+ * An empty object kept a MISSING KEY from crashing — but only one level deep.
+ * `t.shared.foo` was `undefined` and rendered blank; `t.shared.sidebar_extra.x`
+ * read a property off that `undefined` and threw, which the always-mounted
+ * sidebar did on most cold starts. Measured 2026-09-06: 4,623 call sites in
+ * `src/` read two levels deep, so this was a landmine under most of the app,
+ * armed for exactly as long as a section chunk takes to arrive.
+ *
+ * `SECTION_SHAPES` is en.json with every string dropped, so the fallback has
+ * the section's GROUPS and a nested read lands on `undefined` — blank, not a
+ * TypeError — at any depth. It is generated beside the types and bundled
+ * eagerly (~10 KB), because a fallback that itself had to load could not
+ * cover the window it exists for.
+ */
+function shapeFor(section: TranslationSection): Record<string, unknown> {
+  return SECTION_SHAPES[section] ?? EMPTY_SECTION_FALLBACK;
+}
+
 function getResolvedSection(lang: Language, section: TranslationSection): unknown {
   const english = getEnglishSection(section);
-  if (lang === 'en') return english ?? EMPTY_SECTION_FALLBACK;
+  if (lang === 'en') return english ?? shapeFor(section);
 
   const localized = getCachedSection(lang, section);
-  if (localized === undefined) return english ?? EMPTY_SECTION_FALLBACK;
+  if (localized === undefined) return english ?? shapeFor(section);
   if (english === undefined) return localized;
 
   const cacheKey = `${lang}:${section}`;

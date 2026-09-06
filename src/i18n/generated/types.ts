@@ -21895,10 +21895,6 @@ export type Translations = {
     preview_title: string;
     preview_show: string;
     preview_hide: string;
-    variant_label: string;
-    variant_journal: string;
-    variant_workbench: string;
-    variant_split: string;
     suggestion_kind_section: string;
     suggestion_kind_edit: string;
     suggestion_kind_question: string;

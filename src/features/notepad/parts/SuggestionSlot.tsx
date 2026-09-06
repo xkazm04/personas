@@ -5,7 +5,7 @@ import { FilePlus2, HelpCircle, Pencil, Sparkles } from 'lucide-react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { DeferredMarkdown } from '@/features/shared/components/editors/DeferredMarkdown';
 import { resolveNoteSuggestion } from '@/api/notepad';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -13,7 +13,7 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { markRowResolvedLocally } from '../athena/noteSuggestions';
 import { refetchNote } from '../notepadStore';
-import type { NoteSuggestion } from '../variants/types';
+import type { NoteSuggestion } from '../types';
 
 interface SuggestionSlotProps {
   suggestions: NoteSuggestion[];
@@ -99,7 +99,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
       </div>
 
       {editing === null ? (
-        <MarkdownRenderer content={row.bodyMd} className="typo-caption text-foreground/85" />
+        <DeferredMarkdown content={row.bodyMd} className="typo-caption text-foreground/85" />
       ) : (
         <MarkdownMiniEditor
           value={editing}

@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { prefetchNotepadHost } from './notepadHostChunk';
+import { beginNotepadOpen } from './notepadTiming';
 
 /**
  * Footer toggle for the notepad layer.
@@ -25,7 +26,12 @@ export default function NotepadFooterIcon() {
   const setOpen = useSystemStore((s) => s.notepadSetOpen);
   const { t } = useTranslation();
 
-  const handleClick = useCallback(() => setOpen(!open), [open, setOpen]);
+  const handleClick = useCallback(() => {
+    // Before the state write, so the first number in the table is the cost of
+    // React reaching the layer at all — not of everything after it.
+    if (!open) beginNotepadOpen();
+    setOpen(!open);
+  }, [open, setOpen]);
   const label = open ? t.notepad.footer_close : t.notepad.footer_open;
 
   // The hint goes through the shared Tooltip rather than a native `title=`:

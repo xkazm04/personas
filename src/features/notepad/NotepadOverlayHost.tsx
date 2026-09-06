@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NotepadText, X } from 'lucide-react';
@@ -9,15 +9,26 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listProjects } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { lazyRetry } from '@/lib/lazyRetry';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { NoteTabStrip } from './NoteTabStrip';
-import { NoteArchiveModal } from './NoteArchiveModal';
+// Both of these are MODALS — nothing renders them until a menu item is
+// picked, so nothing should have to load them to open the pad. `BaseModal`
+// and the confirm dialog stay out of the pad's first paint entirely.
+const NoteArchiveModal = lazyRetry(() =>
+  import('./NoteArchiveModal').then((m) => ({ default: m.NoteArchiveModal })),
+);
+const ConfirmDialog = lazyRetry(() =>
+  import('@/features/shared/components/feedback/ConfirmDialog').then((m) => ({
+    default: m.ConfirmDialog,
+  })),
+);
 import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
 import { useNoteSuggestions } from './athena/noteSuggestions';
+import { markNotepadPhase } from './notepadTiming';
 import {
   archivedNotes as archivedNotesOf,
   atCap as atCapNow,
@@ -33,26 +44,7 @@ import {
   setProject,
 } from './notepadStore';
 import { useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes } from './useNotepad';
-import NoteBodyJournal from './variants/NoteBodyJournal';
-import NoteBodyWorkbench from './variants/NoteBodyWorkbench';
-import NoteBodySplitCanvas from './variants/NoteBodySplitCanvas';
-import type { NoteBodyProps } from './variants/types';
-
-// ---------------------------------------------------------------------------
-// THROWAWAY variant switcher (prototype discipline)
-//
-// Three directional layouts behind a strip of buttons. It exists to be USED —
-// switch between them on real notes, pick one, then delete the other two files
-// AND this block. Do not build on it: no persistence, no store key, no i18n
-// beyond the three names, and it is the only thing in the feature that knows
-// more than one variant exists.
-// ---------------------------------------------------------------------------
-type VariantId = 'journal' | 'workbench' | 'split';
-const VARIANTS: { id: VariantId; Body: (p: NoteBodyProps) => React.JSX.Element }[] = [
-  { id: 'journal', Body: NoteBodyJournal },
-  { id: 'workbench', Body: NoteBodyWorkbench },
-  { id: 'split', Body: NoteBodySplitCanvas },
-];
+import NoteBody from './NoteBody';
 
 /** Ghost tab strip — shown UNDER the permanent chrome while the first fetch is
  *  in flight and there is nothing to draw. Never a spinner: this is a surface
@@ -78,7 +70,12 @@ interface PendingDelete {
  * Full-screen layer above the footer, portaled to `<body>` so it shares a
  * stacking context with the footer (the same lesson `DesktopFooter` records:
  * a `z-index` inside a transformed subtree means nothing). Tab strip on top,
- * the chosen body variant in the middle, the dispatch bar at the bottom.
+ * the body in the middle, the dispatch bar at the bottom.
+ *
+ * The body is the WORKBENCH layout, chosen 2026-09-06 out of the three the
+ * prototype round put behind a switcher (Journal, Workbench, Split canvas).
+ * The other two and the switcher were deleted in the same commit that picked
+ * it — a surviving switcher is a decision nobody made.
  */
 export default function NotepadOverlayHost() {
   const { t, tx } = useTranslation();
@@ -92,7 +89,6 @@ export default function NotepadOverlayHost() {
   const saveStates = useNotepadSaveStates();
   const { loading, loaded } = useNotepadStatus();
 
-  const [variant, setVariant] = useState<VariantId>('workbench');
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
@@ -101,10 +97,16 @@ export default function NotepadOverlayHost() {
   // First open fetches; later opens paint the notes already in memory and
   // refresh underneath them — a re-open must never re-ghost (loading law 1).
   useEffect(() => {
-    void load();
+    markNotepadPhase('mount');
+    // One frame after mount is the first moment the operator could have SEEN
+    // the real pad; everything before it is work they were waiting through.
+    const raf = requestAnimationFrame(() => markNotepadPhase('paint'));
+    void load().finally(() => markNotepadPhase('notes'));
     listProjects()
       .then(setProjects)
-      .catch(silentCatch('notepad projects'));
+      .catch(silentCatch('notepad projects'))
+      .finally(() => markNotepadPhase('projects'));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const close = useCallback(() => {
@@ -191,7 +193,6 @@ export default function NotepadOverlayHost() {
     setPendingDelete(null);
   }, [pendingDelete]);
 
-  const Body = VARIANTS.find((v) => v.id === variant)?.Body ?? NoteBodyWorkbench;
   const atCap = atCapNow();
   const showGhost = loading && notes.length === 0;
   const showEmpty = loaded && !loading && notes.length === 0;
@@ -218,30 +219,6 @@ export default function NotepadOverlayHost() {
           <NotepadText className="w-4 h-4" aria-hidden />
           {t.notepad.title}
         </span>
-
-        {/* THROWAWAY — see the block comment at the top of this file. */}
-        <div className="flex items-center gap-1" aria-label={t.notepad.variant_label}>
-          {VARIANTS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setVariant(v.id)}
-              aria-pressed={variant === v.id}
-              data-testid={`notepad-variant-${v.id}`}
-              className={`h-7 px-2.5 rounded-input typo-caption transition-colors focus-ring ${
-                variant === v.id
-                  ? 'bg-primary/10 text-foreground ring-1 ring-primary/25'
-                  : 'text-foreground/55 hover:text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              {v.id === 'journal'
-                ? t.notepad.variant_journal
-                : v.id === 'workbench'
-                  ? t.notepad.variant_workbench
-                  : t.notepad.variant_split}
-            </button>
-          ))}
-        </div>
 
         <button
           type="button"
@@ -274,19 +251,19 @@ export default function NotepadOverlayHost() {
           onOpenArchive={() => setArchiveOpen(true)}
           panel={
             active ? (
-              // Keyed on the note AND the layout, so switching either crosses
-              // a fade rather than snapping. Never keyed on the note's TEXT —
-              // that would re-mount the editor on every keystroke.
+              // Keyed on the note, so switching notes crosses a fade rather
+              // than snapping. Never keyed on the note's TEXT — that would
+              // re-mount the editor on every keystroke.
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
-                  key={`${variant}:${active.id}`}
+                  key={active.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: reduceMotion ? 0 : 0.12, ease: 'easeOut' }}
                   className="flex-1 min-h-0 flex flex-col"
                 >
-                  <Body
+                  <NoteBody
                     note={active}
                     onPatch={(patch) => patchNote(active.id, patch)}
                     readOnly={active.status !== 'draft'}
@@ -325,6 +302,7 @@ export default function NotepadOverlayHost() {
       )}
 
       {archiveOpen && (
+        <Suspense fallback={null}>
         <NoteArchiveModal
           notes={archived.length > 0 ? archived : archivedNotesOf()}
           atCap={atCap}
@@ -334,9 +312,11 @@ export default function NotepadOverlayHost() {
           onDelete={(note) => handleDelete(note, true)}
           onClose={() => setArchiveOpen(false)}
         />
+        </Suspense>
       )}
 
       {pendingDelete && (
+        <Suspense fallback={null}>
         <ConfirmDialog
           danger
           title={
@@ -356,6 +336,7 @@ export default function NotepadOverlayHost() {
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
         />
+        </Suspense>
       )}
     </motion.div>,
     document.body,
