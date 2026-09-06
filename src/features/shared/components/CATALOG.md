@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**130 reusable components** live under `src/features/shared/components/`.
+**132 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -77,6 +77,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
+| `DeferredMarkdown` | fallback. |
 | `JsonEditor` | JSON editing/validation editor. |
 | `MarkdownMiniEditor` | _(add a `@catalog` tag)_ |
 | `MarkdownRenderer` | Safe markdown → React renderer (sanitized). |
@@ -215,4 +216,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_130 components, 45 without a `@catalog` description._
+_132 components, 45 without a `@catalog` description._

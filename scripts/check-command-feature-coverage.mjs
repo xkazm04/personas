@@ -284,7 +284,15 @@ export function discoverInvokedCommands(srcRoot = FRONTEND_SRC) {
 // the check
 // ---------------------------------------------------------------------------
 
-/** Build variants, read from the tauri config files rather than hard-coded. */
+/**
+ * Build variants, read from the tauri config files rather than hard-coded.
+ *
+ * Refuses an empty enumeration for the same reason the registration and
+ * invocation floors exist: every per-variant check below iterates this list,
+ * so zero variants makes every exposure vanish and prints "0 build variant(s)"
+ * on the way to a clean exit. A renamed directory or a changed config
+ * filename would look exactly like a tree with nothing to report.
+ */
 function discoverVariants() {
   const out = [];
   for (const f of readdirSync(resolve(ROOT, "src-tauri"))) {
@@ -293,6 +301,16 @@ function discoverVariants() {
     const features = conf?.build?.features ?? conf?.features ?? [];
     if (!Array.isArray(features)) continue;
     out.push({ conf: f, declared: features });
+  }
+  if (out.length === 0) {
+    console.error(
+      "\nPartial scan: 0 build variants discovered in src-tauri/.\n" +
+        "Refusing to report -- every per-variant check iterates this list, so an\n" +
+        "empty enumeration exits clean while checking nothing. A renamed directory\n" +
+        "or a changed config filename looks exactly like a tree with nothing to\n" +
+        "report. Fix the walk.",
+    );
+    process.exit(1);
   }
   return out.sort((a, b) => a.conf.localeCompare(b.conf));
 }

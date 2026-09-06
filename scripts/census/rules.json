@@ -4807,6 +4807,10 @@
         {
           "path": "scripts/check-event-registry.mjs",
           "reason": "the enumeration IS guarded, two statements past this pattern's window: the call-site scan counts every listen()/emit() it visits and exits 1 with 'The scanner is broken, not the code' when callSites === 0, so 'looked at nothing' cannot report clean. The rule's proxy keys on the guard sitting beside the readdir, and here it sits after the loop because the honest denominator is call sites, not files"
+        },
+        {
+          "path": "scripts/check-command-feature-coverage.mjs",
+          "reason": "the enumeration IS guarded, but past this pattern's 220-char window: discoverVariants() refuses out.length === 0 and exits 1, and the two upstream walks are floored by MIN_REGISTRATIONS/MIN_INVOCATIONS, so 'looked at nothing' cannot report clean. The process.exit(1) sits 410 chars after the guard because the refusal message names what an empty walk would hide; shortening it to fit the window would trade a real explanation for a regex match. Same shape as the check-event-registry.mjs entry above"
         }
       ]
     },
