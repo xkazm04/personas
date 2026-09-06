@@ -2546,7 +2546,21 @@
     "suspend": "স্থগিত করুন",
     "transition_unavailable_hint": "একটি চার্টার সক্রিয় বা স্থগিত করা এখনও সম্ভব নয়। অবসরে পাঠানো সম্ভব।",
     "trigger_attention": "অ্যাটেনশন লুপ",
-    "trigger_every_minutes": "প্রতি {minutes} মিনিট"
+    "trigger_every_minutes": "প্রতি {minutes} মিনিট",
+    "activity_kind_act": "কার্য",
+    "activity_kind_decide": "সিদ্ধান্ত",
+    "activity_kind_deliver": "ডেলিভারি",
+    "activity_kind_observe": "পর্যবেক্ষণ",
+    "recipe_card_title": "রেসিপি",
+    "recipe_connector_capability_unverified": "বাউন্ড কানেক্টরটি ধরনের সাথে মিলে যায়। এই দায়িত্বের যা প্রয়োজন তা এটি করতে পারে কিনা, তা যাচাই করা হয়নি: ক্যাটালগে সক্ষমতা ঘোষণা করা নেই।",
+    "recipe_connector_unbound": "বাউন্ড নয়",
+    "recipe_connector_unbound_hint": "এই দায়িত্বের নাগালের মধ্যে এখনও সেই কানেক্টর ধরন কভার করার মতো কিছু নেই। কানেক্টর মাত্রায় একটি বাইন্ড করুন।",
+    "recipe_connector_uncovered": "এটি কভার করার মতো কোনো কানেক্টর নেই",
+    "recipe_connector_uncovered_hint": "ক্যাটালগে সেই বিভাগের কোনো কানেক্টর নেই, তাই বাইন্ড করার মতো কিছু নেই। এই দায়িত্বের জন্য ক্যাটালগে একটি কানেক্টর যোগ করা প্রয়োজন, অথবা ভিন্ন ধরনের রেসিপি প্রয়োজন।",
+    "recipe_connectors_label": "কানেক্টর",
+    "recipe_dependencies_label": "নির্ভরতা",
+    "recipe_shape_hint": "এই কাজ ক্রমানুসারে যে ধরনের কার্যক্রমের মধ্য দিয়ে যায়। এটি কোনো রানবুক নয়: এতে কোনো শাখা নেই।",
+    "recipe_shape_label": "কাজের রূপরেখা"
   },
   "role_card": {
     "assign": "নির্ধারণ করুন",

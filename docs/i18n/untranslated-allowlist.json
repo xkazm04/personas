@@ -787,6 +787,7 @@
   "de:agents.overview_columns.persona",
   "de:agents.overview_columns.status",
   "de:agents.persona_list.col_persona",
+  "de:agents.responsibilities.recipe_connectors_label",
   "de:agents.settings_status.label_icon",
   "de:agents.settings_status.label_name",
   "de:agents.template_picker.category_devops",

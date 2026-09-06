@@ -614,7 +614,12 @@ pub fn instant_adopt_template_inner(
     // function refuses elsewhere, so a mint failure fails the adoption and
     // removes the just-created persona instead of leaving a ghost.
     if let Some(pid) = created_persona_id.as_deref() {
-        match mint_charters_from_use_cases(&state.db, pid, &raw_use_cases) {
+        // No `AdoptionAnswers` on this path by construction: instant adopt IS
+        // "adopt with defaults" and never runs the questionnaire, so it has no
+        // credential bindings to resolve a v3 recipe's connector TYPES
+        // through. Those types land on `spec.connector_types` unbound, which
+        // is the honest state — the alternative is guessing an allowlist.
+        match mint_charters_from_use_cases(&state.db, pid, &raw_use_cases, None) {
             Ok(minted) => {
                 // Remap the freshly created trigger rows onto their charter
                 // ids: the drafts carried the hoisted `use_case_id` tag and
@@ -2333,7 +2338,13 @@ fn synthesize_system_prompt_markdown(design: &serde_json::Value) -> Option<Strin
 
 /// Map one use-case-shaped JSON value into the charter create input.
 ///
-/// Two input shapes, detected structurally:
+/// Three input shapes, detected structurally:
+/// - **v3 recipe payload** (`RecipeSpec` — has an `activities` array and an
+///   OBJECT `description`): the recipe is craftsman knowledge, so this is the
+///   adoption crossing, not a copy. Connector TYPES resolve to bound instances
+///   through `answers.credential_bindings`; the recommended trigger becomes a
+///   cadence; activities, dependencies and the recipe pointer are carried onto
+///   the charter's spec. See [`charter_input_from_recipe`].
 /// - **v2 responsibility payload** (transformed recipe seeds — has a
 ///   `procedure` string): deserialized directly; the camelCase keys mirror
 ///   `CreatePersonaResponsibilityInput`.
@@ -2358,10 +2369,26 @@ fn synthesize_system_prompt_markdown(design: &serde_json::Value) -> Option<Strin
 pub(crate) fn map_use_case_to_charter_input(
     persona_id: &str,
     uc: &serde_json::Value,
+    answers: Option<&crate::engine::adoption_answers::AdoptionAnswers>,
 ) -> crate::db::models::CreatePersonaResponsibilityInput {
     use crate::db::models::CreatePersonaResponsibilityInput;
 
     let uc_id = uc.get("id").and_then(|v| v.as_str()).map(str::to_string);
+
+    // v3 recipe payload: the adoption crossing. A payload that fails typed
+    // deserialization falls through to the shapes below rather than losing the
+    // capability entirely.
+    if crate::db::models::RecipeSpec::looks_like_v3(uc) {
+        match serde_json::from_value::<crate::db::models::RecipeSpec>(uc.clone()) {
+            Ok(recipe) => return charter_input_from_recipe(persona_id, &recipe, answers),
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "charter mint: v3 recipe payload failed typed deserialization — using the legacy mapper"
+                );
+            }
+        }
+    }
 
     // v2 payload: inject personaId and let serde do the field mapping.
     // A v2 blob that fails to deserialize falls through to the legacy
@@ -2497,7 +2524,6 @@ pub(crate) fn map_use_case_to_charter_input(
         source_recipe_version: str_of("source_recipe_version"),
         migrated_from_use_case_id: uc_id,
         memory_policy: non_null("memory_policy"),
-        suggested_trigger: non_null("suggested_trigger"),
         // Carried, not dropped. A charter minted here has no use case behind
         // it, so anything the prompt path cannot read off `spec` is simply
         // gone — and `review_policy` decides whether outputs reach a human
@@ -2521,11 +2547,17 @@ pub(crate) fn map_use_case_to_charter_input(
             })
             .filter(|v| !v.is_empty()),
         model_rationale: str_of("model_rationale").or_else(|| str_of("modelRationale")),
-        use_case_flow: non_null("use_case_flow").or_else(|| non_null("useCaseFlow")),
         enabled_by_default: uc
             .get("enabled_by_default")
             .or_else(|| uc.get("enabledByDefault"))
             .and_then(|v| v.as_bool()),
+        // Recipe v3 provenance — a legacy use case has none of it.
+        recipe_ref: None,
+        description: None,
+        activities: None,
+        connector_types: None,
+        connector_bindings: None,
+        dependencies: None,
     };
 
     CreatePersonaResponsibilityInput {
@@ -2546,6 +2578,138 @@ pub(crate) fn map_use_case_to_charter_input(
         connectors,
         procedure,
         spec,
+    }
+}
+
+/// Mint a charter from a v3 [`RecipeSpec`] — the adoption crossing from
+/// craftsman knowledge to one installation's standing charter.
+///
+/// What crosses, and what does NOT:
+///
+/// * **connector ROLES -> bound instances.** The recipe declares roles over
+///   catalog categories (a role-less recipe gets one role per type, named
+///   after the type — `RecipeSpec::effective_roles`); the charter holds
+///   concrete connector ids. The crossing is `answers.credential_bindings`,
+///   resolved by `personas_engine::adoption_answers::resolve_connector_roles`.
+///   A role nobody bound binds NOTHING: the charter's `connectors` is a
+///   runtime allowlist, so guessing an entry would widen a persona's reach on
+///   a coin flip. The unbound role is kept at `spec.connector_bindings` with a
+///   null connector, which is how the UI tells "still needs an answer" apart
+///   from "no allowlist"; `spec.connector_types` keeps the flat declared list
+///   beside it.
+/// * **recommended trigger -> cadence.** See [`cadence_from_recommendation`].
+/// * **dependencies are RECORDED, never installed.** They land on
+///   `spec.dependencies`. Installing them is a privileged act with a blast
+///   radius (a package manager, a PATH binary) and it needs an operator gate
+///   and a verification step that do not exist yet; the hook belongs in the
+///   post-mint section of `adopt_template_instant` / `promote_build_draft`,
+///   beside `wire_event_subscriptions_from_use_cases`, once that gate exists.
+/// * **`guidance` becomes `procedure`.** The recipe's judgment prose IS how
+///   the persona carries the charter out; the four-field description stays
+///   structured at `spec.description` for the prompt renderer.
+pub(crate) fn charter_input_from_recipe(
+    persona_id: &str,
+    recipe: &crate::db::models::RecipeSpec,
+    answers: Option<&crate::engine::adoption_answers::AdoptionAnswers>,
+) -> crate::db::models::CreatePersonaResponsibilityInput {
+    use crate::db::models::{CreatePersonaResponsibilityInput, ResponsibilitySpec};
+
+    let empty_bindings = std::collections::HashMap::new();
+    let bindings = answers
+        .map(|a| &a.credential_bindings)
+        .unwrap_or(&empty_bindings);
+    let roles = recipe.effective_roles();
+    let resolved = crate::engine::adoption_answers::resolve_connector_roles(&roles, bindings);
+    let unresolved = resolved.unresolved_roles();
+    if !unresolved.is_empty() {
+        tracing::info!(
+            recipe = %recipe.slug,
+            unresolved = %unresolved.join(", "),
+            "charter mint: recipe connector roles with no credential binding — charter minted without them"
+        );
+    }
+
+    // The flat declared list, whole (minus the entries that are never a
+    // question). `connectors` is the bound subset and `connector_bindings`
+    // says which role got which.
+    let declared_types: Vec<String> = recipe
+        .connector_types
+        .iter()
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty() && t != "desktop")
+        .collect();
+
+    let title = if recipe.title.trim().is_empty() {
+        "Untitled recipe".to_string()
+    } else {
+        recipe.title.trim().to_string()
+    };
+
+    let spec = ResponsibilitySpec {
+        input_schema: recipe.input_schema.clone(),
+        source_recipe_id: Some(recipe.id.clone()),
+        source_recipe_version: Some(recipe.version.clone()).filter(|v| !v.is_empty()),
+        // The provenance pointer the trigger remap and
+        // `retire_use_case_born_charters` key on — same contract as the v1/v2
+        // shapes, stamped from whatever this payload calls itself.
+        migrated_from_use_case_id: Some(recipe.id.clone()).filter(|id| !id.is_empty()),
+        recipe_ref: Some(recipe.recipe_ref()),
+        description: Some(recipe.description.clone()),
+        // `None` where the recipe declared nothing, so the wire says ABSENT
+        // rather than "adopted from a recipe that wanted zero of these".
+        activities: Some(recipe.activities.clone()).filter(|a| !a.is_empty()),
+        connector_types: Some(declared_types).filter(|t| !t.is_empty()),
+        connector_bindings: Some(resolved.bindings.clone()).filter(|b| !b.is_empty()),
+        dependencies: Some(recipe.dependencies.clone()).filter(|d| !d.is_empty()),
+        ..Default::default()
+    };
+
+    CreatePersonaResponsibilityInput {
+        persona_id: persona_id.to_string(),
+        title,
+        domain: Some(recipe.domain.trim().to_string()).filter(|d| !d.is_empty()),
+        outcomes: recipe.outcomes.clone(),
+        objectives: Vec::new(),
+        scope_rung: 0,
+        refusal_classes: Vec::new(),
+        approval_gates: Vec::new(),
+        owner: String::new(),
+        cadence: cadence_from_recommendation(&recipe.recommended_trigger.kind),
+        budget_monthly_usd: None,
+        tenure: Default::default(),
+        status: None,
+        project_id: None,
+        connectors: resolved.bound_connectors(),
+        procedure: recipe.guidance.trim().to_string(),
+        spec,
+    }
+}
+
+/// A v3 recipe's RECOMMENDED trigger kind as a charter cadence.
+///
+/// * `event` and `time` set nothing. Both name a trigger the adopter binds as
+///   a `persona_triggers` row (an event subscription, a schedule); a recipe
+///   carries no event name and no cron, so there is nothing here to write and
+///   inventing one would be fabrication.
+/// * `self_paced` turns the charter's attention loop ON with NO interval,
+///   which is a real firing configuration and not a dead switch: the attention
+///   tick takes the max declared `intervalMinutes` across the persona's
+///   charters and falls back to `DEFAULT_INTERVAL_MINUTES` (30) when none
+///   declares one (`engine/subscription/attention.rs`), and
+///   `responsibilities::list_active_with_attention` selects on
+///   `cadence.attentionEnabled = 1`.
+///
+/// Note what this does NOT mean: the attention loop itself is gated by the
+/// `autonomous_attention_loop` autonomy action, which ships DEFAULT-OFF. A
+/// self-paced charter is enrolled and idle until the operator turns that on.
+/// That is the point of self-pacing (the work has no external clock) and it is
+/// why enabling it here is safe; the legacy `cadence_hint_from_trigger` path
+/// below still refuses to enrol anything, because a legacy `suggested_trigger`
+/// is an assertion about a schedule, not a request to self-pace.
+fn cadence_from_recommendation(kind: &str) -> crate::db::models::ResponsibilityCadence {
+    crate::db::models::ResponsibilityCadence {
+        attention_enabled: kind == "self_paced",
+        ..Default::default()
     }
 }
 
@@ -2607,10 +2771,11 @@ pub(crate) fn mint_charters_from_use_cases(
     pool: &crate::db::DbPool,
     persona_id: &str,
     use_cases: &[serde_json::Value],
+    answers: Option<&crate::engine::adoption_answers::AdoptionAnswers>,
 ) -> Result<Vec<crate::db::models::PersonaResponsibility>, AppError> {
     let mut minted: Vec<crate::db::models::PersonaResponsibility> = Vec::new();
     for uc in use_cases {
-        let input = map_use_case_to_charter_input(persona_id, uc);
+        let input = map_use_case_to_charter_input(persona_id, uc, answers);
         match personas_engine::responsibility::create_from_input(pool, &input) {
             Ok(row) => minted.push(row),
             Err(e) => {
@@ -2710,7 +2875,7 @@ mod charter_mint_tests {
             "source_recipe_version": "1.0.0",
             "suggested_trigger": {"trigger_type": "polling", "config": {"cron": "*/10 * * * *"}},
         });
-        let input = map_use_case_to_charter_input("persona-1", &uc);
+        let input = map_use_case_to_charter_input("persona-1", &uc, None);
         assert_eq!(input.persona_id, "persona-1");
         assert_eq!(input.title, "Triage");
         assert_eq!(input.domain.as_deref(), Some("workflow"));
@@ -2758,7 +2923,7 @@ mod charter_mint_tests {
             "error_policy": {"incident": true, "lab": false, "escalate_after": 3},
             "error_handling": "legacy prose that must not double-land",
         });
-        let input = map_use_case_to_charter_input("p", &uc);
+        let input = map_use_case_to_charter_input("p", &uc, None);
         let policy = input.spec.error_policy.expect("typed policy mapped");
         assert_eq!(policy.incident, Some(true));
         assert_eq!(policy.lab, Some(false));
@@ -2789,7 +2954,7 @@ mod charter_mint_tests {
                 "errorHandling": "prose kept in the seed, no typed slot yet"
             }
         });
-        let input = map_use_case_to_charter_input("p2", &uc);
+        let input = map_use_case_to_charter_input("p2", &uc, None);
         assert_eq!(input.persona_id, "p2");
         assert_eq!(input.title, "Weekly Report");
         assert_eq!(input.domain.as_deref(), Some("reporting"));
@@ -2808,10 +2973,216 @@ mod charter_mint_tests {
         );
     }
 
+    // -- Recipe v3 adoption crossing ---------------------------------------
+
+    fn v3_recipe() -> serde_json::Value {
+        json!({
+            "id": "uc_review",
+            "slug": "web-analytics-performance-review",
+            "title": "Web analytics performance review",
+            "version": "0.1.0",
+            "status": "seed",
+            "path": "sales_marketing/web-analytics",
+            "domain": "sales_marketing",
+            "description": {
+                "need": "Content decisions drift when nobody reads the numbers.",
+                "input": "Engagement for posts inside the review window.",
+                "coreAction": "Compare against rolling baselines and say what changed.",
+                "output": "A shortlist of spikes and underperformers, with the baselines updated."
+            },
+            "activities": [
+                {"id": "collect", "label": "Pull engagement for the window", "kind": "observe"},
+                {"id": "compare", "label": "Compare against rolling baselines", "kind": "decide"},
+                {"id": "flag", "label": "Flag spikes and underperformers", "kind": "act"}
+            ],
+            "outcomes": [{"id": "o1", "statement": "Nobody is guessing about reach.",
+                          "successCriteria": ["Every flagged post names its baseline"]}],
+            "guidance": "Weigh the platform, not the raw number.",
+            "connectorTypes": ["analytics", "social"],
+            "recommendedTrigger": {"kind": "self_paced", "rationale": "The work follows the numbers."},
+            "dependencies": ["ffmpeg"],
+            "inputSchema": [{"name": "window_days", "type": "number"}]
+        })
+    }
+
+    fn answers_with(pairs: &[(&str, &str)]) -> crate::engine::adoption_answers::AdoptionAnswers {
+        crate::engine::adoption_answers::AdoptionAnswers {
+            answers: std::collections::HashMap::new(),
+            questions: Vec::new(),
+            credential_bindings: pairs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn a_v3_recipe_mints_a_charter_with_its_provenance_and_shape() {
+        let uc = v3_recipe();
+        let answers = answers_with(&[("analytics", "plausible"), ("social", "linkedin")]);
+        let input = map_use_case_to_charter_input("p3", &uc, Some(&answers));
+
+        assert_eq!(input.title, "Web analytics performance review");
+        assert_eq!(input.domain.as_deref(), Some("sales_marketing"));
+        assert_eq!(
+            input.procedure, "Weigh the platform, not the raw number.",
+            "the recipe's guidance IS how the charter is carried out"
+        );
+        assert_eq!(input.outcomes.len(), 1);
+        assert_eq!(
+            input.spec.activities.as_deref().unwrap_or_default().len(),
+            3
+        );
+        assert_eq!(
+            input.spec.dependencies.as_deref(),
+            Some(["ffmpeg".to_string()].as_slice())
+        );
+        assert_eq!(
+            input.spec.recipe_ref.as_ref().map(|r| r.slug.as_str()),
+            Some("web-analytics-performance-review")
+        );
+        assert_eq!(
+            input
+                .spec
+                .description
+                .as_ref()
+                .map(|d| d.core_action.as_str()),
+            Some("Compare against rolling baselines and say what changed.")
+        );
+        assert!(input.spec.input_schema.is_some());
+        // Provenance stays the payload's own id, so the trigger remap and the
+        // retire sweep keep working unchanged.
+        assert_eq!(
+            input.spec.migrated_from_use_case_id.as_deref(),
+            Some("uc_review")
+        );
+    }
+
+    #[test]
+    fn v3_connector_types_bind_through_the_credential_bindings_seam() {
+        let uc = v3_recipe();
+        let answers = answers_with(&[("analytics", "plausible"), ("social", "linkedin")]);
+        let input = map_use_case_to_charter_input("p3", &uc, Some(&answers));
+        assert_eq!(
+            input.connectors,
+            vec!["plausible".to_string(), "linkedin".to_string()]
+        );
+        assert_eq!(
+            input.spec.connector_types.as_deref(),
+            Some(["analytics".to_string(), "social".to_string()].as_slice()),
+            "the declared list is kept whole beside the bound one"
+        );
+        let bindings = input.spec.connector_bindings.as_deref().unwrap_or_default();
+        assert_eq!(bindings.len(), 2);
+        assert!(bindings.iter().all(|b| b.connector.is_some()));
+    }
+
+    #[test]
+    fn an_unbound_connector_type_leaves_the_allowlist_empty_and_says_so() {
+        let uc = v3_recipe();
+        // Instant adopt: no questionnaire, so no bindings at all.
+        let input = map_use_case_to_charter_input("p3", &uc, None);
+        assert!(
+            input.connectors.is_empty(),
+            "nothing bound means nothing on the allowlist — never a guess"
+        );
+        assert_eq!(
+            input
+                .spec
+                .connector_types
+                .as_deref()
+                .unwrap_or_default()
+                .len(),
+            2
+        );
+        let unbound: Vec<&str> = input
+            .spec
+            .connector_bindings
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .filter(|b| b.connector.is_none())
+            .map(|b| b.role.as_str())
+            .collect();
+        assert_eq!(
+            unbound,
+            vec!["analytics", "social"],
+            "the unanswered roles survive so the UI can ask"
+        );
+    }
+
+    /// The role amendment end to end: two connectors of one type, bound apart.
+    #[test]
+    fn v3_connector_roles_bind_per_role() {
+        let mut uc = v3_recipe();
+        uc["connectorTypes"] = json!(["source_control"]);
+        uc["connectorRoles"] = json!([
+            {"role": "local_checkout", "type": "source_control", "note": "the tree under review"},
+            {"role": "review_surface", "type": "source_control", "note": "where the review lands"}
+        ]);
+        let answers = answers_with(&[
+            ("local_checkout", "local_drive"),
+            ("review_surface", "github"),
+        ]);
+        let input = map_use_case_to_charter_input("p3", &uc, Some(&answers));
+
+        let bindings = input.spec.connector_bindings.as_deref().unwrap_or_default();
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(bindings[0].role, "local_checkout");
+        assert_eq!(bindings[0].connector.as_deref(), Some("local_drive"));
+        assert_eq!(bindings[1].role, "review_surface");
+        assert_eq!(bindings[1].connector.as_deref(), Some("github"));
+        assert_eq!(
+            input.connectors,
+            vec!["local_drive".to_string(), "github".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_self_paced_recipe_enables_attention_with_no_interval() {
+        let input = map_use_case_to_charter_input("p3", &v3_recipe(), None);
+        assert!(input.cadence.attention_enabled);
+        assert_eq!(
+            input.cadence.interval_minutes, None,
+            "a recipe carries no interval; the tick's own default governs"
+        );
+    }
+
+    #[test]
+    fn event_and_time_recommendations_leave_the_attention_loop_alone() {
+        for kind in ["event", "time"] {
+            let mut uc = v3_recipe();
+            uc["recommendedTrigger"] = json!({"kind": kind, "rationale": "r"});
+            let input = map_use_case_to_charter_input("p3", &uc, None);
+            assert!(
+                !input.cadence.attention_enabled,
+                "{kind} names a trigger the adopter binds, not a self-paced charter"
+            );
+            assert_eq!(input.cadence.interval_minutes, None);
+        }
+    }
+
+    /// A v2 charter payload must NOT be mistaken for a v3 recipe: it carries a
+    /// `procedure` string and a STRING `description`, never an object one.
+    #[test]
+    fn a_v2_payload_still_takes_the_v2_branch() {
+        let uc = json!({
+            "id": "uc_report", "title": "Report", "procedure": "Do it.",
+            "domain": "research", "spec": {"sourceRecipeId": "recipe-9"}
+        });
+        let input = map_use_case_to_charter_input("p", &uc, None);
+        assert_eq!(input.procedure, "Do it.");
+        assert!(input.spec.recipe_ref.is_none());
+        assert!(
+            input.spec.activities.is_none(),
+            "absent, never an empty array"
+        );
+    }
+
     #[test]
     fn disabled_capability_mints_a_suspended_charter() {
         let uc = json!({"id": "uc_off", "title": "Off", "description": "d", "enabled": false});
-        let input = map_use_case_to_charter_input("p", &uc);
+        let input = map_use_case_to_charter_input("p", &uc, None);
         assert_eq!(input.status.as_deref(), Some("suspended"));
     }
 
@@ -2825,7 +3196,7 @@ mod charter_mint_tests {
             "id": "uc_m", "title": "M", "description": "d",
             "model_override": {"model": "tier-from-profile-object"}
         });
-        let input = map_use_case_to_charter_input("p", &uc);
+        let input = map_use_case_to_charter_input("p", &uc, None);
         assert_eq!(
             input.spec.model_override.as_deref(),
             Some("tier-from-profile-object")

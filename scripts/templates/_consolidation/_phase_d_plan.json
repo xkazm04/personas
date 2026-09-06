@@ -1,0 +1,409 @@
+{
+ "lanes_done": [
+  "L1",
+  "L2",
+  "L3",
+  "L4"
+ ],
+ "standing_merges": {
+  "b80fc21f-1b22-5355-879e-2fed6c38173d": {
+   "into": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+   "reason": "Its own description says it is 'everything the weekly audit does, plus a cross-article contradiction pass' - not a distinct job, a deeper pa",
+   "from_slice": "automation.json"
+  },
+  "bbace830-43f9-5583-b675-a71aa969127d": {
+   "into": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+   "reason": "Identical job to uc_triage (8751850c): a human accepts or rejects a candidate before it proceeds toward implementation, and the decision tra",
+   "from_slice": "reporting.json"
+  },
+  "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1": {
+   "into": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+   "reason": "Same job as uc_triage (8751850c) and the harvester triage (bbace830): a human accept/reject gate before a candidate proceeds to implementati",
+   "from_slice": "reporting.json"
+  },
+  "fb223f0f-dd00-5f3e-bbec-4ba12a58b430": {
+   "into": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+   "reason": "Both recipes exist to turn a piece of content into a well-summarized, cross-referenced knowledge base page. Feed Scanning's own description ",
+   "from_slice": "research.json"
+  }
+ },
+ "reviewer_flags": [
+  {
+   "lane": "L1",
+   "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
+   "title": "Codebase static analysis sweep",
+   "note": "Superseded by two responsibilities (convert_B, App Master): 'Dead and duplicated code does not accumulate' and 'Module boundaries hold'. Both are carried here as the two outcomes, with their guidance "
+  },
+  {
+   "lane": "L1",
+   "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
+   "title": "Code change implementation and review follow-through",
+   "note": "Superseded by two responsibilities (convert_A, App Master): 'Implementing an accepted backlog item' and 'Carrying a change through review'. Both are carried here, since the v2 recipe is explicitly the"
+  },
+  {
+   "lane": "L1",
+   "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+   "title": "Pull request test verdict",
+   "note": "Superseded by 'Verdict on a change before it merges' (convert_B, App Master), whose outcome, guidance, event trigger and personalization needs are authoritative and are broader than the v2 recipe's Gi"
+  },
+  {
+   "lane": "L1",
+   "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
+   "title": "Release candidate review and approval",
+   "note": "Superseded by 'Deciding when merged work becomes a release' (convert_A, App Master), whose outcome, guidance, self_paced trigger and personalization needs are authoritative. The second outcome is kept"
+  },
+  {
+   "lane": "L1",
+   "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
+   "title": "Release record and version bump",
+   "note": "Superseded by two responsibilities (convert_B, App Master): 'The release record stays true' (event) and 'Knowing when the increment deserves a release' (self_paced). This recipe takes the FIRST as aut"
+  },
+  {
+   "lane": "L1",
+   "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+   "title": "Work candidate triage gate",
+   "note": "Not superseded. Outcomes and guidance carried from the reporting.json verdict, which names this the survivor of a three way merge. Renamed from 'Triage Pipeline', which collided by name with bbace830 "
+  },
+  {
+   "lane": "L1",
+   "id": "bbace830-43f9-5583-b675-a71aa969127d",
+   "title": "Harvested idea triage",
+   "note": "The reporting.json verdict on this recipe is merge_into, not keep: it is one of three that collapse into 8751850c (work candidate triage gate). It is emitted here because the lane requires all 41 with"
+  },
+  {
+   "lane": "L1",
+   "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
+   "title": "Scouted opportunity triage",
+   "note": "The reporting.json verdict on this recipe is merge_into: it collapses into 8751850c together with bbace830. Emitted here because the lane requires all 41 with ids unchanged. RECOMMENDATION: drop at ap"
+  },
+  {
+   "lane": "L2",
+   "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+   "title": "Source artifact repurposing for channels",
+   "note": "Superseded jointly with Publish or Schedule by one designed responsibility, One artifact reaches the channels it should, which treats drafting and publishing as a single job. I kept them as two recipe"
+  },
+  {
+   "lane": "L2",
+   "id": "5e07793e-c964-590f-95dc-f72631789f48",
+   "title": "Approved draft channel publishing",
+   "note": "Four connector ids demoted here, the densest demotion in the lane: linkedin, x_twitter and buffer all to social, notion to knowledge_base. The v2 input_schema still names buffer_queue in an enum value"
+  },
+  {
+   "lane": "L2",
+   "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+   "title": "Content metrics anomaly check",
+   "note": "The strongest merge candidate in the lane and it needs a Director decision. This recipe and the web content performance review are superseded by the SAME designed responsibility, and under a self pace"
+  },
+  {
+   "lane": "L2",
+   "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+   "title": "Paid and organic channel performance scan",
+   "note": "One of three recipes superseded by the single designed responsibility 'Where the spend and the traffic are actually going', which treats reading, cannibalization and proposing as one job. I split its "
+  },
+  {
+   "lane": "L2",
+   "id": "136c0300-30bf-59af-a13d-4b55efb99489",
+   "title": "High intent lead alerting",
+   "note": "Third of the three lead recipes under 'Leads arriving through a form', carrying its speed criterion. The v2 tier vocabulary (Hot, On Fire) is installation language and left the description; the durabl"
+  },
+  {
+   "lane": "L3",
+   "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+   "title": "Correspondence activity digest",
+   "note": "Title loses 'Periodic', which encoded the four-hour default. Not superseded; outcomes and guidance from the verdict, with the 'useful without requiring action' clause promoted from the guidance into a"
+  },
+  {
+   "lane": "L3",
+   "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+   "title": "Under-covered equity discovery by sector",
+   "note": "alpha_vantage demoted to its two catalog categories, finance and research, with the id kept as an example. Both are carried rather than just finance, because the catalyst leg is a news read and resear"
+  },
+  {
+   "lane": "L3",
+   "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+   "title": "Content feed intake for curation",
+   "note": "THIS RECIPE IS A STANDING MERGE, not a survivor. The consolidation verdict is merge_into 7baf2513 (Content Curation) and I agree with it: the two exist to do the same job and differ only in how the co"
+  },
+  {
+   "lane": "L3",
+   "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+   "title": "Knowledge base content curation",
+   "note": "This is the merge survivor. Title takes the verdict's rename from 'Manual Curation' to content curation and adds the area, since the work is no longer manual-only. provenance.from_recipes carries both"
+  },
+  {
+   "lane": "L3",
+   "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+   "title": "Revenue movement report and prediction calibration",
+   "note": "Title loses 'Monthly', per the operator's own rule that a title encoding a cadence loses it; the billing month survives in the trigger rationale where it belongs. Outcomes fuse the verdict's calibrati"
+  },
+  {
+   "lane": "L3",
+   "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+   "title": "Survey insight report delivery",
+   "note": "Title takes the verdict's rename. Outcomes fuse the verdict's delivery-and-baseline outcome with the superseding responsibility's 'work someone can pick up' outcome, which reframes the whole recipe: t"
+  },
+  {
+   "lane": "L4",
+   "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+   "title": "Issue handling trend review",
+   "note": "Superseded by the same App Master responsibility as 0b13d1e5 (\"Keeping the open issue set from rotting\", convert_A, whose from_recipes names both ids). This one takes the comparative half of the accou"
+  },
+  {
+   "lane": "L4",
+   "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+   "title": "Knowledge base contradiction audit",
+   "note": "CARRIES AN EXISTING MERGE VERDICT. The automation.json verdict for this id is merge_into ba138faf, on the grounds that its own description says it is everything the weekly audit does plus a contradict"
+  },
+  {
+   "lane": "L4",
+   "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+   "title": "Memory and knowledge base health audit",
+   "note": "The automation.json verdict keeps this one and merges the deep audit (b80fc21f) into it as an optional deeper scope, so from_recipes carries both ids. v2 connector \"codebase\" is a connector id, not a "
+  }
+ ],
+ "one_responsibility_many_recipes": [
+  {
+   "responsibility": [
+    "convert_A.json",
+    "DevOps Guardian",
+    "Incident capture and classification"
+   ],
+   "recipes": [
+    "ec061c32-9fef-5a33-ad80-c94df9eef861",
+    "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Harvester",
+    "Authoring a finding into a candidate that can actually be judged"
+   ],
+   "recipes": [
+    "215be562-1e76-5a51-9d57-4263ca1c13c7",
+    "7329af31-cd20-5e2d-9c1a-ae10787a016a"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Database owner",
+    "Health read on one database connector"
+   ],
+   "recipes": [
+    "a0f09053-db9a-5080-9796-b5ea0b2e72af",
+    "a7b101bb-c357-5fc5-a2ee-47fde7939daa"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Content",
+    "One artifact reaches the channels it should"
+   ],
+   "recipes": [
+    "5e07793e-c964-590f-95dc-f72631789f48",
+    "b1c5780a-ff95-5663-b9e1-c42174b5daee"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Harvester",
+    "Reading the product's own metrics database"
+   ],
+   "recipes": [
+    "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+    "7329af31-cd20-5e2d-9c1a-ae10787a016a"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Digital Clone",
+    "Leads arriving through a form"
+   ],
+   "recipes": [
+    "136c0300-30bf-59af-a13d-4b55efb99489",
+    "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+    "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Digital Clone",
+    "Leads arriving by mail"
+   ],
+   "recipes": [
+    "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+    "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Web marketer",
+    "Where the spend and the traffic are actually going"
+   ],
+   "recipes": [
+    "41e87ce8-6c73-5361-b10a-81b5978bb176",
+    "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+    "b921e672-5496-5cdd-9ec1-57e3ca6e4624"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "DevOps Guardian",
+    "Spend measurement and threshold watch"
+   ],
+   "recipes": [
+    "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+    "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
+    "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Director",
+    "Decision support and holding him to his own checkpoints"
+   ],
+   "recipes": [
+    "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+    "149395d5-a987-55b6-a6ce-c953f3ed11a1"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Web marketer",
+    "Reading what the payments say about the business"
+   ],
+   "recipes": [
+    "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+    "295d0871-6f35-5c8c-b728-5e87c145c72f"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Web marketer",
+    "Failed collection watch"
+   ],
+   "recipes": [
+    "295d0871-6f35-5c8c-b728-5e87c145c72f",
+    "d4388f24-9c1c-5043-95ff-65c67430a39f"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Any",
+    "Backlog from what respondents actually said"
+   ],
+   "recipes": [
+    "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+    "555079dd-836b-532f-a6ad-802a6c1cfdd7"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "App Master",
+    "Keeping the open issue set from rotting"
+   ],
+   "recipes": [
+    "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+    "26b22f83-5e22-535b-8faa-aa51aef63f23"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_B.json",
+    "Contractor",
+    "No date passes unnoticed"
+   ],
+   "recipes": [
+    "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+    "55bf5308-996a-5c0c-a3e3-6903823cc221"
+   ]
+  },
+  {
+   "responsibility": [
+    "convert_A.json",
+    "Database owner",
+    "Answering questions against live data without putting it at risk"
+   ],
+   "recipes": [
+    "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
+    "d227eebc-94f4-5dfd-8c07-8cad40de7b75"
+   ]
+  }
+ ],
+ "connector_roles_needed_L1": [
+  "CONNECTOR TYPE COLLAPSE, the biggest structural problem this lane found. builtin-codebase (a local checkout) and builtin-github (a hosted review surface) both carry the source_control category, so five recipes that genuinely need BOTH (328df264, c0a5e300, 95f66218, 5dc1a004, e6d13cd7) can only declare source_control once. The v3 shape has no way to say 'two connectors of this type, in different roles'. Options for the Director: allow a repeated type with a role label, add a role field to examples that adoption reads, or accept that a charter binds a list rather than a map. Nothing in this lane is correct until that is decided."
+ ],
+ "lane_findings": {
+  "L1": [
+   "CONNECTOR TYPE COLLAPSE, the biggest structural problem this lane found. builtin-codebase (a local checkout) and builtin-github (a hosted review surface) both carry the source_control category, so five recipes that genuinely need BOTH (328df264, c0a5e300, 95f66218, 5dc1a004, e6d13cd7) can only declare source_control once. The v3 shape has no way to say 'two connectors of this type, in different roles'. Options for the Director: allow a repeated type with a role label, add a role field to examples that adoption reads, or accept that a charter binds a list rather than a map. Nothing in this lane is correct until that is decided.",
+   "desktop_terminal IS NOT A CONNECTOR AND HAS NO CATEGORY. Searched all 134 files in scripts/connectors/builtin: there is no desktop-terminal.json and no terminal category anywhere. It appears in 478fab0f (Lean Sweep) and in the two superseding responsibilities for it. It was dropped entirely and the tool it ran became a dependency, which is exactly how the operator handled ffmpeg in his 3-Pass Cut Edit example. Any other lane that meets desktop_terminal should do the same rather than inventing a type.",
+   "THE monitoring CATEGORY IS TWO DIFFERENT THINGS. Its 8 connectors split between application error monitors (sentry, betterstack, posthog) and LLM observability tools (helicone, langfuse, langsmith, tracklight, anthropic-admin). Five recipes in this lane declare monitoring; an adopter offered langfuse for an application error scan gets a binding that resolves cleanly and returns nothing useful. The same split exists in cloud (platform hosts with a deployment concept versus raw infrastructure clouds) and in knowledge_base (file backed stores versus hosted page products). Adoption step 2 in the spec (research the chosen connector and adjust) is where this has to be caught, and it needs to be able to say 'this connector resolves the type but is a poor fit for this recipe'.",
+   "input_schema connector_ref KNOBS NOW DUPLICATE connector_types. Six recipes carry a v2 input of type connector_ref (target_codebase with ui_component CodebaseSelector, source_control_credential, issue_platform). They were carried verbatim per the review contract, but in v3 the binding is what connector_types resolves into at adoption, so the knob asks the adopter the same question twice and can disagree with the answer. The Director should decide whether the v2 to v3 transform strips connector_ref entries from input_schema.",
+   "TWO RECIPES IN THIS LANE ARE merge_into, NOT keep. bbace830 (harvested idea triage) and d7d804cf (scouted opportunity triage) both collapse into 8751850c (work candidate triage gate) per the reporting.json verdict; all three share the v2 payload id uc_triage across three different templates. All three are emitted here because the lane requires 41 with ids unchanged, and 8751850c's provenance already lists all three in from_recipes and all three templates in from_templates. RECOMMENDATION: drop bbace830 and d7d804cf at apply time and merge their backlog_format and card_verbosity inputs into 8751850c. If they are kept instead, remove the two extra ids from 8751850c's from_recipes so provenance does not claim an absorption that did not happen.",
+   "ONE SUPERSEDING RESPONSIBILITY IN THIS LANE HAS NO RECIPE THAT OWNS IT. convert_A Harvester 'Authoring a finding into a candidate that can actually be judged' supersedes 215be562 in L1 and 7329af31 in L2. It is a distinct job (shaping any finding into a comparable candidate) and 215be562 already carries a different responsibility as its authoritative source. It is deliberately NOT folded into 215be562 here. The Director should decide whether it becomes a new v3 recipe with a new id, which the propose-only lane rules do not currently allow, or lands on the seat without a recipe.",
+   "THE TWO RELEASE RECIPES ARE NOW SEPARATED BY TRIGGER RATHER THAN BY CADENCE. The consolidation flagged 95f66218 and 5dc1a004 as overlapping in end goal. In v3 they split cleanly: 5dc1a004 takes convert_B 'The release record stays true' (event, per merge, keeps the record honest) and 95f66218 takes convert_A 'Deciding when merged work becomes a release' (self_paced, human gated, cuts the release). convert_B's second responsibility, 'Knowing when the increment deserves a release', was deliberately NOT applied to 5dc1a004 because it is the same judgement 95f66218 owns and applying it would rebuild the overlap. This is the one place in the lane where a superseding responsibility was declined on purpose.",
+   "builtin-github's OWN SETUP GUIDE GRANTS Contents READ ONLY. Its metadata asks for Contents (read), Issues (read/write), Pull requests (read/write). That is enough to open a pull request, comment on one, and file an issue, and NOT enough to create a release or push a tag through the API, which 95f66218 and 5dc1a004 both assume. It also grants no Actions or Checks access, so no recipe here may claim to read hosted CI status; c0a5e300's verdict rests entirely on the suite it runs itself in a local worktree. If the Director wants hosted tagging or CI reads, the connector's documented scope has to change first.",
+   "TRIGGER SPLIT AND WHERE THE CRONS WENT. 22 self_paced, 17 event, 2 time. Every cron in the lane was dropped except two, and both survivors kept only the KIND on a stated argument: 5abd6abc (a baseline exists only if sampled regularly, so a gap in sampling is a hole in the baseline) and 228c0d05 (a silent agent failure emits nothing, so only regular sampling finds it). Every other cron was a delivery preference: the Friday release cron, the Monday digest crons, the daily 08:00 scan block that fired four unrelated scans together, the hourly backlog scan. That block in particular is charter composition and should be reconstructible at adoption, or four recipes that used to run together will now drift apart with nobody noticing.",
+   "TWO v2 EVENT TRIGGERS WERE WRONG AND ARE NOW CORRECTED. e6d13cd7 fired on adr.decision.accepted, and the superseding responsibility states in writing that this is exactly the wrong moment because the implementing code does not exist yet; it is now self_paced with a cursor. 6a86eaad fired on incident.resolved and then waited a fixed delay, which is a self paced judgement wearing an event's clothes; it is now self_paced. Worth checking the other lanes for the same shape, an event trigger followed by a configured wait.",
+   "ONE CONNECTOR TYPE WAS ADDED RATHER THAN DEMOTED. ec061c32 (incident capture) declared no connectors in v2; the superseding responsibility adds monitoring, on the reasoning that most incidents are reported by a monitor rather than a person. It is the only addition in the lane and it comes from the authoritative source, but the Director should know that a v2 to v3 transform which only ever removes connectors will not reproduce it.",
+   "THE PLATFORM'S OWN EXECUTION HISTORY IS REACHABLE AS A CONNECTOR AND IS NOT DECLARED AS ONE. 228c0d05 polls the platform execution API over http_request, and builtin-operations-database is described as read only curated views over executions, messages, human reviews, incidents, goals and KPIs, which is that exact source. connector_types was left empty because the v2 recipe evidenced no connector and adding one would invent a binding. The Director should decide whether the four workflow-error-intelligence recipes (228c0d05, b2e9f57f, e9f4f48e, 6da5cc6d) declare database.",
+   "THE database TYPE DOES NOT IMPLY A CHANGE STREAM. 906e8b82 is recommended as event triggered on row changes, but of the 16 connectors in the database category only a few can push row events at all, and builtin-personas-database and builtin-operations-database declare no services whatsoever. Adoption must verify the chosen connector has a change stream before binding an event trigger to it, or the recipe silently never runs.",
+   "input_schema IS CARRIED VERBATIM WITH EXACTLY ONE DEPARTURE, DECLARED HERE. Six input_schema description strings across five recipes carried an em dash, which the house rule forbids and which the rule says to fix by rewriting the sentence rather than swapping the character. Three sentences were rewritten and nothing else was touched: no name, type, default, min, max or enum option changed. The sites are 215be562:senders, 7a90ad49:environment_filter, and target_codebase on 5dc1a001, 5dc1a002, 5dc1a004 and 5dc1a005 (the same sentence four times). If the Director prefers strict verbatim carriage over the house rule, revert those three sentences; the rule and the carry instruction genuinely conflict here and a reviewer should not settle it silently. Note that the in-flight scripts/templates/_v3_normalize.mjs applies a typography pass to input_schema[].description and nowhere else, which is the same scope chosen here, but it swaps the em dash for a spaced hyphen instead of rewriting the sentence. Both leave the file stable under that pass; the Director should pick ONE so three lanes do not ship three conventions.",
+   "VENDOR NAMES SURVIVE INSIDE input_schema OPTION LISTS. 95cfab27's unknown_payload_handling options and bbace830's backlog_format options name specific products (a chat product, an issue tracker, a note product) inside enum values carried verbatim. The titles and descriptions are now connector agnostic and these enums are not, which will read as an inconsistency the first time anyone opens one. Whether the transform rewrites enum options is a Director decision, not a reviewer one."
+  ],
+  "L2": [
+   "Nineteen superseded recipes map onto only eleven distinct designed responsibilities, and four of those are many to one. 'Where the spend and the traffic are actually going' supersedes three recipes (paid-organic-performance-scan, paid-organic-cannibalization-watch, marketing-optimization-proposals); 'Leads arriving through a form' supersedes three (form-lead-intake-and-scoring, lead-welcome-email-drafting, high-intent-lead-alerting); 'One artifact reaches the channels it should' supersedes two (source-artifact-channel-repurposing, approved-draft-channel-publishing); 'Reading the product's own metrics database' supersedes two (web-content-performance-review, content-metrics-anomaly-check). I kept all 27 ids as instructed and split each responsibility's outcome criteria across its recipes so no criterion is claimed twice and none is lost. Whether these become four recipes or twelve is a Director decision this lane cannot make on its own.",
+   "The strongest single merge candidate is content-metrics-anomaly-check into web-content-performance-review. Under a self_paced trigger the mid period check is not a separate job; it is the pacing note of the review. It existed as its own recipe only because the review was pinned to a Monday cron, and both are superseded by the same designed responsibility. If the corpus keeps both, the corpus is keeping a cron artifact after retiring the cron.",
+   "Retiring the polling safety net on form-lead-intake-and-scoring opens a real gap. The designed corpus puts that work in a separate self_paced responsibility ('Nobody who reached out is dropped') that has no surviving recipe in this lane or, as far as this lane can see, anywhere. Folding it back into the intake recipe would put a branch in the activities, which the spec forbids. Either a new recipe carries it or the corpus knowingly ships an event only intake with no reconciliation.",
+   "There is no search ranking or SEO position connector anywhere in the 134 connector catalog. paid-organic-cannibalization-watch needs organic ranking positions to function at all and no category (analytics, research, web_scraping) evidences that data. This is the one place in the lane where a recipe requires a capability the catalog cannot supply. Recorded rather than papered over with a plausible looking type.",
+   "There is no experimentation category, so the three conversion optimization recipes resolve to analytics. That is legal and honest, because humbalytics ('runs experiments that dynamically rewrite page content without redeploying code') and posthog ('feature flags... A/B testing') genuinely provide it. But analytics has eight members and six of them are read only, so an adopter can resolve the type to mixpanel and end up with a recipe that can read underperformance and never deploy a variant. Adoption needs to distinguish the read binding from the deploy binding, or the catalog needs a narrower category.",
+   "Airtable is not a crm connector. The v2 lead pipeline wrote its lead records to Airtable (its own error handling names Airtable 422 and 402 responses), but Airtable is catalogued as spreadsheet, database and project_management, so an adoption resolving crm will be offered attio, hubspot, monday and pipedrive and never the store the recipe was actually built against. This is a concrete adoption trap created by the demotion rule and it will not be visible from the recipe alone.",
+   "'codebase' has no category that means what it means. Three recipes in this lane read the operator's own registered local project (brand-visual-asset-production, product-design-brief-authoring, free-promotion-surface-discovery, plus feature-walkthrough-capture). The connector is catalogued as development, source_control and desktop; desktop is banned by the spec, and development also resolves to github, gitlab and sentry, which are hosted services rather than a local registered project. Every adoption of these four recipes will be offered three wrong answers alongside the right one.",
+   "Two connector_types in this lane have almost no members. vision has exactly one (gemini-vision) and video_generation has exactly two (higgsfield, leonardo-ai), both of which are also image generators. forms has two (tally, formbricks). A type with one member is a vendor lock wearing a category's clothes, and the adoption promise that a type resolves to a choice does not hold there.",
+   "Zero recipes in this lane take a time trigger. Twenty are self_paced and seven are event. Every cron in the v2 sources (daily 10:00, daily 09:00 UTC, Monday 09:00 shared across three capabilities, Wednesday and Friday noon, weekly 08:00) turned out to be a delivery preference or a proxy for 'look when enough has changed'. This matches the finding in section 21 exactly and extends it to a third independent lane.",
+   "The 'carry input_schema verbatim' rule collides with the no em dash house rule in eight places, all inside v2 knob descriptions. I rewrote those eight sentences rather than swapping the character, per the operator's stated preference, and kept every name, type, option, default and bound unchanged. The affected recipes are original-2d-art-curation, product-design-brief-authoring, website-conversion-gap-audit, community-trend-digest, free-promotion-surface-discovery, paid-organic-cannibalization-watch, marketing-optimization-proposals and high-intent-lead-alerting. The Director should confirm this reading of verbatim.",
+   "Connector ids and cadences survive inside carried input_schema knobs even where the recipe around them is now connector and trigger agnostic. approved-draft-channel-publishing has an enum option literally named buffer_queue; community-trend-digest has knobs named subreddits and slack_channel and a time_window description that instructs the reader to match a cron; free-promotion-surface-discovery and marketing-optimization-proposals both say 'per week'. The v2 to v3 transform will need a knob renaming pass or these will read as contradictions the first time someone binds a different connector.",
+   "The YouTube Data connector does not declare caption or transcript retrieval. Its catalog summary covers searching videos, channel statistics, playlists, comments and trending content. The v2 source-artifact-repurposing recipe assumed captions were fetchable (its error handling names 'empty captions across all input modes'). Any adoption that binds a video source to this recipe gets metadata, not a transcript, unless the adopter supplies one.",
+   "The Buffer catalog entry corroborates the operator's own worked example precisely. It declares one resource (profiles), a PAT field and a user healthcheck, and its summary is scheduling and publishing. There is no engagement or analytics resource, so any recipe that reads engagement numbers back from Buffer would be claiming a capability this catalog does not carry. Buffer is a publishing destination in this corpus and nothing else.",
+   "newsletter-issue-curation is the one recipe in the lane whose superseding responsibilities would delete it. The three Harvester ingest responsibilities (Feed, Page and site, Inbox) are all domain product_project and all end at making an item visible in a backlog; none curates, writes, assembles or sends an issue. Applied as authoritative they replace a newsletter with a reading list. I took the ingest half from them and kept the consolidation verdict for the editorial half, and the Director should decide whether the newsletter is a job the roster still wants or whether the Harvester ingest responsibilities are the real survivors.",
+   "website-conversion-gap-audit changed subject under its designed responsibility and its input_schema no longer matches. v2 audited a client's local service business website against industry benchmarks; the designed responsibility audits the operator's own properties against their own previous scores. The business_type enum (hvac, plumbing, roofing and so on) is carried verbatim per the spec but now describes a benchmark set the guidance explicitly does not lean on. Either the knob goes or the responsibility was mis-assigned.",
+   "content-source-health-tracking cannot stand alone at adoption. It declares no connector types because it observes fetches another recipe performs, which is honest but means adopting it without community-trend-digest yields nothing. It is the only recipe in the lane with that dependency, and the v3 shape has no field to express it. Worth a Director decision on whether recipes may declare a companion."
+  ],
+  "L3": [
+   "Connector demotions in this lane: alpha_vantage to finance and research (2 recipes), stripe to finance (2), personas_database to database (4), codebase to development (1). Already-generic ids kept as types: cloud (3), email (3), messaging (3), knowledge_base (5), crm (1), database where v2 already said it. Every id resolved to a real catalog category; none needed a nearest-fit compromise and none is left dangling. No v2 row in this lane carried desktop, so nothing was dropped for that reason, but codebase carries desktop among its three categories and only development was taken.",
+   "Trigger split: 3 time, 6 event, 12 self_paced. The three time triggers are cloud-cost-and-resource-reporting and cloud-spend-threshold-watch, both on the operator's own budget-spending-monitor reasoning that month-to-date spend is undefined outside a billing month and a projection needs regular samples, and watchlist-technical-signal-digest, where a period indicator is undefined before the period closes so an earlier digest reports a partial bar. Everything else that arrived carrying a cron lost it: daily at seven, daily at eight, daily at nine, Sunday at six, Friday at six, every four hours, every five minutes and four separate weeklies were all habitual and are now self_paced or event.",
+   "The catalog cannot answer the questions adoption actually asks. Across 134 connector files the categories vocabulary is rich (48 distinct values) but capability data is nearly empty: stripe declares one resource and no events, aws_cloud and gcp_cloud declare neither, and exactly one messaging or email connector in the whole catalog (personas_messages) declares an inbound event. So connector_types resolves an adopter to a set of candidates and tells them nothing about whether a candidate can do the work. Three recipes here recommend an event trigger against connectors that declare no events. The spec's adoption step 2 (research the chosen connector and adjust) is therefore not an enhancement, it is the only thing standing between a resolved type and a broken charter.",
+   "Categories are too coarse in one direction that matters here. finance resolves to alpha_vantage, harvest, kalshi, lemonsqueezy, ramp and stripe: a market data API, a time tracker, a prediction market, and three payment surfaces. A revenue recipe and a stock-signal recipe both correctly carry finance and would be offered each other's connectors. Similarly email resolves to resend and sendgrid, which cannot read an inbox, alongside gmail which can. Worth considering whether v3 needs a second axis (reads versus writes, or a narrower subtype) or whether that belongs entirely in the adoption research pass.",
+   "Three recipes carry a hidden second binding mechanism that predates connector_types and duplicates it. cross-project-progress-briefing has a source_definition input describing folders, codebases, databases and URL lists; survey-insight-report-delivery has a report_delivery enum whose four options are in_app, notion, email and slack. Both are connector choices living inside input_schema. Carried verbatim as instructed, but a v3 corpus that removes vendor names from connectors and leaves them inside knobs has only moved the problem.",
+   "One recipe in the lane is a standing merge and one is a delete candidate. content-feed-intake-for-curation (fb223f0f) already carries a merge_into verdict pointing at knowledge-base-content-curation, which I agree with and have reflected in the survivor's provenance; publishing both would put two recipes in the corpus that differ only by how content arrives. correspondence-activity-digest (5437968e) is not superseded and has no standalone need: it reports on the two recipes beside it. Both calls are the operator's.",
+   "Three designed responsibilities in this lane each supersede more than one recipe, and in every case I kept the recipes separate rather than collapsing them to match. Spend measurement covers three (a report that always speaks, a watch that speaks only on breach, and an alert that speaks only on blindness, with three different triggers). Reading what the payments say covers two, and merging them would drop the calibration loop the verdict explicitly preserved this recipe for. Backlog from what respondents said covers two halves of one pipeline with different triggers. The responsibilities are the right shape for a persona seat; they are not always the right shape for a registry artifact, and this is the seam between the two designs.",
+   "Two recipes are filed under a different domain than their superseding responsibility. weighted-decision-analysis-and-checkpoint-review and goal-accountability-and-idea-triage-review sit in general_professional per the lane roster and the consolidation verdicts, while convert_A's Director responsibilities file the same work under product_project. Kept general_professional so the lane counts hold, but the disagreement is real and one of the two sources should be corrected rather than both shipped.",
+   "House rule versus verbatim carry: v2 input_schema descriptions contain em dashes, arrows and multiplication signs. Names, types, defaults, options, min and max are carried untouched; the prose inside description was rewritten to remove the forbidden characters, since the output must contain none. Flagged so the Director can decide whether the transform script normalises these at the corpus level rather than per lane.",
+   "Two lane-wide voice changes, applied consistently. First, the designed responsibilities are written about one named operator (he, him); a registry recipe is held by anyone, so those are generalised to the requester, the reader or the adopter without changing a claim. Second, implementation specifics that were choices rather than craft are generalised: three-tier summary becomes layered summary, fourteen-day checkpoint becomes a checkpoint whose length is a personalization need, twenty consecutive approvals stays in the input schema where it belongs but is named as a personalization need in prose."
+  ],
+  "L4": [
+   "One connector token in this lane has NO matching catalog category: \"legal\" (recipes 4d115a03 and 2d6945b7, both from contract-lifecycle-use-case). All 48 categories values across the 134 files in scripts/connectors/builtin were enumerated; there is no legal, esignature, contract or agreement category, and no docusign, adobe-sign, hellosign or pandadoc connector. \"forms\" is used as the nearest (a document sent out for a counterparty to complete and return, with a webhook on completion, which is what formbricks and tally model) but it is a stretch. The right fix is an esignature category with a real connector behind it; until then adoption cannot bind these two recipes at all.",
+   "The \"support\" category is real but carried by exactly ONE connector (crisp). Two recipes in this lane declare it (410bed86, 70e00cca), so the type resolves to a single choice at adoption, which defeats the point of a type. Zendesk, Freshdesk, Intercom and Help Scout are all absent from the catalog. This is a catalog gap rather than a recipe problem.",
+   "Twelve of the twenty ids are superseded, but only nine distinct designed responsibilities cover them, because three responsibilities each supersede two recipes: App Master \"Keeping the open issue set from rotting\" (0b13d1e5 and 26b22f83), Contractor \"No date passes unnoticed\" (2d6945b7 and 55bf5308), and Database owner \"Answering questions against live data without putting it at risk\" (34e0d640 and d227eebc). In each case the responsibility's success criteria split cleanly and both ids are preserved per the brief, but each pair is now much closer than it was, because the cadence was often the only thing separating them. Phase D should decide the merges deliberately rather than inherit three near duplicates.",
+   "Removing the cadence is what exposed the duplication. Nine of the twenty recipes were named or scoped by their clock (\"Weekly Query Digest\", \"Monthly Deep Audit\", \"Daily Escalation Digest\", \"48-hour\" style titles, \"Support Digest\" against \"Issue Health Report\"). Once the cron comes off, several pairs describe the same job at two intervals. This is the strongest argument in this lane for the v3 shape and also the largest cleanup it creates.",
+   "The trigger split is 6 event, 14 self_paced, 0 time. Nothing in this lane produced a genuine time trigger: no statutory calendar was found anywhere in legal_compliance (the dates are per contract, not per jurisdiction), every SLA and reminder loop is a clock CONDITION the seat can watch, and every digest cadence was an authoring convenience rather than an external requirement. If a downstream reviewer expects any recipe corpus to contain time triggers, this lane is evidence that the honest answer is often none.",
+   "input_schema carried verbatim collides with connector_types in one place: 34e0d640 declares a connector_ref knob (target_database, ui_component DatabaseSelector, connector \"database\") that is the v2 way of doing exactly what connector_types plus AdoptionAnswers.credential_bindings now do. It is carried per the brief, but Phase C1 should reconcile the two seams rather than ship both.",
+   "One character was changed inside a verbatim input_schema: efb53700's contract_types description contained the only em dash in any of the twenty schemas, normalised to a comma so the file satisfies the house rule. Every other input_schema is byte identical to its v2 source. Disclosed here rather than left silent.",
+   "Vendor substitution artifacts survived in two titles and were removed: \"legal platform Event Processing\" (4d115a03) and \"knowledge base Publish and Risk Alert\" (04756772). Both are cases where a redacted vendor was replaced by its category and the result was left in a title, which then reads as neither an area nor a vendor. The pattern to look for elsewhere in the corpus is a lowercase category word sitting in title case position.",
+   "Two ids carry a real prerequisite that adoption must verify rather than install: 4d115a03 needs a delivery endpoint the signature platform can reach, and 410bed86 needs response commitments actually defined in the support platform, since a wait has nothing to measure against otherwise. Everything else in the lane evidenced no dependency, and none was invented; eighteen of twenty have an empty dependencies array.",
+   "d4388f24 sits between two domains and the lane roster and the superseding responsibility disagree. The roster and the consolidation verdict file it under customer_support; the superseding Web marketer responsibility \"Failed collection watch\" is filed under finance_accounting. The roster is followed here so the lane counts hold, but this is a real disagreement about which seat owns revenue signals and it should be settled rather than inherited."
+  ]
+ }
+}

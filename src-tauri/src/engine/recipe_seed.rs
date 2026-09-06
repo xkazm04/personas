@@ -4,9 +4,12 @@
 //! pre-Phase-2.2 inline-UC catalog at commit 34f483f1f^, plus the
 //! SDLC-template recipes appended after that ref) into the binary via
 //! `include_str!`, and idempotently inserts any missing rows into
-//! `recipe_definitions` on app startup. The bundle held 299 rows until the
-//! 2026-09 template retirement removed 31 templates and the 86 recipes only
-//! they owned, leaving 213.
+//! `recipe_definitions` on app startup.
+//!
+//! Bundle size, re-measured from the committed file 2026-09-06: **109
+//! recipes across 43 templates**. It held 299, then 213 after the 2026-09
+//! template retirement, then 109 after the recipe consolidation. This line
+//! claimed 213 until the count was re-derived rather than remembered.
 //!
 //! Why this exists: Phase 2.2 collapsed every template's inline use_cases
 //! into recipe_ref pointers, so on a fresh install the recipe table is
@@ -19,14 +22,16 @@
 //! Seed file format (top-level wrapper, then a `recipes[]` array):
 //! ```json
 //! {
-//!   "version": 2,
+//!   "version": 3,
 //!   "ref": "34f483f1f^",
-//!   "recipe_count": 213,
+//!   "recipe_count": 109,
 //!   "recipes": [ { "id": "<uuid>", "source_template_id": ..., ... }, ... ]
 //! }
 //! ```
-//! Since version 2 (Stage B WP4) each `prompt_template` holds a serialized
-//! responsibility charter, not a use case — see `EXPECTED_SEED_VERSION`.
+//! Since version 3 (Recipe v3, 2026-09-06) each `prompt_template` holds a
+//! serialized `RecipeSpec` (craft knowledge: connector TYPES, a recommended
+//! trigger, activities), not a charter and not a use case — see
+//! `EXPECTED_SEED_VERSION`.
 //!
 //! Idempotency contract: each entry's `(source_template_id,
 //! source_use_case_id)` is the partial-unique-index key. We look up via
@@ -66,20 +71,34 @@ use crate::error::AppError;
 /// JSON seeds bundle. Compile-time embedded; ~1.3 MB.
 const SEEDS_JSON: &str = include_str!("../../../scripts/templates/_recipe_seeds.json");
 
-/// Minimum schema version this code understands. Rev when a breaking
-/// change to the seed shape lands so `seed_recipes` fails fast instead
-/// of silently mis-mapping fields.
+/// The seed shape this code is written against. Rev when a breaking change
+/// to the payload shape lands.
 ///
 /// v2 (Stage B WP4, agent-manifest rebase): every `prompt_template` payload
 /// is a serialized responsibility charter (camelCase `{id, title, domain,
 /// outcomes, procedure, connectors, cadence, approvalGates, spec}` — see
 /// `scripts/templates/transform-recipes-to-responsibilities.mjs`), no longer
-/// a serialized use case. The wrapper row fields are unchanged. Rows seeded
-/// by v1 installs are never rewritten (idempotency contract), so DB rows can
-/// be EITHER shape forever — every consumer of `prompt_template` detects the
-/// shape structurally (a v2 payload has a `procedure` string; no v1 UC ever
-/// carried one).
-const EXPECTED_SEED_VERSION: i64 = 2;
+/// a serialized use case.
+///
+/// v3 (Recipe v3): every payload is a serialized [`RecipeSpec`] — craftsman
+/// knowledge with connector TYPES and a RECOMMENDED trigger, bound to an
+/// installation only at adoption. See `scripts/templates/_RECIPE_V3_SPEC.md`
+/// and `scripts/templates/transform-recipes-v2-to-v3.mjs`.
+const EXPECTED_SEED_VERSION: i64 = 3;
+
+/// The oldest bundle version this reader still accepts.
+///
+/// Narrowed to 3 on 2026-09-06, in the same commit that landed the
+/// transformed v3 corpus (it was briefly 2 while the v3 backend preceded the
+/// reviewed bundle, so the app would not refuse to seed in between). The
+/// range still exists rather than a single pin so that a future v4 can stage
+/// the same way. Note this pins the BUNDLE, not the rows: every consumer of
+/// `prompt_template` tells the shapes apart STRUCTURALLY (v3 has an
+/// `activities` array and an object `description`; v2 has a `procedure`
+/// string; v1 has neither), and rows seeded by an older install are never
+/// rewritten, so a live DB holds a mix of all three forever regardless of
+/// what the bundle says.
+const MIN_SUPPORTED_SEED_VERSION: i64 = 3;
 
 #[derive(Debug, Deserialize)]
 struct SeedBundle {
@@ -111,6 +130,10 @@ pub struct SeedReport {
     pub skipped_existing: i64,
     pub repaired: i64,
     pub failed: i64,
+    /// Builtin rows the shipped bundle no longer carries, removed by
+    /// `recipe_repo::retire_stale`. Before this existed the seeder only ever
+    /// inserted, so a live DB kept every recipe any past release had shipped.
+    pub retired: i64,
 }
 
 /// Walk the embedded recipe seed bundle and insert any rows that aren't
@@ -129,9 +152,9 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
         ))
     })?;
 
-    if bundle.version != EXPECTED_SEED_VERSION {
+    if !(MIN_SUPPORTED_SEED_VERSION..=EXPECTED_SEED_VERSION).contains(&bundle.version) {
         return Err(AppError::Internal(format!(
-            "recipe seed bundle version mismatch: got {}, expected {EXPECTED_SEED_VERSION}",
+            "recipe seed bundle version mismatch: got {}, expected {MIN_SUPPORTED_SEED_VERSION}..={EXPECTED_SEED_VERSION}",
             bundle.version
         )));
     }
@@ -140,6 +163,15 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
         total: bundle.recipes.len() as i64,
         ..Default::default()
     };
+
+    // The bundle IS the shipped set — captured before the loop consumes it.
+    let keep_ids: std::collections::HashSet<String> =
+        bundle.recipes.iter().map(|r| r.id.clone()).collect();
+    let shipped_template_ids: std::collections::HashSet<String> = bundle
+        .recipes
+        .iter()
+        .map(|r| r.source_template_id.clone())
+        .collect();
 
     for seed in bundle.recipes.into_iter() {
         match insert_one(pool, seed) {
@@ -150,6 +182,28 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
                 report.failed += 1;
                 tracing::warn!(error = %e, "recipe seed insert failed; continuing");
             }
+        }
+    }
+
+    // Sweep the ghosts the insert-only seeder has been accumulating since the
+    // first release. Best-effort by the same logic as a per-row insert
+    // failure: a sweep that cannot run must not stop the app from booting with
+    // a correctly seeded catalog.
+    match recipe_repo::retire_stale(pool, &keep_ids, &shipped_template_ids) {
+        Ok(retired) => {
+            report.retired = retired.len() as i64;
+            if !retired.is_empty() {
+                // The ids, not just the count: a retirement is a deletion and
+                // the operator must be able to see exactly which rows went.
+                tracing::info!(
+                    count = retired.len(),
+                    ids = %retired.join(", "),
+                    "Retired builtin recipes the shipped bundle no longer carries"
+                );
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "recipe retirement sweep failed; continuing");
         }
     }
 
@@ -168,6 +222,7 @@ pub fn seed_recipes_from_bundle(pool: &DbPool) -> Result<SeedReport, AppError> {
         created = report.created,
         skipped_existing = report.skipped_existing,
         repaired = report.repaired,
+        retired = report.retired,
         failed = report.failed,
         "Recipe seed bundle applied"
     );
@@ -288,6 +343,18 @@ fn refresh_model_tier(
         Ok(v) => v,
         Err(_) => return Ok(false),
     };
+    // A v3 recipe payload carries no model tier at all: which model
+    // right-sizes the work is an ADOPTION decision that lands on the charter's
+    // `spec.modelOverride`, not a property of the craft knowledge. Writing the
+    // v1 top-level keys onto one (which is what the v2/v1 fork below would do,
+    // since a v3 payload has no `procedure`) would invent a field the shape
+    // does not have.
+    if crate::db::models::RecipeSpec::looks_like_v3(&seed_inner)
+        || crate::db::models::RecipeSpec::looks_like_v3(&cur)
+    {
+        return Ok(false);
+    }
+
     let (seed_override, seed_rationale) = model_tier_of(&seed_inner);
     let (cur_override, cur_rationale) = model_tier_of(&cur);
 
@@ -396,6 +463,7 @@ fn write_model_tier(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::PoolExt;
 
     /// Mirrors `recipe_suggestions::test_pool` — initial migrations + the
     /// incremental ones that add the source_* columns. Independent across
@@ -420,7 +488,11 @@ mod tests {
     fn embedded_bundle_parses_and_has_expected_shape() {
         let bundle: SeedBundle =
             serde_json::from_str(SEEDS_JSON).expect("embedded seed bundle must parse");
-        assert_eq!(bundle.version, EXPECTED_SEED_VERSION);
+        assert!(
+            (MIN_SUPPORTED_SEED_VERSION..=EXPECTED_SEED_VERSION).contains(&bundle.version),
+            "bundle version {} is outside the supported range",
+            bundle.version
+        );
         assert!(
             !bundle.recipes.is_empty(),
             "bundle should not be empty after Phase 2.4 generation"
@@ -594,13 +666,21 @@ mod tests {
             }
         }
 
+        // Floors re-derived from the shipped corpus 2026-09-06: **43
+        // templates, 100 recipe_refs** (the consolidation took the corpus from
+        // 111 templates / ~300 refs down to this). They stood at 100/250 —
+        // numbers from the pre-consolidation corpus that this walk could no
+        // longer reach, so the canary could not pass however healthy the
+        // corpus was. The floors exist to catch a walk that visits NOTHING
+        // (the fail-loud contract), so they sit just under the measured
+        // counts; re-derive them, never lower them to fit a failure.
         assert!(
-            checked_templates >= 100,
-            "expected the full corpus, saw {checked_templates}"
+            checked_templates >= 40,
+            "expected the full corpus (43 templates at 2026-09-06), saw {checked_templates}"
         );
         assert!(
-            checked_refs >= 250,
-            "expected recipe_ref coverage, saw {checked_refs}"
+            checked_refs >= 90,
+            "expected recipe_ref coverage (100 refs at 2026-09-06), saw {checked_refs}"
         );
     }
 
@@ -658,6 +738,23 @@ mod tests {
         );
     }
 
+    /// A v3 recipe payload has no model tier to refresh. The probe must catch
+    /// that BEFORE the v2/v1 fork, which would otherwise take the v1 branch
+    /// (no `procedure` key) and write `model_override` onto a shape that has
+    /// no such field.
+    #[test]
+    fn a_v3_payload_is_told_apart_from_a_v1_payload_by_the_tier_probe() {
+        let v3 = serde_json::json!({
+            "id": "uc_x", "title": "X",
+            "description": { "need": "n", "coreAction": "c" },
+            "activities": [{ "id": "collect", "label": "Collect", "kind": "observe" }]
+        });
+        assert!(crate::db::models::RecipeSpec::looks_like_v3(&v3));
+        // The v1/v2 probe genuinely cannot see it — which is exactly why
+        // `refresh_model_tier` checks the v3 shape first.
+        assert!(!is_v2_payload(&v3));
+    }
+
     #[test]
     fn seed_into_empty_db_creates_all_rows() {
         let pool = test_pool();
@@ -666,6 +763,110 @@ mod tests {
         assert_eq!(report.created, report.total, "fresh DB → all created");
         assert_eq!(report.skipped_existing, 0);
         assert_eq!(report.failed, 0);
+    }
+
+    /// The retirement sweep: exactly the unreferenced BUILTIN row the bundle
+    /// no longer carries goes. A referenced one stays (a persona is using it)
+    /// and a user-authored one stays whatever the bundle says.
+    #[test]
+    fn retirement_removes_only_the_unreferenced_builtin_ghost() {
+        use std::collections::HashSet;
+
+        let pool = test_pool();
+        let now = chrono::Utc::now().to_rfc3339();
+        let mk = |id: &str, builtin: bool| {
+            // `PoolExt::conn` rather than `pool.get()`: the labelled checkout is
+            // the sanctioned door (census `pool-get-unwrapped`), and a fixture
+            // that panics on acquire hides the same saturation the product would.
+            let conn = pool.conn("recipe_seed_test::mk").unwrap();
+            conn.execute(
+                "INSERT INTO recipe_definitions (id, project_id, name, prompt_template, is_builtin, created_at, updated_at)
+                 VALUES (?1, 'default', ?1, '{}', ?2, ?3, ?3)",
+                rusqlite::params![id, builtin as i64, now],
+            )
+            .unwrap();
+        };
+        mk("ghost", true); // builtin, unreferenced, not in the bundle
+        mk("in_use", true); // builtin, referenced by a charter
+        mk("mine", false); // user-authored
+
+        // A charter pointing at `in_use` through the same field the guard
+        // reads (`spec.sourceRecipeId`).
+        {
+            let conn = pool.conn("recipe_seed_test::charter").unwrap();
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES ('p1', 'P', '', ?1, ?1)",
+                rusqlite::params![now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_responsibilities
+                   (id, persona_id, title, domain, outcomes, objectives, scope_rung,
+                    refusal_classes, approval_gates, owner, cadence, tenure, status,
+                    source, connectors, procedure, spec, created_at, updated_at)
+                 VALUES ('r1','p1','T','general','[]','[]',0,'[]','[]','', '{}', '{}',
+                         'active','operator','[]','', ?1, ?2, ?2)",
+                rusqlite::params![r#"{"sourceRecipeId":"in_use"}"#, now],
+            )
+            .unwrap();
+        }
+
+        let keep: HashSet<String> = ["in_use".to_string()].into_iter().collect();
+        let templates: HashSet<String> = HashSet::new();
+        let retired = recipe_repo::retire_stale(&pool, &keep, &templates).expect("sweep ok");
+
+        assert_eq!(retired, vec!["ghost".to_string()], "exactly the ghost goes");
+        assert!(
+            recipe_repo::get_by_id(&pool, "in_use").is_ok(),
+            "a referenced recipe stays"
+        );
+        assert!(
+            recipe_repo::get_by_id(&pool, "mine").is_ok(),
+            "a user-authored recipe is never retired, whatever the bundle says"
+        );
+        assert!(recipe_repo::get_by_id(&pool, "ghost").is_err());
+
+        // Idempotent: a second sweep finds nothing left to do.
+        let again = recipe_repo::retire_stale(&pool, &keep, &templates).expect("second sweep ok");
+        assert!(again.is_empty());
+    }
+
+    /// A `derived` row whose template no longer ships is retired even though
+    /// its id IS in the bundle's keep set — the second half of the rule.
+    #[test]
+    fn a_derived_row_from_a_deleted_template_is_retired() {
+        use std::collections::HashSet;
+
+        let pool = test_pool();
+        let now = chrono::Utc::now().to_rfc3339();
+        {
+            let conn = pool.conn("recipe_seed_test::derived").unwrap();
+            conn.execute(
+                "INSERT INTO recipe_definitions
+                   (id, project_id, name, prompt_template, tags, source_template_id,
+                    is_builtin, created_at, updated_at)
+                 VALUES ('orphan','default','Orphan','{}','[\"derived\"]','gone-template',1,?1,?1)",
+                rusqlite::params![now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO recipe_definitions
+                   (id, project_id, name, prompt_template, tags, source_template_id,
+                    is_builtin, created_at, updated_at)
+                 VALUES ('kept','default','Kept','{}','[\"derived\"]','live-template',1,?1,?1)",
+                rusqlite::params![now],
+            )
+            .unwrap();
+        }
+
+        let keep: HashSet<String> = ["orphan".to_string(), "kept".to_string()]
+            .into_iter()
+            .collect();
+        let templates: HashSet<String> = ["live-template".to_string()].into_iter().collect();
+        let retired = recipe_repo::retire_stale(&pool, &keep, &templates).expect("sweep ok");
+        assert_eq!(retired, vec!["orphan".to_string()]);
+        assert!(recipe_repo::get_by_id(&pool, "kept").is_ok());
     }
 
     #[test]
@@ -766,75 +967,56 @@ mod tests {
             .expect("prompt_template must round-trip as JSON");
     }
 
+    /// A v3 recipe carries NO model tier: which model right-sizes the work is
+    /// an adoption decision that lands on the charter, not a property of the
+    /// craft knowledge. So the tier refresh that healed v2 rows must be a
+    /// strict no-op over the shipped bundle: a reseed of a populated install
+    /// repairs nothing tier-wise and leaves every payload byte-identical.
+    /// (The v2 field-merge itself stays covered by
+    /// `model_tier_merge_writes_at_the_stored_rows_own_shape`, which uses
+    /// inline fixtures rather than the shipped corpus.)
     #[test]
-    fn builtin_model_tier_is_refreshed_on_existing_rows() {
+    fn v3_bundle_carries_no_model_tier_and_reseed_repairs_nothing() {
         let pool = test_pool();
         seed_recipes_from_bundle(&pool).expect("seed ok");
         let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON).unwrap();
+        assert_eq!(
+            bundle.version, EXPECTED_SEED_VERSION,
+            "shipped bundle is v3"
+        );
 
-        // Find a shipped recipe carrying a concrete (non-null) model tier
-        // (v2 bundle: the tier lives at spec.modelOverride).
-        let (target, want_tier) = bundle
+        let tiered = bundle
             .recipes
             .iter()
-            .find_map(|r| {
-                let inner: serde_json::Value = serde_json::from_str(&r.prompt_template).ok()?;
-                let mo = inner.pointer("/spec/modelOverride")?.as_str()?.to_string();
-                Some((r, mo))
+            .filter(|r| {
+                serde_json::from_str::<serde_json::Value>(&r.prompt_template)
+                    .ok()
+                    .and_then(|v| v.pointer("/spec/modelOverride").map(|m| !m.is_null()))
+                    .unwrap_or(false)
             })
-            .expect("bundle must contain at least one tiered recipe");
+            .count();
+        assert_eq!(tiered, 0, "a v3 bundle ships no recipe-level model tier");
 
-        // Regress the seeded row to the pre-tiering shape (no override, no
-        // rationale) — simulating an install seeded before tiers shipped.
-        {
-            let row = recipe_repo::get_by_id(&pool, &target.id).unwrap();
-            let mut inner: serde_json::Value = serde_json::from_str(&row.prompt_template).unwrap();
-            let spec = inner
-                .get_mut("spec")
-                .and_then(|s| s.as_object_mut())
-                .unwrap();
-            spec.remove("modelOverride");
-            spec.remove("modelRationale");
-            let regressed = serde_json::to_string(&inner).unwrap();
-            recipe_repo::update(
-                &pool,
-                &target.id,
-                UpdateRecipeInput {
-                    prompt_template: Some(regressed),
-                    ..Default::default()
-                },
-            )
-            .unwrap();
-        }
+        let before: Vec<(String, String)> = bundle
+            .recipes
+            .iter()
+            .map(|r| {
+                let row = recipe_repo::get_by_id(&pool, &r.id).unwrap();
+                (r.id.clone(), row.prompt_template)
+            })
+            .collect();
 
-        // Re-seed: exactly the regressed row's tier should heal.
-        let pass = seed_recipes_from_bundle(&pool).expect("refresh pass ok");
+        let pass = seed_recipes_from_bundle(&pool).expect("reseed ok");
         assert_eq!(pass.created, 0, "no new rows on a populated DB");
-        assert_eq!(pass.repaired, 1, "exactly the regressed tier is refreshed");
+        assert_eq!(pass.repaired, 0, "nothing to refresh on a v3 bundle");
 
-        let healed = recipe_repo::get_by_id(&pool, &target.id).unwrap();
-        let inner: serde_json::Value = serde_json::from_str(&healed.prompt_template).unwrap();
-        assert_eq!(
-            inner
-                .pointer("/spec/modelOverride")
-                .and_then(|v| v.as_str()),
-            Some(want_tier.as_str()),
-            "spec.modelOverride refreshed from the bundle tier",
-        );
-        assert!(
-            inner
-                .pointer("/spec/modelRationale")
-                .map(|v| v.is_string())
-                .unwrap_or(false),
-            "rationale restored alongside the tier",
-        );
-        // Non-tier content survives the field-merge.
-        let orig: serde_json::Value = serde_json::from_str(&target.prompt_template).unwrap();
-        assert_eq!(
-            inner.get("title"),
-            orig.get("title"),
-            "untouched fields are preserved through the merge",
-        );
+        for (id, payload) in before {
+            let after = recipe_repo::get_by_id(&pool, &id).unwrap();
+            assert_eq!(
+                after.prompt_template, payload,
+                "payload {id} untouched by the reseed"
+            );
+        }
 
         // Idempotent: once in sync, nothing further is repaired.
         let again = seed_recipes_from_bundle(&pool).expect("second refresh pass ok");

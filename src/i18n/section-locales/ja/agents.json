@@ -2546,7 +2546,21 @@
     "suspend": "一時停止",
     "transition_unavailable_hint": "責務の有効化・一時停止はまだ利用できません。廃止のみ利用可能です。",
     "trigger_attention": "アテンションループ",
-    "trigger_every_minutes": "{minutes}分ごと"
+    "trigger_every_minutes": "{minutes}分ごと",
+    "activity_kind_act": "実行",
+    "activity_kind_decide": "判断",
+    "activity_kind_deliver": "提出",
+    "activity_kind_observe": "観察",
+    "recipe_card_title": "レシピ",
+    "recipe_connector_capability_unverified": "バインドされたコネクタは種別が一致しています。この責務が必要とする処理を実行できるかは未検証です。カタログに機能情報が定義されていません。",
+    "recipe_connector_unbound": "未バインド",
+    "recipe_connector_unbound_hint": "この責務が参照する範囲には、そのコネクタ種別に対応するものがまだありません。「コネクタ」ディメンションでバインドしてください。",
+    "recipe_connector_uncovered": "対応するコネクタがありません",
+    "recipe_connector_uncovered_hint": "カタログにはそのカテゴリのコネクタがないため、バインドできません。この責務にはカタログへのコネクタ追加、または別の種別のレシピが必要です。",
+    "recipe_connectors_label": "コネクタ",
+    "recipe_dependencies_label": "依存関係",
+    "recipe_shape_hint": "この作業が順に経る活動の種類です。ランブックではありません。分岐はありません。",
+    "recipe_shape_label": "作業の流れ"
   },
   "role_card": {
     "assign": "割り当て",

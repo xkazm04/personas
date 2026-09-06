@@ -241,6 +241,136 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Retire the builtin recipe rows the shipped bundle no longer carries.
+///
+/// **Why this exists.** The boot seeder only ever INSERTS. A row seeded by an
+/// older bundle stays forever, so a live DB drifts above the bundle by every
+/// recipe any past release ever shipped — measured 2026-09-06: 316 rows
+/// against a 109-row bundle, i.e. 190 ghosts plus 18 `derived` rows whose
+/// template was deleted months ago. Ghost recipes are not inert: they are
+/// offered in the catalog and adopted.
+///
+/// **"Retire" means DELETE.** `recipe_definitions` has no status or archived
+/// column, so there is no softer state to move a row into. What makes that
+/// safe is the guard set, not the verb — a row is removed only when all of
+/// these hold:
+///
+/// * `is_builtin = 1`. A user-authored recipe is NEVER touched, whatever the
+///   bundle says. This is the single most important line in the function.
+/// * no `persona_recipe_links` row references it;
+/// * no charter references it at `spec.sourceRecipeId`;
+/// * AND either it is absent from `keep_ids` (the bundle's own id set), or it
+///   is tagged `derived` and its `source_template_id` is not in
+///   `shipped_template_ids` (a row derived from a template that no longer
+///   ships).
+///
+/// One IMMEDIATE transaction: the reads decide the writes, and a deferred
+/// transaction fails `SQLITE_BUSY_SNAPSHOT` in 0 ms while ignoring
+/// `busy_timeout`.
+///
+/// Returns the ids actually removed, so the caller can log them. Never errors
+/// on "nothing to do".
+///
+/// **Index note (measured 2026-09-06).** The charter guard is
+/// `json_extract(spec, '$.sourceRecipeId')` over `persona_responsibilities`,
+/// which has no index and cannot use one without an expression index. It is
+/// read ONCE per boot into a set (not once per candidate row), over a table
+/// that holds tens of rows on a real install and 82 in the largest corpus
+/// seen — a full scan of that is microseconds. An expression index would cost
+/// a migration and write amplification on every charter update to save
+/// nothing measurable, so it is deliberately not added. Revisit if
+/// `persona_responsibilities` ever reaches thousands of rows.
+pub fn retire_stale(
+    pool: &DbPool,
+    keep_ids: &std::collections::HashSet<String>,
+    shipped_template_ids: &std::collections::HashSet<String>,
+) -> Result<Vec<String>, AppError> {
+    timed_query!("recipes", "recipes::retire_stale", {
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+
+        // Columns BY NAME. `recipe_definitions` is read with `SELECT *` at six
+        // sites in this file already; a seventh would make the next
+        // mid-table `ALTER TABLE ADD COLUMN` shift one more set of indices.
+        let mut stmt =
+            tx.prepare("SELECT id, is_builtin, source_template_id, tags FROM recipe_definitions")?;
+        let rows: Vec<(String, bool, Option<String>, Option<String>)> = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>("id")?,
+                    row.get::<_, i64>("is_builtin")? != 0,
+                    row.get::<_, Option<String>>("source_template_id")?,
+                    row.get::<_, Option<String>>("tags")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        drop(stmt);
+
+        // Both reference sets, read once rather than once per candidate.
+        let mut linked = std::collections::HashSet::new();
+        {
+            let mut stmt = tx.prepare("SELECT DISTINCT recipe_id FROM persona_recipe_links")?;
+            for id in stmt.query_map([], |row| row.get::<_, String>("recipe_id"))? {
+                linked.insert(id?);
+            }
+        }
+        let mut charter_referenced = std::collections::HashSet::new();
+        {
+            let mut stmt = tx.prepare(
+                "SELECT DISTINCT json_extract(spec, '$.sourceRecipeId') AS source_recipe_id
+                 FROM persona_responsibilities
+                 WHERE json_extract(spec, '$.sourceRecipeId') IS NOT NULL",
+            )?;
+            for id in stmt.query_map([], |row| row.get::<_, Option<String>>("source_recipe_id"))? {
+                if let Some(id) = id? {
+                    charter_referenced.insert(id);
+                }
+            }
+        }
+
+        let mut retired: Vec<String> = Vec::new();
+        for (id, is_builtin, source_template_id, tags) in rows {
+            if !is_builtin {
+                continue;
+            }
+            if linked.contains(&id) || charter_referenced.contains(&id) {
+                continue;
+            }
+            let absent_from_bundle = !keep_ids.contains(&id);
+            // `tags` is a JSON array string; a substring probe is enough for a
+            // one-word marker and avoids parsing 300 blobs at boot.
+            // `is_none_or` is deliberately spelled out: it stabilized in
+            // 1.82 and this workspace declares MSRV 1.80, so clippy's
+            // `incompatible_msrv` rejects it.
+            let template_still_ships = source_template_id
+                .as_deref()
+                .map(|t| shipped_template_ids.contains(t))
+                .unwrap_or(false);
+            let derived_orphan =
+                tags.as_deref().is_some_and(|t| t.contains("derived")) && !template_still_ships;
+            if !absent_from_bundle && !derived_orphan {
+                continue;
+            }
+            tx.execute(
+                "DELETE FROM persona_recipe_links WHERE recipe_id = ?1",
+                params![id],
+            )?;
+            tx.execute(
+                "DELETE FROM recipe_versions WHERE recipe_id = ?1",
+                params![id],
+            )?;
+            tx.execute("DELETE FROM recipe_definitions WHERE id = ?1", params![id])?;
+            retired.push(id);
+        }
+
+        tx.commit()?;
+        retired.sort();
+        Ok(retired)
+    })
+}
+
 /// Stage B Phase 1b — find a derived recipe by its (template_id, use_case_id)
 /// stable key. Returns None if no recipe has been derived for this pair yet.
 /// The (source_template_id, source_use_case_id) pair has a partial unique

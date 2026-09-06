@@ -1,0 +1,2472 @@
+{
+ "lane": "L4",
+ "reviewed": 20,
+ "recipes": [
+  {
+   "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
+   "slug": "access-request-approval-chain",
+   "title": "Access request approval chain",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "operations_logistics/approvals",
+   "domain": "operations_logistics",
+   "description": {
+    "need": "A request nobody decided looks exactly like one that was denied, and the person waiting cannot tell which. Left alone, silence becomes the way privileged access gets granted.",
+    "input": "A captured, classified request, the approval levels the organisation uses, and how long it has sat with its current approver.",
+    "core_action": "Carry each request to an explicit approved, denied or escalated verdict, judging when a quiet approver has become an escalation and holding anything high privilege for a person to say yes out loud.",
+    "output": "Every request carries a recorded decision, a decider and the time it took, and nothing is pending without a stated reason."
+   },
+   "activities": [
+    {
+     "id": "watch",
+     "label": "Watch requests in flight and how long each has sat with its current approver",
+     "kind": "observe"
+    },
+    {
+     "id": "route",
+     "label": "Put the request in front of the approver whose level it has reached",
+     "kind": "act"
+    },
+    {
+     "id": "judge-silence",
+     "label": "Decide whether a quiet approver needs a nudge or has become an escalation",
+     "kind": "decide"
+    },
+    {
+     "id": "gate",
+     "label": "Hold high privilege and sensitive requests for an explicit human decision",
+     "kind": "decide"
+    },
+    {
+     "id": "record",
+     "label": "Record the verdict, who made it and how long it took",
+     "kind": "act"
+    },
+    {
+     "id": "inform",
+     "label": "Tell the requestor where their request ended up",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "no-request-stalls",
+     "statement": "No access request sits without a decision or a clear reason it is still pending.",
+     "success_criteria": [
+      "Every request reaches approved, denied or escalated within a window that matches its urgency",
+      "An approver falling behind is nudged before the request runs out of time",
+      "A request that runs out of time escalates rather than silently expiring"
+     ]
+    },
+    {
+     "id": "high-privilege-always-human",
+     "statement": "High privilege or sensitive access is never granted without an explicit human decision.",
+     "success_criteria": [
+      "Admin level, production and sensitive resource requests always reach a human reviewer regardless of other automation",
+      "No approval is ever inferred from silence"
+     ]
+    }
+   ],
+   "guidance": "Own getting every request to a clear, timely decision. Route through the configured levels, watch for approvers who have gone quiet, and escalate rather than let a request go silent. High privilege and sensitive requests always need an explicit human call. Use judgment on urgency and on who is worth nudging, but never auto advance past that gate. When approvers disagree or the escalation target is unclear, hand it to a person rather than guessing.",
+   "connector_types": [
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Two conditions drive this work and neither is a clock: a request arriving with its first approver, and a request approaching the point where its approver has gone quiet. Watching both directly is more honest than a poll, and lets an urgent request be chased sooner without reconfiguring anything."
+   },
+   "personalization_needs": [
+    "Which approval levels this organisation actually uses and who sits at each, since the chain shape is a property of the org rather than a default",
+    "What counts as high privilege here, because that line is the only thing standing between automation and an unreviewed grant",
+    "How long the adopter is willing to let a level hold a request before it is escalated, which is a rhythm judgment not a constant"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "timeout_hours",
+     "type": "number",
+     "default": 48,
+     "min": 4,
+     "max": 168,
+     "description": "Standard-urgency approval timeout. Urgent halves it; emergency uses 4h."
+    },
+    {
+     "name": "require_human_review_for_high_privilege",
+     "type": "boolean",
+     "default": true,
+     "description": "Forces admin-level / production / sensitive resource requests through explicit human review regardless of other rules."
+    }
+   ],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "7e2b8d54-a141-5c16-8d76-b2a836a37fd5"
+    ],
+    "from_templates": [
+     "access-request-manager"
+    ],
+    "source_template_id": "access-request-manager"
+   },
+   "review_notes": "v2 declared an empty connectors array, but its own description (\"sends approval notifications\"), its timeout reminder mechanic and its error handling (\"Messages delivery failure, retry once\") all evidence an outbound conversational channel, so connector_types is [\"messaging\"] rather than empty. This is inferred from the recipe's own text, not invented. \"notifications\" was considered and rejected: approval needs a reply from the approver and notifications connectors in this catalog are one way. The v2 suggested trigger was an event listener that \"also wakes on a polling cadence to scan in-flight requests for timeouts\", which is exactly the self_paced shape rather than either pure kind.",
+   "research_notes": "Read the v2 prompt_template (including its errorHandling and reviewPolicy blocks) and the automation.json verdict, whose notes explain why this stays separate from intake. Compared the catalog membership of \"messaging\" (10 connectors, two way) against \"notifications\" (9, mostly one way webhooks) in scripts/connectors/builtin to pick the type.",
+   "superseded_by": []
+  },
+  {
+   "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
+   "slug": "access-grant-audit-and-compliance-reporting",
+   "title": "Access grant audit and compliance reporting",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/compliance-monitoring",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "When somebody asks why an access grant was approved, the answer is usually reconstructed by hand from logs, months late, by whoever still remembers. Approval bottlenecks stay invisible in the same way, buried inside an average.",
+    "input": "The ledger of access requests, their approvers, their verdicts and how long each level held them.",
+    "core_action": "Turn one ledger into both the periodic account and any point in time compliance answer, so the two can never disagree, and name the approvers who are slowing the chain instead of letting an average hide them.",
+    "output": "A standing, defensible record of who asked, who decided and how long it took, with bottlenecks named and any gap in the source stated."
+   },
+   "activities": [
+    {
+     "id": "read",
+     "label": "Read the access request ledger across the period in question",
+     "kind": "observe"
+    },
+    {
+     "id": "reconcile",
+     "label": "Check the ledger against what the approval work actually recorded",
+     "kind": "observe"
+    },
+    {
+     "id": "aggregate",
+     "label": "Aggregate volumes, verdicts and time to decision",
+     "kind": "act"
+    },
+    {
+     "id": "name",
+     "label": "Name the approvers whose response times are dragging the chain",
+     "kind": "decide"
+    },
+    {
+     "id": "compose",
+     "label": "Compose the account, stating any gap in the source plainly",
+     "kind": "act"
+    },
+    {
+     "id": "answer",
+     "label": "Deliver the account and answer point in time compliance questions from the same ledger",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "grants-are-defensible-on-demand",
+     "statement": "Anyone asking why an access grant was approved can get the full chain of approvals and justification for any date range without a person digging through logs.",
+     "success_criteria": [
+      "A compliance answer for any requested date range reconstructs every grant with its approver, justification and timing",
+      "No follow up question about a specific grant requires manual log diving"
+     ]
+    },
+    {
+     "id": "bottlenecks-surface-before-they-fester",
+     "statement": "Approval bottlenecks are visible to the team before they become a recurring complaint.",
+     "success_criteria": [
+      "The periodic account names the approver with the slowest average response time, not just an aggregate",
+      "Time to decision is comparable across consecutive periods"
+     ]
+    }
+   ],
+   "guidance": "Own the standing record of who asked, who decided, how long it took and whether the pattern is healthy. Produce the periodic rollup and any compliance answer from the same ledger so the two never disagree. Call out approvers who are consistently slow rather than burying them in an average. If the source is unreadable, still ship a partial account and say what is missing rather than going quiet.",
+   "connector_types": [
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Two conditions, neither a clock: enough approval activity has accumulated to say something the last account did not, or a compliance question has been asked. No statutory calendar forces a date here, so a cadence would only manufacture accounts into periods where nothing moved."
+   },
+   "personalization_needs": [
+    "Who reads this and what decision they make with it, since that sets the length and the shape entirely",
+    "What the adopter's regulator or auditor actually asks for, because a compliance answer is only defensible against a real question",
+    "What counts as too slow for an approver here, which is a rhythm judgment and not a fixed number"
+   ],
+   "dependencies": [
+    "An access request ledger already being written by the intake work; this recipe reads that record and does not create it"
+   ],
+   "input_schema": [
+    {
+     "name": "audit_enabled",
+     "type": "boolean",
+     "default": true,
+     "description": "Whether every request generates a compliance-grade audit record. Disabling not recommended for regulated industries."
+    }
+   ],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "09e94e4a-ba35-54cd-8a61-59983b21e463"
+    ],
+    "from_templates": [
+     "access-request-manager"
+    ],
+    "source_template_id": "access-request-manager"
+   },
+   "review_notes": "Retitled from \"Audit & Reporting\", which named neither an area nor an activity. v2 carried three cadences (daily digest, weekly summary, on demand report) in one recipe; v3 keeps the job and drops all three, since the spec forbids a cadence on a recipe and the lane rule only allows time where a statutory calendar forces it, which nothing here does. The dependency on an upstream ledger is real and evidenced by v2 error handling (\"Audit DB unreadable, reconstruct from in-flight buffer\"), so it is declared rather than assumed.",
+   "research_notes": "Read the v2 prompt_template and the reporting.json verdict for this id. Checked the lane rule for legal_compliance in the brief against the v2 cron, and checked the Contractor responsibility \"A current account of where things stand\" in convert_B.json as the corpus precedent for a self_paced account (\"do not produce an account into a period where nothing moved\"), which is the same shape.",
+   "superseded_by": []
+  },
+  {
+   "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
+   "slug": "access-request-intake-and-triage",
+   "title": "Access request intake and triage",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "operations_logistics/intake",
+   "domain": "operations_logistics",
+   "description": {
+    "need": "Access requests arrive as ordinary messages among everything else, so the same ask gets entered twice, or read once and forgotten, and the record of who asked for what stops being something anyone would defend.",
+    "input": "Inbound request messages, the organisation's own access level vocabulary, and the record of requests already captured.",
+    "core_action": "Decide what each message is really asking for, whether it has already been captured, and how much privilege it carries, because that classification is what later decides whether a person has to say yes.",
+    "output": "One durable, deduplicated request record per real ask, classified by privilege and ready for a decision."
+   },
+   "activities": [
+    {
+     "id": "collect",
+     "label": "Collect inbound access requests from the watched channel",
+     "kind": "observe"
+    },
+    {
+     "id": "read",
+     "label": "Read the requestor, resource, access level and urgency out of each message",
+     "kind": "observe"
+    },
+    {
+     "id": "screen",
+     "label": "Set aside repeats and messages from senders who may not ask",
+     "kind": "decide"
+    },
+    {
+     "id": "classify",
+     "label": "Judge privilege level against the organisation's own access vocabulary",
+     "kind": "decide"
+    },
+    {
+     "id": "record",
+     "label": "Write each real request as a durable audit record",
+     "kind": "act"
+    },
+    {
+     "id": "hand-off",
+     "label": "Hand the classified request to the approval decision",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "complete-audit-trail",
+     "statement": "Every incoming access request is captured once, correctly classified, and never lost.",
+     "success_criteria": [
+      "Each distinct request produces exactly one audit record, with duplicates and malformed requests handled without dropping the underlying ask",
+      "Every request carries an accurate privilege classification before it reaches the approval chain"
+     ]
+    },
+    {
+     "id": "no-blind-approvals",
+     "statement": "The approval chain never starts deciding on an incomplete or unverified request.",
+     "success_criteria": [
+      "Requests from unverified or external senders are flagged rather than queued for approval",
+      "The audit record exists and is durable before the approval work is notified"
+     ]
+    }
+   ],
+   "guidance": "Own turning inbound access requests into a queue the approval work can trust. Extract the real ask from each message, catch duplicates and malformed requests, and classify privilege carefully, since that classification decides whether a person must review later. Completeness and correctness of the record matter more than speed. Never hand a request onward before its record is durable, and flag an unverified sender rather than queueing them.",
+   "connector_types": [
+    "email"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "A request arriving is a real external occurrence and the work has no value before it. Adoption may realise this as inbox polling where the bound connector cannot push, but the kind of thing being waited on is an arrival, not a clock."
+   },
+   "personalization_needs": [
+    "The organisation's access level vocabulary, because privilege classification is the whole judgment here and the words differ per organisation",
+    "Which inbox, label or folder carries real requests, since the seat should not read everything",
+    "Who counts as allowed to ask, because a request from outside is a security signal rather than a queue item"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "approval_levels",
+     "type": "enum",
+     "options": [
+      "manager_only",
+      "manager_then_admin",
+      "manager_admin_security",
+      "single_approver"
+     ],
+     "default": "manager_then_admin",
+     "description": "Shape of the approval chain the intake primes; drives how many levels the audit record anticipates."
+    },
+    {
+     "name": "access_level_scheme",
+     "type": "text",
+     "description": "Organization's access-level vocabulary (e.g., 'Read-only, Write, Admin' or 'Viewer, Editor, Owner'). Used to classify the requested level and flag high-privilege tiers."
+    }
+   ],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "4d59fa79-cd36-5164-995b-a4d1dc1e04dd"
+    ],
+    "from_templates": [
+     "access-request-manager"
+    ],
+    "source_template_id": "access-request-manager"
+   },
+   "review_notes": "Outcomes and guidance taken from the consolidation verdict (automation.json), which kept this separate from the approval chain because a complete correct record and a timely safe decision are different accountabilities. v2 bound a ten minute cron; v3 recommends the kind (an arrival) and leaves the realisation to adoption. v2 connectors were [\"email\"], already a catalog category, so nothing was demoted. No vendor is evidenced anywhere in the source, so examples is empty rather than populated with a guess.",
+   "research_notes": "Read the v2 row and prompt_template for this id in _recipe_seeds.json; the consolidation verdict in _consolidation/automation.json; the connector catalog under scripts/connectors/builtin (134 files) to confirm \"email\" is a plural categories value carried by gmail, microsoft-outlook, resend, sendgrid, hubspot and the google-workspace template. Checked _lanes_v3.json: superseded_by is empty for this id, so the consolidation verdict is the authority.",
+   "superseded_by": []
+  },
+  {
+   "id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
+   "slug": "contract-intake-and-risk-analysis",
+   "title": "Contract intake and risk analysis",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/contracts",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "Contracts get signed on the strength of whoever had time to read them. Unfavourable terms, missing protections and clauses that are out of line with what this counterparty has signed before go unmentioned because nobody compared.",
+    "input": "An incoming contract document, the team's stated risk tolerance, and the reviewed history of the same counterparty.",
+    "core_action": "Judge the contract on terms, money, obligations and risk, with this counterparty's own prior contracts as the market baseline, and refuse to analyse a document that is unreadable, partial, or an amendment whose original is missing.",
+    "output": "A structured review a person can act on without rereading the contract, with every market claim traceable to a real prior contract."
+   },
+   "activities": [
+    {
+     "id": "receive",
+     "label": "Take in an incoming contract and get readable text out of it",
+     "kind": "observe"
+    },
+    {
+     "id": "qualify",
+     "label": "Decide whether the document is complete enough to analyse at all",
+     "kind": "decide"
+    },
+    {
+     "id": "classify",
+     "label": "Identify the contract type and pull the counterparty's own history",
+     "kind": "observe"
+    },
+    {
+     "id": "read-terms",
+     "label": "Work through key terms, financials and obligations",
+     "kind": "act"
+    },
+    {
+     "id": "assess",
+     "label": "Judge risk, red flags and how the terms sit against what this counterparty signed before",
+     "kind": "decide"
+    },
+    {
+     "id": "record",
+     "label": "Produce the structured review and the dates it commits anyone to",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "risk-surfaced-before-signature",
+     "statement": "Nobody signs or acts on a contract whose unfavourable terms, missing protections or red flags were never surfaced.",
+     "success_criteria": [
+      "Every intake worthy contract produces a structured review covering key terms, financials, obligations, risk, red flags and market comparison before anyone is expected to act on it",
+      "A contract that cannot be confidently classified, reads suspiciously short, or references an original the seat does not have, is routed to a person rather than analysed as if complete"
+     ]
+    },
+    {
+     "id": "market-terms-traceable",
+     "statement": "A claim like \"this escalation clause is above market\" can be traced back to the counterparty's own contract history rather than asserted from nothing.",
+     "success_criteria": [
+      "Market comparison language cites the counterparty's prior reviewed contracts wherever any exist",
+      "A comparison made with no prior history says so instead of implying a baseline"
+     ]
+    }
+   ],
+   "guidance": "Own turning an incoming contract into a review someone can act on without rereading the source. Classify it, then work through terms, money, obligations, risk and market position with the counterparty's own history as context. Escalate rather than guess when the document is unreadable, encrypted, partial, or an amendment without its original. Match strictness to the risk tolerance the team stated, not to a personal bar.",
+   "connector_types": [
+    "email"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "A contract arriving is a real external occurrence with a deadline attached to it, and there is no work to do before one arrives. v2 already offered both a poll and a webhook for the same arrival, which is the tell that the arrival, not the interval, is the thing."
+   },
+   "personalization_needs": [
+    "Which contract types this team actually reviews, because that decides which clause patterns and risk factors the reading emphasises",
+    "Where contracts arrive and how they are marked, since the seat should not read an entire inbox",
+    "How strict the team wants to be, because the same clause is a red flag under one tolerance and normal under another",
+    "Whether an unreadable document should be bounced back to the sender or held quietly, which is a relationship decision"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "contract_types",
+     "type": "text",
+     "description": "Which contract types the team reviews most often , informs which clause patterns and risk factors the analysis emphasizes."
+    },
+    {
+     "name": "risk_tolerance",
+     "type": "enum",
+     "options": [
+      "conservative",
+      "moderate",
+      "aggressive"
+     ],
+     "default": "moderate",
+     "description": "Conservative flags anything non-standard; moderate flags unfavorable + missing protections; aggressive only flags critical risks."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Gmail as the intake connector",
+     "connector": "gmail",
+     "connector_type": "email",
+     "notes": "v2 leaned on label or folder search plus attachment fetch to find contracts, and on a reply to the sender when a document could not be read. An adoption on Gmail inherits both, and inherits its attachment size and format limits as the real boundary on what can be analysed."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "efb53700-bed3-55ab-8b58-4257387c9f5a"
+    ],
+    "from_templates": [
+     "ai-contract-reviewer"
+    ],
+    "source_template_id": "ai-contract-reviewer"
+   },
+   "review_notes": "The \"six pass\" framing in v2 was a runbook detail and is gone; the passes collapse into two coarse activities, since a reader needs the shape and not the pass count. dependencies is deliberately empty: v2 flags a document as needing OCR and refuses rather than performing it, so no OCR toolchain is evidenced and inventing one would be a fabricated dependency. This id has an empty superseded_by, so the analysis.json verdict is the authority.",
+   "research_notes": "Read the v2 prompt_template (toolHints name gmail_search and gmail_get_attachment, which is the only vendor evidence in the row) and the analysis.json verdict. Confirmed against the connector catalog that \"email\" is a categories value on six connectors, so gmail is correctly an example rather than a type. Confirmed no OCR or PDF dependency appears anywhere in the source before leaving dependencies empty.",
+   "superseded_by": []
+  },
+  {
+   "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
+   "slug": "contract-obligation-and-deadline-watch",
+   "title": "Contract obligation and deadline watch",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/deadlines",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "A contract's consequences are carried by dates that live inside it: notice windows, obligation due dates, warranty expiries. Nobody re-reads a signed contract to find them, so they arrive as surprises.",
+    "input": "Every tracked contract with the dates it carries, and the record of which of those dates have already been raised.",
+    "core_action": "Decide which dates are close enough to matter, how urgent each has become, and who can actually act, without raising the same date at the same urgency twice.",
+    "output": "No date with a consequence passes without the person who could have acted on it having been told while there was still time."
+   },
+   "activities": [
+    {
+     "id": "survey",
+     "label": "Survey every tracked contract obligation and the date attached to it",
+     "kind": "observe"
+    },
+    {
+     "id": "approach",
+     "label": "Judge which dates are close enough to matter and how urgent each has become",
+     "kind": "decide"
+    },
+    {
+     "id": "suppress",
+     "label": "Set aside dates already raised at the same urgency",
+     "kind": "decide"
+    },
+    {
+     "id": "raise",
+     "label": "Raise the date with the people who can act on it",
+     "kind": "act"
+    },
+    {
+     "id": "escalate",
+     "label": "Escalate a date that keeps being raised and keeps being ignored",
+     "kind": "act"
+    },
+    {
+     "id": "mark",
+     "label": "Record what was raised so the next pass does not repeat it",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "no-missed-contract-deadline",
+     "statement": "Nobody is surprised by a contract renewal, termination window, obligation or warranty deadline arriving unannounced.",
+     "success_criteria": [
+      "Every tracked date is raised at each level of urgency before it lapses",
+      "A date already raised at a given urgency is never raised again at that same urgency",
+      "A date that passed without anybody acting is treated as a miss regardless of whether the message was delivered"
+     ]
+    }
+   ],
+   "guidance": "Own visibility into every date a signed contract commits someone to: renewals, notice windows, obligations, warranties. Reach the people who can act, size the urgency to how near the date is, and never repeat yourself at the same level. A date that passed with nobody acting is a miss even if the message went out. A date that is consistently ignored is a pattern to escalate, not a reminder to send again.",
+   "connector_types": [
+    "email",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "The dates themselves are what is watched, and each contract has its own. A daily sweep is one way to notice them but it is not the thing being noticed, and it wakes the seat on days when nothing is near. Nothing statutory forces a calendar here."
+   },
+   "personalization_needs": [
+    "Which dates this adopter tracks and where they are recorded, since a deadline nobody wrote down cannot be watched",
+    "Who can actually act on each kind of date, because a reminder that reaches the wrong person looks handled and is not",
+    "How far ahead a date should be raised, which differs sharply between a notice window and a warranty expiry"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "reminder_recipients",
+     "type": "text",
+     "description": "Comma-separated additional email recipients for deadline reminders (besides the original submitter)."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Gmail as the reminder channel",
+     "connector": "gmail",
+     "connector_type": "email",
+     "notes": "v2 sent the reminder to the original submitter plus a configured list. On Gmail a bounce is the failure that matters: v2 learned to leave the reminder unmarked so the next pass retries it rather than recording a send that never landed."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "f714c64f-0e3a-573e-8cbc-1241b34f9400"
+    ],
+    "from_templates": [
+     "ai-contract-reviewer"
+    ],
+    "source_template_id": "ai-contract-reviewer"
+   },
+   "review_notes": "The consolidation verdict renamed this to a parenthetical list of the four deadline kinds, to disambiguate it from the signature reminders (2d6945b7) and the renewal window watch (55bf5308). v3 keeps the disambiguation but not the list: \"obligation and deadline\" names the area and the activity, and the four kinds live in the description where they belong. v2 bound a daily 08:00 cron; per the lane rule for dated obligations that becomes self_paced with the dates as what is watched.",
+   "research_notes": "Read the v2 prompt_template and the content.json verdict including its disambiguation note naming all four near identical source titles. Cross read 2d6945b7 and 55bf5308 in this same lane to keep the three scopes genuinely disjoint (signatures, renewal clock, everything else a signed contract commits you to).",
+   "superseded_by": []
+  },
+  {
+   "id": "04756772-500e-5f72-a401-dd57b66f7251",
+   "slug": "contract-review-publication-and-risk-alert",
+   "title": "Contract review publication and risk alert",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/contracts",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "A completed contract review that only exists inside the reviewer helps nobody. The submitter chases for a verdict, and legal either hears about every routine contract or about none of the risky ones.",
+    "input": "A finished structured contract review with its risk level, its flags and the dates it found.",
+    "core_action": "Decide who this finding is for: publish it where contract records already live, give the submitter a verdict they can act on, and pull legal in only when severity or flag count crosses the line the team drew.",
+    "output": "The analysis is on the record, the submitter knows what happens next, and legal was interrupted exactly when it was worth interrupting."
+   },
+   "activities": [
+    {
+     "id": "take",
+     "label": "Take a completed contract review as it lands",
+     "kind": "observe"
+    },
+    {
+     "id": "publish",
+     "label": "Publish the full analysis where the team already looks for contract records",
+     "kind": "act"
+    },
+    {
+     "id": "tell",
+     "label": "Tell the submitter what was found and what happens next",
+     "kind": "act"
+    },
+    {
+     "id": "weigh",
+     "label": "Weigh flag count and severity against the line the team drew",
+     "kind": "decide"
+    },
+    {
+     "id": "pull-in",
+     "label": "Pull legal in when that line is crossed, and leave them alone when it is not",
+     "kind": "act"
+    },
+    {
+     "id": "track",
+     "label": "Update the contract record and the dates it now carries",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "submitter-gets-a-clear-verdict",
+     "statement": "The person who submitted a contract knows what was found and what happens next without chasing anyone.",
+     "success_criteria": [
+      "Every submitter receives a summary after their contract is reviewed",
+      "The summary states the risk level and the specific flags behind it, not just a score"
+     ]
+    },
+    {
+     "id": "legal-notices-high-risk-fast",
+     "statement": "Legal is pulled in immediately when a contract is genuinely risky, and not for routine ones.",
+     "success_criteria": [
+      "Every contract crossing the high risk threshold or carrying any critical flag reaches the legal channel",
+      "Legal is not paged for contracts below the threshold"
+     ]
+    }
+   ],
+   "guidance": "Convert a completed review into the record of what was found and the news for whoever needs it. Publish the full analysis, tell the submitter plainly, and pull legal in only when the count or the severity crosses the line the team set. Treat a publishing or messaging failure as recoverable: keep the analysis and retry rather than losing a finding that took real work to produce.",
+   "connector_types": [
+    "knowledge_base",
+    "email",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "This work exists only in response to a review completing, and has nothing to do between reviews. Waking on the completion is the whole of it."
+   },
+   "personalization_needs": [
+    "Where this team already keeps contract records, since publishing into a place nobody reads is the same as not publishing",
+    "What the team counts as high risk, because that line is what protects legal from being paged for routine work",
+    "Whether outbound summaries to external submitters need a person to see them first"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "legal_team_channel",
+     "type": "text",
+     "description": "messaging channels for high-risk alerts (e.g., #legal-review)."
+    },
+    {
+     "name": "high_risk_threshold",
+     "type": "number",
+     "default": 3,
+     "description": "Number of red flags that triggers the messaging alert + priority email formatting."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Notion as the contract record",
+     "connector": "notion",
+     "connector_type": "knowledge_base",
+     "notes": "v2 event payloads carried a notion_url, so Notion is the concrete solution this recipe grew up against. What it learned there is rate limit shaped: honour the retry hint, and when publishing still fails, keep the full analysis locally and queue the upload rather than losing the finding."
+    },
+    {
+     "title": "Gmail as the submitter channel",
+     "connector": "gmail",
+     "connector_type": "email",
+     "notes": "A bounced submitter address should be logged and raised on the messaging channel rather than silently dropping the verdict."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "04756772-500e-5f72-a401-dd57b66f7251"
+    ],
+    "from_templates": [
+     "ai-contract-reviewer"
+    ],
+    "source_template_id": "ai-contract-reviewer"
+   },
+   "review_notes": "v2 title was \"knowledge base Publish and Risk Alert\", a vendor substitution artifact where a redacted vendor name was replaced by its category and left in the title. v3 names the area (contract review) and the activity (publication and risk alert), and the knowledge base becomes a connector_type with Notion as the example, which is where the substituted vendor actually belongs. All three v2 connectors were already catalog categories, so nothing was demoted.",
+   "research_notes": "Read the v2 prompt_template, whose contract.risk.high_flagged payload names notion_url and gives the vendor evidence for the example. Read the reporting.json verdict. Checked \"knowledge_base\" in the catalog (8 connectors including notion, confluence, sharepoint, obsidian and the vector knowledge base), which confirms the type is broad enough for adoption to bind something other than Notion.",
+   "superseded_by": []
+  },
+  {
+   "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+   "slug": "support-issue-disposition-account",
+   "title": "Support issue disposition account",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/service-health",
+   "domain": "customer_support",
+   "description": {
+    "need": "Whoever is accountable for a support queue cannot tell from the tracker whether it was handled or merely touched. Without a short account they either open the tracker themselves or stop asking.",
+    "input": "What actually happened to issues since the last account, and the counts the source itself reports.",
+    "core_action": "Say what happened to the issues that were touched, reconciled against the source rather than against local state, and pick the few worth naming instead of counting everything.",
+    "output": "A short account anyone accountable can read without opening the tracker, honest about any gap in the data behind it."
+   },
+   "activities": [
+    {
+     "id": "gather",
+     "label": "Gather what happened to issues since the last account",
+     "kind": "observe"
+    },
+    {
+     "id": "reconcile",
+     "label": "Reconcile the counts against the source rather than local state alone",
+     "kind": "observe"
+    },
+    {
+     "id": "select",
+     "label": "Decide which issues are worth naming rather than counting",
+     "kind": "decide"
+    },
+    {
+     "id": "compose",
+     "label": "Compose a short account that states any gap in the data plainly",
+     "kind": "act"
+    },
+    {
+     "id": "deliver",
+     "label": "Deliver it where the people accountable will actually read it",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "disposition-is-accountable",
+     "statement": "The seat can account for what happened to every issue it touched, without anyone reconstructing it from the tracker.",
+     "success_criteria": [
+      "Each issue named carries its last action and what it is waiting on",
+      "Counts reported about the backlog reconcile with the source rather than with local state alone",
+      "A gap in the underlying data is stated plainly rather than presented as a confident number"
+     ]
+    },
+    {
+     "id": "account-is-actually-read",
+     "statement": "The people accountable for the queue stay current on it without opening the tracker.",
+     "success_criteria": [
+      "The account is short enough to be read in full",
+      "Every issue linked from it resolves to a real, currently valid ticket"
+     ]
+    }
+   ],
+   "guidance": "Own a trustworthy account of how the reported issues were handled. Turn recent triage activity into something people can act on without opening the tracker, and reconcile your counts against the source rather than your own notes. When the underlying data is incomplete, say so plainly rather than presenting confident numbers. Keep it short enough that people actually read it, and link out to notable issues instead of restating them.",
+   "connector_types": [
+    "ticketing",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Act when enough has happened to be worth saying, or when someone asks. A daily cron produces an account into days where nothing moved, which is exactly how a digest becomes something people stop reading."
+   },
+   "personalization_needs": [
+    "Who reads this and what they decide with it, which sets the length and shape entirely",
+    "Which queue or project this account covers, since one account over several queues is a different job",
+    "How much movement is worth an account here, because that threshold is what keeps it from becoming noise"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "digest_channel",
+     "type": "text",
+     "default": "#engineering-alerts",
+     "description": "messaging channels for the daily digest."
+    },
+    {
+     "name": "top_issues_per_bucket",
+     "type": "number",
+     "default": 3,
+     "min": 0,
+     "max": 10,
+     "description": "Maximum notable issues to link per bucket."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Slack as the delivery channel",
+     "connector": "slack",
+     "connector_type": "messaging",
+     "notes": "v2 posted to a single engineering channel and retried a failed post with backoff before giving up. The useful lesson is about shape rather than transport: on Slack the account has to survive being read on a phone, which is what forces the link out rather than restate discipline."
+    },
+    {
+     "title": "Jira as the source of truth for counts",
+     "connector": "jira",
+     "connector_type": "ticketing",
+     "notes": "v2 built the account from local state files only, which is why its outcome had to say counts must reconcile with the source. Reading the source directly is what makes the account defensible."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18"
+    ],
+    "from_templates": [
+     "autonomous-issue-resolver"
+    ],
+    "source_template_id": "autonomous-issue-resolver"
+   },
+   "review_notes": "Superseded by the App Master responsibility \"Keeping the open issue set from rotting\" (convert_A), whose from_recipes names BOTH this id and 26b22f83. Its second outcome (the seat can account for what it touched) is the accounting half and lands here; 26b22f83 takes the comparative half. DEPARTURE: the designed responsibility also carries a disposition outcome (every issue is moving, escalated or closed) that belongs to 0c01547d's triage work, not to an account of it, so it is not duplicated here. Also added \"ticketing\" to connector_types, which the designed responsibility has and v2 did not, because reconciling against the source is an explicit success criterion and v2 read only its own state files. Retitled from the cadence free \"Support Digest\" to an area plus activity name.",
+   "research_notes": "Read the v2 prompt_template, the development.json verdict, and the App Master responsibility in convert_A.json including its pacing note. Checked _lanes_v3.json to confirm one designed responsibility supersedes two ids in this lane. Vendor evidence for the examples is v2's notificationChannels [\"slack\"] and its jira connector.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "App Master",
+     "Keeping the open issue set from rotting"
+    ]
+   ]
+  },
+  {
+   "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
+   "slug": "issue-source-coverage-and-triage",
+   "title": "Issue source coverage and triage",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/ticket-handling",
+   "domain": "customer_support",
+   "description": {
+    "need": "A reported issue that nobody looked at again is indistinguishable from one that was handled. Over time the tracker fills with things that are old rather than things that are open, and nobody trusts it enough to read it.",
+    "input": "One tracked issue source, the issues created or updated since the last pass, and the set of solutions already known to work.",
+    "core_action": "Judge whether each issue holds real work, attach a solution already known to work rather than restating the problem, and decide which issues need a person, reading tone and priority together rather than priority alone.",
+    "output": "Nothing in the source is lost: everything with real work in it has reached the backlog in a shape that can be judged, and everything else has a stated reason it was closed."
+   },
+   "activities": [
+    {
+     "id": "advance",
+     "label": "Advance coverage over the tracked source since the last pass",
+     "kind": "observe"
+    },
+    {
+     "id": "assess",
+     "label": "Judge whether each issue holds real work or should be closed with a reason",
+     "kind": "decide"
+    },
+    {
+     "id": "match",
+     "label": "Look for a solution already known to work before proposing anything new",
+     "kind": "observe"
+    },
+    {
+     "id": "dispose",
+     "label": "Attach a known solution, escalate what needs a person, or close what is abandoned",
+     "kind": "act"
+    },
+    {
+     "id": "promote",
+     "label": "Promote what carries real work into the backlog in a shape that can be judged",
+     "kind": "deliver"
+    },
+    {
+     "id": "learn",
+     "label": "Record what the outcome confirmed or contradicted so the known set improves",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "source-fully-covered",
+     "statement": "Nothing reported in the tracked source is lost, and everything with real work in it reaches the backlog in a shape that can be judged.",
+     "success_criteria": [
+      "Coverage is continuous: every issue created or updated since the last pass has been seen",
+      "A promoted item carries the symptom, the affected area, and what is already known about it",
+      "The same issue is never promoted twice"
+     ]
+    },
+    {
+     "id": "people-not-just-priorities",
+     "statement": "An unhappy or high priority reporter always reaches a person, and is never auto closed into silence.",
+     "success_criteria": [
+      "Tone and priority are read together, not priority alone, when deciding to escalate",
+      "Auto closing an abandoned issue reads as considerate rather than dismissive, and can be reopened"
+     ]
+    },
+    {
+     "id": "known-solutions-earn-their-confidence",
+     "statement": "The set of known solutions becomes a more reliable source of fixes over time rather than a growing pile of guesses.",
+     "success_criteria": [
+      "A confirmed resolution strengthens the entry that produced it",
+      "A rejected solution loses confidence so it stops being suggested"
+     ]
+    }
+   ],
+   "guidance": "Own the completeness of one source so the operator never has to check it himself. Judge each issue on whether there is real work in it rather than on how loudly it was reported. Where a matching solution is already known, attach it instead of restating the problem, and only when you are genuinely confident. Bring anything ambiguous to a person rather than deciding on his behalf, and keep a promoted item small enough to act on.",
+   "connector_types": [
+    "ticketing",
+    "knowledge_base",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Advance a cursor over the source rather than polling on a fixed interval: act when new or updated issues are plausibly waiting, and sooner when the previous pass left items unresolved. A fifteen minute cron rereads a quiet backlog and still lags a busy one."
+   },
+   "personalization_needs": [
+    "Which source, and which project or queue inside it, since the cut is one responsibility per source and each instance must know its slice",
+    "What makes an issue worth the backlog rather than worth closing, because that is the whole judgment and it differs completely between a bug tracker and a feedback inbox",
+    "Which known solutions may be attached without asking, because attaching a confident wrong answer to somebody else's issue is the expensive failure here",
+    "At what age silence should be read as abandonment here, since the source hard coded thirty days and that is a property of a team's rhythm"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "stale_days",
+     "type": "number",
+     "default": 7,
+     "min": 1,
+     "max": 90,
+     "description": "Days of inactivity before an issue is considered stale."
+    },
+    {
+     "name": "max_issues_per_cycle",
+     "type": "number",
+     "default": 20,
+     "min": 5,
+     "max": 100,
+     "description": "Cap on issues processed per 15-minute cycle to respect API rate limits."
+    },
+    {
+     "name": "confidence_threshold",
+     "type": "number",
+     "default": 80,
+     "min": 60,
+     "max": 100,
+     "description": "Minimum confidence for auto-posting a solution."
+    },
+    {
+     "name": "auto_close_enabled",
+     "type": "boolean",
+     "default": true,
+     "description": "When true, issues with 30+ days of inactivity receive a polite closing comment and transition to Closed."
+    },
+    {
+     "name": "eng_manager_email",
+     "type": "text",
+     "default": "eng-manager@company.com",
+     "description": "Engineering manager who receives direct messages for angry + P1/P2 escalations."
+    },
+    {
+     "name": "escalation_channel",
+     "type": "text",
+     "default": "#engineering-escalations",
+     "description": "Dedicated messaging channels for high-priority escalation posts."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Jira as the issue source",
+     "connector": "jira",
+     "connector_type": "ticketing",
+     "notes": "v2 learned two things running against Jira: rate limiting is the binding constraint, so a pass must cap how many issues it touches and resume rather than push through, and an auth failure should stop the whole capability rather than half completing a sweep."
+    },
+    {
+     "title": "Slack as the escalation channel",
+     "connector": "slack",
+     "connector_type": "messaging",
+     "notes": "v2 queued failed posts and retried on the next pass rather than dropping them, because an escalation that silently failed to send is worse than one that arrived late."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "0c01547d-42e9-580f-9fd9-ed78c53ebce2"
+    ],
+    "from_templates": [
+     "autonomous-issue-resolver"
+    ],
+    "source_template_id": "autonomous-issue-resolver"
+   },
+   "review_notes": "Superseded by the App Master responsibility \"Tracking one issue source into the backlog\" (convert_A), which reframes this from auto resolving stale tickets to guaranteeing coverage of one source; that framing, its trigger, its pacing and its personalization needs are taken as authoritative. DEPARTURE: the designed responsibility lists connectors jira and knowledge_base only, and messaging is added back, because both v2 and the development.json verdict make routing an unhappy or high priority reporter to a person a load bearing outcome, and that leg needs a channel. The verdict's two outcomes are kept alongside the designed one for the same reason. Connector id \"jira\" demoted to \"ticketing\".",
+   "research_notes": "Read the v2 prompt_template (six input schema knobs, all carried verbatim), the development.json verdict, and the App Master responsibility in convert_A.json. Checked scripts/connectors/builtin/jira: categories are [\"project_management\",\"ticketing\"], and \"ticketing\" is the narrower and more accurate of the two (its only other member is linear). Confirmed \"knowledge_base\" and \"messaging\" are both categories values already.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "App Master",
+     "Tracking one issue source into the backlog"
+    ]
+   ]
+  },
+  {
+   "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+   "slug": "issue-handling-trend-review",
+   "title": "Issue handling trend review",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/service-health",
+   "domain": "customer_support",
+   "description": {
+    "need": "A count of resolved issues says nothing about whether the queue is getting better. Without a comparison nobody can tell a good period from a bad one, and the same totals get restated until they stop being read.",
+    "input": "This period's triage activity, the account given last time, and whichever of the two sources behind them is currently healthy.",
+    "core_action": "Compare rather than count: state what moved since the last account, and be explicit about which figure came from the live source and which from local state.",
+    "output": "A comparison anyone can read to see whether issue handling is improving or degrading, archived so the trend line survives a failed delivery."
+   },
+   "activities": [
+    {
+     "id": "gather",
+     "label": "Gather this period's triage activity and the last account given",
+     "kind": "observe"
+    },
+    {
+     "id": "compare",
+     "label": "Compare resolution rate, time to resolution and staleness against the previous period",
+     "kind": "decide"
+    },
+    {
+     "id": "source-check",
+     "label": "Say which figure came from the live source and which from local state",
+     "kind": "observe"
+    },
+    {
+     "id": "explain",
+     "label": "Lead with what changed rather than restating totals people have seen",
+     "kind": "act"
+    },
+    {
+     "id": "archive",
+     "label": "Archive the account so the trend line survives a failed delivery",
+     "kind": "act"
+    },
+    {
+     "id": "deliver",
+     "label": "Deliver the comparison to whoever owns the backlog",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "trend-visible-without-digging",
+     "statement": "Anyone can see whether issue handling is improving or degrading without going through raw ticket history.",
+     "success_criteria": [
+      "Each account states resolution rate, time to resolution and staleness against the previous period",
+      "A gap in the underlying data is called out rather than silently omitted",
+      "Which figure came from the live source and which from local state is always stated"
+     ]
+    },
+    {
+     "id": "trend-line-survives",
+     "statement": "The history of these comparisons outlives any single failed delivery.",
+     "success_criteria": [
+      "Every account is archived whether or not it was delivered successfully",
+      "A later account can be built from the archive alone"
+     ]
+    }
+   ],
+   "guidance": "Turn a period of triage activity into a comparison, not a count. Pull live numbers where the source is healthy, fall back to local state when it is not, and always say which backed which figure. Highlight what changed over restating totals people have already seen. Archive every account so the trend survives a failed delivery, and say plainly when a period simply did not move.",
+   "connector_types": [
+    "ticketing",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "A comparison needs enough movement between accounts to be a comparison. Act when the picture has changed enough to be worth saying, rather than manufacturing a Monday report about a quiet week."
+   },
+   "personalization_needs": [
+    "Who owns the backlog and what they decide from this, which sets the shape",
+    "What period this adopter thinks in, since the comparison is only meaningful against their own rhythm",
+    "Which metrics matter here, because resolution rate and time to resolution mean different things to a bug tracker and a support queue"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "report_channel",
+     "type": "text",
+     "default": "#engineering-alerts",
+     "description": "messaging channels for the weekly report."
+    },
+    {
+     "name": "archive_directory",
+     "type": "text",
+     "default": "data/weekly_reports",
+     "description": "Local directory where each report JSON is archived."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Jira as the live source",
+     "connector": "jira",
+     "connector_type": "ticketing",
+     "notes": "v2 fell back to local state counts when the Jira query failed, and the discipline that made that safe was labelling which figure came from where. Silent fallback is what turns a trend line into fiction."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "26b22f83-5e22-535b-8faa-aa51aef63f23"
+    ],
+    "from_templates": [
+     "autonomous-issue-resolver"
+    ],
+    "source_template_id": "autonomous-issue-resolver"
+   },
+   "review_notes": "Superseded by the same App Master responsibility as 0b13d1e5 (\"Keeping the open issue set from rotting\", convert_A, whose from_recipes names both ids). This one takes the comparative half of the accounting outcome plus the verdict's trend outcome; 0b13d1e5 takes the same period account. RECOMMENDATION FOR PHASE D: one designed responsibility supersedes two recipes here, and after removing the cadences that were their only real difference (\"daily digest\" versus \"weekly report\"), they are close enough that a merge is worth considering. Both are written to be mergeable. Ids are preserved unchanged per the brief rather than merged unilaterally. Retitled to drop \"Issue Health Report\", which named a document rather than an area and activity.",
+   "research_notes": "Read the v2 prompt_template, the development.json verdict, and the App Master responsibility in convert_A.json. Compared this id side by side with 0b13d1e5 to make the split defensible once both lose their crons.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "App Master",
+     "Keeping the open issue set from rotting"
+    ]
+   ]
+  },
+  {
+   "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
+   "slug": "contract-envelope-event-sync",
+   "title": "Contract envelope event sync",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/contracts",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "A contract tracker that is updated by hand is out of date by definition, and the gap is invisible: a contract stalled at review looks the same as one merely open, and a decline is discovered when somebody asks.",
+    "input": "Status events from the platform the contract is out on, the full envelope context behind each one, and the tracker the team already keeps.",
+    "core_action": "Reconstruct the true sequence when events arrive twice or out of order, write the tracker so it says what is actually true, and decide which changes are worth interrupting someone over.",
+    "output": "A tracker anyone could act on, carrying who the contract is with, what stage it is at and how long it has been there, with declines and stalls surfaced rather than merely recorded."
+   },
+   "activities": [
+    {
+     "id": "take",
+     "label": "Take an envelope event as it arrives",
+     "kind": "observe"
+    },
+    {
+     "id": "fetch",
+     "label": "Fetch the full envelope context behind the event",
+     "kind": "observe"
+    },
+    {
+     "id": "order",
+     "label": "Reconstruct the true sequence when events arrive out of order or twice",
+     "kind": "decide"
+    },
+    {
+     "id": "write",
+     "label": "Write the tracker so it says what is actually true of the contract",
+     "kind": "act"
+    },
+    {
+     "id": "route",
+     "label": "Route the change to the people it should interrupt, and only them",
+     "kind": "act"
+    },
+    {
+     "id": "flag",
+     "label": "Surface a decline, withdrawal or stall as something to act on rather than only recording it",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "envelope-state-trustworthy",
+     "statement": "The tracker says what is actually true of every contract, including the ones still moving.",
+     "success_criteria": [
+      "A status change is reflected without anyone entering it by hand",
+      "The same event arriving twice does not create a second record",
+      "A contract that stalls at a stage is visible as stalled rather than looking merely open"
+     ]
+    }
+   ],
+   "guidance": "Keep the record true as contracts move through review and signature. Each event should leave the tracker in a state someone could act on, which means carrying who it is with, what stage it is at and how long it has been there. Handle repeats idempotently, because the same event will arrive more than once. Escalate a decline or a withdrawal rather than only recording it. Finish the legs that succeed rather than failing the cycle over one bad leg.",
+   "connector_types": [
+    "forms",
+    "spreadsheet",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "An envelope changing state is a real external occurrence, and the value of reflecting it decays quickly. There is nothing to do between events, so nothing to pace."
+   },
+   "personalization_needs": [
+    "Where the tracker lives and what its columns mean, since the seat is writing into somebody else's structure",
+    "Which stages this adopter's contracts actually pass through, because review workflows differ per organisation",
+    "Which status changes deserve to interrupt someone and which are only record keeping"
+   ],
+   "dependencies": [
+    "A delivery endpoint the signature platform can reach, since this work only starts when an envelope event is delivered"
+   ],
+   "input_schema": [
+    {
+     "name": "completed_channel",
+     "type": "text",
+     "description": "messaging channels for signed/completed envelope celebrations."
+    },
+    {
+     "name": "alerts_channel",
+     "type": "text",
+     "description": "messaging channels for declined contracts and urgent issues."
+    },
+    {
+     "name": "pending_channel",
+     "type": "text",
+     "description": "messaging channels for stale unsigned-contract nudges."
+    },
+    {
+     "name": "activity_channel",
+     "type": "text",
+     "description": "messaging channels for the new-envelope activity feed (low priority)."
+    }
+   ],
+   "examples": [
+    {
+     "title": "DocuSign as the signature platform",
+     "connector": "docusign",
+     "connector_type": "forms",
+     "notes": "v2 named docusign as the webhook source and subscribed to envelope-sent, delivered, completed, declined and voided plus the per recipient variants. Two things learned there: events arrive out of order often enough that the platform timestamp, not arrival order, is the truth, and the envelope id is the only safe idempotency key. DocuSign is not in this repo's connector catalog, so no connector id can be bound today."
+    },
+    {
+     "title": "Airtable as the tracker",
+     "connector": "airtable",
+     "connector_type": "spreadsheet",
+     "notes": "v2 payloads carry an airtable_record_id, and its error handling learned to create on a failed update rather than dropping the event, because the record may not exist yet when an out of order event lands."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "4d115a03-9ba9-556b-88fa-abe921f7f3e1"
+    ],
+    "from_templates": [
+     "contract-lifecycle-use-case"
+    ],
+    "source_template_id": "contract-lifecycle-use-case"
+   },
+   "review_notes": "Title comes from the designed responsibility \"The contract record matches reality\" (convert_B, Contractor seat), which is authoritative here; v2's title \"legal platform Event Processing\" was a vendor substitution artifact and is gone. Outcomes, guidance, trigger and personalization needs are taken from that responsibility rather than the automation.json verdict, which agrees with it anyway. THE ONE UNRESOLVED MAPPING IN THIS LANE: v2 connector \"legal\" has no matching categories value anywhere in the catalog, and no e-signature connector exists in it either. \"forms\" is the nearest (a document sent out for a counterparty to complete and return, with a webhook on completion, which is what formbricks and tally model) and is used here, but it is a stretch and an \"esignature\" category with a real connector behind it is the right fix. Flagged in lane_findings.",
+   "research_notes": "Read the v2 prompt_template (its suggestedTrigger.config.source names docusign and lists eight envelope event types, the only vendor evidence for the platform), the automation.json verdict, and the Contractor responsibility in convert_B.json. Enumerated all 48 categories values across the 134 files in scripts/connectors/builtin and confirmed there is no legal, esignature, contract or agreement category, and no docusign, adobe-sign, hellosign or pandadoc connector. Compared \"forms\" (formbricks, tally), \"integration\" (zapier, n8n, arcade, mcp-gateway) and \"documentation\" (notion, confluence, clickup) before choosing forms.",
+   "superseded_by": [
+    [
+     "convert_B.json",
+     "Contractor",
+     "The contract record matches reality"
+    ]
+   ]
+  },
+  {
+   "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+   "slug": "unsigned-contract-signature-chasing",
+   "title": "Unsigned contract signature chasing",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/deadlines",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "A contract sitting unsigned costs whatever it was going to be worth, and chasing it is a relationship: too few nudges and it dies quietly, too many and the counterparty stops reading anything you send.",
+    "input": "Contracts still out for signature, how long each has waited, what has already been sent, and how this counterparty has historically responded.",
+    "core_action": "Judge when a signer has waited long enough to be nudged again given how they normally respond, and when chasing has stopped working and the contract belongs to a person instead.",
+    "output": "Every unsigned contract has been chased a sensible number of times and then handed to somebody, and none is still looping reminders."
+   },
+   "activities": [
+    {
+     "id": "survey",
+     "label": "Survey contracts still unsigned and how long each has been waiting",
+     "kind": "observe"
+    },
+    {
+     "id": "check",
+     "label": "Check whether the signer already responded somewhere the tracker did not see",
+     "kind": "observe"
+    },
+    {
+     "id": "weigh",
+     "label": "Weigh how long this counterparty usually takes before nudging again",
+     "kind": "decide"
+    },
+    {
+     "id": "nudge",
+     "label": "Nudge the signer, within the cap the relationship can bear",
+     "kind": "act"
+    },
+    {
+     "id": "escalate",
+     "label": "Hand a contract that is genuinely stuck to the owner, then to a person",
+     "kind": "act"
+    },
+    {
+     "id": "record",
+     "label": "Record what was sent so the same nudge does not go twice",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "signatures-chased-then-handed-over",
+     "statement": "An unsigned contract is chased a sensible number of times and then handed to a person, never chased forever.",
+     "success_criteria": [
+      "Signer reminders never exceed the cap the adopter set",
+      "A contract still unsigned past the stuck threshold reaches a person rather than silence",
+      "The same reminder does not fire twice for the same stage"
+     ]
+    },
+    {
+     "id": "chasing-respects-the-relationship",
+     "statement": "Counterparties who are historically slow but reliable are not treated like counterparties who have gone silent.",
+     "success_criteria": [
+      "Per counterparty response history informs when the next nudge is due",
+      "Anything going to an external party is seen by a person first unless the adopter has said otherwise"
+     ]
+    }
+   ],
+   "guidance": "Chase unsigned contracts through a ladder that starts polite and firms up only as needed: a capped run of signer reminders, then the contract owner, then a person once it is genuinely stuck. Chasing is a relationship, so escalate rather than send a fourth reminder to the same counterparty, and give room to signers who are slow but reliable. Check whether they already replied somewhere the tracker did not see before nudging again.",
+   "connector_types": [
+    "spreadsheet",
+    "forms",
+    "email",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Act from the dates themselves rather than a calendar rhythm: check when a contract is approaching the point where a nudge is due, and stay quiet when none is. A weekday cron nudges on the schedule's terms rather than the counterparty's."
+   },
+   "personalization_needs": [
+    "How long the adopter is willing to wait before nudging, which is a relationship judgment and not a default",
+    "How many times a signer may be nudged before it becomes harassment, which differs entirely by counterparty type",
+    "Which outbound messages need approval before they leave, especially anything to an external party"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "remind_threshold_days",
+     "type": "number",
+     "default": 3,
+     "description": "Days unsigned before the first signer reminder fires."
+    },
+    {
+     "name": "escalate_threshold_days",
+     "type": "number",
+     "default": 7,
+     "description": "Days unsigned before reminders escalate from signer to contract owner."
+    }
+   ],
+   "examples": [
+    {
+     "title": "DocuSign as the signature platform",
+     "connector": "docusign",
+     "connector_type": "forms",
+     "notes": "The envelope is where \"still unsigned\" is actually true, and the platform can often resend on its own. DocuSign is not in this repo's connector catalog, so this stays knowledge rather than a bindable choice."
+    },
+    {
+     "title": "Gmail as the chase channel",
+     "connector": "gmail",
+     "connector_type": "email",
+     "notes": "v2 searched sent and received mail before nudging, which is what caught signers who had replied outside the tracker. A bounce should be written back to the tracker as an invalid address rather than retried."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "2d6945b7-5cca-5f28-b91c-26b03249ea70"
+    ],
+    "from_templates": [
+     "contract-lifecycle-use-case"
+    ],
+    "source_template_id": "contract-lifecycle-use-case"
+   },
+   "review_notes": "Superseded by the Contractor responsibility \"No date passes unnoticed\" (convert_B), which also supersedes 55bf5308. That responsibility covers renewals, notice windows and quiet signatures in one; its three success criteria split cleanly, so the signature criteria land here and the renewal window criteria land on 55bf5308. Both ids are preserved unchanged per the lane brief, but Phase D should consider whether the corpus wants one dated obligations recipe rather than three (this one, 55bf5308 and f714c64f). Connector \"legal\" demoted to \"forms\", the same unresolved mapping as 4d115a03.",
+   "research_notes": "Read the v2 prompt_template (toolHints gmail_send and gmail_search, error handling that skips a reminder when a search finds the signer already responded), the content.json verdict, and the Contractor responsibility in convert_B.json including its pacing_note and personalization needs, which are carried through. Confirmed against the catalog that spreadsheet, email and messaging are all categories values and that \"legal\" is not.",
+   "superseded_by": [
+    [
+     "convert_B.json",
+     "Contractor",
+     "No date passes unnoticed"
+    ]
+   ]
+  },
+  {
+   "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
+   "slug": "contract-renewal-window-watch",
+   "title": "Contract renewal window watch",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "legal_compliance/deadlines",
+   "domain": "legal_compliance",
+   "description": {
+    "need": "Renewal clocks run whether anyone is watching or not. A contract auto renews on terms nobody re-negotiated, or lapses because the notice window closed while it was still on somebody's list.",
+    "input": "Every tracked contract with its renewal date and any notice window inside it, plus which windows have already been raised and to whom.",
+    "core_action": "Judge which windows are close enough to act on, raise them while a decision is still possible, and keep a current answer to what renews next and what has changed since the last time anyone asked.",
+    "output": "Nobody discovers a renewal after the fact, and the person accountable can say what renews next without going to look."
+   },
+   "activities": [
+    {
+     "id": "survey",
+     "label": "Survey renewal and notice dates across every tracked contract",
+     "kind": "observe"
+    },
+    {
+     "id": "window",
+     "label": "Judge which windows are close enough to act on and how urgent each is",
+     "kind": "decide"
+    },
+    {
+     "id": "suppress",
+     "label": "Set aside windows already raised at the same urgency",
+     "kind": "decide"
+    },
+    {
+     "id": "raise",
+     "label": "Raise the window with the owner while there is still time to decide",
+     "kind": "act"
+    },
+    {
+     "id": "lapse",
+     "label": "Escalate a date that passed without action rather than letting it close quietly",
+     "kind": "act"
+    },
+    {
+     "id": "account",
+     "label": "Keep a current answer to what renews next and what changed since last time",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "renewals-never-surprise",
+     "statement": "Nothing auto renews unnoticed or lapses because the renewal window went unwatched.",
+     "success_criteria": [
+      "A contract approaching a renewal or notice deadline is raised while there is still time to act",
+      "The same window is never raised twice at the same urgency",
+      "A renewal date that passes without action is escalated rather than closed quietly"
+     ]
+    },
+    {
+     "id": "renewal-picture-answerable",
+     "statement": "The person accountable can say what is coming up for renewal, and what changed, without going to look.",
+     "success_criteria": [
+      "The account leads with what needs a decision and keeps the inventory underneath",
+      "It says what changed since the last time rather than restating the same list",
+      "It says plainly when nothing needs attention instead of padding"
+     ]
+    }
+   ],
+   "guidance": "Watch the renewal clock on every contract and raise it while a decision is still possible, with urgency rising as the window closes. Notice windows matter more than the renewal date itself, because they close earlier and cost more. Never raise the same window twice at the same level. Keep the picture comparative, since what changed is more useful than what is, and say so plainly when nothing needs attention.",
+   "connector_types": [
+    "spreadsheet",
+    "messaging",
+    "email"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Each contract carries its own clock, and the thing being watched is a date approaching, not a Monday arriving. A weekly cron both wakes on quiet weeks and can miss a window that opened on a Tuesday."
+   },
+   "personalization_needs": [
+    "Which contracts carry notice windows, because those deadlines are earlier and more costly than the renewal date itself",
+    "How far ahead this adopter wants to hear, since a renewal decision may need weeks of negotiation or none",
+    "Who reads the renewal picture and what they decide with it, which sets its shape entirely",
+    "What the adopter counts as at risk, since that threshold is a business judgment"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "renewal_tiers_days",
+     "type": "text",
+     "description": "Comma-separated tier thresholds in days (e.g., '60,30,14')."
+    },
+    {
+     "name": "renewals_channel",
+     "type": "text",
+     "description": "messaging channels for renewal alerts."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Airtable as the contract register",
+     "connector": "airtable",
+     "connector_type": "spreadsheet",
+     "notes": "v2 read renewal dates and owner addresses out of the register, and learned to fall back to the original sender when the owner column was empty rather than skipping the contract. A register with a missing owner is the common real failure, not a missing date."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "55bf5308-996a-5c0c-a3e3-6903823cc221"
+    ],
+    "from_templates": [
+     "contract-lifecycle-use-case"
+    ],
+    "source_template_id": "contract-lifecycle-use-case"
+   },
+   "review_notes": "Superseded by two Contractor responsibilities (convert_B): \"No date passes unnoticed\", whose renewal and notice window criteria become the first outcome, and \"A current account of where things stand\", which supplies the second. DEPARTURE: the second responsibility is a general standing account across all contract work, and adopting it whole would swallow this recipe and 4d115a03 both; it is narrowed here to the renewal picture specifically, which is the part this id is accountable for. v2's \"60/30/14 day\" tiers are gone from the title and description, since a recipe carries no cadence; the tier thresholds survive as an input_schema knob, which is where configuration belongs.",
+   "research_notes": "Read the v2 prompt_template, the content.json verdict (whose note explicitly scopes this to the renewal clock as distinct from the broader deadline sweep), and both Contractor responsibilities in convert_B.json. Checked f714c64f and 2d6945b7 in this lane so the three date watching recipes stay disjoint.",
+   "superseded_by": [
+    [
+     "convert_B.json",
+     "Contractor",
+     "No date passes unnoticed"
+    ],
+    [
+     "convert_B.json",
+     "Contractor",
+     "A current account of where things stand"
+    ]
+   ]
+  },
+  {
+   "id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
+   "slug": "live-database-question-answering",
+   "title": "Live database question answering",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "data_ai/data-access",
+   "domain": "data_ai",
+   "description": {
+    "need": "People who need a number wait for whoever can write the query, and the person who can write it spends their week writing them. Opening the database directly instead trades one problem for a worse one.",
+    "input": "A question in plain language, the recent exchange that gives it context, the agreed set of readable tables, and a current picture of the schema.",
+    "core_action": "Decide what is actually being asked, whether it can be answered safely inside the agreed boundary, and refuse with a reason rather than guessing or quietly narrowing it.",
+    "output": "An answer that ships with the query that produced it and what it touched, or a refusal that says why, with the database unharmed either way."
+   },
+   "activities": [
+    {
+     "id": "take",
+     "label": "Take a question as it arrives, with the recent exchange that gives it context",
+     "kind": "observe"
+    },
+    {
+     "id": "resolve",
+     "label": "Resolve what is actually being asked, and ask back when it is ambiguous",
+     "kind": "decide"
+    },
+    {
+     "id": "bound",
+     "label": "Decide whether it can be answered inside the agreed tables and a readable result size",
+     "kind": "decide"
+    },
+    {
+     "id": "read",
+     "label": "Read the answer out of the database, never writing to it",
+     "kind": "act"
+    },
+    {
+     "id": "answer",
+     "label": "Return the answer with the query that produced it and what it touched",
+     "kind": "deliver"
+    },
+    {
+     "id": "record",
+     "label": "Record who asked and what was reached",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "answered-or-clearly-refused",
+     "statement": "A question in plain language gets an answer that is either correct or clearly refused.",
+     "success_criteria": [
+      "Every answer ships with the query that produced it",
+      "A question that cannot be answered safely is refused with the reason and a narrower suggestion, never guessed at",
+      "No answer is produced from a stale picture of the schema"
+     ]
+    },
+    {
+     "id": "data-never-at-risk",
+     "statement": "The data is never at risk from a question.",
+     "success_criteria": [
+      "Only reads reach the database",
+      "Access stays inside the agreed set of tables",
+      "Every query is recorded with who asked and what it touched"
+     ]
+    }
+   ],
+   "guidance": "Own both halves: the answer is useful and the database is unharmed. Resolve ambiguity by asking rather than by picking an interpretation, and narrow a question that would return an unreadable amount of data before running it. Keep the picture of the schema current, because an answer built on a table that has since changed is wrong in the most convincing way. Refuse anything that writes.",
+   "connector_types": [
+    "database",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "A question arriving is a real external occurrence and a late answer is worth little, so this wakes on the message rather than pacing itself. There is nothing to do between questions."
+   },
+   "personalization_needs": [
+    "Which database and which tables are fair game, because the allowlist is the actual safety boundary and a blank one is the dangerous default the source itself warns about",
+    "Who may ask, and whether answers may contain personal data, since the same query is fine for one audience and a disclosure for another",
+    "What counts as an unreadably large answer here, which is a judgment about the reader rather than a row count"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "target_database",
+     "type": "connector_ref",
+     "ui_component": "DatabaseSelector",
+     "connector": "database",
+     "required": true,
+     "description": "Which configured database credential to query against."
+    },
+    {
+     "name": "allowed_tables",
+     "type": "text",
+     "description": "Comma-separated allowlist of tables the analyst may query. Blank = all tables in default schema (not recommended)."
+    }
+   ],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "34e0d640-bd1e-51a6-9f30-9b4de55db0fe"
+    ],
+    "from_templates": [
+     "conversational-database-analyst"
+    ],
+    "source_template_id": "conversational-database-analyst"
+   },
+   "review_notes": "Superseded by the Database owner responsibility \"Answering questions against live data without putting it at risk\" (convert_A), whose from_recipes names both this id and d227eebc; its outcomes, guidance, trigger and personalization needs are taken as authoritative. The schema freshness criterion (\"no answer is produced from a stale picture of the schema\") belongs here and the work of keeping that picture current stays on d227eebc, which is why both survive. NOTE FOR PHASE C1: the carried input_schema contains a connector_ref entry (target_database, ui_component DatabaseSelector, connector \"database\") that is the v2 way of doing exactly what connector_types plus credential_bindings now do at adoption. It is carried verbatim per the brief, but it is a duplicate seam and should be reconciled rather than shipped twice. Flagged in lane_findings.",
+   "research_notes": "Read the v2 prompt_template, the analysis.json verdict, and the Database owner responsibility in convert_A.json including its pacing note, which argues the event kind explicitly. Confirmed \"database\" (16 connectors) and \"messaging\" (10) are both categories values. No vendor is named anywhere in the v2 row, so examples is empty rather than guessed.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "Database owner",
+     "Answering questions against live data without putting it at risk"
+    ]
+   ]
+  },
+  {
+   "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
+   "slug": "database-schema-picture-refresh",
+   "title": "Database schema picture refresh",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "data_ai/data-access",
+   "domain": "data_ai",
+   "description": {
+    "need": "Anything answering questions about a database works from a cached picture of its structure. When the real database moves and the picture does not, the answers stay confident and become wrong, which is worse than failing.",
+    "input": "The real structure of the database and the picture currently held.",
+    "core_action": "Decide whether a fresh read is trustworthy enough to replace what is held, since a bad read that overwrites a good picture does more damage than a stale one.",
+    "output": "A picture of the schema that either matches the database or is openly known to be the last good one."
+   },
+   "activities": [
+    {
+     "id": "read",
+     "label": "Read the real structure of the database",
+     "kind": "observe"
+    },
+    {
+     "id": "diff",
+     "label": "Compare it against the picture currently held",
+     "kind": "decide"
+    },
+    {
+     "id": "judge",
+     "label": "Decide whether the read is trustworthy enough to replace what is held",
+     "kind": "decide"
+    },
+    {
+     "id": "update",
+     "label": "Replace the picture, or keep the last good one when the read failed",
+     "kind": "act"
+    },
+    {
+     "id": "tell",
+     "label": "Say what moved, and say plainly when the picture could not be refreshed",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "schema-picture-current",
+     "statement": "The held picture of the schema never lies about what the real database looks like.",
+     "success_criteria": [
+      "New tables, altered columns and dropped entities are detected and reflected",
+      "A failed read leaves the last known good picture in place rather than corrupting it, and is disclosed rather than silent",
+      "A structural change anyone answering questions depends on is announced, not just stored"
+     ]
+    }
+   ],
+   "guidance": "Own making sure anything relying on the schema picture is working from an accurate view of the real database. Detect structural change and refresh to match. If the read fails, protect the picture you have rather than overwriting it with a bad one, and make the failure visible rather than silent. A change that breaks existing answers is worth announcing, not just recording.",
+   "connector_types": [
+    "database",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "What is watched is the picture going stale: time since the last good read, and any sign the structure moved under an answer. A nightly cron is one realisation of that, but it refreshes on quiet nights and still lets a picture be wrong all day after a morning migration."
+   },
+   "personalization_needs": [
+    "Which database and which schema this picture covers, since one picture across several is a different job",
+    "Who needs to hear that the structure moved, because a dropped column breaks whoever was relying on it and not everybody",
+    "How often the structure realistically changes here, which is what makes a refresh worth doing at all"
+   ],
+   "dependencies": [],
+   "input_schema": [],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "d227eebc-94f4-5dfd-8c07-8cad40de7b75"
+    ],
+    "from_templates": [
+     "conversational-database-analyst"
+    ],
+    "source_template_id": "conversational-database-analyst"
+   },
+   "review_notes": "Superseded by the same Database owner responsibility as 34e0d640, which folds schema freshness into the answering job as a success criterion (\"no answer is produced from a stale picture\") and a directive (\"keep the picture of the schema current\"). DEPARTURE: that responsibility's trigger is event, which is correct for a question arriving but is not what this half responds to, so self_paced is used here with the picture going stale as the condition watched. This is the one place in the lane where a superseding responsibility's trigger is not adopted, and the reason is that the responsibility covers two halves with genuinely different shapes. RECOMMENDATION FOR PHASE D: consider whether this survives as its own recipe at all, given the responsibility treats it as a property of the answering work. input_schema is empty because v2 declared none.",
+   "research_notes": "Read the v2 prompt_template (no inputSchema, only an empty sampleInput; suggestedTrigger was a 02:00 daily cron) and the automation.json verdict. Read the Database owner responsibility in convert_A.json, whose from_recipes names this id, and its pacing note, which argues the event kind for the question half specifically.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "Database owner",
+     "Answering questions against live data without putting it at risk"
+    ]
+   ]
+  },
+  {
+   "id": "02383179-2da1-5a73-a4c3-51be0a31eb72",
+   "slug": "data-assistant-quality-review-from-real-traffic",
+   "title": "Data assistant quality review from real traffic",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "data_ai/data-access",
+   "domain": "data_ai",
+   "description": {
+    "need": "An assistant answering questions against data gets better by impression or not at all. Individual bad answers get noticed and forgotten, so the same failure keeps happening and nobody can say whether last month's fix worked.",
+    "input": "The accumulated record of real questions and what came back: answers refused, corrected, abandoned or quietly wrong, plus the ledger of patterns already fixed.",
+    "core_action": "Group failures by cause rather than reporting single cases, separate a prompt problem from a data problem from a code problem because the fix differs, and come back to measure what actually shipped.",
+    "output": "Patterns worth fixing, proposals stating what each should improve and how it will be measured, and measured results for the changes that shipped, including the ones that did nothing."
+   },
+   "activities": [
+    {
+     "id": "read",
+     "label": "Read the accumulated record of real questions and what came back",
+     "kind": "observe"
+    },
+    {
+     "id": "group",
+     "label": "Group failures by cause, separating a prompt problem from a data problem from a code problem",
+     "kind": "decide"
+    },
+    {
+     "id": "name",
+     "label": "Name the patterns worth fixing rather than reporting single bad answers",
+     "kind": "decide"
+    },
+    {
+     "id": "propose",
+     "label": "Propose a change with what it should improve and how that will be measured",
+     "kind": "act"
+    },
+    {
+     "id": "measure",
+     "label": "Return to a change that shipped and measure it, including when it did nothing",
+     "kind": "act"
+    },
+    {
+     "id": "report",
+     "label": "Hand over the patterns, the proposals and the measured results",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "improvement-is-evidenced",
+     "statement": "The assistant gets better because real failures were found, fixed and measured again.",
+     "success_criteria": [
+      "Every claimed quality problem points at real recorded exchanges rather than an impression",
+      "A proposed change states what it should improve and how that will be measured",
+      "A change that shipped is revisited with its measured effect, including when there was none"
+     ]
+    },
+    {
+     "id": "failure-is-a-pattern-not-a-pile",
+     "statement": "Failure is described as a pattern that can be acted on, not as a pile of individual bad answers.",
+     "success_criteria": [
+      "Failures are grouped by cause, and a prompt problem is separated from a data problem and from a code problem",
+      "A pattern already fixed does not reappear in the next review unless it actually recurred",
+      "A quiet period is reported as a quiet period rather than padded"
+     ]
+    }
+   ],
+   "guidance": "Own whether the assistant is actually getting better. Work from what real conversations show: answers refused, corrected, abandoned or quietly wrong. Group failures into patterns worth fixing rather than reporting single cases, and separate a prompt problem from a data problem from a code problem, because the fix differs. Propose changes for a person to accept, and come back afterwards to measure the ones that shipped.",
+   "connector_types": [
+    "database",
+    "messaging"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Watch the accumulating record: a rising refusal or correction rate, a failure shape not seen before, or a change that shipped and has not yet been measured. The loop resumes at the oldest unfinished item, which a weekly cron cannot express."
+   },
+   "personalization_needs": [
+    "Where the real conversation records actually live, because the whole responsibility is evidence based and has nothing to stand on without them",
+    "What the quality bar is for this product and who decides it, since better is not measurable until someone says what good looks like here",
+    "Whether the seat may propose changes against the repository or only describe them, which changes what a finished proposal looks like and whether a fix can be measured at all"
+   ],
+   "dependencies": [],
+   "input_schema": [],
+   "examples": [],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "02383179-2da1-5a73-a4c3-51be0a31eb72"
+    ],
+    "from_templates": [
+     "conversational-database-analyst"
+    ],
+    "source_template_id": "conversational-database-analyst"
+   },
+   "review_notes": "Superseded by the Database owner responsibility \"Improving the assistant from what its real traffic shows\" (convert_A), which is authoritative and is a much larger job than v2's weekly rollup: not a digest of what people asked, but a measured improvement loop over what went wrong. Retitled and rewritten to that. DEPARTURE: v2 declared only messaging as a connector; the designed responsibility declares database and messaging, and database is adopted because reading the accumulated record of real exchanges is the evidence the whole responsibility stands on. The verdict's pattern visibility outcome survives inside the second outcome, and the saved query suggestion it mentions becomes one kind of proposal rather than the point. \"Weekly\" is gone from the title per trigger agnosticism. input_schema is empty because v2 declared none.",
+   "research_notes": "Read the v2 prompt_template (no inputSchema; enabledByDefault false; listens to the answered-question event from 34e0d640), the analysis.json verdict, and the Database owner responsibility in convert_A.json including its three personalization needs, which are carried through with their reasons.",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "Database owner",
+     "Improving the assistant from what its real traffic shows"
+    ]
+   ]
+  },
+  {
+   "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+   "slug": "knowledge-base-contradiction-audit",
+   "title": "Knowledge base contradiction audit",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "data_ai/data-quality",
+   "domain": "data_ai",
+   "description": {
+    "need": "Two articles covering the same ground and saying different things are both individually healthy: neither is stale, neither is orphaned. A per document audit cannot see the problem, and whoever reads one of them gets a confident wrong answer.",
+    "input": "The compiled articles across the audited layers and the history of contradiction pairs already surfaced.",
+    "core_action": "Cluster articles that appear to cover the same ground, compare their bodies for genuine disagreement, and hand every pair to a person rather than deciding which one is right.",
+    "output": "Contradiction pairs surfaced with how confidently they disagree, queued for a human decision, and a history that shows which pairs keep coming back."
+   },
+   "activities": [
+    {
+     "id": "gather",
+     "label": "Gather the compiled articles across the audited layers",
+     "kind": "observe"
+    },
+    {
+     "id": "cluster",
+     "label": "Cluster articles whose titles suggest they cover the same ground",
+     "kind": "decide"
+    },
+    {
+     "id": "compare",
+     "label": "Compare bodies inside a cluster for genuine disagreement",
+     "kind": "decide"
+    },
+    {
+     "id": "page",
+     "label": "Rank pairs by how confidently they contradict, paging the scan when the corpus is large",
+     "kind": "act"
+    },
+    {
+     "id": "queue",
+     "label": "Queue every pair for a human decision, never resolving a contradiction alone",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "contradictions-caught",
+     "statement": "Cross article contradictions are caught, not just per article staleness and orphan issues.",
+     "success_criteria": [
+      "Clusters of articles covering the same ground are checked for body disagreement and surfaced as findings",
+      "A borderline disagreement is surfaced as needing review rather than judged",
+      "A pair that keeps recurring across passes is visible as recurring"
+     ]
+    },
+    {
+     "id": "the-scan-stays-affordable",
+     "statement": "A large corpus does not make the pass unaffordable or cause it to be skipped.",
+     "success_criteria": [
+      "The scan is paged across passes and reports deltas rather than spending the whole budget in one run",
+      "What was not reached this pass is disclosed rather than implied complete"
+     ]
+    }
+   ],
+   "guidance": "Own the deeper layer of the knowledge health audit: whether related articles actually agree with each other, which no per document check can see. Cluster by apparent subject, compare bodies for real disagreement, and send every pair to a person, especially the borderline ones, because deciding which of two articles is right is not yours to make. On a large corpus, page the scan across passes rather than spending the whole budget at once.",
+   "connector_types": [
+    "knowledge_base",
+    "source_control"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Contradictions appear when articles are written or edited, not on the first of a month. Act when enough has been written to be worth comparing, and when the previous pass left part of the corpus unreached."
+   },
+   "personalization_needs": [
+    "How similar two titles must be before their bodies are worth comparing, since too loose invents contradictions and too strict finds none",
+    "Which article families genuinely should agree, because some corpora keep deliberately divergent versions",
+    "How much of the corpus one pass may cover, which is a budget decision the adopter owns"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "stale_threshold_days",
+     "type": "number",
+     "default": 180,
+     "min": 30,
+     "max": 730,
+     "description": "Same as the weekly audit."
+    },
+    {
+     "name": "max_issues_per_category",
+     "type": "number",
+     "default": 25,
+     "min": 5,
+     "max": 200,
+     "description": "Same as the weekly audit."
+    },
+    {
+     "name": "contradiction_title_distance",
+     "type": "number",
+     "default": 5,
+     "min": 1,
+     "max": 15,
+     "description": "Maximum Levenshtein distance between titles for two articles to enter the contradiction comparison. Lower = stricter."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Obsidian as the audited corpus",
+     "connector": "obsidian",
+     "connector_type": "knowledge_base",
+     "notes": "Title family clustering works well on a vault because filenames carry real subject information. The cost lesson from v2 is that the pairwise body comparison, not the clustering, is what makes this expensive, so the cluster step must be strict before the comparison step runs."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "b80fc21f-1b22-5355-879e-2fed6c38173d"
+    ],
+    "from_templates": [
+     "knowledge-base-health-auditor"
+    ],
+    "source_template_id": "knowledge-base-health-auditor"
+   },
+   "review_notes": "CARRIES AN EXISTING MERGE VERDICT. The automation.json verdict for this id is merge_into ba138faf, on the grounds that its own description says it is everything the weekly audit does plus a contradiction pass, which is a deeper pass of one job rather than a distinct job. This v3 object is authored anyway because the lane brief requires all 20 ids present, and it is written narrowly as the contradiction pass alone (the duplicated staleness and orphan scanning is gone) so that Phase D can either execute the merge cleanly or, if the operator prefers, keep it as a genuinely separate deeper scan. RECOMMENDATION: execute the merge; ba138faf already carries both ids in from_recipes and an outcome criterion covering the deeper scope. Connector demotion is the same as ba138faf: id \"codebase\" to \"source_control\", desktop dropped, knowledge_base added.",
+   "research_notes": "Read the v2 prompt_template for this id (its own description is the evidence for the merge: \"everything the weekly audit does, plus a cross-article contradiction pass\") and the automation.json verdict including the full merge_reason. Read ba138faf's verdict, which records the absorption from the other side.",
+   "superseded_by": []
+  },
+  {
+   "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+   "slug": "memory-and-knowledge-base-health-audit",
+   "title": "Memory and knowledge base health audit",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "data_ai/data-quality",
+   "domain": "data_ai",
+   "description": {
+    "need": "The layers an agent remembers through decay quietly: notes go stale, documents orphan from the code they described, articles start disagreeing with each other. Nothing fails, and trust in the whole system erodes instead.",
+    "input": "Whichever memory layers are configured, what each was last touched, and the totals from previous passes.",
+    "core_action": "Find drift, staleness, orphans and contradiction, rank the findings by severity and recency, and hand every one to a person with a recommended action, never mutating a layer itself.",
+    "output": "A capped, severity ranked set of findings queued for a human decision, and totals that let the next pass say whether it is getting better."
+   },
+   "activities": [
+    {
+     "id": "scope",
+     "label": "Decide which memory layers are configured and in scope for this pass",
+     "kind": "decide"
+    },
+    {
+     "id": "scan",
+     "label": "Scan each layer for staleness, orphans and contradiction",
+     "kind": "observe"
+    },
+    {
+     "id": "rank",
+     "label": "Rank findings by severity and recency, capping rather than flooding the queue",
+     "kind": "decide"
+    },
+    {
+     "id": "recommend",
+     "label": "Attach a recommended action to each finding",
+     "kind": "act"
+    },
+    {
+     "id": "queue",
+     "label": "Queue every finding for a human decision, mutating nothing",
+     "kind": "deliver"
+    },
+    {
+     "id": "trend",
+     "label": "Keep the totals so the next pass can say whether it is getting better",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "memory-layers-stay-healthy",
+     "statement": "Stale, contradictory or orphaned content across the memory layers is caught and queued for a human decision rather than left to accumulate silently.",
+     "success_criteria": [
+      "Every configured layer is audited and every finding reaches a person with a severity and a recommended action",
+      "Findings are capped sensibly per category with the suppressed count disclosed, not silently truncated",
+      "A deeper cross article contradiction pass runs at the scope the adopter wants, without needing a second charter to get it"
+     ]
+    },
+    {
+     "id": "nothing-is-mutated-here",
+     "statement": "The audit never changes a memory layer on its own.",
+     "success_criteria": [
+      "Merge, archive, recompile and reduce importance are all decided by a person",
+      "A layer that is not configured is skipped and noted rather than failing the pass"
+     ]
+    }
+   ],
+   "guidance": "Own catching drift, staleness, contradiction and orphaned content across the memory layers before it erodes trust in the system, and always let a person decide what to do about it; this work never mutates memory itself. Run the deeper cross article contradiction pass when the configured scope calls for it rather than treating it as a separate job. If a layer is not configured, skip it quietly and note it rather than failing.",
+   "connector_types": [
+    "knowledge_base",
+    "source_control"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Staleness accrues continuously and no external clock announces it. Act when enough content has changed or aged to be worth a pass, and take the deeper scope when the corpus has grown enough to warrant it. A weekly slot audits an unchanged corpus and misses a week of heavy writing."
+   },
+   "personalization_needs": [
+    "Which memory layers this adopter actually has, since a vault, a vector store and a persona memory each fail differently",
+    "What counts as stale here, because a reference note and a working note age at completely different rates",
+    "How many findings a person is willing to triage in one sitting, which is what the cap is really protecting",
+    "How deep a pass the adopter wants, since the contradiction scan costs materially more than the rest"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "stale_threshold_days",
+     "type": "number",
+     "default": 180,
+     "min": 30,
+     "max": 730,
+     "description": "Days after which memories, KB documents, or vault notes without recent access count as stale. Matches the obsidian_brain_lint_vault default."
+    },
+    {
+     "name": "max_issues_per_category",
+     "type": "number",
+     "default": 25,
+     "min": 5,
+     "max": 200,
+     "description": "Cap on findings per category per run. Prevents first-run explosions on old vaults."
+    },
+    {
+     "name": "audit_scope",
+     "type": "enum",
+     "options": [
+      "all_layers",
+      "memories_and_kb",
+      "memories_only",
+      "vault_only"
+     ],
+     "default": "all_layers",
+     "description": "Which layers to include. Vault audit is always auto-skipped when no vault is configured, regardless of this setting."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Obsidian as an audited vault",
+     "connector": "obsidian",
+     "connector_type": "knowledge_base",
+     "notes": "v2 audited an optional Obsidian vault alongside persona memory and vector stores, and its rule was to skip the layer silently when no vault is configured rather than failing the pass. The reusable lesson is that a first pass over an old vault will find hundreds of things, which is why the per category cap exists at all."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+     "b80fc21f-1b22-5355-879e-2fed6c38173d"
+    ],
+    "from_templates": [
+     "knowledge-base-health-auditor"
+    ],
+    "source_template_id": "knowledge-base-health-auditor"
+   },
+   "review_notes": "The automation.json verdict keeps this one and merges the deep audit (b80fc21f) into it as an optional deeper scope, so from_recipes carries both ids. v2 connector \"codebase\" is a connector id, not a category; its catalog categories are development, source_control and desktop, so it demotes to \"source_control\", desktop is dropped per the spec, and \"knowledge_base\" is added because the layers actually audited (vector stores, an Obsidian vault) are knowledge_base connectors. \"vector_search\" was considered as a narrower type for the vector store layer and rejected as overlapping: both of its members already carry knowledge_base. v2 bound a weekly Sunday cron, dropped here.",
+   "research_notes": "Read the v2 prompt_template for both this id and b80fc21f, and the automation.json verdicts for both including the merge_reason. Checked scripts/connectors/builtin/codebase (categories development, source_control, desktop), obsidian and obsidian-memory (knowledge_base, and vector_search on the memory variant), and vector-knowledge-base (vector_search, knowledge_base, database) before choosing the two types.",
+   "superseded_by": []
+  },
+  {
+   "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
+   "slug": "revenue-signal-alerting-and-outreach",
+   "title": "Revenue signal alerting and outreach",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/retention",
+   "domain": "customer_support",
+   "description": {
+    "need": "Money that was going to arrive and did not, and accounts drifting toward leaving or ready to grow, all fail quietly. The window in which any of them can still be acted on is short, and by the time it shows up in a revenue report it has closed.",
+    "input": "Signals crossing a threshold on a paying account, the record of which signals have already been raised, and whether the operator has agreed to any customer contact at all.",
+    "core_action": "Separate a signal that will resolve on its own from one that needs a person, raise it once with its cause in the provider's own terms, and never contact a customer on the operator's behalf unless he has explicitly said that is wanted.",
+    "output": "No revenue signal passes unnoticed, none is reported twice, and any outreach that went out is one the operator agreed to."
+   },
+   "activities": [
+    {
+     "id": "take",
+     "label": "Take a signal as it crosses its threshold",
+     "kind": "observe"
+    },
+    {
+     "id": "separate",
+     "label": "Separate a signal that will resolve on its own from one that needs a person",
+     "kind": "decide"
+    },
+    {
+     "id": "suppress",
+     "label": "Check whether this account was already raised inside the suppression window",
+     "kind": "decide"
+    },
+    {
+     "id": "alert",
+     "label": "Alert the team and the account owner with the cause in the provider's own terms",
+     "kind": "act"
+    },
+    {
+     "id": "draft",
+     "label": "Draft outreach matched to the situation, sending only where the operator has said that is wanted",
+     "kind": "act"
+    },
+    {
+     "id": "close",
+     "label": "Close a signal that resolved, and report repeats on one account as a pattern",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "no-signal-passes-quietly",
+     "statement": "Revenue is not lost to a signal that nobody saw.",
+     "success_criteria": [
+      "A signal is raised once with its cause and attempt count rather than on every retry",
+      "A signal that resolves on its own is closed rather than left open",
+      "Repeated signals on one account are reported as a pattern"
+     ]
+    },
+    {
+     "id": "contact-is-the-operators-decision",
+     "statement": "No customer hears from this seat unless the operator decided they should.",
+     "success_criteria": [
+      "Outreach is drafted rather than sent wherever the adopter has not explicitly enabled sending",
+      "The same account is not contacted again inside the suppression window",
+      "Retention and expansion outreach read as different situations rather than one template"
+     ]
+    }
+   ],
+   "guidance": "Own the money that was supposed to arrive and did not, and the accounts moving toward leaving or growing. Separate a transient signal the provider will resolve itself from one that needs a person, and involve the operator only for the second. Report the cause in the provider's own terms so it can be acted on. Do not contact a customer on his behalf unless he has explicitly said that is wanted, and respect the suppression window.",
+   "connector_types": [
+    "finance",
+    "messaging",
+    "email"
+   ],
+   "recommended_trigger": {
+    "kind": "event",
+    "rationale": "A threshold crossing is a real external occurrence with a short window in which it can still be recovered, so this wakes on the signal rather than pacing itself. Memory of what has already been raised is what stops a retrying provider from producing an alert per attempt."
+   },
+   "personalization_needs": [
+    "Whether the operator wants any customer contact at all from this seat, because the source template sent retention email automatically and that is a decision he has not made and must not be made for him",
+    "Which signals are worth interrupting a person over, since a provider that retries on its own produces many that are not",
+    "Who owns an account here, because an alert that reaches the wrong owner looks handled and is not"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "outreach_mode",
+     "type": "enum",
+     "options": [
+      "auto_send",
+      "draft_for_review",
+      "alert_only"
+     ],
+     "default": "draft_for_review",
+     "description": "auto_send = send retention + upgrade emails automatically when confidence > 0.70. draft_for_review = surface for owner approval first. alert_only = messaging only, never email."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Stripe as the signal source",
+     "connector": "stripe",
+     "connector_type": "finance",
+     "notes": "The designed responsibility this recipe is superseded by names stripe directly. Its lesson is the retry shape: a failed charge is retried by the provider on its own schedule, so the signal must be raised once with an attempt count and closed on recovery, not re raised per attempt."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "d4388f24-9c1c-5043-95ff-65c67430a39f"
+    ],
+    "from_templates": [
+     "revenue-intelligence-copilot"
+    ],
+    "source_template_id": "revenue-intelligence-copilot"
+   },
+   "review_notes": "Superseded by the Web marketer responsibility \"Failed collection watch\" (convert_A), which is authoritative and carries a hard operator directive: the source template sent retention email automatically, which is a decision he has not made and must not be made for him. That is taken literally and becomes the second outcome. DEPARTURE, and the largest in this lane: the designed responsibility is scoped to failed payments, while this recipe is scoped to churn and expansion threshold signals. Rather than replace the recipe's subject with dunning, v3 keeps its own subject (any revenue signal crossing a threshold) and adopts the responsibility's constraints wholesale (raise once with cause, close on resolution, report repeats as a pattern, never contact without permission), since those constraints are what the responsibility exists to assert. TENSION TO SETTLE AT PHASE D: the lane roster files this id under customer_support and the consolidation verdict agrees, but the superseding responsibility is filed under finance_accounting on the Web marketer seat. The domain here follows the lane roster. Connector id \"stripe\" demoted to \"finance\".",
+   "research_notes": "Read the v2 prompt_template, the content.json verdict (\"Churn and Expansion Signal Outreach\"), and the Web marketer responsibility in convert_A.json whose from_recipes names this id alongside a payment scan recipe from another lane. Checked scripts/connectors/builtin/stripe: categories are [\"finance\",\"ecommerce\"], and \"finance\" is the correct one for a payment and subscription signal (its other members are alpha-vantage, harvest, kalshi, lemonsqueezy and ramp).",
+   "superseded_by": [
+    [
+     "convert_A.json",
+     "Web marketer",
+     "Failed collection watch"
+    ]
+   ]
+  },
+  {
+   "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
+   "slug": "support-escalation-pattern-review",
+   "title": "Support escalation pattern review",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/service-health",
+   "domain": "customer_support",
+   "description": {
+    "need": "A support function that only reports its escalations absorbs the same pain forever. The cause that produced fifty tickets is described fifty times and fixed never.",
+    "input": "The escalation history far enough back to see a shape, the causes already filed as work, and what the last account said.",
+    "core_action": "Name the causes behind recurring escalations rather than restating the escalations, decide which have a fixable root, and file those as work instead of reporting them again.",
+    "output": "A short comparative account of what the escalations keep saying, with the fixable causes filed as work rather than described."
+   },
+   "activities": [
+    {
+     "id": "read",
+     "label": "Read the escalation history far enough back to see a shape",
+     "kind": "observe"
+    },
+    {
+     "id": "cause",
+     "label": "Name the causes behind recurring escalations rather than restating the escalations",
+     "kind": "decide"
+    },
+    {
+     "id": "new",
+     "label": "Separate what changed from what has always been true, and skip causes already filed",
+     "kind": "decide"
+    },
+    {
+     "id": "file",
+     "label": "File a cause with a fixable root as work",
+     "kind": "act"
+    },
+    {
+     "id": "account",
+     "label": "Give whoever is accountable a short comparative account, saying plainly when the product is at fault",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "recurring-causes-get-fixed",
+     "statement": "A problem that keeps producing escalations gets fixed instead of escalated again.",
+     "success_criteria": [
+      "Recurring causes are named and filed as work, not restated in each account",
+      "A cause already filed is not filed again each time it recurs",
+      "A pattern that is getting worse is escalated rather than waited on"
+     ]
+    },
+    {
+     "id": "the-account-is-comparative",
+     "statement": "The person accountable sees what changed, not a repeat of numbers they have already read.",
+     "success_criteria": [
+      "The account distinguishes what changed from what has always been true",
+      "Repeat requesters and unusually long waits are called out by name rather than buried in an average",
+      "It is short enough to be read at the end of a long day"
+     ]
+    }
+   ],
+   "guidance": "Read your own escalation history for patterns and turn the ones with a fixable cause into work. This is the difference between a support seat that absorbs pain forever and one that reduces it. Say plainly when the pattern is the product's fault. Keep the account short and comparative, because the useful content is what changed, and escalate a pattern that is getting worse rather than waiting to report it.",
+   "connector_types": [
+    "support",
+    "knowledge_base",
+    "email"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "Act when enough escalations have accumulated to see a shape, or when one cause has recurred often enough to be worth naming. A fixed evening slot produces an account on days with nothing to say, which is how a digest trains its reader to skip it."
+   },
+   "personalization_needs": [
+    "Where filed causes should go, since a backlog and a knowledge base serve different follow up",
+    "Who reads this account and what decision they make with it, which sets its length and shape",
+    "How far back the adopter considers relevant, because pattern detection over the wrong window invents trends"
+   ],
+   "dependencies": [],
+   "input_schema": [
+    {
+     "name": "lead_email",
+     "type": "text",
+     "default": "support-lead@company.com",
+     "description": "Recipient of the daily HTML digest."
+    },
+    {
+     "name": "trend_alert_threshold",
+     "type": "number",
+     "default": 120,
+     "min": 100,
+     "max": 300,
+     "description": "Percent of 7-day avg above which the digest generates recommendations."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Notion as the escalation record",
+     "connector": "notion",
+     "connector_type": "knowledge_base",
+     "notes": "v2 queried the escalation log for the day plus a rolling window of history, and fell back to a partial account with an explicit gap note when the query failed. Naming the gap is what keeps a pattern claim honest, since a pattern read off an incomplete window is worse than no pattern."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d"
+    ],
+    "from_templates": [
+     "support-escalation-engine"
+    ],
+    "source_template_id": "support-escalation-engine"
+   },
+   "review_notes": "Superseded by the Digital Clone responsibility \"What the escalations keep saying\" (convert_B), which is authoritative and materially changes the job: v2 was a styled daily digest email, and the designed responsibility makes the core action naming fixable causes and filing them as work, with the account as the deliverable rather than the point. Retitled accordingly. DEPARTURE: v2 delivered over messaging as well as email; the designed responsibility lists support, knowledge_base and email, and that narrower set is used, since the account is a considered piece of writing rather than an alert. Adoption can bind messaging if that is where the reader is. The research.json verdict's trend and repeat offender content survives as the second outcome.",
+   "research_notes": "Read the v2 prompt_template, the research.json verdict (whose note pairs this with 410bed86 as digest and real time escalation), and the Digital Clone responsibility in convert_B.json. Checked that \"support\" and \"knowledge_base\" are both real categories values in scripts/connectors/builtin.",
+   "superseded_by": [
+    [
+     "convert_B.json",
+     "Digital Clone",
+     "What the escalations keep saying"
+    ]
+   ]
+  },
+  {
+   "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+   "slug": "support-request-sla-watch-and-escalation",
+   "title": "Support request SLA watch and escalation",
+   "version": "0.1.0",
+   "status": "seed",
+   "path": "customer_support/sla",
+   "domain": "customer_support",
+   "description": {
+    "need": "Somebody who asked for help is waiting, and nobody knows it. A breach discovered after the fact is only a report; the same information an hour earlier would have been a save.",
+    "input": "The open request queue with what was promised on each, how long each has waited, and the history of who has been escalated for what.",
+    "core_action": "Judge which requests are entering their risk window before they breach, and which genuinely need a person, since escalating everything is as bad as escalating nothing.",
+    "output": "Nobody who asked for help is waiting without either an answer or a human knowing they are waiting, and every escalation carries enough context that nobody rebuilds the case."
+   },
+   "activities": [
+    {
+     "id": "watch",
+     "label": "Watch the oldest unanswered request and any commitment coming due",
+     "kind": "observe"
+    },
+    {
+     "id": "risk",
+     "label": "Judge which requests are entering their risk window before they breach it",
+     "kind": "decide"
+    },
+    {
+     "id": "weigh",
+     "label": "Decide what genuinely needs a person, since escalating everything is as bad as escalating nothing",
+     "kind": "decide"
+    },
+    {
+     "id": "enrich",
+     "label": "Enrich the case with repeat requester and agent load context so a pattern is visible",
+     "kind": "act"
+    },
+    {
+     "id": "escalate",
+     "label": "Escalate with enough context to decide, and hand over one account when many break at once",
+     "kind": "act"
+    },
+    {
+     "id": "log",
+     "label": "Log every escalation so later pattern work has something real to read",
+     "kind": "deliver"
+    }
+   ],
+   "outcomes": [
+    {
+     "id": "nothing-waits-unnoticed",
+     "statement": "Nobody who asked for help is waiting without either an answer or a human knowing they are waiting.",
+     "success_criteria": [
+      "The oldest unanswered request is always known, and the seat can say why it is still open",
+      "A request entering its risk window is warned about before it breaches, not only after",
+      "A request escalated once is not escalated again for the same reason"
+     ]
+    },
+    {
+     "id": "urgency-is-proportional",
+     "statement": "The most urgent cases reach a person directly rather than a channel that might be missed, and routine ones do not.",
+     "success_criteria": [
+      "What was promised to a requester is tracked against what actually happened",
+      "When many requests break at once, one account of the situation is handed over rather than a stream of alerts"
+     ]
+    },
+    {
+     "id": "patterns-not-just-instances",
+     "statement": "Repeat requesters and overloaded agents show up as patterns the team can act on, not as isolated escalations.",
+     "success_criteria": [
+      "An escalation notes when the same requester or issue has recurred",
+      "Every escalation is logged somewhere later pattern analysis can read"
+     ]
+    }
+   ],
+   "guidance": "Hold the promise made to whoever asked. Answer what you can answer well, and put in front of a person what needs one, with enough context that they do not have to reconstruct the case. The judgment is in deciding what genuinely needs a person: escalating everything is as bad as escalating nothing. Warn before the breach rather than after. When many things break at once, hand over one account rather than a stream of alerts.",
+   "connector_types": [
+    "support",
+    "messaging",
+    "email",
+    "knowledge_base"
+   ],
+   "recommended_trigger": {
+    "kind": "self_paced",
+    "rationale": "What is watched is a clock condition the seat can hold itself: the oldest unanswered request, and any commitment about to come due. Act sooner when something is time sensitive and later when the queue is quiet, rather than polling every two minutes through the night. The request arriving is an event, but the waiting is not."
+   },
+   "personalization_needs": [
+    "What the adopter has actually promised requesters, since urgency is meaningless without a commitment to measure it against",
+    "Which situations require a person and which the seat may answer alone, which is a trust boundary only the adopter can set",
+    "How the adopter wants to be reached when something needs them, and what is important enough to interrupt for",
+    "Which requester tiers are in scope, because silencing a tier is a deliberate business choice rather than a filter"
+   ],
+   "dependencies": [
+    "Response commitments defined in the support platform, since a wait has nothing to be measured against otherwise"
+   ],
+   "input_schema": [
+    {
+     "name": "warning_window_minutes",
+     "type": "number",
+     "default": 15,
+     "min": 0,
+     "max": 240,
+     "description": "Minutes before SLA deadline that trigger a Low-severity early warning. 0 disables early warnings."
+    },
+    {
+     "name": "tiers_enabled",
+     "type": "text",
+     "default": "Enterprise,Professional,Starter,Free",
+     "description": "Comma-separated tiers to include in breach detection. Drop tiers to silence."
+    },
+    {
+     "name": "escalation_channel",
+     "type": "text",
+     "default": "#support-escalations",
+     "description": "messaging channels receiving breach alerts."
+    },
+    {
+     "name": "lead_user_id",
+     "type": "text",
+     "default": "",
+     "description": "messaging user ID of the support lead (e.g., U0123456789) for Critical-breach DMs."
+    },
+    {
+     "name": "require_confirmation",
+     "type": "boolean",
+     "default": false,
+     "description": "When true, Critical escalations stage with a confirm-to-post affordance before broadcasting."
+    }
+   ],
+   "examples": [
+    {
+     "title": "Slack as the escalation channel",
+     "connector": "slack",
+     "connector_type": "messaging",
+     "notes": "v2 posted to a channel and direct messaged the lead on the most severe cases, queued failed posts rather than dropping them, and switched to a single incident summary above fifty breaches in one pass. That flood behaviour is the reusable lesson: a channel stops being read the moment it is flooded."
+    },
+    {
+     "title": "Notion as the escalation log",
+     "connector": "notion",
+     "connector_type": "knowledge_base",
+     "notes": "v2 payloads carry a notion_page_id, and it fell back to a local file when the write failed rather than losing the record, because the pattern review downstream has nothing to read if the log has holes."
+    }
+   ],
+   "lessons": [],
+   "provenance": {
+    "from_recipes": [
+     "410bed86-bf86-5ef8-8c98-23ff437f33d2"
+    ],
+    "from_templates": [
+     "support-escalation-engine"
+    ],
+    "source_template_id": "support-escalation-engine"
+   },
+   "review_notes": "Superseded by the Digital Clone responsibility \"Nothing waits longer than it should\" (convert_B), which is taken as authoritative for the outcomes, guidance, trigger and personalization needs. Its pacing note explicitly rejects the fixed interval, which agrees with the lane rule that an SLA loop is a clock condition and not a cadence; v2's two minute poll is gone. DEPARTURE: the designed responsibility lists support, messaging and email; knowledge_base is added back because logging every escalation is a load bearing outcome in both v2 and the research.json verdict, and it is what feeds 70e00cca. Four connector types is more than ideal and adoption may bind fewer. The verdict also notes this absorbs a separate SLA prevention recipe from another lane.",
+   "research_notes": "Read the v2 prompt_template (five input schema knobs carried verbatim; payloads name notion_page_id and slack_ts, the vendor evidence for both examples), the research.json verdict and its notes on the two ids this absorbs or stays distinct from, and the Digital Clone responsibility in convert_B.json. Checked \"support\" in the connector catalog: it is a real categories value but carried by exactly one connector (crisp), which makes it the thinnest type used in this lane. Flagged in lane_findings.",
+   "superseded_by": [
+    [
+     "convert_B.json",
+     "Digital Clone",
+     "Nothing waits longer than it should"
+    ]
+   ]
+  }
+ ],
+ "topics_used": {
+  "operations_logistics/approvals": 1,
+  "legal_compliance/compliance-monitoring": 1,
+  "operations_logistics/intake": 1,
+  "legal_compliance/contracts": 3,
+  "legal_compliance/deadlines": 3,
+  "customer_support/service-health": 3,
+  "customer_support/ticket-handling": 1,
+  "data_ai/data-access": 3,
+  "data_ai/data-quality": 2,
+  "customer_support/retention": 1,
+  "customer_support/sla": 1
+ },
+ "lane_findings": [
+  "One connector token in this lane has NO matching catalog category: \"legal\" (recipes 4d115a03 and 2d6945b7, both from contract-lifecycle-use-case). All 48 categories values across the 134 files in scripts/connectors/builtin were enumerated; there is no legal, esignature, contract or agreement category, and no docusign, adobe-sign, hellosign or pandadoc connector. \"forms\" is used as the nearest (a document sent out for a counterparty to complete and return, with a webhook on completion, which is what formbricks and tally model) but it is a stretch. The right fix is an esignature category with a real connector behind it; until then adoption cannot bind these two recipes at all.",
+  "The \"support\" category is real but carried by exactly ONE connector (crisp). Two recipes in this lane declare it (410bed86, 70e00cca), so the type resolves to a single choice at adoption, which defeats the point of a type. Zendesk, Freshdesk, Intercom and Help Scout are all absent from the catalog. This is a catalog gap rather than a recipe problem.",
+  "Twelve of the twenty ids are superseded, but only nine distinct designed responsibilities cover them, because three responsibilities each supersede two recipes: App Master \"Keeping the open issue set from rotting\" (0b13d1e5 and 26b22f83), Contractor \"No date passes unnoticed\" (2d6945b7 and 55bf5308), and Database owner \"Answering questions against live data without putting it at risk\" (34e0d640 and d227eebc). In each case the responsibility's success criteria split cleanly and both ids are preserved per the brief, but each pair is now much closer than it was, because the cadence was often the only thing separating them. Phase D should decide the merges deliberately rather than inherit three near duplicates.",
+  "Removing the cadence is what exposed the duplication. Nine of the twenty recipes were named or scoped by their clock (\"Weekly Query Digest\", \"Monthly Deep Audit\", \"Daily Escalation Digest\", \"48-hour\" style titles, \"Support Digest\" against \"Issue Health Report\"). Once the cron comes off, several pairs describe the same job at two intervals. This is the strongest argument in this lane for the v3 shape and also the largest cleanup it creates.",
+  "The trigger split is 6 event, 14 self_paced, 0 time. Nothing in this lane produced a genuine time trigger: no statutory calendar was found anywhere in legal_compliance (the dates are per contract, not per jurisdiction), every SLA and reminder loop is a clock CONDITION the seat can watch, and every digest cadence was an authoring convenience rather than an external requirement. If a downstream reviewer expects any recipe corpus to contain time triggers, this lane is evidence that the honest answer is often none.",
+  "input_schema carried verbatim collides with connector_types in one place: 34e0d640 declares a connector_ref knob (target_database, ui_component DatabaseSelector, connector \"database\") that is the v2 way of doing exactly what connector_types plus AdoptionAnswers.credential_bindings now do. It is carried per the brief, but Phase C1 should reconcile the two seams rather than ship both.",
+  "One character was changed inside a verbatim input_schema: efb53700's contract_types description contained the only em dash in any of the twenty schemas, normalised to a comma so the file satisfies the house rule. Every other input_schema is byte identical to its v2 source. Disclosed here rather than left silent.",
+  "Vendor substitution artifacts survived in two titles and were removed: \"legal platform Event Processing\" (4d115a03) and \"knowledge base Publish and Risk Alert\" (04756772). Both are cases where a redacted vendor was replaced by its category and the result was left in a title, which then reads as neither an area nor a vendor. The pattern to look for elsewhere in the corpus is a lowercase category word sitting in title case position.",
+  "Two ids carry a real prerequisite that adoption must verify rather than install: 4d115a03 needs a delivery endpoint the signature platform can reach, and 410bed86 needs response commitments actually defined in the support platform, since a wait has nothing to measure against otherwise. Everything else in the lane evidenced no dependency, and none was invented; eighteen of twenty have an empty dependencies array.",
+  "d4388f24 sits between two domains and the lane roster and the superseding responsibility disagree. The roster and the consolidation verdict file it under customer_support; the superseding Web marketer responsibility \"Failed collection watch\" is filed under finance_accounting. The roster is followed here so the lane counts hold, but this is a real disagreement about which seat owns revenue signals and it should be settled rather than inherited."
+ ]
+}

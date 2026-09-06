@@ -211,8 +211,19 @@ pub fn render_responsibilities(responsibilities: &[PersonaResponsibility]) -> St
 
     for r in active {
         out.push_str(&format!("- **{}** ({})", r.title, r.domain));
-        if let Some(outcome) = r.outcomes.first().and_then(|o| non_empty(&o.statement)) {
-            out.push_str(&format!(" — {outcome}"));
+        // The one-line "what this is": the recipe's core action when the
+        // charter was adopted from a v3 recipe, the first outcome otherwise.
+        // Core action names the JUDGMENT at the centre of the work, which is
+        // what a roster reader needs; an outcome names the result, which is
+        // the older and vaguer answer.
+        let summary = r
+            .spec
+            .description
+            .as_ref()
+            .and_then(|d| non_empty(&d.core_action))
+            .or_else(|| r.outcomes.first().and_then(|o| non_empty(&o.statement)));
+        if let Some(summary) = summary {
+            out.push_str(&format!(" — {summary}"));
         }
         out.push('\n');
         out.push_str(&format!("  {}", scope_rung_line(r.scope_rung)));
@@ -304,10 +315,52 @@ pub fn render_responsibility_focused(r: &PersonaResponsibility) -> String {
         r.title, r.domain
     ));
 
+    // The recipe's four-field description, labelled. Four separate lines
+    // rather than a paragraph because they answer four different questions
+    // and the model should be able to tell which is which.
+    if let Some(d) = r.spec.description.as_ref() {
+        let mut block = String::new();
+        for (label, value) in [
+            ("Why this work exists", d.need.as_str()),
+            ("What it starts from", d.input.as_str()),
+            ("The judgment at its centre", d.core_action.as_str()),
+            ("What exists when it is done well", d.output.as_str()),
+        ] {
+            if let Some(value) = non_empty(value) {
+                block.push_str(&format!("{label}: {value}\n"));
+            }
+        }
+        if !block.is_empty() {
+            out.push('\n');
+            out.push_str(&block);
+        }
+    }
+
     if let Some(p) = non_empty(&r.procedure) {
         out.push_str("\nHow you carry this charter out:\n");
         out.push_str(p);
         out.push_str("\n\n");
+    }
+
+    // The coarse shape of the work — labels only. The KINDS
+    // (observe/decide/act/deliver) are omitted deliberately: they exist so a
+    // diagram can colour the steps, and spending prompt on them would read as
+    // a state machine the model is meant to follow, which is exactly what
+    // `use_case_flow` was and why it is gone.
+    let shape: Vec<&str> = r
+        .spec
+        .activities
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|a| non_empty(&a.label))
+        .collect();
+    if !shape.is_empty() {
+        out.push_str("Shape of the work:\n");
+        for label in shape {
+            out.push_str(&format!("- {label}\n"));
+        }
+        out.push('\n');
     }
 
     if !r.outcomes.is_empty() {

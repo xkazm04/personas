@@ -478,3 +478,299 @@ model can represent "no cadence" but that currently means "never wakes", not "pa
 - **The adoption questionnaire (§14a)** - generated rather than stored - has no build slot
   yet. It pairs naturally with the self-pacing work as the other half of directive (a)/(b),
   but no decision was taken on when.
+
+## 24. RECIPE v3 - operator course-correction (2026-09-06) and the plan
+
+The operator, after the consolidation: "I still essentially don't like the current state."
+Five principles, captured to the decision ledger. The contract is
+`scripts/templates/_RECIPE_V3_SPEC.md`; this section is the impact and the plan.
+
+### The one idea underneath all five
+
+**A recipe is mastery, not configuration.** Everything that binds it to one installation
+(connector, trigger, credentials, persona) moves to adoption time and lives on the
+charter. The recipe itself becomes a versioned registry artifact any agent can hold and
+improve, exactly like a skill.
+
+### Impact, measured
+
+- **Connector types already have a vocabulary.** The connector catalog's plural
+  `categories` field (`scripts/connectors/builtin/*.json`, 134 connectors) carries
+  values like `transcription`, `analytics`, `social`, `email` - deepgram is
+  `["ai","transcription","voice_generation"]`. No new vocabulary needed; promote this
+  field to a contract. The singular `category` is too coarse (deepgram = `ai`).
+- **The type-to-instance binding seam already exists.** `AdoptionAnswers.credential_bindings`
+  (`engine/src/adoption_answers.rs:35`) is `HashMap<String,String>` keyed by a generic
+  connector key mapped to a concrete service (`"email" -> "gmail"`), and `template_adopt.rs`
+  already feeds it into a "connector swap" adjustment pass. v3 formalizes what is there.
+- **Both recipes the operator used as worked examples were DELETED in the waves.**
+  "3-Pass Cut Edit" (template youtube-content-pipeline) and "48-Hour Performance Review"
+  (analytics-content-distribution-use-case). Recovered from `8c7d6ff7c` to ground the
+  spec. Implication to put in front of him: principle 4 ("recipes may start vague and
+  mature with use") argues AGAINST retiring thin recipes, and 142 were retired. The
+  retire rationale was "job not worth a preset", not "thin" - but the corpus he is now
+  designing against is one he has only partly seen. Restore-from-git is one command per
+  recipe if he wants any back.
+- **`useCaseFlow` strip (decision 7) still stands.** v3's `activities` is a different
+  object: linear, branch-free, 3-8 items, kinds only - a shape for a diagram, not a script.
+  The spec draws that line explicitly so it does not regress into a runbook.
+- **Decision 6 (apply the 82 designed responsibilities as-is) is superseded.** They carry
+  specific `connectors` and bound `trigger` values. They are the AUTHORITATIVE content for
+  the recipes they supersede (via `from_recipes`), but must be reshaped to v3 first.
+  Measured: 109 surviving recipes, of which a subset is superseded by a designed
+  responsibility - see `_lanes_v3.json` per lane.
+- **No sequence/diagram primitive exists in the app** (only `WizardStepper`). The activity
+  visualization is new UI.
+- **Registry: this is a new lane**, per the registry's own lane doctrine (new content kind
+  = new lane). `recipes/`, nested depth like `knowledge/` (generated index, max 10 child
+  dirs per level), versioned like `skills/` (semver + append-only LESSONS.md, gate mirrors
+  `check-skills.mjs`). `practices/` is not a fit (repo-level habits, fixed depth 3).
+  Migration is designed now and executed only after operator approval.
+
+### Plan
+
+**Phase A - contract (done this turn).** `_RECIPE_V3_SPEC.md`.
+
+**Phase B - item-by-item review into v3 (4 Opus agents, proposals only).** Lanes in
+`_lanes_v3.json`, grouped by domain. Each recipe: area+activity title; four-field
+description; 3-8 activities; connector TYPES (demote every connector id to a type, keep the
+id as an `example`; drop `desktop`); recommended trigger only; personalization needs;
+dependencies; where a designed responsibility supersedes the recipe, its outcomes/guidance
+are authoritative. Research per item where the connector's actual content matters.
+
+**Phase C1 - backend (Opus).** `RecipeSpec` v3 Rust type + ts-rs; `ResponsibilitySpec`
+shrinks to adoption-bound fields; v2->v3 transform script (deterministic, refuses re-run);
+adoption path resolves `connector_types` through catalog `categories` into
+`credential_bindings`, installs `dependencies`, assigns trigger from recommendation;
+prompt render reads need/input/core_action/output; `session_prompt.rs` + gates stop
+minting `use_case_flow` (decision 7, folded here).
+
+**Phase C2 - registry lane + UI (Opus).** `recipes/` lane in ai-registry (registry.yaml
+entry, gate, index builder, README) left EMPTY pending approval; app: activity-sequence
+visualization on the charter detail, connector-type -> bound-connector display, recipe
+version badge.
+
+**Phase D - apply (Director).** Merge Phase B output into the corpus as v3, run C1's
+transform, regenerate manifests, gates, commit. Then operator review; then registry
+migration.
+
+## 25. The 316 rows in the live Recipes table, explained (measured read-only, 2026-09-06)
+
+The operator sees 316 recipes in the app. The seed bundle has 109. Read-only query of
+`recipe_definitions` in `personas.db`:
+
+| rows | what they are |
+|---|---|
+| **108** | in the current 109-row bundle (1 bundle row not yet seeded; appears on next boot) |
+| **190** | GHOSTS: recipes retired from the bundle in the three waves. `seed_recipes_from_bundle` creates and updates rows but has **no retirement path**; the only DELETE is the per-id user command. |
+| **18** | never in any bundle: `derived` rows minted 2026-05-10 by `recipe_derivation` from eight templates deleted months ago. 17 are `is_builtin=1`; one (`uc_test_remediation`, no category) is `is_builtin=0`. |
+
+`persona_recipe_links` and `recipe_versions` are both empty: nothing references a DB
+recipe row by link. Charters carry `spec.sourceRecipeId` as a copy, so retiring a row does
+not break a charter.
+
+**So "316 to review" is mostly a reconciliation, not a review.** Decision: the seeder gains
+a guarded, bundle-driven retirement (builtin rows whose id left the bundle, and derived rows
+whose source template no longer exists, retired only when nothing references them; user rows
+never auto-retired). Handed to the v3 backend agent as an addendum. The 18 derived rows are
+duplicates of jobs the corpus already covers (email triage, lead qualification, SLA
+escalation all exist in lane L4); recommended to let them retire with the ghosts rather
+than review them as new content. Operator can veto per row.
+
+## 26. The connector catalog is a browsing taxonomy, not a capability contract (L3 finding, structural)
+
+v3 makes `connector_types` resolve through the catalog's `categories`. Lane L3 measured
+what that resolution can and cannot do:
+
+- **48 category values, almost no capability data.** `stripe` declares 1 resource and 0
+  events; `aws_cloud` / `gcp_cloud` declare neither; exactly ONE messaging/email connector
+  in all 134 (`personas_messages`) declares an inbound event. Three L3 recipes recommend an
+  `event` trigger against connectors that declare no event at all.
+- **Some types are too coarse to be a match.** `finance` resolves to a market-data API, a
+  time tracker, a prediction market and three payment surfaces; a revenue recipe and a
+  stock-signal recipe both correctly carry it and would be offered each other's
+  connectors. `email` offers resend/sendgrid, which cannot READ an inbox.
+- **Research changed content, not just notes:** AWS gates cost behind `ce:GetCostAndUsage`
+  while the catalog healthcheck is only an identity probe (a credential can pass adoption
+  and be unable to read cost); GCP has no cost endpoint (needs a BigQuery billing export);
+  Alpha Vantage's free tier (~25 req/day) caps watchlist size, not the thresholds; Stripe
+  has no MRR endpoint. These became `dependencies` and `examples`.
+
+**What this means for the design:** the TYPE label is fine for recipes. **Adoption cannot
+verify that a chosen connector satisfies the recipe.** That needs the catalog to declare
+capabilities (reads inbox / emits events / exposes cost / per-post metrics ...) so adoption
+can offer only connectors that can do the job and can refuse an `event` trigger where no
+event exists. Operator decision: extend the connector schema with a capability declaration,
+or accept that adoption's connector research pass (spec step 2) is what catches it.
+
+Also from L3, for Phase D: a second vendor-binding mechanism survives inside
+`input_schema` (a `report_delivery` enum with notion/email/slack options); `fb223f0f` is a
+standing merge into Content Curation; `5437968e` (Correspondence Activity Digest) is a
+delete candidate that reports only on the two recipes beside it.
+
+## 27. Lane L4 findings that outlive the lane
+
+- **`legal` has no catalog home.** Across all 48 `categories` values and 134 connectors
+  there is no legal / e-signature / contract category and no DocuSign, Adobe Sign, HelloSign
+  or PandaDoc connector. Two contract recipes (4d115a03, 2d6945b7) were mapped to `forms`
+  as nearest and flagged loudly. Adoption cannot bind them honestly today. Related:
+  `support` is a real category carried by exactly ONE connector (Crisp), so a "type" there
+  resolves to a single choice. Add to the §26 catalog decision.
+- **Two binding seams now coexist.** Recipe 34e0d640 carries a `connector_ref` knob in
+  `input_schema` doing exactly what `credential_bindings` now does. Handed to the backend
+  agent: reconcile, do not ship both.
+- **Removing the cadence is what exposed the duplication.** Nine of twenty L4 recipes were
+  named or scoped by their clock; once the cron comes off, several pairs describe one job
+  at two intervals. Three designed responsibilities each supersede TWO recipes
+  (0b13d1e5/26b22f83, 2d6945b7/55bf5308, 34e0d640/d227eebc). Both ids preserved per the
+  brief; **Phase D decides those merges deliberately.**
+- L4 trigger split: 6 event, 14 self_paced, **0 time** (no statutory calendar anywhere in
+  the seven legal recipes; every date is per contract). Corpus tally so far (L3+L4):
+  26 self_paced / 12 event / 3 time.
+- Disputed domain: d4388f24 (customer_support per roster and verdict; finance_accounting on
+  the Web marketer seat per the superseding responsibility). Roster followed; flagged.
+
+## 28. Lane L1: the spec gap, and the second catalog collapse
+
+- **Spec gap, now amended: connector ROLES.** Five code-review recipes need a local checkout
+  AND a hosted review surface, both `source_control`; a flat `connector_types` list can
+  declare the type once. Added `connector_roles: [{role, type, note}]` (optional) to the
+  spec; `connector_types` becomes the derived distinct-types list; adoption binds per role;
+  `credential_bindings` keyed by role name, which equals the type name in the common case so
+  the existing seam is unchanged. Sent to both implementers. **Until the L1 recipes carry
+  roles, the reviewer's own verdict stands: nothing in that lane is correct.** Phase D adds
+  roles to those five (the reviewer named them).
+- **Second catalog collapse (adds to §26):** `monitoring` is two different things
+  (application error monitors vs LLM observability tools); `cloud` and `knowledge_base`
+  split the same way. An adopter offered langfuse for an application error scan gets a
+  clean binding that returns nothing. Capability declarations, or sub-categories, are the
+  fix; neither exists.
+- `desktop_terminal` is a v2 connector id with NO catalog file or category; dropped, the
+  tool became a dependency (mirrors the operator's ffmpeg handling).
+- One type was ADDED on a superseding responsibility's authority (`monitoring` on
+  ec061c32): a transform that only ever removes connectors would not reproduce it.
+- Research changed content: builtin-github's own setup grants Contents READ only, so hosted
+  tag creation is not evidenced and no recipe now claims to read hosted CI status;
+  `builtin-codebases` exposes portfolio-level services `builtin-codebase` does not.
+- Two `merge_into` recipes (bbace830, d7d804cf -> 8751850c) emitted with full content per
+  the all-41 rule; drop at apply time. L1 triggers: 22 self_paced / 17 event / 2 time.
+  Corpus tally so far (L1+L3+L4): 48 self_paced / 29 event / 5 time.
+- Six `connector_ref` knobs in L1 duplicate `connector_types` (same seam collision as L4).
+
+## 29. All four v3 lanes in - corpus-wide integration result (2026-09-06)
+
+Validated as one corpus, not four reports: **109 / 109 recipes, 0 schema errors, 0 duplicate
+ids / slugs / titles across lanes, no folder over the 10-sibling cap** (37 topic folders
+across 10 domains: software_engineering 9, creative_design 5, general_professional 5,
+sales_marketing 4, customer_support 4, finance_accounting 3, legal_compliance 3,
+product_project 2, operations_logistics 2, data_ai 2).
+
+**Trigger tally, final: 68 self_paced / 36 event / 5 time.** Zero calendar triggers in three
+of four lanes; the five `time` cases are all argued individually (billing month, baseline
+sampling, a silent failure only sampling finds, a period indicator undefined before the
+period closes). Every declared cron in v2 resolved to a delivery preference or a watchable
+condition. This is the strongest evidence yet for directive (b), and it makes the
+self-pacing build (decision 4) load-bearing for 68 of 109 recipes.
+
+**Connector types: 25 distinct, top `messaging` 28, `source_control` 20, `email` 18,
+`database` 16, `knowledge_base` 16. 18 recipes legitimately declare none** (script drafting,
+voice profiling, audits over local data).
+
+### L2 findings that outlive the lane
+- **`desktop` IS a real catalog category (5 connectors) that the spec bans as a recipe type.**
+  Reconciled: the ban stands for the abstract "desktop" (every agent has it); concrete
+  desktop capabilities map to their real type (`desktop_browser` -> `browser_automation`).
+- **`codebase` has no category of its own**: `development` also resolves to github, gitlab
+  and sentry, so the operator's own registered local project is indistinguishable from a
+  hosted repo at the type level. Recorded as `development` with the id as an example; adds
+  to §26/§28's catalog decision.
+- **Research that changed answers:** Buffer declares no engagement/analytics resource
+  (corroborating the operator's own worked example: Buffer is a destination, not a metrics
+  source); YouTube Data has no caption/transcript surface (a v2 repurposing recipe assumed
+  it); Airtable is NOT `crm` despite being the store the v2 lead pipeline wrote to; **no
+  SEO-position connector exists anywhere** (the cannibalization watch has no source).
+- A type with one member is vendor lock in a category's clothes: `vision` 1, `video_generation`
+  2, `forms` 2.
+- Retiring the lead-polling safety net leaves a real gap with no surviving recipe.
+- Connector ids and cadences survive inside carried knob NAMES (`buffer_queue`,
+  `slack_channel`, "per week"). Renaming a knob breaks `{{param.<key>}}` in existing
+  persona prompts, so the transform REPORTS them and Phase D decides with that impact in
+  view (sent to the backend agent).
+- Verbatim-`input_schema` vs no-em-dash collided in 8 L2 descriptions (and once in L4);
+  rewritten as sentences, names/types/options/defaults untouched. The transform now
+  normalizes corpus-wide so this stops being a per-lane judgment.
+
+## 30. Registry lane scaffolded; and a Director error, stated
+
+**`recipes/` lane exists in ai-registry (uncommitted):** `registry.yaml` block (nested,
+max 10 child dirs, `index:` block, `version_reports_staleness: true`, a `boundary:` line
+naming the recipe/charter split, a note that it is declared ahead of its corpus by design
+and populated only after operator approval), `docs/recipes-lane.md`,
+`scripts/check-recipes.mjs` (eight fault injections all caught; found and fixed a latent
+fence-parsing bug that `check-skills.mjs` shares), `scripts/build-recipes-index.mjs`
+(new rather than reusing `build-index.mjs`, which is the knowledge bundle's indexer and
+resolves laws/techniques a recipe does not have), `recipes/README.md`, one worked example
+(web-analytics-performance-review). Whole registry gate chain 14/14 green with it.
+
+**Charter UI (uncommitted, Personas):** `ActivitySequence` shared primitive (catalogued),
+`CharterRecipeBlocks`, `CharterConnectorTypes` rendering PER ROLE with three honest
+states (bound / unbound-with-candidates / uncovered-by-the-catalog, `legal` being the
+measured uncovered case), interim `src/lib/personas/recipeV3.ts` to be replaced by the
+binding, 14 en keys (182-key i18n gap for the fan-out).
+
+**Director error.** I sent four addenda (seeder retirement, the transform items, the
+`connector_ref` seam, the backend half of the roles amendment) to the UI agent instead of
+the backend agent, and the UI half of the roles amendment to the backend. The UI agent
+handled it correctly: refused the Rust work as outside its walls and wrote the exact
+retirement rule instead; built the transform passes as a standalone `_v3_normalize.mjs`
+(43 node tests) the transform can import. Re-sent everything to the backend agent in one
+consolidated message. Lesson for the overlay: **the agent id is not the agent; label
+addenda with the brief's own title line and check the dispatch order before sending.**
+
+**Live conflict, theirs to clear:** `src/lib/personas/capabilities.ts` is dirty with
+`r.spec.connectorTypes` written before the ts-rs regen; `tsc` fails with exactly one error
+until `export_bindings` runs. Also: stale bundle-count comments (213/299 vs 109) and a
+corpus canary whose floors (100 templates / 250 refs) can no longer pass against 43 / 100.
+
+## 31. Phase D applied (2026-09-06): the corpus is v3
+
+- **`_recipe_seeds.json` is version 3: 109 recipes, all 109 reviewed, 0 mechanical.**
+  The transform's first run refused every overlay: it keyed overlays on the PAYLOAD id
+  (`uc_approval_workflow`) while every lane file keys on the ROW uuid. Fixed to look up by
+  row id with a payload-id fallback; the payload id stays the graph key the corpus canary
+  derives `recipe_ref` ids from. The v2 bundle is kept at
+  `%TEMP%/claude/seeds_v2_backup.json` for this session only; git has it at `97cb19d64`.
+- **Transform notes, as designed:** 13 duplicate `connector_ref` knobs folded into one
+  binding seam; 32 knob names/descriptions still carry a connector id or a cadence word
+  (REPORTED, never renamed: a knob name is a `{{param.<key>}}` substitution key); 1
+  vendor name inside an enum; 17 typography rewrites inside `input_schema` descriptions.
+- **`recipeIndex.generated.json` now has a generator and a gate** (decision 11):
+  `scripts/templates/generate-recipe-index.mjs` (+ `--check`, wired as the `recipe-index`
+  codegen task in predev/prebuild and as `check:recipe-index` in `npm run check`). `tags`
+  are real arrays again; `useExploreCatalog.ts` had been typing that field `string[]`
+  while receiving a six-character string. **My earlier "no reader, the file is dead"
+  claim was wrong** - the grep filtered out the `.json` import line. Same substring-vs-
+  structural family as before, in my own hands again. The index maps each v3 domain
+  family to an explore category the catalog's `CATEGORY_TO_DOMAIN` understands (the v3
+  families themselves are not in that map), and carries `domain`/`path` beside it.
+- **The documented gate count was stale by one BEFORE this pass** (`check:promise-pins`
+  in the chain, absent from the prose); now corrected to thirteen project checks.
+- **Seeder:** `MIN_SUPPORTED_SEED_VERSION` narrowed 2 -> 3 in this commit, per its own
+  doc. The tier-refresh test that read `spec.modelOverride` off the shipped bundle could
+  no longer find one (v3 carries no recipe-level model tier by design) and was rewritten
+  to assert that contract: a reseed of a populated install repairs nothing and leaves
+  every payload byte-identical. The v2 field-merge stays covered by its inline-fixture
+  test.
+
+### Merges were NOT applied in the bundle, and the reason is structural
+
+The 4 standing merges and the 16 many-to-one clusters (`_phase_d_plan.json`) were
+deliberately left for the registry migration. The corpus canary asserts
+`recipe_ref.id == derive_recipe_id(template_id, payload_id)`: **a recipe id is derived from
+its owning template**, which is precisely why 290 of 299 recipes were private copies and
+why "point two templates at one shared recipe" is impossible under the current invariant.
+A merge in this bundle would have to be "delete the loser and remove its use case from the
+losing template", which silently changes what adopting that template provides. In v3 the
+persona adopts recipes from the registry, where the identity is `slug@version` and
+sharing is the point. So: merges execute at migration time, once, under the new identity.
+Recorded here rather than done quietly.

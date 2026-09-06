@@ -2546,7 +2546,21 @@
     "suspend": "Tangguhkan",
     "transition_unavailable_hint": "Mengaktifkan dan menangguhkan piagam belum tersedia. Memensiunkan piagam sudah tersedia.",
     "trigger_attention": "Loop perhatian",
-    "trigger_every_minutes": "Setiap {minutes} mnt"
+    "trigger_every_minutes": "Setiap {minutes} mnt",
+    "activity_kind_act": "Bertindak",
+    "activity_kind_decide": "Putuskan",
+    "activity_kind_deliver": "Kirim",
+    "activity_kind_observe": "Amati",
+    "recipe_card_title": "Resep",
+    "recipe_connector_capability_unverified": "Konektor yang terikat cocok dengan jenisnya. Apakah ia bisa melakukan yang dibutuhkan piagam ini belum diverifikasi: katalog tidak mendeklarasikan kemampuan apa pun.",
+    "recipe_connector_unbound": "Belum terikat",
+    "recipe_connector_unbound_hint": "Belum ada yang dijangkau piagam ini yang mencakup jenis konektor tersebut. Ikat satu pada dimensi Konektor.",
+    "recipe_connector_uncovered": "Tidak ada konektor yang mencakup ini",
+    "recipe_connector_uncovered_hint": "Katalog tidak memiliki konektor dalam kategori itu, jadi tidak ada yang bisa diikat. Piagam ini membutuhkan konektor yang ditambahkan ke katalog, atau resep ini membutuhkan jenis yang berbeda.",
+    "recipe_connectors_label": "Konektor",
+    "recipe_dependencies_label": "Dependensi",
+    "recipe_shape_hint": "Jenis aktivitas yang dilalui pekerjaan ini, secara berurutan. Bukan buku panduan operasi: tidak ada percabangan.",
+    "recipe_shape_label": "Bentuk pekerjaan"
   },
   "role_card": {
     "assign": "Tugaskan",

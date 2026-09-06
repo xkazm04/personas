@@ -452,6 +452,9 @@ fn looks_like_bare_agent_ir(value: &serde_json::Value) -> bool {
         "full_prompt_markdown",
         "structured_prompt",
         "use_cases",
+        // Retired by Recipe v3 — the build prompt no longer asks for it. Kept
+        // as a marker so an OLD payload that still carries one is recognised
+        // as an agent_ir rather than rejected as some other object.
         "use_case_flows",
         "triggers",
         "suggested_triggers",

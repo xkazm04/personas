@@ -34,6 +34,7 @@ const TASKS = {
   // added via the manual --changes ingest. See docs/plans/curated-connector-events.md.
   "shared-events": "scripts/events/generate-connector-events.mjs",
   checksums: "scripts/generate-template-checksums.mjs",
+  "recipe-index": "scripts/templates/generate-recipe-index.mjs",
   "n8n-limits": "scripts/generate-n8n-limits.mjs",
   "host-check": "scripts/check-build-cache.mjs",
   // Advisory Rust build-cache size check. Argless spawn = --guard mode: reads
@@ -82,8 +83,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "recipe-index", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "recipe-index", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;
