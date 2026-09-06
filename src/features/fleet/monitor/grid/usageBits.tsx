@@ -11,11 +11,13 @@
 
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Flame, Gauge, Snowflake } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
 import type { Translations } from '@/i18n/generated/types';
+import { formatPercent } from '@/lib/utils/formatters';
 import {
-  formatCountdown, meterTone, pace, windowProgress, type MeterTone, type Pace,
+  formatCountdown, meterTone, pace, remainingLabel, windowProgress, type MeterTone, type Pace,
 } from './usageModel';
 
 /** The marker moves with the clock; 30s is the finest it needs. */
@@ -113,7 +115,10 @@ export function windowAria(
   now: number,
 ): string {
   const p = pace(w, now);
-  return `${windowLabel(t, w.key)} ${Math.round(w.utilizationPct)}% · ${countdownText(t, tx, w, now)}${p ? ` · ${paceLabel(t, p)}` : ''}`;
+  // formatPercent, not `${Math.round(x)}%`: this string is read aloud, and the
+  // hand-composed form freezes en's decimal separator and its no-space-before-%
+  // convention into all 14 locales (de/fr/cs want `42 %`, ar needs bidi marks).
+  return `${windowLabel(t, w.key)} ${formatPercent(w.utilizationPct, { precision: 0 })} · ${countdownText(t, tx, w, now)}${p ? ` · ${paceLabel(t, p)}` : ''}`;
 }
 
 /** Ticks only while the window is visible, re-stamped on re-show. */
@@ -174,6 +179,33 @@ export function MeterBar({
       )}
     </>
   );
+}
+
+/**
+ * The meter's leading label: whole hours (5h window) or days (7d window)
+ * left until the reset. The window's name is the tooltip; the number is what
+ * you read. A window with no scheduled reset shows its plain name.
+ */
+export function RemainingLabel({ w, now, t }: { w: ClaudeUsageWindow; now: number; t: Translations }) {
+  const label = remainingLabel(w, now, { day: t.monitor.usage_unit_day, hour: t.monitor.usage_unit_hour });
+  const name = windowLabel(t, w.key);
+  return (
+    <Tooltip content={windowHint(t, w.key)}>
+      <span className="typo-caption tabular-nums text-foreground opacity-70" data-testid="fleet-usage-remaining">
+        {label ?? name}
+      </span>
+    </Tooltip>
+  );
+}
+
+export function windowHint(t: Translations, key: string): string {
+  switch (key) {
+    case 'five_hour': return t.monitor.usage_window_five_hour_hint;
+    case 'seven_day': return t.monitor.usage_window_seven_day_hint;
+    case 'seven_day_opus': return t.monitor.usage_window_seven_day_opus_hint;
+    case 'seven_day_sonnet': return t.monitor.usage_window_seven_day_sonnet_hint;
+    default: return key;
+  }
 }
 
 /** The temperature glyph; the name rides along for screen readers. */
