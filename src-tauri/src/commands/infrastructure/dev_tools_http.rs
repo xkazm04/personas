@@ -39,6 +39,8 @@
 //!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
 //!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
+//!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
+//!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -56,6 +58,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
+use crate::commands::infrastructure::app_master_adopt;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -115,6 +118,8 @@ pub fn router(app: AppHandle) -> Router {
         .route("/patterns/consult", get(patterns_consult))
         .route("/patterns/propose", post(patterns_propose))
         .route("/patterns/{id}", get(pattern_get))
+        .route("/app-master/adopt", post(app_master_adopt_route))
+        .route("/app-master/{project_id}", get(app_master_state))
         .with_state(DevToolsHttp { app })
 }
 
@@ -139,6 +144,19 @@ fn err(e: AppError) -> (StatusCode, String) {
 /// A refused path is the caller's mistake, not ours — 400, with the reason.
 fn bad_request(e: AppError) -> (StatusCode, String) {
     (StatusCode::BAD_REQUEST, e.to_string())
+}
+
+/// Map an `AppError` to the status its CAUSE deserves rather than collapsing
+/// everything to 500: a caller who named a project that does not exist has
+/// made a 400, and a caller who named a recipe slug nobody seeded has made a
+/// 404. Both are actionable; a 500 is not.
+fn status_for(e: AppError) -> (StatusCode, String) {
+    let code = match e {
+        AppError::Validation(_) => StatusCode::BAD_REQUEST,
+        AppError::NotFound(_) => StatusCode::NOT_FOUND,
+        _ => StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (code, e.to_string())
 }
 
 /// Canonicalise a project root, refusing anything that is not an existing
@@ -1586,4 +1604,51 @@ async fn kpi_rebind(
     )
     .map(Json)
     .map_err(err)
+}
+
+// ============================================================================
+// App Master adoption — the headless door onto a project's accountable owner
+// ============================================================================
+//
+// The operation itself lives in `app_master_adopt`; these two are adapters. It
+// is a BLOCKING function (rusqlite + the manifest file), so it runs on the
+// blocking pool rather than on an axum worker.
+
+async fn app_master_adopt_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_adopt::AdoptAppMasterInput>,
+) -> Result<Json<app_master_adopt::AppMasterAdoption>, (StatusCode, String)> {
+    let pool = db(&s);
+    // Bound, then awaited: a panic in the blocking task comes back as a
+    // `JoinError` and becomes a 500 that says so, rather than a request that
+    // never answers.
+    let handle = tokio::task::spawn_blocking(move || app_master_adopt::adopt(&pool, &b));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("app-master adopt: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn app_master_state(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Option<app_master_adopt::AppMasterAdoption>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || app_master_adopt::current(&pool, &project_id));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("app-master state: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
 }

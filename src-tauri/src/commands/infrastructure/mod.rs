@@ -1,3 +1,4 @@
+pub mod app_master_adopt;
 pub mod auth;
 pub mod autopilot;
 #[cfg(feature = "desktop")]

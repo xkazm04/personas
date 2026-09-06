@@ -2558,6 +2558,10 @@ pub(crate) fn map_use_case_to_charter_input(
         connector_types: None,
         connector_bindings: None,
         dependencies: None,
+        // Set by the App-master adoption door, which is the only writer of an
+        // ordering; a legacy use case carries neither.
+        priority: None,
+        pacing: None,
     };
 
     CreatePersonaResponsibilityInput {
