@@ -1,6 +1,7 @@
 use super::super::cli_args::DEFAULT_EFFORT;
 use super::super::*;
 use super::test_persona;
+use personas_core::model_ids;
 use personas_core::types::ModelProfile;
 
 #[test]
@@ -90,11 +91,133 @@ fn test_cli_args_effort_blank_falls_back_to_default() {
 
 #[test]
 fn test_resume_cli_args_pins_effort() {
-    let args = build_resume_cli_args("sess-resume-1");
+    let args = build_resume_cli_args("sess-resume-1", None);
     assert!(args.args.contains(&"--effort".to_string()));
     assert!(args.args.contains(&DEFAULT_EFFORT.to_string()));
     assert!(args.args.contains(&"--resume".to_string()));
     assert!(args.args.contains(&"sess-resume-1".to_string()));
+    // No profile means no decision to carry, so no --model either.
+    assert!(
+        !args.args.contains(&"--model".to_string()),
+        "a profileless resume must not invent a model"
+    );
+}
+
+/// The regression this file used to certify. `test_resume_cli_args_pins_effort`
+/// passes a `None` profile, so `DEFAULT_EFFORT` is the right answer and the test
+/// was green while the resume path pushed the constant UNCONDITIONALLY — the
+/// pin the comment above it promised did not exist. Assert against a profile
+/// that asks for something other than the default, which is the only input that
+/// can tell a pin from a constant.
+#[test]
+fn resume_cli_args_carry_the_profile_effort_not_the_constant() {
+    let profile = ModelProfile {
+        effort: Some("high".into()),
+        ..Default::default()
+    };
+    let args = build_resume_cli_args("sess-resume-effort", Some(&profile));
+
+    let effort = flag_value(&args.args, "--effort");
+    assert_eq!(
+        effort.as_deref(),
+        Some("high"),
+        "resume must use resolve_effort(profile), not DEFAULT_EFFORT"
+    );
+    assert_ne!(effort.as_deref(), Some(DEFAULT_EFFORT));
+    assert_eq!(
+        args.args.iter().filter(|a| *a == "--effort").count(),
+        1,
+        "exactly one --effort flag expected"
+    );
+}
+
+/// The model half of the same defect: the decision was computed and discarded,
+/// so a resumed run reverted to the CLI's account default. Fresh and resume
+/// must agree on the model for the same profile.
+#[test]
+fn resume_cli_args_carry_the_decided_model() {
+    let profile = ModelProfile {
+        model: Some(model_ids::DEFAULT_STRONG.into()),
+        effort: Some("low".into()),
+        ..Default::default()
+    };
+    let resumed = build_resume_cli_args("sess-resume-model", Some(&profile));
+    let fresh = build_cli_args(None, Some(&profile));
+
+    assert_eq!(
+        flag_value(&resumed.args, "--model").as_deref(),
+        Some(model_ids::DEFAULT_STRONG)
+    );
+    assert_eq!(
+        flag_value(&resumed.args, "--model"),
+        flag_value(&fresh.args, "--model"),
+        "fresh and resumed runs must be spawned on the same model"
+    );
+    assert_eq!(
+        flag_value(&resumed.args, "--effort"),
+        flag_value(&fresh.args, "--effort"),
+        "fresh and resumed runs must be spawned on the same effort"
+    );
+    assert_eq!(
+        args_after_resume_flag(&resumed.args),
+        Some("sess-resume-model".to_string())
+    );
+}
+
+/// An empty model string is not a model. The fresh path already treats it that
+/// way; the resume path must not emit a bare `--model` with nothing after it,
+/// which the CLI rejects.
+#[test]
+fn resume_cli_args_emit_no_model_for_an_empty_string() {
+    let profile = ModelProfile {
+        model: Some("".into()),
+        ..Default::default()
+    };
+    let args = build_resume_cli_args("sess-resume-empty", Some(&profile));
+    assert!(!args.args.contains(&"--model".to_string()));
+}
+
+/// The three call sites that reach the resume path all funnel through the
+/// provider trait's `build_resume_args`, which the runner calls with the SAME
+/// `candidate_profile` the fresh branch passes to `build_execution_args` — so
+/// the fix is at one seam and covers healing, the scheduled `api_error_resume`
+/// drain, and the warm pool alike. Assert the seam itself: the trait method
+/// forwards the profile, for both prompt-delivery shapes.
+#[test]
+fn provider_resume_seam_forwards_the_profile_to_the_argv() {
+    use crate::provider::{resolve_provider, CliProvider};
+    use personas_core::engine_kind::EngineKind;
+
+    let profile = ModelProfile {
+        model: Some(model_ids::DEFAULT_FAST.into()),
+        effort: Some("high".into()),
+        ..Default::default()
+    };
+    let provider: Box<dyn CliProvider> = resolve_provider(EngineKind::ClaudeCode);
+
+    for args in [
+        provider.build_resume_args("sess-seam", Some(&profile)),
+        provider.build_resume_args_with_prompt("sess-seam", Some(&profile), "go on"),
+    ] {
+        assert_eq!(
+            flag_value(&args.args, "--model").as_deref(),
+            Some(model_ids::DEFAULT_FAST)
+        );
+        assert_eq!(flag_value(&args.args, "--effort").as_deref(), Some("high"));
+    }
+}
+
+/// Read the value that follows `flag`, so a test cannot pass on a value that
+/// happens to appear somewhere else in the argv (which `contains` allows).
+fn flag_value(args: &[String], flag: &str) -> Option<String> {
+    args.iter()
+        .position(|a| a == flag)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
+}
+
+fn args_after_resume_flag(args: &[String]) -> Option<String> {
+    flag_value(args, "--resume")
 }
 
 #[test]
@@ -207,7 +330,7 @@ fn test_cli_args_nonessential_traffic_suppression() {
 
 #[test]
 fn test_resume_cli_args_nonessential_traffic_suppression() {
-    let args = build_resume_cli_args("sess-non-essential-1");
+    let args = build_resume_cli_args("sess-non-essential-1", None);
     for key in [
         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
         "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
@@ -225,7 +348,7 @@ fn test_resume_cli_args_nonessential_traffic_suppression() {
 
 #[test]
 fn test_resume_cli_args_has_exclude_dynamic() {
-    let args = build_resume_cli_args("sess-1");
+    let args = build_resume_cli_args("sess-1", None);
     assert!(args
         .args
         .contains(&"--exclude-dynamic-system-prompt-sections".to_string()));
@@ -251,7 +374,7 @@ fn test_cli_args_strips_disable_prompt_caching_env() {
         );
     }
 
-    let resumed = build_resume_cli_args("sess-1");
+    let resumed = build_resume_cli_args("sess-1", None);
     for key in expected {
         assert!(
             resumed.env_removals.iter().any(|k| k == key),
