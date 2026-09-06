@@ -4,6 +4,8 @@ import type { PersonaResponsibility } from "@/lib/bindings/PersonaResponsibility
 import type { CreatePersonaResponsibilityInput } from "@/lib/bindings/CreatePersonaResponsibilityInput";
 import type { UpdatePersonaResponsibilityInput } from "@/lib/bindings/UpdatePersonaResponsibilityInput";
 import type { AttentionLedgerEntry } from "@/lib/bindings/AttentionLedgerEntry";
+import type { AdoptAppMasterInput } from "@/lib/bindings/AdoptAppMasterInput";
+import type { AppMasterAdoption } from "@/lib/bindings/AppMasterAdoption";
 
 // ============================================================================
 // Responsibilities (living-agent charters)
@@ -98,3 +100,25 @@ export const setPersonaResponsibilityStatus = (
  */
 export const listAttentionLedger = (personaId: string, limit = 50) =>
   invoke<AttentionLedgerEntry[]>("list_attention_ledger", { personaId, limit });
+
+// ============================================================================
+// App Master adoption
+// ============================================================================
+
+/**
+ * Adopt (or re-adopt) the App Master for a registered dev project: one persona
+ * pinned to the project, one charter per named recipe, every charter enrolled
+ * in the attention loop, and the mandate written into the persona's manifest
+ * law sections.
+ *
+ * Idempotent — the persona is keyed by `(design_context.devProjectId, name)`
+ * and each charter by its recipe slug, so calling twice with the same body
+ * updates in place. A slug dropped from `recipes` SUSPENDS its charter (never
+ * deletes it: the charter carries the attention loop's coverage memory).
+ *
+ * Partial outcomes are reported rather than rounded up: read `notes` and
+ * `manifestPath` before treating an adoption as complete. The same operation
+ * is on the loopback dev-tools bridge at `POST /dev-tools/app-master/adopt`.
+ */
+export const adoptAppMaster = (input: AdoptAppMasterInput) =>
+  invoke<AppMasterAdoption>("adopt_app_master", { input });

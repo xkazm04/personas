@@ -5,6 +5,7 @@ import type { RecipeActivity } from "./RecipeActivity";
 import type { RecipeDescription } from "./RecipeDescription";
 import type { RecipeRef } from "./RecipeRef";
 import type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
+import type { ResponsibilityPacing } from "./ResponsibilityPacing";
 
 /**
  * The runtime envelope a charter carries beyond its governance fields — the
@@ -113,4 +114,13 @@ connectorBindings?: Array<CharterConnectorBinding>,
  * Things that must be installed or verified before the first run.
  * RECORDED here, never installed by the mint — see the adoption path.
  */
-dependencies?: Array<string>, };
+dependencies?: Array<string>, 
+/**
+ * Operator-set ordering for the App Master's decision step: 1 = highest,
+ * 5 = lowest. Absent means the persona decides.
+ */
+priority?: number, 
+/**
+ * Coverage memory written back by the decision lane between wakes.
+ */
+pacing?: ResponsibilityPacing, };

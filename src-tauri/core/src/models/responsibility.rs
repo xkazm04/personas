@@ -209,6 +209,27 @@ pub struct ResponsibilityErrorPolicy {
     pub escalate_after: Option<i64>,
 }
 
+/// Coverage memory for a self-paced charter, written by the attention loop's
+/// decision step and read back on the next wake.
+// `PartialEq` is NOT in the spec text this struct was authored from: it is
+// required because `ResponsibilitySpec` — the only holder — derives `PartialEq`
+// itself, and a non-`PartialEq` field would fail that derive. Adding it here is
+// the smaller change.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsibilityPacing {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub last_decided_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub last_dispatched_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub coverage_note: Option<String>,
+}
+
 /// The runtime envelope a charter carries beyond its governance fields — the
 /// half of a legacy design-context use case that was never about *what the
 /// persona holds* but about *how a run of it is shaped* (input schema, engine
@@ -355,6 +376,15 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub dependencies: Option<Vec<String>>,
+    /// Operator-set ordering for the App Master's decision step: 1 = highest,
+    /// 5 = lowest. Absent means the persona decides.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub priority: Option<u8>,
+    /// Coverage memory written back by the decision lane between wakes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub pacing: Option<ResponsibilityPacing>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.

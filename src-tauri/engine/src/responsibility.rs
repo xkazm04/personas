@@ -184,6 +184,14 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
             app_master::rung_label(MAX_GRANTABLE_RUNG),
         )));
     }
+    if let Some(priority) = input.spec.priority {
+        if !(1..=5).contains(&priority) {
+            return Err(AppError::Validation(format!(
+                "Charter priority {priority} is out of range: 1 (highest) to 5 (lowest), or \
+                 absent to let the persona decide"
+            )));
+        }
+    }
     input.status.parse::<ResponsibilityStatus>()?;
     for class in &input.refusal_classes {
         if !class_is_valid(class) {

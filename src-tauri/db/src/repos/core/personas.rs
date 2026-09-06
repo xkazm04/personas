@@ -739,6 +739,32 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     })
 }
 
+/// Every persona pinned to one dev project — the personas whose
+/// `design_context.devProjectId` names `project_id`.
+///
+/// That pin is the codebase binding (`DesignContextData::dev_project_id`,
+/// `rename_all = "camelCase"` → the JSON key `devProjectId`), and it is what
+/// the runner turns into `PERSONAS_DEV_PROJECT_ID`. The key is extracted in
+/// SQL, mirroring `responsibilities::list_active_with_attention`, so a scan
+/// never deserializes the design contexts it is going to skip.
+///
+/// Oldest first: the App-master adoption door treats the earliest match as the
+/// incumbent, so re-running it converges on one persona instead of alternating.
+#[instrument(skip(pool))]
+pub fn list_by_dev_project(pool: &DbPool, project_id: &str) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::list_by_dev_project", {
+        let conn = pool.conn("personas::list_by_dev_project")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas
+             WHERE json_valid(design_context)
+               AND json_extract(design_context, '$.devProjectId') = ?1
+             ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map(params![project_id], row_to_persona)?;
+        Ok(collect_rows(rows, "personas::list_by_dev_project"))
+    })
+}
+
 /// Personas the user has starred — the Director's coaching scope. Excludes
 /// the Director itself is the caller's concern (cycle runners skip it).
 #[instrument(skip(pool))]

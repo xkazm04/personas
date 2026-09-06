@@ -30,7 +30,7 @@ pub use budget::{fnv1a_64, warn_over_budget, PromptBlockSizes};
 pub use capabilities::{
     active_capabilities_fingerprint, build_tool_documentation, core_fingerprint,
     parse_model_profile, render_capability_policy_lines, resolve_use_case_model_override,
-    DEFAULT_CAPABILITY_MODEL,
+    tier_slug_to_model_id, DEFAULT_CAPABILITY_MODEL,
 };
 pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args, DEFAULT_EFFORT};
 pub use core_section::{

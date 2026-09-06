@@ -5,6 +5,7 @@
 
 export type { AccessLevel } from "./AccessLevel";
 export type { ActiveChain } from "./ActiveChain";
+export type { AdoptAppMasterInput } from "./AdoptAppMasterInput";
 export type { AdoptedTeamPresetFailure } from "./AdoptedTeamPresetFailure";
 export type { AdoptedTeamPresetMember } from "./AdoptedTeamPresetMember";
 export type { AdoptedTeamPresetResult } from "./AdoptedTeamPresetResult";
@@ -28,7 +29,10 @@ export type { ApiRequestBody } from "./ApiRequestBody";
 export type { AppendMessageResult } from "./AppendMessageResult";
 export type { AppliedTriage } from "./AppliedTriage";
 export type { ApplyMemoryReviewProposalResult } from "./ApplyMemoryReviewProposalResult";
+export type { AppMasterAdoption } from "./AppMasterAdoption";
+export type { AppMasterCharterOutcome } from "./AppMasterCharterOutcome";
 export type { AppMasterLink } from "./AppMasterLink";
+export type { AppMasterRecipeRequest } from "./AppMasterRecipeRequest";
 export type { Archetype } from "./Archetype";
 export type { ArchetypeCatalog } from "./ArchetypeCatalog";
 export type { ArtistAsset } from "./ArtistAsset";
@@ -849,6 +853,7 @@ export type { ResponsibilityCadence } from "./ResponsibilityCadence";
 export type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
 export type { ResponsibilityObjective } from "./ResponsibilityObjective";
 export type { ResponsibilityOutcome } from "./ResponsibilityOutcome";
+export type { ResponsibilityPacing } from "./ResponsibilityPacing";
 export type { ResponsibilitySpec } from "./ResponsibilitySpec";
 export type { ResponsibilityTenure } from "./ResponsibilityTenure";
 export type { ReviewMessage } from "./ReviewMessage";
