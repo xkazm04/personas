@@ -47,6 +47,17 @@ describe('makeIssueId', () => {
     expect(a).toBe(b);
     expect(a).toMatch(/^hc_[0-9a-f]{16}$/);
   });
+
+  it('keeps the exact hash the NUL-separated input has always produced', () => {
+    // Pinned from the tree BEFORE the raw NUL bytes in the template literal were
+    // rewritten as `unicode` escapes: the separator's VALUE is part of every id.
+    expect(makeIssueId('persona-1', 'error', 'Missing credential for slack')).toBe('hc_8314f1b023d77a13');
+  });
+
+  it('separates fields so a space in one field cannot alias a split in another', () => {
+    expect(makeIssueId('p', 'a b', 'c')).toBe('hc_fe57c4bbfad02177');
+    expect(makeIssueId('p', 'a', 'b c')).toBe('hc_2878c5c7fbe3c377');
+  });
 });
 
 function issue(severity: DryRunIssue['severity'], resolved = false): DryRunIssue {

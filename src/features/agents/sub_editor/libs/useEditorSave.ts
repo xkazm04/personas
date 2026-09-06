@@ -144,7 +144,12 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
             `Undo failed to save: ${err instanceof Error ? err.message : String(err)}`,
             'error',
           );
-          return;
+          // Rethrow so the document store keeps the entry where it was. A
+          // swallowed failure resolved this promise, and EditorDocument.undo()
+          // then moved the entry onto the redo stack as if the restore had
+          // landed: the history said "undone", disk still held the value, and
+          // the entry was gone from the undo stack for good.
+          throw err;
         }
         // Re-check after the IPC await — the user may have switched personas.
         if (!token.isStillCurrent()) return;

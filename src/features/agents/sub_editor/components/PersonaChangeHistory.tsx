@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { History, ArrowRight } from 'lucide-react';
 import { listPersonaChangeLog } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { storeBus } from '@/lib/storeBus';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,17 +30,27 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
   const [entries, setEntries] = useState<PersonaChangeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Latest-wins: only the newest request may write. Without it a slow
+  // response for persona A landed after the user had switched to B and
+  // painted A's history under B's name (and cleared B's loading ghost early).
+  // The counter/compare pair is the shared one — a hand-rolled `++ref.current`
+  // is the same guard written a second time, and gets the comparison
+  // direction wrong sooner or later.
+  const latestWins = useRef(createLatestWins()).current;
   const load = useCallback(() => {
+    const token = latestWins.next();
     listPersonaChangeLog(personaId, 50)
-      .then(setEntries)
+      .then((rows) => { if (latestWins.isCurrent(token)) setEntries(rows); })
       .catch((err) => { silentCatch('PersonaChangeHistory:list')(err); })
-      .finally(() => setLoading(false));
-  }, [personaId]);
+      .finally(() => { if (latestWins.isCurrent(token)) setLoading(false); });
+  }, [personaId, latestWins]);
 
   useEffect(() => {
     setLoading(true);
     load();
-  }, [load]);
+    // A persona switch or unmount retires every response still in flight.
+    return () => { latestWins.next(); };
+  }, [load, latestWins]);
 
   // A completed run never edits config, but saves do — re-pull when the store
   // signals a persona changed so a fresh edit shows without a manual refresh.
@@ -76,7 +87,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
             ))}
           </div>
         ) : entries.length === 0 ? (
-          <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground/60">
+          <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground">
             <History className="w-3.5 h-3.5" />
             {labels.empty}
           </p>
@@ -87,7 +98,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
                 <span className="typo-body font-medium text-foreground min-w-0 shrink-0">
                   {fieldLabel(e.field)}
                 </span>
-                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground/70">
+                <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground">
                   <span className="truncate max-w-[8rem]" title={displayValue(e.beforeValue)}>
                     {displayValue(e.beforeValue)}
                   </span>
@@ -99,7 +110,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
                 <span className={`shrink-0 px-1.5 py-0.5 rounded-card border typo-caption ${SOURCE_TONE[e.source ?? 'other'] ?? SOURCE_TONE.other}`}>
                   {sourceLabel(e.source)}
                 </span>
-                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-foreground/60" />
+                <RelativeTime timestamp={e.createdAt} className="shrink-0 typo-caption text-foreground" />
               </li>
             ))}
           </ul>

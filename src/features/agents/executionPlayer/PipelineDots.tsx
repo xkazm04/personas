@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import {
   PIPELINE_STAGES,
   STAGE_META,
@@ -56,6 +56,9 @@ export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
 
 export function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasError: boolean }) {
   if (hasError) return <XCircle className="w-4 h-4 text-red-400" />;
-  if (isExecuting) return <LoadingSpinner className="text-blue-400" />;
+  // LoadingSpinner renders null, so the header showed NO glyph while a run was
+  // in flight. The shared liveness dot is the app's vocabulary for "in flight"
+  // (CloudHistoryHelpers uses the same swap for queued/running rows).
+  if (isExecuting) return <LiveStatusDot tone="syncing" size="sm" className="mx-1" />;
   return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
 }

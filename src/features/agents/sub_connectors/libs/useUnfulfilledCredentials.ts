@@ -12,7 +12,6 @@ import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from
 const FALLBACK_COLOR = {
   unknownConnector: '#8b5cf6',  // violet — connector with no catalog entry
   unknownPersona: '#3b82f6',    // blue   — persona with no `color` set
-  placeholderPersona: '#6b7280', // gray   — global view's "any agent" row
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -140,44 +139,4 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
 
     return { totalDemands, fulfilledCount, unfulfilledCount, reusableCount, demands };
   }, [target, credentials, connectors]);
-}
-
-// ---------------------------------------------------------------------------
-// Hook: global unfulfilled credentials across all personas
-// ---------------------------------------------------------------------------
-
-export function useGlobalUnfulfilledCredentials() {
-  const credentials = useVaultStore((s) => s.credentials);
-  const connectors = useVaultStore((s) => s.connectorDefinitions);
-
-  return useMemo((): CredentialDemandSummary => {
-    // For the global view we approximate by matching the credential store's
-    // service_types against the connector catalog. The actual demand detection
-    // happens per-persona in the agent editor (see useUnfulfilledCredentials).
-    // Global view shows: connectors with no matching credentials.
-
-    const credServiceTypes = new Set<string>();
-    for (const c of credentials) credServiceTypes.add(c.service_type);
-
-    const uncoveredConnectors = connectors.filter((c) => !credServiceTypes.has(c.name));
-
-    const demands: UnfulfilledCredential[] = uncoveredConnectors.map((c) => ({
-      connectorName: c.name,
-      connectorLabel: c.label,
-      connectorColor: c.color,
-      connectorCategory: c.category,
-      personaId: '',
-      personaName: 'Any agent using this connector',
-      personaColor: FALLBACK_COLOR.placeholderPersona,
-      matchingCredentials: [],
-    }));
-
-    return {
-      totalDemands: connectors.length,
-      fulfilledCount: connectors.length - uncoveredConnectors.length,
-      unfulfilledCount: uncoveredConnectors.length,
-      reusableCount: 0,
-      demands,
-    };
-  }, [credentials, connectors]);
 }

@@ -1,7 +1,9 @@
 import { useEffect, useCallback, Suspense, useState } from 'react';
 import { TabSaveError } from '../libs/EditorDocument';
+import { tabIdLabel, tabIdsToLabels } from '../libs/editorTabConstants';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -30,7 +32,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 
 export function EditorBody() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const {
     selectedPersona, deletePersona,
     pendingSelectPersonaId: pendingPersonaId,
@@ -127,16 +129,20 @@ export function EditorBody() {
       setShowDeleteConfirm(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      toastCatch('EditorBody:deletePersona', t.agents.editor_ui.delete_failed.replace('{message}', msg))(err);
+      toastCatch('EditorBody:deletePersona', tx(t.agents.editor_ui.delete_failed, { message: msg }))(err);
       // Keep the delete confirmation dialog open so the user can retry
     }
-  }, [selectedPersona, deletePersona, setShowDeleteConfirm, t]);
+  }, [selectedPersona, deletePersona, setShowDeleteConfirm, t, tx]);
 
   if (!selectedPersona) {
     return <EditorEmptyState />;
   }
 
-  const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
+  // Passed uncast: the resolver declares the catalog's closed shape, so a
+  // label missing from the locale files is a type error here rather than a
+  // machine token on screen. Same catalog the switch-guard toast reads.
+  const tabCatalog = t.agents.editor.tabs;
+  const changedSections = allDirtyTabs.map((id) => tabIdLabel(id, tabCatalog));
 
   return (
     <ContentBox>
@@ -157,16 +163,18 @@ export function EditorBody() {
         <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
           <RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
           <span className="typo-body text-red-300/90 flex-1">
-            {t.agents.editor_ui.save_failed_tabs.replace('{tabs}', failedTabs.join(', '))}
+            {tx(t.agents.editor_ui.save_failed_tabs, { tabs: tabIdsToLabels(failedTabs, tabCatalog) })}
           </span>
-          <button
-            type="button"
-            onClick={() => void runSaveAll()}
-            disabled={isSaving}
-            className="px-2 py-1 typo-body rounded-card border border-red-500/30 text-red-300 hover:bg-red-500/10 disabled:opacity-40"
+          <AsyncButton
+            variant="accent"
+            accentColor="rose"
+            size="xs"
+            onClick={runSaveAll}
+            isLoading={isSaving}
+            data-testid="editor-save-retry"
           >
             {t.agents.editor_ui.save_failed_retry_button}
-          </button>
+          </AsyncButton>
         </div>
       )}
 

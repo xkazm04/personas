@@ -49,8 +49,8 @@ export interface UsePersonaListFiltersResult {
 /**
  * Centralised filter+sort logic for the persona overview table.
  *
- * Pulled out of the page component to keep PersonaOverviewPage under 200 LOC
- * and to make the filtering pipeline independently testable.
+ * Pulled out of the page component so the filtering pipeline is independently
+ * testable - see `__tests__/usePersonaListFilters.test.ts`.
  */
 export function usePersonaListFilters({
   personas,

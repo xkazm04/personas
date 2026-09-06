@@ -1,6 +1,7 @@
 import type { ModelProfile, ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { DEFAULT_PERSONA_COLOR } from '@/features/shared/components/forms/ColorPicker';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Default execution timeout for a new persona, in milliseconds.
@@ -139,11 +140,11 @@ export function buildDraft(persona: { name: string; description?: string | null;
     // anthropic default and, without guards, the debounced auto-save would
     // then persist that reset over the real config. Callers should check
     // checkModelProfileIntegrity() before accepting a model-fields save.
+    // Through the shared door, not console.warn: a corrupt persisted profile
+    // is a background failure worth a breadcrumb and a swallow-rate sample,
+    // and the console line reached neither.
     const rawLen = persona.model_profile ? persona.model_profile.length : 0;
-    console.warn(
-      '[PersonaDraft] model_profile JSON parse failed — fields reset; auto-save of model fields will be blocked until re-selected',
-      { rawLength: rawLen, error: err instanceof Error ? err.message : String(err) },
-    );
+    silentCatch(`PersonaDraft:buildDraft:model_profile(${rawLen}b)`)(err);
   }
   return {
     name: persona.name,

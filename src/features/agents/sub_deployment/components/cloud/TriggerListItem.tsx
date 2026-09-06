@@ -101,7 +101,7 @@ export function TriggerListItem({
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
               }`}
             >
-              {trigger.enabled ? <><Pause className="w-3 h-3" /> {t.deployment.dashboard.action_pause}</> : <><Play className="w-3 h-3" /> Enable</>}
+              {trigger.enabled ? <><Pause className="w-3 h-3" /> {t.deployment.dashboard.action_pause}</> : <><Play className="w-3 h-3" /> {t.deployment.dashboard.action_resume}</>}
             </button>
             <button
               type="button"

@@ -86,7 +86,9 @@ export function useDeploymentTest() {
           result: {
             status: 'fail',
             durationMs: null,
-            costUsd: 0,
+            // The run never happened, so its cost was never recorded - null,
+            // per the TestResult contract, not 0 ("free").
+            costUsd: null,
             error: err instanceof Error ? err.message : String(err),
           },
         },
