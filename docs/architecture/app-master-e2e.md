@@ -280,3 +280,22 @@ which `env` a reading belongs to (a local probe is `local`; only a production re
 failed before the MCP token fix should show as `failed` in the last-dispatch line so the App
 Master re-runs them deliberately; (d) an operator surface for the 33 pending items is the
 existing triage deck, nothing new to build.
+
+### Cycle 3 (merged 05:34 UTC, `c8f9a7da3`)
+
+**Built:** self-pacing proper. The decision plan carries `nextWakeMinutes` (10 to 240, clamped;
+a non-integer costs only the sleep choice, never the dispatch list), stamped on every considered
+charter's pacing; admission uses the newest choice as the interval for an App Master and keeps the
+declared-cadence rule for every other persona. The prompt shows the UTC clock and the previous
+choice. The KPI stewardship recipe says which `env` a reading belongs to. Two census rises the
+builder attributed to my own committed scripts were fixed in code (`b04529574`): the driver now
+discovers the harness port, the bundle merge refuses an empty enumeration.
+
+**Evidence from the cycle-2 tail (03:19 to 03:45):** the outcome route works end to end: the
+wake-5 delivery worker wrote wake 1's outcome back (task for `297f6ba4` completed with branch and
+commit). CandiDate's note now carries an operational lesson ("security scan failed on empty CWD,
+pass the code path"). Three fleet workers ended with "You've reached your Fable limit": the fleet
+path pushes no `--model`, so the workers rode the account default instead of the charter's Opus,
+and the registry filed the limit as a finished task. Cycle 4 builds: `--model` on the fleet path
+from the charter's override, a limit or `FLEET:BLOCKED` end reported as `failed` in the decision
+context, and a sweep that closes a dispatch-minted task whose worker ended without writing back.
