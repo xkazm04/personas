@@ -265,13 +265,18 @@ and decision capture filed six through the routes (`scan_type = app-master`), as
 analysis six and its steward seventeen (K1 to K17, KPI measurement functions and governance
 proposals), personas-web's static analysis four through the repaired `propose_backlog` text path,
 one of them a critique of the loop: "priority-1 KPI charter unserved while priority-3 scans ran
-twice". No KPI rows or measurements came through the routes yet: the stewards still file KPI work
-as backlog items rather than declaring the KPI. The `propose_backlog` items carry
+twice". The KPI routes were used too: the ascent steward declared 17 KPIs and recorded 20
+measurements (env `local`, so they land as simulation readings and do not roll `current_value`),
+taking ascent from 39 to 49 of 49 contexts with an active KPI by its own count; CandiDate's steward
+declared one. A first read of this claimed "no KPI rows": the KPI tables store timestamps with a
+space separator, and a string compare against an ISO `T` timestamp excluded every row. Compare
+through `datetime()`, as the codebase's own quota gate learned. The `propose_backlog` items carry
 `scan_type = team_proposed`, the route-filed ones `app-master`.
 
 **Cycle 3 candidates:** (a) self-pacing proper: the decision returns `nextWakeMinutes` (bounded)
 and admission honours it instead of the 30-minute default; (b) the KPI stewardship recipe says
-"declare the KPI in Personas, a probe in the repo is optional"; (c) the two scan charters that
+which `env` a reading belongs to (a local probe is `local`; only a production reading moves
+`current_value`); (c) the two scan charters that
 failed before the MCP token fix should show as `failed` in the last-dispatch line so the App
 Master re-runs them deliberately; (d) an operator surface for the 33 pending items is the
 existing triage deck, nothing new to build.
