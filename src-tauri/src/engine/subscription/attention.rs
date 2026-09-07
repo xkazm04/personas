@@ -1992,7 +1992,11 @@ async fn run_decision_lane(
     // technically closes an operator's open run — the same trade the overnight
     // path documents, and `claim_run_for_spawn` would have opened an unnamed
     // run for this burst regardless. The only thing added is the label.
-    let run_label = format!("app-master:{persona_id}");
+    // The label is minted by the shared vocabulary, not spelled out here: the
+    // fleet's unattended sweeper reads it back through
+    // `is_app_master_run`, and a tag written in one place and read in another
+    // is exactly how this lane went unswept until 2026-09-07.
+    let run_label = personas_engine::unattended::app_master_run_label(&persona_id);
     crate::commands::fleet::run::begin_run(Some(run_label.clone()));
 
     let mut dispatched: Vec<serde_json::Value> = Vec::new();
@@ -2088,6 +2092,19 @@ async fn run_decision_lane(
 /// concurrency, the engine's global headroom, and [`MAX_DECIDE_DISPATCH`].
 /// Reads the LIVE tracker (`AppState.engine`), the same one `start_execution`
 /// admits against, so the decision cannot plan past what the queue will accept.
+///
+/// **What the tracker holds is EXECUTIONS, and only executions** — `admit`
+/// inserts an `execution_id` (`personas_engine::queue`), and nothing anywhere
+/// puts a fleet session into it. So a code charter dispatched through
+/// [`dispatch_into_worktree`], which spawns a headless fleet session and no
+/// execution, never occupies a slot here: not while it runs, and not while it
+/// sits parked in `awaiting_input` after ending on a `FLEET:BLOCKED` line.
+/// Verified 2026-09-07 while fixing that park; recorded because the obvious
+/// reading of "the persona's two slots" is that the parked worker is holding
+/// one, and it is not. What a parked worker DOES hold is its `dev_tasks` row —
+/// closed by [`close_abandoned_dispatch_tasks`] once the fleet sweeper has
+/// finished the session — and a fleet live slot, which is a soft cap that
+/// never refuses a spawn.
 async fn decide_free_capacity(
     state: &Arc<crate::AppState>,
     persona_id: &str,

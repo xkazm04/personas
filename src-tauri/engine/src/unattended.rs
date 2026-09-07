@@ -20,6 +20,17 @@
 //!   arithmetic ([`holds_overnight_slot`]) stops counting a parked ticket as
 //!   live work.
 //!
+//! The Overnight Portfolio Engine is no longer the only dispatcher with nobody
+//! behind it. An **App Master** persona's attention loop spawns headless fleet
+//! workers of exactly the same shape ([`app_master_run_label`] /
+//! [`is_app_master_run`]), and on 2026-09-07 one of them ended its turn with
+//! `FLEET:BLOCKED, backlog can't be drained by autopilot`, was parked
+//! `awaiting_input`, and sat there for over an hour — the identical failure
+//! sweep #18 recorded for the night, in a lane the night's tag could not see.
+//! [`is_unattended_run`] is the predicate every "nobody is there to answer"
+//! decision keys on now; `is_overnight_run` stays for the accounting that is
+//! genuinely about a *night* (the ledger, the morning digest).
+//!
 //! - **The isolation half** — [`unattended_worktree_task_text`] is the variant
 //!   for a worker that was *given* its branch in an isolated worktree
 //!   ([`crate::unattended_worktree`]) instead of being told to go and make one
@@ -254,6 +265,47 @@ pub fn is_overnight_run(run_label: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+/// Sentinel prefix stamped into a fleet session's `run_label` when an App
+/// Master persona's decide lane dispatches a headless worker into an isolated
+/// authoring worktree (`attention::run_decision_lane`).
+///
+/// The colon carries the same weight it does in [`OVERNIGHT_RUN_LABEL_PREFIX`]:
+/// it keeps a human run somebody named "app master notes" from being swept as a
+/// machine dispatch.
+pub const APP_MASTER_RUN_LABEL_PREFIX: &str = "app-master:";
+
+/// The run label an App Master persona's wake opens for its dispatch burst.
+///
+/// No space after the colon — the persona id is the entire tail. The shape is
+/// the dispatcher's, not this module's invention; it is written down here so
+/// the tag and the predicate that reads it cannot drift, which is exactly how
+/// the App Master lane ended up invisible to a sweeper written for the night.
+pub fn app_master_run_label(persona_id: &str) -> String {
+    format!("{APP_MASTER_RUN_LABEL_PREFIX}{}", persona_id.trim())
+}
+
+/// True when a fleet session's `run_label` says an App Master persona's
+/// attention loop spawned it — headless, in a worktree of its own, with no
+/// operator behind it.
+pub fn is_app_master_run(run_label: Option<&str>) -> bool {
+    run_label
+        .map(|l| l.trim_start().starts_with(APP_MASTER_RUN_LABEL_PREFIX))
+        .unwrap_or(false)
+}
+
+/// True when **nobody is there to answer** this session: a machine dispatched
+/// it, either as the Overnight Portfolio Engine's night work or as an App
+/// Master wake's charter.
+///
+/// This is the predicate for every sweeper and slot decision whose reasoning is
+/// "a question asked here reaches an empty room". Decisions that are genuinely
+/// about a *night* — the night ledger, the morning digest, the per-project
+/// nightly dispatch cap — stay on [`is_overnight_run`], because widening those
+/// would make an App Master wake spend the night's budget.
+pub fn is_unattended_run(run_label: Option<&str>) -> bool {
+    is_overnight_run(run_label) || is_app_master_run(run_label)
+}
+
 /// How long an overnight-tagged session may sit in `awaiting_input` before
 /// both the sweeper and the slot arithmetic accept that nobody is coming.
 ///
@@ -265,6 +317,26 @@ pub fn is_overnight_run(run_label: Option<&str>) -> bool {
 /// operator who happens to be awake, keeps a real chance to answer first;
 /// after it, silence is the answer.
 pub const OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS: i64 = 30 * 60;
+
+/// How long an APP MASTER-tagged session may sit in `awaiting_input` before the
+/// sweeper accepts that nobody is coming.
+///
+/// Fifteen minutes, half the night's, and the halving is not a taste call — the
+/// two cutoffs are sized by who might still arrive. The night's half hour buys
+/// a window for Athena or an operator who happens to be awake at 03:00; a
+/// persona's wake fires during the working day against a fleet the operator can
+/// see, so anyone who was going to answer has already had their chance by the
+/// time the ticker has run thirty times.
+///
+/// The cost of waiting longer is not symmetric either. An App Master persona
+/// runs at `personas.max_concurrent` — normally **2** — and its next wake is
+/// minutes away, so a parked worker is a large fraction of a small budget held
+/// against a question that will never be answered. Measured 2026-09-07: one
+/// `FLEET:BLOCKED` worker held a slot for over an hour. Fifteen minutes is
+/// still long enough that a worker mid-permission-prompt (the one
+/// `awaiting_input` a human really does resolve) is not swept out from under
+/// the hand reaching for it.
+pub const APP_MASTER_AWAITING_SLOT_CUTOFF_SECS: i64 = 15 * 60;
 
 /// Longest question text carried into a `state_reason`. The reason string
 /// ships in events, the debug log and the durable `fleet_sessions` row.
@@ -322,7 +394,8 @@ pub const MAX_DISPATCH_PER_PROJECT_PER_NIGHT: usize = 3;
 ///   [`OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS`] it is a parked ticket, and since
 ///   the soft-cap sweeper never evicts it, counting it would let one
 ///   unanswered question starve every future night. (The companion sweep
-///   finishes overnight-tagged ones outright; this rule also covers the
+///   finishes unattended-tagged ones outright — overnight and App Master
+///   alike, each on its own cutoff; this rule also covers the
 ///   *human* session parked days ago, which nothing may touch but which is
 ///   not work either.)
 /// - `idle` / `stale` — resting with a resumable transcript. These are exactly
@@ -564,6 +637,74 @@ mod tests {
         assert!(!is_overnight_run(Some("overnight cleanup")));
         assert!(!is_overnight_run(Some("perfect round 9")));
         assert!(!is_overnight_run(None));
+    }
+
+    #[test]
+    fn app_master_sessions_are_tagged_and_only_they_match() {
+        let label = app_master_run_label("p-web-master");
+        // The shape the dispatcher writes: no space, the persona id is the tail.
+        assert_eq!(label, "app-master:p-web-master");
+        assert!(is_app_master_run(Some(&label)));
+        assert!(is_app_master_run(Some(&app_master_run_label(""))));
+        // An operator's own run is never swept as machine-dispatched.
+        assert!(!is_app_master_run(Some("app master notes")));
+        assert!(!is_app_master_run(Some("perfect round 9")));
+        assert!(!is_app_master_run(None));
+        // The two tags do not bleed into each other.
+        assert!(!is_overnight_run(Some(&label)));
+        assert!(!is_app_master_run(Some(&overnight_run_label("kp"))));
+    }
+
+    #[test]
+    fn an_unattended_run_is_either_dispatcher_and_nothing_else() {
+        assert!(is_unattended_run(Some(&overnight_run_label("kp"))));
+        assert!(is_unattended_run(Some(&app_master_run_label("p1"))));
+        // Everything a human could have named stays outside.
+        for human in ["overnight cleanup", "app master notes", "perfect round 9"] {
+            assert!(!is_unattended_run(Some(human)), "{human}");
+        }
+        assert!(!is_unattended_run(None));
+    }
+
+    #[test]
+    fn the_app_master_cutoff_is_shorter_than_the_nights() {
+        assert_eq!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS, 15 * 60);
+        assert!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS < OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS);
+    }
+
+    #[test]
+    fn a_parked_app_master_worker_stops_holding_a_slot_at_its_own_cutoff() {
+        const AM_CUTOFF_MS: i64 = APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+        // The observed session: parked `awaiting_input` for over an hour.
+        let parked_ms = 65 * 60 * 1000;
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            parked_ms,
+            AM_CUTOFF_MS
+        ));
+        // …and it would have lapsed on the night's cutoff too — the tag is what
+        // was missing, not the arithmetic.
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            parked_ms,
+            CUTOFF_MS
+        ));
+        // Fresh still holds: a permission prompt a human is walking toward.
+        assert!(holds_overnight_slot("awaiting_input", FRESH, AM_CUTOFF_MS));
+        // …but 20 minutes in, the App Master lapses where the night still waits.
+        let twenty_min = 20 * 60 * 1000;
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            twenty_min,
+            AM_CUTOFF_MS
+        ));
+        assert!(holds_overnight_slot(
+            "awaiting_input",
+            twenty_min,
+            CUTOFF_MS
+        ));
+        // Once the sweeper has finished it, no cutoff matters any more.
+        assert!(!holds_overnight_slot("finished", FRESH, AM_CUTOFF_MS));
     }
 
     #[test]

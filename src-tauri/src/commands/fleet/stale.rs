@@ -211,6 +211,36 @@ pub fn overnight_awaiting_cutoff_ms() -> i64 {
     ) * 1000
 }
 
+/// The same cutoff for an APP MASTER-dispatched session — shorter, for the
+/// reasons written down at
+/// [`personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS`]. Its
+/// own env knob, so a harness can drive the two lanes independently.
+pub fn app_master_awaiting_cutoff_ms() -> i64 {
+    env_secs(
+        "PERSONAS_FLEET_APP_MASTER_AWAITING_SECS",
+        personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS,
+    ) * 1000
+}
+
+/// How long this session's `awaiting_input` may stand before the sweep accepts
+/// that nobody is coming — or `None` when nothing may sweep it at all.
+///
+/// One function answers both halves deliberately. "Is this an unattended run"
+/// and "how long does it get" were previously a predicate in the pass's filter
+/// and a constant beside it, and the App Master lane went unswept for exactly
+/// as long as it took nobody to notice they were two separate reads of the same
+/// run label. `None` is an operator's own session: untouchable at any age.
+fn unattended_awaiting_cutoff_ms(run_label: Option<&str>) -> Option<i64> {
+    use personas_engine::unattended::{is_app_master_run, is_overnight_run};
+    if is_app_master_run(run_label) {
+        Some(app_master_awaiting_cutoff_ms())
+    } else if is_overnight_run(run_label) {
+        Some(overnight_awaiting_cutoff_ms())
+    } else {
+        None
+    }
+}
+
 /// Spawn the staleness ticker. Idempotent — the caller should call this
 /// at most once (in `setup()`).
 ///
@@ -406,8 +436,10 @@ fn is_never_attached(
 ///   haven't grown for `STALE_AFTER_SECS` is not actually progressing → `Stale`
 ///   (fixes "stale shown as in progress"). Staleness is measured from the last
 ///   real log growth, not the last hook/mtime touch, so a hung session can't
-///   masquerade as in-progress. `AwaitingInput` is left alone — it's
-///   legitimately waiting for the user, not stale.
+///   masquerade as in-progress. `AwaitingInput` is left alone here — it's
+///   legitimately waiting for the user, not stale. The one lane that ever ends
+///   an `AwaitingInput` is [`unattended_awaiting_pass`], and only for a session
+///   a machine dispatched, where "the user" is nobody.
 ///
 /// Sessions with no transcript yet (unbound `Spawning`) fall back to the
 /// hook-driven `last_activity_ms` cutoff.
@@ -867,34 +899,45 @@ fn tick_once(app: &AppHandle) {
     }
 
     limit_retry_pass(app, now);
-    overnight_awaiting_pass(app, now);
+    unattended_awaiting_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
     auto_forget_pass(app);
 }
 
-/// Unanswered-question sweep: an OVERNIGHT-dispatched worker that ends its
-/// turn asking something has asked an empty room. Past the unattended cutoff
-/// this pass makes that terminal — the session is finished with a
-/// `state_reason` naming the question, and the question is **never answered**.
+/// Unanswered-question sweep: an UNATTENDED worker that ends its turn asking
+/// something has asked an empty room. Past that lane's cutoff this pass makes
+/// it terminal — the session is finished with a `state_reason` naming the
+/// question, and the question is **never answered**.
+///
+/// Unattended means both machine dispatchers, not just the night
+/// (`personas_engine::unattended::is_unattended_run`). The App Master's decide
+/// lane spawns headless workers of exactly the same shape, and on 2026-09-07
+/// one of them ended with `FLEET:BLOCKED, backlog can't be drained by
+/// autopilot`, was parked `awaiting_input` by the fleet orchestration, and sat
+/// there for over an hour holding one of its persona's two slots — the failure
+/// this pass exists to prevent, in a lane the overnight-only tag could not see.
 ///
 /// Why here and not in Athena's assessment: the staleness ticker is always on,
 /// while `fleet_bridge::reassess_stale_awaiting` only runs in autonomous mode.
 /// A night that dispatched must be reclaimable on a plain install too. Athena
 /// still gets first refusal — she runs on the `AwaitingInput` transition and
-/// on her own timer, both far inside this cutoff, and a session she revives to
-/// `Running` is no longer a candidate.
+/// on her own timer, both far inside these cutoffs, and a session she revives
+/// to `Running` is no longer a candidate.
 ///
 /// Scoped hard, mirroring `auto_forget_pass`:
-///   • only sessions the Overnight Portfolio Engine spawned (the run label —
-///     `personas_engine::unattended::is_overnight_run`); an operator's own
+///   • only sessions a machine spawned (the run label); an operator's own
 ///     parked session is never touched, whatever its age,
 ///   • only `AwaitingInput`, re-validated inside `finish_unanswered`'s lock,
-///   • only past [`overnight_awaiting_cutoff_ms`].
-fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
-    let cutoff_ms = overnight_awaiting_cutoff_ms();
-
+///   • only past that lane's own [`unattended_awaiting_cutoff_ms`].
+///
+/// The `state_reason` it writes KEEPS the worker's last line verbatim (see
+/// `personas_engine::unattended::unanswered_finish_reason`), which is what lets
+/// `classify::worker_end_kind` read a `FLEET:BLOCKED` finish as `Blocked` and
+/// the App Master's abandoned-dispatch sweep close the task row as `failed`
+/// with that reason, rather than as a completion nobody declared.
+fn unattended_awaiting_pass(app: &AppHandle, now: i64) {
     // Pass A — snapshot under the lock; no IO while it is held.
     let candidates: Vec<(String, String)> = {
         let map = registry()
@@ -904,8 +947,8 @@ fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
         map.values()
             .filter(|s| {
                 matches!(s.state, FleetSessionState::AwaitingInput)
-                    && personas_engine::unattended::is_overnight_run(s.run_label.as_deref())
-                    && now - s.last_activity_ms >= cutoff_ms
+                    && unattended_awaiting_cutoff_ms(s.run_label.as_deref())
+                        .is_some_and(|cutoff| now - s.last_activity_ms >= cutoff)
             })
             .map(|s| {
                 // The AwaitingInput `state_reason` is the notification message
@@ -926,8 +969,7 @@ fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
         if let Some(prev) = registry().finish_unanswered(&sid, &reason) {
             tracing::info!(
                 session_id = %sid,
-                cutoff_secs = cutoff_ms / 1000,
-                "fleet overnight sweep: finished an unattended session that ended on a question"
+                "fleet unattended sweep: finished a machine-dispatched session that ended on a question"
             );
             super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason));
         }
@@ -2302,6 +2344,98 @@ mod tests {
         ];
         // Only one process-backed live session → within cap 1 → nothing.
         assert!(live_slot_evictions(&snaps, 1).is_empty());
+    }
+
+    // ---- the unattended unanswered-question sweep --------------------------
+
+    #[test]
+    fn only_a_machine_dispatched_run_is_ever_swept() {
+        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        // Both dispatchers are in scope, each with its own cutoff.
+        assert_eq!(
+            unattended_awaiting_cutoff_ms(Some(&app_master_run_label("p-web-master"))),
+            Some(app_master_awaiting_cutoff_ms()),
+        );
+        assert_eq!(
+            unattended_awaiting_cutoff_ms(Some(&overnight_run_label("kp"))),
+            Some(overnight_awaiting_cutoff_ms()),
+        );
+        // An operator's own run is untouchable at any age — including the two
+        // human labels that merely READ like the machine tags.
+        for human in [
+            "app master notes",
+            "overnight cleanup",
+            "perfect round 9",
+            "",
+        ] {
+            assert_eq!(unattended_awaiting_cutoff_ms(Some(human)), None, "{human}");
+        }
+        assert_eq!(unattended_awaiting_cutoff_ms(None), None);
+
+        // …and "is there a cutoff at all" IS `is_unattended_run`, so the two
+        // cannot drift into disagreeing about who may be swept.
+        use personas_engine::unattended::is_unattended_run;
+        let labels = [
+            Some(app_master_run_label("p1")),
+            Some(overnight_run_label("kp")),
+            Some("app master notes".to_string()),
+            Some("overnight cleanup".to_string()),
+            Some(String::new()),
+            None,
+        ];
+        for label in &labels {
+            let l = label.as_deref();
+            assert_eq!(
+                unattended_awaiting_cutoff_ms(l).is_some(),
+                is_unattended_run(l),
+                "{l:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_app_master_park_is_swept_on_the_shorter_cutoff() {
+        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        let am = unattended_awaiting_cutoff_ms(Some(&app_master_run_label("p1")))
+            .expect("app-master runs are sweepable");
+        let night = unattended_awaiting_cutoff_ms(Some(&overnight_run_label("kp")))
+            .expect("overnight runs are sweepable");
+        assert!(
+            am < night,
+            "a headless worker that asked a question is done sooner than a night is"
+        );
+        assert_eq!(
+            am,
+            personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000
+        );
+
+        // The observed session: parked `awaiting_input` for over an hour. It is
+        // due on its own cutoff, exactly as an `overnight:` one is on its.
+        let parked_ms = 65 * 60 * 1000;
+        assert!(parked_ms >= am);
+        assert!(parked_ms >= night);
+        // …and at 20 minutes the App Master is already due where the night is
+        // not, which is the whole point of splitting the two.
+        let twenty_min = 20 * 60 * 1000;
+        assert!(twenty_min >= am);
+        assert!(twenty_min < night);
+    }
+
+    #[test]
+    fn the_swept_reason_keeps_the_workers_own_blocked_line() {
+        use crate::commands::fleet::classify::{worker_end_kind, WorkerEndKind};
+        // Verbatim from the parked personas-web worker, 2026-09-07 08:08 UTC.
+        let question = "Athena left this to you: turn complete but FLEET:BLOCKED — \
+             backlog can't be drained by autopilot (no idea accept verb in the \
+             dev-tools bridge); needs in-app triage";
+        let reason = personas_engine::unattended::unanswered_finish_reason(Some(question));
+        // The sweep reports what happened without claiming a completion…
+        assert!(reason.starts_with(personas_engine::unattended::UNANSWERED_FINISH_PREFIX));
+        assert!(!reason.contains("Task complete: "));
+        // …and the worker's own last line survives into the durable row, which
+        // is what the App Master's dispatch sweep reads back.
+        assert!(reason.contains("FLEET:BLOCKED"));
+        assert_eq!(worker_end_kind(Some(&reason)), WorkerEndKind::Blocked);
     }
 
     // ---- limit-reset ETA parsing ------------------------------------------
