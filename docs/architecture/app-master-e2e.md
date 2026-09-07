@@ -400,3 +400,12 @@ sessions' files (`machine-specific-path-in-tooling` from `C:/Users/kazda/...` li
 migration and studio scripts, `unobservable-detached-task` in `autonomy_*.rs`,
 `gate-without-empty-input-guard` in a migration script); named here for the operator, not
 edited behind those sessions' backs.
+
+**Cycles 5 and 6 observed (09:07 to 09:37 UTC):** the ask reached the operator. personas-web's
+wake at 09:03 raised `accept_ideas` and it stands in Overview > Approvals as "App Master
+personas-web: Triage the 21 pending ideas in-app, 0 accepted, delivery loop fully starved",
+with the three actions; the persona's later wakes cite "accept_ideas ask open ~27 min" and do
+not repeat it. Its KPI steward keeps turning the one loop it can (67 to 61 uncovered contexts,
+"16 honest meters, 1 false-zero retracted"). CandiDate's wakes 12 and 13 held both slots on
+workers the cycle-5/6 restarts had killed ("no log growth 6 min, if still none next wake weigh
+TaskStop"), the case cycle 7 automates. Sixty-six pending ideas, none accepted.
