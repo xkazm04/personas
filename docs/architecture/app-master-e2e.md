@@ -450,3 +450,16 @@ that policy treats as routine. Fix in cycle 9: any review carrying `source = app
 excluded from auto-triage regardless of severity. The one idea the policy accepted is left as
 it is and named in the wrap-up; it was accepted by a policy the operator configured, not by a
 person, and the record should say so.
+
+### Cycle 9 (built 11:1x UTC, branch `88fb1bcda`)
+
+**Built:** active `app-master:<persona>` fleet sessions (spawning, running, awaiting input,
+idle, within the unattended cutoff) count against `max_concurrent` through a named repo read
+that fails closed; the prompt's capacity line and the decide row carry the breakdown
+("0 execution(s) and 1 fleet worker(s) of yours are running"). And the auto-triage fix: any
+review carrying `source = app_master_ask` is excluded from the unattended review policy
+regardless of severity, proven by a tick test in which the ask stays pending while a routine
+review beside it is approved. The builder measured that policy's real reach: with autonomous
+mode on it approves every pending review older than an hour of any severity except high or
+critical, ten per tick, under a note that calls them "low/medium" whatever they are. Reported
+for the operator; not widened beyond the ask exclusion. Merges together with cycle 8.
