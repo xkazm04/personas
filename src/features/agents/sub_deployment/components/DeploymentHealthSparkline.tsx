@@ -80,21 +80,31 @@ function MiniSparkline({
 // Composite health sparklines: success rate + volume + errors
 // ---------------------------------------------------------------------------
 
+/**
+ * The three series behind the sparklines. A day whose success rate the
+ * backend did not report (`null` - no runs, or stats unavailable) is LEFT OUT
+ * of the rate and error series rather than plotted as 100% / 0 errors. Until
+ * 2026-09-07 it was plotted as 100%, so a persona with one failed run in the
+ * window drew six days of perfect health beside one crash - a trend the data
+ * never contained. Registry technique: provider-capability-honesty ("anything
+ * the provider does not report renders as an honest unknown rather than a
+ * fabricated default"). Volume is reported for every day and stays complete.
+ */
+export function sparklineSeries(daily: HealthDataPoint[]): { successRates: number[]; volumes: number[]; errorCounts: number[] } {
+  const sr: number[] = [];
+  const vol: number[] = [];
+  const errs: number[] = [];
+  for (const d of daily) {
+    vol.push(d.count);
+    if (d.successRate == null) continue;
+    sr.push(d.successRate * 100);
+    errs.push(Math.round(d.count * (1 - d.successRate)));
+  }
+  return { successRates: sr, volumes: vol, errorCounts: errs };
+}
+
 export function DeploymentHealthSparkline({ daily }: DeploymentHealthSparklineProps) {
-  const { successRates, volumes, errorCounts } = useMemo(() => {
-    const sr: number[] = [];
-    const vol: number[] = [];
-    const errs: number[] = [];
-    for (const d of daily) {
-      sr.push(d.successRate != null ? d.successRate * 100 : 100);
-      vol.push(d.count);
-      const failCount = d.successRate != null
-        ? Math.round(d.count * (1 - d.successRate))
-        : 0;
-      errs.push(failCount);
-    }
-    return { successRates: sr, volumes: vol, errorCounts: errs };
-  }, [daily]);
+  const { successRates, volumes, errorCounts } = useMemo(() => sparklineSeries(daily), [daily]);
 
   const { t } = useTranslation();
   const dt = t.deployment.dashboard;
