@@ -364,14 +364,14 @@ pub async fn retrieve(
     let mut fact_ids = fact_ids;
     union_keyword_ids(
         &mut fact_ids,
-        keyword::search_kind(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default(),
+        keyword::search_kind_reranked(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default(),
         KEYWORD_FACT_TOPK + VECTOR_FACT_TOPK,
         &fact_ids_in_recall,
     );
     let mut procedural_ids = procedural_ids;
     union_keyword_ids(
         &mut procedural_ids,
-        keyword::search_kind(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
+        keyword::search_kind_reranked(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
             .unwrap_or_default(),
         KEYWORD_PROCEDURAL_TOPK + VECTOR_PROCEDURAL_TOPK,
         &procedural_ids_in_recall,
@@ -512,7 +512,15 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     episodes.extend(recent);
 
     // Facts / procedurals: keyword hits append after the always-include set.
-    for id in keyword::search_kind(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default() {
+    //
+    // These two lanes re-rank (see `keyword::search_kind_reranked`) where the
+    // episode and doctrine lanes do not. They are the narrowest — four slots
+    // and three — so a boilerplate match costs proportionally the most here,
+    // and their rows are one-liners, so over-fetching them is cheap. Episodes
+    // are long and their lane is wide; that trade has not been measured.
+    for id in
+        keyword::search_kind_reranked(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default()
+    {
         if fact_ids_in_recall.contains(&id) {
             continue;
         }
@@ -520,8 +528,8 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
             facts.push(f);
         }
     }
-    for id in
-        keyword::search_kind(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK).unwrap_or_default()
+    for id in keyword::search_kind_reranked(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
+        .unwrap_or_default()
     {
         if procedural_ids_in_recall.contains(&id) {
             continue;
