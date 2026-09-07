@@ -333,6 +333,47 @@ pub fn count_today(
     )
 }
 
+/// How many CHARTER DISPATCHES of `kind` this persona started today (UTC) — a
+/// row that both succeeded (`verdict = 'dispatched'`) and names the
+/// responsibility it dispatched.
+///
+/// The narrower sibling of [`count_today`], for a persona whose every wake
+/// writes more than one row. An App Master's decision lane opens its own
+/// roster-wide `decide` row (no `responsibility_id`) plus one row per charter
+/// it dispatches, so [`count_today`] charges a wake that dispatched two
+/// charters three times against the cap — measured 2026-09-07, CandiDate hit
+/// the default cap of 24 after roughly eight wakes, at 05:55 UTC, with
+/// `{"runs_today":26,"cap":24}`. The operator's cap means "how many times this
+/// persona may ACT per day"; this counts the acts.
+///
+/// Deliberately not a `lane` filter on [`count_today`]: the discriminator is
+/// the row's own shape (dispatched + names a charter), not which lane produced
+/// it, so the older lanes' dispatches count here exactly as the decide lane's
+/// do.
+pub fn count_charter_dispatches_today(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::count_charter_dispatches_today",
+        {
+            let conn = pool.conn("attention_ledger::count_charter_dispatches_today")?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND kind = ?2
+                   AND verdict = 'dispatched'
+                   AND responsibility_id IS NOT NULL
+                   AND date(started_at) = date('now')",
+                params![persona_id, kind],
+                |r| r.get("n"),
+            )?;
+            Ok(count)
+        }
+    )
+}
+
 /// Fleet-wide aggregate for the Overview status tile: the newest ledger row
 /// overall (any persona, any verdict — `None` only when the ledger is empty)
 /// plus today's (UTC) counts: dispatched lanes, refusals, enqueued
