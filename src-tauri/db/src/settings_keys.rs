@@ -408,6 +408,24 @@ pub const AUTONOMOUS_ATTENTION_LOOP: &str = "autonomous_attention_loop";
 /// Default for [`AUTONOMOUS_ATTENTION_LOOP`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ATTENTION_LOOP_DEFAULT: bool = false;
 
+/// Personas that were just switched ON and are owed ONE attention pass that
+/// skips the interval floor — a JSON array of persona ids, written by
+/// `set_persona_enabled` and consumed (and cleared) by the attention loop's
+/// next tick.
+///
+/// A settings row rather than a `persona_background_job` row on purpose: the
+/// job worker executes every row it finds by `kind`, so a wake row would need
+/// a new kind, a handler, and a CHECK-constraint migration purely to represent
+/// a flag nobody executes. This key is durable across a restart (the whole
+/// point — the switch and the tick can be minutes and a process apart), needs
+/// no migration, and the loop is its only consumer. Absent or unparseable = no
+/// wakes owed. Stored as `["persona_a","persona_b"]`.
+pub const ATTENTION_WAKE_REQUESTS: &str = "attention_wake_requests";
+/// Hard cap on [`ATTENTION_WAKE_REQUESTS`] so a stuck loop (leadership held by
+/// another instance, the feature switched off) cannot grow the row unbounded.
+/// Oldest requests are dropped first — a wake is a nudge, not a promise.
+pub const ATTENTION_WAKE_REQUESTS_MAX: usize = 64;
+
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -841,6 +859,7 @@ const ALLOWED_KEYS: &[&str] = &[
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
+    ATTENTION_WAKE_REQUESTS,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -972,6 +991,11 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         return validate_json_wellformed(key, value);
     }
     match key {
+        // A JSON array of persona ids. Refused at write time rather than
+        // read-time, because the reader treats an unparseable row as "no wakes
+        // owed" — a silently dropped wake is exactly the failure the durable
+        // row exists to prevent.
+        ATTENTION_WAKE_REQUESTS => validate_json_wellformed(key, value),
         COMPANION_FLEET_BOLDNESS => match value {
             "cautious" | "balanced" | "bold" => Ok(()),
             _ => Err(format!(

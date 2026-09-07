@@ -529,6 +529,45 @@ pub fn set_status(pool: &DbPool, id: &str, status: ResponsibilityStatus) -> Resu
     )
 }
 
+/// Merge the App Master decision lane's coverage memory into ONE key of the
+/// charter's `spec` JSON, leaving every other key exactly as stored.
+///
+/// Deliberately NOT [`update`] with `spec: Some(..)`: that rewrites the whole
+/// column from a snapshot the caller read some seconds earlier, so a concurrent
+/// operator edit to any other spec field (a recipe re-adoption, a model
+/// override, a connector binding) would be silently reverted by a background
+/// loop the operator cannot see. `json_set` touches `$.pacing` and nothing
+/// else, so the two writers cannot clobber each other.
+///
+/// A charter whose `spec` is unparseable JSON (the repo reads leniently, so
+/// such rows DO exist) is rebased onto `{}` rather than failing — `json_set`
+/// errors on invalid JSON, and a corrupt spec must not wedge the loop.
+/// Returns `false` when no row matched.
+pub fn merge_spec_pacing(
+    pool: &DbPool,
+    id: &str,
+    pacing: &crate::models::ResponsibilityPacing,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::merge_spec_pacing",
+        {
+            let pacing_json = to_json(pacing, "spec.pacing")?;
+            let conn = pool.conn("responsibilities::merge_spec_pacing")?;
+            let updated = conn.execute(
+                "UPDATE persona_responsibilities
+                 SET spec = json_set(
+                         CASE WHEN json_valid(spec) THEN spec ELSE '{}' END,
+                         '$.pacing', json(?1)),
+                     updated_at = ?2
+                 WHERE id = ?3",
+                params![pacing_json, chrono::Utc::now().to_rfc3339(), id],
+            )?;
+            Ok(updated > 0)
+        }
+    )
+}
+
 /// Bump `updated_at` without changing anything else (attention passes touch
 /// the charter they just served so staleness ordering stays honest). Touching
 /// a charter that does not exist is an error, not a silent no-op.
@@ -892,6 +931,92 @@ mod tests {
             touch_updated_at(&pool, "resp_missing"),
             Err(AppError::NotFound(_))
         ));
+        Ok(())
+    }
+
+    /// The whole reason `merge_spec_pacing` exists rather than a `update(spec:
+    /// Some(..))`: a background loop stamping coverage must not revert an
+    /// operator edit to any OTHER spec field made in between.
+    #[test]
+    fn merge_spec_pacing_touches_one_key_and_reverts_nothing() -> Result<(), AppError> {
+        use crate::models::ResponsibilityPacing;
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+        let spec = ResponsibilitySpec {
+            model_override: Some("opus".into()),
+            priority: Some(2),
+            ..Default::default()
+        };
+        let created = create(
+            &pool,
+            CreateResponsibilityInput {
+                spec: &spec,
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(created.spec.pacing, None);
+
+        // The loop stamps coverage…
+        let pacing = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T09:00:00Z".into()),
+            last_dispatched_at: None,
+            coverage_note: Some("docs charter deferred twice".into()),
+        };
+        assert!(merge_spec_pacing(&pool, &created.id, &pacing)?);
+        let after = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(after.spec.pacing.as_ref(), Some(&pacing));
+        assert_eq!(
+            after.spec.model_override.as_deref(),
+            Some("opus"),
+            "an unrelated spec field survives the merge"
+        );
+        assert_eq!(after.spec.priority, Some(2));
+
+        // …and a SECOND stamp built on a stale snapshot still cannot clobber
+        // an operator edit that landed in between.
+        update(
+            &pool,
+            &created.id,
+            UpdateResponsibilityInput {
+                spec: Some(ResponsibilitySpec {
+                    model_override: Some("sonnet".into()),
+                    priority: Some(1),
+                    pacing: after.spec.pacing.clone(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )?;
+        let second = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T10:00:00Z".into()),
+            last_dispatched_at: Some("2026-09-07T10:00:00Z".into()),
+            coverage_note: Some("dispatched".into()),
+        };
+        assert!(merge_spec_pacing(&pool, &created.id, &second)?);
+        let final_row = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(final_row.spec.pacing.as_ref(), Some(&second));
+        assert_eq!(
+            final_row.spec.model_override.as_deref(),
+            Some("sonnet"),
+            "the operator's edit stands"
+        );
+        assert_eq!(final_row.spec.priority, Some(1));
+
+        // A charter whose spec is corrupt JSON is rebased onto `{}` rather
+        // than failing — `json_set` errors on invalid JSON and a bad spec must
+        // not wedge the loop. (The read is lenient the same way.)
+        pool.get()?.execute(
+            "UPDATE persona_responsibilities SET spec = '{nope' WHERE id = ?1",
+            params![created.id],
+        )?;
+        assert!(merge_spec_pacing(&pool, &created.id, &second)?);
+        let repaired = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(repaired.spec.pacing.as_ref(), Some(&second));
+
+        assert!(
+            !merge_spec_pacing(&pool, "resp_missing", &second)?,
+            "no row matched"
+        );
         Ok(())
     }
 }

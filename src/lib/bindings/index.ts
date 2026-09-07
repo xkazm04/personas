@@ -849,6 +849,7 @@ export type { ResponsibilityCadence } from "./ResponsibilityCadence";
 export type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
 export type { ResponsibilityObjective } from "./ResponsibilityObjective";
 export type { ResponsibilityOutcome } from "./ResponsibilityOutcome";
+export type { ResponsibilityPacing } from "./ResponsibilityPacing";
 export type { ResponsibilitySpec } from "./ResponsibilitySpec";
 export type { ResponsibilityTenure } from "./ResponsibilityTenure";
 export type { ReviewMessage } from "./ReviewMessage";

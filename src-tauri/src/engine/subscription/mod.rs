@@ -39,6 +39,7 @@
 //! re-exports below preserve the pre-split surface exactly.
 
 mod attention;
+mod attention_decide;
 mod autonomy_backlog;
 mod autonomy_coaching;
 mod autonomy_goals;

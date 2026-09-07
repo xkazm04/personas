@@ -2558,6 +2558,12 @@ pub(crate) fn map_use_case_to_charter_input(
         connector_types: None,
         connector_bindings: None,
         dependencies: None,
+        // A template/use-case adoption declares no ordering: `None` means "the
+        // persona decides", which is the honest reading of a source that never
+        // ranked its capabilities. `pacing` is the decision lane's own
+        // bookkeeping and is never seeded.
+        priority: None,
+        pacing: None,
     };
 
     CreatePersonaResponsibilityInput {

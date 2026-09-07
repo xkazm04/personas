@@ -123,6 +123,11 @@ fn class_is_valid(class: &str) -> bool {
 // Intake validation
 // ---------------------------------------------------------------------------
 
+/// Highest (most urgent) charter priority the decision lane accepts.
+pub const MIN_CHARTER_PRIORITY: u8 = 1;
+/// Lowest charter priority the decision lane accepts.
+pub const MAX_CHARTER_PRIORITY: u8 = 5;
+
 /// Validate a charter at intake — the same posture as the App-master mandate:
 /// refuse rather than store-and-remember-to-ignore.
 ///
@@ -167,6 +172,24 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
                         "connectors",
                         "required",
                         "Every connector entry must be a non-empty connector id",
+                    )
+                }),
+            // The decision lane reads `priority` as an ORDER, so an
+            // out-of-band value would silently sort somewhere nobody meant.
+            // `None` stays legal and means "the persona decides".
+            input
+                .spec
+                .priority
+                .filter(|p| !(MIN_CHARTER_PRIORITY..=MAX_CHARTER_PRIORITY).contains(p))
+                .map(|p| {
+                    ValidationError::new(
+                        "spec.priority",
+                        "range",
+                        format!(
+                            "Charter priority {p} is out of range: use \
+                             {MIN_CHARTER_PRIORITY} (highest) .. {MAX_CHARTER_PRIORITY} \
+                             (lowest), or omit it to let the persona decide"
+                        ),
                     )
                 }),
         ]
@@ -786,6 +809,43 @@ mod tests {
             &GENERAL_CLASSES[..],
             "an unlibraried domain gets the general set"
         );
+    }
+
+    /// `spec.priority` is an ORDER the App Master decision lane reads, so an
+    /// out-of-band value would sort somewhere nobody meant. Absent stays legal
+    /// and means "the persona decides" — it is NOT coerced to a middle rank.
+    #[test]
+    fn validate_bounds_charter_priority_and_leaves_absence_alone() {
+        let base = from_mandate_record(&record("p1", "proj-1"), "p1");
+        assert_eq!(base.spec.priority, None);
+        validate(&base).expect("no declared priority is valid");
+
+        for ok in [MIN_CHARTER_PRIORITY, 3, MAX_CHARTER_PRIORITY] {
+            let mut r = base.clone();
+            r.spec.priority = Some(ok);
+            validate(&r).unwrap_or_else(|e| panic!("priority {ok} must be valid: {e}"));
+        }
+
+        for bad in [0u8, MAX_CHARTER_PRIORITY + 1, 200] {
+            let mut r = base.clone();
+            r.spec.priority = Some(bad);
+            let err =
+                validate(&r).unwrap_err_or_else_panic(&format!("priority {bad} must be refused"));
+            assert!(err.to_string().contains("priority"), "{err}");
+        }
+    }
+
+    /// Small helper so the loop above reads as one assertion per case.
+    trait UnwrapErrOrPanic {
+        fn unwrap_err_or_else_panic(self, msg: &str) -> AppError;
+    }
+    impl UnwrapErrOrPanic for Result<(), AppError> {
+        fn unwrap_err_or_else_panic(self, msg: &str) -> AppError {
+            match self {
+                Err(e) => e,
+                Ok(()) => panic!("{msg}"),
+            }
+        }
     }
 
     #[test]

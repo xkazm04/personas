@@ -126,7 +126,12 @@ impl MatchableSubscription for ParsedTrigger<'_> {
         }
     }
     fn use_case_id(&self) -> Option<&str> {
-        self.trigger.use_case_id.as_deref()
+        // Charter first, legacy use case second — the ONE fallback order, from
+        // the trigger row itself. This is the site that actually decides what a
+        // fired event_listener runs: the match's id becomes
+        // `persona_executions.use_case_id`, which `execute_persona_inner`
+        // resolves to a charter (and reads `spec.modelOverride` from).
+        self.trigger.effective_capability_id()
     }
     fn is_eligible(&self, event: &PersonaEvent) -> bool {
         // Canonical (not exact) event-type match, mirroring the subscription
@@ -547,6 +552,7 @@ mod tests {
             created_at: "2026-01-15T10:00:00Z".into(),
             updated_at: "2026-01-15T10:00:00Z".into(),
             use_case_id: None,
+            responsibility_id: None,
             unattended_mode: "auto".into(),
         }
     }

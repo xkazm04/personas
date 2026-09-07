@@ -23,3 +23,22 @@ static EVENT_BUS_WAKE: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync
 pub fn event_bus_wake_signal() -> &'static tokio::sync::Notify {
     &EVENT_BUS_WAKE
 }
+
+/// Wake signal for the persona attention loop.
+///
+/// Fired by `set_persona_enabled` when a persona is switched OFF→ON, so an
+/// App Master starts reconciling within seconds instead of waiting out the
+/// 300 s active / 900 s idle poll. Same durability posture as the event-bus
+/// signal above: the poll is RETAINED unchanged as the degraded-mode
+/// heartbeat, and the SIGNAL IS NOT THE REQUEST — the request itself is a
+/// durable row (`settings_keys::ATTENTION_WAKE_REQUESTS`), so a wake that
+/// fires while no loop is listening (another instance holds leadership, the
+/// app is restarting) is honoured on the next tick rather than lost. Losing
+/// the signal costs latency, never the pass.
+static ATTENTION_WAKE: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync::Notify::new);
+
+/// The attention-loop wake signal. Producers call `.notify_one()`; the
+/// subscription runner awaits it alongside the poll interval.
+pub fn attention_wake_signal() -> &'static tokio::sync::Notify {
+    &ATTENTION_WAKE
+}

@@ -5,6 +5,7 @@ import type { RecipeActivity } from "./RecipeActivity";
 import type { RecipeDescription } from "./RecipeDescription";
 import type { RecipeRef } from "./RecipeRef";
 import type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
+import type { ResponsibilityPacing } from "./ResponsibilityPacing";
 
 /**
  * The runtime envelope a charter carries beyond its governance fields — the
@@ -113,4 +114,19 @@ connectorBindings?: Array<CharterConnectorBinding>,
  * Things that must be installed or verified before the first run.
  * RECORDED here, never installed by the mint — see the adoption path.
  */
-dependencies?: Array<string>, };
+dependencies?: Array<string>, 
+/**
+ * Operator-declared priority, **1 = highest .. 5 = lowest**. Validated at
+ * the charter intake door (`personas_engine::responsibility::validate`).
+ *
+ * `None` is not "priority 3" — it explicitly means *the persona decides*,
+ * and the decision prompt says so. Charters that DO carry a priority are
+ * stable-sorted ahead of the ones that do not, so declaring a priority on
+ * one charter cannot silently demote the rest into a made-up order.
+ */
+priority?: number, 
+/**
+ * Coverage memory written back by the decision lane after every wake —
+ * never authored by the operator. See [`ResponsibilityPacing`].
+ */
+pacing?: ResponsibilityPacing, };

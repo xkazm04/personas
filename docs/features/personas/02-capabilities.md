@@ -227,7 +227,99 @@ tick, in priority order:
    operator. At most one per persona per day, and it grants nothing until a
    human approves it.
 4. **`advance`** — push the least-recently-advanced charter's
-   objectives forward (never-advanced charters first).
+   objectives forward (never-advanced charters first). For an **App
+   Master** this rung is replaced by `decide` (below); the three rungs
+   above it are unchanged for every persona.
+
+### Decision lane (App Master)
+
+**Trigger.** A persona holding at least one *admitted, project-bound*
+charter (`persona_responsibilities.project_id` non-empty) is an **App
+Master**. On such a persona `choose_lane` swaps exactly one rung:
+`decide` stands where `advance` stood. Arrivals recovery, consolidation
+and the daily self-review keep their precedence — answering a human and
+keeping memory healthy are not "which responsibility moves the project"
+questions. Unlike `advance`, `decide` runs even when no charter carries
+an outcome or objective, because the decision considers everything the
+persona holds. Behind the same default-OFF `autonomous_attention_loop`
+switch as the rest of the loop.
+
+**Inputs** (`attention_decide::DecisionContext`, gathered DB-only at
+plan time; `src-tauri/src/engine/subscription/attention_decide.rs`):
+
+| Group | Fields |
+|---|---|
+| Persona | id, name, `max_concurrent`, the resolved model |
+| Capacity | free slots, measured against the LIVE `ConcurrencyTracker` immediately before the call — never at plan time |
+| Per charter | id, title, `spec.priority`, `spec.recipeRef.slug`, `spec.description.need` / `.coreAction`, cadence, `spec.pacing`, last ledger start + verdict, whether it authors code |
+| Per project | undispatched accepted ideas (count + up to 10 named), pending ideas, context count + newest `updated_at`, contexts with no active KPI |
+
+Every project read is independently best-effort, and an unread figure
+renders as "not measured" rather than as a zero nobody computed.
+
+**The model.** One bounded call (180 s) through the metered one-shot
+door (`companion::brain::oneshot::call_claude_text`, leg
+`app_master_decision`), on the model the charter's `spec.modelOverride`
+resolves to — the same chain a dispatched run walks, so the decision and
+the work it orders never split across models.
+
+**The JSON contract.** The prompt states the priority rule (explicit
+priority orders first; **absent priority means the persona decides**,
+not "middling"), the coverage memory, the capacity, the exact charter
+ids, and demands ONE object:
+
+```json
+{ "dispatch": [ { "charterId": "…", "reason": "why this one, this wake",
+                  "brief": "what specifically to do" } ],
+  "defer":    [ { "charterId": "…", "reason": "why it waits" } ],
+  "note": "coverage note for the next wake, ≤ 300 chars" }
+```
+
+`parse_decision` strips fences, drops ids the persona does not hold
+(recording them), dedupes on first mention, stable-sorts explicit
+priorities ahead of the rest, bounds every string, and **only then**
+truncates `dispatch` to the free capacity — so a capacity of one keeps
+the highest-priority charter, not whichever the model listed first. A
+plan whose every dispatch id was invented is refused outright.
+
+**Capacity rule.** `min(max_concurrent − running, global headroom, 4)`.
+`max_concurrent <= 0` and a global cap of `0` both mean "unlimited" in
+the queue's own convention. Zero free slots returns without spending a
+model call.
+
+**Dispatch.** One ledger row per dispatched charter, lane `decide`
+(`persona_attention_ledger.lane` is unconstrained TEXT — no migration).
+A charter that does **not** author code goes through
+`execute_persona_inner` with the charter id in `use_case_id`, which is
+what makes its `spec.modelOverride` apply. A charter that **does**
+(a `repository` connector role, or a code-host connector type) never
+runs in the operator's checkout: `execute_persona_inner` takes no
+working directory, so it is dispatched as a headless fleet session whose
+cwd is a fresh `autopilot/<slug>` worktree
+(`personas_engine::unattended_worktree`), under the run label
+`app-master:<persona_id>`. A worktree that cannot be prepared is a
+**refusal**, never a fallback into the shared checkout.
+
+**Write-back.** Every charter the decision *considered* — deferred ones
+included — gets `spec.pacing` stamped (`lastDecidedAt`, plus
+`lastDispatchedAt` for the dispatched, plus the plan's `coverageNote`)
+through a targeted `json_set` merge, so a background stamp cannot revert
+a concurrent operator edit to another spec field. A plan that returned no
+note keeps the previous one.
+
+**Fallback.** Any model-side failure — no reply, no JSON, unparseable,
+every id invented — logs at `warn` and degrades to the deterministic
+least-recently-advanced single dispatch the `advance` lane would have
+made. Pacing is **not** stamped on that path: nothing was decided.
+
+**Waking.** `set_persona_enabled` (the runtime on/off switch, its own
+command since the attention loop's roster joins on `personas.enabled`)
+records a durable wake request on an OFF→ON flip
+(`settings_keys::ATTENTION_WAKE_REQUESTS`, a JSON array of persona ids)
+and fires the subscription's `wake_signal`. The loop consumes the request
+on its next tick, which buys **one** pass past the interval floor and
+**only** that rung — in-flight, quiet hours, the daily cap and the budget
+still refuse. A no-op save records nothing.
 
 Every dispatched brief embeds the `ATTENTION_GUARDRAILS` preamble
 ("PROPOSE, never restructure", "NEVER touch your own gates", "stay

@@ -199,6 +199,7 @@ pub fn run() {
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
             commands::core::personas::set_persona_starred,
+            commands::core::personas::set_persona_enabled,
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::update_persona_parameters,
