@@ -438,3 +438,15 @@ a new outcome that every carried item ends with its outcome written back. KPI st
 declare the KPI bound to its context before writing any probe. All within the 40 to 90 word
 guidance bound, sources identical to bundle rows, corpus and index gates green. The seeder will
 upgrade the six live rows on the next boot. Merges together with cycle 9.
+
+**Cycle 7 observed, and a serious finding (09:55 to 10:25 UTC):** the parked personas-web worker
+was swept as intended ("Ended unattended: asked for input nobody could answer"), and the
+personas reason about restarts correctly ("fresh, not the 08:33 zombie"). But the operator ask
+never reached a human: at 10:17 an existing unattended review policy auto-approved it as
+"routine (low/medium) severity auto-approved; feeds the accept to decision learning loop", and
+the approve path applied the accept to a listed idea. A machine took the one decision the whole
+mechanism exists to reserve for a person. Cause: cycle 5 filed asks at severity `info`, which
+that policy treats as routine. Fix in cycle 9: any review carrying `source = app_master_ask` is
+excluded from auto-triage regardless of severity. The one idea the policy accepted is left as
+it is and named in the wrap-up; it was accepted by a policy the operator configured, not by a
+person, and the record should say so.
