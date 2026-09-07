@@ -8,9 +8,15 @@
  *   PERSONAS_BASE=http://127.0.0.1:17330 node scripts/studio-orb-verify.mjs
  */
 import { existsSync, readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BASE = process.env.PERSONAS_BASE || 'http://127.0.0.1:17330';
-const MK = 'C:/Users/kazda/kiro/mk';
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, '..');
+// `mk` is a sibling checkout of this repo, so it derives from this file's
+// own location rather than from whose machine happened to run it first.
+const MK = process.env.MK_DIR || resolve(ROOT, '..', 'mk');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const post = (p, b) =>
   fetch(BASE + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) })

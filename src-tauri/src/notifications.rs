@@ -465,11 +465,20 @@ fn deliver_v2_channels(
             | ChannelSpecV2Type::Discord
             | ChannelSpecV2Type::Teams => {
                 let ch_type_str = channel_type_str(&ch.channel_type).to_string();
+                let ch_type_str_for_panic = ch_type_str.clone();
                 let app_clone = app.clone();
                 let title = title.to_string();
                 let body = body.to_string();
                 let spec = ch.clone();
                 tokio::spawn(async move {
+                    use futures_util::FutureExt;
+                    // Panic boundary per the panic-isolation golden path. This
+                    // task is fire-and-forget delivery to an external channel:
+                    // without it a panic in credential resolution or in a
+                    // provider client is the task silently vanishing, and a
+                    // notification that was never delivered looks exactly like
+                    // one that was.
+                    let delivered = std::panic::AssertUnwindSafe(async {
                     let start = std::time::Instant::now();
                     // Slice 1: resolve credential_id → decrypted vault fields,
                     // overlay spec.config on top.
@@ -503,6 +512,15 @@ fn deliver_v2_channels(
                                 "shape-v2 external delivery failed"
                             );
                         }
+                    }
+                    })
+                    .catch_unwind()
+                    .await;
+                    if delivered.is_err() {
+                        tracing::warn!(
+                            channel_type = %ch_type_str_for_panic,
+                            "shape-v2 external delivery panicked; the notification was not sent"
+                        );
                     }
                 });
             }
@@ -543,6 +561,12 @@ pub(crate) fn deliver_to_channels(
     let body = body.to_owned();
     let app = app.clone();
     tokio::spawn(async move {
+        use futures_util::FutureExt;
+        // Panic boundary per the panic-isolation golden path, matching the
+        // shape-v2 arm above: this is the legacy fan-out, and a panic in one
+        // channel's client would otherwise take the whole loop with it and
+        // report nothing at all.
+        let delivered = std::panic::AssertUnwindSafe(async {
         for ch in enabled {
             let metrics = DELIVERY_METRICS.for_channel(&ch.channel_type);
             let start = std::time::Instant::now();
@@ -584,6 +608,12 @@ pub(crate) fn deliver_to_channels(
                 consecutive_failures: metrics.consecutive_failures.load(Ordering::Relaxed),
             };
             emit_event(&app, event_name::NOTIFICATION_DELIVERY, &event);
+        }
+        })
+        .catch_unwind()
+        .await;
+        if delivered.is_err() {
+            tracing::warn!("legacy channel delivery panicked; some notifications were not sent");
         }
     });
 }

@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PERSONAS = path.resolve(HERE, '..', '..', '..');
 const BUNDLE = path.join(PERSONAS, 'scripts', 'templates', '_recipe_seeds.json');
-const REGISTRY = process.env.AI_REGISTRY || 'C:/Users/kazda/kiro/ai-registry';
+const REGISTRY = process.env.AI_REGISTRY || path.resolve(PERSONAS, '..', 'ai-registry');
 const LANE = path.join(REGISTRY, 'recipes');
 
 const bundle = JSON.parse(fs.readFileSync(BUNDLE, 'utf8'));

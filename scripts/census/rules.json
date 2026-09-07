@@ -2577,7 +2577,7 @@
       "floor": 900
     },
     {
-      "id": "machine-specific-path-in-tooling",
+      "id": "machine-specific-path-positive-control",
       "goldenPath": "docs/concepts/golden-paths/adding-a-ci-gate.md",
       "roots": [
         "scripts",
@@ -2590,14 +2590,10 @@
         ".sh"
       ],
       "signal": {
-        "pattern": "['\"`](?:[A-Za-z]:[\\\\/]Users[\\\\/]|/Users/|/home/)",
+        "pattern": "(?:REPO_ROOT|ROOT|PROJECT_ROOT|repoRoot|repo_root)\\s*=\\s*(?:path\\.)?(?:resolve|join|dirname)\\s*\\(|(?:REPO_ROOT|ROOT|PROJECT_ROOT|repoRoot)\\s*=\\s*process\\.(?:cwd\\(\\)|env\\.CLAUDE_PROJECT_DIR)",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "a quoted absolute path rooted in a user home directory, inside repo tooling. PROXY FOR the stack-free condition: 'an enforcement mechanism depends on state that exists only on its author's machine.' Measured 2026-08-15: 10 matches in 9 files, precision 10/10 hand-verified, agreed by three independent implementations (census engine, git grep, ripgrep). TWO OF THEM ARE INSIDE `npm run check`: scripts/census/check-corpus-integrity.mjs:31 and scripts/docs/check-doc-map-paths.mjs:17 both open with `const ROOT = 'C:/Users/mkdol/dolla/personas'`, and both correctly exit 2 when that path is absent — so on every CI runner and every foreign checkout they abort the `&&` chain at step 5 of 9, and `tsc --noEmit`, `eslint src/` and `npm run census:check` never execute. Verified by simulation: repointing ROOT at a nonexistent path prints 'FATAL: required input missing' and exits 2. THE COMPLIANT FORM IS ALREADY DOMINANT — 50 files / 53 sites derive their root from import.meta.url, process.cwd() or CLAUDE_PROJECT_DIR (positive control below), which is why this is a defect and not a house style; the fix is one line each: `const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')`. Three of the ten name C:/Users/kazda/, an account that does not exist on this machine, so those scripts are already dead where they sit — NOT excluded, because an unexplained exemption is where violations hide and deleting the scripts ratchets the count down honestly. Roots are deliberately narrow: the same pattern over the whole repo including .md/.json matches 910 times, nearly all documentation prose. BACKTRACKING: character class plus fixed alternation, no nested quantifier — 31,573 files in 8.6 s, and four adversarial 200k-character inputs in <=1 ms each. PRECONDITION (re-derive per repo): this proxy assumes tooling is Node/shell and spells a machine path as a quoted literal. A Python gate spells it Path(\"/Users/...\"), a Makefile spells it -C /home/..., and a repo whose tooling only ever receives its root as an argument has the condition in a form this pattern cannot see. DELETE THIS RULE at zero rather than baselining it — ten one-line edits reach zero."
-      },
-      "baseline": {
-        "files": 5,
-        "matches": 6
+        "description": "POSITIVE CONTROL for the retired machine-specific-path-in-tooling — the same anchor (how a tooling script establishes a filesystem location) pointed at the COMPLIANT form: a root derived from import.meta.url via resolve/join/dirname, from process.cwd(), or from CLAUDE_PROJECT_DIR. Specified in this path's §9 on 2026-08-15 alongside the violating rule and never installed. Installed 2026-09-07, when the violating rule reached zero and was deleted per its own written policy: nine literals became derived paths, so the condition now has no violating population and this control is what keeps the anchor honest — a fall here means tooling stopped deriving its root, which is the same defect arriving from the other side. Carries NO baseline by design: a ratchet is monotone-downward and this count should RISE."
       },
       "floor": 120
     },
@@ -3467,7 +3463,7 @@
       },
       "baseline": {
         "files": 97,
-        "matches": 176
+        "matches": 175
       },
       "floor": 900,
       "exclude": [

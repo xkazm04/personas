@@ -24,7 +24,10 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const LANE = path.join(process.env.AI_REGISTRY || 'C:/Users/kazda/kiro/ai-registry', 'recipes');
+const LANE = path.join(
+  process.env.AI_REGISTRY || path.resolve(ROOT, '..', 'ai-registry'),
+  'recipes',
+);
 
 const recipes = [];
 for (const d of fs.readdirSync(LANE, { withFileTypes: true }).filter((x) => x.isDirectory())) {

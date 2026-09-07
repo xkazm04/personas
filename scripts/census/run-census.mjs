@@ -278,6 +278,12 @@ function updateBaselines(args, results) {
   for (const { rule, result } of results) {
     const target = registry.rules.find((r) => r.id === rule.id);
     if (!target) continue;
+    // A rule may carry NO baseline on purpose — a positive control measures the
+    // COMPLIANT form, so its count is expected to RISE and a ratchet (monotone
+    // downward) would be the wrong instrument on it. `--update` used to throw
+    // here the moment such a rule existed, which made the documented repair for
+    // a legitimate drop unreachable for the whole corpus.
+    if (!target.baseline) continue;
     if (target.baseline.files !== result.files || target.baseline.matches !== result.matches) {
       changed.push(
         `  ${rule.id}: files ${target.baseline.files} -> ${result.files}, ` +

@@ -12,7 +12,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const LANE = path.join(process.env.AI_REGISTRY || 'C:/Users/kazda/kiro/ai-registry', 'recipes');
+const LANE = path.join(
+  process.env.AI_REGISTRY || path.resolve(ROOT, '..', 'ai-registry'),
+  'recipes',
+);
 const bundle = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/templates/_recipe_seeds.json'), 'utf8'));
 const bySlug = new Map();
 for (const row of bundle.recipes) { const p = JSON.parse(row.prompt_template); if (p.slug) bySlug.set(p.slug, row.id); }

@@ -6,10 +6,13 @@
  * with no rebuild — adoption hydrates recipes from the DB, not the embedded seed).
  * Run: node scripts/templates/__wire_gmail_scout.mjs */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import Database from 'better-sqlite3';
 
 const SEEDS = 'scripts/templates/_recipe_seeds.json';
-const DB = 'C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db';
+const DB =
+  process.env.PERSONAS_DB ||
+  join(process.env.APPDATA || '', 'com.personas.desktop', 'personas.db');
 const GMAIL_NOTE =
   " EMAIL SCAN (when relevant): the user's Gmail is reachable directly via the MCP tools `mcp__personas__gmail_list_messages` (args: {query, max_results} — e.g. query 'newer_than:7d category:promotions OR from:noreply' for vendor/release mail) and `mcp__personas__gmail_get_message` (args: {message_id, format:'metadata'|'full'}) — these read the connected Gmail through the vault credential with NO interactive auth and NO API key. Use them to pull recent vendor newsletters / release emails as an ADDITIONAL opportunity source alongside web research. If gmail_list_messages reports no Gmail credential, skip email and rely on web research.";
 

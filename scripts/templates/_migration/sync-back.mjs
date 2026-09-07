@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 const BUNDLE = path.join(ROOT, 'scripts', 'templates', '_recipe_seeds.json');
-const REGISTRY = process.env.AI_REGISTRY || 'C:/Users/kazda/kiro/ai-registry';
+const REGISTRY = process.env.AI_REGISTRY || path.resolve(ROOT, '..', 'ai-registry');
 const LANE = path.join(REGISTRY, 'recipes');
 
 const dryRun = process.argv.includes('--dry-run');
