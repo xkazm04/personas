@@ -332,3 +332,13 @@ act the mandate reserves for a person: accepting an idea. The product already ha
 that (`Action::BacklogTriage` under a project's `full` autopilot with triage rules, the Overnight
 engine's mechanical accept), but granting it is the operator's decision, not the Director's.
 Cycles 5 to 10 run under that ceiling unless the operator accepts items or opens the door.
+
+**Cycle 4 observed (06:49 to 07:37 UTC):** the fleet args now carry `--model claude-opus-4-8`.
+personas-web keeps a 12 to 15 minute pace and its notes explain every empty dispatch ("KPI in
+flight, delivery blocked upstream, scanners would deepen an 18-deep unactioned backlog"). CandiDate
+ran a memory consolidation under pressure (24.5k chars of episodes) and is no longer refused by the
+daily cap. Ascent sleeps 120 minutes by its own choice. 61 pending ideas, 0 accepted. The dev
+launcher exited cleanly at 06:53 (a closed window, most likely; the operator was using the app,
+a credential capture is logged at 07:15) and was relaunched; the test harness took fallback port
+17321 because 17320 was still held, which is the exact case the census rule fixed in `b04529574`
+guards against: the driver reads `PERSONAS_TEST_PORT` now.
