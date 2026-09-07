@@ -155,6 +155,19 @@ pub(crate) struct DecisionCharter {
     /// This charter's runs author code in a real repository, so a dispatch
     /// must go to an isolated worktree rather than the operator's checkout.
     pub writes_code: bool,
+    /// The charter's autonomy rung (`persona_responsibilities.scope_rung`) —
+    /// `0` read, `1` retry, `2` open branch/PR
+    /// (`personas_engine::app_master::RUNG_*`).
+    ///
+    /// Carried here for the DISPATCHER, not for the prompt: the worktree task
+    /// text a code charter is seeded with states what the worker may ship, and
+    /// until 2026-09-07 it stated the Overnight engine's never-ship rule at
+    /// every rung — so a rung-2 App Master was told not to open the pull
+    /// request its own mandate permits. Not rendered into the decision prompt:
+    /// the mandate is already in the persona's Core sections, and repeating it
+    /// as a per-charter line would invite the model to reason about its own
+    /// ceiling.
+    pub scope_rung: u8,
     /// The model a dispatch of THIS charter must run on, resolved through the
     /// same chain the execution path walks (`spec.modelOverride` → the
     /// persona's `model_profile` → the capability default). Never empty.

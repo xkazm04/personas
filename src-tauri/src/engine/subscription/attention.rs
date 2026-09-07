@@ -1064,6 +1064,7 @@ fn build_decision_context(
                 last_verdict,
                 last_dispatch,
                 writes_code: charter_writes_code(c),
+                scope_rung: c.scope_rung,
                 project_id: c.project_id.clone(),
                 dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
             }
@@ -1297,12 +1298,44 @@ fn resolve_last_dispatch(
         },
     };
 
+    // The pull request the worker opened, when it reported one. It lands on the
+    // task's description (`app_master_writeback::outcome_block`) because
+    // `dev_tasks` has no PR column — so the decision reads it back from there,
+    // appended AFTER the bound so a long summary can never truncate the URL.
+    // Without it a rung-2 wake sees `finished` and no link, and has no way to
+    // tell a branch left for review from one already proposed.
+    let pr_url = find("taskId")
+        .and_then(|task_id| crate::db::repos::dev_tools::get_task_by_id(pool, &task_id).ok())
+        .and_then(|task| pr_url_from_outcome(task.description.as_deref()));
+
+    let summary = match (summary.map(|s| bound_summary(&s)), pr_url) {
+        (Some(s), Some(pr)) => Some(format!("{s} · PR {pr}")),
+        (None, Some(pr)) => Some(format!("PR {pr}")),
+        (s, None) => s,
+    };
+
     Some(LastDispatch {
         at: row.started_at.clone(),
         worker: worker.to_string(),
         state: state.to_string(),
-        summary: summary.map(|s| bound_summary(&s)),
+        summary,
     })
+}
+
+/// The `pr: <url>` line `app_master_writeback::outcome_block` appends to a
+/// task's description, or `None`.
+///
+/// Matched on the block's own `label: value` shape rather than on "anything
+/// that looks like a GitHub URL": the description also holds the dispatch
+/// brief, which is worker- and model-authored text and may name any link.
+fn pr_url_from_outcome(description: Option<&str>) -> Option<String> {
+    description?
+        .lines()
+        .rev()
+        .find_map(|l| l.trim().strip_prefix("pr: "))
+        .map(str::trim)
+        .filter(|u| !u.is_empty())
+        .map(str::to_string)
 }
 
 /// `status` plus the most informative text the row carries, for one execution.
@@ -2551,10 +2584,17 @@ async fn dispatch_into_worktree(
     .map_err(|e| AppError::Internal(format!("no isolated authoring worktree: {e}")))?;
 
     let worktree_path = worktree.path.to_string_lossy().to_string();
-    let text = personas_engine::unattended::unattended_worktree_task_text(
+    // What the worker may SHIP is the charter's mandate, not the Overnight
+    // engine's. Probed here rather than left to the worker to discover: a
+    // rung-2 dispatch onto a machine with no authenticated `gh` would otherwise
+    // spend a turn on a push that cannot work.
+    let gh_authenticated = gh_is_authenticated().await;
+    let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
         task,
         &worktree.branch,
         &worktree_path,
+        charter.scope_rung,
+        gh_authenticated,
     );
     // The model is passed EXPLICITLY on this lane. `execute_persona_inner`
     // resolves a charter's `spec.modelOverride` for the execution arm, but a
@@ -2577,6 +2617,8 @@ async fn dispatch_into_worktree(
         persona_id = %context.persona_id,
         charter = %charter.id,
         model = %model,
+        scope_rung = charter.scope_rung,
+        gh_authenticated,
         branch = %worktree.branch,
         worktree = %worktree_path,
         "persona_attention: code charter dispatched into an isolated authoring worktree"
@@ -2586,6 +2628,8 @@ async fn dispatch_into_worktree(
         "worker": "fleet",
         "sessionId": session_id,
         "model": model,
+        "scopeRung": charter.scope_rung,
+        "ghAuthenticated": gh_authenticated,
         "branch": worktree.branch,
         "worktreePath": worktree_path,
     }))
@@ -2727,6 +2771,35 @@ fn raise_asks(
         }
     }
     raised
+}
+
+/// Is the operator's `gh` CLI authenticated on this machine right now?
+///
+/// Reuses the readiness resolver's own probe rather than spawning a second
+/// `gh auth status`: `cached_cli_probe` already carries the 4 s timeout, the
+/// Windows `.cmd`-shim handling and a 300 s TTL cache, so a wake dispatching
+/// several code charters probes at most once and consecutive wakes at most once
+/// per five minutes. `gh auth status` is already an accepted readiness signal
+/// (`personas_core::models::connector::CLI_PROBE_CONNECTORS`), so this asks the
+/// same question through the same door.
+///
+/// Blocking (it may spawn a process), hence `spawn_blocking`. A probe that
+/// cannot be run at all answers `false`: the prompt then tells the worker not
+/// to try, which costs at worst a pull request that could have been opened —
+/// never a push that fails halfway.
+async fn gh_is_authenticated() -> bool {
+    let Some(spec) = crate::db::models::cli_probe_spec("github") else {
+        tracing::warn!("persona_attention: no `github` CLI probe spec — assuming gh is unusable");
+        return false;
+    };
+    tokio::task::spawn_blocking(move || {
+        crate::commands::design::connector_readiness::cached_cli_probe(spec).authed()
+    })
+    .await
+    .unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "persona_attention: gh auth probe panicked — assuming unusable");
+        false
+    })
 }
 
 /// Stamp the coverage memory on every charter the decision considered.
@@ -4794,6 +4867,153 @@ mod attention_tests {
             serde_json::json!({ "lane": "decide", "freeCapacity": 0, "dispatched": 0 }),
         );
         assert!(resolve_last_dispatch(&pool, &ledger_entry(&pool, &empty)).is_none());
+    }
+
+    // -- Cycle 5: what a rung-2 worker may ship, and the PR coming back -------
+
+    #[test]
+    fn only_the_outcome_blocks_pr_line_is_read_as_a_pull_request() {
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "the dispatch brief\n\n--- App Master outcome: delivered ---\n\
+                 note: shipped it\nbranch: autopilot/x\ncommit: abc123\n\
+                 pr: https://github.com/o/r/pull/7\n"
+            ))
+            .as_deref(),
+            Some("https://github.com/o/r/pull/7")
+        );
+        // A brief that merely MENTIONS a pull request is not a reported one —
+        // the description holds worker- and model-authored prose.
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "See https://github.com/o/r/pull/1 for context; open a PR when done."
+            )),
+            None
+        );
+        // Nothing reported, nothing invented.
+        assert_eq!(pr_url_from_outcome(None), None);
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "--- App Master outcome: blocked ---\nnote: no creds\n"
+            )),
+            None
+        );
+        assert_eq!(pr_url_from_outcome(Some("pr:    \n")), None);
+        // Two outcome blocks (a re-run): the LAST one is the current answer.
+        assert_eq!(
+            pr_url_from_outcome(Some("pr: https://x/1\nnote: retried\npr: https://x/2\n"))
+                .as_deref(),
+            Some("https://x/2")
+        );
+    }
+
+    #[test]
+    fn a_reported_pull_request_reaches_the_next_decision() {
+        use crate::commands::infrastructure::app_master_writeback::{
+            record_idea_outcome, IdeaOutcomeInput,
+        };
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Deliver an accepted idea", &one_outcome());
+        let project = seed_project(&pool, "pr-app");
+        let idea = seed_accepted_idea(&pool, &project, "Ship the retry helper");
+        let task = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&project),
+            "Ship the retry helper",
+            Some("the dispatch brief"),
+            Some(&idea),
+            None,
+            Some("running"),
+            None,
+        )
+        .unwrap();
+
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({
+                "charterId": charter,
+                "sessionId": "sess-pr",
+                "worker": "fleet",
+                "taskId": task.id,
+            }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-pr", "finished", Some("Task complete: opened the PR")),
+        )
+        .unwrap();
+
+        // Before the worker reports one, there is no PR to name.
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.summary.as_deref(), Some("opened the PR"));
+
+        // The worker writes back through the outcome route, PR and all.
+        record_idea_outcome(
+            &pool,
+            &idea,
+            &IdeaOutcomeInput {
+                outcome: "delivered".into(),
+                note: Some("added the helper + tests".into()),
+                branch: Some("autopilot/retry".into()),
+                commit: Some("abc1234".into()),
+                pr_url: Some("https://github.com/o/r/pull/7".into()),
+            },
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.summary.as_deref(),
+            Some("opened the PR · PR https://github.com/o/r/pull/7"),
+            "the next wake must be able to see the pull request, not just `finished`"
+        );
+    }
+
+    #[test]
+    fn a_code_charters_rung_reaches_the_dispatcher() -> Result<(), AppError> {
+        use crate::db::repos::core::responsibilities::UpdateResponsibilityInput;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+        // `seed_charter` grants rung 1; the App Master's delivery charter is 2.
+        let charter = seed_charter(&pool, "p1", "Deliver an accepted idea", &one_outcome());
+        responsibilities::update(
+            &pool,
+            &charter,
+            UpdateResponsibilityInput {
+                scope_rung: Some(personas_engine::unattended::RUNG_MAY_OPEN_PR),
+                ..Default::default()
+            },
+        )?;
+        let rows = responsibilities::list_by_persona(&pool, "p1", false)?;
+        let refs: Vec<&PersonaResponsibility> = rows.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        let c = ctx
+            .charters
+            .iter()
+            .find(|c| c.id == charter)
+            .expect("the charter is in the context");
+        assert_eq!(
+            c.scope_rung,
+            personas_engine::unattended::RUNG_MAY_OPEN_PR,
+            "the dispatcher cannot honour a mandate it never receives"
+        );
+
+        // …and that rung is what decides the worker's ship rule.
+        let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver",
+            "/tmp/wt",
+            c.scope_rung,
+            true,
+        );
+        assert!(text.contains("gh pr create"));
+        assert!(!text.contains("do NOT open pull requests"));
+        Ok(())
     }
 
     // -- Cycle 4: the model on the fleet lane, and workers that never came back
