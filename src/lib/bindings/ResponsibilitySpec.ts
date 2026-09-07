@@ -116,11 +116,17 @@ connectorBindings?: Array<CharterConnectorBinding>,
  */
 dependencies?: Array<string>, 
 /**
- * Operator-set ordering for the App Master's decision step: 1 = highest,
- * 5 = lowest. Absent means the persona decides.
+ * Operator-declared priority, **1 = highest .. 5 = lowest**. Validated at
+ * the charter intake door (`personas_engine::responsibility::validate`).
+ *
+ * `None` is not "priority 3" — it explicitly means *the persona decides*,
+ * and the decision prompt says so. Charters that DO carry a priority are
+ * stable-sorted ahead of the ones that do not, so declaring a priority on
+ * one charter cannot silently demote the rest into a made-up order.
  */
 priority?: number, 
 /**
- * Coverage memory written back by the decision lane between wakes.
+ * Coverage memory written back by the decision lane after every wake —
+ * never authored by the operator. See [`ResponsibilityPacing`].
  */
 pacing?: ResponsibilityPacing, };

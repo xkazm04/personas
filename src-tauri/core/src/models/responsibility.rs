@@ -209,22 +209,37 @@ pub struct ResponsibilityErrorPolicy {
     pub escalate_after: Option<i64>,
 }
 
-/// Coverage memory for a self-paced charter, written by the attention loop's
-/// decision step and read back on the next wake.
-// `PartialEq` is NOT in the spec text this struct was authored from: it is
-// required because `ResponsibilitySpec` — the only holder — derives `PartialEq`
-// itself, and a non-`PartialEq` field would fail that derive. Adding it here is
-// the smaller change.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+/// Coverage memory the App Master decision lane writes back on every wake —
+/// how a persona remembers, between wakes, which of its charters it has
+/// already looked at and what it decided to leave for next time.
+///
+/// Lives on the charter's `spec` (a JSON column) rather than in a new table
+/// or the attention ledger on purpose: the ledger records *dispatches*, and a
+/// charter the decision deliberately DEFERRED writes no ledger row at all, so
+/// the ledger cannot answer "when did I last consider this?". These three
+/// stamps can, and they travel with the charter through export/import like the
+/// rest of the spec.
+///
+/// All three are RFC-3339 strings / free prose written by the loop, never by
+/// the operator — treat them as the loop's own bookkeeping, not as authored
+/// configuration.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponsibilityPacing {
+    /// When the decision lane last CONSIDERED this charter (dispatched or
+    /// deferred). Distinct from `last_dispatched_at`: a charter deferred four
+    /// wakes running was considered four times and dispatched zero.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub last_decided_at: Option<String>,
+    /// When the decision lane last DISPATCHED work for this charter.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub last_dispatched_at: Option<String>,
+    /// The plan's note to its own next wake (≤ 300 chars, bounded at the
+    /// parse). Rendered back into the next decision prompt so coverage is a
+    /// memory rather than a fresh guess each tick.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub coverage_note: Option<String>,
@@ -376,12 +391,19 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub dependencies: Option<Vec<String>>,
-    /// Operator-set ordering for the App Master's decision step: 1 = highest,
-    /// 5 = lowest. Absent means the persona decides.
+    // ---- App Master decision lane ----------------------------------------
+    /// Operator-declared priority, **1 = highest .. 5 = lowest**. Validated at
+    /// the charter intake door (`personas_engine::responsibility::validate`).
+    ///
+    /// `None` is not "priority 3" — it explicitly means *the persona decides*,
+    /// and the decision prompt says so. Charters that DO carry a priority are
+    /// stable-sorted ahead of the ones that do not, so declaring a priority on
+    /// one charter cannot silently demote the rest into a made-up order.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub priority: Option<u8>,
-    /// Coverage memory written back by the decision lane between wakes.
+    /// Coverage memory written back by the decision lane after every wake —
+    /// never authored by the operator. See [`ResponsibilityPacing`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub pacing: Option<ResponsibilityPacing>,

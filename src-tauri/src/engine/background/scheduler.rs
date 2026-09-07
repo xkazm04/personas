@@ -1283,7 +1283,9 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 &trigger.persona_id,
                 &event_type,
                 payload.as_deref(),
-                trigger.use_case_id.as_deref(),
+                // Charter first, legacy use case second — the held fire must
+                // resolve to the same capability the live fire below would.
+                trigger.effective_capability_id(),
             ) {
                 Ok(pf) => tracing::info!(
                     trigger_id = %trigger.id,
@@ -1313,7 +1315,14 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 target_persona_id: Some(trigger.persona_id.clone()),
                 project_id: None,
                 payload,
-                use_case_id: trigger.use_case_id.clone(),
+                // Charter first, legacy use case second. NOTE (measured
+                // 2026-09-07): nothing downstream reads `PersonaEvent
+                // .use_case_id` into a run today — the event bus derives the
+                // dispatched capability from the MATCHING subscription/listener
+                // row (`bus::EventMatch::use_case_id`), so this column is
+                // audit/provenance. It is set through the same accessor anyway
+                // so the event row and the fire it records cannot disagree.
+                use_case_id: trigger.effective_capability_id().map(str::to_string),
             },
         ) {
             Ok(_) => {

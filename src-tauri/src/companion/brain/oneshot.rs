@@ -101,6 +101,12 @@ pub mod leg {
     /// Phase B of the sleep cycle: supersede / contradiction judgement over the
     /// active fact set.
     pub const CYCLE_RECONCILE: &str = "cycle_reconcile";
+    /// The App Master's wake decision (`engine::subscription::attention_decide`):
+    /// one bounded call per wake that picks which of a persona's charters move
+    /// its project. Metered here like every other leg so "what does an
+    /// autonomous persona cost to THINK, before it costs anything to act" is a
+    /// `GROUP BY trigger_kind` away.
+    pub const APP_MASTER_DECISION: &str = "app_master_decision";
 }
 
 /// Spawn a one-shot `claude -p -` call, pipe `prompt` as stdin, collect

@@ -2558,8 +2558,10 @@ pub(crate) fn map_use_case_to_charter_input(
         connector_types: None,
         connector_bindings: None,
         dependencies: None,
-        // Set by the App-master adoption door, which is the only writer of an
-        // ordering; a legacy use case carries neither.
+        // A template/use-case adoption declares no ordering: `None` means "the
+        // persona decides", which is the honest reading of a source that never
+        // ranked its capabilities. `pacing` is the decision lane's own
+        // bookkeeping and is never seeded.
         priority: None,
         pacing: None,
     };
@@ -2652,10 +2654,7 @@ pub(crate) fn charter_input_from_recipe(
     let spec = ResponsibilitySpec {
         input_schema: recipe.input_schema.clone(),
         source_recipe_id: Some(recipe.id.clone()),
-        // Absent for a draft recipe, which is every recipe on the starting
-        // line — the charter records "adopted from a recipe with no version",
-        // not an empty one.
-        source_recipe_version: recipe.version.clone().filter(|v| !v.is_empty()),
+        source_recipe_version: Some(recipe.version.clone()).filter(|v| !v.is_empty()),
         // The provenance pointer the trigger remap and
         // `retire_use_case_born_charters` key on — same contract as the v1/v2
         // shapes, stamped from whatever this payload calls itself.

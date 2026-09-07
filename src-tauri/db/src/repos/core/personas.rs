@@ -792,6 +792,49 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
     Ok(starred)
 }
 
+/// Flip a persona's runtime switch and report whether it CHANGED.
+///
+/// `enabled` is the whole-agent on/off: the attention loop's roster query joins
+/// on `personas.enabled = 1`, so switching it on is what makes a chartered
+/// persona start reconciling and switching it off is what stops it. It had no
+/// dedicated door — the only writer was the generic `update_persona`, which
+/// takes a whole editor payload and cannot tell a deliberate switch-on from a
+/// save that happened to carry the same value.
+///
+/// The `Option<bool>` return is the load-bearing part: `Some(true)` means this
+/// call performed an OFF→ON transition (the caller records a wake request),
+/// `Some(false)` an ON→OFF, and `None` that the persona already held that
+/// value, so re-saving an enabled persona cannot mint a wake per save.
+/// Read-then-write inside one `Immediate` transaction, because the read decides
+/// the write.
+pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<Option<bool>, AppError> {
+    timed_query!("personas", "personas::set_enabled", {
+        let mut conn = pool.conn("personas::set_enabled")?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let previous: Option<bool> = tx
+            .query_row(
+                "SELECT enabled FROM personas WHERE id = ?1",
+                params![id],
+                // By NAME, never by index: this table grows columns by ALTER
+                // TABLE routinely and a positional read would follow the shift.
+                |r| r.get::<_, i64>("enabled").map(|v| v != 0),
+            )
+            .optional()?;
+        let Some(previous) = previous else {
+            return Err(AppError::NotFound(format!("persona {id}")));
+        };
+        if previous == enabled {
+            return Ok(None);
+        }
+        tx.execute(
+            "UPDATE personas SET enabled = ?1, updated_at = datetime('now') WHERE id = ?2",
+            params![if enabled { 1 } else { 0 }, id],
+        )?;
+        tx.commit()?;
+        Ok(Some(enabled))
+    })
+}
+
 /// Set a persona's lifecycle stage directly. Validates the value against the
 /// `PersonaLifecycle` enum. Used by the build promote path (→ `active`) and the
 /// build cancel/fail cleanup guard. Does NOT touch `enabled` — lifecycle and
@@ -3521,5 +3564,41 @@ mod tests {
         // With a positive retention the old clean draft IS swept.
         assert_eq!(sweep_stale_drafts(&pool, 7).unwrap(), 1);
         assert!(get_by_id(&pool, &d.id).is_err());
+    }
+
+    /// `set_enabled` reports the TRANSITION, not the value — that is what lets
+    /// `set_persona_enabled` mint a wake on a real switch-on and stay silent
+    /// on a re-save.
+    #[test]
+    fn set_enabled_reports_only_a_real_transition() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+             VALUES ('p1', 'P1', 'sp', 0, datetime('now'), datetime('now'))",
+            [],
+        )?;
+        drop(conn);
+
+        // OFF → ON is the transition a wake hangs off.
+        assert_eq!(set_enabled(&pool, "p1", true)?, Some(true));
+        assert!(get_by_id(&pool, "p1")?.enabled);
+
+        // Re-saving an already-enabled persona is NOT a switch-on: `None`, so
+        // a save loop cannot mint a wake per keystroke.
+        assert_eq!(set_enabled(&pool, "p1", true)?, None);
+
+        // ON → OFF is a transition too, and reports itself as one.
+        assert_eq!(set_enabled(&pool, "p1", false)?, Some(false));
+        assert!(!get_by_id(&pool, "p1")?.enabled);
+        assert_eq!(set_enabled(&pool, "p1", false)?, None);
+
+        // A persona that does not exist is a NotFound, never a silent no-op
+        // that would look identical to "already had that value".
+        assert!(matches!(
+            set_enabled(&pool, "nope", true),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
     }
 }

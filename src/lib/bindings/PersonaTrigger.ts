@@ -11,6 +11,19 @@ status: string, last_triggered_at: string | null, next_trigger_at: string | null
  */
 trigger_version: number, created_at: string, updated_at: string, use_case_id: string | null, 
 /**
+ * The standing CHARTER this trigger fires, when it has been remapped onto
+ * one. Written by the `e19_agent_manifest` migration (which minted a
+ * charter per design-context use case and remapped every trigger) and kept
+ * fresh by `repos::resources::triggers::definitions`.
+ *
+ * The column and its index have existed since e19, but no Rust type read
+ * it until now, so every fire path still selected the LEGACY
+ * `use_case_id` — a trigger whose capability had already become a charter
+ * fired without its charter. [`Self::effective_capability_id`] is the
+ * order the fire paths ask through.
+ */
+responsibility_id: string | null, 
+/**
  * Behavior when this trigger fires UNATTENDED (schedule/event), the
  * destructive-action gate (UAT P5): "auto" = fire normally (default),
  * "dry_run" = fire but the launched run is_simulation (outbound side-effects

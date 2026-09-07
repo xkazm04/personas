@@ -1443,6 +1443,7 @@ export type CommandName =
   | "set_model_routing_rules"
   | "set_network_config"
   | "set_persona_curation_schedule"
+  | "set_persona_enabled"
   | "set_persona_responsibility_status"
   | "set_persona_starred"
   | "set_quality_gate_config"
