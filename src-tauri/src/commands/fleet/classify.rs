@@ -459,6 +459,23 @@ mod tests {
     }
 
     #[test]
+    fn the_parked_app_master_workers_own_sentence_reads_as_blocked() {
+        // Verbatim from the personas-web worker parked `awaiting_input` at
+        // 2026-09-07 08:08 UTC — the `state_reason` the fleet orchestration
+        // wrote when it deferred to the operator, which the unattended sweep
+        // then carries into the finished row.
+        //
+        // Three ways it could have gone wrong, all pinned here: "can't be
+        // drained" is not a limit banner; "turn complete" is not the
+        // `Task complete:` done marker; and the "Athena left this to you: "
+        // prefix does not hide the protocol tag behind it.
+        let observed = "Athena left this to you: turn complete but FLEET:BLOCKED — \
+             backlog can't be drained by autopilot (no idea accept verb in the \
+             dev-tools bridge); needs in-app triage";
+        assert_eq!(worker_end_kind(Some(observed)), WorkerEndKind::Blocked);
+    }
+
+    #[test]
     fn a_limit_wins_over_a_stale_completion_marker_in_the_same_reason() {
         assert_eq!(
             worker_end_kind(Some(

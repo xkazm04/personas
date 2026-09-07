@@ -1516,8 +1516,8 @@ impl FleetRegistry {
     }
 
     /// Terminal-finish a session parked in `AwaitingInput` that provably has
-    /// nobody to answer it — an overnight-tagged worker past the unattended
-    /// cutoff (see `super::stale::overnight_awaiting_pass`).
+    /// nobody to answer it — an overnight- or App Master-tagged worker past its
+    /// lane's cutoff (see `super::stale::unattended_awaiting_pass`).
     ///
     /// Deliberately NOT [`Self::mark_finished`]: that stamps the
     /// `Task complete: ` prefix which `super::run::summary_from_reason` reads
@@ -1542,7 +1542,7 @@ impl FleetRegistry {
             session,
             FleetSessionState::Finished,
             reason,
-            "overnight:unanswered",
+            "unattended:unanswered",
         )
         .accepted()
         .then_some(prev)
