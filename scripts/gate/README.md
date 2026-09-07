@@ -33,6 +33,20 @@ For `tsc`, `ok` means **no introduced errors** when the root is a worktree
 worktree fixes, keyed by file + code + message so moved lines do not count), and
 **zero errors** when the root is the base itself.
 
+For `census`, a worktree verdict is the same delta. The worker evaluates the
+base once under the worktree's own `scripts/census/rules.json` (cached by the
+sha256 of the rules text, dropped on every base invalidation, so a repeated
+request pays no second evaluation) and reports per rule: `introduced` = the
+worktree's measured `[files, matches]` differs from the base's AND from the
+rule's baseline (landing exactly on the baseline is a fix, not drift);
+`resolved` = a rule that drifts in the base but not in the worktree;
+`baseDrift` = how many rules drift in the base. `ok` for a worktree is no
+structural problems and no `introduced`; the full `drift` list stays in the
+result and the table prints it as inherited so nobody thinks it vanished. For
+the base root the verdict is unchanged `--check` semantics: no structural, no
+drift. Structural problems (floor, zero matches, stale exclude) are fatal in
+both modes.
+
 ## How a request is answered
 
 1. The client computes nothing; it reads the handshake, checks the daemon is
@@ -89,7 +103,9 @@ node --test "scripts/gate/__tests__/*.test.mjs"
 `overlay` builds a throwaway repo + worktree and asserts the exact file set;
 `fingerprint` asserts determinism and sensitivity; `tsc-worker` drives the worker
 through base, introduced, fixed, deleted, added, base-dirty and healed states and
-asserts the program was reused.
+asserts the program was reused; `census-worker` drives the census worker through
+base, introduced, inherited base drift, resolved, own-registry and structural
+states and asserts the base evaluation is cached across requests.
 
 ## Measured (2026-09-07, this machine, base at 6,651 program files / 4,683 roots)
 

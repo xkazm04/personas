@@ -288,6 +288,12 @@ function summarize(name, r) {
       const drift = Array.isArray(r.drift) ? r.drift.length : null;
       const structural = Array.isArray(r.structural) ? r.structural.length : null;
       if (drift === null && structural === null) return r.ok ? 'clean' : 'FAILED';
+      if (r.delta) {
+        // a worktree verdict is a delta against the base, as for tsc
+        const parts = [`${r.baseDrift ?? 0} drift in base`, `${r.introduced ? r.introduced.length : 0} introduced`, `${r.resolved ? r.resolved.length : 0} resolved`];
+        if (structural) parts.push(`${structural} structural`);
+        return parts.join(', ');
+      }
       return `${drift ?? 0} drifted, ${structural ?? 0} structural`;
     }
     case 'vitest':
@@ -325,7 +331,20 @@ function printTable(response, gates) {
     } else if (g === 'eslint' && Array.isArray(r.messages)) {
       lines = r.messages.map((e) => `  ${relToRoot(e.file)}(${e.line},${e.col}): ${e.code}: ${e.message}`);
     } else if (g === 'census') {
-      if (Array.isArray(r.drift)) lines = r.drift.map((d) => `  ${d.rule}: files ${JSON.stringify(d.files)} matches ${JSON.stringify(d.matches)}`);
+      if (r.delta) {
+        const introduced = Array.isArray(r.introduced) ? r.introduced : [];
+        lines = introduced.map((d) => `  ${d.rule}: files [${d.files[0]} vs ${d.files[1]}] matches [${d.matches[0]} vs ${d.matches[1]}] (baseline ${d.baseline.files}/${d.baseline.matches})`);
+        if (Array.isArray(r.resolved) && r.resolved.length) lines.push(`  (${r.resolved.length} base drift(s) resolved by this root: ${r.resolved.join(', ')})`);
+        // inherited base drift, listed so nobody thinks it vanished; it does not count against this root
+        const named = new Set(introduced.map((d) => d.rule));
+        const inherited = (Array.isArray(r.drift) ? r.drift : []).filter((d) => !named.has(d.rule));
+        if (inherited.length) {
+          lines.push(`  inherited from base (not counted):`);
+          lines.push(...inherited.map((d) => `    ${d.rule}: files ${JSON.stringify(d.files)} matches ${JSON.stringify(d.matches)}`));
+        }
+      } else if (Array.isArray(r.drift)) {
+        lines = r.drift.map((d) => `  ${d.rule}: files ${JSON.stringify(d.files)} matches ${JSON.stringify(d.matches)}`);
+      }
       if (Array.isArray(r.structural)) lines.push(...r.structural.map((s) => `  ${typeof s === 'string' ? s : JSON.stringify(s)}`));
       if (!lines.length && !r.ok && r.output) lines = r.output.split('\n').map((l) => '  ' + l);
     } else if (g === 'vitest' && !r.ok && r.output) {
