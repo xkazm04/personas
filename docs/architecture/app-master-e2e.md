@@ -470,3 +470,27 @@ The first merge-when-idle attempt silently did nothing (its error was filtered o
 log while a sibling commit landed); the second, in the foreground with errors visible, merged
 both cleanly. The seeder upgrades the six tuned recipe rows on this boot; the fleet-capacity
 accounting and the ask exclusion from auto-triage are live from this boot.
+
+### Cycle 10: the wrap-up (12:00 UTC)
+
+**Final observation (11:21 to 11:59 UTC):** the seeder upgraded the five tuned recipe rows on
+boot and the sweep closed one orphan. The capacity line shows the fleet count ("Capacity was
+free (0 running)"). Three new asks stand pending in Approvals and were NOT auto-approved:
+ascent asks to accept a batch of its 27 pending ideas and to clear seven duplicate
+"Document ALERT_WEBHOOK_URL" tasks stuck in flight since August 26; CandiDate asks how to handle
+the structural accepted idea `a94f3c09` that keeps blocking its delivery loop. Ascent sleeps the
+maximum 240 minutes. Eighty pending items, none accepted. No pull request yet under the rung-2
+brief.
+
+**Closing numbers (ledger at 12:00 UTC):** 45 roster decisions, 50 charter dispatches, 24
+executions (111 min, about $36 estimated) and 29 fleet worker sessions on Opus, 80 backlog
+items filed, 56 KPIs declared (37 active), 78 measurements (55 production), 3 ideas delivered
+to branches, 5 asks raised (3 pending). Code: about 45 commits since the morning pull, some 80
+files, roughly 14,000 lines added, about 140 tests. Nothing pushed.
+
+**The answer to the operator's question:** an App Master drives a project autonomously up to
+the one act the mandate reserves for a person, the accept. It decides, paces itself, dispatches
+to capacity into isolated branches, files findings and KPIs as data, remembers coverage, refuses
+to re-sweep unchanged code, notices dead workers and zombie tasks, and now asks for the decision
+it cannot take. The rest of the day is the operator's: answer the asks, or open the accept door,
+or leave the loop bounded. Journey page: `app-master-first-day.html` (artifact).
