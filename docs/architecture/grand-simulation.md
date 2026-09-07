@@ -1,0 +1,176 @@
+# The Grand Simulation — plan, gaps, and the headless services it needs
+
+> Started 2026-09-07 (evening), after the App Master's first day
+> (`docs/architecture/app-master-e2e.md`). Operator directive, condensed: design a special kind of
+> test in which an autonomous organisation of personas builds a fake banking system for one million
+> users from scratch, using three systems together: the ai-registry (recipe design and coverage),
+> kp (defining requirements for an agentic workforce and hiring it into projects through Personas),
+> and Personas (the orchestrator that runs the system of applications, keeps them healthy, and
+> lets personas reflect and adjust their own scope). This session designs the plan, names the gaps,
+> and prepares the headless services; later sessions execute, through a skill built for it, with
+> Obsidian as the progress map.
+
+## 0. The rules as given
+
+1. Goal: a banking application for payments, contract exchange, loans, investments, basic accounts.
+2. Start: an empty Workspace; an **Architect** (a cross-project role) designs the enterprise
+   solution, creates Personas projects, and assigns an App Master to each.
+3. App Masters can ask for more roles through kp: a headless integration where another LLM
+   describes the need and composes a job description; Personas turns it into an agent through
+   adoption, with new responsibilities or existing recipes. kp itself may be changed for gaps.
+4. App Masters can request responsibility adjustments or new responsibilities. The simulation's
+   orchestrator (this session's Director, on Fable) may extend Personas in any capacity.
+5. The Architect makes sure the solution design is fulfilled: creates Goals, speaks in
+   Conversation Channels as an authority; App Masters and other roles listen and reflect the
+   channel in their own responsibilities.
+6. New repos in a dedicated folder; any open-source tech, Docker, infrastructure-as-code; no paid
+   cloud, the bank runs on this machine.
+7. "One million users" is the stress-test definition that forces enterprise-grade architecture
+   (queues, async integration) and code quality; languages are free (Rust, Python, TypeScript);
+   the project should not consume all machine resources.
+8. Every agent may run Opus; only the orchestrator stays on Fable.
+9. At most 10 active personas at once, app-wide: find the threshold, check it works, apply it.
+10. Never delete data Personas considers the "last working version" in the workspace; it becomes a
+    close-to-real ecosystem for future agent and responsibility tests.
+11. Bring the `/uat` skill into it: fixtures and simulated scenarios as a data dimension, both ways.
+
+## 1. What exists today (measured 2026-09-07; file:line in the scout reports)
+
+**Hiring.** The wire runs kp → Personas only: kp composes a role (`RoleBrief` → `AppMasterSpec`,
+`pipeline/jobfit/appmaster.py`; JD build `app/_lib/jd-build-run.ts`) and POSTs
+`/api/kp/persona-requests` on the management API (:9420, scope `personas:build`); Personas
+queues a `companion_approval` that a human clicks, then a headless one-shot **build session**
+mints the persona (`approval_exec_core.rs:868`), and for an `appMaster` block `bind_app_master`
+creates/finds the project (root path must exist), team, KPIs, triggers, mandate charter, memory
+(`app_master_hire.rs:1115`). With `PERSONAS_HEADLESS_BRIDGE=1` the request executes immediately
+(`management_api.rs:3126`). The only outbound call is the report push
+(`kp_reporter.rs:355`). **Personas cannot ask kp for a hire.** kp's own bench driver already runs
+the whole hire unattended (`scripts/app-master-bench/run.mjs`: pair → scan → intake → 9-message
+dialog → compose → dispatch → activate → seed → nights → probation) and ships a mock Personas
+bridge for tests.
+
+**Channels.** One table, `team_channel_messages` (`author_kind` user | persona | athena | slack,
+`addressed_to` JSON of persona ids, `consumer` inject | display). A persona hears a channel only
+in two ways: injected at a team-assignment step boundary (`list_injectable_for_persona`), or the
+attention loop's arrivals lane, which reads **`author_kind = 'user'` only**
+(`team_channel.rs:448`). No rank or authority field; the nearest is `author_kind` and the team
+role CHECK `orchestrator | worker | reviewer | router`. The MCP `post_message` tool writes
+`persona_reports`, not a channel.
+
+**Goals.** `dev_goals` per project with sub-goals, items, signals, dependencies, a KPI soft link;
+headless routes `POST /api/dev/milestones/{id}/goals` and `POST /api/dev/goals/{id}`; advanced by
+`goal_advance.rs` into a goal-linked team assignment on the project's team, gated by
+`Action::GoalAdvancement` (default off) with a 2-hour per-goal cooldown and 3 per tick.
+
+**Workspaces and roles.** `dev_workspaces` with `dev_projects.workspace_id`; workspace knowledge,
+practices, harvest; cross-project reads (`portfolio.rs`, `cross_project.rs`). **Every persona
+binds to at most one project**; App-Master-ness is defined as holding a project-bound charter.
+No cross-project persona exists.
+
+**Caps.** No `max_active_personas` anywhere. Enforced: `max_parallel_executions` (default 10,
+1..20, hot-applied, over the cap queues) and per-persona `max_concurrent`. Soft, in memory:
+fleet `live_slots` (evicts idle sessions only). `MAX_PERSONAS = 200` is bundle-import validation.
+Since the first day: App Master fleet workers count against the persona's `max_concurrent`
+(cycle 9). Today's dispatch route `dev_tools_dispatch_ideas(..., target = "fleet")` spawns one
+session per idea with no cap at all: 51 ideas became 51 concurrent Claude Code processes and
+had to be killed back to two per project by hand.
+
+**Project creation.** `POST /dev-tools/projects {name, root_path}` registers an existing
+directory (idempotent, marker-healed, one team per project). Nothing creates a repository and a
+project in one step; `git init` appears only in test fixtures and in the web-build scaffold,
+which is not wired to registration.
+
+**Registry.** The recipes lane holds 113 recipes across 10 domains (41 software engineering,
+8 finance: investing, SaaS revenue, cloud cost, none retail banking); its three prose declarations
+still say "one worked example, declared ahead of its corpus". There is no banking, finance or
+fintech knowledge bundle; `recruiting` and `software-engineering` are the bundles a bank build
+consumes. 29 skills; `consult`, `conform`, `project-populate`, `uat`, `tiger`, `kpi-sim`,
+`value-ledger`, `i18n-translate`, `ship-loop`, `mvp` are the load-bearing ones.
+
+**`/uat`.** Evaluative testing by Characters (never "personas") × Journeys, L1 theoretical over a
+code-derived surface model then L2 empirical in a browser, a finding schema with impact-derived
+severity, verdicts as exit codes. Fixtures are the per-app preconditions enumerated in
+`uat/env.md` with the rule "distinct, realistic data per Character, a clone is untestable";
+there is no scenario object and no fixture generator: the hooks are the `env.md` fixture table,
+the shared grounding denominators, the Character surface binding, and the driver's `api.*`.
+kp's own close-out names the dimension that is missing: value ledger never measured, C1 untested
+because all work was seeded, no journey lane, "kp's /uat apparatus is unconnected".
+
+## 2. The shape of the simulation
+
+```
+Workspace "Bank"  (dev_workspaces)                      last working version is never deleted
+ ├─ Architect (cross-project persona, workspace-bound charters)
+ │    designs the solution → creates projects (repo + registration in one step)
+ │    → adopts an App Master per project → sets Goals → speaks in the workspace channel
+ ├─ Project: bank-core (accounts, ledger, payments)        App Master + hired roles
+ ├─ Project: bank-contracts (contract exchange, e-sign)    App Master + hired roles
+ ├─ Project: bank-lending (loans, scoring)                 App Master + hired roles
+ ├─ Project: bank-invest (investments, portfolios)         App Master + hired roles
+ ├─ Project: bank-edge (API gateway, auth, channels)       App Master + hired roles
+ └─ Project: bank-platform (infra as code, queues, observability, load test)  App Master + roles
+kp (the hiring product): composes roles from a need + the repo dossier, dispatches persona requests
+ai-registry: recipes the roles adopt; a new banking knowledge bundle; lessons flow back
+/uat: Characters (a retail customer, a teller, a compliance officer, a fraud analyst, an SRE)
+       × Journeys, with fixtures generated from the simulation's own data
+```
+
+**Acts.** The simulation runs in acts that each end in a measurable state, so a later session
+can resume from any act:
+
+| Act | Ends when | Measured by |
+|---|---|---|
+| 0 Foundation | the headless services in §4 exist and are proven by a dry run on a throwaway workspace | the gap list below, each with a test |
+| 1 Architect | an empty workspace holds a solution design, the six projects with repositories, one App Master each, workspace goals, and the first channel directive | `GET /dev-tools/app-master/{project}` for six projects; the design doc in `bank-platform` |
+| 2 Hiring | each App Master has asked kp for at least one role and the role runs as a persona with a charter | `hired_agents` in kp, personas with `kpLink` in Personas |
+| 3 Build | every project has a walking skeleton (service, schema, queue, test, container), the platform runs them together with Docker Compose | `docker compose ps` green; the Architect's goals moving |
+| 4 Load | a load test at a scale that stands in for a million users (synthetic accounts, payment bursts through the queues) with a stated envelope | a load report with p95 latencies and the machine's resource ceiling respected |
+| 5 Reflection | personas have proposed responsibility changes, the Architect has adjusted scope, lessons have reached the registry | `responsibility_draft` proposals, recipe `LESSONS.md` entries, `/uat` findings drained |
+
+**Roles, as charters.** Architect: solution design, project creation, App Master adoption, goal
+setting, channel direction, scope adjustment (workspace-bound). App Master: the six charters of
+the first day plus a hiring charter ("ask kp for a role when a responsibility has no holder").
+Hired roles: whatever kp composes, adopted through the build session with recipes from the
+registry where one fits.
+
+## 3. Gaps (measured, not guessed) and what closes each
+
+| # | Gap | Closes it | Size |
+|---|---|---|---|
+| G1 | No cross-project persona; App-Master-ness is project-bound | a **workspace-bound charter** (`persona_responsibilities.workspace_id`, spec `workspaceId`); `is_app_master` becomes "holds a project- or workspace-bound charter"; the decision context aggregates the workspace's projects (goals, App Master states, channel) | medium |
+| G2 | Personas cannot ask kp for a hire | outbound **`request_hire`**: a bridge route and command that calls kp's intake (`POST /api/intake`, `/message`, `/compose-app-master` or the JD build) with a need text, and a kp route that composes and dispatches a persona request in one call for a headless caller; kp's bench driver already does the sequence | medium, both repos |
+| G3 | A persona's channel message never wakes another persona | arrivals lane accepts `author_kind IN ('user','athena','persona')` when `addressed_to` names the persona or the message carries a **directive** marker; a new `authority` on messages (`directive | note`) written by the Architect's charter and the operator; App Masters answer directives in their decision ("what the channel asked of me") | small |
+| G4 | No app-level active-persona cap | setting **`max_active_personas`** (default 10) enforced at `set_persona_enabled`, adoption doors and the kp hire; a refused enable returns the count; the decision context shows "N of 10 personas active" | small |
+| G5 | Fleet dispatch spawns one session per idea with no cap | `dev_tools_dispatch_ideas` honours `max_parallel` for the fleet target by queueing tasks and draining them, the same way the runner target does | small, and needed today |
+| G6 | No one-step repository + project creation | `POST /dev-tools/projects/create {workspace, name, template}`: `git init` under the dedicated root (`~/.personas/sim/<workspace>/<name>` or an operator path), a README and `.personas/project.json`, then `register_project`, assign to the workspace | small |
+| G7 | The kp hire needs a human click | `PERSONAS_HEADLESS_BRIDGE=1` already auto-executes; the simulation runs the app in that mode; the App Master's own ask mechanism keeps the operator informed | config |
+| G8 | Hired App Masters are not enrolled in the attention loop (`attention_enabled = false`) | the adoption/hire door sets it for the simulation, or the Architect's adoption call does | small |
+| G9 | No banking knowledge in the registry; recipes docs stale | a `banking` bundle seeded from the Architect's design plus kp's Česká spořitelna corpus; the lane's three declarations corrected to the 113-recipe reality | registry, medium |
+| G10 | `/uat` has no scenario object or fixture generator | a **scenario file** in the overlay (`uat/scenarios/*.md`: Characters × Journeys × fixture set × load envelope) and a fixture generator that reads the simulation's own data (accounts, contracts, loans) into `env.md`'s table; findings drain into the projects' backlogs through the write-back route | medium, skill-side |
+| G11 | Persona → persona addressing in the decision | the decision plan gains `say: [{to, body, authority}]` so an App Master can answer the Architect and ask a sibling; written through the channel table | small |
+
+## 4. Headless services to prepare first (Act 0)
+
+1. **Workspace and project creation route** (G6) with the dedicated root and the never-delete rule
+   encoded as a refusal in every delete path that meets a project tagged `last_working_version`.
+2. **Active-persona cap** (G4) and **fleet dispatch cap** (G5).
+3. **Workspace-bound charters and the Architect adoption door** (G1): `POST /dev-tools/architect/adopt
+   {workspace, recipes}` mirroring the App Master door.
+4. **Channel authority and persona wake** (G3, G11).
+5. **Outbound hire** (G2): Personas side first with kp's existing routes; then the one-call kp route.
+6. **Simulation switches**: headless bridge on, Opus for all agents, cap 10, autopilot `full` for
+   the six projects with triage rules that auto-accept low-risk items (the first day's ceiling).
+7. **The skill** `/grand-sim` with acts as modes (`design | hire | build | load | reflect | status`),
+   state under `.claude/grand-sim/`, and an Obsidian folder `Grand Simulation/` for the map.
+
+## 5. Open decisions for the operator
+
+- The dedicated folder for the bank's repositories (proposal: `C:\Users\kazda\kiro\bank\`).
+- kp changes: a one-call "compose and dispatch from a need" route is the smallest; is the intake
+  dialog (9 messages) worth keeping for realism, or should the App Master's need text go straight
+  to compose?
+- Which charters the Architect holds on day one, and whether it may also hire.
+- The load envelope that stands in for a million users on this machine (proposal: 1M synthetic
+  accounts in the store, 10k payments per minute through the queue for 10 minutes, p95 under
+  200 ms at the gateway, memory under 60% of the machine).
+- The `/uat` Characters for the bank (proposal: five, above).
