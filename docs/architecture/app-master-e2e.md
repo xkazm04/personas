@@ -367,3 +367,24 @@ operator. CandiDate's wake 9 re-dispatched its two fleet charters "as a Fable-re
 persona reasoning about the subscription as an environmental fact. Sixty-four pending items. The
 ask mechanism lands with the cycle-5 merge; from then on the persona asks for the accept as a
 review instead of instructing a worker to do what it cannot.
+
+### Cycle 6 (built 08:44 UTC, branch `aeece8fb1`)
+
+**Built:** rung-2 shipping. The worktree task text is rung-aware: at rung 2 the worker may push
+its `autopilot/*` branch and open the pull request with the operator's authenticated `gh`
+(probed once per five minutes through the existing connector-readiness path, fail-closed), never
+merge, never touch the default branch, branch protection or CI; below rung 2 the text is
+byte-identical to before and the Overnight engine's own guardrail is untouched. A reported
+`pr_url` reaches the next decision's last-dispatch line. The mandate the adoption door writes
+already said exactly this ("Rung 2 (open branch/PR) ... a human merges"); the prompt now agrees
+with it. Census on the base commit carries three rises from sibling sessions' scripts
+(`scripts/templates/_migration/*.mjs`, studio scripts), none from this arc; reported, not fixed
+behind their backs.
+
+**Merge discipline under a live loop:** the three personas self-pace at 12 to 20 minutes and
+their workers run 15 to 30 minutes, so a fully idle window is rare. A merge restarts the app
+and kills running workers; the cycle-4 sweep then closes their tasks and re-offers the ideas,
+so the cost of a merge is one wasted worker run per active persona, never lost state. Parked
+`awaiting_input` sessions from `FLEET:BLOCKED` are not "busy"; the sweeper should treat an
+`app-master:` run's `awaiting_input` as terminal the way it does for `overnight:` runs
+(cycle 7 candidate).
