@@ -14,7 +14,7 @@ import { formatDuration, formatCost } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
@@ -39,7 +39,20 @@ export function CloudHistoryPanel() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [period, setPeriod] = useState<number>(7);
 
-  const fetchData = useCallback(async () => {
+  // True once a fetch has failed and no later one has succeeded: the rows on
+  // screen are the last good snapshot, not the current one.
+  const [stale, setStale] = useState(false);
+
+  // `source` names who asked, because the error door differs: a user-pressed
+  // Refresh earns a toast, a filter change or a poll tick a breadcrumb only.
+  // A poll tick RETHROWS after reporting - `usePolling` only backs off and only
+  // withholds `lastRefreshed` on a thrown error, so a catch here that swallowed
+  // everything (as it did until 2026-09-07) kept the poller at full cadence
+  // against a dead orchestrator and kept the "Live" dot green over the last
+  // good snapshot. The failed-poll trap of the registry's
+  // transition-detection-and-notify technique: a failed poll yields NO
+  // snapshot (the previous rows stay), and the display says so.
+  const fetchData = useCallback(async (source: 'poll' | 'manual' | 'filter' = 'poll') => {
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
@@ -48,7 +61,13 @@ export function CloudHistoryPanel() {
       ]);
       setExecutions(execs);
       setStats(st);
-    } catch (err) { silentCatch("features/deployment/components/cloud/CloudHistoryPanel:catch1")(err); } finally {
+      setStale(false);
+    } catch (err) {
+      setStale(true);
+      if (source === 'manual') toastCatch('features/deployment/components/cloud/CloudHistoryPanel:refresh')(err);
+      else silentCatch('features/deployment/components/cloud/CloudHistoryPanel:catch1')(err);
+      if (source === 'poll') throw err;
+    } finally {
       setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
@@ -103,7 +122,7 @@ export function CloudHistoryPanel() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const debouncedFetchData = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(fetchData, 300);
+    debounceRef.current = setTimeout(() => { void fetchData('filter'); }, 300);
   }, [fetchData]);
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
@@ -190,14 +209,16 @@ export function CloudHistoryPanel() {
         </select>
 
         {historyLastPolled != null && (
-          <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2">
-            <LiveStatusDot tone="active" ping size="sm" />
-            {t.agents.executions.live}
+          <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2" data-testid="cloud-history-liveness" data-stale={stale ? 'true' : 'false'}>
+            {/* Data age is honest state: after a failed poll the rows are the
+                last good snapshot, and the indicator must not claim "Live". */}
+            <LiveStatusDot tone={stale ? 'off' : 'active'} ping={!stale} size="sm" />
+            {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
         )}
         <button
           type="button"
-          onClick={fetchData}
+          onClick={() => { void fetchData('manual'); }}
           disabled={isLoading}
           className={`flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
