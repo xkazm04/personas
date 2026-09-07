@@ -59,6 +59,24 @@ export function deriveStageIndex(lines: string[]): number {
   return 0;
 }
 
+/**
+ * Which platform credential the modal should hold, given what the vault
+ * currently offers. Keeps a valid selection; replaces a selection that no
+ * longer exists (the credential was deleted, or an edited automation points
+ * at one of another platform) with the first offered; clears it when the
+ * platform has none. The effect used to keep a dangling id whenever ANY
+ * credential remained, so Deploy stayed enabled against a credential that
+ * was gone and the banner named a different one.
+ */
+export function pickPlatformCredentialId(
+  offered: ReadonlyArray<Pick<CredentialMetadata, 'id'>>,
+  current: string | null,
+): string | null {
+  if (offered.length === 0) return null;
+  if (current && offered.some((c) => c.id === current)) return current;
+  return offered[0]!.id;
+}
+
 export function useAutomationSetup(personaId: string, editAutomationId?: string | null) {
   const { t } = useTranslation();
   const design = useAutomationDesign();
@@ -128,11 +146,8 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   }, [editAutomation]);
 
   useEffect(() => {
-    if (platformCredentials.length > 0 && !platformCredentialId) {
-      setPlatformCredentialId(platformCredentials[0]!.id);
-    } else if (platformCredentials.length === 0) {
-      setPlatformCredentialId(null);
-    }
+    const next = pickPlatformCredentialId(platformCredentials, platformCredentialId);
+    if (next !== platformCredentialId) setPlatformCredentialId(next);
   }, [platformCredentials, platformCredentialId]);
 
   useEffect(() => {

@@ -49,6 +49,7 @@ export function AutomationTriggerStep({
   canDesign, onDesign,
 }: AutomationTriggerStepProps) {
   const { t, tx } = useTranslation();
+  const selectedCredential = platformCredentials.find((c) => c.id === platformCredentialId) ?? null;
   return (
     <div key="idle" className="animate-fade-slide-in space-y-4">
       <p className="typo-body text-foreground">
@@ -144,7 +145,12 @@ export function AutomationTriggerStep({
             <p className="typo-body text-foreground">
               <span className="font-medium text-brand-emerald">{tx(t.agents.connectors.auto_connected, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</span>
               {' -- '}
-              <span className="text-foreground">{platformCredentials[0]?.name}</span>
+              {/* The SELECTED credential, not the first one: with two n8n
+                  credentials and the second picked, this banner named the
+                  first while deploy used the second. Bound, with its own
+                  absence arm (entity-picker golden path): a selection whose
+                  row is gone must not render as if the first were chosen. */}
+              <span className="text-foreground">{selectedCredential ? selectedCredential.name : t.agents.connectors.auto_none_selected}</span>
             </p>
           </div>
           {platformCredentials.length > 1 && (
