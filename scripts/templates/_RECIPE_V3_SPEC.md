@@ -52,6 +52,11 @@ Two layers, and the line between them is the whole design:
   "outcomes": [ { "id": "...", "statement": "...", "success_criteria": ["..."] } ],
   "guidance": "40-90 words of judgment, never numbered steps, never a tool order.",
 
+  "use_cases": [                                   // 3..6 situations where adopting this pays. The SELECTION signal.
+    "A team publishing several times a week across more than one platform, where ...",
+    "A founder running content alone, who cannot tell a format that is working from ..."
+  ],
+
   "connector_types": ["analytics", "social"],      // from the connector catalog's `categories` vocabulary, NEVER a connector id
   "recommended_trigger": { "kind": "self_paced", "rationale": "..." },   // event | time | self_paced. A recommendation only.
   "personalization_needs": ["what adoption must learn from the adopter, and why"],
@@ -94,6 +99,37 @@ through, so a reader (and a diagram) can see the shape at a glance. Rules: 3 to 
 no `decision` nodes, no edges, no conditions; each `kind` is one of `observe | decide |
 act | deliver`; a label is a phrase, not an instruction. If it needs a branch, it is a
 runbook and it does not belong.
+
+### Field casing: this document writes snake_case, the wire does not
+
+**The field names above are written snake_case for readability, and neither serialized form
+uses them verbatim.** Two consumers, two conventions, and getting this wrong costs an author
+a whole pass:
+
+| | Personas bundle (`_recipe_seeds.json` payloads) | ai-registry lane (`recipe.json`) |
+|---|---|---|
+| convention | **camelCase** | **snake_case** |
+| examples | `coreAction`, `successCriteria`, `connectorTypes`, `recommendedTrigger`, `personalizationNeeds`, `inputSchema`, `useCases` | `core_action`, `success_criteria`, `connector_types`, `recommended_trigger`, `personalization_needs`, `input_schema`, `use_cases` |
+| why | `RecipeSpec` and its neighbours derive `#[serde(rename_all = "camelCase")]` | the registry lane's gate and its worked example were authored snake_case |
+
+The mapping is mechanical and lives in exactly one place,
+`scripts/templates/_migration/rx.mjs`, so a missed rename is one bug rather than a hundred.
+Never hand-convert. This paragraph exists because the spec documented snake_case while all
+109 payloads carried camelCase, and the first author to notice had already written to the
+wrong one.
+
+### `use_cases` is the selection signal
+
+Three to six, and the registry lane's gate requires them. `need` and `core_action` describe
+**the craft**; `use_cases` describe **the situations that should reach for it**, and they are
+not the same sentence. A corpus of two hundred recipes is selected FROM, by an operator
+scanning for what fits their week and by an agent proposing an adoption, and neither can tell
+from a well-written `need` whether this recipe is for them.
+
+Each entry names a **situation and why the work pays there**: who is in it, what is going
+wrong or about to, and what this recipe changes about that. An audience is not a use case:
+"marketing teams" names a group, and every recipe in the domain would claim it. Write them
+last, so they describe the recipe that exists rather than the one that was planned.
 
 ### `description` is four fields, always
 
