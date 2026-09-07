@@ -174,3 +174,35 @@ registry where one fits.
   accounts in the store, 10k payments per minute through the queue for 10 minutes, p95 under
   200 ms at the gateway, memory under 60% of the machine).
 - The `/uat` Characters for the bank (proposal: five, above).
+
+## 6. The `/uat` dimension (G10), proposed shape
+
+`/uat` evaluates by Characters × Journeys over a code-derived surface model (L1) and a live
+browser (L2); its fixtures are the per-app preconditions in `uat/env.md`, with the rule that a
+Character without distinct, realistic data is untestable. The simulation gives it what it lacks:
+data with provenance. Two additions, both in the overlay first and promoted to the registry skill
+when they have earned it:
+
+- **A scenario file** `uat/scenarios/<slug>.md` binding Characters × Journeys to a fixture set
+  and a load envelope: `characters: [retail-customer, teller, compliance-officer, fraud-analyst,
+  sre]`, `journeys: [...]`, `fixtures: {source: simulation, accounts: 1000, contracts: 200, loans:
+  50, snapshot: <workspace last-working-version tag>}`, `load: {accounts: 1_000_000, payments_per_min:
+  10_000, minutes: 10, p95_ms: 200, memory_ceiling: 0.6}`. A scenario is a Journey set with a data
+  contract; it does not change the finding schema.
+- **A fixture generator** `uat/driver/fixtures-from-sim.mjs` that reads the simulation's own data
+  (accounts, contracts, loans, investments from the bank's services through their APIs, never
+  invented) into the `env.md` fixture table with provenance per row, honouring the skill's residue
+  rule (every row the run wrote is recorded as written by the run). The grounding denominators
+  gain the bank's sources (ledger, contract store, loan book, portfolio, gateway logs).
+- **The other direction**: `/uat` findings drain into the projects' backlogs through the write-back
+  route, so the App Masters deliver them; a finding with `type: trust` becomes an ask to the
+  Architect.
+
+## 7. Session log
+
+- 2026-09-07 evening: plan written; 51 low-risk backlog items approved and dispatched (the fleet
+  dispatch ignored its cap, throttled by hand, drained at two per project); scouts settled §1;
+  Act-0 builders dispatched for G4+G5, G6, G3+G11, G2 (both repos), G1 (with the Architect
+  recipes merged into the bundle); the five Architect recipes drafted (`24bb2f7be`); the
+  `/grand-sim` skill skeleton (`6443930c1`); vault map and session note. Owed by the operator:
+  the location of the prepared ticket section syntax; the five open decisions in §5.
