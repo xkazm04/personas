@@ -218,3 +218,18 @@ nor an ideas route on the bridge. Cycle 2 builds: bridge write-back routes (`POS
 a write-back block in every worker's task text, an in-flight list in the decision prompt, and a
 boot sweep that closes orphaned open ledger rows. Also observed: fleet sessions stay `running` in
 the registry after `FLEET:DONE`.
+
+**Second wave (01:28 to 01:35 UTC):** ascent and personas-web decided on their first admitted
+pass after the orphaned rows aged out; CandiDate's second wake rotated to its two never-run
+priority-3 scans and deferred the in-flight pair. Coverage notes read like a colleague's
+("Wake 2: ... rotate next"). Non-code charters run through `execute_persona_inner` on Opus
+(security scans 4-5 min, about $1.2-1.4 each by the engine's estimate; the subscription pays).
+
+**Two more defects, from the execution logs:** (1) the MCP sidecar is launched with
+`PERSONAS_API_KEY` while `personas-mcp` authorizes from `PERSONAS_MCP_TOKEN`, so every
+`mcp__personas__*` call in a persona execution fails `-32001 Authentication required`; the
+personas-web scan found its repository by guessing on disk. (2) The scans emitted
+`{"propose_backlog": ...}` as text; the runner intercepts protocol verbs only as tool calls to
+tools the CLI does not have, so nothing was filed. Both handed to the cycle-2 builder (P6, P7).
+(3) The decision context sees a dispatch but not its outcome: CandiDate deferred KPI stewardship
+as "still in flight" 25 minutes after that worker's `FLEET:DONE` (P4 addendum).
