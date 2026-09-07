@@ -151,13 +151,23 @@ pub(super) fn apply_rule_supersedes(
         // deletion. The rule keeps its markdown and its provenance; what it
         // loses is retrieval eligibility.
         semantic::demote_superseded(&tx, &loser, &now)?;
-        tx.execute(
+        // `supersedes_id IS NULL` is a compare-and-set, so its affected-row
+        // count is the only thing that can say whether the belief held. Zero
+        // means the winner already pointed somewhere: the loser has just been
+        // demoted and its provenance now names a different rule, which is a
+        // state worth reporting rather than a silent success.
+        let linked = tx.execute(
             "UPDATE companion_procedural SET supersedes_id = ?1
              WHERE id = ?2 AND supersedes_id IS NULL",
             params![loser, winner],
         )?;
         tx.commit()?;
 
+        if linked == 0 {
+            notes.caveats.push(format!(
+                "Rule `{winner}` already recorded a supersedes link; `{loser}` was retired                  but the link still names the earlier one."
+            ));
+        }
         stats.rule_supersedes_applied += 1;
         notes.supersedes.push(format!(
             "rule `{winner}` now supersedes `{loser}`{}",

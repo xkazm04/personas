@@ -1008,7 +1008,13 @@
         "files": 30,
         "matches": 35
       },
-      "floor": 900
+      "floor": 900,
+      "exclude": [
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "names a scratch FILE, not a row: `sim-prompt-<8hex>.md` is a temp file handed to the CLI and deleted after the call, so there is no collision domain and no primary key. This is the same false-positive class this rule's own precision analysis records for session/interrupts.rs"
+        }
+      ]
     },
     {
       "id": "nullable-text-primary-key",
@@ -2384,7 +2390,13 @@
         "files": 13,
         "matches": 17
       },
-      "floor": 900
+      "floor": 900,
+      "exclude": [
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "the memory-year benchmark driver (feature `memory-sim`, in no release profile). The system DB here is genuinely optional and the Option is a LOCAL, not a boundary: ingest/consolidate/recall never touch it, so it is opened on first use and a memory-only replay never creates the file. Making it non-optional would mean standing up the whole migration+seed chain for every run of a benchmark that mostly does not need it"
+        }
+      ]
     },
     {
       "id": "discarded-timezone-parse",
@@ -3457,7 +3469,13 @@
         "files": 97,
         "matches": 176
       },
-      "floor": 900
+      "floor": 900,
+      "exclude": [
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "the memory-year benchmark driver's stderr pump for one CLI leg (feature `memory-sim`, in no release profile). The task is not detached in the sense the rule names: its JoinHandle is awaited on the next lines before the reply is parsed, and what it collects is the leg's stderr, which the driver reports back to the harness on failure. A panic here loses log text for one benchmark call, not a user's work"
+        }
+      ]
     },
     {
       "id": "unconsulted-tail-pin",
@@ -4607,6 +4625,10 @@
         {
           "path": "src-tauri/src/companion/brain/keyword.rs",
           "reason": "the only companion_fts writes in this file are #[cfg(test)] fixtures that build the retrieval lane's own two-table test schema; the census engine has no #[cfg(test)] exclusion, and a fixture cannot diverge in production"
+        },
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "the memory-year benchmark driver mirrors into companion_fts exactly as the production writers do (episodic/semantic/procedural/goals/doctrine all mirror their body). The driver reimplements nothing; a divergent index here would make the benchmark measure a retrieval path the app does not have"
         }
       ],
       "baseline": {
@@ -4710,7 +4732,13 @@
         "files": 25,
         "matches": 134
       },
-      "floor": 900
+      "floor": 900,
+      "exclude": [
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "the memory-year benchmark driver replicates the app's OWN production ALTER list so the sim runs on the same tables the app boots on — a sim against a narrower or differently constrained schema would be measuring a brain that does not exist. These two declarations are copies of the production DDL, and the invariant they lack is missing in the original: fix it there and this mirror follows"
+        }
+      ]
     },
     {
       "id": "stringly-typed-transition-door",
@@ -5379,6 +5407,10 @@
         {
           "path": "src-tauri/engine/src/cli_process.rs",
           "reason": "the chokepoint itself — this file IS where argv separation, env scrubbing, stdio, timeouts, PID recording and kill-on-drop live, so it must call Command::new"
+        },
+        {
+          "path": "src-tauri/src/companion/brain/memory_sim.rs",
+          "reason": "the memory-year benchmark driver reproduces the chat-turn spawn deliberately and can not route through cli_process: it builds its argv from the tree's OWN session::base_cli_invocation and applies session::apply_no_console_window, but it must spawn from the throwaway `--home` (production spawns from the user's home, which would let a replayed turn pick up this repo's CLAUDE.md and measure a brain reading our own docs) and it must own the three stdio pipes to meter the leg. Feature `memory-sim`, in no release profile; if the chokepoint ever grows a current_dir + piped-stdio shape, this exclusion should go rather than the driver keeping its own door"
         }
       ],
       "baseline": {
