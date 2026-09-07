@@ -254,8 +254,24 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
     L += ["", "## Restraint: the paired rates", ""] + _restraint_lines(answers, probes)
     wc = header["write_cost"]
     ev = max(1, header["events_replayed"])
+    # Realized spend against the DECLARED budget. The two numbers were both already
+    # reported and never compared, so four arms shipped at 15-54% utilisation and no
+    # arm's under-spend was ever explained. An arm that leaves most of its budget on
+    # the table is a defect to explain before its score is compared to another arm's:
+    # whatever bound the pack (item count, store size, an inner cap) is the constant
+    # the number is really about.
+    mean_tok = sum(tok) / max(1, len(tok))
+    budget = header.get("budget_tokens") or 0
+    util = (mean_tok / budget * 100.0) if budget else 0.0
+    spend = f" of {budget} declared ({util:.0f}%)" if budget else ""
+    underspent = bool(budget) and util < 50.0
     L += ["", "## Cost", "",
-          f"- read: mean {sum(tok) / max(1, len(tok)):.0f} context tokens per scored probe (max {max(tok) if tok else 0})",
+          f"- read: mean {mean_tok:.0f} context tokens per scored probe{spend} (max {max(tok) if tok else 0})",]
+    if underspent:
+        L += [f"- **under-spend: this arm used {util:.0f}% of its declared budget.** Name what bound the "
+              f"pack - item count, store size, or a cap inside the arm - before comparing this score to "
+              f"another arm's; whichever bound binds first is the constant the score is a fact about."]
+    L += [
           f"- write: {wc.get('model_calls', 0)} model calls, {wc.get('tokens_in', 0)} tokens in, {wc.get('tokens_out', 0)} tokens out, {wc.get('embeddings', 0)} embeddings over {ev} events "
           f"({wc.get('model_calls', 0) / ev:.2f} calls/event, {wc.get('tokens_in', 0) / ev:.0f} tokens/event); write wall {wc.get('write_ms', 0)} ms",
           f"- store bytes at day: {json.dumps(header['store_bytes_at'])}", ""]
