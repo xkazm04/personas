@@ -961,6 +961,7 @@ mod tests {
             last_decided_at: Some("2026-09-07T09:00:00Z".into()),
             last_dispatched_at: None,
             coverage_note: Some("docs charter deferred twice".into()),
+            next_wake_minutes: None,
         };
         assert!(merge_spec_pacing(&pool, &created.id, &pacing)?);
         let after = get_by_id(&pool, &created.id)?.expect("row");
@@ -991,6 +992,7 @@ mod tests {
             last_decided_at: Some("2026-09-07T10:00:00Z".into()),
             last_dispatched_at: Some("2026-09-07T10:00:00Z".into()),
             coverage_note: Some("dispatched".into()),
+            next_wake_minutes: Some(45),
         };
         assert!(merge_spec_pacing(&pool, &created.id, &second)?);
         let final_row = get_by_id(&pool, &created.id)?.expect("row");
