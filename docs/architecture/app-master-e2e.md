@@ -254,3 +254,24 @@ been failing), and `propose_backlog` in the protocol text parser (the verb was m
 key table, so text fallbacks were dropped). Left out with evidence: `origin = app-master` on filed
 ideas (a closed 11-value allowlist mirrored in UI and 14 locales; `scan_type` carries the producer
 instead), `evidence` on filed ideas, `measured_at` on measurements.
+
+**Cycle 2 observed (02:46 to 03:19 UTC):** the boot sweep closed 3 orphaned passes. CandiDate wake 4
+cleared its never-run backlog (architecture review, decision capture) and rested the rest with
+reasons that cite last-dispatch outcomes ("just finished at 02:09 delivering cb71f912"; "failed
+with 'codebase not in CWD', needs the connector fix"). Ascent wake 2 dispatched KPI stewardship
+and its first static analysis; personas-web took its daily self-review. Thirty-three backlog
+items reached `dev_ideas` in this wave across all three projects: CandiDate's architecture review
+and decision capture filed six through the routes (`scan_type = app-master`), ascent's static
+analysis six and its steward seventeen (K1 to K17, KPI measurement functions and governance
+proposals), personas-web's static analysis four through the repaired `propose_backlog` text path,
+one of them a critique of the loop: "priority-1 KPI charter unserved while priority-3 scans ran
+twice". No KPI rows or measurements came through the routes yet: the stewards still file KPI work
+as backlog items rather than declaring the KPI. The `propose_backlog` items carry
+`scan_type = team_proposed`, the route-filed ones `app-master`.
+
+**Cycle 3 candidates:** (a) self-pacing proper: the decision returns `nextWakeMinutes` (bounded)
+and admission honours it instead of the 30-minute default; (b) the KPI stewardship recipe says
+"declare the KPI in Personas, a probe in the repo is optional"; (c) the two scan charters that
+failed before the MCP token fix should show as `failed` in the last-dispatch line so the App
+Master re-runs them deliberately; (d) an operator surface for the 33 pending items is the
+existing triage deck, nothing new to build.
