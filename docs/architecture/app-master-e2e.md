@@ -424,3 +424,17 @@ fleet dispatch creates no execution, so an App Master's "2 parallel sessions" ha
 been enforced by the persona's own reading of its ledger ("both slots held, 0 free"). The
 soft live-slot cap spawns regardless when nothing is evictable. Cycle 9 counts active
 `app-master:<persona>` fleet sessions against `max_concurrent`.
+
+### Cycle 8 (built 10:3x UTC, branch on `app-master-c8`)
+
+**Built, recipe layer only:** the three scan recipes gain a first observe step that reads the
+last sweep's note, the findings already filed and the current commit, and stop with one line
+when the swept surface is unchanged; one shared guidance sentence: findings are filed once, as
+backlog items with evidence, never re-filed, and a finding below the project's bar (a transitive
+advisory with no call site, a warning a gate already enforces) belongs in the sweep note; a new
+outcome "a sweep over unchanged code costs one read and files nothing". Delivery: confirm the
+previously carried item reached review or was declined, stop when no accepted item exists, and
+a new outcome that every carried item ends with its outcome written back. KPI stewardship:
+declare the KPI bound to its context before writing any probe. All within the 40 to 90 word
+guidance bound, sources identical to bundle rows, corpus and index gates green. The seeder will
+upgrade the six live rows on the next boot. Merges together with cycle 9.
