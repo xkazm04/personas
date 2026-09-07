@@ -310,3 +310,25 @@ the daily cap (`runs_today 26, cap 24`): every wake writes a decide row plus one
 the default cap of 24 passes is reached after about eight wakes; handed to cycle 4 as P4 (count
 charter dispatches only, App Master default 96). Across the day so far: 28 KPIs declared (15
 active, 13 proposed), 33 measurements (20 local, 13 production), well over forty backlog items.
+
+### Cycle 4 (merged 06:44 UTC, `5c841775d`)
+
+**Built:** the fleet path pins the charter's resolved model (`--model claude-opus-4-8`); a pure
+end-of-run classifier (Limit | Blocked | Finished | Unknown) reusing the registry's limit shapes
+plus the model-limit sentence the registry had never matched; a limit or `FLEET:BLOCKED` end is
+reported as `failed` in the decision context; a dispatch-minted task whose worker ended without
+writing back is closed with a marker that the undispatched sensor exempts, so the idea is
+offered again while a reported refusal still silences it; the daily cap counts charter
+dispatches only for an App Master, default 96.
+
+**The finding that bounds the whole arc (06:10 to 06:41 UTC):** the App Masters have run out of
+permitted work. Ascent, wake 7: "dispatched none. Loop operator-blocked: 27 pending / 0 accepted,
+delivery starves without accepts. All code charters scanned unchanged code today; re-run = dupes.
+KPI 49/49, back-measure blocked on delivery", and it chose a 120-minute sleep. personas-web:
+"DELIVERY blocked: 0 accepted / 13 pending, stalled at upstream triage, not starved by me."
+CandiDate's steward took its project from 74 to 68 contexts without a KPI. Sixty backlog items
+today across the three projects, all `pending`. The loop's throughput is now bounded by the one
+act the mandate reserves for a person: accepting an idea. The product already has a door for
+that (`Action::BacklogTriage` under a project's `full` autopilot with triage rules, the Overnight
+engine's mechanical accept), but granting it is the operator's decision, not the Director's.
+Cycles 5 to 10 run under that ceiling unless the operator accepts items or opens the door.
