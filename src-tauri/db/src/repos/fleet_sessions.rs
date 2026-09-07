@@ -14,7 +14,7 @@
 //! - Exited rows age out on boot ([`prune_exited_before`]); the live registry
 //!   remains the source of truth while the app runs.
 
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -104,6 +104,25 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
         let conn = pool.get()?;
         conn.execute("DELETE FROM fleet_sessions WHERE id = ?1", params![id])?;
         Ok(())
+    })
+}
+
+/// One session by its REGISTRY id — the handle a spawn hands back and the
+/// attention loop stores in its ledger stats. `None` when the row was pruned
+/// (`prune_exited_before`) or never persisted; the caller reports that as
+/// "unknown", never as "still running".
+pub fn get(pool: &DbPool, id: &str) -> Result<Option<FleetSessionRow>, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::get", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, claude_session_id, cwd, project_label, name, title, args_json,
+                    mode, state, state_reason, run_id, run_label,
+                    created_at_ms, last_activity_ms
+             FROM fleet_sessions WHERE id = ?1",
+        )?;
+        stmt.query_row(params![id], map_row)
+            .optional()
+            .map_err(AppError::Database)
     })
 }
 

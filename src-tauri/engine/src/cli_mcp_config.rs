@@ -9,7 +9,9 @@
 //! existing `personas_*` tools) to the running persona.
 //!
 //! Secret hygiene: this config file embeds short-lived secrets for the run —
-//! the `PERSONAS_API_KEY` bridge key and any delegate API key — in plaintext.
+//! the `PERSONAS_API_KEY` / `PERSONAS_MCP_TOKEN` pair (the same system key,
+//! under the two names the sidecar's outbound bridge and its inbound auth gate
+//! each read) and any delegate API key — in plaintext.
 //! The default `exec_dir` is a *stable, reused* per-persona temp dir that the
 //! runner never deletes, so the file MUST be scrubbed at run termination via
 //! [`scrub_mcp_sidecar`] on every exit path (normal, error, cancel, timeout,
@@ -118,6 +120,88 @@ pub fn note_sidecar_missing(persona_id: &str) -> usize {
     entries.len()
 }
 
+/// The sidecar's env block — pure, so what the child MCP process is handed can
+/// be asserted without a binary, a database or a spawn.
+///
+/// Extracted from [`install_mcp_sidecar`] in the same change that fixed the
+/// missing `PERSONAS_MCP_TOKEN`: that defect lived here for as long as it did
+/// because nothing could see this map without running a real execution.
+fn sidecar_env(
+    exec_dir: &Path,
+    drive_root: Option<&Path>,
+    api_key: Option<&str>,
+    dev_project_id: Option<&str>,
+    delegate: Option<(&str, &str, Option<&str>)>,
+) -> std::collections::BTreeMap<String, String> {
+    let mut env: std::collections::BTreeMap<String, String> = Default::default();
+
+    // PERSONAS_DRIVE_ROOT is passed through so the child MCP process resolves
+    // the same sandbox as the parent runner.
+    if let Some(root) = drive_root {
+        env.insert("PERSONAS_DRIVE_ROOT".into(), root.display().to_string());
+    }
+
+    // Connector bridge: lets the sidecar's vault-connector tools (e.g.
+    // gmail_list_messages) call the desktop app's credential proxy on :9420,
+    // which resolves the OAuth token. The sidecar holds no secrets — it only
+    // forwards with this short-lived system API key. Omitted if we couldn't
+    // mint a key (the tools then return a clear "bridge unavailable" message).
+    if let Some(key) = api_key {
+        env.insert(
+            "PERSONAS_BRIDGE_URL".into(),
+            "http://127.0.0.1:9420".to_string(),
+        );
+        env.insert("PERSONAS_API_KEY".into(), key.to_string());
+        // …and the SAME key under the name the MCP binary's own auth gate
+        // reads. `PERSONAS_API_KEY` authenticates the sidecar's OUTBOUND calls
+        // to the credential proxy on :9420; it is NOT what authorizes an
+        // INBOUND `tools/call`. That gate reads `--token` or
+        // `PERSONAS_MCP_TOKEN` (`src/mcp_bin.rs`) and demands the
+        // `personas:execute` scope (`mcp_server::auth::MCP_REQUIRED_SCOPE`).
+        //
+        // Writing only the first name meant EVERY `mcp__personas__*` call from
+        // a persona execution failed with `MCP error -32001: Authentication
+        // required` — measured in cycle 1, where the worker then went looking
+        // for the repository on disk by guessing. One key satisfies both: the
+        // system key (`management_api::get_or_create_system_api_key`) is minted
+        // with `personas:read` + `personas:execute` + `proxy`.
+        env.insert("PERSONAS_MCP_TOKEN".into(), key.to_string());
+    }
+
+    // Codebase pin: the executing persona's `design_context.dev_project_id`.
+    // The sidecar's `resolve_context_project` reads this env first so a persona
+    // adopted for repo X always queries repo X's dev_project, regardless of the
+    // global first-project default. Omitted for unpinned personas (they fall
+    // back to the global probe). Mirrors the twin connector's per-persona pin.
+    if let Some(pid) = dev_project_id.filter(|p| !p.is_empty()) {
+        env.insert("PERSONAS_DEV_PROJECT_ID".into(), pid.to_string());
+    }
+
+    // Mixed-engine delegate (docs/plans/mixed-engine-byom.md): arms the
+    // sidecar's `llm_delegate` tool with the local model endpoint. Only
+    // written for capabilities that opted in (engine_mode == "mixed") — the
+    // sidecar advertises the tool only when these vars are present.
+    if let Some((base_url, model, delegate_api_key)) = delegate {
+        env.insert("PERSONAS_DELEGATE_BASE_URL".into(), base_url.to_string());
+        env.insert("PERSONAS_DELEGATE_MODEL".into(), model.to_string());
+        env.insert(
+            "PERSONAS_DELEGATE_AUDIT".into(),
+            exec_dir
+                .join(".claude")
+                .join("delegate-audit.jsonl")
+                .display()
+                .to_string(),
+        );
+        // Hosted delegate backends (Ollama Cloud) need a Bearer token. Only
+        // written when configured; local Ollama leaves it unset.
+        if let Some(key) = delegate_api_key.filter(|k| !k.trim().is_empty()) {
+            env.insert("PERSONAS_DELEGATE_API_KEY".into(), key.to_string());
+        }
+    }
+
+    env
+}
+
 /// Install the `personas-mcp` entry into the `--mcp-config` file
 /// (`exec_dir/.claude/personas-mcp-config.json`).
 ///
@@ -166,86 +250,12 @@ pub fn install_mcp_sidecar(
     // could linger here. Sweep it before writing the fresh one for this run.
     scrub_mcp_sidecar(exec_dir);
 
-    // Build the server entry. PERSONAS_DRIVE_ROOT is passed through env so the
-    // child MCP process resolves the same sandbox as the parent runner.
-    let mut env_map = serde_json::Map::new();
-    if let Some(root) = drive_root {
-        env_map.insert(
-            "PERSONAS_DRIVE_ROOT".to_string(),
-            serde_json::Value::String(root.display().to_string()),
-        );
-    }
-    // Connector bridge: lets the sidecar's vault-connector tools (e.g.
-    // gmail_list_messages) call the desktop app's credential proxy on :9420,
-    // which resolves the OAuth token. The sidecar holds no secrets — it only
-    // forwards with this short-lived system API key. Omitted if we couldn't
-    // mint a key (the tools then return a clear "bridge unavailable" message).
-    if let Some(key) = api_key {
-        env_map.insert(
-            "PERSONAS_BRIDGE_URL".to_string(),
-            serde_json::Value::String("http://127.0.0.1:9420".to_string()),
-        );
-        env_map.insert(
-            "PERSONAS_API_KEY".to_string(),
-            serde_json::Value::String(key.to_string()),
-        );
-    }
-    // Codebase pin: the executing persona's `design_context.dev_project_id`.
-    // The sidecar's `resolve_context_project` reads this env first so a persona
-    // adopted for repo X always queries repo X's dev_project, regardless of the
-    // global first-project default. Omitted for unpinned personas (they fall
-    // back to the global probe). Mirrors the twin connector's per-persona pin.
-    if let Some(pid) = dev_project_id {
-        if !pid.is_empty() {
-            env_map.insert(
-                "PERSONAS_DEV_PROJECT_ID".to_string(),
-                serde_json::Value::String(pid.to_string()),
-            );
-        }
-    }
-
-    // Mixed-engine delegate (docs/plans/mixed-engine-byom.md): arms the
-    // sidecar's `llm_delegate` tool with the local model endpoint. Only
-    // written for capabilities that opted in (engine_mode == "mixed") — the
-    // sidecar advertises the tool only when these vars are present.
-    if let Some((base_url, model, delegate_api_key)) = delegate {
-        env_map.insert(
-            "PERSONAS_DELEGATE_BASE_URL".to_string(),
-            serde_json::Value::String(base_url.to_string()),
-        );
-        env_map.insert(
-            "PERSONAS_DELEGATE_MODEL".to_string(),
-            serde_json::Value::String(model.to_string()),
-        );
-        env_map.insert(
-            "PERSONAS_DELEGATE_AUDIT".to_string(),
-            serde_json::Value::String(
-                exec_dir
-                    .join(".claude")
-                    .join("delegate-audit.jsonl")
-                    .display()
-                    .to_string(),
-            ),
-        );
-        // Hosted delegate backends (Ollama Cloud) need a Bearer token. Only
-        // written when configured; local Ollama leaves it unset.
-        if let Some(key) = delegate_api_key.filter(|k| !k.trim().is_empty()) {
-            env_map.insert(
-                "PERSONAS_DELEGATE_API_KEY".to_string(),
-                serde_json::Value::String(key.to_string()),
-            );
-        }
-    }
+    let env = sidecar_env(exec_dir, drive_root, api_key, dev_project_id, delegate);
 
     // `alwaysLoad: true` skips the CLI's tool-search deferral so personas-mcp
     // tools (`drive_*`, `personas_*`) are deterministically discoverable on
     // every spawn. Field added in CLI 2.1.121; older CLIs ignore unknown
     // server-config fields per the MCP schema, so this is safe across versions.
-    // Every value inserted above is a `Value::String`, so this is lossless.
-    let env: std::collections::BTreeMap<String, String> = env_map
-        .into_iter()
-        .filter_map(|(k, v)| v.as_str().map(|s| (k, s.to_string())))
-        .collect();
 
     let server_entry = personas_core::mcp_config::McpServer::stdio(
         mcp_binary.display().to_string(),
@@ -285,7 +295,8 @@ pub fn install_mcp_sidecar(
 /// Scrub the run's `personas-mcp` sidecar config from `exec_dir`.
 ///
 /// Deletes `exec_dir/.claude/personas-mcp-config.json`, which embeds the run's
-/// plaintext `PERSONAS_API_KEY` bridge key and any delegate API key. The runner
+/// plaintext `PERSONAS_API_KEY` / `PERSONAS_MCP_TOKEN` key and any delegate API
+/// key. The runner
 /// calls this on every execution exit path (normal, error, cancel, timeout,
 /// kill) so secrets don't sit in the reused per-persona temp dir between runs.
 ///
@@ -374,7 +385,7 @@ mod tests {
         let config = mcp_config_path(exec_dir);
         std::fs::write(
             &config,
-            r#"{"mcpServers":{"personas":{"env":{"PERSONAS_API_KEY":"sekret"}}}}"#,
+            r#"{"mcpServers":{"personas":{"env":{"PERSONAS_API_KEY":"sekret","PERSONAS_MCP_TOKEN":"sekret"}}}}"#,
         )
         .unwrap();
         assert!(config.exists(), "precondition: config file present");
@@ -382,6 +393,52 @@ mod tests {
         scrub_mcp_sidecar(exec_dir);
 
         assert!(!config.exists(), "scrub must delete the --mcp-config file");
+    }
+
+    #[test]
+    fn the_api_key_is_written_under_both_names_the_sidecar_reads() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let env = sidecar_env(dir.path(), None, Some("sys-key-123"), None, None);
+
+        // The outbound bridge name…
+        assert_eq!(
+            env.get("PERSONAS_API_KEY").map(String::as_str),
+            Some("sys-key-123")
+        );
+        // …with its bridge URL beside it. The VALUE is deliberately not asserted
+        // here: restating this app's own listener address would be a second
+        // hardcoded copy of it (census `hardcoded-own-listener-address`), and
+        // the token — not the URL — is what this test is about.
+        assert!(env.contains_key("PERSONAS_BRIDGE_URL"));
+        // …and the INBOUND auth-gate name. `mcp_bin.rs` reads only `--token` or
+        // this variable, so without it every `mcp__personas__*` tool call comes
+        // back as `MCP error -32001: Authentication required`.
+        assert_eq!(
+            env.get("PERSONAS_MCP_TOKEN").map(String::as_str),
+            Some("sys-key-123"),
+            "the MCP auth gate reads PERSONAS_MCP_TOKEN, not PERSONAS_API_KEY"
+        );
+    }
+
+    #[test]
+    fn no_key_means_no_credential_variables_at_all() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let env = sidecar_env(dir.path(), None, None, Some("proj-9"), None);
+        for absent in [
+            "PERSONAS_API_KEY",
+            "PERSONAS_MCP_TOKEN",
+            "PERSONAS_BRIDGE_URL",
+        ] {
+            assert!(
+                !env.contains_key(absent),
+                "{absent} must be omitted rather than written empty"
+            );
+        }
+        // The non-secret pin still lands.
+        assert_eq!(
+            env.get("PERSONAS_DEV_PROJECT_ID").map(String::as_str),
+            Some("proj-9")
+        );
     }
 
     #[test]

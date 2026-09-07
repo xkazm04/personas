@@ -3,7 +3,7 @@ use crate::models::DevTask;
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use std::collections::{HashMap, HashSet};
 
 fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
@@ -299,6 +299,65 @@ pub fn update_task(
         conn.execute(&sql, params_ref.as_slice())?;
 
         get_task_by_id(pool, id)
+    })
+}
+
+/// The projection [`row_to_task`] actually consumes, named beside the mapper
+/// that reads it so the two cannot drift.
+///
+/// Deliberately NOT retrofitted onto the pre-existing `SELECT *` queries in
+/// this file — see the twin note on `IDEA_COLUMNS` in `ideas.rs`: converting
+/// them here would take the census's `select-star-in-repo` count down through
+/// its baseline in a change that is not about that.
+const TASK_COLUMNS: &str = "id, project_id, title, description, source_idea_id, goal_id, status, \
+     session_id, progress_pct, output_lines, error, started_at, completed_at, created_at, \
+     updated_at, depth, parent_task_id, attempt";
+
+/// The newest `dev_tasks` row promoted from `idea_id`, or `None` when nobody
+/// ever dispatched it.
+///
+/// This is the exact inverse of the `NOT EXISTS (… WHERE t.source_idea_id = i.id)`
+/// clause the undispatched-idea sensor keys on (`dev/attention.rs`), so a
+/// caller can ask "has this idea got a task yet" through the same relation the
+/// sensor answers with — rather than listing a project's tasks and filtering in
+/// Rust, which is what every other reader of this relation would otherwise do.
+pub fn latest_task_for_idea(pool: &DbPool, idea_id: &str) -> Result<Option<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::latest_task_for_idea", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {TASK_COLUMNS} FROM dev_tasks WHERE source_idea_id = ?1 \
+             ORDER BY created_at DESC, id DESC LIMIT 1"
+        ))?;
+        stmt.query_row(params![idea_id], row_to_task)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Tasks a project has in flight right now — `running` first, then `queued`,
+/// oldest-started first inside each band, capped at `limit`.
+///
+/// The App Master's decision reads this so a charter it dispatched last wake is
+/// visible as work already under way. Without it the loop sees only the
+/// *sensor* ("accepted ideas with no task"), which goes quiet the moment a task
+/// exists but says nothing about the run that is still going.
+pub fn list_in_flight_tasks(
+    pool: &DbPool,
+    project_id: &str,
+    limit: usize,
+) -> Result<Vec<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::list_in_flight_tasks", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {TASK_COLUMNS} FROM dev_tasks \
+             WHERE project_id = ?1 AND status IN ('running', 'queued') \
+             ORDER BY CASE status WHEN 'running' THEN 0 ELSE 1 END, \
+                      COALESCE(started_at, created_at) ASC, id ASC \
+             LIMIT ?2"
+        ))?;
+        let rows = stmt.query_map(params![project_id, limit as i64], row_to_task)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 

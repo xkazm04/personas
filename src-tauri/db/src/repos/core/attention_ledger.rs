@@ -99,6 +99,47 @@ pub fn complete(
     })
 }
 
+/// The verdict a boot sweep writes onto a row no process can ever close.
+pub const VERDICT_CRASHED: &str = "crashed";
+/// The reason that goes with [`VERDICT_CRASHED`].
+pub const REASON_PROCESS_RESTARTED: &str = "process restarted";
+
+/// Close every still-open pass, once, at process start.
+///
+/// A row opened by [`insert_started`] is closed by [`complete`] from the SAME
+/// process. If that process dies — a crash, a `tauri dev` restart, the app
+/// quit mid-wake — nothing can ever close it, and the row is not merely
+/// untidy: the loop's own "is this persona already busy" read counts open rows
+/// as `in_flight`, so a dead pass keeps refusing its persona for as long as the
+/// staleness window lasts. Cycle 1 measured exactly that — personas refused for
+/// 30 minutes after every dev-app restart, by a run that had not existed since
+/// the previous process.
+///
+/// Called ONCE per process, before the loop's first tick. Safe by
+/// construction: at that moment no live pass exists, so every open row is by
+/// definition an orphan. Returns how many were closed, so the caller can log a
+/// count rather than assert a silence.
+pub fn close_orphans_at_boot(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::close_orphans_at_boot",
+        {
+            let conn = pool.conn("attention_ledger::close_orphans_at_boot")?;
+            let closed = conn.execute(
+                "UPDATE persona_attention_ledger
+                 SET verdict = ?1, reason = ?2, completed_at = ?3
+                 WHERE completed_at IS NULL",
+                params![
+                    VERDICT_CRASHED,
+                    REASON_PROCESS_RESTARTED,
+                    chrono::Utc::now().to_rfc3339(),
+                ],
+            )?;
+            Ok(closed)
+        }
+    )
+}
+
 /// Record a pass refused before it started (rate cap, quiet hours, budget).
 /// The row lands already terminal: `verdict = 'refused'`, completed at insert.
 pub fn insert_refusal(
@@ -768,5 +809,61 @@ mod tests {
         let latest = s.latest.expect("non-empty ledger has a latest row");
         assert_ne!(latest.id, old, "a backdated row can never be the latest");
         Ok(())
+    }
+
+    #[test]
+    fn boot_sweep_closes_open_rows_and_leaves_closed_ones_alone() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+
+        // Two rows no process can ever close, across two personas and both kinds.
+        let orphan_a = insert_started(&pool, "p1", None, "attention", Some("decide"))?;
+        let orphan_b = insert_started(&pool, "p2", None, "consolidation", None)?;
+        // One already-terminal row, and one refusal (terminal at insert).
+        let done = insert_started(&pool, "p1", None, "attention", Some("advance"))?;
+        complete(
+            &pool,
+            &done,
+            "dispatched",
+            "shipped",
+            None,
+            None,
+            Some(0.25),
+        )?;
+        let refused = insert_refusal(&pool, "p1", None, "attention", Some("advance"), "cap")?;
+
+        assert_eq!(list_open(&pool, "p1", "attention")?.len(), 1);
+        assert_eq!(close_orphans_at_boot(&pool)?, 2);
+
+        // Both orphans are now terminal, and say WHY they are terminal.
+        for id in [&orphan_a, &orphan_b] {
+            let row = last_row_by_id(&pool, id)?;
+            assert_eq!(row.verdict, VERDICT_CRASHED);
+            assert_eq!(row.reason, REASON_PROCESS_RESTARTED);
+            assert!(row.completed_at.is_some());
+        }
+        // The closed rows keep their own verdict, reason and cost.
+        let kept = last_row_by_id(&pool, &done)?;
+        assert_eq!(kept.verdict, "dispatched");
+        assert_eq!(kept.reason, "shipped");
+        assert_eq!(kept.cost_usd, Some(0.25));
+        assert_eq!(last_row_by_id(&pool, &refused)?.verdict, "refused");
+
+        // Nothing is left open, and a second sweep is a measured no-op.
+        assert!(list_open(&pool, "p1", "attention")?.is_empty());
+        assert!(list_open(&pool, "p2", "consolidation")?.is_empty());
+        assert_eq!(close_orphans_at_boot(&pool)?, 0);
+        Ok(())
+    }
+
+    fn last_row_by_id(pool: &DbPool, id: &str) -> Result<AttentionLedgerEntry, AppError> {
+        let conn = pool.get()?;
+        conn.query_row(
+            &format!("SELECT {COLUMNS} FROM persona_attention_ledger WHERE id = ?1"),
+            params![id],
+            row_to_entry,
+        )
+        .map_err(AppError::Database)
     }
 }

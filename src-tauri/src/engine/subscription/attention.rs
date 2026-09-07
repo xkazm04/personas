@@ -984,10 +984,24 @@ fn build_decision_context(
             .unwrap_or((None, None))
     };
 
+    // The newest DECIDE row per charter — the one whose stats name a worker.
+    // Separate from `last_for` because that one deliberately spans every lane,
+    // and only a decide dispatch has a session/execution to follow up on.
+    let last_decide_for = |rid: &str| {
+        history.iter().find(|r| {
+            r.responsibility_id.as_deref() == Some(rid)
+                && r.lane.as_deref() == Some(LANE_DECIDE)
+                && r.verdict != "refused"
+                && r.stats_json.is_some()
+        })
+    };
+
     let decision_charters: Vec<DecisionCharter> = charters
         .iter()
         .map(|c| {
             let (last_started_at, last_verdict) = last_for(&c.id);
+            let last_dispatch =
+                last_decide_for(&c.id).and_then(|row| resolve_last_dispatch(pool, row));
             DecisionCharter {
                 id: c.id.clone(),
                 title: c.title.clone(),
@@ -1001,6 +1015,7 @@ fn build_decision_context(
                 pacing: c.spec.pacing.clone(),
                 last_started_at,
                 last_verdict,
+                last_dispatch,
                 writes_code: charter_writes_code(c),
                 project_id: c.project_id.clone(),
             }
@@ -1031,6 +1046,151 @@ fn build_decision_context(
         charters: decision_charters,
         projects,
     })
+}
+
+/// Follow one dispatched charter's worker and report where it actually got to.
+///
+/// The ledger says a charter was `dispatched`; it does not say whether the
+/// worker is still going. This closes that half: the decide row's `stats_json`
+/// names either a fleet `sessionId` or an `executionId`, and each of those has
+/// a table that knows its end state.
+///
+/// Best-effort by design. A row that cannot be found reports
+/// [`DISPATCH_UNKNOWN`] — never `running` — because "I could not find the
+/// record" and "it is still working" are different facts and only one of them
+/// justifies deferring a charter.
+fn resolve_last_dispatch(
+    pool: &DbPool,
+    row: &personas_db::models::AttentionLedgerEntry,
+) -> Option<attention_decide::LastDispatch> {
+    use attention_decide::{
+        LastDispatch, DISPATCH_FAILED, DISPATCH_FINISHED, DISPATCH_RUNNING, DISPATCH_UNKNOWN,
+    };
+
+    let stats: serde_json::Value = serde_json::from_str(row.stats_json.as_deref()?).ok()?;
+    // A decide row's stats are either the multi-charter blob (dispatched[]) or
+    // the single per-charter blob `dispatch_decided_charter` returns. Look in
+    // the row itself first, then in its `dispatched` array — the per-charter
+    // rows carry the flat shape, so this is a courtesy, not the main path.
+    let find = |key: &str| -> Option<String> {
+        stats
+            .get(key)
+            .and_then(|v| v.as_str())
+            .or_else(|| {
+                stats
+                    .get("dispatched")?
+                    .as_array()?
+                    .iter()
+                    .find_map(|d| d.get(key)?.as_str())
+            })
+            .map(str::to_string)
+    };
+
+    // Which handle the row carries decides which table knows the end state. A
+    // decide row with NEITHER (free capacity 0, a fallback, a deferral-only
+    // wake) has no worker to follow, and says so by returning `None` here.
+    enum Handle {
+        Fleet(String),
+        Execution(String),
+    }
+    let handle = find("sessionId")
+        .map(Handle::Fleet)
+        .or_else(|| find("executionId").map(Handle::Execution))?;
+
+    let (worker, state, summary) = match handle {
+        Handle::Fleet(session_id) => match crate::db::repos::fleet_sessions::get(pool, &session_id)
+        {
+            Ok(Some(s)) => {
+                let state = match s.state.as_str() {
+                    "finished" => DISPATCH_FINISHED,
+                    // Ended without declaring done. Not necessarily a crash,
+                    // but definitely not a completed job.
+                    "exited" => DISPATCH_FAILED,
+                    // `hibernated` included: suspended but resumable, and it
+                    // has reported no outcome, so it is not finished.
+                    _ => DISPATCH_RUNNING,
+                };
+                let summary = crate::commands::fleet::run::summary_from_reason(
+                    &s.state,
+                    s.state_reason.as_deref(),
+                )
+                .or_else(|| s.state_reason.clone());
+                ("fleet", state, summary)
+            }
+            Ok(None) => ("fleet", DISPATCH_UNKNOWN, None),
+            Err(e) => {
+                tracing::warn!(session_id, error = %e,
+                    "persona_attention: fleet session lookup failed for last-dispatch");
+                ("fleet", DISPATCH_UNKNOWN, None)
+            }
+        },
+        Handle::Execution(execution_id) => match execution_end_state(pool, &execution_id) {
+            Ok(Some((status, detail))) => {
+                let state = match status.as_str() {
+                    "completed" => DISPATCH_FINISHED,
+                    "failed" | "cancelled" | "incomplete" => DISPATCH_FAILED,
+                    _ => DISPATCH_RUNNING,
+                };
+                ("execution", state, detail)
+            }
+            Ok(None) => ("execution", DISPATCH_UNKNOWN, None),
+            Err(e) => {
+                tracing::warn!(execution_id, error = %e,
+                    "persona_attention: execution lookup failed for last-dispatch");
+                ("execution", DISPATCH_UNKNOWN, None)
+            }
+        },
+    };
+
+    Some(LastDispatch {
+        at: row.started_at.clone(),
+        worker: worker.to_string(),
+        state: state.to_string(),
+        summary: summary.map(|s| bound_summary(&s)),
+    })
+}
+
+/// `status` plus the most informative text the row carries, for one execution.
+///
+/// One direct query for the same reason [`improve_run_state`] uses one: this is
+/// the only reader, and a repo fn built for a single caller is the shape this
+/// backend already has too much of.
+fn execution_end_state(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Option<(String, Option<String>)>, AppError> {
+    use rusqlite::OptionalExtension;
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT status, output_data, error_message FROM persona_executions WHERE id = ?1",
+        rusqlite::params![execution_id],
+        |r| {
+            let status: String = r.get("status")?;
+            let output: Option<String> = r.get("output_data")?;
+            let error: Option<String> = r.get("error_message")?;
+            // The error first: when a run failed, WHY is the useful half.
+            let detail = error
+                .filter(|e| !e.trim().is_empty())
+                .or(output)
+                .filter(|o| !o.trim().is_empty());
+            Ok((status, detail))
+        },
+    )
+    .optional()
+    .map_err(AppError::Database)
+}
+
+/// Char-bounded (not byte-bounded) truncation for a dispatch summary. The
+/// summary is worker-authored text and may hold anything.
+fn bound_summary(s: &str) -> String {
+    let s = s.trim();
+    if s.chars().count() <= attention_decide::MAX_DISPATCH_SUMMARY_CHARS {
+        return s.to_string();
+    }
+    s.chars()
+        .take(attention_decide::MAX_DISPATCH_SUMMARY_CHARS)
+        .collect::<String>()
+        + "…"
 }
 
 /// The model the decision itself runs on — the SAME chain
@@ -1145,6 +1305,26 @@ fn project_snapshot(
         }
     };
 
+    // Work already under way. Best-effort like every other field here: an
+    // unreadable task table renders as "in flight: nothing", which is the same
+    // thing the decision saw before this existed.
+    let in_flight_tasks = crate::db::repos::dev::tasks::list_in_flight_tasks(
+        pool,
+        project_id,
+        attention_decide::MAX_NAMED_IN_FLIGHT,
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(project_id, error = %e, "persona_attention: in-flight task read failed");
+        Vec::new()
+    })
+    .into_iter()
+    .map(|t| attention_decide::InFlightTask {
+        idea_id: t.source_idea_id,
+        title: t.title,
+        started_at: t.started_at,
+    })
+    .collect();
+
     attention_decide::ProjectSnapshot {
         project_id: project_id.to_string(),
         project_name,
@@ -1154,6 +1334,7 @@ fn project_snapshot(
             .take(max_named_ideas)
             .map(|i| (i.id, i.title))
             .collect(),
+        in_flight_tasks,
         pending_idea_count,
         context_count: project_contexts.len(),
         context_newest_at,
@@ -1723,39 +1904,190 @@ async fn dispatch_decided_charter(
     item: &attention_decide::DecisionItem,
     ledger_id: &str,
 ) -> Result<serde_json::Value, AppError> {
-    let task = decided_task_text(charter, item);
-    if charter.writes_code {
-        return dispatch_into_worktree(state, app, context, charter, &task).await;
+    // Which accepted idea (if any) this dispatch is FOR. Resolved before the
+    // spawn so the worker's brief can name it, and re-used after the spawn to
+    // mint the task row that tells the sensor it is in hand.
+    let idea = resolve_decided_idea(&state.db, charter, item);
+    let task = decided_task_text(charter, item, idea.as_deref());
+
+    let outcome = if charter.writes_code {
+        dispatch_into_worktree(state, app, context, charter, &task).await
+    } else {
+        spawn_attention_execution(
+            state,
+            app,
+            &context.persona_id,
+            ledger_id,
+            Some(&charter.id),
+            LANE_DECIDE,
+            &task,
+            // The CHARTER id, so `execute_persona_inner` resolves the charter and
+            // applies its `spec.modelOverride` — the reason the decide lane passes
+            // this where the older lanes pass None.
+            Some(&charter.id),
+        )
+        .await
+        .map(|execution_id| {
+            serde_json::json!({
+                "charterId": charter.id,
+                "executionId": execution_id,
+                "worker": "execution",
+                "reason": item.reason,
+            })
+        })
+    };
+
+    // Only a dispatch that actually STARTED gets a task row. Minting one for a
+    // failed spawn would tell the undispatched sensor the idea is in hand while
+    // nothing is running — the exact lie the row exists to prevent.
+    match (outcome, idea) {
+        (Ok(mut stats), Some(idea_id)) => {
+            let task_id = mint_dispatch_task(&state.db, charter, &idea_id, &stats);
+            if let Some(id) = task_id {
+                stats["taskId"] = serde_json::Value::String(id);
+            }
+            stats["ideaId"] = serde_json::Value::String(idea_id);
+            Ok(stats)
+        }
+        (other, _) => other,
     }
-    let execution_id = spawn_attention_execution(
-        state,
-        app,
-        &context.persona_id,
-        ledger_id,
-        Some(&charter.id),
-        LANE_DECIDE,
-        &task,
-        // The CHARTER id, so `execute_persona_inner` resolves the charter and
-        // applies its `spec.modelOverride` — the reason the decide lane passes
-        // this where the older lanes pass None.
-        Some(&charter.id),
-    )
-    .await?;
-    Ok(serde_json::json!({
-        "charterId": charter.id,
-        "executionId": execution_id,
-        "worker": "execution",
-        "reason": item.reason,
-    }))
+}
+
+/// Resolve the accepted idea a decided dispatch is about, or `None`.
+///
+/// Only for the accepted-idea-delivery charter: every other charter's brief is
+/// about an area, not an item, and a hex-looking word in one of those must not
+/// mint a task row against an unrelated idea. `brief` is read before `reason`
+/// because the brief is where the plan says WHAT to do.
+fn resolve_decided_idea(
+    pool: &DbPool,
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+) -> Option<String> {
+    if charter.recipe_slug.as_deref() != Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG) {
+        return None;
+    }
+    let project_id = charter
+        .project_id
+        .as_deref()
+        .filter(|p| !p.trim().is_empty())?;
+    let token = attention_decide::extract_idea_id_token(&item.brief)
+        .or_else(|| attention_decide::extract_idea_id_token(&item.reason));
+    let Some(token) = token else {
+        tracing::info!(
+            charter = %charter.id,
+            "persona_attention: delivery dispatch names no idea id — no task row minted"
+        );
+        return None;
+    };
+    match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, &token) {
+        Ok(Some(idea)) => Some(idea.id),
+        Ok(None) => {
+            tracing::info!(
+                charter = %charter.id, token = %token,
+                "persona_attention: delivery dispatch named an id that resolves to no idea \
+                 in this project — no task row minted"
+            );
+            None
+        }
+        Err(e) => {
+            tracing::warn!(charter = %charter.id, token = %token, error = %e,
+                "persona_attention: idea lookup failed — no task row minted");
+            None
+        }
+    }
+}
+
+/// Mint the `dev_tasks` row for a dispatch that has just started.
+///
+/// This is the write cycle 1 was missing. Without it the idea stays `accepted`
+/// with no task, so the next wake's "accepted ideas with no task" sensor offers
+/// it again and the App Master re-dispatches work already in flight.
+///
+/// Shaped exactly like `dispatch_ideas_core`'s fleet arm (`dev_tools.rs:1440`):
+/// [`create_task_core`] carries a materialized workspace practice's adoption
+/// cell to `dispatched`, then the row goes `running` with the worker's session
+/// id and a start stamp. Best-effort — a task row that cannot be written must
+/// not undo a run that is already going.
+fn mint_dispatch_task(
+    pool: &DbPool,
+    charter: &attention_decide::DecisionCharter,
+    idea_id: &str,
+    stats: &serde_json::Value,
+) -> Option<String> {
+    use crate::commands::infrastructure::dev_tools::create_task_core;
+
+    let idea = match crate::db::repos::dev_tools::get_idea_by_id(pool, idea_id) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::warn!(idea_id, error = %e, "persona_attention: idea unreadable at dispatch");
+            return None;
+        }
+    };
+    let task = match create_task_core(
+        pool,
+        idea.project_id.as_deref(),
+        &idea.title,
+        idea.description.as_deref(),
+        Some(&idea.id),
+        None,
+        Some("queued"),
+        None,
+    ) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(idea_id, error = %e,
+                "persona_attention: could not mint the dispatch task row");
+            return None;
+        }
+    };
+
+    // The worker's handle, whichever arm ran it. A fleet session and an
+    // execution are both "the run that owns this task"; `session_id` is the
+    // column both dispatch paths already use.
+    let worker_id = stats
+        .get("sessionId")
+        .or_else(|| stats.get("executionId"))
+        .and_then(|v| v.as_str());
+    let now = chrono::Utc::now().to_rfc3339();
+    if let Err(e) = crate::db::repos::dev_tools::update_task(
+        pool,
+        &task.id,
+        None,
+        None,
+        Some("running"),
+        Some(worker_id),
+        None,
+        None,
+        None,
+        Some(Some(now.as_str())),
+        None,
+    ) {
+        tracing::warn!(task_id = %task.id, error = %e,
+            "persona_attention: dispatch task row created but not marked running");
+    }
+    tracing::info!(
+        idea_id, task_id = %task.id, charter = %charter.id,
+        "persona_attention: delivery dispatch minted its task row"
+    );
+    Some(task.id)
 }
 
 /// The dispatched brief: the charter's standing contract plus THIS wake's
 /// argument for it. The decision's reason and brief are additive — they say
 /// which slice to take, never what the charter is allowed to do, which stays
 /// the charter's own guardrails.
+///
+/// It also carries the WRITE-BACK block
+/// ([`crate::commands::infrastructure::app_master_writeback::write_back_brief`]),
+/// on every dispatch and not only on a delivery. Cycle 1's workers committed
+/// real work and wrote nothing back, for the plain reason that nothing in their
+/// brief told them a door existed — so the door is named in every brief, and
+/// the idea id is named in the ones that have an idea.
 fn decided_task_text(
     charter: &attention_decide::DecisionCharter,
     item: &attention_decide::DecisionItem,
+    idea_id: Option<&str>,
 ) -> String {
     let mut s = format!(
         "Attention pass — advance your standing charter \"{}\", chosen by your own \
@@ -1777,6 +2109,17 @@ fn decided_task_text(
         .filter(|a| !a.trim().is_empty())
     {
         s.push_str(&format!("Its core action: {action}\n"));
+    }
+    if let Some(project_id) = charter
+        .project_id
+        .as_deref()
+        .filter(|p| !p.trim().is_empty())
+    {
+        s.push_str(
+            &crate::commands::infrastructure::app_master_writeback::write_back_brief(
+                project_id, idea_id,
+            ),
+        );
     }
     s.push('\n');
     s.push_str(ATTENTION_GUARDRAILS);
@@ -3139,5 +3482,387 @@ mod attention_tests {
         assert_eq!(reason["kind"], "daily_cap_reached");
         assert_eq!(reason["cap"], 1);
         Ok(())
+    }
+
+    // -- P2/P3/P4: the write-back loop's own reads and writes ---------------
+
+    fn decide_charter(
+        id: &str,
+        project_id: Option<&str>,
+        slug: Option<&str>,
+    ) -> attention_decide::DecisionCharter {
+        attention_decide::DecisionCharter {
+            id: id.into(),
+            title: "Deliver an accepted idea".into(),
+            recipe_slug: slug.map(str::to_string),
+            project_id: project_id.map(str::to_string),
+            ..Default::default()
+        }
+    }
+
+    fn decide_item(charter_id: &str, brief: &str) -> attention_decide::DecisionItem {
+        attention_decide::DecisionItem {
+            charter_id: charter_id.into(),
+            reason: "oldest accepted idea".into(),
+            brief: brief.into(),
+        }
+    }
+
+    fn seed_project(pool: &DbPool, name: &str) -> String {
+        // `dev_projects.root_path` is UNIQUE — a shared literal makes the
+        // second project in a test fail on a constraint, not on the thing the
+        // test is about.
+        crate::db::repos::dev_tools::create_project(
+            pool,
+            name,
+            &format!("/tmp/attn/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("project")
+        .id
+    }
+
+    fn seed_accepted_idea(pool: &DbPool, project_id: &str, title: &str) -> String {
+        crate::db::repos::dev_tools::create_idea(
+            pool,
+            Some(project_id),
+            None,
+            "manual",
+            Some("technical"),
+            title,
+            Some("body"),
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("idea")
+        .id
+    }
+
+    #[test]
+    fn a_delivery_dispatch_mints_a_task_row_and_silences_the_sensor() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "mint-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Extract the retry helper");
+
+        // The sensor offers it while nothing has been dispatched.
+        assert_eq!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .len(),
+            1
+        );
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        // The decision echoes the 8-char prefix, exactly as the prompt printed it.
+        let item = decide_item(
+            "r-delivery",
+            &format!("Deliver idea {} end to end.", &idea_id[..8]),
+        );
+        let resolved = resolve_decided_idea(&pool, &charter, &item).expect("the prefix resolves");
+        assert_eq!(resolved, idea_id);
+
+        let stats = serde_json::json!({ "charterId": "r-delivery", "sessionId": "sess-1" });
+        let task_id = mint_dispatch_task(&pool, &charter, &resolved, &stats).expect("task minted");
+
+        let task = crate::db::repos::dev_tools::get_task_by_id(&pool, &task_id).unwrap();
+        assert_eq!(task.source_idea_id.as_deref(), Some(idea_id.as_str()));
+        assert_eq!(task.status, "running");
+        assert_eq!(task.session_id.as_deref(), Some("sess-1"));
+        assert!(task.started_at.is_some());
+
+        // The whole point: the next wake's sensor no longer offers it.
+        assert!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .is_empty(),
+            "an idea in flight must not be offered again"
+        );
+    }
+
+    #[test]
+    fn only_the_delivery_charter_resolves_an_idea_from_its_brief() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "scope-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Something");
+        let brief = format!("Look at {}", &idea_id[..8]);
+
+        // Another charter's brief may contain anything; it must not mint a row
+        // against an idea it was not dispatched for.
+        let other = decide_charter("r-kpi", Some(&pid), Some("project-kpi-stewardship"));
+        assert!(resolve_decided_idea(&pool, &other, &decide_item("r-kpi", &brief)).is_none());
+
+        // A delivery charter bound to no project has nothing to scope against.
+        let unbound = decide_charter(
+            "r-d",
+            None,
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        assert!(resolve_decided_idea(&pool, &unbound, &decide_item("r-d", &brief)).is_none());
+
+        // And an id from a DIFFERENT project does not resolve here.
+        let other_pid = seed_project(&pool, "other-app");
+        let delivery = decide_charter(
+            "r-d2",
+            Some(&other_pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        assert!(resolve_decided_idea(&pool, &delivery, &decide_item("r-d2", &brief)).is_none());
+    }
+
+    #[test]
+    fn the_dispatch_brief_carries_the_write_back_door() {
+        let charter = decide_charter(
+            "r-delivery",
+            Some("proj-77"),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        let item = decide_item("r-delivery", "Deliver it.");
+
+        let with_idea = decided_task_text(&charter, &item, Some("297f6ba4"));
+        assert!(with_idea.contains("PERSONAS WRITE-BACK"));
+        assert!(with_idea.contains("/dev-tools/ideas/297f6ba4/outcome"));
+        assert!(with_idea.contains("proj-77"));
+        assert!(with_idea.contains("x-personas-local-token"));
+        // The charter's own guardrails still ride along — the write-back block
+        // is additive, never a replacement.
+        assert!(with_idea.contains("propose_backlog"));
+
+        // A charter bound to no project gets no door (there is nothing to
+        // write back TO), and must not be handed a half-formed one.
+        let unbound = decide_charter("r-x", None, None);
+        let text = decided_task_text(&unbound, &item, None);
+        assert!(!text.contains("PERSONAS WRITE-BACK"));
+    }
+
+    #[test]
+    fn the_project_snapshot_reports_work_already_in_flight() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "inflight-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Wire the connector");
+        let running = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&pid),
+            "Wire the connector",
+            None,
+            Some(&idea_id),
+            None,
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        // …then started, exactly as `mint_dispatch_task` does it: `create_task`
+        // never writes `started_at`, so a row that only claims `running` has no
+        // start stamp.
+        let now = chrono::Utc::now().to_rfc3339();
+        crate::db::repos::dev_tools::update_task(
+            &pool,
+            &running.id,
+            None,
+            None,
+            Some("running"),
+            Some(Some("sess-9")),
+            None,
+            None,
+            None,
+            Some(Some(now.as_str())),
+            None,
+        )
+        .unwrap();
+        // A finished task is NOT in flight and must not appear.
+        crate::db::repos::dev_tools::create_task(
+            &pool,
+            Some(&pid),
+            "Already done",
+            None,
+            None,
+            None,
+            Some("completed"),
+            None,
+        )
+        .unwrap();
+
+        let snap = project_snapshot(&pool, &pid, 10);
+        assert_eq!(snap.in_flight_tasks.len(), 1, "only running/queued");
+        assert_eq!(snap.in_flight_tasks[0].title, "Wire the connector");
+        assert_eq!(
+            snap.in_flight_tasks[0].idea_id.as_deref(),
+            Some(idea_id.as_str())
+        );
+        assert!(snap.in_flight_tasks[0].started_at.is_some());
+    }
+
+    // -- P4 addendum: the last dispatch's END state -------------------------
+
+    fn decide_row(
+        pool: &DbPool,
+        persona_id: &str,
+        charter_id: &str,
+        stats: serde_json::Value,
+    ) -> String {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            Some(charter_id),
+            KIND_ATTENTION,
+            Some(LANE_DECIDE),
+        )
+        .unwrap();
+        attention_ledger::complete(
+            pool,
+            &id,
+            "dispatched",
+            "",
+            None,
+            Some(&stats.to_string()),
+            None,
+        )
+        .unwrap();
+        id
+    }
+
+    fn ledger_entry(pool: &DbPool, id: &str) -> crate::db::models::AttentionLedgerEntry {
+        attention_ledger::list_by_persona(pool, "p1", 50)
+            .unwrap()
+            .into_iter()
+            .find(|r| r.id == id)
+            .expect("row")
+    }
+
+    fn fleet_row(
+        id: &str,
+        state: &str,
+        reason: Option<&str>,
+    ) -> crate::db::repos::fleet_sessions::FleetSessionRow {
+        crate::db::repos::fleet_sessions::FleetSessionRow {
+            id: id.into(),
+            claude_session_id: "cc-1".into(),
+            cwd: "/tmp/wt".into(),
+            project_label: "app".into(),
+            name: None,
+            title: None,
+            args_json: "[]".into(),
+            mode: "headless".into(),
+            state: state.into(),
+            state_reason: reason.map(str::to_string),
+            run_id: None,
+            run_label: None,
+            created_at_ms: 1,
+            last_activity_ms: 2,
+        }
+    }
+
+    #[test]
+    fn a_finished_fleet_session_is_reported_finished_not_in_flight() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "KPI stewardship", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-done", "worker": "fleet" }),
+        );
+        // The worker declared it was done — the exact 01:33 UTC situation the
+        // decision misread as "still in flight".
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-done",
+                "finished",
+                Some("Task complete: recorded the KPI"),
+            ),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.worker, "fleet");
+        assert_eq!(d.state, attention_decide::DISPATCH_FINISHED);
+        assert_eq!(d.summary.as_deref(), Some("recorded the KPI"));
+
+        // A session that ended without declaring done is `failed`, not running.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-done", "exited", Some("process gone")),
+        )
+        .unwrap();
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert_eq!(d.summary.as_deref(), Some("process gone"));
+    }
+
+    #[test]
+    fn an_execution_dispatch_reports_its_own_terminal_status() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Docs charter", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "executionId": "exec-1" }),
+        );
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, error_message, created_at)
+             VALUES ('exec-1', 'p1', 'failed', 'clippy refused the branch', datetime('now'))",
+            [],
+        )?;
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.worker, "execution");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert_eq!(d.summary.as_deref(), Some("clippy refused the branch"));
+
+        // Still going is still going.
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status='running', error_message=NULL \
+             WHERE id='exec-1'",
+            [],
+        )?;
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_RUNNING);
+        Ok(())
+    }
+
+    #[test]
+    fn a_vanished_worker_is_unknown_never_running() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Charter", &one_outcome());
+        // The session row was pruned; nothing can say what happened.
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "sessionId": "sess-gone" }),
+        );
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_UNKNOWN,
+            "a missing record is not evidence of a live worker"
+        );
+
+        // A decide row that dispatched nothing has no worker to follow.
+        let empty = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "lane": "decide", "freeCapacity": 0, "dispatched": 0 }),
+        );
+        assert!(resolve_last_dispatch(&pool, &ledger_entry(&pool, &empty)).is_none());
     }
 }
