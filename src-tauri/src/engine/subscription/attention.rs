@@ -1100,7 +1100,12 @@ fn build_decision_context(
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
         max_concurrent: persona.max_concurrent,
+        // All three are measured by the executor immediately before the model
+        // call (`decide_free_capacity`), never here: capacity read at plan time
+        // is a guess by the time the prompt is rendered.
         free_capacity: 0,
+        running_executions: 0,
+        running_fleet: 0,
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
         now_utc: chrono::Utc::now().to_rfc3339(),
@@ -1947,16 +1952,27 @@ async fn run_decision_lane(
     let pool = state.db.clone();
     let persona_id = context.persona_id.clone();
 
-    context.free_capacity = decide_free_capacity(state, &persona_id, context.max_concurrent).await;
+    let capacity = decide_free_capacity(state, &persona_id, context.max_concurrent).await;
+    context.free_capacity = capacity.free;
+    context.running_executions = capacity.running_executions;
+    context.running_fleet = capacity.running_fleet;
     if context.free_capacity == 0 {
         // Not a failure and not a refusal: the persona is already running as
         // much as it may. Spending a model call to be told "dispatch nothing"
         // would be paying for a conclusion we already hold.
         tracing::info!(
             persona_id,
+            running_executions = capacity.running_executions,
+            running_fleet = capacity.running_fleet,
             "persona_attention: decide lane has no free slot this wake"
         );
-        return Ok(serde_json::json!({ "lane": LANE_DECIDE, "freeCapacity": 0, "dispatched": 0 }));
+        return Ok(serde_json::json!({
+            "lane": LANE_DECIDE,
+            "freeCapacity": 0,
+            "dispatched": 0,
+            "runningExecutions": capacity.running_executions,
+            "runningFleet": capacity.running_fleet,
+        }));
     }
 
     let prompt = attention_decide::render_decision_prompt(&context);
@@ -2074,6 +2090,10 @@ async fn run_decision_lane(
         "lane": LANE_DECIDE,
         "model": context.model,
         "freeCapacity": context.free_capacity,
+        // The two halves the capacity was computed FROM. Without them a ledger
+        // row saying "free 1 of 2" cannot be checked against the fleet grid.
+        "runningExecutions": context.running_executions,
+        "runningFleet": context.running_fleet,
         "dispatched": dispatched,
         "failed": failed,
         "deferred": plan.defer.iter()
@@ -2088,31 +2108,127 @@ async fn run_decision_lane(
     }))
 }
 
+/// What this wake may start, and the two counts it was derived from.
+///
+/// The counts travel with the number because the persona is TOLD them (the
+/// prompt's CAPACITY line) and the ledger records them: a free capacity of 0
+/// that cannot say which workers are holding the slots is a figure the operator
+/// has to take on faith.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct DecideCapacity {
+    /// Slots this persona may fill right now.
+    free: usize,
+    /// Its own executions in the live tracker.
+    running_executions: usize,
+    /// Its own fleet workers still holding a slot (see
+    /// [`count_active_fleet_workers`]).
+    running_fleet: usize,
+}
+
+/// The fleet states in which a dispatched worker is still holding one of this
+/// persona's slots.
+///
+/// Sourced from the registry's own enum through [`state_to_token`] rather than
+/// spelled as literals, because a token written in one place and read in
+/// another is exactly how this lane went unswept until 2026-09-07.
+/// `finished` / `exited` are done, `stale` has stopped producing, `hibernated`
+/// has no process — none of them are occupying anything.
+fn active_fleet_states() -> [&'static str; 4] {
+    use crate::commands::fleet::types::{state_to_token, FleetSessionState as S};
+    [
+        state_to_token(S::Spawning),
+        state_to_token(S::Running),
+        state_to_token(S::AwaitingInput),
+        state_to_token(S::Idle),
+    ]
+}
+
+/// How many fleet workers this persona's own dispatches still have in the air.
+///
+/// Reads the DURABLE `fleet_sessions` table, not the in-memory registry, so the
+/// count survives a restart — a persona that woke up after a crash with two
+/// live workers must not read itself as idle.
+///
+/// `None` means the read FAILED, and the caller treats that as "assume full"
+/// rather than "assume none": a slot guard that fails open is not a guard. The
+/// cost of the conservative branch is one skipped wake, and a wake whose
+/// database is unreadable could not have opened a dispatch ledger row anyway.
+fn count_active_fleet_workers(pool: &crate::db::DbPool, persona_id: &str) -> Option<usize> {
+    let run_label = personas_engine::unattended::app_master_run_label(persona_id);
+    let cutoff_ms = personas_core::utils::now_ms()
+        - personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+    match crate::db::repos::fleet_sessions::count_active_for_run_label(
+        pool,
+        &run_label,
+        &active_fleet_states(),
+        cutoff_ms,
+    ) {
+        Ok(n) => Some(n),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not count this persona's fleet workers — \
+                 treating its slots as full for this wake");
+            None
+        }
+    }
+}
+
 /// Slots this persona may fill right now — the minimum of its own remaining
 /// concurrency, the engine's global headroom, and [`MAX_DECIDE_DISPATCH`].
 /// Reads the LIVE tracker (`AppState.engine`), the same one `start_execution`
 /// admits against, so the decision cannot plan past what the queue will accept.
 ///
-/// **What the tracker holds is EXECUTIONS, and only executions** — `admit`
-/// inserts an `execution_id` (`personas_engine::queue`), and nothing anywhere
-/// puts a fleet session into it. So a code charter dispatched through
+/// **The tracker holds EXECUTIONS, and only executions** — `admit` inserts an
+/// `execution_id` (`personas_engine::queue`), and nothing anywhere puts a fleet
+/// session into it. So a code charter dispatched through
 /// [`dispatch_into_worktree`], which spawns a headless fleet session and no
-/// execution, never occupies a slot here: not while it runs, and not while it
-/// sits parked in `awaiting_input` after ending on a `FLEET:BLOCKED` line.
-/// Verified 2026-09-07 while fixing that park; recorded because the obvious
-/// reading of "the persona's two slots" is that the parked worker is holding
-/// one, and it is not. What a parked worker DOES hold is its `dev_tasks` row —
-/// closed by [`close_abandoned_dispatch_tasks`] once the fleet sweeper has
-/// finished the session — and a fleet live slot, which is a soft cap that
-/// never refuses a spawn.
+/// execution, never occupies a slot *there*: not while it runs, and not while
+/// it sits parked in `awaiting_input` after ending on a `FLEET:BLOCKED` line.
+/// Until 2026-09-07 that was the whole story, and it meant a persona with
+/// `max_concurrent = 2` and two fleet workers in flight read `free = 2` and
+/// could start two more — the limit was being kept only by the persona's own
+/// reading of its ledger, which is luck, not enforcement.
+///
+/// So the persona's own headroom now subtracts BOTH: its executions from the
+/// tracker and its active fleet workers from [`count_active_fleet_workers`].
+/// The GLOBAL headroom deliberately does not — that ceiling is the execution
+/// queue's, and a fleet session does not consume an execution slot.
+/// (A parked worker also holds its `dev_tasks` row, closed by
+/// [`close_abandoned_dispatch_tasks`] once the fleet sweeper finishes the
+/// session, and a fleet live slot, which is a soft cap that never refuses a
+/// spawn.)
 async fn decide_free_capacity(
     state: &Arc<crate::AppState>,
     persona_id: &str,
     max_concurrent: i32,
-) -> usize {
+) -> DecideCapacity {
+    // Counted BEFORE the tracker lock is taken: this is a synchronous sqlite
+    // read and there is no reason for the engine's global mutex to wait on it.
+    let running_fleet = count_active_fleet_workers(&state.db, persona_id);
     let tracker = state.engine.tracker().lock().await;
+    decide_capacity_from(&tracker, persona_id, max_concurrent, running_fleet)
+}
+
+/// The arithmetic, over a real tracker and an already-measured fleet count —
+/// separated from [`decide_free_capacity`] only so a test can drive it with the
+/// engine's own tracker and rows seeded through the repo, mocking nothing.
+fn decide_capacity_from(
+    tracker: &personas_engine::queue::ConcurrencyTracker,
+    persona_id: &str,
+    max_concurrent: i32,
+    running_fleet: Option<usize>,
+) -> DecideCapacity {
+    let running_executions = tracker.running_count(persona_id);
+    // A failed count is read as "every slot is taken" — see
+    // [`count_active_fleet_workers`].
+    let running_fleet = running_fleet.unwrap_or_else(|| max_concurrent.max(0) as usize);
+    let mut cap = DecideCapacity {
+        free: 0,
+        running_executions,
+        running_fleet,
+    };
     if !tracker.has_global_capacity() {
-        return 0;
+        return cap;
     }
     let global_cap = tracker.global_max_concurrent();
     // `0` spells "no global limit" in the tracker's own convention.
@@ -2125,9 +2241,12 @@ async fn decide_free_capacity(
     let own_headroom = if max_concurrent <= 0 {
         MAX_DECIDE_DISPATCH
     } else {
-        (max_concurrent as usize).saturating_sub(tracker.running_count(persona_id))
+        (max_concurrent as usize)
+            .saturating_sub(running_executions)
+            .saturating_sub(running_fleet)
     };
-    own_headroom.min(global_headroom).min(MAX_DECIDE_DISPATCH)
+    cap.free = own_headroom.min(global_headroom).min(MAX_DECIDE_DISPATCH);
+    cap
 }
 
 /// The deterministic degrade path: the charter the `advance` lane would have
@@ -5461,5 +5580,152 @@ mod attention_tests {
             "the UNPREFIXED title, so the duplicate check compares like with like"
         );
         Ok(())
+    }
+
+    // -- capacity: the fleet workers the tracker cannot see -------------------
+
+    /// Seed ONE fleet worker of this persona's, through the repo's own insert
+    /// door — no mock, no hand-built table.
+    fn seed_fleet_worker(
+        pool: &crate::db::DbPool,
+        id: &str,
+        persona_id: &str,
+        state: &str,
+        last_activity_ms: i64,
+    ) {
+        crate::db::repos::fleet_sessions::upsert(
+            pool,
+            &crate::db::repos::fleet_sessions::FleetSessionRow {
+                id: id.into(),
+                claude_session_id: format!("cs-{id}"),
+                cwd: "C:/repos/ascent".into(),
+                project_label: "ascent".into(),
+                name: None,
+                title: None,
+                args_json: "[]".into(),
+                mode: "headless".into(),
+                state: state.into(),
+                state_reason: None,
+                run_id: Some("run-1".into()),
+                run_label: Some(personas_engine::unattended::app_master_run_label(
+                    persona_id,
+                )),
+                created_at_ms: last_activity_ms,
+                last_activity_ms,
+            },
+        )
+        .expect("seed fleet worker");
+    }
+
+    /// The bug this closes: a persona at `max_concurrent = 2` with two fleet
+    /// workers in flight read `free = 2` and could start two more, because the
+    /// execution tracker has never held a fleet session.
+    #[test]
+    fn free_capacity_subtracts_this_personas_own_fleet_workers() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+
+        // No workers: both of the persona's slots are free.
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(
+            cap,
+            DecideCapacity {
+                free: 2,
+                running_executions: 0,
+                running_fleet: 0
+            }
+        );
+
+        // One worker running: one slot left.
+        seed_fleet_worker(&pool, "w1", "p1", "running", now);
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, 1);
+        assert_eq!(cap.running_fleet, 1);
+
+        // Two: none. This is the case the operator's "2 per project" rule is
+        // about, and the case that used to read as fully free.
+        seed_fleet_worker(&pool, "w2", "p1", "awaiting_input", now);
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, 0);
+        assert_eq!(cap.running_fleet, 2);
+
+        // Another persona's workers are not this one's.
+        seed_fleet_worker(&pool, "w3", "p2", "running", now);
+        assert_eq!(count_active_fleet_workers(&pool, "p2"), Some(1));
+        assert_eq!(count_active_fleet_workers(&pool, "p1"), Some(2));
+    }
+
+    /// A worker parked past the App Master awaiting cutoff has stopped holding
+    /// a slot — the fleet sweeper will finish it, but the sweep runs on a
+    /// ticker and the wake must not wait for it.
+    #[test]
+    fn a_worker_parked_past_the_cutoff_stops_holding_a_slot() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+        let cutoff_ms = personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+
+        seed_fleet_worker(&pool, "fresh", "p1", "running", now);
+        seed_fleet_worker(
+            &pool,
+            "parked",
+            "p1",
+            "awaiting_input",
+            now - cutoff_ms - 60_000,
+        );
+
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(
+            cap.running_fleet, 1,
+            "only the fresh one still holds a slot"
+        );
+        assert_eq!(cap.free, 1);
+    }
+
+    /// Terminal and dormant states hold nothing — a finished worker that has
+    /// not been reaped yet must not cost the next wake its slot.
+    #[test]
+    fn finished_and_exited_workers_hold_nothing() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let now = personas_core::utils::now_ms();
+        seed_fleet_worker(&pool, "done", "p1", "finished", now);
+        seed_fleet_worker(&pool, "dead", "p1", "exited", now);
+        seed_fleet_worker(&pool, "gone", "p1", "hibernated", now);
+        seed_fleet_worker(&pool, "quiet", "p1", "stale", now);
+        assert_eq!(count_active_fleet_workers(&pool, "p1"), Some(0));
+    }
+
+    /// A count that could not be read is "assume full", never "assume none":
+    /// a slot guard that fails open is not a guard.
+    #[test]
+    fn an_unreadable_fleet_count_costs_the_wake_its_slots() {
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let cap = decide_capacity_from(&tracker, "p1", 2, None);
+        assert_eq!(cap.free, 0);
+        assert_eq!(cap.running_fleet, 2);
+    }
+
+    /// `max_concurrent <= 0` means the operator declared no per-persona limit,
+    /// and the fleet count must not silently reintroduce one.
+    #[test]
+    fn unlimited_concurrency_is_still_unlimited_with_workers_in_flight() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+        seed_fleet_worker(&pool, "w1", "p1", "running", now);
+        let cap = decide_capacity_from(&tracker, "p1", 0, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, MAX_DECIDE_DISPATCH.min(4));
+        assert_eq!(cap.running_fleet, 1, "still counted, still reported");
+    }
+
+    /// The states are read out of the registry's own enum, not re-spelled here
+    /// — the drift that made this lane invisible to its sweeper.
+    #[test]
+    fn the_active_states_are_the_registrys_own_tokens() {
+        assert_eq!(
+            active_fleet_states(),
+            ["spawning", "running", "awaiting_input", "idle"]
+        );
     }
 }

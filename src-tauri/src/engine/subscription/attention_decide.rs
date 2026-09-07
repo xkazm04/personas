@@ -264,6 +264,15 @@ pub(crate) struct DecisionContext {
     /// executor immediately before the call, never at plan time: a figure
     /// measured minutes earlier is not capacity, it is a guess.
     pub free_capacity: usize,
+    /// This persona's own executions running right now, out of the live
+    /// tracker. Printed beside [`Self::free_capacity`] so the persona is told
+    /// WHY it has the capacity it has.
+    pub running_executions: usize,
+    /// This persona's own fleet workers still holding a slot. The half that was
+    /// invisible until 2026-09-07 — a code charter dispatches a headless fleet
+    /// session and no execution, so a persona reading only the tracker saw two
+    /// workers in the fleet grid and "2 free" in its own prompt.
+    pub running_fleet: usize,
     /// The wall clock at gather time, RFC-3339 UTC. Carried rather than read
     /// inside the renderer so [`render_decision_prompt`] stays a pure function
     /// of its context — and so a prompt in a ledger can be reproduced exactly.
@@ -906,7 +915,8 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          re-run what you just ran, and do not starve what you keep deferring.\n",
     );
     s.push_str(&format!(
-        "- CAPACITY: you may dispatch AT MOST {} charter(s) this wake ({}). \
+        "- CAPACITY: you may dispatch AT MOST {} charter(s) this wake ({}; {} \
+         execution(s) and {} fleet worker(s) of yours are running). \
          Naming more is not an error — anything past the limit is dropped, \
          highest priority first — but it wastes the slot you actually have. \
          Dispatching FEWER, or none, is a legitimate answer.\n",
@@ -915,7 +925,13 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             format!("your parallel capacity is {}", ctx.max_concurrent)
         } else {
             "your parallel capacity is unlimited; this is the engine's free slots".to_string()
-        }
+        },
+        // The breakdown, not just the total: a persona that is told only "1
+        // free" has to guess which of its workers is holding the other slot,
+        // and until 2026-09-07 the honest answer was that the engine did not
+        // know either — a code charter's fleet worker was in nobody's count.
+        ctx.running_executions,
+        ctx.running_fleet,
     ));
     s.push_str(
         "- IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
@@ -1270,6 +1286,25 @@ mod tests {
         let plan = parse_decision(raw, &roster(), 0).expect("parses");
         assert!(plan.dispatch.is_empty());
         assert_eq!(plan.trimmed_for_capacity, 3);
+    }
+
+    /// The operator's rule is "at most 2 parallel sessions per project", and a
+    /// wake with one fleet worker already in the air has ONE slot left — no
+    /// matter how many charters the model names. The dispatch is bounded twice
+    /// (the prompt states the number, the parser enforces it) and this is the
+    /// half that does not depend on the model reading its instructions.
+    #[test]
+    fn a_plan_naming_four_charters_dispatches_one_when_a_fleet_worker_holds_a_slot() {
+        // max_concurrent = 2, one active fleet worker, no executions
+        // → `decide_capacity_from` yields free = 1.
+        let free_capacity = 1;
+        let raw = "{\"dispatch\":[{\"charterId\":\"r1\"},{\"charterId\":\"r2\"},\
+                   {\"charterId\":\"r3\"},{\"charterId\":\"r4\"}]}";
+        let plan = parse_decision(raw, &roster(), free_capacity).expect("parses");
+        assert_eq!(plan.dispatch.len(), 1, "one slot, one dispatch");
+        assert_eq!(plan.trimmed_for_capacity, 3);
+        // …and the one it keeps is the highest priority named, not the first.
+        assert_eq!(plan.dispatch[0].charter_id, "r2", "priority 1");
     }
 
     // -- parse: priority ordering -------------------------------------------
@@ -1694,6 +1729,8 @@ mod tests {
             persona_name: "Ascent Master".into(),
             max_concurrent: 3,
             free_capacity: 2,
+            running_executions: 0,
+            running_fleet: 1,
             now_utc: "2026-09-07T02:30:00+00:00".into(),
             // Through the one door for model ids — a dated literal here would
             // rot the fixture the day the id retires.
@@ -1884,6 +1921,40 @@ mod tests {
         assert!(p.contains("\"dispatch\""));
         assert!(p.contains("\"defer\""));
         assert!(p.contains(&MAX_NOTE_CHARS.to_string()));
+    }
+
+    /// The CAPACITY line must show the persona WHERE its missing slots went.
+    /// Before 2026-09-07 a fleet worker was in nobody's count, so a persona
+    /// could read "2 free" while two of its own workers were on screen in the
+    /// fleet grid — and the only thing keeping it to its limit was its own
+    /// reading of the ledger.
+    #[test]
+    fn prompt_breaks_capacity_down_into_executions_and_fleet_workers() {
+        let mut ctx = ctx_fixture();
+        ctx.max_concurrent = 2;
+        ctx.free_capacity = 1;
+        ctx.running_executions = 0;
+        ctx.running_fleet = 1;
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains(
+                "AT MOST 1 charter(s) this wake (your parallel capacity is 2; 0 \
+                 execution(s) and 1 fleet worker(s) of yours are running)"
+            ),
+            "{p}"
+        );
+
+        // Both halves are printed, including an idle one — "0 of each" is the
+        // statement that nothing is holding a slot, which is not the same as
+        // saying nothing.
+        let mut ctx = ctx_fixture();
+        ctx.running_executions = 2;
+        ctx.running_fleet = 0;
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("2 execution(s) and 0 fleet worker(s) of yours are running"),
+            "{p}"
+        );
     }
 
     #[test]

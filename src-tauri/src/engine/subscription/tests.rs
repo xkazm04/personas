@@ -86,6 +86,132 @@ fn test_high_severity_auto_approvable_classifier() {
     ));
 }
 
+/// An App Master's operator ask must survive auto-triage AT ANY SEVERITY.
+///
+/// Measured 2026-09-07: the cycle-5 ask "App Master personas-web: Triage the 21
+/// pending ideas…" was filed at `info` severity, fell past the 60-minute grace
+/// window into the low/medium branch, and was auto-APPROVED with the
+/// unattended-policy note — after which the approve path applied
+/// `IdeaVerdict::Accept` to the ideas it named. The one row in the system that
+/// exists *because a human must decide it* was decided by a policy.
+///
+/// The seeding goes through `ask_to_review` + `manual_reviews::create` — the
+/// exact pair `attention::raise_asks` uses — so this fails if the ask's own
+/// shape ever drifts away from what the exclusion keys on.
+#[tokio::test]
+async fn auto_triage_never_answers_an_app_masters_operator_ask(
+) -> Result<(), crate::error::AppError> {
+    use crate::db::models::CreateManualReviewInput;
+    use crate::db::repos::communication::manual_reviews;
+    use rusqlite::params;
+
+    let pool = crate::db::init_test_db()?;
+    // The tick's own gate: autonomy ON, which implies review triage.
+    crate::db::repos::core::settings::set(
+        &pool,
+        crate::db::settings_keys::COMPANION_AUTONOMOUS_MODE,
+        "true",
+    )?;
+
+    // A review is FK-anchored to an execution, so the persona needs a run.
+    // The checkout PROPAGATES rather than unwrapping: a fixture that panics on
+    // acquire hides the same saturation the product would.
+    pool.get()?.execute(
+        "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+         VALUES ('p1', 'p1', 'sp', 1, datetime('now'), datetime('now'))",
+        params![],
+    )?;
+    let exec =
+        crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+
+    // The ask, built and filed exactly the way `raise_asks` builds and files it.
+    let ask = attention_decide::OperatorAsk {
+        kind: attention_decide::ASK_ACCEPT_IDEAS.to_string(),
+        title: "Triage the 21 pending ideas in-app".to_string(),
+        why: "The delivery charter is starved until the backlog is triaged.".to_string(),
+        ..Default::default()
+    };
+    let review =
+        attention_decide::ask_to_review(&ask, "p1", Some("proj_1"), Some("personas-web"), &[]);
+    assert_eq!(
+        review.severity, "info",
+        "the severity the incident was filed at"
+    );
+    let ask_row = manual_reviews::create(
+        &pool,
+        CreateManualReviewInput {
+            execution_id: exec.id.clone(),
+            persona_id: "p1".into(),
+            title: review.title,
+            description: Some(review.description),
+            severity: Some(review.severity),
+            context_data: Some(review.context_data),
+            suggested_actions: Some(review.suggested_actions),
+            use_case_id: None,
+            assignment_id: None,
+            step_id: None,
+        },
+    )?;
+
+    // The control: an ordinary routine review of the same persona and age, which
+    // the policy SHOULD approve. Without it a green test could mean the tick
+    // simply did nothing.
+    let routine = manual_reviews::create(
+        &pool,
+        CreateManualReviewInput {
+            execution_id: exec.id.clone(),
+            persona_id: "p1".into(),
+            title: "Check the output".into(),
+            description: None,
+            severity: Some("low".into()),
+            context_data: None,
+            suggested_actions: None,
+            use_case_id: None,
+            assignment_id: None,
+            step_id: None,
+        },
+    )?;
+
+    // Both past the 60-minute grace window.
+    pool.get()?.execute(
+        "UPDATE persona_manual_reviews SET created_at = datetime('now','-1 day')",
+        params![],
+    )?;
+
+    ManualReviewAutoTriageSubscription { pool: pool.clone() }
+        .tick()
+        .await;
+
+    let still_pending: Vec<String> = manual_reviews::get_by_persona(&pool, "p1", Some("pending"))?
+        .into_iter()
+        .map(|r| r.id)
+        .collect();
+    assert!(
+        still_pending.contains(&ask_row.id),
+        "the operator ask was auto-answered: {still_pending:?}"
+    );
+    assert!(
+        !still_pending.contains(&routine.id),
+        "the routine review should have been auto-approved — otherwise this test \
+         proves nothing about the exclusion"
+    );
+    Ok(())
+}
+
+/// The exclusion keys on the ask's SOURCE, not on its severity or its text.
+#[test]
+fn operator_ask_is_recognised_by_its_source_marker() {
+    assert!(is_operator_ask(Some(
+        r#"{"source":"app_master_ask","kind":"accept_ideas"}"#
+    )));
+    // The Director's own marker is a different row and stays triageable.
+    assert!(!is_operator_ask(Some(r#"{"source":"director"}"#)));
+    assert!(!is_operator_ask(Some(r#"{"kind":"accept_ideas"}"#)));
+    assert!(!is_operator_ask(Some("not json")));
+    assert!(!is_operator_ask(Some("")));
+    assert!(!is_operator_ask(None));
+}
+
 #[test]
 fn test_subscription_trait_name() {
     let count = Arc::new(AtomicU32::new(0));
