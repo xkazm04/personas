@@ -4,6 +4,14 @@ Deterministic from a seed. Natural-language variety comes from templates; a loca
 may paraphrase `say` events (cached) but the facts, their lifecycles and the probes' gold
 never pass through a model. Probes are derived from the world, never from observed
 queries, so the fixture set cannot feed on itself.
+
+One class is deliberately exempt from the event stream. `held_out` facts are true of
+the user and are NEVER emitted as events, so no capture-based design can acquire them.
+They exist to measure what the rest of the scenario cannot: every other probe asks about
+knowledge the store was told, so no arm can lose points for having no way to acquire
+knowledge nobody transacted. They are opt-in (`--held-out N`), drawn from a separate RNG
+and appended after all other generation, so a world with `held_out=0` is byte-identical
+to WORLD_VERSION 1 and every published number stays comparable.
 """
 from __future__ import annotations
 
@@ -36,6 +44,44 @@ USER_KEYS = {
     "coffee": ["flat white", "espresso", "filter", "none, tea"],
     "dog": ["Rex", "Luna", "Bobik", "Mia", "no dog"],
 }
+# True of the user, and never said out loud to the agent. Goals, constraints, the
+# alternative that was rejected, and why a convention exists are classes that generate
+# no event by nature: nobody transacts them, they are simply the case. A capture-only
+# design must answer these wrongly or not at all.
+HELD_OUT_QUESTIONS = {
+    "quarter-goal": "What is my main goal for this quarter?",
+    "hard-constraint": "What is the hardest constraint I am working under right now?",
+    "rejected-alternative": "Which option did we consider and reject, and why?",
+    "convention-rationale": "Why do our commit and review conventions work the way they do?",
+}
+
+UNWITNESSED = {
+    "quarter-goal": [
+        "ship the mobile client before the end of the quarter",
+        "cut the median build time in half",
+        "get off the legacy billing provider",
+        "hire a second backend engineer",
+    ],
+    "hard-constraint": [
+        "no customer data may leave the Frankfurt region",
+        "the on-call rota is one person, so nothing may page at night",
+        "the annual cloud budget is fixed and already 80 percent spent",
+        "the audit in November freezes all schema changes",
+    ],
+    "rejected-alternative": [
+        "Kubernetes, rejected because the ops budget is one person",
+        "a microservice split, rejected because the team is four people",
+        "a managed search product, rejected on price at this volume",
+        "rewriting the client in Swift, rejected as a year of work",
+    ],
+    "convention-rationale": [
+        "commit messages lead with the ticket id because release notes are generated from them",
+        "migrations are append-only because the replica cannot be rebuilt",
+        "we pin exact versions because a transitive bump broke production once",
+        "reviews need two approvals because the last incident shipped on one",
+    ],
+}
+
 PREFERENCES = {
     "reply-length": ["short answers", "detailed answers", "bullet points"],
     "tone": ["formal", "casual", "blunt"],
@@ -117,8 +163,13 @@ def _h(scope: str) -> str:
 
 
 class World:
-    def __init__(self, seed: int, days: int = 365, density: float = 10.0, projects: int = 5):
+    def __init__(self, seed: int, days: int = 365, density: float = 10.0, projects: int = 5,
+                 held_out: int = 0):
         self.rng = random.Random(seed)
+        # Held-out generation draws from its own stream so that enabling it cannot
+        # perturb a single draw of the main one: same seed, same world, plus a class.
+        self.held_out = held_out
+        self.held_rng = random.Random(seed ^ 0x48454C44)
         self.seed, self.days, self.density = seed, days, density
         self.user = self.rng.choice(FIRST_NAMES)
         self.projects = self.rng.sample(PROJECT_STEMS, projects)
@@ -225,6 +276,9 @@ class World:
                 cur.valid_to = day
                 expired += 1
                 self._emit(day, "say", p, self._say("expire", p, key, ""), [cur.id])
+        # 6b. held-out facts: true, and never emitted as an event. Appended last so
+        # every fact id above is unchanged when this is off.
+        self._make_held_out()
         # 7. probes
         self._make_probes(rule_days, proc)
         self.events.sort(key=lambda e: (e.day, e.minute))
@@ -299,6 +353,38 @@ class World:
         else:
             self._emit(day, "outcome", p, f"The {kind} for project {p} went fine.", task_kind=kind, failed=False)
 
+    def _make_held_out(self):
+        """Facts true of the user that no event ever carries.
+
+        The inverse of the `distractor` class: a distractor asks about something that is
+        not the case and is graded UNKNOWN, so a store is right to disclaim it. A
+        held-out fact IS the case and the store was simply never told, so UNKNOWN is
+        wrong. Only an acquisition path that asks the user can score here.
+        """
+        if self.held_out <= 0:
+            return
+        rng = self.held_rng
+        keys = list(UNWITNESSED)
+        for i in range(self.held_out):
+            key = keys[i % len(keys)]
+            value = rng.choice(UNWITNESSED[key])
+            day = rng.randint(0, max(1, self.days // 3))
+            self._new_fact(scope="user", key=key, value=value, valid_from=day, kind="held-out")
+
+    def _held_out_probes(self):
+        if self.held_out <= 0:
+            return
+        rng = self.held_rng
+        N = self.days
+        for f in [x for x in self.facts if x.kind == "held-out"]:
+            pd = min(N - 1, f.valid_from + rng.choice([30, 120, 240]))
+            self._pid += 1
+            self.probes.append(Probe(
+                id=f"p{self._pid:04d}", day=pd, minute=rng.randint(9 * 60, 17 * 60),
+                cls="held-out", scope="user", question=HELD_OUT_QUESTIONS[f.key],
+                gold=f.value, wrong=[], form=None, fact_ids=[f.id],
+                history_days=max(0, pd - f.valid_from)))
+
     def _make_probes(self, rule_days: dict, proc: dict):
         rng = self.rng
         N = self.days
@@ -366,6 +452,7 @@ class World:
             key = rng.choice(["monitoring stack", "on-call rota", "domain registrar", "license", "design tool"])
             pd = rng.randint(min(30, N - 2), N - 1)
             self._probe(pd, "distractor", p, f"What is the {key} for project {p}?", "UNKNOWN", newest_day=0)
+        self._held_out_probes()
 
     def _question(self, scope: str, key: str) -> str:
         kh = HUMAN_KEYS.get(key, key)
@@ -401,7 +488,9 @@ class World:
     def save(self, out: Path):
         out.mkdir(parents=True, exist_ok=True)
         (out / "world.json").write_text(json.dumps({
-            "version": WORLD_VERSION, "seed": self.seed, "days": self.days, "density": self.density,
+            "version": "2" if self.held_out else WORLD_VERSION,
+            "seed": self.seed, "days": self.days, "density": self.density,
+            "held_out": self.held_out,
             "user": self.user, "projects": self.projects, "scopes": ["user"] + self.projects,
         }, indent=1), encoding="utf-8")
         (out / "facts.json").write_text(json.dumps(to_json(self.facts), indent=1), encoding="utf-8")
