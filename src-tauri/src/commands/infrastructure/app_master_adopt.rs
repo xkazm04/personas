@@ -516,7 +516,10 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
             &p.id,
             UpdatePersonaInput {
                 name: Some(desired_name.clone()),
-                enabled: Some(enabled),
+                // A re-adoption refreshes charters; it does not switch a
+                // running persona off. `enabled` moves only when the request
+                // says so.
+                enabled: input.enabled,
                 max_concurrent: Some(max_concurrent),
                 model_profile: Some(Some(model_profile.clone())),
                 design_context: Some(Some(design_context_with_pin(

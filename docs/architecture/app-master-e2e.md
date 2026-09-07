@@ -150,8 +150,8 @@ seeded lazily on first read, not by adoption.
 |---|---|---|---|
 | T1 | Draft baseline for the corpus + Rust/TS readers + bindings | builder (Opus) | done: 111 recipes draft, `version` optional, non-draft requires one |
 | T2 | Two new recipes: `accepted-idea-delivery`, `project-kpi-stewardship` (v3, draft) | author (Opus) | done: `scripts/templates/_app_master/`, merged into the bundle under virtual owner `app-master` |
-| T3 | `ResponsibilitySpec.priority`, `pacing`; `set_persona_enabled` command; trigger fire path reads `responsibility_id` | builder (Opus) | pending |
-| T4 | Decision lane in the attention loop (Opus prompt, bounded JSON plan, capacity-aware dispatch) | builder (Opus) | pending |
+| T3 | `ResponsibilitySpec.priority`, `pacing`; `set_persona_enabled` command; trigger fire path reads `responsibility_id` | builder (Opus) | done: wake carrier = settings row `attention_wake_requests`; `responsibility_id` had never been read into Rust (live defect closed); merged `bf54ddc0c` |
+| T4 | Decision lane in the attention loop (Opus prompt, bounded JSON plan, capacity-aware dispatch) | builder (Opus) | done: lane `decide` replaces only the `advance` rung for App Masters; code charters run as fleet sessions in an isolated authoring worktree (`execute_persona_inner` takes no cwd); `MAX_DECIDE_DISPATCH = 4`; unusable decision falls back to least-recently-advanced |
 | T5 | Headless adoption route on the dev-tools bridge (idempotent) | builder (Opus) | done: `POST /dev-tools/app-master/adopt`, `GET /dev-tools/app-master/{project}`, command `adopt_app_master`; merged `535fc1552` + fix `24d7bc20f` |
 | T6 | `scripts/e2e/app-master-cycle.mjs` + evidence report | Director | written; runs once T3-T5 merge |
 

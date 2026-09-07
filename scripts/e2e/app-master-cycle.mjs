@@ -123,14 +123,14 @@ async function setEnabled(personaIds, enabled) {
   await bridge.health();
   for (const id of personaIds) {
     const r = await bridge.invoke('set_persona_enabled', { personaId: id, enabled });
-    console.log(`set_persona_enabled ${id} -> ${enabled}: ${JSON.stringify(r).slice(0, 120)}`);
+    console.log(`set_persona_enabled ${id} -> ${enabled}: ${String(JSON.stringify(r) ?? r).slice(0, 120)}`);
   }
 }
 
 async function setAttentionLoop(on) {
   await bridge.health();
   const r = await bridge.invoke('set_app_setting', { key: 'autonomous_attention_loop', value: on ? 'true' : 'false' });
-  console.log(`autonomous_attention_loop=${on}: ${JSON.stringify(r).slice(0, 120)}`);
+  console.log(`autonomous_attention_loop=${on}: ${String(JSON.stringify(r) ?? r).slice(0, 120)}`);
 }
 
 function snapshot(projects, personaIds) {
@@ -186,7 +186,7 @@ async function main() {
 
   let adoption = null;
   let personaIds = [];
-  if (!flag('--report-only') && !flag('--disable')) {
+  if (!flag('--report-only') && !flag('--disable') && !flag('--no-adopt')) {
     adoption = await adopt(h, projects);
     personaIds = adoption.map((a) => a.personaId);
   } else {
