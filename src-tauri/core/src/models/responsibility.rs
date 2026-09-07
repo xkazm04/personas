@@ -220,9 +220,8 @@ pub struct ResponsibilityErrorPolicy {
 /// stamps can, and they travel with the charter through export/import like the
 /// rest of the spec.
 ///
-/// All three are RFC-3339 strings / free prose written by the loop, never by
-/// the operator — treat them as the loop's own bookkeeping, not as authored
-/// configuration.
+/// Every field is written by the loop, never by the operator — treat them as
+/// the loop's own bookkeeping, not as authored configuration.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -243,6 +242,17 @@ pub struct ResponsibilityPacing {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub coverage_note: Option<String>,
+    /// How long the persona itself chose to sleep before its next wake, in
+    /// minutes — the decision lane's answer to *when* as well as *what*.
+    ///
+    /// Written on every charter the decision considered (it is the persona's
+    /// choice, not the charter's), bounded at the parse to 10..=240, and read
+    /// back by the admission ladder's interval floor. `None` means the persona
+    /// said nothing this wake, and the previous choice — or the declared
+    /// cadence — stands; it never means "as fast as possible".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub next_wake_minutes: Option<u32>,
 }
 
 /// The runtime envelope a charter carries beyond its governance fields — the
@@ -532,4 +542,43 @@ pub struct UpdatePersonaResponsibilityInput {
     pub connectors: Option<Vec<String>>,
     pub procedure: Option<String>,
     pub spec: Option<ResponsibilitySpec>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The pacing block is a JSON column the loop merges into, so its wire
+    /// shape is load-bearing: camelCase keys, and an absent field that stays
+    /// absent rather than serializing a `null` the next merge would read back
+    /// as "the persona chose nothing" over a value it did choose.
+    #[test]
+    fn pacing_round_trips_its_self_paced_wake_in_camel_case() {
+        let pacing = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T10:00:00+00:00".into()),
+            next_wake_minutes: Some(45),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&pacing).expect("serializes");
+        assert!(json.contains("\"nextWakeMinutes\":45"), "{json}");
+        assert!(
+            !json.contains("coverageNote") && !json.contains("lastDispatchedAt"),
+            "an absent field is absent, not null: {json}"
+        );
+        assert_eq!(
+            serde_json::from_str::<ResponsibilityPacing>(&json).expect("parses"),
+            pacing
+        );
+    }
+
+    /// A pacing block written before self-pacing existed still reads, with the
+    /// new field absent rather than the whole spec failing to parse.
+    #[test]
+    fn pacing_without_a_wake_choice_still_parses() {
+        let legacy = "{\"lastDecidedAt\":\"2026-09-06T10:00:00+00:00\",\
+                      \"coverageNote\":\"docs deferred twice\"}";
+        let pacing: ResponsibilityPacing = serde_json::from_str(legacy).expect("parses");
+        assert_eq!(pacing.next_wake_minutes, None);
+        assert_eq!(pacing.coverage_note.as_deref(), Some("docs deferred twice"));
+    }
 }

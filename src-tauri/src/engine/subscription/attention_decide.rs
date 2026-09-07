@@ -36,6 +36,19 @@ pub(crate) const MAX_NOTE_CHARS: usize = 300;
 /// stated; the titles are a sample, and the prompt says so.
 pub(crate) const MAX_NAMED_IDEAS: usize = 10;
 
+/// Floor on the sleep a plan may choose for itself, in minutes.
+///
+/// A persona that asks to wake in one minute is not pacing itself, it is
+/// spinning: every wake costs a model call, and the work it dispatched cannot
+/// have finished. The bound is a CLAMP rather than a rejection — a plan whose
+/// only fault is an over-eager number is still a plan, and throwing away its
+/// dispatch list over its sleep would be a worse answer than pacing it.
+pub(crate) const MIN_NEXT_WAKE_MINUTES: u32 = 10;
+/// Ceiling on the same choice. Four hours is already long enough that the
+/// operator would rather switch the persona off than wait; beyond it the
+/// persona has effectively resigned without saying so.
+pub(crate) const MAX_NEXT_WAKE_MINUTES: u32 = 240;
+
 // ── Inputs ────────────────────────────────────────────────────────────────
 
 /// How far the charter's LAST dispatch actually got.
@@ -163,6 +176,12 @@ pub(crate) struct DecisionContext {
     /// executor immediately before the call, never at plan time: a figure
     /// measured minutes earlier is not capacity, it is a guess.
     pub free_capacity: usize,
+    /// The wall clock at gather time, RFC-3339 UTC. Carried rather than read
+    /// inside the renderer so [`render_decision_prompt`] stays a pure function
+    /// of its context — and so a prompt in a ledger can be reproduced exactly.
+    /// Empty means the clock was not read; the prompt then prints no time at
+    /// all rather than a fabricated one.
+    pub now_utc: String,
     pub charters: Vec<DecisionCharter>,
     pub projects: Vec<ProjectSnapshot>,
 }
@@ -194,6 +213,10 @@ pub(crate) struct DecisionPlan {
     pub defer: Vec<DecisionDeferral>,
     /// The plan's message to its own next wake.
     pub note: Option<String>,
+    /// How long the persona chose to sleep before waking again, in minutes,
+    /// already clamped to [`MIN_NEXT_WAKE_MINUTES`]..=[`MAX_NEXT_WAKE_MINUTES`].
+    /// `None` = the plan said nothing, so the previous choice stands.
+    pub next_wake_minutes: Option<u32>,
     /// Charter ids the model named that do not exist on this persona. Kept
     /// rather than silently discarded: a plan that invents ids is a plan that
     /// did not read the roster, and the ledger should show that it happened.
@@ -256,6 +279,12 @@ struct WirePlan {
     defer: Vec<WireItem>,
     #[serde(default)]
     note: Option<String>,
+    /// Deliberately `serde_json::Value` rather than `Option<u32>`: a model that
+    /// answers `"30 minutes"` or `22.5` must lose only its sleep choice, not
+    /// the whole plan. A typed field would make the entire reply Malformed and
+    /// send a perfectly good dispatch list to the deterministic fallback.
+    #[serde(rename = "nextWakeMinutes", alias = "next_wake_minutes", default)]
+    next_wake_minutes: Option<serde_json::Value>,
 }
 
 // ── Parse ─────────────────────────────────────────────────────────────────
@@ -362,13 +391,62 @@ pub(crate) fn parse_decision(
         .map(|n| bound(n.trim(), MAX_NOTE_CHARS))
         .filter(|n| !n.is_empty());
 
+    let next_wake_minutes = wire.next_wake_minutes.as_ref().and_then(clamp_next_wake);
+
     Ok(DecisionPlan {
         dispatch,
         defer,
         note,
+        next_wake_minutes,
         dropped_unknown,
         trimmed_for_capacity,
     })
+}
+
+/// Read the plan's sleep choice, clamped into the bounds the prompt states.
+///
+/// Anything that is not a JSON integer — a string, a float, `null`, an object —
+/// is IGNORED (returns `None`, "the plan said nothing"), never coerced: a model
+/// that answered `"soon"` did not choose 0 minutes, and a value invented here
+/// would be indistinguishable downstream from one the persona meant.
+fn clamp_next_wake(raw: &serde_json::Value) -> Option<u32> {
+    let n = raw.as_i64()?;
+    Some(n.clamp(
+        i64::from(MIN_NEXT_WAKE_MINUTES),
+        i64::from(MAX_NEXT_WAKE_MINUTES),
+    ) as u32)
+}
+
+/// The persona's most recent sleep choice, across the charters it holds.
+///
+/// `write_back_pacing` stamps the SAME value on every charter the decision
+/// considered — it is the persona's choice, not the charter's — so in practice
+/// they agree. They can still disagree after a charter is added, retired, or
+/// edited between wakes, and "newest" is the only defensible tiebreak: the
+/// stamp carrying the latest `lastDecidedAt` is the one the persona meant last.
+/// A charter with a choice but no stamp sorts oldest rather than being dropped.
+///
+/// Takes `(last_decided_at, next_wake_minutes)` pairs instead of a charter type
+/// so the admission ladder (which holds `PersonaResponsibility`) and the prompt
+/// (which holds [`DecisionCharter`]) read the same rule from one place.
+pub(crate) fn newest_next_wake_minutes<'a>(
+    pacings: impl IntoIterator<Item = (Option<&'a str>, Option<u32>)>,
+) -> Option<u32> {
+    pacings
+        .into_iter()
+        .filter_map(|(decided_at, minutes)| minutes.map(|m| (decided_at.unwrap_or(""), m)))
+        .max_by(|a, b| a.0.cmp(b.0))
+        .map(|(_, m)| m)
+}
+
+/// The same read over a decision context's own charters.
+pub(crate) fn context_next_wake_minutes(charters: &[DecisionCharter]) -> Option<u32> {
+    newest_next_wake_minutes(charters.iter().map(|c| {
+        (
+            c.pacing.as_ref().and_then(|p| p.last_decided_at.as_deref()),
+            c.pacing.as_ref().and_then(|p| p.next_wake_minutes),
+        )
+    }))
 }
 
 /// The recipe whose runs deliver ONE accepted backlog idea. A dispatch of this
@@ -446,6 +524,27 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ctx.persona_name
     ));
 
+    // --- Where in time this wake sits ---
+    //
+    // Every other instant in this prompt is an absolute timestamp, so without
+    // a "now" the persona cannot tell a dispatch that started four minutes ago
+    // from one that started four hours ago — and elapsed time is exactly what
+    // its own pacing choice is about. Printed only when the clock was actually
+    // read (the loop's own rule about figures it did not measure).
+    let now = ctx.now_utc.trim();
+    let chosen_sleep = context_next_wake_minutes(&ctx.charters);
+    if !now.is_empty() {
+        s.push_str(&format!("RIGHT NOW (UTC): {now}\n"));
+    }
+    if let Some(minutes) = chosen_sleep {
+        s.push_str(&format!(
+            "You chose to sleep {minutes} minutes after your last wake.\n"
+        ));
+    }
+    if !now.is_empty() || chosen_sleep.is_some() {
+        s.push('\n');
+    }
+
     // --- The rules, before the data ---
     s.push_str("HOW TO DECIDE\n");
     s.push_str(
@@ -477,6 +576,15 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          The same goes for a project's `in flight` tasks: those are already under way, \
          so do not re-dispatch them.\n",
     );
+    s.push_str(&format!(
+        "- YOUR NEXT WAKE: `nextWakeMinutes` chooses how long you sleep before \
+         you are asked this question again. Sleep SHORT ({MIN_NEXT_WAKE_MINUTES}-20) \
+         when you dispatched work you must check on, or when work is waiting that \
+         you could not start this wake. Sleep LONG (60-{MAX_NEXT_WAKE_MINUTES}) \
+         when everything you own is already in flight, or nothing is due yet. \
+         Omit the field to keep your current pacing. Anything outside \
+         {MIN_NEXT_WAKE_MINUTES}-{MAX_NEXT_WAKE_MINUTES} is pulled back into it.\n"
+    ));
     s.push_str(
         "- EVERY charter must appear exactly once, in `dispatch` or in `defer`. \
          A deferral with a reason is a decision; silence is not.\n\n",
@@ -628,7 +736,9 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          \"brief\":\"what specifically to do\"}}],\
          \"defer\":[{{\"charterId\":\"...\",\"reason\":\"why it waits\"}}],\
          \"note\":\"<what your next wake should know about coverage, \
-         at most {MAX_NOTE_CHARS} characters>\"}}\n\
+         at most {MAX_NOTE_CHARS} characters>\",\
+         \"nextWakeMinutes\":<integer {MIN_NEXT_WAKE_MINUTES}-{MAX_NEXT_WAKE_MINUTES}, \
+         or omit this field>}}\n\
          `dispatch` may be empty. Charter ids must be copied exactly from the \
          list above; an invented id is dropped.\n"
     ));
@@ -824,6 +934,112 @@ mod tests {
         );
     }
 
+    // -- parse: the plan's own next wake -----------------------------------
+
+    #[test]
+    fn parse_reads_and_clamps_the_plans_chosen_next_wake() {
+        let plan_for = |v: &str| {
+            parse_decision(
+                &format!("{{\"dispatch\":[{{\"charterId\":\"r1\"}}],\"nextWakeMinutes\":{v}}}"),
+                &roster(),
+                3,
+            )
+            .expect("parses")
+            .next_wake_minutes
+        };
+
+        // In range: taken as given.
+        assert_eq!(plan_for("15"), Some(15));
+        assert_eq!(plan_for("240"), Some(MAX_NEXT_WAKE_MINUTES));
+        assert_eq!(plan_for("10"), Some(MIN_NEXT_WAKE_MINUTES));
+
+        // Out of range: CLAMPED, never rejected — the dispatch list survives.
+        assert_eq!(plan_for("1"), Some(MIN_NEXT_WAKE_MINUTES));
+        assert_eq!(plan_for("0"), Some(MIN_NEXT_WAKE_MINUTES));
+        assert_eq!(plan_for("-30"), Some(MIN_NEXT_WAKE_MINUTES));
+        assert_eq!(plan_for("100000"), Some(MAX_NEXT_WAKE_MINUTES));
+
+        // The clamp never costs the plan its work.
+        let plan = parse_decision(
+            "{\"dispatch\":[{\"charterId\":\"r1\"}],\"nextWakeMinutes\":100000}",
+            &roster(),
+            3,
+        )
+        .expect("parses");
+        assert_eq!(plan.dispatch.len(), 1, "a silly sleep is not a bad plan");
+
+        // snake_case is accepted here too, same as `charter_id`.
+        assert_eq!(
+            parse_decision("{\"dispatch\":[],\"next_wake_minutes\":90}", &roster(), 3)
+                .expect("parses")
+                .next_wake_minutes,
+            Some(90)
+        );
+    }
+
+    #[test]
+    fn parse_ignores_a_next_wake_that_is_not_an_integer() {
+        for v in [
+            "\"30 minutes\"",
+            "\"30\"",
+            "22.5",
+            "null",
+            "{\"minutes\":30}",
+            "[30]",
+            "true",
+        ] {
+            let plan = parse_decision(
+                &format!("{{\"dispatch\":[{{\"charterId\":\"r1\"}}],\"nextWakeMinutes\":{v}}}"),
+                &roster(),
+                3,
+            )
+            .expect("a bad sleep value must not cost the plan its dispatch");
+            assert_eq!(
+                plan.next_wake_minutes, None,
+                "{v} is not a choice — the previous pacing stands"
+            );
+            assert_eq!(plan.dispatch.len(), 1, "for {v}");
+        }
+
+        // An absent field is the same: silence, not zero.
+        assert_eq!(
+            parse_decision("{\"dispatch\":[]}", &roster(), 3)
+                .expect("parses")
+                .next_wake_minutes,
+            None
+        );
+    }
+
+    #[test]
+    fn newest_next_wake_takes_the_most_recent_stamp() {
+        // The newest stamp wins even when it is not the largest number.
+        assert_eq!(
+            newest_next_wake_minutes([
+                (Some("2026-09-06T10:00:00Z"), Some(200)),
+                (Some("2026-09-07T02:00:00Z"), Some(15)),
+                (Some("2026-09-05T10:00:00Z"), Some(90)),
+            ]),
+            Some(15)
+        );
+        // A charter carrying no choice at all is skipped, not counted as zero.
+        assert_eq!(
+            newest_next_wake_minutes([
+                (Some("2026-09-07T02:00:00Z"), None),
+                (Some("2026-09-06T10:00:00Z"), Some(60)),
+            ]),
+            Some(60)
+        );
+        // A choice with no stamp sorts oldest but is still an answer.
+        assert_eq!(newest_next_wake_minutes([(None, Some(45))]), Some(45));
+        assert_eq!(
+            newest_next_wake_minutes([(None, Some(45)), (Some("2026-01-01T00:00:00Z"), Some(20))]),
+            Some(20)
+        );
+        // Nothing anywhere is None, never a default.
+        assert_eq!(newest_next_wake_minutes([(Some("x"), None)]), None);
+        assert_eq!(newest_next_wake_minutes([]), None);
+    }
+
     #[test]
     fn bound_cuts_on_a_char_boundary() {
         // 4 multi-byte chars; cutting at 2 must not split a code point.
@@ -839,6 +1055,7 @@ mod tests {
             persona_name: "Ascent Master".into(),
             max_concurrent: 3,
             free_capacity: 2,
+            now_utc: "2026-09-07T02:30:00+00:00".into(),
             // Through the one door for model ids — a dated literal here would
             // rot the fixture the day the id retires.
             model: personas_core::model_ids::DEFAULT_STRONG.into(),
@@ -853,6 +1070,7 @@ mod tests {
                         last_decided_at: Some("2026-09-06T10:00:00Z".into()),
                         last_dispatched_at: None,
                         coverage_note: Some("docs charter deferred twice".into()),
+                        next_wake_minutes: Some(45),
                     }),
                     writes_code: true,
                     last_dispatch: Some(LastDispatch {
@@ -1040,6 +1258,51 @@ mod tests {
         assert!(p.contains("parallel capacity is unlimited"));
         assert!(p.contains("(none — dispatch nothing)"));
         assert!(p.contains("(no project state could be read this wake)"));
+    }
+
+    /// The persona cannot reason about elapsed time without a "now", and it
+    /// cannot pace itself without seeing what it last chose.
+    #[test]
+    fn prompt_shows_the_clock_and_the_sleep_the_persona_last_chose() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(
+            p.contains("RIGHT NOW (UTC): 2026-09-07T02:30:00+00:00"),
+            "{p}"
+        );
+        assert!(
+            p.contains("You chose to sleep 45 minutes after your last wake."),
+            "{p}"
+        );
+
+        // The rule and the field are both stated, with the same bounds the
+        // parser enforces.
+        assert!(p.contains("`nextWakeMinutes`"));
+        assert!(p.contains("Omit the field to keep your current pacing"));
+        assert!(
+            p.contains("\"nextWakeMinutes\""),
+            "the JSON skeleton carries it"
+        );
+        assert!(p.contains(&MIN_NEXT_WAKE_MINUTES.to_string()));
+        assert!(p.contains(&MAX_NEXT_WAKE_MINUTES.to_string()));
+    }
+
+    #[test]
+    fn prompt_prints_no_clock_and_no_sleep_it_was_not_given() {
+        let mut ctx = ctx_fixture();
+        ctx.now_utc = String::new();
+        for c in &mut ctx.charters {
+            if let Some(p) = c.pacing.as_mut() {
+                p.next_wake_minutes = None;
+            }
+        }
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("RIGHT NOW"), "an unread clock prints nothing");
+        assert!(
+            !p.contains("You chose to sleep"),
+            "no previous choice is not a choice of zero"
+        );
+        // The RULE still stands — it is what asks for the next one.
+        assert!(p.contains("YOUR NEXT WAKE"));
     }
 
     #[test]

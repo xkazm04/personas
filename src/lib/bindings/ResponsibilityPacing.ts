@@ -12,9 +12,8 @@
  * stamps can, and they travel with the charter through export/import like the
  * rest of the spec.
  *
- * All three are RFC-3339 strings / free prose written by the loop, never by
- * the operator — treat them as the loop's own bookkeeping, not as authored
- * configuration.
+ * Every field is written by the loop, never by the operator — treat them as
+ * the loop's own bookkeeping, not as authored configuration.
  */
 export type ResponsibilityPacing = { 
 /**
@@ -32,4 +31,15 @@ lastDispatchedAt?: string,
  * parse). Rendered back into the next decision prompt so coverage is a
  * memory rather than a fresh guess each tick.
  */
-coverageNote?: string, };
+coverageNote?: string, 
+/**
+ * How long the persona itself chose to sleep before its next wake, in
+ * minutes — the decision lane's answer to *when* as well as *what*.
+ *
+ * Written on every charter the decision considered (it is the persona's
+ * choice, not the charter's), bounded at the parse to 10..=240, and read
+ * back by the admission ladder's interval floor. `None` means the persona
+ * said nothing this wake, and the previous choice — or the declared
+ * cadence — stands; it never means "as fast as possible".
+ */
+nextWakeMinutes?: number, };

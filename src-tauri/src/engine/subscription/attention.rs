@@ -615,8 +615,11 @@ fn admit_persona(
         }
     }
 
-    // (b) interval floor: last completed pass + the most conservative
-    // declared interval (max over the persona's charters, default 30m).
+    // (b) interval floor: last completed pass + the interval the persona is
+    // owed. For an App Master that is its OWN last choice (`spec.pacing
+    // .nextWakeMinutes`, written by the decision lane); for everyone else, the
+    // most conservative declared interval (max over charters, default 30m).
+    // See [`admission_interval`].
     //
     // A pending WAKE request (the persona was just switched on) skips THIS
     // rung and only this one — the in-flight probe above already ran, and
@@ -627,23 +630,27 @@ fn admit_persona(
     // persona with no completed pass yet has no floor to spend it on, and a
     // wake that lingered until its first refusal was the reason cycle 1's
     // App Masters never reached their decision.
+    let (interval, self_paced) = admission_interval(charters);
     let woke = consume_wake_request(pool, persona_id);
     if woke {
         tracing::info!(
             persona_id,
+            interval_minutes = interval,
+            self_paced = self_paced.is_some(),
             "persona_attention: wake request admits the persona for one pass"
         );
     }
-    let interval = charters
-        .iter()
-        .filter_map(|c| c.cadence.interval_minutes)
-        .max()
-        .unwrap_or(DEFAULT_INTERVAL_MINUTES)
-        .max(1);
     if let Some(last) = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)? {
         let minutes = last.completed_at.as_deref().and_then(minutes_since_ts);
         if let Some(refusal) = interval_floor_refusal(minutes, interval) {
             if !woke {
+                tracing::info!(
+                    persona_id,
+                    interval_minutes = interval,
+                    self_paced = self_paced.is_some(),
+                    "persona_attention: interval floor refuses — {} minutes of sleep left",
+                    interval - minutes.unwrap_or(0)
+                );
                 return Ok(Admission::Refused(refusal));
             }
         }
@@ -1042,6 +1049,9 @@ fn build_decision_context(
         persona_name: persona.name.clone(),
         max_concurrent: persona.max_concurrent,
         free_capacity: 0,
+        // The clock is read HERE, not inside the renderer, so the prompt stays
+        // a pure function of the context it was handed.
+        now_utc: chrono::Utc::now().to_rfc3339(),
         model: decision_model(persona, charters),
         charters: decision_charters,
         projects,
@@ -1360,6 +1370,43 @@ fn minutes_since_ts(ts: &str) -> Option<i64> {
             None
         }
     }
+}
+
+/// How many minutes this persona must wait between passes, and whether that
+/// figure is its own choice.
+///
+/// Cycle 2 measured every App Master wake landing on the fixed 30-minute floor
+/// regardless of what it had in flight or how much work was waiting — a
+/// schedule wearing a judgment's clothes. A persona that decides WHAT to do
+/// every wake should also decide WHEN the next one is, so an App Master's
+/// floor is the newest `spec.pacing.next_wake_minutes` it wrote for itself.
+///
+/// The rule is scoped to App Masters on purpose: nothing else runs the
+/// decision lane, so nothing else ever writes that field, and a plain persona
+/// keeps the declared-cadence rule EXACTLY as it was. Returns the floor plus
+/// the self-paced choice when there was one, so the caller can say in the log
+/// which of the two rules produced the number.
+fn admission_interval(charters: &[&PersonaResponsibility]) -> (i64, Option<u32>) {
+    let self_paced = if is_app_master(charters) {
+        attention_decide::newest_next_wake_minutes(charters.iter().map(|c| {
+            (
+                c.spec
+                    .pacing
+                    .as_ref()
+                    .and_then(|p| p.last_decided_at.as_deref()),
+                c.spec.pacing.as_ref().and_then(|p| p.next_wake_minutes),
+            )
+        }))
+    } else {
+        None
+    };
+    let declared = charters
+        .iter()
+        .filter_map(|c| c.cadence.interval_minutes)
+        .max()
+        .unwrap_or(DEFAULT_INTERVAL_MINUTES);
+    let interval = self_paced.map(i64::from).unwrap_or(declared).max(1);
+    (interval, self_paced)
 }
 
 /// The interval-floor decision over a measured gap. `None` minutes (never
@@ -1803,7 +1850,20 @@ async fn run_decision_lane(
         .iter()
         .map(|i| i.charter_id.as_str())
         .collect();
-    write_back_pacing(&pool, &context, &dispatched_ids, plan.note.as_deref());
+    write_back_pacing(
+        &pool,
+        &context,
+        &dispatched_ids,
+        plan.note.as_deref(),
+        plan.next_wake_minutes,
+    );
+    if let Some(minutes) = plan.next_wake_minutes {
+        tracing::info!(
+            persona_id,
+            next_wake_minutes = minutes,
+            "persona_attention: the decision chose its own next wake"
+        );
+    }
 
     Ok(serde_json::json!({
         "lane": LANE_DECIDE,
@@ -1817,6 +1877,7 @@ async fn run_decision_lane(
         "droppedUnknown": plan.dropped_unknown,
         "trimmedForCapacity": plan.trimmed_for_capacity,
         "note": plan.note,
+        "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
     }))
 }
@@ -2208,12 +2269,16 @@ async fn dispatch_into_worktree(
 /// Best-effort per charter: one unwritable spec must not lose the rest. An
 /// absent plan note KEEPS the previous one rather than erasing it — a model
 /// that returned no note said nothing about coverage, which is not the same as
-/// saying there is nothing to remember.
+/// saying there is nothing to remember. `next_wake_minutes` follows the same
+/// rule and is written to EVERY considered charter with the same value: the
+/// sleep is the persona's choice, not the charter's, and the admission ladder
+/// reads it back from whichever charter carries the newest stamp.
 fn write_back_pacing(
     pool: &DbPool,
     context: &attention_decide::DecisionContext,
     dispatched_ids: &[&str],
     note: Option<&str>,
+    next_wake_minutes: Option<u32>,
 ) {
     let now = chrono::Utc::now().to_rfc3339();
     for charter in &context.charters {
@@ -2224,6 +2289,9 @@ fn write_back_pacing(
         }
         if let Some(note) = note {
             pacing.coverage_note = Some(note.to_string());
+        }
+        if let Some(minutes) = next_wake_minutes {
+            pacing.next_wake_minutes = Some(minutes);
         }
         match responsibilities::merge_spec_pacing(pool, &charter.id, &pacing) {
             Ok(true) => {}
@@ -2414,7 +2482,7 @@ mod attention_tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::models::{
-        ResponsibilityCadence, ResponsibilityObjective, ResponsibilityOutcome,
+        ResponsibilityCadence, ResponsibilityObjective, ResponsibilityOutcome, ResponsibilityPacing,
     };
     use crate::db::repos::core::responsibilities::CreateResponsibilityInput;
     use crate::db::settings_keys;
@@ -2473,6 +2541,52 @@ mod attention_tests {
         assert_eq!(interval_floor_refusal(Some(31), 30), None);
         // Never completed / unparseable → no floor.
         assert_eq!(interval_floor_refusal(None, 30), None);
+    }
+
+    /// The floor an App Master is owed is its OWN last choice; a persona that
+    /// never runs the decision lane keeps the declared-cadence rule untouched.
+    #[test]
+    fn admission_interval_follows_the_app_masters_own_pacing_and_nobody_elses() {
+        let paced = |id: &str, project: Option<&str>, minutes: Option<u32>, decided: &str| {
+            let mut c = charter_fixture(id);
+            c.project_id = project.map(str::to_string);
+            c.cadence.interval_minutes = Some(90);
+            c.spec.pacing = Some(ResponsibilityPacing {
+                last_decided_at: Some(decided.into()),
+                next_wake_minutes: minutes,
+                ..Default::default()
+            });
+            c
+        };
+
+        // App Master with a choice: the choice wins over its declared 90m.
+        let am = paced("r1", Some("proj_1"), Some(15), "2026-09-07T02:00:00Z");
+        assert_eq!(admission_interval(&[&am]), (15, Some(15)));
+
+        // Two charters disagreeing: the NEWEST stamp is the persona's answer.
+        let older = paced("r2", Some("proj_1"), Some(200), "2026-09-06T02:00:00Z");
+        assert_eq!(admission_interval(&[&older, &am]), (15, Some(15)));
+
+        // The SAME pacing on a persona holding no project charter changes
+        // nothing — the declared cadence still rules.
+        let plain = paced("r3", None, Some(15), "2026-09-07T02:00:00Z");
+        assert_eq!(
+            admission_interval(&[&plain]),
+            (90, None),
+            "a plain persona never runs the decision lane, so the field is not its choice"
+        );
+
+        // An App Master that has not chosen yet falls back to the same rule.
+        let unchosen = paced("r4", Some("proj_1"), None, "2026-09-07T02:00:00Z");
+        assert_eq!(admission_interval(&[&unchosen]), (90, None));
+
+        // …and with no declared cadence either, to the 30m default.
+        let mut bare = charter_fixture("r5");
+        bare.project_id = Some("proj_1".into());
+        assert_eq!(
+            admission_interval(&[&bare]),
+            (DEFAULT_INTERVAL_MINUTES, None)
+        );
     }
 
     #[test]
@@ -3206,6 +3320,118 @@ mod attention_tests {
         Ok(())
     }
 
+    /// Stamp a persona's own sleep choice onto one charter, the way the
+    /// decision lane's write-back does.
+    fn record_wake_choice(pool: &DbPool, charter_id: &str, minutes: u32) {
+        responsibilities::merge_spec_pacing(
+            pool,
+            charter_id,
+            &ResponsibilityPacing {
+                last_decided_at: Some(chrono::Utc::now().to_rfc3339()),
+                next_wake_minutes: Some(minutes),
+                ..Default::default()
+            },
+        )
+        .expect("pacing written");
+    }
+
+    /// Cycle 2 measured every App Master wake landing on the fixed 30-minute
+    /// floor whatever the persona had in flight. Its own choice now sets the
+    /// floor: 12 minutes after a pass, a persona that asked for 10 is admitted
+    /// where the default would still have refused it.
+    #[test]
+    fn an_app_master_wakes_on_the_interval_it_chose_for_itself() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+
+        // One completed pass, backdated 12 minutes: the 30m default refuses.
+        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        backdate_completed(&pool, &first.ledger_id, 12)?;
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "the default floor still stands");
+        assert_eq!(counts.refused, 1);
+
+        // The refusal row closes with a completion of its own, so re-age every
+        // closed row: the point being measured is the floor, not the refusal.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET completed_at = ?1 WHERE completed_at IS NOT NULL",
+            params![(chrono::Utc::now() - chrono::Duration::minutes(12)).to_rfc3339()],
+        )?;
+
+        // The persona's own last decision: wake me in ten minutes.
+        record_wake_choice(&pool, &charter, 10);
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0, "12 minutes clears a 10-minute choice");
+        assert!(dispatch.is_some(), "the persona paced itself back in");
+
+        Ok(())
+    }
+
+    /// A long choice holds the persona out where the 30-minute default would
+    /// have let it in — self-pacing has to work in both directions or it is
+    /// just a faster schedule.
+    #[test]
+    fn a_long_choice_holds_an_app_master_out_past_the_default() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+
+        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        // 40 minutes: past the 30m default, short of a 120m choice.
+        backdate_completed(&pool, &first.ledger_id, 40)?;
+        record_wake_choice(&pool, &charter, 120);
+
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "everything it owns is still in flight");
+        assert_eq!(counts.refused, 1);
+        let rows = ledger_rows(&pool, "am");
+        let refusal = rows.iter().find(|r| r.verdict == "refused").expect("row");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "interval_floor");
+        assert_eq!(
+            reason["interval_minutes"], 120,
+            "the refusal names the interval the persona actually chose"
+        );
+        Ok(())
+    }
+
+    /// The same field on a persona that holds no project charter changes
+    /// nothing: it never runs the decision lane, so the value is not its
+    /// choice and the declared cadence keeps ruling.
+    #[test]
+    fn a_plain_personas_pacing_field_never_moves_its_floor() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+
+        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        backdate_completed(&pool, &first.ledger_id, 12)?;
+
+        record_wake_choice(&pool, &charter, 10);
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert!(
+            dispatch.is_none(),
+            "12 minutes is still inside the 30-minute default"
+        );
+        assert_eq!(counts.refused, 1);
+        let rows = ledger_rows(&pool, "p1");
+        let refusal = rows.iter().find(|r| r.verdict == "refused").expect("row");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["interval_minutes"], DEFAULT_INTERVAL_MINUTES);
+        Ok(())
+    }
+
     /// The bypass is scoped to the interval floor. Every other rung — here the
     /// daily cap — still refuses a woken persona, because switching a persona
     /// on is permission to START, not permission to exceed its declared limits.
@@ -3545,6 +3771,80 @@ mod attention_tests {
         )
         .expect("idea")
         .id
+    }
+
+    /// The write-back carries the persona's sleep choice onto every charter it
+    /// considered — and an absent choice keeps the last one rather than
+    /// erasing it, the same rule the coverage note follows.
+    #[test]
+    fn pacing_write_back_stores_the_chosen_wake_and_keeps_it_when_absent() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "am")?;
+        let a = seed_project_charter(&pool, "am", "Charter A", "proj_1");
+        let b = seed_project_charter(&pool, "am", "Charter B", "proj_1");
+        let stored = |id: &str| -> Option<ResponsibilityPacing> {
+            responsibilities::get_by_id(&pool, id)
+                .expect("read")
+                .expect("row")
+                .spec
+                .pacing
+        };
+
+        let mut context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![
+                decide_charter(&a, Some("proj_1"), None),
+                decide_charter(&b, Some("proj_1"), None),
+            ],
+            ..Default::default()
+        };
+
+        // Wake 1: dispatched A, deferred B, chose to sleep 25 minutes.
+        write_back_pacing(&pool, &context, &[a.as_str()], Some("B waits"), Some(25));
+        for id in [&a, &b] {
+            let p = stored(id).expect("pacing written");
+            assert_eq!(
+                p.next_wake_minutes,
+                Some(25),
+                "the sleep is the persona's choice, so every considered charter carries it"
+            );
+            assert!(p.last_decided_at.is_some());
+            assert_eq!(p.coverage_note.as_deref(), Some("B waits"));
+        }
+        assert!(stored(&a).unwrap().last_dispatched_at.is_some());
+        assert!(
+            stored(&b).unwrap().last_dispatched_at.is_none(),
+            "a deferral is considered, not dispatched"
+        );
+
+        // Wake 2 reads the stored pacing back into its context (what
+        // `build_decision_context` does) and says nothing about sleep.
+        for charter in &mut context.charters {
+            charter.pacing = stored(&charter.id);
+        }
+        write_back_pacing(&pool, &context, &[], None, None);
+        for id in [&a, &b] {
+            let p = stored(id).expect("pacing");
+            assert_eq!(
+                p.next_wake_minutes,
+                Some(25),
+                "silence about pacing is not a choice to stop pacing"
+            );
+            assert_eq!(
+                p.coverage_note.as_deref(),
+                Some("B waits"),
+                "and the note keeps its own previous value the same way"
+            );
+        }
+
+        // Wake 3 changes its mind.
+        for charter in &mut context.charters {
+            charter.pacing = stored(&charter.id);
+        }
+        write_back_pacing(&pool, &context, &[], None, Some(180));
+        assert_eq!(stored(&a).unwrap().next_wake_minutes, Some(180));
+        assert_eq!(stored(&b).unwrap().next_wake_minutes, Some(180));
+        Ok(())
     }
 
     #[test]
