@@ -260,7 +260,7 @@ const CONSOLIDATION_STALE_HOURS: i64 = 72;
 fn hours_since(at: &str) -> Option<i64> {
     let parsed = chrono::DateTime::parse_from_rfc3339(at).ok()?;
     Some(
-        chrono::Utc::now()
+        super::sim_clock::now()
             .signed_duration_since(parsed.with_timezone(&chrono::Utc))
             .num_hours(),
     )

@@ -10,9 +10,9 @@
 
 use std::fs;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -78,7 +78,7 @@ pub fn write_goal(pool: &UserDbPool, input: &GoalInput<'_>) -> Result<String, Ap
         return Err(AppError::Internal("goal title must not be empty".into()));
     }
     let id = format!("goal_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let priority = input.priority.clamp(1, 5);
 
     let slug = slugify(input.title);
@@ -117,7 +117,7 @@ pub fn write_goal(pool: &UserDbPool, input: &GoalInput<'_>) -> Result<String, Ap
 }
 
 pub fn update_status(pool: &UserDbPool, id: &str, status: GoalStatus) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let completed_at = if matches!(status, GoalStatus::Completed) {
         Some(now.clone())

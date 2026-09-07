@@ -14,11 +14,11 @@
 use std::fs;
 use std::time::Duration;
 
-use chrono::Utc;
 use rusqlite::params;
 
 use crate::companion::brain::episodic;
 use crate::companion::brain::oneshot::{self, call_claude_text};
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -51,7 +51,7 @@ pub async fn run_reflection(
     let reflection_text = call_claude_oneshot(pool, &prompt).await?;
 
     let id = format!("ref_{}", short_uuid());
-    let now = Utc::now();
+    let now = sim_clock::now();
     let now_str = now.to_rfc3339();
     let date_slug = now.format("%Y-%m-%d").to_string();
 

@@ -8,6 +8,14 @@ mod browser_bridge;
 mod cloud;
 mod commands;
 mod companion;
+/// The `personas-memory-sim` driver, for the `memory-year` benchmark harness.
+///
+/// `mod companion` is private, and the driver's whole job is to reach into it,
+/// so the binary target cannot get there on its own. Feature-gated and exported
+/// as a single item rather than opening the module — the same shape
+/// `athena-bench-validate` takes through `pub mod bench`.
+#[cfg(feature = "memory-sim")]
+pub use companion::brain::memory_sim;
 pub mod daemon;
 // The data layer is its own crate (see src-tauri/db/). Re-exported under the
 // old name so every `crate::db::…` path across commands, engine and companion

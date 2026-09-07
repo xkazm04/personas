@@ -7,17 +7,20 @@
 use std::collections::HashSet;
 
 use super::apply::{
-    apply_candidates, apply_supersedes, apply_tag_proposals, collect_contradictions,
+    apply_candidates, apply_rule_supersedes, apply_supersedes, apply_tag_proposals,
+    collect_contradictions,
 };
 use super::limits::{
-    COMPRESS_TIMEOUT, MAX_CHARS_IN, MAX_EPISODES_IN, MAX_EPISODE_CHARS, MAX_FACTS_TO_RECONCILE,
+    COMPRESS_TIMEOUT, MAX_CHARS_IN, MAX_EPISODES_IN, MAX_EPISODE_CHARS, MAX_RECONCILE_SEEDS,
+    RECONCILE_CANDIDATES_PER_SEED, RECONCILE_CANDIDATE_POOL, RECONCILE_SWEEP_SEEDS,
     RECONCILE_TIMEOUT,
 };
 use super::parse::{normalize_tag, parse_object};
 use super::prompts::{build_compress_prompt, build_reconcile_prompt};
 use super::run::{CycleLlm, CycleNotes, CycleStats, Window};
+use super::shortlist;
 use super::sync_inbox::consume_sync_inbox;
-use crate::companion::brain::{consolidation, episodic, oneshot, semantic, taxonomy};
+use crate::companion::brain::{consolidation, episodic, oneshot, procedural, semantic, taxonomy};
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -174,6 +177,17 @@ pub(super) fn bound_input(available: Vec<episodic::Episode>, window_total: usize
 
 // ── Phase B · reconcile ────────────────────────────────────────────────────
 
+/// How many cycles have completed before this one. The rotating sweep advances
+/// on this rather than on the clock, so a replay at any date picks the same
+/// window and the coverage schedule is reproducible.
+fn completed_cycles(pool: &UserDbPool) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    let n: i64 = conn
+        .query_row("SELECT COUNT(*) FROM companion_cycle", [], |r| r.get(0))
+        .unwrap_or(0);
+    Ok(n.max(0) as usize)
+}
+
 pub(super) async fn phase_reconcile(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
@@ -184,20 +198,55 @@ pub(super) async fn phase_reconcile(
     // B1 · consume whatever the paired device staged.
     consume_sync_inbox(pool, cycle_id, stats, notes)?;
 
-    // B2 · judge supersedes / contradictions across the active fact set.
-    let facts = semantic::list_facts(pool, None, false, MAX_FACTS_TO_RECONCILE)?;
-    let judged = if facts.len() < 2 {
-        notes
-            .caveats
-            .push("Reconcile leg skipped: fewer than two active facts to compare.".into());
+    // B2 · judge supersedes / contradictions around what this cycle wrote.
+    //
+    // Not across the whole active set: that made the prompt a function of the
+    // store, so a fixed leg timeout began failing exactly as memory started to
+    // pay off, and the cap that bounded it left everything below the cut
+    // permanently uncomparable. The seeds are the memories written tonight,
+    // plus a window that advances every cycle so the quiet tail is revisited.
+    //
+    // BOTH tiers, in one call. A fact and the rule distilled from the same
+    // sentence carry the same belief, and a year-long replay showed what
+    // governing only one of them costs: 261 of 375 facts were retired on
+    // schedule while 0 of 133 rules ever were, so a preference the user changed
+    // in January was still being applied in December — from the always-on
+    // procedural lane, which injects six rules into every turn regardless of
+    // the question.
+    let cycle_index = completed_cycles(pool)?;
+    let facts = semantic::list_facts(pool, None, false, RECONCILE_CANDIDATE_POOL)?;
+    let rules = procedural::list_rules(pool, None, false, RECONCILE_CANDIDATE_POOL)?;
+    let fact_groups = shortlist::groups_for(
+        &facts,
+        &notes.written_fact_ids,
+        MAX_RECONCILE_SEEDS,
+        RECONCILE_SWEEP_SEEDS,
+        cycle_index,
+        RECONCILE_CANDIDATES_PER_SEED,
+    );
+    let rule_groups = shortlist::groups_for(
+        &rules,
+        &notes.written_procedural_ids,
+        MAX_RECONCILE_SEEDS,
+        RECONCILE_SWEEP_SEEDS,
+        cycle_index,
+        RECONCILE_CANDIDATES_PER_SEED,
+    );
+    let judged = if fact_groups.is_empty() && rule_groups.is_empty() {
+        notes.caveats.push(
+            "Reconcile leg skipped: nothing this cycle wrote had an existing neighbour to \
+             compare against."
+                .into(),
+        );
         false
     } else {
-        let prompt = build_reconcile_prompt(&facts);
+        let prompt = build_reconcile_prompt(&fact_groups, &rule_groups);
         let text = llm
             .call(oneshot::leg::CYCLE_RECONCILE, &prompt, RECONCILE_TIMEOUT)
             .await?;
         let reply = parse_object(&text, "reconcile reply")?;
         apply_supersedes(pool, &reply, stats, notes)?;
+        apply_rule_supersedes(pool, &reply, stats, notes)?;
         collect_contradictions(&reply, stats, notes);
         true
     };

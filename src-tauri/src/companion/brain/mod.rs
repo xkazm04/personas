@@ -22,6 +22,10 @@ pub mod graph;
 pub mod health;
 pub mod identity;
 pub mod keyword;
+/// Headless driver for this module, for the `memory-year` benchmark harness.
+/// Feature-gated: nothing in the shipped app compiles it.
+#[cfg(feature = "memory-sim")]
+pub mod memory_sim;
 pub mod oneshot;
 pub mod procedural;
 pub mod profile_synthesis;
@@ -30,6 +34,9 @@ pub mod reflection;
 pub mod retrieval;
 pub mod rituals;
 pub mod semantic;
+/// The brain's one reading of "now". Every timestamp written here and every
+/// interval compared here goes through it; unset, it IS `Utc::now()`.
+pub mod sim_clock;
 pub mod sleep_cycle;
 pub mod sync_staging;
 pub mod taxonomy;

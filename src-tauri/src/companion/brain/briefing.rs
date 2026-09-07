@@ -26,6 +26,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
+use crate::companion::brain::sim_clock;
 use crate::companion::model_routing;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -361,7 +362,7 @@ pub fn sanitize_briefing_spec(raw: &str, delta: &SessionDelta) -> Result<String,
     let body = serde_json::json!({
         "title": title,
         "widgets": kept,
-        "updated_at": chrono::Utc::now().to_rfc3339(),
+        "updated_at": sim_clock::now().to_rfc3339(),
     });
     Ok(body.to_string())
 }

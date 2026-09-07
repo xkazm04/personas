@@ -388,14 +388,14 @@ pub async fn retrieve(
     let mut fact_ids = fact_ids;
     union_keyword_ids(
         &mut fact_ids,
-        keyword::search_kind(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default(),
+        keyword::search_kind_reranked(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default(),
         KEYWORD_FACT_TOPK + VECTOR_FACT_TOPK,
         &fact_ids_in_recall,
     );
     let mut procedural_ids = procedural_ids;
     union_keyword_ids(
         &mut procedural_ids,
-        keyword::search_kind(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
+        keyword::search_kind_reranked(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
             .unwrap_or_default(),
         KEYWORD_PROCEDURAL_TOPK + VECTOR_PROCEDURAL_TOPK,
         &procedural_ids_in_recall,
@@ -548,7 +548,15 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     episodes.extend(recent);
 
     // Facts / procedurals: keyword hits append after the always-include set.
-    for id in keyword::search_kind(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default() {
+    //
+    // These two lanes re-rank (see `keyword::search_kind_reranked`) where the
+    // episode and doctrine lanes do not. They are the narrowest — four slots
+    // and three — so a boilerplate match costs proportionally the most here,
+    // and their rows are one-liners, so over-fetching them is cheap. Episodes
+    // are long and their lane is wide; that trade has not been measured.
+    for id in
+        keyword::search_kind_reranked(pool, query, "fact", KEYWORD_FACT_TOPK).unwrap_or_default()
+    {
         if fact_ids_in_recall.contains(&id) {
             continue;
         }
@@ -556,8 +564,8 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
             facts.push(f);
         }
     }
-    for id in
-        keyword::search_kind(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK).unwrap_or_default()
+    for id in keyword::search_kind_reranked(pool, query, "procedural", KEYWORD_PROCEDURAL_TOPK)
+        .unwrap_or_default()
     {
         if procedural_ids_in_recall.contains(&id) {
             continue;
@@ -642,6 +650,43 @@ fn with_recency_tail(
     out
 }
 
+/// True while a [`ProbeRead`] guard is alive. Never set in the shipped app.
+static PROBE_READ: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Suppress recall's read-marking for the lifetime of this guard.
+///
+/// [`touch_recalled`] is how the production path marks a memory as *seen*: it
+/// restarts `last_seen_at` / `last_used_at`, which is exactly the column
+/// [`consolidation::decay_unused_facts`] keys off. That is right for a chat
+/// turn and wrong for a benchmark probe — a probe that keeps a fact alive has
+/// changed the thing it was measuring, and a year-long replay would report that
+/// nothing ever decays.
+///
+/// There was no read/probe distinction in this module before, so this adds one.
+/// A guard rather than a parameter because the two retrieval arms
+/// ([`retrieve`] and [`retrieve_keyword`]) have different signatures and
+/// different call graphs, and threading a `touch: bool` through both — plus
+/// `prompt::recall_for`, its two feature arms, and every caller of those —
+/// would spread a benchmark's concern across the production prompt path.
+/// Constructed only by `brain::memory_sim`.
+#[must_use = "read-marking resumes as soon as this guard drops"]
+#[cfg_attr(not(feature = "memory-sim"), allow(dead_code))]
+pub struct ProbeRead;
+
+impl ProbeRead {
+    #[cfg_attr(not(feature = "memory-sim"), allow(dead_code))]
+    pub fn new() -> Self {
+        PROBE_READ.store(true, std::sync::atomic::Ordering::Release);
+        ProbeRead
+    }
+}
+
+impl Drop for ProbeRead {
+    fn drop(&mut self) {
+        PROBE_READ.store(false, std::sync::atomic::Ordering::Release);
+    }
+}
+
 /// Restart the decay clock for everything Athena actually saw this turn.
 /// Best-effort — a failure here must never block a chat turn.
 ///
@@ -651,6 +696,10 @@ fn with_recency_tail(
 /// `consolidation::decay_unused_facts` keys off. Recall now keeps memory
 /// alive on every path, so decay measures real disuse.
 fn touch_recalled(pool: &UserDbPool, facts: &[Fact], procedurals: &[Procedural]) {
+    // A probe read observes memory; it does not use it. See [`ProbeRead`].
+    if PROBE_READ.load(std::sync::atomic::Ordering::Acquire) {
+        return;
+    }
     if !facts.is_empty() {
         let ids: Vec<String> = facts.iter().map(|f| f.id.clone()).collect();
         let _ = semantic::touch_last_seen(pool, &ids);

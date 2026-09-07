@@ -322,8 +322,8 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms,
             num_turns, is_error, voice, assistant_episode_id, outcome_json,
             prompt_blocks_json, total_prompt_chars, error_reason,
-            prompt_block_hashes_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+            prompt_block_hashes_json, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
         params![
             id,
             rec.origin,
@@ -346,6 +346,11 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             rec.total_prompt_chars,
             rec.error_reason,
             rec.prompt_block_hashes_json,
+            // Bound rather than left to the column's `datetime('now')` default:
+            // the brain reads this column back over a rolling window
+            // (`profile_synthesis`), and SQLite's clock cannot follow
+            // `brain::sim_clock`. Identical text to the default it replaces.
+            crate::companion::brain::sim_clock::now_sql(),
         ],
     )?;
     Ok(id)

@@ -10,11 +10,11 @@
 //! `list_by_context` (decisions tagged with a specific persona id /
 //! build session id / intent string).
 
-use chrono::Utc;
 use rusqlite::params;
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::companion::brain::sim_clock;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -55,7 +55,7 @@ pub fn save_batch(
         return Ok(Vec::new());
     }
     let conn = pool.get()?;
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let mut ids = Vec::with_capacity(decisions.len());
     for d in decisions {
         let id = format!(

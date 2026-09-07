@@ -17,11 +17,11 @@ use std::fs;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -111,7 +111,7 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
     }
 
     let id = format!("fact_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let scope_s = input.scope.as_str();
     let importance = input.importance.clamp(1, 5);
     let confidence = input.confidence.clamp(0.0, 1.0);
@@ -309,7 +309,7 @@ pub fn reinforce_fact(
     fact_id: &str,
     new_sources: &[String],
 ) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let tx = conn.unchecked_transaction()?;
     tx.execute(
@@ -479,12 +479,12 @@ pub fn delete_fact(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
     let tx = conn.unchecked_transaction()?;
     if let Some((scope, fact_key, excerpt)) = identity.as_ref() {
         tx.execute(
-            "INSERT INTO companion_fact_tombstone (scope, fact_key, value_excerpt)
-             VALUES (?1, ?2, ?3)
+            "INSERT INTO companion_fact_tombstone (scope, fact_key, value_excerpt, forgotten_at)
+             VALUES (?1, ?2, ?3, ?4)
              ON CONFLICT(scope, fact_key) DO UPDATE SET
                  value_excerpt = excluded.value_excerpt,
-                 forgotten_at  = datetime('now')",
-            params![scope, fact_key, excerpt],
+                 forgotten_at  = excluded.forgotten_at",
+            params![scope, fact_key, excerpt, sim_clock::now_sql()],
         )?;
     }
     tx.execute(
@@ -526,7 +526,7 @@ pub fn touch_last_seen(pool: &UserDbPool, ids: &[String]) -> Result<(), AppError
         return Ok(());
     }
     let conn = pool.get()?;
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     let sql = format!("UPDATE companion_fact SET last_seen_at = ? WHERE id IN ({placeholders})");
     let mut p: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(ids.len() + 1);

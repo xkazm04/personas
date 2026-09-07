@@ -37,9 +37,9 @@
 use std::fs;
 use std::sync::Mutex;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -88,7 +88,7 @@ pub fn save_dashboard(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError
 /// new bytes down, upsert the node row. Callers hold
 /// [`DASHBOARD_WRITE_LOCK`].
 fn write_spec(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let root = disk::brain_root()?;
     let abs_path = root.join(DASHBOARD_REL_PATH);
     // Snapshot before overwriting. Best-effort: no prior file (first compose)

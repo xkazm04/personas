@@ -19,11 +19,11 @@
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::Duration;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -199,7 +199,7 @@ pub async fn run_consolidation(
     instructions: Option<&str>,
 ) -> Result<String, AppError> {
     let id = format!("cons_{}", short_uuid());
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
 
     // Insert the run row in `running` so the UI can show progress
     // immediately. We update to `review` when the JSON envelope lands.
@@ -254,7 +254,7 @@ pub async fn run_consolidation(
         let tx = conn.unchecked_transaction()?;
         let persisted = persist_proposals(&tx, &id, &envelope.proposals)?;
         let summary_text = envelope.summary.clone();
-        let now2 = Utc::now().to_rfc3339();
+        let now2 = sim_clock::now().to_rfc3339();
         tx.execute(
             "UPDATE companion_consolidation
              SET status = 'review', completed_at = ?1, summary = ?2
@@ -344,8 +344,8 @@ fn persist_proposals(
         tx.execute(
             "INSERT INTO companion_consolidation_item
              (id, consolidation_id, kind, scope, fact_key, proposed_value, sources_json,
-              importance, confidence, supersedes_id, rationale, status)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending')",
+              importance, confidence, supersedes_id, rationale, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'pending', ?12)",
             params![
                 item_id,
                 consolidation_id,
@@ -358,6 +358,10 @@ fn persist_proposals(
                 raw.confidence.clamp(0.0, 1.0),
                 raw.supersedes_id,
                 raw.rationale,
+                // Bound, never `datetime('now')`: SQLite's clock cannot follow
+                // the simulated one, so a column default silently stamps a
+                // replayed row with today.
+                sim_clock::now_sql(),
             ],
         )?;
         out.inserted += 1;
@@ -494,7 +498,7 @@ pub async fn apply_item(
         None => semantic::write_fact(pool, &input)?,
     };
 
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation_item
@@ -542,7 +546,7 @@ pub async fn apply_item(
     };
 
     let fact_id = semantic::write_fact(pool, &input)?;
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation_item
@@ -556,7 +560,7 @@ pub async fn apply_item(
 /// Mark an item rejected — no fact is written. Status persists so the
 /// summary view can show "reviewed: 12 applied, 3 rejected".
 pub fn reject_item(pool: &UserDbPool, item_id: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let updated = conn.execute(
         "UPDATE companion_consolidation_item
@@ -576,8 +580,8 @@ pub fn reject_item(pool: &UserDbPool, item_id: &str) -> Result<(), AppError> {
 /// that haven't been recalled in a while. Floor of 1 — we never delete
 /// via decay, only reduce salience. Returns the number of facts touched.
 pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
-    let now = Utc::now().to_rfc3339();
-    let cutoff = (Utc::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
+    let cutoff = (sim_clock::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
     let conn = pool.get()?;
     // Guard on last_decayed_at so a fact decays at most once per
     // DECAY_THRESHOLD_DAYS window even if consolidation is re-run sooner
@@ -644,7 +648,7 @@ pub fn dormant_fact_candidates(pool: &UserDbPool) -> Result<Vec<PruneCandidate>,
     let mut out = Vec::new();
     for scope in ["user", "project", "world"] {
         let cutoff =
-            (Utc::now() - chrono::Duration::days(age_out_horizon_days(scope))).to_rfc3339();
+            (sim_clock::now() - chrono::Duration::days(age_out_horizon_days(scope))).to_rfc3339();
         let mut stmt = conn.prepare(
             "SELECT n.id, f.scope, f.fact_key, n.importance, f.last_seen_at
              FROM companion_node n
@@ -685,7 +689,7 @@ pub fn age_out_dormant_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     if candidates.is_empty() {
         return Ok(0);
     }
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let mut total = 0i64;
     for c in &candidates {
@@ -737,8 +741,8 @@ pub fn age_out_dormant_facts(pool: &UserDbPool) -> Result<i64, AppError> {
 /// already at importance 0 are excluded, so a re-run matches nothing.
 pub fn retire_expired_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     let conn = pool.get()?;
-    let today = Utc::now().format("%Y-%m-%d").to_string();
-    let now = Utc::now().to_rfc3339();
+    let today = sim_clock::now().format("%Y-%m-%d").to_string();
+    let now = sim_clock::now().to_rfc3339();
     let n = conn.execute(
         "UPDATE companion_node SET importance = 0, updated_at = ?1
            WHERE kind = 'fact'
@@ -798,7 +802,7 @@ const LIFECYCLE_SWEEP_MIN_INTERVAL_SECS: i64 = 6 * 3600;
 /// are different facts, and this pass exists precisely because the second one
 /// went unnoticed for 77 days.
 pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
-    let now = Utc::now().timestamp();
+    let now = sim_clock::now().timestamp();
     let last = LAST_LIFECYCLE_SWEEP.load(Ordering::Relaxed);
     if last != 0 && now.saturating_sub(last) < LIFECYCLE_SWEEP_MIN_INTERVAL_SECS {
         return;
@@ -985,7 +989,7 @@ pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     if candidates.is_empty() {
         return Ok(0);
     }
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     let mut total_demoted = 0i64;
     for c in &candidates {
@@ -1140,7 +1144,7 @@ fn load_item(pool: &UserDbPool, item_id: &str) -> Result<ConsolidationItem, AppE
 }
 
 fn mark_failed(pool: &UserDbPool, id: &str, err: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
         "UPDATE companion_consolidation

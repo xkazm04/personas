@@ -130,6 +130,10 @@ pub(super) struct CycleStats {
     pub(super) staged_consumed: usize,
     pub(super) staged_malformed: usize,
     pub(super) supersedes_applied: usize,
+    /// Procedural supersedes, counted apart from fact supersedes: they share a
+    /// per-cycle budget but they retire different things, and a cycle that
+    /// retired four rules and no facts should not read as four facts.
+    pub(super) rule_supersedes_applied: usize,
     pub(super) supersedes_dropped: usize,
     pub(super) tags_proposed: usize,
     pub(super) prune_candidates: usize,
@@ -163,6 +167,15 @@ pub(super) struct CycleNotes {
     /// key keeps coming back (which means the evidence behind it is still
     /// accumulating and the real fix is upstream).
     pub(super) refused_forgotten: Vec<String>,
+    /// Ids of the facts this cycle actually wrote, in write order. Not for the
+    /// reader: this is the hand-off from compress to reconcile, which shortlists
+    /// existing candidates AROUND each new fact instead of judging the whole
+    /// store. A fact nobody wrote tonight is not a new duplicate risk.
+    pub(super) written_fact_ids: Vec<String>,
+    /// Same hand-off for the procedural tier. Rules are shortlisted and judged
+    /// beside facts because a rule distilled from a superseded sentence is the
+    /// same stale belief wearing a trigger.
+    pub(super) written_procedural_ids: Vec<String>,
     pub(super) truncation: Option<String>,
     /// Non-fatal things that went sideways — a dropped candidate, an id that
     /// pointed at nothing. Surfaced so "dropped 3" in the stats has a why.
@@ -171,7 +184,11 @@ pub(super) struct CycleNotes {
 
 // ── Orchestration ──────────────────────────────────────────────────────────
 
-pub(super) async fn run_admitted_with(
+/// `pub` rather than `pub(super)` since 2026-09-03: the `memory-sim` driver
+/// runs a real cycle with a local model behind the [`CycleLlm`] seam, which is
+/// exactly the call [`run_admitted`] makes with `MeteredLegs`. Nothing else
+/// about the entry point changed.
+pub async fn run_admitted_with(
     pool: &UserDbPool,
     llm: &dyn CycleLlm,
     mut admitted: AdmittedCycle,
