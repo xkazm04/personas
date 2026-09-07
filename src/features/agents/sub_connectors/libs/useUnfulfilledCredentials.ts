@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { silentCatch } from "@/lib/silentCatch";
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // Hex fallbacks for unknown / placeholder entries. Consumed by callers
@@ -117,14 +117,16 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
       tools: target.tools,
     }];
 
-    // Parse credentialLinks from design_context
+    // ONE reading of the links. This used to hand-parse design_context and
+    // read only the camelCase `credentialLinks` key, while useConnectorStatuses
+    // (via useSelectedCredentialLinks) reads through parseDesignContext, which
+    // also migrates the legacy snake_case `credential_links` envelope. For a
+    // persona still on the legacy shape the two disagreed: the connectors
+    // list showed the slot linked while this banner demanded a credential
+    // for it -- and a "reuse" click here would then overwrite the real link.
     const credentialLinks = new Map<string, Record<string, string>>();
-    try {
-      const ctx = target.design_context ? JSON.parse(target.design_context) : {};
-      if (ctx.credentialLinks) credentialLinks.set(target.id, ctx.credentialLinks);
-    } catch (err) {
-      silentCatch("useUnfulfilledCredentials:design_context-parse")(err);
-    }
+    const links = parseDesignContext(target.design_context).credentialLinks;
+    if (links) credentialLinks.set(target.id, links);
 
     const demands = computeUnfulfilled(personas, credentials, connectors, credentialLinks);
 
