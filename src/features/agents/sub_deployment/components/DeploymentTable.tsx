@@ -27,6 +27,18 @@ interface TestStateMap {
  */
 const CASCADE_ROWS = 14;
 
+/**
+ * What the health cell shows when there is no sparkline data for the row.
+ * `loading` only while the stats fetch is actually in flight; once it has
+ * settled without data for this row the cell says so (failure-not-empty-
+ * success: a fetch that failed or returned nothing is a settled fact, not a
+ * pending one). GitLab rows have no per-persona stats at all.
+ */
+export function healthCellState(target: UnifiedDeployment['target'], healthLoading: boolean): 'loading' | 'no-data' | 'not-applicable' {
+  if (target !== 'cloud') return 'not-applicable';
+  return healthLoading ? 'loading' : 'no-data';
+}
+
 interface DeploymentTableProps {
   displayRows: UnifiedDeployment[];
   /** Ghost placeholder rows for the cold-empty + fetching moment (§C). */
@@ -43,6 +55,10 @@ interface DeploymentTableProps {
   cloudRemoveDeploy: (id: string) => Promise<void>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
   healthMap?: Record<string, HealthDataPoint[]>;
+  /** True while the health stats fetch is in flight. Without it a persona whose
+   * stats call failed read "Loading..." forever (the hook reported the failure
+   * to Sentry but the cell had no settled state to fall into). */
+  healthLoading?: boolean;
   testStates?: TestStateMap;
   onTest?: (deploymentId: string, personaId: string) => void;
   onDismissTest?: (deploymentId: string) => void;
@@ -65,6 +81,7 @@ export function DeploymentTable({
   cloudRemoveDeploy,
   gitlabUndeployAgent,
   healthMap,
+  healthLoading = false,
   testStates,
   onTest,
   onDismissTest,
@@ -155,10 +172,12 @@ export function DeploymentTable({
               <td className="px-4 py-3">
                 {(() => {
                   const health = healthMap?.[row.id];
-                  return health ? (
-                    <DeploymentHealthSparkline daily={health} />
-                  ) : (
-                    <span className="typo-caption text-foreground">{row.target === 'cloud' ? t.common.loading : '-'}</span>
+                  if (health) return <DeploymentHealthSparkline daily={health} />;
+                  const state = healthCellState(row.target, healthLoading);
+                  return (
+                    <span className="typo-caption text-foreground" data-health-state={state}>
+                      {state === 'loading' ? t.common.loading : state === 'no-data' ? dt.no_data : '-'}
+                    </span>
                   );
                 })()}
               </td>

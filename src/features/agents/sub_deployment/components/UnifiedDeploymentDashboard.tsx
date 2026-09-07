@@ -119,7 +119,7 @@ export function UnifiedDeploymentDashboard() {
     return rows;
   }, [cloudDeployments, gitlabAgents, gitlabDeploymentStatuses, cloudBaseUrl, personaName, gitlabSelectedProjectId]);
 
-  const { healthMap } = useDeploymentHealth(unified);
+  const { healthMap, isLoading: healthLoading } = useDeploymentHealth(unified);
   const { tests, runTest, dismissResult } = useDeploymentTest();
 
   const displayRows = useMemo(() => {
@@ -206,7 +206,7 @@ export function UnifiedDeploymentDashboard() {
     handleAction,
     cloudPauseDeploy, cloudResumeDeploy,
     cloudRemoveDeploy, gitlabUndeployAgent,
-    healthMap,
+    healthMap, healthLoading,
     testStates: tests, onTest: runTest, onDismissTest: dismissResult,
     selectedIds,
     onToggleSelect: handleToggleSelect,
