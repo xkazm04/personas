@@ -167,7 +167,11 @@ fn result_field(result_line: &str) -> Option<String> {
 
 /// Claude flags that take a following value — so we don't mistake the value
 /// (e.g. the model id after `--model`) for the task prompt.
-const VALUE_FLAGS: &[&str] = &[
+///
+/// `pub(super)` because [`super::headless::headless_argv`] needs the same
+/// answer when it decides how far to skip past a caller-supplied flag; two
+/// lists would drift the first time a flag is added to one of them.
+pub(super) const VALUE_FLAGS: &[&str] = &[
     "--model",
     // Fleet plans can pick a reasoning level per session; without this entry
     // `medium` would be read as the task prompt and become the session title.

@@ -615,6 +615,17 @@ fn undispatched_ideas_rows(
     // write set, so it is when the decision was made. NOT EXISTS mirrors
     // `archive_stale_ideas` — the one existing piece of prior art — but on
     // 'accepted' rather than 'pending'.
+    //
+    // The inner AND is the ONE exception to "a task row silences this sensor":
+    // an App Master dispatch mints a task at SPAWN, and a worker that died (or
+    // ran out of account) without calling the write-back route leaves a claim
+    // nobody is honouring. The sweep that closes such a row stamps
+    // [`super::tasks::ABANDONED_DISPATCH_ERROR_PREFIX`] into `error`, and that
+    // marker — never a bare `failed`, which is what the write-back door's
+    // `blocked` outcome writes for a real, reported refusal — is what hands the
+    // idea back. Interpolated rather than bound because the prefix is a
+    // compile-time constant with no LIKE wildcard in it (see its doc).
+    let abandoned = super::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
     let sql = format!(
         "SELECT i.id, i.title, i.project_id, p.name AS project_name, i.category,
                 i.origin, i.priority, i.impact, i.effort,
@@ -622,7 +633,11 @@ fn undispatched_ideas_rows(
          FROM dev_ideas i
          LEFT JOIN dev_projects p ON p.id = i.project_id
          WHERE i.status = 'accepted'
-           AND NOT EXISTS (SELECT 1 FROM dev_tasks t WHERE t.source_idea_id = i.id)
+           AND NOT EXISTS (
+                 SELECT 1 FROM dev_tasks t
+                 WHERE t.source_idea_id = i.id
+                   AND NOT (t.status = 'failed'
+                            AND COALESCE(t.error, '') LIKE '{abandoned}%'))
            {}
          ORDER BY accepted_at ASC, i.id ASC
          LIMIT {limit}",
@@ -798,6 +813,69 @@ mod attention_queue_tests {
             "a freshly-written stamp must yield a real age, not None",
         );
         assert_eq!(rows[0].project_name.as_deref(), Some("P"));
+    }
+
+    #[test]
+    fn an_abandoned_dispatch_task_hands_its_idea_back_but_a_reported_failure_does_not() {
+        use crate::repos::dev::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
+        let pool = crate::init_test_db().unwrap();
+        let p = create_project(&pool, "P", "/tmp/abandoned", None, None, None, None, None).unwrap();
+
+        let abandoned = idea(&pool, &p.id, "worker died mid-flight", "accepted");
+        let reported = idea(&pool, &p.id, "worker reported blocked", "accepted");
+
+        for (i, status, error) in [
+            (
+                &abandoned,
+                "failed",
+                format!("{ABANDONED_DISPATCH_ERROR_PREFIX}limit: You've reached your Fable limit."),
+            ),
+            // What the write-back door writes for a `blocked` outcome: a real,
+            // reported refusal. It keeps silencing the sensor.
+            (
+                &reported,
+                "failed",
+                "no credential for the vendor API".to_string(),
+            ),
+        ] {
+            let t = create_task(
+                &pool,
+                Some(&p.id),
+                "work",
+                None,
+                Some(&i.id),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            update_task(
+                &pool,
+                &t.id,
+                None,
+                None,
+                Some(status),
+                None,
+                None,
+                None,
+                Some(Some(error.as_str())),
+                None,
+                None,
+            )
+            .unwrap();
+        }
+
+        let ids: Vec<String> = list_undispatched_ideas(&pool, Some(&p.id), None)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.id)
+            .collect();
+        assert_eq!(
+            ids,
+            vec![abandoned.id.clone()],
+            "only the ABANDONED dispatch hands its idea back; a reported `blocked` \
+             failure is somebody's answer and stays silencing",
+        );
     }
 
     #[test]

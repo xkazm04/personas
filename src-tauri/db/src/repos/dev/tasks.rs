@@ -175,6 +175,23 @@ pub fn list_ready_tasks(
     })
 }
 
+/// The `error` prefix an App Master dispatch's ABANDONED task carries.
+///
+/// A decide-lane dispatch mints a `dev_tasks` row at spawn so the
+/// undispatched-idea sensor stops offering an idea that is already in hand
+/// (`engine/subscription/attention.rs`, `mint_dispatch_task`). When the worker
+/// dies — or ends on a usage limit — without calling the write-back route, that
+/// row would otherwise sit `running` forever: the idea is neither delivered nor
+/// re-offered. The sweep that closes such a row stamps this prefix into `error`,
+/// and it is the ONE marker that tells an abandoned dispatch apart from a task
+/// a human (or the write-back door's `blocked` outcome) deliberately failed.
+///
+/// The undispatched sensor keys on it (`dev/attention.rs`) so — and ONLY so —
+/// an abandoned dispatch hands its idea back to the backlog. It carries no SQL
+/// `LIKE` wildcard (`%` / `_`), which is what lets that clause interpolate it
+/// literally.
+pub const ABANDONED_DISPATCH_ERROR_PREFIX: &str = "worker ended without write-back: ";
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_task(
     pool: &DbPool,

@@ -1174,7 +1174,11 @@ fn parse_clock(tail: &str) -> Option<(u32, u32)> {
 /// REAL banner text observed live 2026-07-24 ("You've hit your session limit ·
 /// resets 7:50pm … /usage-credits to finish what you're working on") — the
 /// first signature guess missed it and 8 of 16 sessions sat invisible.
-fn screen_shows_limit_error(screen: &str) -> bool {
+///
+/// `pub(super)` so [`super::classify::worker_end_kind`] reads the SAME shapes
+/// rather than mirroring them — a second copy of this list is exactly how the
+/// 8-of-16 miss above would come back on a different lane.
+pub(super) fn screen_shows_limit_error(screen: &str) -> bool {
     let s = screen.to_lowercase();
     s.contains("usage limit")
         || s.contains("session limit")

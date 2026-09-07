@@ -114,6 +114,21 @@ pub(crate) struct DecisionCharter {
     /// This charter's runs author code in a real repository, so a dispatch
     /// must go to an isolated worktree rather than the operator's checkout.
     pub writes_code: bool,
+    /// The model a dispatch of THIS charter must run on, resolved through the
+    /// same chain the execution path walks (`spec.modelOverride` → the
+    /// persona's `model_profile` → the capability default). Never empty.
+    ///
+    /// Carried per charter rather than taken from [`DecisionContext::model`]
+    /// because that one is the roster-wide answer for the DECISION call, and
+    /// the fleet lane has no `execute_persona_inner` to resolve it later: it
+    /// spawns a CLI, and a CLI with no `--model` rides the operator's account
+    /// default. Measured in cycles 2-3 (2026-09-07): every App Master worker
+    /// ran on the account default instead of its charter's Opus, and three of
+    /// them burned the operator's own subscription to a limit.
+    ///
+    /// Not rendered into the prompt — it is an instruction to the dispatcher,
+    /// not a fact the decision reasons about.
+    pub dispatch_model: String,
     /// The project this charter is bound to, when it is bound to one.
     pub project_id: Option<String>,
 }

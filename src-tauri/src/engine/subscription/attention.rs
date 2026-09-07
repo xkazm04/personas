@@ -77,6 +77,13 @@ pub(crate) const LANE_DECIDE: &str = "decide";
 const DEFAULT_INTERVAL_MINUTES: i64 = 30;
 /// Daily cap when no charter declares `maxRunsPerDay`.
 const DEFAULT_MAX_RUNS_PER_DAY: i64 = 24;
+/// …and for an App Master, which paces ITSELF (`spec.pacing.nextWakeMinutes`,
+/// floored at [`attention_decide::MIN_NEXT_WAKE_MINUTES`]) and may dispatch
+/// several charters per wake. At the floor a persona wakes ~144 times a day, so
+/// 24 is a ceiling it meets before noon; 96 leaves room for a busy day and
+/// still refuses a runaway loop. A DECLARED `maxRunsPerDay` overrides it, the
+/// same as for anyone else.
+const APP_MASTER_MAX_RUNS_PER_DAY: i64 = 96;
 /// An open `started` row younger than this refuses a new pass; older open
 /// rows are treated as crashed and ignored (noted in the tick summary).
 const IN_FLIGHT_WINDOW_MINUTES: i64 = 30;
@@ -520,6 +527,12 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
             }
             LaneWork::Decide => {
                 counts.dispatched = Some(LANE_DECIDE);
+                // BEFORE the gather, not after: a task whose worker died is a
+                // claim on an idea that nothing is honouring, and the context
+                // built below reads both the in-flight list and the
+                // undispatched sensor. Sweeping first is what lets THIS wake
+                // see the failure instead of the next one.
+                close_abandoned_dispatch_tasks(pool, pid);
                 // The decision's OWN row: `responsibility_id` is None because
                 // the decision is about the whole roster. Each charter it
                 // dispatches opens its own row naming that charter.
@@ -691,15 +704,42 @@ fn admit_persona(
         }
     }
 
-    // (d) daily cap: today's non-refused passes vs the most conservative
-    // declared cap (min over charters, default 24; a declared 0 = never).
+    // (d) daily cap: today's runs vs the most conservative declared cap (min
+    // over charters; a declared 0 = never).
+    //
+    // WHAT COUNTS AS A RUN DEPENDS ON THE SHAPE OF THE PERSONA. A one-lane
+    // persona writes one ledger row per wake, so "rows today" and "times it
+    // acted today" are the same number. An App Master's decision lane writes
+    // its own roster-wide `decide` row PLUS one row per charter it dispatched,
+    // so counting rows charges a two-charter wake three times: measured
+    // 2026-09-07, CandiDate was refused at 05:55 UTC with
+    // `{"runs_today":26,"cap":24}` after roughly eight wakes. The cap the
+    // operator set means "how many times may this persona act", so an App
+    // Master is charged for its charter dispatches and nothing else — its
+    // bookkeeping rows are free.
+    //
+    // The DEFAULT moves with the same reasoning: an App Master paced at its own
+    // chosen sleep (as little as `MIN_NEXT_WAKE_MINUTES`) legitimately
+    // dispatches far more than a daily-rhythm persona, so an undeclared cap of
+    // 24 is a limit it meets before noon. A DECLARED cap still wins, whatever
+    // its value — this changes what the loop assumes, never what the operator
+    // said.
+    let app_master = is_app_master(charters);
     let cap = charters
         .iter()
         .filter_map(|c| c.cadence.max_runs_per_day)
         .min()
-        .unwrap_or(DEFAULT_MAX_RUNS_PER_DAY)
+        .unwrap_or(if app_master {
+            APP_MASTER_MAX_RUNS_PER_DAY
+        } else {
+            DEFAULT_MAX_RUNS_PER_DAY
+        })
         .max(0);
-    let runs_today = attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, None)?;
+    let runs_today = if app_master {
+        attention_ledger::count_charter_dispatches_today(pool, persona_id, KIND_ATTENTION)?
+    } else {
+        attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, None)?
+    };
     if runs_today >= cap {
         return Ok(Admission::Refused(AttentionRefusal::DailyCapReached {
             runs_today,
@@ -1025,6 +1065,7 @@ fn build_decision_context(
                 last_dispatch,
                 writes_code: charter_writes_code(c),
                 project_id: c.project_id.clone(),
+                dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
             }
         })
         .collect();
@@ -1073,6 +1114,7 @@ fn resolve_last_dispatch(
     pool: &DbPool,
     row: &personas_db::models::AttentionLedgerEntry,
 ) -> Option<attention_decide::LastDispatch> {
+    use crate::commands::fleet::classify::WorkerEndKind;
     use attention_decide::{
         LastDispatch, DISPATCH_FAILED, DISPATCH_FINISHED, DISPATCH_RUNNING, DISPATCH_UNKNOWN,
     };
@@ -1112,7 +1154,20 @@ fn resolve_last_dispatch(
         {
             Ok(Some(s)) => {
                 let state = match s.state.as_str() {
-                    "finished" => DISPATCH_FINISHED,
+                    // …unless the reason says the run was ENDED rather than
+                    // completed. The registry's `finished` means "stopped and
+                    // parked", and a session killed by a usage limit or a
+                    // declared block parks there too — carrying the banner as
+                    // its `state_reason`. Reading that as done is how three
+                    // limit-killed workers were reported as finished work in
+                    // cycles 2-3. The registry's vocabulary is left alone; only
+                    // this reading of it changes.
+                    "finished" => match crate::commands::fleet::classify::worker_end_kind(
+                        s.state_reason.as_deref(),
+                    ) {
+                        WorkerEndKind::Limit | WorkerEndKind::Blocked => DISPATCH_FAILED,
+                        WorkerEndKind::Finished | WorkerEndKind::Unknown => DISPATCH_FINISHED,
+                    },
                     // Ended without declaring done. Not necessarily a crash,
                     // but definitely not a completed job.
                     "exited" => DISPATCH_FAILED,
@@ -1213,16 +1268,34 @@ fn bound_summary(s: &str) -> String {
 /// about the model has a configuration problem the loop cannot resolve, and
 /// picking the first in roster order is at least deterministic and visible.
 fn decision_model(persona: &Persona, charters: &[&PersonaResponsibility]) -> String {
-    charters
-        .iter()
-        .find_map(|c| c.spec.model_override.clone())
-        .map(serde_json::Value::String)
+    resolve_charter_model(
+        persona,
+        charters
+            .iter()
+            .find_map(|c| c.spec.model_override.as_deref()),
+    )
+}
+
+/// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
+/// model id, through the SAME chain `execute_persona_inner` walks: the override
+/// first — accepting both shapes, a tier slug (`"opus"`) and a full model id —
+/// then the persona's own `model_profile`, then the capability default.
+///
+/// Never returns an empty string: the last step is a constant. That matters
+/// because the fleet lane turns this into `--model <id>` on a CLI argv, where
+/// an empty value would not fall back to anything, it would just be wrong.
+fn resolve_charter_model(persona: &Persona, model_override: Option<&str>) -> String {
+    model_override
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| serde_json::Value::String(s.to_string()))
         .and_then(|v| crate::engine::prompt::resolve_use_case_model_override(&v))
         .and_then(|p| p.model)
         .or_else(|| {
             crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
                 .and_then(|p| p.model)
         })
+        .filter(|m| !m.trim().is_empty())
         .unwrap_or_else(|| crate::engine::prompt::DEFAULT_CAPABILITY_MODEL.to_string())
 }
 
@@ -2134,6 +2207,154 @@ fn mint_dispatch_task(
     Some(task.id)
 }
 
+/// How far back the abandoned-dispatch sweep reads the persona's own ledger.
+/// The same depth [`build_decision_context`] uses for its charter history —
+/// a dispatch older than that has been superseded many wakes over.
+const DISPATCH_SWEEP_LEDGER_ROWS: u32 = 200;
+
+/// Task statuses that mean "somebody is still on this". Mirrors
+/// `dev_tasks::list_in_flight_tasks` so the sweep and the in-flight sensor can
+/// never disagree about what is under way.
+const NON_TERMINAL_TASK_STATUSES: &[&str] = &["running", "queued"];
+
+/// Close the `dev_tasks` rows this persona's dispatches minted whose worker is
+/// gone and which never came back through the write-back door.
+///
+/// The gap this closes, measured in cycles 2-3: a worker that dies — or ends on
+/// a usage limit — without calling `/dev-tools/ideas/<id>/outcome` leaves the
+/// row [`mint_dispatch_task`] wrote at spawn sitting `running` forever. The idea
+/// is then neither delivered nor re-offered: the undispatched sensor is silent
+/// because a task row exists, and the in-flight list keeps naming a run that
+/// ended hours ago.
+///
+/// **Only ever touches a task the dispatch itself minted**, identified by the
+/// `taskId` the decide row's own `stats_json` carries — the id
+/// `dispatch_decided_charter` stamped there after `mint_dispatch_task`
+/// returned. Nothing is inferred from a project's task list, so a task somebody
+/// else created is out of reach by construction. The row it closes is marked
+/// with [`ABANDONED_DISPATCH_ERROR_PREFIX`], which is what lets the
+/// undispatched sensor hand the idea back — and what keeps a *reported*
+/// `blocked` outcome (the write-back door writes `failed` too) silencing it.
+///
+/// Best-effort throughout and returns how many rows it closed: an unreadable
+/// row must not fail the wake it is preparing.
+fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
+    use crate::db::repos::dev::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
+
+    let rows = match attention_ledger::list_by_persona(pool, persona_id, DISPATCH_SWEEP_LEDGER_ROWS)
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: dispatch sweep could not read the ledger");
+            return 0;
+        }
+    };
+
+    let mut closed = 0usize;
+    for row in rows
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        let Some(stats) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        else {
+            continue;
+        };
+        let str_field = |key: &str| stats.get(key).and_then(|v| v.as_str());
+        // No task id means this dispatch minted no row — nothing of ours to close.
+        let Some(task_id) = str_field("taskId") else {
+            continue;
+        };
+        let Ok(task) = crate::db::repos::dev::tasks::get_task_by_id(pool, task_id) else {
+            continue; // pruned or never written; not ours to resurrect
+        };
+        if !NON_TERMINAL_TASK_STATUSES.contains(&task.status.as_str()) {
+            continue; // already settled — by the write-back door or by a human
+        }
+
+        let Some(ended) =
+            dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId"))
+        else {
+            continue; // still alive, or we could not tell — never guess a death
+        };
+
+        let error = format!("{ABANDONED_DISPATCH_ERROR_PREFIX}{ended}");
+        let now = chrono::Utc::now().to_rfc3339();
+        match crate::db::repos::dev::tasks::update_task(
+            pool,
+            &task.id,
+            None,
+            None,
+            Some("failed"),
+            None,
+            None,
+            None,
+            Some(Some(error.as_str())),
+            None,
+            Some(Some(now.as_str())),
+        ) {
+            Ok(_) => {
+                closed += 1;
+                tracing::info!(
+                    persona_id, task_id = %task.id, reason = %error,
+                    "persona_attention: closed a dispatch task whose worker ended \
+                     without writing back"
+                );
+            }
+            Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
+                "persona_attention: could not close an abandoned dispatch task"),
+        }
+    }
+    closed
+}
+
+/// `Some("<end kind>: <reason>")` when this dispatch's worker has stopped, or
+/// `None` while it may still act — which INCLUDES every state we cannot read.
+///
+/// `idle` and `hibernated` count as alive: a headless session parks in `idle`
+/// between turns and a hibernated one is resumable, so neither has spent its
+/// chance to write back. Only `finished` / `exited` / `stale` are ends.
+fn dispatch_worker_ended(
+    pool: &DbPool,
+    session_id: Option<&str>,
+    execution_id: Option<&str>,
+) -> Option<String> {
+    use crate::commands::fleet::classify::{worker_end_kind, WorkerEndKind};
+
+    if let Some(session_id) = session_id {
+        let session = crate::db::repos::fleet_sessions::get(pool, session_id)
+            .ok()
+            .flatten()?;
+        if !matches!(session.state.as_str(), "finished" | "exited" | "stale") {
+            return None;
+        }
+        let reason = session.state_reason.as_deref().unwrap_or("").trim();
+        let kind = match worker_end_kind(session.state_reason.as_deref()) {
+            WorkerEndKind::Limit => "limit",
+            WorkerEndKind::Blocked => "blocked",
+            WorkerEndKind::Finished => "finished",
+            WorkerEndKind::Unknown => session.state.as_str(),
+        };
+        return Some(format!("{kind}: {}", bound_summary(reason)));
+    }
+
+    let execution_id = execution_id?;
+    let (status, detail) = execution_end_state(pool, execution_id).ok().flatten()?;
+    if !matches!(
+        status.as_str(),
+        "completed" | "failed" | "cancelled" | "incomplete"
+    ) {
+        return None;
+    }
+    Some(format!(
+        "{status}: {}",
+        bound_summary(detail.as_deref().unwrap_or("").trim())
+    ))
+}
+
 /// The dispatched brief: the charter's standing contract plus THIS wake's
 /// argument for it. The decision's reason and brief are additive — they say
 /// which slice to take, never what the charter is allowed to do, which stays
@@ -2239,11 +2460,19 @@ async fn dispatch_into_worktree(
         &worktree.branch,
         &worktree_path,
     );
+    // The model is passed EXPLICITLY on this lane. `execute_persona_inner`
+    // resolves a charter's `spec.modelOverride` for the execution arm, but a
+    // headless fleet session is a `claude` CLI: with no `--model` it rides the
+    // operator's account default, which is what happened to every App Master
+    // worker in cycles 2-3 (three of them ended on the operator's own
+    // subscription limit). `charter.dispatch_model` is the same chain the
+    // execution arm walks, resolved at gather time and never empty.
+    let model = charter.dispatch_model.clone();
     let session_id = crate::commands::fleet::commands::fleet_spawn_headless_session(
         app,
         worktree_path.clone(),
         text,
-        None,
+        Some(vec!["--model".to_string(), model.clone()]),
     )
     .await
     .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
@@ -2251,6 +2480,7 @@ async fn dispatch_into_worktree(
     tracing::info!(
         persona_id = %context.persona_id,
         charter = %charter.id,
+        model = %model,
         branch = %worktree.branch,
         worktree = %worktree_path,
         "persona_attention: code charter dispatched into an isolated authoring worktree"
@@ -2259,6 +2489,7 @@ async fn dispatch_into_worktree(
         "charterId": charter.id,
         "worker": "fleet",
         "sessionId": session_id,
+        "model": model,
         "branch": worktree.branch,
         "worktreePath": worktree_path,
     }))
@@ -3466,6 +3697,171 @@ mod attention_tests {
         Ok(())
     }
 
+    /// Close one ledger row of the shape `verdict`/`responsibility_id` describe,
+    /// as the lanes themselves write them — and push its completion far enough
+    /// back that the interval floor (rung b) is not what refuses the pass these
+    /// tests are aiming at rung (d).
+    fn ledger_pass(
+        pool: &DbPool,
+        persona_id: &str,
+        responsibility_id: Option<&str>,
+        lane: &str,
+        verdict: &str,
+    ) -> Result<(), AppError> {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            responsibility_id,
+            KIND_ATTENTION,
+            Some(lane),
+        )?;
+        attention_ledger::complete(pool, &id, verdict, "", None, None, None)?;
+        // `started_at` stays today — that is what the cap counts.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET completed_at = ?1 WHERE id = ?2",
+            params![
+                (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339(),
+                id
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// An App Master is charged for what it DID, not for how many rows it wrote
+    /// doing it. Its decision lane opens a roster-wide `decide` row plus one row
+    /// per charter it dispatched, and counting rows is what refused CandiDate at
+    /// 05:55 UTC with `runs_today: 26` against a cap of 24.
+    #[test]
+    fn an_app_masters_cap_counts_charter_dispatches_not_bookkeeping_rows() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver ideas", "proj_1");
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                cadence: Some(ResponsibilityCadence {
+                    attention_enabled: true,
+                    max_runs_per_day: Some(2),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(is_app_master(&charters), "a project-bound charter");
+
+        let cap_refusal = |pool: &DbPool| -> Option<(i64, i64)> {
+            let mut counts = TickCounts::default();
+            match admit_persona(pool, "p1", &charters, &mut counts).unwrap() {
+                Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
+                    Some((runs_today, cap))
+                }
+                _ => None,
+            }
+        };
+
+        // Everything a wake writes that is NOT a charter dispatch: the
+        // roster-wide decide row, an improve pass, and a refusal. Five rows;
+        // zero acts.
+        ledger_pass(&pool, "p1", None, LANE_DECIDE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_DECIDE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_IMPROVE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_MAINTENANCE, "enqueued")?;
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_DECIDE, "refused")?;
+        assert!(
+            cap_refusal(&pool).is_none(),
+            "bookkeeping and refusals are not acts"
+        );
+
+        // A charter dispatch IS an act. Two of them meet the declared cap.
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_DECIDE, "dispatched")?;
+        assert!(cap_refusal(&pool).is_none(), "one act, cap two");
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_ADVANCE, "dispatched")?;
+        assert_eq!(
+            cap_refusal(&pool),
+            Some((2, 2)),
+            "the refusal keeps its shape: runs_today and cap"
+        );
+        Ok(())
+    }
+
+    /// A persona with no project-bound charter is counted exactly as before —
+    /// one ledger row per wake, one charge against the cap.
+    #[test]
+    fn a_plain_personas_cap_still_counts_every_pass() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let charter_id = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                cadence: Some(ResponsibilityCadence {
+                    attention_enabled: true,
+                    max_runs_per_day: Some(1),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(!is_app_master(&charters), "no project binding");
+
+        // A lane row that names no charter still counts for a plain persona.
+        ledger_pass(&pool, "p1", None, LANE_IMPROVE, "dispatched")?;
+        let mut counts = TickCounts::default();
+        match admit_persona(&pool, "p1", &charters, &mut counts)? {
+            Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
+                assert_eq!((runs_today, cap), (1, 1));
+            }
+            _ => panic!("expected the daily cap to refuse a plain persona's second pass"),
+        }
+        Ok(())
+    }
+
+    /// With nothing declared, an App Master gets the App Master default and
+    /// everyone else keeps theirs. A DECLARED cap still wins for both.
+    #[test]
+    fn the_undeclared_cap_default_follows_the_shape_of_the_persona() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "am")?;
+        seed_persona(&pool, "plain")?;
+        let am_id = seed_project_charter(&pool, "am", "Deliver ideas", "proj_1");
+        let plain_id = seed_charter(&pool, "plain", "Charter A", &one_outcome());
+        let am = responsibilities::get_by_id(&pool, &am_id)?.expect("charter");
+        let plain = responsibilities::get_by_id(&pool, &plain_id)?.expect("charter");
+
+        // Neither declares a cap, so neither refuses yet — drive the number out
+        // of the ladder by filling the plain persona past ITS default only.
+        for _ in 0..DEFAULT_MAX_RUNS_PER_DAY {
+            ledger_pass(&pool, "plain", None, LANE_ADVANCE, "dispatched")?;
+            ledger_pass(&pool, "am", Some(&am_id), LANE_DECIDE, "dispatched")?;
+        }
+        let refusal = |pid: &str, charters: &[&PersonaResponsibility]| {
+            let mut counts = TickCounts::default();
+            match admit_persona(&pool, pid, charters, &mut counts).unwrap() {
+                Admission::Refused(AttentionRefusal::DailyCapReached { cap, .. }) => Some(cap),
+                _ => None,
+            }
+        };
+        assert_eq!(
+            refusal("plain", &[&plain]),
+            Some(DEFAULT_MAX_RUNS_PER_DAY),
+            "an undeclared cap is 24 for a persona that acts once a wake"
+        );
+        assert_eq!(
+            refusal("am", &[&am]),
+            None,
+            "24 charter dispatches is a busy morning for an App Master, not its day"
+        );
+        Ok(())
+    }
+
     /// A corrupt or absent wake row reads as "none owed" and never wedges the
     /// loop — the same leniency the rest of the ladder keeps.
     #[test]
@@ -4164,5 +4560,223 @@ mod attention_tests {
             serde_json::json!({ "lane": "decide", "freeCapacity": 0, "dispatched": 0 }),
         );
         assert!(resolve_last_dispatch(&pool, &ledger_entry(&pool, &empty)).is_none());
+    }
+
+    // -- Cycle 4: the model on the fleet lane, and workers that never came back
+
+    /// The exact sentence three App Master workers ended on in cycles 2-3.
+    const FABLE_LIMIT: &str =
+        "You've reached your Fable limit. Switch to another model, or manage usage";
+
+    /// Every charter carries the model its dispatch must run on, resolved
+    /// through the execution path's own chain — and it is never empty, because
+    /// the fleet lane turns it into a `--model` argument where empty is wrong
+    /// rather than absent.
+    #[test]
+    fn a_charters_dispatch_model_resolves_the_same_way_the_execution_path_does(
+    ) -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+
+        // Nothing declared anywhere → the capability default, never "".
+        assert_eq!(
+            resolve_charter_model(&persona, None),
+            crate::engine::prompt::DEFAULT_CAPABILITY_MODEL
+        );
+        for empty in ["", "   "] {
+            assert_eq!(
+                resolve_charter_model(&persona, Some(empty)),
+                crate::engine::prompt::DEFAULT_CAPABILITY_MODEL,
+                "an empty override is not a model id"
+            );
+        }
+
+        // The App Master's own shape: a tier slug, resolved to a concrete id.
+        // Both spellings come from `personas_core::model_ids`, the one door for
+        // model identifiers — a dated literal here would rot on the vendor's
+        // schedule exactly as `bare-model-id-literal` says.
+        use personas_core::model_ids::{ALIAS_OPUS, DEFAULT_FAST, OPUS_CURRENT};
+        let opus = resolve_charter_model(&persona, Some(ALIAS_OPUS));
+        assert_eq!(
+            opus, OPUS_CURRENT,
+            "the slug is resolved, not passed through"
+        );
+        // …and a full model id passes through as itself.
+        assert_eq!(
+            resolve_charter_model(&persona, Some(OPUS_CURRENT)),
+            OPUS_CURRENT
+        );
+
+        // With no charter override the persona's own profile is the fallback.
+        let mut profiled = persona.clone();
+        profiled.model_profile = Some(format!(r#"{{"model":"{DEFAULT_FAST}"}}"#));
+        assert_eq!(resolve_charter_model(&profiled, None), DEFAULT_FAST);
+        // …and the charter still outranks it.
+        assert_eq!(
+            resolve_charter_model(&profiled, Some(ALIAS_OPUS)),
+            OPUS_CURRENT
+        );
+        Ok(())
+    }
+
+    /// A worker the operator's own subscription refused did NOT finish the
+    /// work. The fleet registry parks it `finished` with the banner as its
+    /// reason; the decision must read that as a failure it can re-dispatch.
+    #[test]
+    fn a_limit_killed_fleet_worker_reads_as_failed_not_finished() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Ship the parser", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-limit" }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-limit", "finished", Some(FABLE_LIMIT)),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_FAILED,
+            "a limit is a failure, whatever the registry's own state says"
+        );
+        assert_eq!(
+            d.summary.as_deref(),
+            Some(FABLE_LIMIT),
+            "the decision is told WHY, so it can judge whether to retry"
+        );
+
+        // The registry's vocabulary is untouched: the row still says finished.
+        assert_eq!(
+            fleet_sessions::get(&pool, "sess-limit")
+                .unwrap()
+                .unwrap()
+                .state,
+            "finished"
+        );
+    }
+
+    /// The whole P3 loop over a real database: a dispatch mints a task, its
+    /// worker dies on a limit without writing back, and the next wake's sweep
+    /// hands the idea back to the backlog instead of leaving a claim nobody is
+    /// honouring.
+    #[test]
+    fn an_abandoned_dispatch_task_is_closed_and_its_idea_offered_again() -> Result<(), AppError> {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "abandoned");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Wire the connector");
+
+        // Exactly what `dispatch_decided_charter` writes: the task row, then the
+        // decide ledger row carrying its id beside the worker's.
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({ "charterId": charter_id, "sessionId": "sess-dead" });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-dead", "taskId": task_id,
+            }),
+        );
+        assert_eq!(tasks::get_task_by_id(&pool, &task_id)?.status, "running");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "the minted task silences the sensor while the worker is alive"
+        );
+
+        // While the worker is still going, the sweep leaves it alone.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "running", Some("Streaming turn")),
+        )?;
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        assert_eq!(tasks::get_task_by_id(&pool, &task_id)?.status, "running");
+
+        // The worker hits the operator's limit and parks. No write-back ever came.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "finished", Some(FABLE_LIMIT)),
+        )?;
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+
+        let closed = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(closed.status, "failed");
+        let error = closed.error.unwrap_or_default();
+        assert!(
+            error.starts_with(tasks::ABANDONED_DISPATCH_ERROR_PREFIX),
+            "the marker is what tells an abandoned dispatch from a reported one: {error}"
+        );
+        assert!(error.contains("limit: "), "{error}");
+        assert!(error.contains("Fable limit"), "{error}");
+
+        // …so the idea is on offer again, and the wake that follows can see it.
+        let offered: Vec<String> = dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?
+            .into_iter()
+            .map(|i| i.id)
+            .collect();
+        assert_eq!(offered, vec![idea_id], "the abandoned idea is re-offered");
+        assert!(
+            project_snapshot(&pool, &pid, 10).in_flight_tasks.is_empty(),
+            "and it is no longer claimed as work under way"
+        );
+
+        // Idempotent: a second sweep has nothing left to close.
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        Ok(())
+    }
+
+    /// The sweep is bounded by the dispatch's own bookkeeping: no `taskId` in
+    /// the ledger row means no row of ours to touch, whatever else is failing.
+    #[test]
+    fn the_sweep_never_touches_a_task_the_dispatch_did_not_mint() -> Result<(), AppError> {
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "foreign");
+        let charter_id = seed_project_charter(&pool, "p1", "Charter", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Somebody else's work");
+
+        // A task nobody's dispatch minted, running against the same dead session.
+        let foreign = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&pid),
+            "hand-made",
+            None,
+            Some(&idea_id),
+            None,
+            Some("running"),
+            None,
+        )?;
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "exited", Some("process gone")),
+        )?;
+        // A decide row that dispatched a worker but minted no task row.
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({ "charterId": charter_id, "sessionId": "sess-dead" }),
+        );
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        assert_eq!(tasks::get_task_by_id(&pool, &foreign.id)?.status, "running");
+        Ok(())
     }
 }

@@ -81,6 +81,63 @@ impl portable_pty::ChildKiller for PidKiller {
     }
 }
 
+/// The flags every headless spawn carries, before `extra_args` and before the
+/// variadic `--mcp-config`. Pure, so the argv contract is unit-testable without
+/// spawning anything.
+///
+/// `extra_args` are appended in order, with ONE rule applied: a flag from
+/// [`super::naming::VALUE_FLAGS`] that the base argv already carries is dropped
+/// along with its value. Only `--session-id` can collide today (the base pins
+/// it), but the rule is written against the flag list rather than that one name
+/// because the caller-supplied set grows — the decide lane started passing
+/// `--model` on 2026-09-07 — and `claude` takes the LAST occurrence of a
+/// repeated flag, so a silent duplicate would override a value this function
+/// chose deliberately.
+fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> {
+    let mut argv: Vec<String> = [
+        "--print",
+        // stream-json output with --print requires --verbose (per CLI contract).
+        "--verbose",
+        "--input-format",
+        "stream-json",
+        "--output-format",
+        "stream-json",
+        "--dangerously-skip-permissions",
+        "--session-id",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    argv.push(claude_session_id.to_string());
+
+    let base_flags: Vec<String> = argv
+        .iter()
+        .filter(|a| a.starts_with("--"))
+        .cloned()
+        .collect();
+    let mut i = 0;
+    while i < extra_args.len() {
+        let a = &extra_args[i];
+        let takes_value = super::naming::VALUE_FLAGS.contains(&a.as_str());
+        if base_flags.contains(a) {
+            tracing::warn!(
+                flag = %a,
+                "fleet headless spawn: dropping a caller arg the base argv already sets"
+            );
+            i += if takes_value { 2 } else { 1 };
+            continue;
+        }
+        argv.push(a.clone());
+        if takes_value {
+            if let Some(v) = extra_args.get(i + 1) {
+                argv.push(v.clone());
+            }
+        }
+        i += if takes_value { 2 } else { 1 };
+    }
+    argv
+}
+
 /// Spawn a headless stream-json Claude Code session rooted at `cwd`, seeded
 /// with `task` as its first user message. Returns the internal session id.
 pub fn spawn_headless_session(
@@ -124,17 +181,7 @@ pub fn spawn_headless_session(
     let program: PathBuf = PathBuf::from("claude");
 
     let mut cmd = Command::new(&program);
-    cmd.arg("--print")
-        // stream-json output with --print requires --verbose (per CLI contract).
-        .arg("--verbose")
-        .arg("--input-format")
-        .arg("stream-json")
-        .arg("--output-format")
-        .arg("stream-json")
-        .arg("--dangerously-skip-permissions")
-        .arg("--session-id")
-        .arg(&claude_session_id);
-    for a in &extra_args {
+    for a in headless_argv(&claude_session_id, &extra_args) {
         cmd.arg(a);
     }
     // Variadic `--mcp-config` must come LAST — see pty.rs for the rationale.
@@ -480,6 +527,85 @@ mod tests {
         assert!(render_event_line(&json!({"type":"user","message":{}})).is_none());
         assert!(render_event_line(&json!({"type":"stream_event"})).is_none());
         assert!(render_event_line(&json!({"type":"system","subtype":"compact"})).is_none());
+    }
+
+    fn argv(raw: &[&str]) -> Vec<String> {
+        raw.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Index of `flag`'s value in `args`, or None.
+    fn value_of<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .map(String::as_str)
+    }
+
+    #[test]
+    fn the_base_argv_pins_the_session_and_carries_the_stream_json_contract() {
+        let a = headless_argv("sess-1", &[]);
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-1"));
+        for flag in [
+            "--print",
+            "--verbose",
+            "--dangerously-skip-permissions",
+            "--input-format",
+            "--output-format",
+        ] {
+            assert!(a.iter().any(|x| x == flag), "{flag} missing from {a:?}");
+        }
+        // Nothing invents a model: with no caller args the session rides the
+        // account default, exactly as before.
+        assert!(!a.iter().any(|x| x == "--model"));
+    }
+
+    #[test]
+    fn a_caller_supplied_model_reaches_the_argv_exactly_once() {
+        // What `dispatch_into_worktree` passes for an App Master code charter.
+        // The id comes from `personas_core::model_ids` — the one door — rather
+        // than a dated literal that would rot on the vendor's schedule.
+        let opus = personas_core::model_ids::OPUS_CURRENT;
+        let a = headless_argv("sess-2", &argv(&["--model", opus]));
+        assert_eq!(
+            a.iter().filter(|x| *x == "--model").count(),
+            1,
+            "exactly one --model in {a:?}"
+        );
+        assert_eq!(value_of(&a, "--model"), Some(opus));
+        // …and it lands after the base flags, so the base contract is intact.
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-2"));
+    }
+
+    #[test]
+    fn a_caller_cannot_duplicate_a_flag_the_base_argv_already_set() {
+        // `claude` takes the LAST occurrence, so an un-dropped duplicate would
+        // silently unpin the session id the registry keyed everything on.
+        let opus = personas_core::model_ids::OPUS_CURRENT;
+        let a = headless_argv(
+            "sess-3",
+            &argv(&["--session-id", "hijacked", "--model", opus]),
+        );
+        assert_eq!(a.iter().filter(|x| *x == "--session-id").count(), 1);
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-3"));
+        assert!(!a.iter().any(|x| x == "hijacked"));
+        assert_eq!(value_of(&a, "--model"), Some(opus));
+    }
+
+    #[test]
+    fn extra_args_keep_their_order_and_their_positionals() {
+        let a = headless_argv(
+            "sess-4",
+            &argv(&["--model", "m", "--add-dir", "/repo", "--flagless"]),
+        );
+        let tail: Vec<&str> = a
+            .iter()
+            .skip_while(|x| *x != "--model")
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            tail,
+            vec!["--model", "m", "--add-dir", "/repo", "--flagless"]
+        );
     }
 
     #[test]

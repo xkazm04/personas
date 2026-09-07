@@ -60,6 +60,79 @@ pub fn verdict_token(v: &ParkedVerdict) -> Option<&'static str> {
     }
 }
 
+/// How a session's END reads, from the `state_reason` it left behind.
+///
+/// Distinct from [`ParkedVerdict`], which reads a transcript to decide what a
+/// *live* session is doing. This one reads the one string a session leaves on
+/// the registry row after it stops, and answers a narrower question: did the
+/// worker do the work, or did something end the run for it?
+///
+/// The distinction was measured, not theorised. In App Master cycles 2-3
+/// (2026-09-07) three workers ended with the transcript line *"You've reached
+/// your Fable limit. Switch to another model, or manage usage"* — the operator's
+/// own subscription refusing to serve. The fleet registry recorded each as
+/// `finished` with that sentence as its `state_reason`, so every reader keyed on
+/// the STATE saw completed work and the App Master deferred those charters as
+/// done. A limit is a failure; the state vocabulary cannot say so, and this
+/// says it without changing the vocabulary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkerEndKind {
+    /// The worker declared the task complete through the fleet protocol.
+    Finished,
+    /// A provider- or account-side refusal ended the run: a usage/session
+    /// limit, a model limit, or a transient API error. No work was completed by
+    /// the run ending this way, whatever its state says.
+    Limit,
+    /// The worker declared itself blocked and stopped asking.
+    Blocked,
+    /// The reason says nothing either way (including no reason at all). NOT
+    /// "finished" — the caller keeps whatever the state told it.
+    Unknown,
+}
+
+/// The fleet protocol's completion marker; `registry::mark_finished` rewrites
+/// it into the `Task complete: ` prefix `run::summary_from_reason` reads back.
+const DONE_MARKERS: &[&str] = &["fleet:done", "task complete:"];
+
+/// The fleet protocol's blocked marker. Named by the App Master's worker brief;
+/// the mechanical cue reader (`fleet_bridge.rs`) recognises `FLEET:DONE` and
+/// `FLEET:NEXT` today, so this is the one shape here with no second reader yet.
+const BLOCKED_MARKERS: &[&str] = &["fleet:blocked"];
+
+/// Model-limit banners that the screen-side predicate does NOT match, because
+/// it was written against the *session* limit banner. Measured live: the
+/// sentence "You've reached your Fable limit. Switch to another model, or
+/// manage usage" contains none of `usage limit` / `session limit` /
+/// `usage-credits` / `limit resets`, so it fell through as a clean finish.
+fn reason_shows_model_limit(reason: &str) -> bool {
+    let s = reason.to_lowercase();
+    s.contains("switch to another model")
+        || s.contains("manage usage")
+        || (s.contains("limit") && s.contains("reached your"))
+}
+
+/// Classify how a stopped session ENDED, from its `state_reason`. Pure.
+///
+/// Order matters: a limit banner is checked before the done markers, because a
+/// reason may carry both (a session that declared `FLEET:DONE` on an earlier
+/// turn and then hit the wall on a later one keeps the older text in front).
+pub fn worker_end_kind(state_reason: Option<&str>) -> WorkerEndKind {
+    let Some(reason) = state_reason.map(str::trim).filter(|r| !r.is_empty()) else {
+        return WorkerEndKind::Unknown;
+    };
+    if super::stale::screen_shows_limit_error(reason) || reason_shows_model_limit(reason) {
+        return WorkerEndKind::Limit;
+    }
+    let lower = reason.to_lowercase();
+    if BLOCKED_MARKERS.iter().any(|m| lower.contains(m)) {
+        return WorkerEndKind::Blocked;
+    }
+    if DONE_MARKERS.iter().any(|m| lower.contains(m)) {
+        return WorkerEndKind::Finished;
+    }
+    WorkerEndKind::Unknown
+}
+
 /// Longest summary carried out of a Done verdict.
 const SUMMARY_MAX: usize = 200;
 
@@ -336,6 +409,85 @@ mod tests {
         assert_eq!(
             classify_parked(&lines(&["not json at all"]), None, false),
             ParkedVerdict::Unknown
+        );
+    }
+
+    // ---- how a stopped session ENDED --------------------------------------
+
+    #[test]
+    fn the_fable_limit_sentence_is_a_limit_not_a_finish() {
+        // Verbatim from the three App Master workers of cycles 2-3 (2026-09-07).
+        // The registry stored it as the `state_reason` of a `finished` row.
+        assert_eq!(
+            worker_end_kind(Some(
+                "You've reached your Fable limit. Switch to another model, or manage usage"
+            )),
+            WorkerEndKind::Limit,
+        );
+    }
+
+    #[test]
+    fn the_session_limit_banner_is_read_through_the_stale_lane_predicate() {
+        for reason in [
+            "You've hit your session limit · resets 7:50pm (Europe/Prague)",
+            "usage limit reached",
+            "/usage-credits to finish what you're working on",
+            "API Error: overloaded_error",
+        ] {
+            assert_eq!(
+                worker_end_kind(Some(reason)),
+                WorkerEndKind::Limit,
+                "{reason}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_declared_completion_is_finished_and_a_declared_block_is_blocked() {
+        assert_eq!(
+            worker_end_kind(Some("Task complete: shipped the parser")),
+            WorkerEndKind::Finished,
+        );
+        assert_eq!(
+            worker_end_kind(Some("FLEET:DONE — rebased and pushed")),
+            WorkerEndKind::Finished,
+        );
+        assert_eq!(
+            worker_end_kind(Some("FLEET:BLOCKED — the repo has no main branch")),
+            WorkerEndKind::Blocked,
+        );
+    }
+
+    #[test]
+    fn a_limit_wins_over_a_stale_completion_marker_in_the_same_reason() {
+        assert_eq!(
+            worker_end_kind(Some(
+                "Task complete: first pass · You've reached your Fable limit. \
+                 Switch to another model, or manage usage"
+            )),
+            WorkerEndKind::Limit,
+        );
+    }
+
+    #[test]
+    fn a_reason_that_says_nothing_abstains() {
+        for reason in [
+            None,
+            Some(""),
+            Some("   "),
+            Some("Headless session spawned"),
+        ] {
+            assert_eq!(
+                worker_end_kind(reason),
+                WorkerEndKind::Unknown,
+                "{reason:?}"
+            );
+        }
+        // A session that merely TALKS about limits is not one that hit one —
+        // the same narrowness the screen-side predicate is written for.
+        assert_eq!(
+            worker_end_kind(Some("Added a rate limit to the uploader")),
+            WorkerEndKind::Unknown,
         );
     }
 
