@@ -51,7 +51,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assertRule, scanRule, validateRule } from './lib/engine.mjs';
+import { assertRule, buildIndex, scanRuleOverIndex, validateRule } from './lib/engine.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -122,10 +122,18 @@ export function runCensus(args) {
     return { exitCode: 1, results: [], problemsByRule: new Map() };
   }
 
+  // Walk once, read once: ONE index over the union of the selected rules'
+  // roots and extensions, then every rule evaluated over it. Each rule's
+  // `walked` is still ITS OWN visit count (its roots, its extensions), so the
+  // "file-visits" total in the summary line means what it always meant.
+  const t0 = performance.now();
+  const index = buildIndex(args.root, { rules });
+  const indexMs = performance.now() - t0;
+
   const results = [];
   const problemsByRule = new Map();
   for (const rule of rules) {
-    const result = scanRule(rule, { root: args.root });
+    const result = scanRuleOverIndex(rule, index);
     results.push({ rule, result });
     problemsByRule.set(rule.id, assertRule(rule, result));
   }
@@ -137,10 +145,15 @@ export function runCensus(args) {
   if (structural.length > 0) exitCode = 1;
   else if (args.check && drift.length > 0) exitCode = 1;
 
-  return { exitCode, results, problemsByRule };
+  return {
+    exitCode,
+    results,
+    problemsByRule,
+    index: { files: index.files.size, walkMs: index.walkMs, readMs: index.readMs, ms: indexMs },
+  };
 }
 
-function report(args, { results, problemsByRule, exitCode }) {
+function report(args, { results, problemsByRule, exitCode, index }) {
   if (args.json) {
     console.log(
       JSON.stringify(
@@ -170,6 +183,14 @@ function report(args, { results, problemsByRule, exitCode }) {
 
   console.log(c.bold('\ncensus') + c.dim(`  ${args.check ? 'check (drift is fatal)' : 'report'}`));
   console.log(c.dim('  golden-path enforcement — one runner, N declarative rules\n'));
+  if (args.verbose && index) {
+    console.log(
+      c.dim(
+        `  index: ${index.files} file(s) read once — walk ${Math.round(index.walkMs)} ms, ` +
+          `read ${Math.round(index.readMs)} ms\n`,
+      ),
+    );
+  }
 
   const pad = (s, n) => String(s).padEnd(n);
   const lpad = (s, n) => String(s).padStart(n);
