@@ -11,9 +11,25 @@
  * (tables.md, inline-busy-state.md §9, dropdown-and-select.md §9) each specified
  * a near-identical "ratcheting baseline count" mechanism independently. This is
  * that mechanism, once.
+ *
+ * Walk once, read once (2026-09-07)
+ * ---------------------------------
+ * The original `scanRule` did a fresh recursive walk and a `readFileSync` per
+ * rule, so 205 rules visited the same ~6,500 files ~575,000 times per run. The
+ * engine now builds ONE in-memory index (`buildIndex`) — the union of every
+ * rule's roots, walked with the same skip rules, every matching-extension file
+ * read exactly once — and evaluates each rule over it (`scanRuleOverIndex`).
+ * Per-rule `walked` / `scanned` / `files` / `matches` and the exclude-hit
+ * accounting are computed from the index with the rule's OWN roots, extensions
+ * and excludes, so every number `assertRule` consumes is identical to the
+ * per-rule walk. `scanRule` remains as a compatibility wrapper that builds a
+ * one-rule index. The index is also what the gate daemon keeps warm
+ * (`docs/architecture/warm-verification-service.md`): `applyOverlay` lays a
+ * worktree's changed files over it copy-on-write, `invalidateIndex` re-reads
+ * files a watcher reported.
  */
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { extname, join, relative, sep } from 'node:path';
 
 /** Directories never worth walking, in any repo. */
 const ALWAYS_SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'target', 'coverage']);
@@ -172,12 +188,219 @@ function buildRegExp(signal) {
   return new RegExp(signal.pattern, flags.includes('g') ? flags : flags + 'g');
 }
 
+// ------------------------------------------------------------------ index ---
+
+/** Repo-relative posix form of a path, as the walk has always reported it. */
+function toRel(rootDir, abs) {
+  return relative(rootDir, abs).split(sep).join('/');
+}
+
 /**
- * Scan one rule. Returns a result object; performs NO assertions and never
- * exits — the caller decides what is fatal (so the self-test can inspect
- * failures instead of dying on them).
+ * Normalise a rule root (`src`, `./src/`, `src\\features`) to the exact posix
+ * prefix the walk would have produced for files beneath it. `''` is the root.
  */
-export function scanRule(rule, { root, collectScanned = false }) {
+function normalizeRoot(rootDir, relRoot) {
+  return toRel(rootDir, join(rootDir, relRoot));
+}
+
+/** Posix-normalise an overlay / watcher path (`./src\\a.ts` -> `src/a.ts`). */
+function normalizeRelPath(p) {
+  let s = String(p).replace(/\\/g, '/');
+  while (s.startsWith('./')) s = s.slice(2);
+  return s.replace(/\/{2,}/g, '/').replace(/^\//, '');
+}
+
+/** True if any DIRECTORY segment of a relative path is one the walk skips. */
+function underSkippedDir(rel) {
+  const segs = rel.split('/');
+  for (let i = 0; i < segs.length - 1; i++) if (isSkippedDir(segs[i])) return true;
+  return false;
+}
+
+const uniq = (arr) => [...new Set(arr)];
+
+/**
+ * Collapse a set of roots to the minimal set of walks that covers them. `b` is
+ * covered by `a` when `b` lies beneath `a` AND no directory between them is one
+ * the walk skips — the old per-rule walk started INSIDE such a directory and
+ * would have seen its files, so a walk from `a` must not be assumed to.
+ */
+function coveringRoots(rootDir, roots) {
+  const norm = uniq(roots.map((r) => normalizeRoot(rootDir, r)));
+  return norm.filter((b) => {
+    return !norm.some((a) => {
+      if (a === b) return false;
+      if (a !== '' && !b.startsWith(a + '/')) return false;
+      const between = a === '' ? b : b.slice(a.length + 1);
+      return !underSkippedDir(between + '/x');
+    });
+  });
+}
+
+/**
+ * Walk the tree ONCE and read every file ONCE into a shared in-memory index.
+ *
+ * `roots` and `extensions` default to the union across `rules`; pass either to
+ * override. Keys are repo-relative posix paths in walk order (depth-first,
+ * `readdirSync` order), so selecting a root's files from the index in insertion
+ * order reproduces exactly the order the per-rule walk visited them.
+ *
+ * @param {string} rootDir absolute repo root
+ * @param {{ rules?: object[], roots?: string[], extensions?: string[] }} [opts]
+ * @returns {{ rootDir: string, roots: string[], extensions: string[],
+ *   files: Map<string, { content: string, ext: string }>,
+ *   builtAt: number, walkMs: number, readMs: number, version: number }}
+ */
+export function buildIndex(rootDir, { rules, roots, extensions } = {}) {
+  const ruleList = rules ?? [];
+  const wantRoots = roots ?? ruleList.flatMap((r) => r.roots ?? []);
+  const wantExts = extensions ?? uniq(ruleList.flatMap((r) => r.extensions ?? []));
+  if (wantExts.length === 0) {
+    throw new Error('buildIndex: no extensions to index — pass `rules` or `extensions`');
+  }
+
+  const t0 = performance.now();
+  const absFiles = [];
+  for (const relRoot of coveringRoots(rootDir, wantRoots)) {
+    walkFiles(join(rootDir, relRoot), wantExts, absFiles);
+  }
+  const t1 = performance.now();
+
+  const files = new Map();
+  for (const abs of absFiles) {
+    const rel = toRel(rootDir, abs);
+    // Two covering roots can never overlap, so a key is set at most once; the
+    // guard only protects against a caller passing the same root twice.
+    if (files.has(rel)) continue;
+    files.set(rel, { content: readFileSync(abs, 'utf8'), ext: extname(rel) });
+  }
+  const t2 = performance.now();
+
+  const normRoots = uniq(wantRoots.map((r) => normalizeRoot(rootDir, r)));
+  return {
+    rootDir,
+    roots: normRoots,
+    extensions: wantExts,
+    files,
+    // True when some root lies INSIDE a directory the walk skips. Only then can
+    // the index hold files an outer root's own walk would never have reached,
+    // and only then does `selectFiles` pay for the per-file skip check.
+    skippedRootsPresent: normRoots.some((r) => underSkippedDir(r + '/x')),
+    builtAt: Date.now(),
+    walkMs: t1 - t0,
+    readMs: t2 - t1,
+    version: 0,
+  };
+}
+
+/**
+ * Lay a set of changed files over an index, copy-on-write. The input index is
+ * never mutated — the daemon keeps it as the warm base and answers each request
+ * from a fresh overlay.
+ *
+ * Entries: `{ path, status: 'modified'|'added'|'deleted', content? }` with
+ * repo-relative posix paths. `deleted` removes the key; `added`/`modified` set
+ * `content` (required — an overlay that names a file without its content is a
+ * caller bug, not something to guess at). A path beneath a directory the walk
+ * skips, or with an extension no rule reads, is ignored, exactly as the walk
+ * would have ignored it on disk.
+ */
+export function applyOverlay(index, overlayFiles) {
+  const files = new Map(index.files);
+  let applied = 0;
+  for (const entry of overlayFiles ?? []) {
+    const rel = normalizeRelPath(entry.path);
+    if (entry.status === 'deleted') {
+      if (files.delete(rel)) applied++;
+      continue;
+    }
+    if (underSkippedDir(rel)) continue;
+    if (!index.extensions.some((ext) => rel.endsWith(ext))) continue;
+    if (typeof entry.content !== 'string') {
+      throw new Error(`applyOverlay: "${rel}" is ${entry.status} but carries no content`);
+    }
+    files.set(rel, { content: entry.content, ext: extname(rel) });
+    applied++;
+  }
+  return { ...index, files, version: 0, overlayApplied: applied };
+}
+
+/**
+ * Re-read the named files from disk under `index.rootDir`, in place. A file
+ * that is gone is dropped from the index; a path the walk would not have
+ * indexed (skipped directory, foreign extension, a directory itself) is dropped
+ * if present and otherwise ignored. Used by the daemon worker after a watcher
+ * event. Returns the number of keys changed.
+ */
+export function invalidateIndex(index, relPaths) {
+  let changed = 0;
+  for (const p of relPaths ?? []) {
+    const rel = normalizeRelPath(p);
+    const indexable = !underSkippedDir(rel) && index.extensions.some((ext) => rel.endsWith(ext));
+    if (!indexable) {
+      if (index.files.delete(rel)) changed++;
+      continue;
+    }
+    try {
+      index.files.set(rel, { content: readFileSync(join(index.rootDir, rel), 'utf8'), ext: extname(rel) });
+      changed++;
+    } catch (err) {
+      if (err?.code === 'ENOENT' || err?.code === 'ENOTDIR') {
+        if (index.files.delete(rel)) changed++;
+      } else if (err?.code !== 'EISDIR') {
+        throw err;
+      }
+    }
+  }
+  if (changed) index.version++;
+  return changed;
+}
+
+/**
+ * Entries of an index as an array, cached per (index, version) so 205 rules do
+ * not each re-materialise the same 6,500-entry list.
+ */
+const entriesCache = new WeakMap();
+function indexEntries(index) {
+  const cached = entriesCache.get(index);
+  if (cached && cached.version === index.version) return cached.entries;
+  const entries = [...index.files];
+  entriesCache.set(index, { version: index.version, entries });
+  return entries;
+}
+
+/**
+ * The files a rule's own walk would have visited, in the order it would have
+ * visited them: root by root (a file under two of the rule's roots is yielded
+ * twice, as the walk counted it twice), each root's files in walk order.
+ */
+function* selectFiles(rule, index) {
+  const entries = indexEntries(index);
+  const exts = rule.extensions;
+  const guardSkipped = index.skippedRootsPresent === true;
+  for (const relRoot of rule.roots) {
+    const prefix = normalizeRoot(index.rootDir, relRoot);
+    const under = prefix === '' ? () => true : (rel) => rel.startsWith(prefix + '/');
+    for (const [rel, entry] of entries) {
+      if (!under(rel)) continue;
+      if (!exts.some((ext) => rel.endsWith(ext))) continue;
+      // A walk from THIS root would have stopped at a skipped directory on the
+      // way down; a file the index holds because another rule starts inside
+      // that directory must stay invisible to this rule.
+      if (guardSkipped && underSkippedDir(prefix === '' ? rel : rel.slice(prefix.length + 1))) continue;
+      yield [rel, entry.content];
+    }
+  }
+}
+
+// ------------------------------------------------------------------- scan ---
+
+/**
+ * Scan one rule over a prebuilt index. Returns a result object; performs NO
+ * assertions and never exits — the caller decides what is fatal (so the
+ * self-test can inspect failures instead of dying on them).
+ */
+export function scanRuleOverIndex(rule, index, { collectScanned = false } = {}) {
   const excludes = (rule.exclude ?? []).map((entry) => ({
     ...entry,
     regexp: patternToRegExp(entry.path),
@@ -198,68 +421,63 @@ export function scanRule(rule, { root, collectScanned = false }) {
   let totalMatches = 0;
   let commentMatchesSkipped = 0;
 
-  for (const relRoot of rule.roots) {
-    const absRoot = join(root, relRoot);
-    for (const abs of walkFiles(absRoot, rule.extensions)) {
-      const rel = relative(root, abs).split(sep).join('/');
-      walked++;
+  for (const [rel, source] of selectFiles(rule, index)) {
+    walked++;
 
-      const excluded = excludes.find((e) => e.regexp.test(rel));
-      if (excluded) {
-        excluded.hits++;
+    const excluded = excludes.find((e) => e.regexp.test(rel));
+    if (excluded) {
+      excluded.hits++;
+      continue;
+    }
+    scanned++;
+    if (scannedFiles) scannedFiles.push(rel);
+
+    // Cheap pre-filter: skip the line indexing for files that cannot match.
+    regexp.lastIndex = 0;
+    if (!regexp.test(source)) continue;
+
+    const { lines, lineOf } = lineIndexer(source);
+    regexp.lastIndex = 0;
+    let match;
+    let fileMatches = 0;
+    const fileLines = new Set();
+    while ((match = regexp.exec(source)) !== null) {
+      if (match[0].length === 0) {
+        regexp.lastIndex++; // zero-width pattern guard
         continue;
       }
-      scanned++;
-      if (scannedFiles) scannedFiles.push(rel);
-
-      const source = readFileSync(abs, 'utf8');
-      // Cheap pre-filter: skip the line indexing for files that cannot match.
-      regexp.lastIndex = 0;
-      if (!regexp.test(source)) continue;
-
-      const { lines, lineOf } = lineIndexer(source);
-      regexp.lastIndex = 0;
-      let match;
-      let fileMatches = 0;
-      const fileLines = new Set();
-      while ((match = regexp.exec(source)) !== null) {
-        if (match[0].length === 0) {
-          regexp.lastIndex++; // zero-width pattern guard
-          continue;
-        }
-        const lineIdx = lineOf(match.index);
-        if (ignoreComments && isCommentOnlyLine(lines[lineIdx])) {
-          commentMatchesSkipped++;
-          // Rewind to just after this match's START, not past its whole extent.
-          //
-          // `exec` leaves lastIndex at the END of the match, so a skipped match
-          // also CONSUMES everything it spanned. For a single-line pattern that
-          // is harmless. For a MULTILINE pattern it silently eats real matches:
-          // a comment containing the pattern's opening token can begin a match
-          // that runs for hundreds of lines (this rule's `[^\]]*` crosses
-          // newlines), and every genuine hit inside that span disappears.
-          //
-          // Measured 2026-08-14: adding an explanatory comment containing the
-          // literal `#[cfg(` to lib.rs dropped build-gated-ipc-entrypoint from
-          // 127 to 126 — the comment's runaway match swallowed a real
-          // registration. The count moved because of a COMMENT, which is the
-          // precise failure the `ignoreCommentLines` option exists to prevent,
-          // and it surfaced as a "silent drop" drift warning: the detector
-          // reporting the codebase improved when nothing had changed.
-          regexp.lastIndex = match.index + 1;
-          continue;
-        }
-        fileMatches++;
-        fileLines.add(lineIdx + 1);
+      const lineIdx = lineOf(match.index);
+      if (ignoreComments && isCommentOnlyLine(lines[lineIdx])) {
+        commentMatchesSkipped++;
+        // Rewind to just after this match's START, not past its whole extent.
+        //
+        // `exec` leaves lastIndex at the END of the match, so a skipped match
+        // also CONSUMES everything it spanned. For a single-line pattern that
+        // is harmless. For a MULTILINE pattern it silently eats real matches:
+        // a comment containing the pattern's opening token can begin a match
+        // that runs for hundreds of lines (this rule's `[^\]]*` crosses
+        // newlines), and every genuine hit inside that span disappears.
+        //
+        // Measured 2026-08-14: adding an explanatory comment containing the
+        // literal `#[cfg(` to lib.rs dropped build-gated-ipc-entrypoint from
+        // 127 to 126 — the comment's runaway match swallowed a real
+        // registration. The count moved because of a COMMENT, which is the
+        // precise failure the `ignoreCommentLines` option exists to prevent,
+        // and it surfaced as a "silent drop" drift warning: the detector
+        // reporting the codebase improved when nothing had changed.
+        regexp.lastIndex = match.index + 1;
+        continue;
       }
-      if (fileMatches > 0) {
-        totalMatches += fileMatches;
-        hits.push({
-          file: rel,
-          matches: fileMatches,
-          lines: [...fileLines].sort((a, b) => a - b),
-        });
-      }
+      fileMatches++;
+      fileLines.add(lineIdx + 1);
+    }
+    if (fileMatches > 0) {
+      totalMatches += fileMatches;
+      hits.push({
+        file: rel,
+        matches: fileMatches,
+        lines: [...fileLines].sort((a, b) => a - b),
+      });
     }
   }
 
@@ -276,6 +494,17 @@ export function scanRule(rule, { root, collectScanned = false }) {
     excludes: excludes.map(({ path, reason, hits: n }) => ({ path, reason, hits: n })),
     ...(scannedFiles ? { scannedFiles } : {}),
   };
+}
+
+/**
+ * Scan one rule with its own walk — the original entry point, kept as a thin
+ * wrapper: build an index for just this rule's roots and extensions, then
+ * evaluate over it. Same result shape, same numbers. Callers that scan many
+ * rules should build one index and use `scanRuleOverIndex`.
+ */
+export function scanRule(rule, { root, collectScanned = false }) {
+  const index = buildIndex(root, { rules: [rule] });
+  return scanRuleOverIndex(rule, index, { collectScanned });
 }
 
 /**
