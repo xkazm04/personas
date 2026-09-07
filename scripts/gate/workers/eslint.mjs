@@ -52,6 +52,11 @@ function getInstance(root) {
     cwd: key,
     cache: true,
     cacheLocation: path.join(key, '.eslintcache'),
+    // Pin typescript-eslint's project root to THIS checkout. Without it the
+    // parser sees two candidate tsconfig roots (the main checkout and the
+    // worktree) and refuses to parse: "multiple candidate TSConfigRootDirs are
+    // present" (measured 2026-09-07 on a base-dirty generated file).
+    overrideConfig: { languageOptions: { parserOptions: { tsconfigRootDir: key } } },
   });
   instances.set(key, eslint);
   while (instances.size > MAX_INSTANCES) {
@@ -125,10 +130,13 @@ async function runGate(msg) {
     if (!LINT_EXTENSIONS.has(path.extname(rel))) continue;
     const abs = path.join(root, rel);
     if (await eslint.isPathIgnored(abs)) continue;
-    if (typeof cand.content === 'string') {
-      toLintFromText.push({ abs, rel, content: cand.content });
-    } else if (isFile(abs)) {
+    // Overlay content is a copy of what is on disk in `root`, so prefer the
+    // disk path (lintFiles honours the cache and the project service); lint
+    // from text only when the file is genuinely not on disk.
+    if (isFile(abs)) {
       toLintFromDisk.push({ abs, rel });
+    } else if (typeof cand.content === 'string') {
+      toLintFromText.push({ abs, rel, content: cand.content });
     }
   }
 

@@ -22,7 +22,11 @@ import { writeHandshake, removeHandshake } from './handshake.mjs';
 const PORT_RANGE = [17330, 17345];
 const QUEUE_DEPTH = 32;
 const IDLE_MS = 45 * 60 * 1000;
-const RSS_CAP_BYTES = 4 * 1024 * 1024 * 1024;
+// Measured 2026-09-07 with all four workers warm on this repo: 3.4 GB RSS
+// (tsc heap alone about 1 GB, census index 9k files). A 4 GB cap sat one
+// request away from a self-restart and a cold 60 s rebuild, so the default
+// is 6 GB; GATE_RSS_CAP_MB overrides it.
+const RSS_CAP_BYTES = (Number(process.env.GATE_RSS_CAP_MB) || 6144) * 1024 * 1024;
 const WATCH_DIRS = ['src', 'src-tauri/src', 'scripts', 'docs'];
 const WATCH_DEBOUNCE_MS = 300;
 const GATE_NAMES = ['tsc', 'eslint', 'census', 'vitest'];
