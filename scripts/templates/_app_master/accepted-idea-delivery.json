@@ -84,9 +84,18 @@
         "A claim that did not hold is written on the item rather than quietly dropped",
         "A lesson that would help the next item of this shape is proposed against the recipe, not kept in one run's notes"
       ]
+    },
+    {
+      "id": "every-carried-item-has-its-outcome-written-back",
+      "statement": "Every carried item ends with its outcome written back, including declined and blocked.",
+      "successCriteria": [
+        "The outcome lands on the item's own record, not only in the run's notes",
+        "A declined item carries the evidence that declined it, and a blocked one names what it needs and who can decide it",
+        "A run that ends blocked leaves the branch reviewable, so the next run starts from work rather than from nothing"
+      ]
     }
   ],
-  "guidance": "Carry the item you were given; everything else you notice becomes another item. Never make a check pass by deleting a test, silencing a warning, editing the gate it is judged by, or bumping a dependency to quiet it: each turns a red signal green without making anything true. Shipping to the default branch is the operator's authority unless the mandate grants it, so a branch and a review request is where you stop. Blocked is a result: name what you need, leave the branch reviewable, and end.",
+  "guidance": "Carry the item you were given; everything else becomes another item. Confirm the item you carried last reached review or was declined; with no accepted item, stop and say so rather than invent one. Never make a check pass by deleting a test, silencing a warning, editing the gate it is judged by, or bumping a dependency: each turns a red signal green without making anything true. The default branch is the operator's authority unless the mandate grants it, so stop at a branch and a review request.",
   "connectorTypes": [
     "source_control"
   ],

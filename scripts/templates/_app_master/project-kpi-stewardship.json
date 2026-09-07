@@ -24,7 +24,7 @@
     },
     {
       "id": "populate",
-      "label": "Rescan or propose, and fill the backlog with items that carry their evidence",
+      "label": "Rescan or propose, and fill the backlog with items that carry their evidence (declare it bound to the context, active only when it has a measurement source)",
       "kind": "act"
     },
     {
@@ -81,7 +81,7 @@
       ]
     }
   ],
-  "guidance": "Measure before claiming anything moved. Coverage is the first read and usually a wall of zeros: recording the zero is the work, not a failure. A KPI with a target and no measurement is a wish. A reading taken locally is recorded with env local and never moves the KPI current value; only a production reading does. Keep technical metrics few and skip what a gate already enforces. Proposals go to a person who owns the KPI set; measurements do not, and waiting to record one stalls the loop.",
+  "guidance": "Measure before claiming anything moved. Coverage is the first read, usually a wall of zeros: recording the zero is the work. A local reading is recorded with env local and never moves the KPI current value; only production does. Declare the KPI bound to its context before writing any probe; a probe without a declared KPI is homework nobody assigned. Keep technical metrics few and skip what a gate enforces. Proposals go to a person who owns the KPI set; measurements do not, and waiting stalls the loop.",
   "connectorTypes": [
     "source_control"
   ],
