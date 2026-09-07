@@ -36,6 +36,47 @@ pub(crate) const MAX_NOTE_CHARS: usize = 300;
 /// stated; the titles are a sample, and the prompt says so.
 pub(crate) const MAX_NAMED_IDEAS: usize = 10;
 
+/// How many asks ONE wake may put to the operator.
+///
+/// A wake that raises four questions has not decided anything; it has forwarded
+/// its whole situation. Three is already generous for a loop that wakes every
+/// few hours, and the cap is what stops a blocked persona from filling the
+/// review queue one wake at a time.
+pub(crate) const MAX_ASKS: usize = 3;
+/// Hard bound on one ask's title — it becomes a manual review's title.
+pub(crate) const MAX_ASK_TITLE_CHARS: usize = 120;
+/// Hard bound on one ask's `why` — it becomes the review's description.
+pub(crate) const MAX_ASK_WHY_CHARS: usize = 400;
+/// How many backlog ideas one ask may name.
+pub(crate) const MAX_ASK_IDEA_IDS: usize = 10;
+/// How many options one ask may offer, and how long each may be. Not stated in
+/// the brief that asked for this field, but an unbounded option list is an
+/// unbounded `suggested_actions` blob, and every other string on this wire is
+/// bounded.
+pub(crate) const MAX_ASK_OPTIONS: usize = 6;
+pub(crate) const MAX_ASK_OPTION_CHARS: usize = 120;
+
+/// The operator is asked to accept (or reject) named backlog items.
+pub(crate) const ASK_ACCEPT_IDEAS: &str = "accept_ideas";
+/// The operator is asked to choose between options only they can choose between.
+pub(crate) const ASK_DECISION: &str = "decision";
+/// The operator is asked to remove an obstacle (access, a credential, a gate).
+pub(crate) const ASK_UNBLOCK: &str = "unblock";
+
+/// `context_data.source` on every review an ask mints.
+///
+/// The Director stamps `"director"` here and `manual_reviews::update_status`
+/// branches on it, so an ask needs its own marker rather than borrowing that
+/// one: these rows must reach the operator's queue without being treated as
+/// coaching to synthesize into a memory.
+pub(crate) const ASK_SOURCE: &str = "app_master_ask";
+
+/// The three actions an `accept_ideas` ask always offers. The resolve path keys
+/// on these exact strings, so they are a contract, not copy.
+pub(crate) const ASK_ACCEPT_ACTION: &str = "Accept the listed ideas";
+pub(crate) const ASK_REJECT_ACTION: &str = "Reject them";
+pub(crate) const ASK_LATER_ACTION: &str = "Decide later";
+
 /// Floor on the sleep a plan may choose for itself, in minutes.
 ///
 /// A persona that asks to wake in one minute is not pacing itself, it is
@@ -173,6 +214,25 @@ pub(crate) struct ProjectSnapshot {
     pub kpi_coverage_gap: Option<usize>,
 }
 
+/// An ask this persona already put to the operator that nobody has answered.
+///
+/// Carried into the prompt so a blocked persona does not re-ask the same
+/// question every wake, and re-used by the executor as the duplicate-suppression
+/// key — one shape, so the rule the prompt states and the rule the code enforces
+/// cannot drift apart.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct OpenAsk {
+    /// The `persona_manual_reviews` row this ask is waiting in.
+    pub review_id: String,
+    pub kind: String,
+    pub title: String,
+    /// How long it has been waiting. Computed by the gatherer against the same
+    /// clock stamped on [`DecisionContext::now_utc`], so the renderer stays a
+    /// pure function and never reads a clock of its own. `None` = the row's
+    /// timestamp could not be parsed; the prompt then prints no age at all.
+    pub age_minutes: Option<i64>,
+}
+
 /// Everything the decision is allowed to know.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct DecisionContext {
@@ -199,6 +259,9 @@ pub(crate) struct DecisionContext {
     pub now_utc: String,
     pub charters: Vec<DecisionCharter>,
     pub projects: Vec<ProjectSnapshot>,
+    /// Asks this persona has already put to the operator and nobody has
+    /// answered yet.
+    pub open_asks: Vec<OpenAsk>,
 }
 
 // ── Output ────────────────────────────────────────────────────────────────
@@ -221,11 +284,36 @@ pub(crate) struct DecisionDeferral {
     pub reason: String,
 }
 
+/// One question the plan puts to the operator, because it is the operator's to
+/// answer.
+///
+/// The loop's own ceiling, measured 2026-09-07: an App Master whose delivery
+/// charter is starved by an un-triaged backlog can dispatch nothing useful and
+/// has, until now, had exactly one way to say so — a 300-character coverage note
+/// addressed to its own next wake. This is the other direction of that channel.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct OperatorAsk {
+    /// [`ASK_ACCEPT_IDEAS`] | [`ASK_DECISION`] | [`ASK_UNBLOCK`]. Anything else
+    /// the model writes is read as [`ASK_DECISION`] — see [`normalize_ask_kind`].
+    pub kind: String,
+    pub title: String,
+    /// Why the loop cannot move without this. Becomes the review's description.
+    pub why: String,
+    /// Backlog idea ids the ask is about, as the model wrote them: full uuids or
+    /// the 8-char prefixes the app prints. Resolved against `dev_ideas` by the
+    /// caller, which drops what does not resolve.
+    pub idea_ids: Vec<String>,
+    /// The choices the operator is being offered, when the ask offers choices.
+    pub options: Vec<String>,
+}
+
 /// A parsed, bounded, capacity-capped plan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct DecisionPlan {
     pub dispatch: Vec<DecisionItem>,
     pub defer: Vec<DecisionDeferral>,
+    /// What this wake needs a person to decide. At most [`MAX_ASKS`].
+    pub asks: Vec<OperatorAsk>,
     /// The plan's message to its own next wake.
     pub note: Option<String>,
     /// How long the persona chose to sleep before waking again, in minutes,
@@ -287,11 +375,31 @@ struct WireItem {
 }
 
 #[derive(serde::Deserialize)]
+struct WireAsk {
+    #[serde(default)]
+    kind: Option<String>,
+    #[serde(default)]
+    title: Option<String>,
+    #[serde(default)]
+    why: Option<String>,
+    /// `ideaIds` is what the prompt asks for; `idea_ids` is accepted for the
+    /// same reason `charter_id` is.
+    #[serde(rename = "ideaIds", alias = "idea_ids", default)]
+    idea_ids: Vec<String>,
+    #[serde(default)]
+    options: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
 struct WirePlan {
     #[serde(default)]
     dispatch: Vec<WireItem>,
     #[serde(default)]
     defer: Vec<WireItem>,
+    /// Absent (the common case) is an empty list, never a parse failure: a plan
+    /// with nothing to ask is the normal plan.
+    #[serde(default)]
+    asks: Vec<WireAsk>,
     #[serde(default)]
     note: Option<String>,
     /// Deliberately `serde_json::Value` rather than `Option<u32>`: a model that
@@ -408,14 +516,104 @@ pub(crate) fn parse_decision(
 
     let next_wake_minutes = wire.next_wake_minutes.as_ref().and_then(clamp_next_wake);
 
+    let asks = parse_asks(wire.asks);
+
     Ok(DecisionPlan {
         dispatch,
         defer,
+        asks,
         note,
         next_wake_minutes,
         dropped_unknown,
         trimmed_for_capacity,
     })
+}
+
+/// Read the ask list: bound every string, cap every list, drop what says
+/// nothing.
+///
+/// An ask with no title is dropped — a review with no title is a row nobody can
+/// read, and there is nothing left to ask about. Everything else is kept and
+/// trimmed to size: this channel exists because the persona had no way to speak
+/// at all, so the bar for keeping what it said is low and the bar for what it
+/// may write into the operator's queue is fixed.
+fn parse_asks(wire: Vec<WireAsk>) -> Vec<OperatorAsk> {
+    let mut asks: Vec<OperatorAsk> = Vec::new();
+    for a in wire {
+        if asks.len() >= MAX_ASKS {
+            break;
+        }
+        let title = bound(a.title.unwrap_or_default().trim(), MAX_ASK_TITLE_CHARS);
+        if title.is_empty() {
+            continue;
+        }
+        let kind = normalize_ask_kind(a.kind.as_deref());
+        // Dedupe within the wake as well as against what is already open: a
+        // model that names the same question twice asked once.
+        if asks
+            .iter()
+            .any(|x| x.kind == kind && same_ask_title(&x.title, &title))
+        {
+            continue;
+        }
+        let mut idea_ids: Vec<String> = Vec::new();
+        for raw in a.idea_ids {
+            if idea_ids.len() >= MAX_ASK_IDEA_IDS {
+                break;
+            }
+            let id = raw.trim().to_ascii_lowercase();
+            if id.is_empty() || idea_ids.contains(&id) {
+                continue;
+            }
+            idea_ids.push(id);
+        }
+        let options: Vec<String> = a
+            .options
+            .into_iter()
+            .map(|o| bound(o.trim(), MAX_ASK_OPTION_CHARS))
+            .filter(|o| !o.is_empty())
+            .take(MAX_ASK_OPTIONS)
+            .collect();
+        asks.push(OperatorAsk {
+            kind,
+            title,
+            why: bound(a.why.unwrap_or_default().trim(), MAX_ASK_WHY_CHARS),
+            idea_ids,
+            options,
+        });
+    }
+    asks
+}
+
+/// Read an ask's `kind`, leniently.
+///
+/// An unrecognised (or absent) kind becomes [`ASK_DECISION`] rather than
+/// dropping the ask: `decision` is the generic "a person must choose", so the
+/// operator still sees the question and only the automatic verdict-application
+/// of [`ASK_ACCEPT_IDEAS`] is withheld — which is the safe direction to err.
+fn normalize_ask_kind(raw: Option<&str>) -> String {
+    match raw.unwrap_or_default().trim().to_ascii_lowercase().as_str() {
+        ASK_ACCEPT_IDEAS => ASK_ACCEPT_IDEAS.to_string(),
+        ASK_UNBLOCK => ASK_UNBLOCK.to_string(),
+        _ => ASK_DECISION.to_string(),
+    }
+}
+
+/// Whether two ask titles name the same question. Case- and whitespace-
+/// insensitive, because a model re-asking a question rarely reproduces its own
+/// punctuation exactly and an operator would read both rows as one.
+pub(crate) fn same_ask_title(a: &str, b: &str) -> bool {
+    a.trim().eq_ignore_ascii_case(b.trim())
+}
+
+/// Whether this ask is already sitting unanswered in the operator's queue.
+///
+/// Keyed on `kind` + `title`, which is what the operator actually sees; the
+/// `why` and the idea list may legitimately be re-worded between wakes without
+/// making it a different question.
+pub(crate) fn ask_is_open(ask: &OperatorAsk, open: &[OpenAsk]) -> bool {
+    open.iter()
+        .any(|o| o.kind == ask.kind && same_ask_title(&o.title, &ask.title))
 }
 
 /// Read the plan's sleep choice, clamped into the bounds the prompt states.
@@ -464,6 +662,31 @@ pub(crate) fn context_next_wake_minutes(charters: &[DecisionCharter]) -> Option<
     }))
 }
 
+/// The persona's most recent coverage note, across the charters it holds.
+///
+/// Same newest-wins rule as [`newest_next_wake_minutes`], and for the same
+/// reason: `write_back_pacing` stamps ONE note on every charter the decision
+/// considered, so in practice they agree, and the only case where they disagree
+/// — a charter added or retired between wakes — is settled by whichever stamp
+/// carries the latest `lastDecidedAt`.
+///
+/// Takes `(last_decided_at, coverage_note)` pairs rather than a charter type so
+/// the state route (which holds `PersonaResponsibility`) and this module read
+/// one rule from one place. A blank note is not a note.
+pub(crate) fn newest_coverage_note<'a>(
+    pacings: impl IntoIterator<Item = (Option<&'a str>, Option<&'a str>)>,
+) -> Option<String> {
+    pacings
+        .into_iter()
+        .filter_map(|(decided_at, note)| {
+            note.map(str::trim)
+                .filter(|n| !n.is_empty())
+                .map(|n| (decided_at.unwrap_or(""), n))
+        })
+        .max_by(|a, b| a.0.cmp(b.0))
+        .map(|(_, n)| n.to_string())
+}
+
 /// The recipe whose runs deliver ONE accepted backlog idea. A dispatch of this
 /// charter is the only one that has an idea to write back about, which is why
 /// it is the only one that mints a `dev_tasks` row at dispatch time.
@@ -510,6 +733,103 @@ pub(crate) fn extract_idea_id_token(text: &str) -> Option<String> {
         }
     }
     prefix
+}
+
+// ── An ask, as a review row ───────────────────────────────────────────────
+
+/// The `persona_manual_reviews` row an ask becomes, computed without a
+/// database so the mapping is testable on its own.
+///
+/// Deliberately NOT `CreateManualReviewInput`: that type also carries the
+/// execution/persona anchors and the team-step links, which are the caller's
+/// facts, not the ask's. This is only the part the ask decides.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct AskReview {
+    pub title: String,
+    pub description: String,
+    pub severity: String,
+    /// A JSON object string, ready for `context_data`.
+    pub context_data: String,
+    /// A JSON array string, ready for `suggested_actions` — the shape
+    /// `engine::dispatch` writes for a runtime review, which is what the review
+    /// UI reads.
+    pub suggested_actions: String,
+}
+
+/// Turn one ask into the review row the operator will read.
+///
+/// `resolved_ideas` are `(full id, title)` pairs the caller has already looked
+/// up; ids that did not resolve are simply absent, so the description never
+/// promises an item nobody can find. Pure — the caller owns every lookup.
+pub(crate) fn ask_to_review(
+    ask: &OperatorAsk,
+    persona_id: &str,
+    project_id: Option<&str>,
+    project_name: Option<&str>,
+    resolved_ideas: &[(String, String)],
+) -> AskReview {
+    let project_label = project_name
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .or_else(|| project_id.map(str::trim).filter(|p| !p.is_empty()));
+    let title = match project_label {
+        Some(label) => format!("App Master {label}: {}", ask.title),
+        // No project to name is not a reason to drop the prefix — the operator
+        // still needs to know which surface is speaking.
+        None => format!("App Master: {}", ask.title),
+    };
+
+    let mut description = ask.why.trim().to_string();
+    if !resolved_ideas.is_empty() {
+        if !description.is_empty() {
+            description.push_str("\n\n");
+        }
+        description.push_str("Ideas:\n");
+        for (id, idea_title) in resolved_ideas {
+            // The 8-char prefix is what the app prints everywhere else, so it
+            // is what the operator can match against the backlog.
+            let short: String = id.chars().take(8).collect();
+            description.push_str(&format!("- {short}: {}\n", idea_title.trim()));
+        }
+        // One trailing newline is noise in a description field.
+        while description.ends_with('\n') {
+            description.pop();
+        }
+    }
+
+    let actions: Vec<String> = if ask.kind == ASK_ACCEPT_IDEAS {
+        // Fixed, because the resolve path keys on these exact strings. A model
+        // wording its own options here would silently disarm the verdicts.
+        vec![
+            ASK_ACCEPT_ACTION.to_string(),
+            ASK_REJECT_ACTION.to_string(),
+            ASK_LATER_ACTION.to_string(),
+        ]
+    } else {
+        ask.options.clone()
+    };
+
+    let context_data = serde_json::json!({
+        "source": ASK_SOURCE,
+        "personaId": persona_id,
+        "projectId": project_id,
+        "kind": ask.kind,
+        "ideaIds": resolved_ideas.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+        // The ask's OWN title, unprefixed. The duplicate check compares this
+        // rather than the row's title so it never has to un-build the
+        // `App Master <project>: ` prefix — and so a project rename between
+        // wakes does not turn one open question into two.
+        "askTitle": ask.title,
+    })
+    .to_string();
+
+    AskReview {
+        title,
+        description,
+        severity: "info".to_string(),
+        context_data,
+        suggested_actions: serde_json::json!(actions).to_string(),
+    }
 }
 
 /// Char-bounded truncation on a char boundary (the loop's existing helper is
@@ -600,10 +920,41 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          Omit the field to keep your current pacing. Anything outside \
          {MIN_NEXT_WAKE_MINUTES}-{MAX_NEXT_WAKE_MINUTES} is pulled back into it.\n"
     ));
+    s.push_str(&format!(
+        "- ASK WHEN BLOCKED: if what would move the project is a decision only the \
+         operator can take (accepting backlog items, choosing between options, \
+         granting access), put ONE ask in `asks` naming the exact items or \
+         options, instead of sleeping on it. Do not ask for what you can decide \
+         yourself. Do not repeat an ask that is still open. At most {MAX_ASKS} \
+         asks; `kind` is `{ASK_ACCEPT_IDEAS}`, `{ASK_DECISION}` or \
+         `{ASK_UNBLOCK}`.\n"
+    ));
     s.push_str(
         "- EVERY charter must appear exactly once, in `dispatch` or in `defer`. \
          A deferral with a reason is a decision; silence is not.\n\n",
     );
+
+    // --- What is already with the operator ---
+    //
+    // Printed before the charters because it is a CONSTRAINT on the answer, not
+    // a fact to reason from: an ask the operator has not answered yet must not
+    // be asked again, and a persona that cannot see its open asks will re-raise
+    // one every wake for as long as it stays blocked.
+    if !ctx.open_asks.is_empty() {
+        s.push_str("ALREADY WITH THE OPERATOR (do not ask these again)\n");
+        for a in &ctx.open_asks {
+            s.push_str(&format!(
+                "- [{}] {}{}\n",
+                a.kind,
+                a.title,
+                match a.age_minutes {
+                    Some(m) => format!(" — waiting {m} minute(s)"),
+                    None => String::new(),
+                }
+            ));
+        }
+        s.push('\n');
+    }
 
     // --- The charters ---
     s.push_str("YOUR CHARTERS\n");
@@ -750,11 +1101,18 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          \"reason\":\"why this one, this wake\",\
          \"brief\":\"what specifically to do\"}}],\
          \"defer\":[{{\"charterId\":\"...\",\"reason\":\"why it waits\"}}],\
+         \"asks\":[{{\"kind\":\"{ASK_ACCEPT_IDEAS}\",\
+         \"title\":\"<the question, at most {MAX_ASK_TITLE_CHARS} characters>\",\
+         \"why\":\"<why the loop cannot move without it, at most \
+         {MAX_ASK_WHY_CHARS} characters>\",\
+         \"ideaIds\":[\"<ids copied from the list above>\"],\
+         \"options\":[\"<what the operator may choose>\"]}}],\
          \"note\":\"<what your next wake should know about coverage, \
          at most {MAX_NOTE_CHARS} characters>\",\
          \"nextWakeMinutes\":<integer {MIN_NEXT_WAKE_MINUTES}-{MAX_NEXT_WAKE_MINUTES}, \
          or omit this field>}}\n\
-         `dispatch` may be empty. Charter ids must be copied exactly from the \
+         `dispatch` may be empty, and so may `asks` — omit `asks` entirely when \
+         nothing needs a person. Charter ids must be copied exactly from the \
          list above; an invented id is dropped.\n"
     ));
     s
@@ -1055,6 +1413,259 @@ mod tests {
         assert_eq!(newest_next_wake_minutes([]), None);
     }
 
+    // -- parse: the asks ----------------------------------------------------
+
+    /// The whole point of the channel: a plan that dispatched nothing still
+    /// carries a question, and every field survives the parse intact.
+    #[test]
+    fn parse_reads_an_ask_beside_an_empty_dispatch() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "asks": [{
+                "kind": "accept_ideas",
+                "title": "27 ideas are waiting on your triage",
+                "why": "delivery starves without accepts",
+                "ideaIds": ["297f6ba4", "DEADBEEF12"],
+                "options": ["Accept all", "Let me pick"],
+            }],
+            "note": "operator-blocked",
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &roster(), 3).expect("parses");
+        assert!(plan.dispatch.is_empty());
+        assert_eq!(plan.asks.len(), 1);
+        let a = &plan.asks[0];
+        assert_eq!(a.kind, ASK_ACCEPT_IDEAS);
+        assert_eq!(a.title, "27 ideas are waiting on your triage");
+        assert_eq!(a.why, "delivery starves without accepts");
+        // Ids are normalised to lower case so the DB prefix match is not
+        // case-dependent — the same rule `extract_idea_id_token` follows.
+        assert_eq!(a.idea_ids, vec!["297f6ba4", "deadbeef12"]);
+        assert_eq!(a.options, vec!["Accept all", "Let me pick"]);
+
+        // snake_case rides too, and an absent `asks` is an empty list, never a
+        // parse failure.
+        let snake = "{\"dispatch\":[],\"asks\":[{\"kind\":\"unblock\",\"title\":\"t\",\
+                     \"idea_ids\":[\"aabbccdd\"]}]}";
+        assert_eq!(
+            parse_decision(snake, &roster(), 3).expect("parses").asks[0].idea_ids,
+            vec!["aabbccdd"]
+        );
+        assert!(parse_decision("{\"dispatch\":[]}", &roster(), 3)
+            .expect("parses")
+            .asks
+            .is_empty());
+    }
+
+    #[test]
+    fn parse_bounds_every_part_of_an_ask() {
+        let long = "x".repeat(5_000);
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "asks": [{
+                "kind": "accept_ideas",
+                "title": long,
+                "why": long,
+                // 14 ids, one blank, one repeated, one padded.
+                "ideaIds": ["a1", "", "  b2  ", "b2", "c3", "d4", "e5", "f6",
+                            "g7", "h8", "i9", "j10", "k11", "l12"],
+                "options": (0..12).map(|i| format!("option {i}")).collect::<Vec<_>>(),
+            }],
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &roster(), 3).expect("parses");
+        let a = &plan.asks[0];
+        assert_eq!(a.title.chars().count(), MAX_ASK_TITLE_CHARS);
+        assert_eq!(a.why.chars().count(), MAX_ASK_WHY_CHARS);
+        assert_eq!(
+            a.idea_ids.len(),
+            MAX_ASK_IDEA_IDS,
+            "an unbounded id list is an unbounded lookup fan-out"
+        );
+        assert!(!a.idea_ids.iter().any(|i| i.is_empty()));
+        assert_eq!(
+            a.idea_ids.iter().filter(|i| *i == "b2").count(),
+            1,
+            "a repeated id is one id"
+        );
+        assert_eq!(a.options.len(), MAX_ASK_OPTIONS);
+
+        // And a wake may raise at most MAX_ASKS questions.
+        let many = serde_json::json!({
+            "dispatch": [],
+            "asks": (0..9).map(|i| serde_json::json!({ "title": format!("q{i}") }))
+                .collect::<Vec<_>>(),
+        })
+        .to_string();
+        assert_eq!(
+            parse_decision(&many, &roster(), 3)
+                .expect("parses")
+                .asks
+                .len(),
+            MAX_ASKS
+        );
+    }
+
+    /// An ask with no title is nothing to show a person; an unrecognised kind
+    /// is still a question and must not cost the operator the question.
+    #[test]
+    fn parse_drops_titleless_asks_and_reads_an_unknown_kind_as_a_decision() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "asks": [
+                { "kind": "accept_ideas", "title": "   ", "why": "no title" },
+                { "kind": "escalate", "title": "Which vendor?" },
+                { "title": "And this one has no kind at all" },
+                // A same kind+title repeat inside one wake asked once.
+                { "kind": "decision", "title": "which vendor?" },
+            ],
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &roster(), 3).expect("parses");
+        assert_eq!(plan.asks.len(), 2, "{:?}", plan.asks);
+        assert_eq!(plan.asks[0].kind, ASK_DECISION);
+        assert_eq!(plan.asks[0].title, "Which vendor?");
+        assert_eq!(plan.asks[1].kind, ASK_DECISION);
+    }
+
+    #[test]
+    fn an_open_ask_is_recognised_across_case_and_padding() {
+        let open = vec![OpenAsk {
+            review_id: "rev1".into(),
+            kind: ASK_ACCEPT_IDEAS.into(),
+            title: "27 ideas are waiting".into(),
+            age_minutes: Some(120),
+        }];
+        assert!(ask_is_open(
+            &ask(ASK_ACCEPT_IDEAS, "  27 IDEAS are waiting "),
+            &open
+        ));
+        // A different kind is a different question, even under the same title.
+        assert!(!ask_is_open(
+            &ask(ASK_UNBLOCK, "27 ideas are waiting"),
+            &open
+        ));
+        assert!(!ask_is_open(
+            &ask(ASK_ACCEPT_IDEAS, "something else"),
+            &open
+        ));
+        assert!(!ask_is_open(&ask(ASK_ACCEPT_IDEAS, "anything"), &[]));
+    }
+
+    // -- the ask → review mapping ------------------------------------------
+
+    #[test]
+    fn an_accept_ideas_ask_becomes_a_review_the_operator_can_act_on() {
+        let a = OperatorAsk {
+            kind: ASK_ACCEPT_IDEAS.into(),
+            title: "27 ideas are waiting on your triage".into(),
+            why: "Delivery starves without accepts.".into(),
+            idea_ids: vec!["297f6ba4".into()],
+            // Options the model wrote are DELIBERATELY ignored for this kind.
+            options: vec!["Sure, whatever".into()],
+        };
+        let ideas = vec![
+            (
+                "297f6ba4-1c2d-4e5f-8a9b-0c1d2e3f4a5b".to_string(),
+                "Retire the legacy shim".to_string(),
+            ),
+            (
+                "aabbccdd-0000-0000-0000-000000000000".to_string(),
+                "Ship the retry helper".to_string(),
+            ),
+        ];
+        let r = ask_to_review(&a, "p1", Some("proj_1"), Some("Ascent"), &ideas);
+
+        assert_eq!(
+            r.title, "App Master Ascent: 27 ideas are waiting on your triage",
+            "the operator must see which surface is speaking"
+        );
+        assert_eq!(r.severity, "info");
+        assert!(r
+            .description
+            .starts_with("Delivery starves without accepts."));
+        assert!(
+            r.description.contains("- 297f6ba4: Retire the legacy shim"),
+            "the ideas are named by the prefix the app prints: {}",
+            r.description
+        );
+        assert!(r.description.contains("- aabbccdd: Ship the retry helper"));
+        assert!(!r.description.ends_with('\n'));
+
+        // The three actions the resolve path keys on — not the model's wording.
+        let actions: Vec<String> = serde_json::from_str(&r.suggested_actions).expect("json array");
+        assert_eq!(
+            actions,
+            vec![ASK_ACCEPT_ACTION, ASK_REJECT_ACTION, ASK_LATER_ACTION]
+        );
+
+        let ctx: serde_json::Value = serde_json::from_str(&r.context_data).expect("json object");
+        assert_eq!(ctx["source"], ASK_SOURCE);
+        assert_eq!(ctx["personaId"], "p1");
+        assert_eq!(ctx["projectId"], "proj_1");
+        assert_eq!(ctx["kind"], ASK_ACCEPT_IDEAS);
+        assert_eq!(
+            ctx["askTitle"], "27 ideas are waiting on your triage",
+            "the unprefixed title is what the duplicate check compares"
+        );
+        assert_eq!(
+            ctx["ideaIds"],
+            serde_json::json!([
+                "297f6ba4-1c2d-4e5f-8a9b-0c1d2e3f4a5b",
+                "aabbccdd-0000-0000-0000-000000000000"
+            ]),
+            "context_data carries the RESOLVED ids — the resolve path acts on \
+             these, so an unresolved id must never reach it"
+        );
+    }
+
+    #[test]
+    fn a_decision_ask_offers_the_options_it_was_given() {
+        let a = OperatorAsk {
+            kind: ASK_DECISION.into(),
+            title: "Postgres or SQLite?".into(),
+            why: "Both work; the cost profile differs.".into(),
+            idea_ids: vec![],
+            options: vec!["Postgres".into(), "SQLite".into()],
+        };
+        let r = ask_to_review(&a, "p1", Some("proj_1"), None, &[]);
+        // No project NAME falls back to the id rather than dropping the prefix.
+        assert_eq!(r.title, "App Master proj_1: Postgres or SQLite?");
+        assert_eq!(r.description, "Both work; the cost profile differs.");
+        let actions: Vec<String> = serde_json::from_str(&r.suggested_actions).expect("json array");
+        assert_eq!(actions, vec!["Postgres", "SQLite"]);
+
+        // …and with no project at all the prefix still names the speaker.
+        let r = ask_to_review(&a, "p1", None, None, &[]);
+        assert_eq!(r.title, "App Master: Postgres or SQLite?");
+    }
+
+    // -- the newest coverage note ------------------------------------------
+
+    #[test]
+    fn newest_coverage_note_takes_the_most_recent_non_blank_stamp() {
+        assert_eq!(
+            newest_coverage_note([
+                (Some("2026-09-06T10:00:00Z"), Some("older")),
+                (Some("2026-09-07T02:00:00Z"), Some("newest")),
+                (Some("2026-09-05T10:00:00Z"), Some("oldest")),
+            ])
+            .as_deref(),
+            Some("newest")
+        );
+        // A blank note is not a note, so it never wins by being newest.
+        assert_eq!(
+            newest_coverage_note([
+                (Some("2026-09-07T02:00:00Z"), Some("   ")),
+                (Some("2026-09-06T10:00:00Z"), Some("the real one")),
+            ])
+            .as_deref(),
+            Some("the real one")
+        );
+        assert_eq!(newest_coverage_note([(Some("x"), None)]), None);
+        assert_eq!(newest_coverage_note([]), None);
+    }
+
     #[test]
     fn bound_cuts_on_a_char_boundary() {
         // 4 multi-byte chars; cutting at 2 must not split a code point.
@@ -1113,6 +1724,16 @@ mod tests {
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
             }],
+            open_asks: Vec::new(),
+        }
+    }
+
+    fn ask(kind: &str, title: &str) -> OperatorAsk {
+        OperatorAsk {
+            kind: kind.into(),
+            title: title.into(),
+            why: "because".into(),
+            ..Default::default()
         }
     }
 
@@ -1318,6 +1939,61 @@ mod tests {
         );
         // The RULE still stands — it is what asks for the next one.
         assert!(p.contains("YOUR NEXT WAKE"));
+    }
+
+    /// The rule and the field must both be stated, or a persona that is blocked
+    /// on a person has been told to ask and given nowhere to put the ask.
+    #[test]
+    fn prompt_states_the_ask_rule_and_the_ask_field() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(p.contains("ASK WHEN BLOCKED"), "{p}");
+        assert!(p.contains("Do not ask for what you can decide yourself"));
+        assert!(p.contains("Do not repeat an ask that is still open"));
+        assert!(p.contains(ASK_ACCEPT_IDEAS));
+        assert!(p.contains(ASK_UNBLOCK));
+        // The JSON skeleton the parser actually reads.
+        assert!(p.contains("\"asks\""));
+        assert!(p.contains("\"ideaIds\""));
+        assert!(p.contains("omit `asks` entirely when nothing needs a person"));
+    }
+
+    /// "Do not repeat an ask that is still open" is only actionable if the
+    /// persona can see which asks ARE still open.
+    #[test]
+    fn prompt_lists_the_asks_already_with_the_operator() {
+        let mut ctx = ctx_fixture();
+        ctx.open_asks = vec![
+            OpenAsk {
+                review_id: "rev1".into(),
+                kind: ASK_ACCEPT_IDEAS.into(),
+                title: "27 ideas are waiting on your triage".into(),
+                age_minutes: Some(310),
+            },
+            OpenAsk {
+                review_id: "rev2".into(),
+                kind: ASK_UNBLOCK.into(),
+                title: "Grant push access to origin".into(),
+                age_minutes: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("ALREADY WITH THE OPERATOR (do not ask these again)"));
+        assert!(
+            p.contains(
+                "- [accept_ideas] 27 ideas are waiting on your triage — waiting 310 minute(s)"
+            ),
+            "{p}"
+        );
+        // An age nobody could compute prints no age, not a fabricated zero.
+        assert!(
+            p.contains("- [unblock] Grant push access to origin\n"),
+            "{p}"
+        );
+        assert!(!p.contains("waiting 0 minute(s)"));
+
+        // With nothing open the section is absent entirely rather than an
+        // empty heading the model has to interpret.
+        assert!(!render_decision_prompt(&ctx_fixture()).contains("ALREADY WITH THE OPERATOR"));
     }
 
     #[test]

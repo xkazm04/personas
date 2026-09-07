@@ -32,6 +32,7 @@ export type { ApplyMemoryReviewProposalResult } from "./ApplyMemoryReviewProposa
 export type { AppMasterAdoption } from "./AppMasterAdoption";
 export type { AppMasterCharterOutcome } from "./AppMasterCharterOutcome";
 export type { AppMasterLink } from "./AppMasterLink";
+export type { AppMasterOpenAsk } from "./AppMasterOpenAsk";
 export type { AppMasterRecipeRequest } from "./AppMasterRecipeRequest";
 export type { Archetype } from "./Archetype";
 export type { ArchetypeCatalog } from "./ArchetypeCatalog";

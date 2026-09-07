@@ -1085,6 +1085,16 @@ fn build_decision_context(
         .map(|project_id| project_snapshot(pool, &project_id, MAX_NAMED_IDEAS))
         .collect::<Vec<ProjectSnapshot>>();
 
+    let open_asks = list_open_asks(pool, &persona.id)
+        .into_iter()
+        .map(|r| attention_decide::OpenAsk {
+            age_minutes: minutes_since_ts(&r.created_at),
+            review_id: r.review_id,
+            kind: r.kind,
+            title: r.title,
+        })
+        .collect();
+
     Ok(attention_decide::DecisionContext {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
@@ -1096,7 +1106,87 @@ fn build_decision_context(
         model: decision_model(persona, charters),
         charters: decision_charters,
         projects,
+        open_asks,
     })
+}
+
+/// One unanswered operator ask, as it sits in `persona_manual_reviews`.
+///
+/// Read here rather than in the two consumers (the decision prompt and the
+/// App Master state route) so "which rows ARE this persona's open asks" is one
+/// rule: a `pending` review of this persona whose `context_data.source` is
+/// [`attention_decide::ASK_SOURCE`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct OpenAskRecord {
+    pub review_id: String,
+    pub kind: String,
+    /// The ask's OWN title, from `context_data.askTitle` — not the row's
+    /// `App Master <project>: …` title.
+    pub title: String,
+    pub created_at: String,
+}
+
+/// Every ask this persona has put to the operator that nobody has answered.
+///
+/// Best-effort by design: this feeds a prompt and a status route, and neither
+/// is worth failing a wake over. An unreadable queue reports nothing open,
+/// which costs at worst a duplicate ask the operator can resolve.
+pub(crate) fn list_open_asks(pool: &DbPool, persona_id: &str) -> Vec<OpenAskRecord> {
+    let rows = match crate::db::repos::communication::manual_reviews::get_by_persona(
+        pool,
+        persona_id,
+        Some("pending"),
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the open asks — treating none as open");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter_map(|r| {
+            let ctx: serde_json::Value = serde_json::from_str(r.context_data.as_deref()?).ok()?;
+            if ctx.get("source").and_then(|v| v.as_str()) != Some(attention_decide::ASK_SOURCE) {
+                return None;
+            }
+            Some(OpenAskRecord {
+                review_id: r.id,
+                kind: ctx
+                    .get("kind")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(attention_decide::ASK_DECISION)
+                    .to_string(),
+                // A row whose `askTitle` is missing falls back to the display
+                // title: the duplicate check then over-matches rather than
+                // under-matches, which is the safe direction.
+                title: ctx
+                    .get("askTitle")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(&r.title)
+                    .to_string(),
+                created_at: r.created_at,
+            })
+        })
+        .collect()
+}
+
+/// The newest coverage note across a persona's charters — the App Master's own
+/// last word about where it stands. Thin adapter over the pure rule so the
+/// state route does not have to reach into the decision module.
+pub(crate) fn newest_coverage_note_for(charters: &[PersonaResponsibility]) -> Option<String> {
+    attention_decide::newest_coverage_note(charters.iter().map(|c| {
+        (
+            c.spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.last_decided_at.as_deref()),
+            c.spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.coverage_note.as_deref()),
+        )
+    }))
 }
 
 /// Follow one dispatched charter's worker and report where it actually got to.
@@ -1918,6 +2008,11 @@ async fn run_decision_lane(
     // just the dispatched ones — a charter deferred four wakes running is the
     // fact the next wake most needs, and the ledger cannot record it because a
     // deferral writes no ledger row.
+    // What this wake needs a PERSON to decide. Raised after the dispatch so an
+    // ask never costs the loop work it could have started on its own, and
+    // recorded in the ledger row so the operator can see the question was put.
+    let asks = raise_asks(&pool, &context, &plan.asks);
+
     let dispatched_ids: Vec<&str> = plan
         .dispatch
         .iter()
@@ -1949,6 +2044,7 @@ async fn run_decision_lane(
             .collect::<Vec<_>>(),
         "droppedUnknown": plan.dropped_unknown,
         "trimmedForCapacity": plan.trimmed_for_capacity,
+        "asks": asks,
         "note": plan.note,
         "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
@@ -2493,6 +2589,144 @@ async fn dispatch_into_worktree(
         "branch": worktree.branch,
         "worktreePath": worktree_path,
     }))
+}
+
+/// Put the wake's asks to the operator, as manual reviews.
+///
+/// The loop's ceiling, measured on the ascent App Master at 06:10 UTC on
+/// 2026-09-07: wake 7 dispatched nothing and slept two hours with the note
+/// *"Loop operator-blocked: 27 pending / 0 accepted, delivery starves without
+/// accepts"*. The persona knew exactly what it needed from a person and had no
+/// channel but a note addressed to itself. This is that channel, and it reuses
+/// the door `ProtocolMessage::ManualReview` already dispatches into rather than
+/// inventing a second review-shaped surface.
+///
+/// Best-effort per ask, and never fatal: a wake that dispatched real work must
+/// not fail because a question could not be filed. Returns one entry per ask
+/// that became a row, for the decision's ledger stats.
+fn raise_asks(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    asks: &[attention_decide::OperatorAsk],
+) -> Vec<serde_json::Value> {
+    use crate::db::models::CreateManualReviewInput;
+
+    if asks.is_empty() {
+        return Vec::new();
+    }
+
+    // `persona_manual_reviews.execution_id` is NOT NULL with an FK onto
+    // `persona_executions`, so an ask needs a run to hang off. Same constraint
+    // and same handling as the App master probation review
+    // (`engine::app_master_probation`): a persona that has never executed
+    // cannot file one, and saying so is more honest than inventing an anchor.
+    let anchor = crate::db::repos::execution::executions::get_by_persona_id(
+        pool,
+        &context.persona_id,
+        Some(1),
+    )
+    .ok()
+    .and_then(|v| v.into_iter().next());
+    let Some(anchor) = anchor else {
+        tracing::warn!(
+            persona_id = %context.persona_id, asks = asks.len(),
+            "persona_attention: the decision asked the operator something but this \
+             persona has never executed — a manual review needs an execution to \
+             anchor to, so the ask(s) could not be filed"
+        );
+        return Vec::new();
+    };
+
+    // Re-read rather than reusing `context.open_asks`: the context was gathered
+    // before the model call, and this wake's own dispatches may have taken
+    // minutes. The duplicate check is only worth having if it reads what is
+    // open NOW.
+    let open: Vec<attention_decide::OpenAsk> = list_open_asks(pool, &context.persona_id)
+        .into_iter()
+        .map(|r| attention_decide::OpenAsk {
+            review_id: r.review_id,
+            kind: r.kind,
+            title: r.title,
+            age_minutes: None,
+        })
+        .collect();
+
+    // The project the ask is about. An App Master's charters are project-bound
+    // and in practice name one project; the first is the one to attribute to.
+    let project = context.projects.first();
+
+    let mut raised: Vec<serde_json::Value> = Vec::new();
+    for ask in asks {
+        if attention_decide::ask_is_open(ask, &open) {
+            tracing::info!(
+                persona_id = %context.persona_id, kind = %ask.kind, title = %ask.title,
+                "persona_attention: the same ask is already open — not re-filing it"
+            );
+            continue;
+        }
+
+        // Resolve the named ideas so the operator reads titles, not hex, and so
+        // the resolve path acts only on ideas that exist. Unresolvable ids are
+        // dropped and logged: an id nobody can find must not become a promise.
+        let mut ideas: Vec<(String, String)> = Vec::new();
+        if let Some(project_id) = project.map(|p| p.project_id.as_str()) {
+            for token in &ask.idea_ids {
+                match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, token) {
+                    Ok(Some(idea)) => ideas.push((idea.id, idea.title)),
+                    Ok(None) => tracing::info!(
+                        persona_id = %context.persona_id, token = %token,
+                        "persona_attention: an ask named an idea id that resolves to \
+                         nothing in this project — dropped from the ask"
+                    ),
+                    Err(e) => tracing::warn!(
+                        persona_id = %context.persona_id, token = %token, error = %e,
+                        "persona_attention: idea lookup failed while raising an ask — \
+                         dropped from the ask"
+                    ),
+                }
+            }
+        }
+
+        let review = attention_decide::ask_to_review(
+            ask,
+            &context.persona_id,
+            project.map(|p| p.project_id.as_str()),
+            project.and_then(|p| p.project_name.as_deref()),
+            &ideas,
+        );
+        match crate::db::repos::communication::manual_reviews::create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: anchor.id.clone(),
+                persona_id: context.persona_id.clone(),
+                title: review.title.clone(),
+                description: Some(review.description),
+                severity: Some(review.severity),
+                context_data: Some(review.context_data),
+                suggested_actions: Some(review.suggested_actions),
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        ) {
+            Ok(row) => {
+                tracing::info!(
+                    persona_id = %context.persona_id, review_id = %row.id, kind = %ask.kind,
+                    "persona_attention: the decision put a question to the operator"
+                );
+                raised.push(serde_json::json!({
+                    "reviewId": row.id,
+                    "kind": ask.kind,
+                    "title": ask.title,
+                }));
+            }
+            Err(e) => tracing::warn!(
+                persona_id = %context.persona_id, kind = %ask.kind, error = %e,
+                "persona_attention: could not file the operator ask"
+            ),
+        }
+    }
+    raised
 }
 
 /// Stamp the coverage memory on every charter the decision considered.
@@ -4777,6 +5011,218 @@ mod attention_tests {
 
         assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
         assert_eq!(tasks::get_task_by_id(&pool, &foreign.id)?.status, "running");
+        Ok(())
+    }
+
+    // -- P2: the asks reach the operator ------------------------------------
+
+    /// A decision context carrying one project and no charters — enough for
+    /// `raise_asks`, which reads the persona, the project and nothing else.
+    fn ask_context(persona_id: &str, project_id: &str) -> attention_decide::DecisionContext {
+        attention_decide::DecisionContext {
+            persona_id: persona_id.to_string(),
+            persona_name: "App Master Ascent".into(),
+            projects: vec![attention_decide::ProjectSnapshot {
+                project_id: project_id.to_string(),
+                project_name: Some("Ascent".into()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn accept_ask(idea_ids: Vec<String>) -> attention_decide::OperatorAsk {
+        attention_decide::OperatorAsk {
+            kind: attention_decide::ASK_ACCEPT_IDEAS.into(),
+            title: "27 ideas are waiting on your triage".into(),
+            why: "Delivery starves without accepts.".into(),
+            idea_ids,
+            options: vec![],
+        }
+    }
+
+    fn pending_reviews(
+        pool: &DbPool,
+        persona_id: &str,
+    ) -> Vec<crate::db::models::PersonaManualReview> {
+        crate::db::repos::communication::manual_reviews::get_by_persona(
+            pool,
+            persona_id,
+            Some("pending"),
+        )
+        .unwrap()
+    }
+
+    /// The wake's ask becomes a row the operator can read and act on — and the
+    /// SAME ask on the next wake does not become a second one.
+    #[test]
+    fn an_ask_becomes_one_review_and_is_not_re_filed_while_it_stays_open() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let idea = crate::db::repos::dev::ideas::create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "manual",
+            None,
+            "Retire the legacy shim",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let short: String = idea.id.chars().take(8).collect();
+
+        let ctx = ask_context("p1", &project.id);
+        // One resolvable id, and one that resolves to nothing in this project.
+        let asks = vec![accept_ask(vec![short.clone(), "ffffffffdead".into()])];
+
+        let raised = raise_asks(&pool, &ctx, &asks);
+        assert_eq!(raised.len(), 1, "one ask, one review");
+        assert_eq!(raised[0]["kind"], attention_decide::ASK_ACCEPT_IDEAS);
+
+        let rows = pending_reviews(&pool, "p1");
+        assert_eq!(rows.len(), 1);
+        let row = &rows[0];
+        assert_eq!(row.execution_id, exec.id, "anchored to a real run");
+        assert_eq!(
+            row.title,
+            "App Master Ascent: 27 ideas are waiting on your triage"
+        );
+        assert_eq!(row.severity, "info");
+        let desc = row.description.clone().unwrap_or_default();
+        assert!(desc.contains("Delivery starves without accepts."), "{desc}");
+        assert!(
+            desc.contains(&format!("- {short}: Retire the legacy shim")),
+            "{desc}"
+        );
+        assert!(
+            !desc.contains("ffffffff"),
+            "an id that resolves to nothing must not be promised to the operator: {desc}"
+        );
+
+        // The resolve path acts on context_data.ideaIds, so only the RESOLVED
+        // id may be there.
+        let ctx_data: serde_json::Value =
+            serde_json::from_str(row.context_data.as_deref().unwrap()).unwrap();
+        assert_eq!(ctx_data["ideaIds"], serde_json::json!([idea.id]));
+        assert_eq!(ctx_data["source"], attention_decide::ASK_SOURCE);
+        assert_eq!(ctx_data["projectId"], project.id);
+
+        // The three actions the resolve path keys on.
+        let actions: Vec<String> =
+            serde_json::from_str(row.suggested_actions.as_deref().unwrap()).unwrap();
+        assert_eq!(actions.len(), 3);
+        assert_eq!(actions[0], attention_decide::ASK_ACCEPT_ACTION);
+
+        // The next wake asks the same thing while nobody has answered: still
+        // ONE row. A loop that re-files its question every wake buries the
+        // queue it is trying to reach.
+        let again = raise_asks(&pool, &ctx, &asks);
+        assert!(again.is_empty(), "the open ask was re-filed: {again:?}");
+        assert_eq!(pending_reviews(&pool, "p1").len(), 1);
+
+        // …and once it IS answered, the same question may be asked again.
+        crate::db::repos::communication::manual_reviews::update_status(
+            &pool,
+            &row.id,
+            crate::db::models::ManualReviewStatus::Approved,
+            None,
+        )?;
+        assert_eq!(raise_asks(&pool, &ctx, &asks).len(), 1);
+        Ok(())
+    }
+
+    /// A persona that has never run cannot file a review (the FK onto
+    /// `persona_executions` is NOT NULL). Saying so beats inventing an anchor.
+    #[test]
+    fn an_ask_from_a_persona_that_never_executed_files_nothing() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let raised = raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+        assert!(raised.is_empty());
+        assert!(pending_reviews(&pool, "p1").is_empty());
+        Ok(())
+    }
+
+    /// The open asks the next wake is shown are exactly the unanswered ask
+    /// rows — not every pending review the persona happens to have.
+    #[test]
+    fn open_asks_are_read_back_by_their_own_marker() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+
+        // An ordinary review of the same persona, pending, is not an ask.
+        crate::db::repos::communication::manual_reviews::create(
+            &pool,
+            crate::db::models::CreateManualReviewInput {
+                execution_id: exec.id,
+                persona_id: "p1".into(),
+                title: "Check the output".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )?;
+
+        let open = list_open_asks(&pool, "p1");
+        assert_eq!(open.len(), 1, "{open:?}");
+        assert_eq!(open[0].kind, attention_decide::ASK_ACCEPT_IDEAS);
+        assert_eq!(
+            open[0].title, "27 ideas are waiting on your triage",
+            "the UNPREFIXED title, so the duplicate check compares like with like"
+        );
         Ok(())
     }
 }

@@ -57,6 +57,11 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
     context_data: r.context_data,
     suggested_actions: r.suggested_actions,
     title: r.title,
+    // Carried in its own field as well as inside `content`: the pending focus
+    // flow renders `description`, and until this line it was always undefined
+    // there -- the cast to `TriageReview` (whose `description` is optional) let
+    // the gap type-check, so every pending review lost its reasoning.
+    description: r.description,
     created_at: r.created_at,
     resolved_at: r.resolved_at,
   };
