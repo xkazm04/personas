@@ -27,7 +27,7 @@ Both pages are wired in `src/features/personas/PersonasPage.tsx`.
 
 | Component | Behavior |
 | --- | --- |
-| `CloudDeployPanel.tsx` | Deploy a persona to cloud with a budget preset, see deployments list, deploy/pause/resume/remove actions |
+| `CloudDeployPanel.tsx` | Deploy a persona to cloud with a budget preset, see deployments list, deploy/pause/resume/remove actions. Remove (undeploy) and trigger delete open a confirm that names the target first; pause/resume stay one click |
 | `CloudDeploymentsPanel.tsx` | The deployments list view (also embedded in CloudDeployPanel) |
 | `DeploymentCard.tsx` | Per-deployment card — status, base URL, budget, run, sync |
 | `CloudConnectionForm.tsx` | Connect to a cloud control-plane URL with API key, run diagnostics |
