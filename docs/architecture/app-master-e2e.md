@@ -409,3 +409,18 @@ not repeat it. Its KPI steward keeps turning the one loop it can (67 to 61 uncov
 "16 honest meters, 1 false-zero retracted"). CandiDate's wakes 12 and 13 held both slots on
 workers the cycle-5/6 restarts had killed ("no log growth 6 min, if still none next wake weigh
 TaskStop"), the case cycle 7 automates. Sixty-six pending ideas, none accepted.
+
+### Cycle 7 (built 10:0x UTC, branch `625f16fa4`)
+
+**Built:** an App Master worker parked `awaiting_input` (a headless worker that ended on a
+question or `FLEET:BLOCKED`) is an unattended run: the fleet sweeper treats `app-master:` labels
+like `overnight:` ones with a 15-minute cutoff of their own, keeps the worker's own blocked line
+as the reason, and the classifier, the decision context and the abandoned-dispatch sweep do
+the rest. The run label is minted by one function so the tag and its predicate cannot drift.
+
+**Found while verifying the brief's premise, and not papered over:** fleet workers never occupied
+the persona's concurrency slots. `decide_free_capacity` reads the execution tracker, and a
+fleet dispatch creates no execution, so an App Master's "2 parallel sessions" has only ever
+been enforced by the persona's own reading of its ledger ("both slots held, 0 free"). The
+soft live-slot cap spawns regardless when nothing is evictable. Cycle 9 counts active
+`app-master:<persona>` fleet sessions against `max_concurrent`.
