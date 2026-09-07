@@ -196,3 +196,25 @@ one. Pinned by `a_woken_app_master_decides_before_its_daily_self_review`.
 **Process lesson:** any edit under `src-tauri/src` restarts the dev app, which resets an
 observation window mid-flight (the fleet sessions it spawned die with it). Edit between windows,
 never during one.
+
+**After the fix (00:54 to 01:20 UTC):** the loop admitted ascent and personas-web on their wakes and
+planned both decisions in the same second (the re-armed signal works); a dev-app restart from a
+test edit orphaned those two open rows, which then refused their personas as `in_flight`. CandiDate
+decided at 00:58:25 on Opus: dispatched priority 1 KPI stewardship ("280 of 285 contexts carry no
+active KPI") and priority 2 accepted-idea delivery ("oldest of 5 taskless: 297f6ba4"), deferred
+the other four with reasons, wrote a coverage note. Both dispatches became fleet sessions in
+isolated authoring worktrees. The delivery worker re-validated the idea (premise half stale: the
+guards it asked for already existed), delivered the remaining ask as `3935d589` on
+`autopilot/accepted-idea-delivery-to-the-main-branch`, ran the suite, attributed a flaky test to
+untouched code, and reported `FLEET:DONE`. The steward committed `be2e8c93` (a self-scheduling
+booking-rate KPI probe, baseline 50%, target 70%) and reported that adopting the KPI row "needs a
+human because no bridge route creates one".
+
+**Gap for cycle 2 (measured, not guessed):** the workers wrote nothing back into Personas. Idea
+`297f6ba4` is still `accepted` with no `dev_tasks` row, so the undispatched sensor re-offers it;
+no `dev_kpis` row, no measurement, no backlog items. A fleet session has neither the Personas MCP
+nor an ideas route on the bridge. Cycle 2 builds: bridge write-back routes (`POST /dev-tools/ideas`,
+`/ideas/{id}/outcome`, `/kpis`, `/kpis/{id}/measure`), a dispatch-time task row for a named idea,
+a write-back block in every worker's task text, an in-flight list in the decision prompt, and a
+boot sweep that closes orphaned open ledger rows. Also observed: fleet sessions stay `running` in
+the registry after `FLEET:DONE`.
