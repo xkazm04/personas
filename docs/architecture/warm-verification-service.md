@@ -203,6 +203,45 @@ eviction.
 - Measured before/after on this machine, recorded in the "Measured" section below.
 - Two builders' overlays and `CLAUDE.md` point at the fast lane.
 
-## Measured
+## Measured (2026-09-07, this machine, master at `bd621adac`, 16 sessions live)
 
-_Appended when the work lands._
+All numbers from `node scripts/gate/gate.mjs --root <worktree> --gates tsc,eslint,census`
+run from the `gate-daemon` worktree whose overlay against master was 21 changed,
+19 added, 9 deleted. The base was dirty with a sibling's regenerated
+`src/lib/commandNames.generated.ts`, a hub type imported nearly everywhere.
+
+| Request | Wall | tsc | eslint | census |
+|---|---|---|---|---|
+| Cold: daemon start + first worktree verdict | 112 s | 56.6 s, rechecked 6,592 of 6,651 files | 0.3 s, 19 files | 15.0 s (worktree eval + first base eval) |
+| Warm: same worktree again | 16 s | 0.65 s, rechecked 0 | 4 ms | 14.7 s (base re-evaluated after sibling edits invalidated it) |
+| Warm: the main checkout itself | 8 s | 0.70 s, rechecked 1 | 0.67 s, 3 dirty files | 7.4 s, full `--check` verdict |
+
+Reference cold costs on the same box the same day: `npx tsc --noEmit` 65.8 s
+(0 errors, the same count the daemon's warm base reports), `census:check` 43.7 s
+before the walk-once engine and 7.6 s after, and a warm incremental
+`tsc --noEmit` 6 s once `tsconfig.json` carries `incremental`.
+
+What the table says:
+
+- **The first worktree verdict is not cheap when the base is dirty on a hub
+  file.** TypeScript rechecked 6,592 files because the base's generated command
+  list differed from the worktree's. That is incremental compilation doing its
+  job, not a cache miss (`reuse: completely`). A clean base makes the first
+  worktree request the size of its own diff.
+- **A repeated verdict is seconds, and tsc is no longer the cost.** The census's
+  regex pass over 9,177 in-memory files is now the floor at about 7 s, doubled
+  when sibling edits to the main checkout invalidate the cached base evaluation
+  between requests. Splitting the 205 rules across worker threads is the next
+  lever if that floor matters.
+- **Memory:** 3.47 GB RSS with all four workers warm, under the 6 GB cap.
+- **Semantics held:** the base request fails on the three census drifts master
+  really carries; the worktree request passes with those three shown as
+  inherited and none introduced.
+
+Done against the session's definition: `npm run gate` answers for the main
+checkout and for a worktree with the overlay visible; tsc parity with the cold
+command (0 errors both) and census parity (same three drifts) are recorded above;
+`.claude/perfect/config.md` and `CLAUDE.md` point at the fast lane. Not done, by
+decision: routing lefthook pre-push through the daemon waits for a parity run on a
+tree with real type errors, and `.claude/spark/config.md` does not exist in this
+checkout.
