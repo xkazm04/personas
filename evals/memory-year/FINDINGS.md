@@ -23,8 +23,16 @@ her own production routing (`claude-opus-4-8@low`); its consumer is hers, not th
 | athena (before the reconcile fix) | 0.80 | 12 | 2 | 0.07 | 0.01 | 1,603 | 1,341 |
 | athena (after the reconcile fix) | 0.82 | 13 | 2 | 0.14 | 0.01 | 1,628 | 1,352 |
 | **athena (both tiers governed)** | **0.86** | 9 | 1 | 0.07 | 0.01 | 1,592 | 1,371 |
+| athena (+ query fix and re-rank) † | 0.84 | 13 | 0 | 0.07 | 0.00 | 1,558 | 1,372 |
 | write-time verdict | 0.78 | 4 | 3 | 0.14 | 0.02 | **918** | 7,341 |
 | athena in her own voice | 0.73 | 17 | 19 | 0.00 | 0.12 | 3,222 | 1,736 |
+
+† Read this row as unresolved, not as a regression. Its procedure class went 0.60 to 1.00
+and failure-cause 0.80 to 0.88; the two points come out of adaptation, a form-judged class
+whose score across three runs of nearly identical code reads 0.56, 0.84, 0.56, and which
+re-scores to 0.92 on both runs when the rubric's wording is relaxed. On the instrument that
+varies only the code — retrieval coverage over a fixed store — the change gains seven
+probes and loses none. See round four below.
 
 Accuracy per thousand context tokens, because read budget is the scarce resource in a real
 assistant whose system prompt is already large:
@@ -96,8 +104,36 @@ the ladder behind verbatim retrieval, at half its context.
 **Two things this fix did not do, stated plainly.** The preference class moved 0.22 to 0.44
 and did not return to the 0.56 it started at, so the stale-rule diagnosis was necessary and
 not sufficient — something else is wrong in that class. And **procedures regressed 0.90 to
-0.60** (four probes): the leg can now retire rules, and on a narrow class a few over-eager
-retirements cost more than the stale ones did. Both need a look before this branch merges.
+0.60** (four probes).
+
+**Correction, 2026-09-07.** I first wrote that the procedure regression was over-eager
+retirement — the leg could now retire rules, so it must have retired the wrong ones. That
+was inference, and it was wrong. Measured: the three step-sequence rules behind the failing
+probes are all still live, and ranking the same query against the PRE-fix store puts the
+correct rule at the same rank four, evicted by the same three. The class was fragile in both
+runs and landed differently; retirement did not cause the swing. What causes it is
+[finding 7](#7-the-question-carried-the-answers-shape-into-the-query).
+
+**Round four, 2026-09-07 (`32c389c16`): the query stops carrying the answer's shape.**
+Framing words are dropped from the FTS5 MATCH when a subject survives, and the fact and
+procedural lanes re-rank their candidates by which query terms are rare *within the
+candidate set*. Procedures went **0.60 to 1.00** and failure causes 0.80 to 0.88 — and the
+overall number went 0.86 to **0.84**, because adaptation read 0.56 against 0.84.
+
+That last number is not a result, and saying why is the more useful finding. Two runs of the
+same rung differ in their store (each replays the year with real model legs) and are scored
+on the form classes by a model. Both were varying here, so I built the instrument that
+varies neither: **one fixed store, two binaries, no consumer and no judge**, asking only
+whether the answer was in the recalled context at all.
+
+| fixed store | old code | new code | gained | lost |
+| --- | --- | --- | --- | --- |
+| 2026-09-06 store | 151/177 | 158/177 | 7 | 0 |
+| 2026-09-07 store | 152/177 | 157/177 | 6 | 1 |
+
+Gains land where the diagnosis predicted: procedure +3, failure-cause +3, adaptation +1 on
+the first store. Context size is unchanged (6,890 → 6,953 chars). On coverage the change
+dominates; the ladder number cannot see it, for the reason in the next section.
 
 **4. Her own voice is calibrated quiet.** Read by a neutral consumer her store gives 0.07
 false fire and 0.01 silent failure. Answering in her own production routing she gives 0.00
@@ -126,6 +162,21 @@ side, and it is a property of her instructions and effort rather than of her mem
    15 of 40 abstentions at `low` were answered correctly at `medium` on a fixed context.
 6. **Her own voice loses the failure-cause class** (0.08 against 0.72 for the same store read
    neutrally), and abstains six times more often than the neutral consumer.
+7. <a id="7-the-question-carried-the-answers-shape-into-the-query"></a>**The question carried
+   the answer's shape into the query, and the store answered in the same register.** "How do
+   we do an invoice for project atlas? *List the steps in order*" tokenised `list`, `steps`
+   and `order` into the FTS5 MATCH, where they matched the BODY of a rule reading "execute
+   the steps in order" — a rule about a different project. That one rule took **slot one on
+   all ten procedure probes**, whatever project each asked about, and with
+   `KEYWORD_PROCEDURAL_TOPK = 3` the correct rule sat at rank four and was dropped. Neither
+   the always-on lane nor the scope column compensates: always-on ranks by importance then
+   recency and every cycle-written rule shares an importance, so the six slots go to
+   whatever was written last; and a rule's scope is a coarse category (`build`, `memory`,
+   `action`, `chat`), never the project. Two independent fixes each carry the correct rule
+   into the top three on all five probes that have one — dropping answer-shape words from
+   the query, and re-ranking candidates by which query terms are rare *within the candidate
+   set*. Landed together, since they fail differently: the word list is a fixed vocabulary
+   and will miss phrasings; the re-rank needs a distinguishing term to exist in the text.
 
 ## What the harness learned about itself
 
@@ -143,6 +194,19 @@ side, and it is a property of her instructions and effort rather than of her mem
 - **The restraint pair earns itself.** False fire and silent failure travel together because
   either alone is gamed by being louder or quieter. The empty rung reads 0.00 against 1.00,
   the degenerate quiet extreme in two numbers.
+- **A grader's register sensitivity can be larger than the effect under test, and it looks
+  exactly like a result.** The form classes are scored by a model on a rubric that reads
+  "applies the fix *as the first thing it does*". Re-scored on the same cached answers with
+  that clause relaxed to "anywhere", the two runs **swap places**: 0.86 / 0.84 strict becomes
+  0.87 / 0.89 lenient, and adaptation reads 0.92 on both. The strict grader was not marking
+  down worse memory; it was marking down *"First: verify the smoke-test-hits-old-router
+  condition is checked"* for hyphenating a phrase its deterministic pre-check wanted verbatim.
+  Corroborating: adaptation has scored 0.56, 0.84 and 0.56 across three runs of nearly the
+  same code. **A ladder cell whose spread across re-runs exceeds the delta being measured is
+  not evidence, and the only fix is an instrument that varies one thing** — here, coverage on
+  a fixed store with no consumer and no judge. Two of the four harness lessons above are now
+  the same lesson twice: a judge over free text carries a register assumption, and it carries
+  it in the model rubric as well as in the deterministic assertions.
 - A date inside embedded text leaks the clock into the ranking; all embedding arms embed
   date-free text and the purity check passes on each.
 - A run of this size must be resumable and detached. Three multi-hour runs were killed by
@@ -167,8 +231,17 @@ three mechanisms and one metric, all of which are now arms or instruments here.
       as `1c5b88571`: rules shortlist and reconcile beside facts. 68 of 131 retired, +4 points.
 - [ ] preferences are still below where they started (0.56 -> 0.22 -> 0.44). Retiring stale
       rules was not the whole cause; the remaining half is unidentified.
-- [ ] procedures regressed 0.90 -> 0.60 when rule retirement switched on. Check for
-      over-eager supersedes on the four failing probes before merging the branch.
+- [x] procedures regressed 0.90 -> 0.60. NOT over-eager retirement — that was my inference
+      and it was wrong; the correct rules are live and the same eviction reproduces in the
+      pre-fix store. Cause in finding 7, fixed 2026-09-07 as `32c389c16`: the class reads
+      1.00 and coverage gained seven probes and lost none on a fixed store.
+- [ ] the form rubric decides on register, not on memory, and its spread is wider than the
+      effects being measured. Make the `applies:` check match the fix's CONTENT rather than
+      its phrase order, and re-score every run that has a form class before quoting an
+      adaptation number again. Until then adaptation and rule are leads, not measurements.
+- [ ] retrieval coverage on a fixed store is the instrument that resolved round four
+      (`scratchpad/paired_recall.py` shape: copy the store, two binaries, no consumer, no
+      judge). It belongs in the harness as a first-class mode rather than a one-off script.
 - [ ] one cycle in 76 still stalls (a 300s timeout on a prompt that size normally answers in
       under a minute). Looks like an occasional hang, not a tight budget. Do not raise the
       timeout again without evidence it is size-related.
