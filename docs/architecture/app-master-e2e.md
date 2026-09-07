@@ -388,3 +388,15 @@ so the cost of a merge is one wasted worker run per active persona, never lost s
 `awaiting_input` sessions from `FLEET:BLOCKED` are not "busy"; the sweeper should treat an
 `app-master:` run's `awaiting_input` as terminal the way it does for `overnight:` runs
 (cycle 7 candidate).
+
+### Cycles 5 and 6 merged (08:46 and 09:0x UTC, `4be3e1604`, `b73d89989`)
+
+Both merged onto a master that sibling sessions kept moving (the operator's recipe registry
+migration under `scripts/templates/_migration/`, a memory-year eval). Cycle 6 overlapped cycle 5
+in one insertion point of the attention file; both sides were whole additions and both were
+kept. Suites on the merged tree: 90 attention, 46 ask, 18 write-back, 23 unattended; tsc and
+bindings clean. The census is red on master for three rules whose new matches are in other
+sessions' files (`machine-specific-path-in-tooling` from `C:/Users/kazda/...` literals in the
+migration and studio scripts, `unobservable-detached-task` in `autonomy_*.rs`,
+`gate-without-empty-input-guard` in a migration script); named here for the operator, not
+edited behind those sessions' backs.
