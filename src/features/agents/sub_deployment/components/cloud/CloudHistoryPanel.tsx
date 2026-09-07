@@ -10,7 +10,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } fro
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -73,16 +73,24 @@ export function CloudHistoryPanel() {
   }, [filterPersona, filterStatus, period]);
 
   const fetchingRef = useRef(new Set<string>());
-  const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number }>());
+  // A terminal execution's output is immutable, so its entry never expires
+  // (the LRU cap is its only reaper); an in-flight execution's output is
+  // still growing, so its entry ages out. Until 2026-09-07 every entry had
+  // the 5-minute TTL AND the row's refresh control went through the same
+  // cache read, so "refresh output" was a no-op for five minutes on exactly
+  // the rows whose output was changing. Registry techniques:
+  // deployment-history (terminal is immutable - cache accordingly) and
+  // failure-drill-down (a running job's tail is a refreshing tail).
+  const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number; terminal: boolean }>());
   const OUTPUT_CACHE_TTL = 5 * 60 * 1000;
   const OUTPUT_CACHE_MAX = 50;
 
-  /** Evict expired entries, then trim oldest if over cap (LRU via Map insertion order). */
+  /** Evict aged in-flight entries, then trim oldest if over cap (LRU via Map insertion order). */
   const evictCache = useCallback(() => {
     const cache = outputCacheRef.current;
     const now = Date.now();
     for (const [key, entry] of cache) {
-      if (now - entry.ts >= OUTPUT_CACHE_TTL) cache.delete(key);
+      if (!entry.terminal && now - entry.ts >= OUTPUT_CACHE_TTL) cache.delete(key);
     }
     while (cache.size > OUTPUT_CACHE_MAX) {
       const oldest = cache.keys().next().value;
@@ -91,10 +99,13 @@ export function CloudHistoryPanel() {
     }
   }, [OUTPUT_CACHE_TTL]);
 
-  const fetchOutput = useCallback(async (execId: string) => {
-    // Return cached output if still fresh (re-insert to mark as recently used)
+  const fetchOutput = useCallback(async (exec: CloudExecution, opts: { force?: boolean } = {}) => {
+    const execId = exec.id;
+    const terminal = classifyExecutionStatus(exec.status) !== 'in_flight';
+    // Serve the cache unless the caller asked for a fresh read (re-insert to
+    // mark as recently used). A terminal entry is fresh forever.
     const cached = outputCacheRef.current.get(execId);
-    if (cached && Date.now() - cached.ts < OUTPUT_CACHE_TTL) {
+    if (!opts.force && cached && (cached.terminal || Date.now() - cached.ts < OUTPUT_CACHE_TTL)) {
       outputCacheRef.current.delete(execId);
       outputCacheRef.current.set(execId, cached);
       setOutputMap((prev) => ({ ...prev, [execId]: { lines: cached.lines, loading: false } }));
@@ -102,10 +113,11 @@ export function CloudHistoryPanel() {
     }
     if (fetchingRef.current.has(execId)) return;
     fetchingRef.current.add(execId);
-    setOutputMap((prev) => ({ ...prev, [execId]: { lines: [], loading: true } }));
+    // A refresh keeps the lines on screen while the new read is in flight.
+    setOutputMap((prev) => ({ ...prev, [execId]: { lines: prev[execId]?.lines ?? [], loading: true } }));
     try {
       const lines = await cloudGetExecutionOutput(execId);
-      outputCacheRef.current.set(execId, { lines, ts: Date.now() });
+      outputCacheRef.current.set(execId, { lines, ts: Date.now(), terminal });
       evictCache();
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
@@ -281,7 +293,8 @@ export function CloudHistoryPanel() {
                 isExpanded={expandedId === exec.id}
                 onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
                 output={outputMap[exec.id]}
-                onFetchOutput={() => fetchOutput(exec.id)}
+                onFetchOutput={() => fetchOutput(exec)}
+                onRefreshOutput={() => fetchOutput(exec, { force: true })}
               />
             </RevealItem>
           ))}

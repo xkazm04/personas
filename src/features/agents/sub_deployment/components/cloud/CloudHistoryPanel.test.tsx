@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 
 const listMock = vi.hoisted(() => vi.fn());
 const statsMock = vi.hoisted(() => vi.fn());
@@ -36,6 +36,26 @@ const stats = { totalExecutions: 1, successRate: 1, totalCostUsd: 0.01, avgDurat
 beforeEach(() => {
   listMock.mockReset(); statsMock.mockReset(); outputMock.mockReset();
   captured.poll = null;
+});
+
+describe('CloudHistoryPanel: output cache', () => {
+  it('the row refresh control re-reads past the cache instead of serving the cached lines', async () => {
+    listMock.mockResolvedValue([exec]);
+    statsMock.mockResolvedValue(stats);
+    outputMock.mockResolvedValue(['line 1']);
+    render(<CloudHistoryPanel />);
+    await act(async () => { await captured.poll!(); });
+
+    fireEvent.click(screen.getByText('persona:p1'));
+    await act(async () => { fireEvent.click(screen.getByText('View Output')); });
+    expect(outputMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('line 1')).toBeTruthy();
+
+    // Before the fix this went through the same cache read and was a no-op
+    // for five minutes.
+    await act(async () => { fireEvent.click(screen.getByTestId('cloud-exec-output-refresh-ex-1')); });
+    expect(outputMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('CloudHistoryPanel: the failed-poll trap', () => {

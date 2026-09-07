@@ -11,10 +11,13 @@ interface CloudExecutionRowProps {
   isExpanded: boolean;
   onToggle: () => void;
   output?: { lines: string[]; loading: boolean; error?: string };
+  /** First read: served from the panel's cache when it has one. */
   onFetchOutput: () => void;
+  /** Explicit re-read past the cache - the only honest meaning of a refresh control. */
+  onRefreshOutput?: () => void;
 }
 
-export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput }: CloudExecutionRowProps) {
+export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput, onRefreshOutput }: CloudExecutionRowProps) {
   const { t } = useTranslation();
   const dt = t.deployment.exec_detail;
   return (
@@ -99,7 +102,9 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                   </span>
                   <button
                     type="button"
-                    onClick={onFetchOutput}
+                    onClick={onRefreshOutput ?? onFetchOutput}
+                    aria-label={t.common.refresh}
+                    data-testid={`cloud-exec-output-refresh-${exec.id}`}
                     className="typo-caption text-foreground hover:text-foreground/70 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-3 h-3" />
