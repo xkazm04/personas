@@ -357,3 +357,13 @@ executed cannot be filed (the reviews table anchors on an execution) and is defe
 probation code does. Found and fixed on the way: every pending review had been rendering its
 title with no reasoning under it, because the list folded `description` into `content` while
 the focus flow read a field that was never set. Full `npm run check` green.
+
+**Observed while cycle 5 waited to merge (07:42 to 08:08 UTC):** personas-web's App Master, with
+19 pending and 0 accepted, told its steward to "TRIAGE (accept evidence-bearing items) to
+unblock delivery, not just add"; the worker refused correctly with `FLEET:BLOCKED, backlog can't
+be drained by automation`, and the fleet orchestration parked it as awaiting input for the
+operator. CandiDate's wake 9 re-dispatched its two fleet charters "as a Fable-reset test, about
+3.8 h since the last limit failure; if both fail again, pivot to analysis charters", which is the
+persona reasoning about the subscription as an environmental fact. Sixty-four pending items. The
+ask mechanism lands with the cycle-5 merge; from then on the persona asks for the accept as a
+review instead of instructing a worker to do what it cannot.
