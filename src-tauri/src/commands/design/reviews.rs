@@ -1217,6 +1217,25 @@ pub fn update_manual_review_status(
         // packet never links a team assignment, so the two are disjoint.
         react_to_app_master_probation(&state, &review, None, None);
 
+        // App Master operator ask: the plain Approve / Reject controls are the
+        // other way an operator answers one, and they must mean the same thing
+        // as clicking the ask's own action — otherwise the same decision moves
+        // the backlog or not depending on which button was nearer.
+        react_to_app_master_ask(
+            &state,
+            &review,
+            match review.status {
+                crate::db::models::ManualReviewStatus::Approved => {
+                    Some(crate::engine::subscription::ASK_ACCEPT_ACTION)
+                }
+                crate::db::models::ManualReviewStatus::Rejected => {
+                    Some(crate::engine::subscription::ASK_REJECT_ACTION)
+                }
+                // `Resolved` is "filed, not decided" — the same as Decide later.
+                _ => Some(crate::engine::subscription::ASK_LATER_ACTION),
+            },
+        );
+
         // Resume-loop (Phase 1): if this review gated a team step that is still
         // held, an APPROVAL resumes the blocked assignment. Shared with the
         // Athena path so resolution reacts identically regardless of who acted.
@@ -1244,6 +1263,168 @@ pub fn update_manual_review_status(
 /// `headless_incomplete_streak` is the headless bridge's consecutive
 /// `incomplete` counter, which the carry-out stamps onto the mandate. Every
 /// human call site passes `None`: nothing a person clicks ever writes it.
+/// Carry out an **App Master operator ask** (`context_data.source =
+/// "app_master_ask"`) when the operator answers it.
+///
+/// The ask channel exists because an App Master can be blocked on a decision
+/// only a person can take — most often an un-triaged backlog, where the loop
+/// dispatches nothing and sleeps while 27 ideas sit `pending`. Raising the
+/// question is half of it; this is the other half, so that answering it in the
+/// review queue actually moves the backlog instead of only closing a row.
+///
+/// Only `kind = "accept_ideas"` has an action to apply. Returns `true` when the
+/// caller should skip its follow-up persona run: applying the verdicts IS the
+/// carry-out, and re-running the App Master to "accept the listed ideas" would
+/// ask an agent to perform the operator's own decision. A `decision` or
+/// `unblock` ask returns `false` on purpose — there the follow-up run is how
+/// the persona learns what the operator chose.
+///
+/// Never fails the resolution: a verdict that cannot be applied is appended to
+/// the review's own notes, where the person who made the decision will see it.
+pub(crate) fn react_to_app_master_ask(
+    state: &State<'_, Arc<AppState>>,
+    review: &crate::db::models::PersonaManualReview,
+    chosen_action: Option<&str>,
+) -> bool {
+    let outcome = apply_ask_verdicts(&state.db, review, chosen_action);
+    // The persona asked because it was blocked; it is not blocked any more.
+    // Waking it now is the difference between the operator's answer landing in
+    // minutes and landing after the two-hour sleep the block produced.
+    if outcome.applied > 0 {
+        crate::engine::subscription::request_wake(&state.db, &review.persona_id);
+    }
+    outcome.handled
+}
+
+/// What answering an ask did.
+pub(crate) struct AskOutcome {
+    /// This WAS an App Master `accept_ideas` ask, so the caller must not also
+    /// dispatch a follow-up run.
+    pub handled: bool,
+    /// How many named ideas the verdict actually moved.
+    pub applied: usize,
+}
+
+/// The pool-only half of [`react_to_app_master_ask`] — everything except the
+/// wake signal, which needs no `AppState` and so needs no `AppState` to test.
+pub(crate) fn apply_ask_verdicts(
+    pool: &crate::db::DbPool,
+    review: &crate::db::models::PersonaManualReview,
+    chosen_action: Option<&str>,
+) -> AskOutcome {
+    use crate::commands::infrastructure::dev_tools::{apply_idea_verdict_cas, IdeaVerdict};
+    use crate::engine::subscription::{
+        ASK_ACCEPT_ACTION, ASK_ACCEPT_IDEAS, ASK_LATER_ACTION, ASK_REJECT_ACTION, ASK_SOURCE,
+    };
+
+    let untouched = |handled: bool| AskOutcome {
+        handled,
+        applied: 0,
+    };
+
+    let ctx: serde_json::Value = review
+        .context_data
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(serde_json::Value::Null);
+    if ctx.get("source").and_then(|v| v.as_str()) != Some(ASK_SOURCE) {
+        return untouched(false);
+    }
+    if ctx.get("kind").and_then(|v| v.as_str()) != Some(ASK_ACCEPT_IDEAS) {
+        return untouched(false);
+    }
+
+    // The operator's answer, as one of the three actions the ask offered. An
+    // action this ask never offered is not a verdict — close the row and do
+    // nothing, rather than guessing which way the person meant it.
+    let verdict = match chosen_action.map(str::trim) {
+        Some(a) if a == ASK_ACCEPT_ACTION => IdeaVerdict::Accept,
+        Some(a) if a == ASK_REJECT_ACTION => IdeaVerdict::Reject {
+            reason: review
+                .reviewer_notes
+                .as_deref()
+                .map(str::trim)
+                .filter(|n| !n.is_empty())
+                .map(str::to_string),
+        },
+        Some(a) if a == ASK_LATER_ACTION => {
+            tracing::info!(review_id = %review.id,
+                "app_master ask: operator chose to decide later — no verdicts applied");
+            return untouched(true);
+        }
+        other => {
+            tracing::info!(review_id = %review.id, action = ?other,
+                "app_master ask: resolved without choosing one of its actions — \
+                 no verdicts applied");
+            return untouched(true);
+        }
+    };
+    let accepting = matches!(verdict, IdeaVerdict::Accept);
+
+    let idea_ids: Vec<String> = ctx
+        .get("ideaIds")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str())
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    if idea_ids.is_empty() {
+        tracing::info!(review_id = %review.id,
+            "app_master ask: accept_ideas ask names no ideas — nothing to apply");
+        return untouched(true);
+    }
+
+    let mut applied = 0usize;
+    let mut failures: Vec<String> = Vec::new();
+    for id in &idea_ids {
+        // `expected = "pending"` is what "each listed idea that is still
+        // pending" means as a compare-and-swap: an idea already carrying this
+        // verdict is a no-op `Ok`, and one decided the OTHER way is a failure
+        // the operator should read rather than a write that overrules them.
+        let one = if accepting {
+            IdeaVerdict::Accept
+        } else {
+            IdeaVerdict::Reject {
+                reason: match &verdict {
+                    IdeaVerdict::Reject { reason } => reason.clone(),
+                    IdeaVerdict::Accept => None,
+                },
+            }
+        };
+        match apply_idea_verdict_cas(pool, id, one, "Human", Some("pending")) {
+            Ok(_) => applied += 1,
+            Err(e) => {
+                let short: String = id.chars().take(8).collect();
+                failures.push(format!("{short}: {e}"));
+            }
+        }
+    }
+
+    if !failures.is_empty() {
+        let note = format!(
+            "App Master ask: {applied} of {} idea(s) updated. Not applied — {}",
+            idea_ids.len(),
+            failures.join("; ")
+        );
+        tracing::warn!(review_id = %review.id, %note, "app_master ask: partial verdict application");
+        if let Err(e) = manual_repo::append_reviewer_note(pool, &review.id, &note) {
+            tracing::warn!(review_id = %review.id, error = %e,
+                "app_master ask: could not record the failed verdicts on the review");
+        }
+    } else {
+        tracing::info!(review_id = %review.id, applied,
+            "app_master ask: applied the operator's verdict to the named ideas");
+    }
+
+    AskOutcome {
+        handled: true,
+        applied,
+    }
+}
+
 pub(crate) fn react_to_app_master_probation(
     state: &State<'_, Arc<AppState>>,
     review: &crate::db::models::PersonaManualReview,
@@ -1732,6 +1913,12 @@ pub async fn dispatch_review_action(
     // "carry out" its own activation or retirement, which is not its call to
     // make — so this short-circuits both the resume-loop and the run below.
     if react_to_app_master_probation(&state, &review, Some(action.as_str()), None) {
+        return Ok(review);
+    }
+
+    // App Master operator ask: the chosen action IS the decision, and for an
+    // `accept_ideas` ask applying it to the backlog is the whole carry-out.
+    if react_to_app_master_ask(&state, &review, Some(action.as_str())) {
         return Ok(review);
     }
 
@@ -2994,4 +3181,277 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         ((structural_passed as f64 / structural_total as f64) * 100.0).round() as i32;
     let semantic_score = ((semantic_passed as f64 / semantic_total as f64) * 100.0).round() as i32;
     (structural_score, semantic_score)
+}
+
+// ---------------------------------------------------------------------------
+// Tests — the App Master operator-ask carry-out
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod ask_tests {
+    use super::*;
+    use crate::db::models::{CreateManualReviewInput, CreatePersonaInput, PersonaManualReview};
+    use crate::db::repos::communication::manual_reviews as review_repo;
+    use crate::db::repos::core::personas as personas_repo;
+    use crate::db::repos::dev::ideas as ideas_repo;
+    use crate::db::repos::dev::projects as projects_repo;
+    use crate::db::repos::execution::executions as executions_repo;
+    use crate::db::DbPool;
+    use crate::engine::subscription::{
+        ASK_ACCEPT_ACTION, ASK_ACCEPT_IDEAS, ASK_LATER_ACTION, ASK_REJECT_ACTION, ASK_SOURCE,
+    };
+    use personas_db::init_test_db;
+
+    /// A project, an App Master persona with one execution to anchor reviews
+    /// to, and `n` pending backlog ideas.
+    fn fixture(pool: &DbPool, n: usize) -> (String, String, Vec<String>) {
+        let project = projects_repo::create_project(
+            pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let persona = personas_repo::create(
+            pool,
+            CreatePersonaInput {
+                name: "App Master Ascent".into(),
+                system_prompt: "sp".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions_repo::create(pool, &persona.id, None, None, None, None).unwrap();
+        let ideas = (0..n)
+            .map(|i| {
+                ideas_repo::create_idea(
+                    pool,
+                    Some(&project.id),
+                    None,
+                    "manual",
+                    None,
+                    &format!("Idea {i}"),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                .unwrap()
+                .id
+            })
+            .collect();
+        (persona.id, exec.id, ideas)
+    }
+
+    fn seed_ask(
+        pool: &DbPool,
+        persona_id: &str,
+        execution_id: &str,
+        idea_ids: &[String],
+        kind: &str,
+    ) -> PersonaManualReview {
+        review_repo::create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: execution_id.to_string(),
+                persona_id: persona_id.to_string(),
+                title: "App Master Ascent: the backlog needs triage".into(),
+                description: Some("Delivery starves without accepts.".into()),
+                severity: Some("info".into()),
+                context_data: Some(
+                    serde_json::json!({
+                        "source": ASK_SOURCE,
+                        "personaId": persona_id,
+                        "projectId": "proj",
+                        "kind": kind,
+                        "ideaIds": idea_ids,
+                        "askTitle": "the backlog needs triage",
+                    })
+                    .to_string(),
+                ),
+                suggested_actions: Some(
+                    serde_json::json!([ASK_ACCEPT_ACTION, ASK_REJECT_ACTION, ASK_LATER_ACTION])
+                        .to_string(),
+                ),
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap()
+    }
+
+    fn status_of(pool: &DbPool, idea_id: &str) -> String {
+        ideas_repo::get_idea_by_id(pool, idea_id).unwrap().status
+    }
+
+    /// The whole point: answering the ask moves the backlog. Two pending
+    /// ideas, the operator chooses Accept, both end `accepted`.
+    #[test]
+    fn accepting_an_ask_accepts_every_idea_it_named() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, exec_id, ideas) = fixture(&pool, 2);
+        assert!(ideas.iter().all(|i| status_of(&pool, i) == "pending"));
+
+        let review = seed_ask(&pool, &persona_id, &exec_id, &ideas, ASK_ACCEPT_IDEAS);
+        let out = apply_ask_verdicts(&pool, &review, Some(ASK_ACCEPT_ACTION));
+
+        assert!(out.handled, "an accept_ideas ask IS the caller carry-out");
+        assert_eq!(out.applied, 2);
+        for i in &ideas {
+            assert_eq!(status_of(&pool, i), "accepted", "idea {i}");
+        }
+    }
+
+    /// Reject carries the operator's own note into the idea's rejection reason
+    /// — the persona re-reads that, and "rejected because" is worth more to it
+    /// than "rejected".
+    #[test]
+    fn rejecting_an_ask_rejects_with_the_operators_note() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, exec_id, ideas) = fixture(&pool, 1);
+        let review = seed_ask(&pool, &persona_id, &exec_id, &ideas, ASK_ACCEPT_IDEAS);
+        review_repo::update_status(
+            &pool,
+            &review.id,
+            crate::db::models::ManualReviewStatus::Rejected,
+            Some("Not this quarter.".into()),
+        )
+        .unwrap();
+        let review = review_repo::get_by_id(&pool, &review.id).unwrap();
+
+        let out = apply_ask_verdicts(&pool, &review, Some(ASK_REJECT_ACTION));
+        assert_eq!(out.applied, 1);
+        let idea = ideas_repo::get_idea_by_id(&pool, &ideas[0]).unwrap();
+        assert_eq!(idea.status, "rejected");
+        assert_eq!(idea.rejection_reason.as_deref(), Some("Not this quarter."));
+    }
+
+    /// "Decide later" is a real answer and must change nothing — while still
+    /// telling the caller not to dispatch a follow-up run.
+    #[test]
+    fn deciding_later_moves_nothing() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, exec_id, ideas) = fixture(&pool, 2);
+        let review = seed_ask(&pool, &persona_id, &exec_id, &ideas, ASK_ACCEPT_IDEAS);
+
+        let out = apply_ask_verdicts(&pool, &review, Some(ASK_LATER_ACTION));
+        assert!(out.handled);
+        assert_eq!(out.applied, 0);
+        assert!(ideas.iter().all(|i| status_of(&pool, i) == "pending"));
+    }
+
+    /// A verdict that cannot be applied must not fail the resolution, and must
+    /// not vanish either: it lands on the review the operator is looking at.
+    #[test]
+    fn a_failed_verdict_is_recorded_on_the_review_not_swallowed() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, exec_id, ideas) = fixture(&pool, 2);
+        // One idea was already rejected by somebody else. Accepting the ask now
+        // must move the other one and report the one it could not touch.
+        crate::commands::infrastructure::dev_tools::apply_idea_verdict_cas(
+            &pool,
+            &ideas[0],
+            crate::commands::infrastructure::dev_tools::IdeaVerdict::Reject { reason: None },
+            "Human",
+            None,
+        )
+        .unwrap();
+
+        let review = seed_ask(&pool, &persona_id, &exec_id, &ideas, ASK_ACCEPT_IDEAS);
+        let out = apply_ask_verdicts(&pool, &review, Some(ASK_ACCEPT_ACTION));
+
+        assert!(out.handled);
+        assert_eq!(out.applied, 1, "the still-pending idea is applied");
+        assert_eq!(status_of(&pool, &ideas[0]), "rejected", "unchanged");
+        assert_eq!(status_of(&pool, &ideas[1]), "accepted");
+
+        let notes = review_repo::get_by_id(&pool, &review.id)
+            .unwrap()
+            .reviewer_notes
+            .unwrap_or_default();
+        let short: String = ideas[0].chars().take(8).collect();
+        assert!(
+            notes.contains("1 of 2 idea(s) updated") && notes.contains(&short),
+            "the operator must be able to see which item their decision missed: {notes}"
+        );
+    }
+
+    /// Everything that is not an App Master `accept_ideas` ask is left alone —
+    /// including the loop's own other ask kinds, whose carry-out IS the
+    /// follow-up run this return value would have suppressed.
+    #[test]
+    fn other_reviews_are_not_touched() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, exec_id, ideas) = fixture(&pool, 1);
+
+        // A `decision` ask: recognised as an ask, deliberately not handled.
+        let decision = seed_ask(&pool, &persona_id, &exec_id, &ideas, "decision");
+        let out = apply_ask_verdicts(&pool, &decision, Some(ASK_ACCEPT_ACTION));
+        assert!(!out.handled, "a decision ask still wants its follow-up run");
+        assert_eq!(status_of(&pool, &ideas[0]), "pending");
+
+        // A Director verdict carrying the same `kind` key from another
+        // vocabulary must not be mistaken for an ask.
+        let director = review_repo::create(
+            &pool,
+            CreateManualReviewInput {
+                execution_id: exec_id.clone(),
+                persona_id: persona_id.clone(),
+                title: "Add a precondition check".into(),
+                description: None,
+                severity: Some("warning".into()),
+                context_data: Some(
+                    serde_json::json!({ "source": "director", "kind": ASK_ACCEPT_IDEAS })
+                        .to_string(),
+                ),
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap();
+        assert!(!apply_ask_verdicts(&pool, &director, Some(ASK_ACCEPT_ACTION)).handled);
+
+        // And a plain review with no context_data at all.
+        let plain = review_repo::create(
+            &pool,
+            CreateManualReviewInput {
+                execution_id: exec_id,
+                persona_id,
+                title: "Check the output".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap();
+        assert!(!apply_ask_verdicts(&pool, &plain, Some(ASK_ACCEPT_ACTION)).handled);
+    }
 }

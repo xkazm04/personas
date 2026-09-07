@@ -56,6 +56,14 @@ mod watchdogs;
 mod tests;
 
 pub use attention::*;
+// The operator-ask vocabulary reaches one caller outside the loop — the review
+// resolve path, which has to recognise an ask row and the action the operator
+// chose on it. Re-exported by NAME rather than by glob: `attention_decide` is
+// the decision's internal surface (a prompt renderer, a wire parser, a dozen
+// bounds) and none of the rest of it is anybody else's business.
+pub(crate) use attention_decide::{
+    ASK_ACCEPT_ACTION, ASK_ACCEPT_IDEAS, ASK_LATER_ACTION, ASK_REJECT_ACTION, ASK_SOURCE,
+};
 pub use autonomy_backlog::*;
 pub use autonomy_coaching::*;
 pub use autonomy_goals::*;

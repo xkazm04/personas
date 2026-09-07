@@ -171,6 +171,34 @@ pub struct AppMasterAdoption {
     #[ts(optional)]
     pub manifest_path: Option<String>,
     pub notes: Vec<String>,
+    /// Questions this App Master has put to the operator that nobody has
+    /// answered. Empty on the adopt path — an adoption has not woken yet, so it
+    /// cannot have asked anything.
+    #[serde(default)]
+    pub open_asks: Vec<AppMasterOpenAsk>,
+    /// The App Master's own last word about where it stands: the newest
+    /// coverage note its decision lane wrote. `None` when it has never decided.
+    ///
+    /// Reported here because a terminal reading this route is otherwise looking
+    /// at charter titles and statuses — none of which say *the loop is blocked
+    /// and here is what it needs*, which is the one thing the note carries.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub last_note: Option<String>,
+}
+
+/// One unanswered ask, as the state route reports it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AppMasterOpenAsk {
+    /// The `persona_manual_reviews` row the operator answers.
+    pub review_id: String,
+    /// `accept_ideas` | `decision` | `unblock`.
+    pub kind: String,
+    /// The question itself, without the `App Master <project>: ` display prefix.
+    pub title: String,
+    pub created_at: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -600,6 +628,11 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
         suspended,
         manifest_path,
         notes,
+        // An adoption has not woken yet, so it has asked nothing and decided
+        // nothing. Reported empty rather than omitted: the shape is the same on
+        // both paths, and a reader never has to ask which one produced it.
+        open_asks: Vec::new(),
+        last_note: None,
     })
 }
 
@@ -795,24 +828,39 @@ pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>
     else {
         return Ok(None);
     };
-    let charters: Vec<AppMasterCharterOutcome> =
-        resp_repo::list_by_persona(pool, &persona.id, false)?
+    let responsibilities = resp_repo::list_by_persona(pool, &persona.id, false)?;
+    // Read from EVERY live charter, not only the recipe-backed ones the list
+    // below keeps: `write_back_pacing` stamps the note on every charter the
+    // decision considered, and a charter without a recipe slug carries it just
+    // as well as one with.
+    let last_note = crate::engine::subscription::newest_coverage_note_for(&responsibilities);
+    let charters: Vec<AppMasterCharterOutcome> = responsibilities
+        .into_iter()
+        .filter_map(|r| {
+            let slug = r
+                .spec
+                .recipe_ref
+                .as_ref()
+                .map(|rr| rr.slug.trim().to_string())
+                .filter(|s| !s.is_empty())?;
+            Some(AppMasterCharterOutcome {
+                id: r.id,
+                slug,
+                title: r.title,
+                priority: r.spec.priority,
+                status: r.status,
+                created: false,
+            })
+        })
+        .collect();
+    let open_asks: Vec<AppMasterOpenAsk> =
+        crate::engine::subscription::list_open_asks(pool, &persona.id)
             .into_iter()
-            .filter_map(|r| {
-                let slug = r
-                    .spec
-                    .recipe_ref
-                    .as_ref()
-                    .map(|rr| rr.slug.trim().to_string())
-                    .filter(|s| !s.is_empty())?;
-                Some(AppMasterCharterOutcome {
-                    id: r.id,
-                    slug,
-                    title: r.title,
-                    priority: r.spec.priority,
-                    status: r.status,
-                    created: false,
-                })
+            .map(|a| AppMasterOpenAsk {
+                review_id: a.review_id,
+                kind: a.kind,
+                title: a.title,
+                created_at: a.created_at,
             })
             .collect();
     let suspended: Vec<String> = charters
@@ -834,6 +882,8 @@ pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>
         suspended,
         manifest_path,
         notes: Vec::new(),
+        open_asks,
+        last_note,
     }))
 }
 
