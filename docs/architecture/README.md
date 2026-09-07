@@ -16,5 +16,7 @@ Cross-cutting implementation contracts and system diagrams live here.
 | [memory-vector-orphan-reconciliation.md](memory-vector-orphan-reconciliation.md) | Reaper registry, orphan ledger, and dependent-side sweep for the memory vector store (deferred-fixes #108) |
 | [prune-preview-enforcement-path.md](prune-preview-enforcement-path.md) | Storage prune preview computed through the enforcement path (deferred-fixes #31) |
 | [scene-store-race-guards-and-relay-bound.md](scene-store-race-guards-and-relay-bound.md) | Mastermind scene-store keyed race guards + browser-bridge relay channel bound |
+| [warm-verification-service.md](warm-verification-service.md) | Plan 1: the gate daemon, one warm tsc/eslint/census base with per-worktree overlays, `npm run gate` |
+| [linux-fleet-filesystem.md](linux-fleet-filesystem.md) | Plan 2 (deferred): running the agent fleet inside WSL2 on ext4 with a hard CPU cap, and the signals that start it |
 
 Archived root architecture notes were moved to [_archive/root/ARCHITECTURE.md](../_archive/root/ARCHITECTURE.md).
