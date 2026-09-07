@@ -1,0 +1,530 @@
+[
+ {
+  "slug": "audio-briefing-production",
+  "domain": "creative_design",
+  "topic": "audio",
+  "guidance_words": 87
+ },
+ {
+  "slug": "audio-briefing-script-drafting",
+  "domain": "creative_design",
+  "topic": "audio",
+  "guidance_words": 77
+ },
+ {
+  "slug": "newsletter-issue-curation",
+  "domain": "creative_design",
+  "topic": "newsletters",
+  "guidance_words": 82
+ },
+ {
+  "slug": "approved-draft-channel-publishing",
+  "domain": "creative_design",
+  "topic": "social-publishing",
+  "guidance_words": 77
+ },
+ {
+  "slug": "source-artifact-channel-repurposing",
+  "domain": "creative_design",
+  "topic": "social-publishing",
+  "guidance_words": 86
+ },
+ {
+  "slug": "feature-announcement-video-production",
+  "domain": "creative_design",
+  "topic": "video",
+  "guidance_words": 81
+ },
+ {
+  "slug": "feature-walkthrough-capture",
+  "domain": "creative_design",
+  "topic": "video",
+  "guidance_words": 88
+ },
+ {
+  "slug": "brand-visual-asset-production",
+  "domain": "creative_design",
+  "topic": "visual-assets",
+  "guidance_words": 86
+ },
+ {
+  "slug": "original-2d-art-curation",
+  "domain": "creative_design",
+  "topic": "visual-assets",
+  "guidance_words": 82
+ },
+ {
+  "slug": "revenue-signal-alerting-and-outreach",
+  "domain": "customer_support",
+  "topic": "retention",
+  "guidance_words": 85
+ },
+ {
+  "slug": "issue-handling-trend-review",
+  "domain": "customer_support",
+  "topic": "service-health",
+  "guidance_words": 78
+ },
+ {
+  "slug": "support-escalation-pattern-review",
+  "domain": "customer_support",
+  "topic": "service-health",
+  "guidance_words": 82
+ },
+ {
+  "slug": "support-issue-disposition-account",
+  "domain": "customer_support",
+  "topic": "service-health",
+  "guidance_words": 74
+ },
+ {
+  "slug": "support-request-sla-watch-and-escalation",
+  "domain": "customer_support",
+  "topic": "sla",
+  "guidance_words": 77
+ },
+ {
+  "slug": "issue-source-coverage-and-triage",
+  "domain": "customer_support",
+  "topic": "ticket-handling",
+  "guidance_words": 86
+ },
+ {
+  "slug": "agent-context-budget-audit",
+  "domain": "data_ai",
+  "topic": "agent-context",
+  "guidance_words": 73
+ },
+ {
+  "slug": "database-schema-picture-refresh",
+  "domain": "data_ai",
+  "topic": "data-access",
+  "guidance_words": 87
+ },
+ {
+  "slug": "congressional-stock-disclosure-coverage",
+  "domain": "finance_accounting",
+  "topic": "investing",
+  "guidance_words": 83
+ },
+ {
+  "slug": "under-covered-equity-discovery-by-sector",
+  "domain": "finance_accounting",
+  "topic": "investing",
+  "guidance_words": 89
+ },
+ {
+  "slug": "watchlist-technical-signal-digest",
+  "domain": "finance_accounting",
+  "topic": "investing",
+  "guidance_words": 84
+ },
+ {
+  "slug": "payment-event-scoring-for-churn-and-expansion",
+  "domain": "finance_accounting",
+  "topic": "revenue",
+  "guidance_words": 87
+ },
+ {
+  "slug": "cloud-billing-access-failure-alerting",
+  "domain": "finance_accounting",
+  "topic": "spend-and-budget",
+  "guidance_words": 88
+ },
+ {
+  "slug": "cloud-cost-and-resource-reporting",
+  "domain": "finance_accounting",
+  "topic": "spend-and-budget",
+  "guidance_words": 88
+ },
+ {
+  "slug": "cloud-spend-threshold-watch",
+  "domain": "finance_accounting",
+  "topic": "spend-and-budget",
+  "guidance_words": 88
+ },
+ {
+  "slug": "inbound-message-triage-across-channels",
+  "domain": "general_professional",
+  "topic": "correspondence",
+  "guidance_words": 76
+ },
+ {
+  "slug": "correspondence-activity-digest",
+  "domain": "general_professional",
+  "topic": "digests",
+  "guidance_words": 84
+ },
+ {
+  "slug": "cross-project-progress-briefing",
+  "domain": "general_professional",
+  "topic": "digests",
+  "guidance_words": 77
+ },
+ {
+  "slug": "goal-accountability-and-idea-triage-review",
+  "domain": "general_professional",
+  "topic": "goals-and-reviews",
+  "guidance_words": 82
+ },
+ {
+  "slug": "content-feed-intake-for-curation",
+  "domain": "general_professional",
+  "topic": "knowledge-curation",
+  "guidance_words": 84
+ },
+ {
+  "slug": "knowledge-base-curation-audit",
+  "domain": "general_professional",
+  "topic": "knowledge-curation",
+  "guidance_words": 82
+ },
+ {
+  "slug": "sanitized-corpus-derivation",
+  "domain": "general_professional",
+  "topic": "knowledge-curation",
+  "guidance_words": 75
+ },
+ {
+  "slug": "access-grant-audit-and-compliance-reporting",
+  "domain": "legal_compliance",
+  "topic": "compliance-monitoring",
+  "guidance_words": 83
+ },
+ {
+  "slug": "contract-envelope-event-sync",
+  "domain": "legal_compliance",
+  "topic": "contracts",
+  "guidance_words": 87
+ },
+ {
+  "slug": "contract-intake-and-risk-analysis",
+  "domain": "legal_compliance",
+  "topic": "contracts",
+  "guidance_words": 87
+ },
+ {
+  "slug": "contract-review-publication-and-risk-alert",
+  "domain": "legal_compliance",
+  "topic": "contracts",
+  "guidance_words": 78
+ },
+ {
+  "slug": "contract-obligation-and-deadline-watch",
+  "domain": "legal_compliance",
+  "topic": "deadlines",
+  "guidance_words": 84
+ },
+ {
+  "slug": "contract-renewal-window-watch",
+  "domain": "legal_compliance",
+  "topic": "deadlines",
+  "guidance_words": 88
+ },
+ {
+  "slug": "unsigned-contract-signature-chasing",
+  "domain": "legal_compliance",
+  "topic": "deadlines",
+  "guidance_words": 80
+ },
+ {
+  "slug": "access-request-approval-chain",
+  "domain": "operations_logistics",
+  "topic": "approvals",
+  "guidance_words": 80
+ },
+ {
+  "slug": "access-request-intake-and-triage",
+  "domain": "operations_logistics",
+  "topic": "intake",
+  "guidance_words": 88
+ },
+ {
+  "slug": "survey-insight-report-delivery",
+  "domain": "product_project",
+  "topic": "customer-feedback",
+  "guidance_words": 85
+ },
+ {
+  "slug": "survey-response-theme-and-sentiment-analysis",
+  "domain": "product_project",
+  "topic": "customer-feedback",
+  "guidance_words": 87
+ },
+ {
+  "slug": "product-idea-harvesting-from-codebase-and-web",
+  "domain": "product_project",
+  "topic": "ideation",
+  "guidance_words": 80
+ },
+ {
+  "slug": "community-trend-digest",
+  "domain": "sales_marketing",
+  "topic": "community-channels",
+  "guidance_words": 81
+ },
+ {
+  "slug": "content-source-health-tracking",
+  "domain": "sales_marketing",
+  "topic": "community-channels",
+  "guidance_words": 85
+ },
+ {
+  "slug": "free-promotion-surface-discovery",
+  "domain": "sales_marketing",
+  "topic": "community-channels",
+  "guidance_words": 88
+ },
+ {
+  "slug": "competitor-positioning-comparison",
+  "domain": "sales_marketing",
+  "topic": "conversion-optimization",
+  "guidance_words": 87
+ },
+ {
+  "slug": "conversion-experiment-program-digest",
+  "domain": "sales_marketing",
+  "topic": "conversion-optimization",
+  "guidance_words": 81
+ },
+ {
+  "slug": "conversion-experiment-significance-watch",
+  "domain": "sales_marketing",
+  "topic": "conversion-optimization",
+  "guidance_words": 84
+ },
+ {
+  "slug": "conversion-variant-hypothesis-proposals",
+  "domain": "sales_marketing",
+  "topic": "conversion-optimization",
+  "guidance_words": 83
+ },
+ {
+  "slug": "website-conversion-gap-audit",
+  "domain": "sales_marketing",
+  "topic": "conversion-optimization",
+  "guidance_words": 86
+ },
+ {
+  "slug": "high-intent-lead-alerting",
+  "domain": "sales_marketing",
+  "topic": "lead-handling",
+  "guidance_words": 77
+ },
+ {
+  "slug": "lead-welcome-email-drafting",
+  "domain": "sales_marketing",
+  "topic": "lead-handling",
+  "guidance_words": 84
+ },
+ {
+  "slug": "content-metrics-anomaly-check",
+  "domain": "sales_marketing",
+  "topic": "web-analytics",
+  "guidance_words": 86
+ },
+ {
+  "slug": "paid-organic-performance-scan",
+  "domain": "sales_marketing",
+  "topic": "web-analytics",
+  "guidance_words": 79
+ },
+ {
+  "slug": "web-analytics-performance-review",
+  "domain": "sales_marketing",
+  "topic": "web-analytics",
+  "guidance_words": 67
+ },
+ {
+  "slug": "web-content-performance-review",
+  "domain": "sales_marketing",
+  "topic": "web-analytics",
+  "guidance_words": 87
+ },
+ {
+  "slug": "change-implementation-and-review",
+  "domain": "software_engineering",
+  "topic": "code-review",
+  "guidance_words": 81
+ },
+ {
+  "slug": "pull-request-test-verdict",
+  "domain": "software_engineering",
+  "topic": "code-review",
+  "guidance_words": 82
+ },
+ {
+  "slug": "codebase-feasibility-analysis",
+  "domain": "software_engineering",
+  "topic": "codebase-health",
+  "guidance_words": 86
+ },
+ {
+  "slug": "codebase-latent-defect-hunt",
+  "domain": "software_engineering",
+  "topic": "codebase-health",
+  "guidance_words": 78
+ },
+ {
+  "slug": "codebase-test-coverage-advance",
+  "domain": "software_engineering",
+  "topic": "codebase-health",
+  "guidance_words": 83
+ },
+ {
+  "slug": "idea-architecture-verdict",
+  "domain": "software_engineering",
+  "topic": "codebase-health",
+  "guidance_words": 90
+ },
+ {
+  "slug": "approved-maintenance-issue-filing",
+  "domain": "software_engineering",
+  "topic": "engineering-records",
+  "guidance_words": 84
+ },
+ {
+  "slug": "decision-record-rot-watch",
+  "domain": "software_engineering",
+  "topic": "engineering-records",
+  "guidance_words": 83
+ },
+ {
+  "slug": "decision-to-code-linking",
+  "domain": "software_engineering",
+  "topic": "engineering-records",
+  "guidance_words": 88
+ },
+ {
+  "slug": "agent-platform-error-classification",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 79
+ },
+ {
+  "slug": "agent-platform-error-ingestion",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 85
+ },
+ {
+  "slug": "agent-reliability-reporting",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 78
+ },
+ {
+  "slug": "application-error-scan",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 90
+ },
+ {
+  "slug": "cross-workflow-error-pattern-detection",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 80
+ },
+ {
+  "slug": "production-error-issue-filter",
+  "domain": "software_engineering",
+  "topic": "error-triage",
+  "guidance_words": 82
+ },
+ {
+  "slug": "webhook-classification-and-routing",
+  "domain": "software_engineering",
+  "topic": "event-routing",
+  "guidance_words": 72
+ },
+ {
+  "slug": "database-anomaly-incident-diagnosis",
+  "domain": "software_engineering",
+  "topic": "incident-response",
+  "guidance_words": 86
+ },
+ {
+  "slug": "incident-capture-and-classification",
+  "domain": "software_engineering",
+  "topic": "incident-response",
+  "guidance_words": 78
+ },
+ {
+  "slug": "open-incident-vigilance",
+  "domain": "software_engineering",
+  "topic": "incident-response",
+  "guidance_words": 79
+ },
+ {
+  "slug": "database-activity-digest",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 85
+ },
+ {
+  "slug": "database-anomaly-baseline-refresh",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 88
+ },
+ {
+  "slug": "database-health-check",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 86
+ },
+ {
+  "slug": "database-performance-baseline-monitoring",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 86
+ },
+ {
+  "slug": "database-row-change-watch",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 80
+ },
+ {
+  "slug": "deploy-regression-correlation",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 79
+ },
+ {
+  "slug": "infrastructure-metrics-scan",
+  "domain": "software_engineering",
+  "topic": "observability",
+  "guidance_words": 90
+ },
+ {
+  "slug": "release-candidate-review",
+  "domain": "software_engineering",
+  "topic": "release",
+  "guidance_words": 80
+ },
+ {
+  "slug": "release-record-and-version-bump",
+  "domain": "software_engineering",
+  "topic": "release",
+  "guidance_words": 86
+ },
+ {
+  "slug": "harvested-idea-triage",
+  "domain": "software_engineering",
+  "topic": "work-intake",
+  "guidance_words": 80
+ },
+ {
+  "slug": "scouted-opportunity-triage",
+  "domain": "software_engineering",
+  "topic": "work-intake",
+  "guidance_words": 80
+ },
+ {
+  "slug": "stack-grounded-opportunity-research",
+  "domain": "software_engineering",
+  "topic": "work-intake",
+  "guidance_words": 80
+ }
+]
