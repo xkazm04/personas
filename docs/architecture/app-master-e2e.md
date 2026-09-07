@@ -233,3 +233,24 @@ personas-web scan found its repository by guessing on disk. (2) The scans emitte
 tools the CLI does not have, so nothing was filed. Both handed to the cycle-2 builder (P6, P7).
 (3) The decision context sees a dispatch but not its outcome: CandiDate deferred KPI stewardship
 as "still in flight" 25 minutes after that worker's `FLEET:DONE` (P4 addendum).
+
+**Third wave (02:08 UTC, CandiDate wake 3):** re-dispatched priority 1 and 2 on `-2` branches with
+a brief that told the workers to verify wake 1's item first and take a fresh one otherwise; the
+coverage memory carried what the database could not. The delivery worker took idea `e38c24b7`,
+found its premise overtaken by emit sites that landed on 2026-09-05, delivered the defect
+underneath (`cb71f912`, ten files) and said so. The steward measured a JD build failure rate
+KPI and wired it to the existing Personas row through the bridge. The ascent steward finished
+with six measured KPIs and nine backlog items filed as docs on its branch, for want of a route.
+Seven App Master executions so far, the engine's estimate about $8.6, on the subscription.
+
+### Cycle 2 (merged 02:43 UTC, `58dc4c06d`)
+
+**Built from cycle 1's evidence:** bridge write-back routes (`POST /dev-tools/ideas`,
+`/ideas/{id}/outcome`, `/kpis`, `/kpis/{id}/measure`), a dispatch-time `dev_tasks` row for a
+named accepted idea, a write-back block in every worker's task text, in-flight tasks and each
+charter's last-dispatch outcome in the decision prompt, a boot sweep closing orphaned attention
+rows, `PERSONAS_MCP_TOKEN` on the MCP sidecar (every persona execution's Personas tool call had
+been failing), and `propose_backlog` in the protocol text parser (the verb was missing from the
+key table, so text fallbacks were dropped). Left out with evidence: `origin = app-master` on filed
+ideas (a closed 11-value allowlist mirrored in UI and 14 locales; `scan_type` carries the producer
+instead), `evidence` on filed ideas, `measured_at` on measurements.
