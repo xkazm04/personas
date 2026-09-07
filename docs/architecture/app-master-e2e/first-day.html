@@ -1,0 +1,276 @@
+<title>The App Master's First Day</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F3F6; --surface:#FFFFFF; --ink:#161B24; --muted:#5B6572; --rule:#D3D9E1;
+  --accent:#0E7C73; --accent-ink:#0A5F58; --amber:#B4690E; --amber-soft:#FBF1E2; --accent-soft:#E3F2F0;
+  --mono-ground:#F6F8FA;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1319; --surface:#151C25; --ink:#E4E9EF; --muted:#98A3B0; --rule:#263040;
+    --accent:#3FB8AC; --accent-ink:#7ED6CC; --amber:#E0A048; --amber-soft:#2A2114; --accent-soft:#12302E;
+    --mono-ground:#111820;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1319; --surface:#151C25; --ink:#E4E9EF; --muted:#98A3B0; --rule:#263040;
+  --accent:#3FB8AC; --accent-ink:#7ED6CC; --amber:#E0A048; --amber-soft:#2A2114; --accent-soft:#12302E;
+  --mono-ground:#111820;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.55}
+a{color:var(--accent-ink)}
+.wrap{max-width:72rem;margin:0 auto;padding:2.5rem 1.5rem 5rem;display:grid;grid-template-columns:13rem minmax(0,1fr);gap:3rem}
+@media (max-width:52rem){.wrap{grid-template-columns:1fr;gap:1.5rem}}
+.rail{position:sticky;top:1.5rem;align-self:start;font-size:.92rem}
+@media (max-width:52rem){.rail{position:static}}
+.rail .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .6rem}
+.rail ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
+.rail li{padding:.3rem 0 .3rem .9rem;color:var(--muted)}
+.rail li a{color:inherit;text-decoration:none}
+.rail li a:hover,.rail li a:focus-visible{color:var(--accent-ink);text-decoration:underline;outline:none}
+.rail li .n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.75rem;color:var(--accent);margin-right:.5rem}
+main{max-width:66ch}
+h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(2.1rem,4vw,3rem);line-height:1.08;letter-spacing:-.01em;margin:0 0 .6rem;text-wrap:balance}
+.lede{font-size:1.18rem;color:var(--muted);margin:0 0 2.2rem;text-wrap:pretty}
+h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:1.55rem;line-height:1.2;margin:3rem 0 .8rem;text-wrap:balance}
+h2 .n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;color:var(--accent);letter-spacing:.06em;display:block;margin-bottom:.35rem}
+h3{font-size:1.05rem;font-weight:600;margin:1.6rem 0 .4rem}
+p{margin:0 0 1rem;text-wrap:pretty}
+.answer{border-left:3px solid var(--accent);padding:.2rem 0 .2rem 1rem;margin:1.6rem 0 2rem}
+.answer p{margin:0 0 .6rem;font-size:1.06rem}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;margin:.6rem 0 1.4rem;font-size:.95rem}
+th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.9rem}
+.tablewrap{overflow-x:auto}
+.note{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.82rem;line-height:1.5;background:var(--mono-ground);border:1px solid var(--rule);border-left:3px solid var(--amber);padding:.8rem 1rem;margin:.9rem 0 1.2rem;white-space:pre-wrap;word-wrap:break-word;color:var(--ink)}
+.note .who{display:block;color:var(--amber);margin-bottom:.35rem;font-weight:500}
+.cycle{margin:1.4rem 0 1.8rem;padding-top:.2rem}
+.cycle .meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.75rem;color:var(--muted);letter-spacing:.04em;margin-bottom:.4rem}
+.cycle dl{margin:0;display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:.35rem 1rem}
+.cycle dt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:.25rem}
+.cycle dd{margin:0}
+figure{margin:1.2rem 0 1.6rem}
+figcaption{font-size:.88rem;color:var(--muted);margin-top:.5rem}
+svg text{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
+.legend{display:flex;gap:1.2rem;font-size:.85rem;color:var(--muted);margin-top:.4rem}
+.legend i{display:inline-block;width:.75rem;height:.75rem;border-radius:2px;margin-right:.4rem;vertical-align:-1px}
+.pill{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.05em;padding:.1rem .5rem;border-radius:3px;background:var(--accent-soft);color:var(--accent-ink);vertical-align:middle}
+.pill.amber{background:var(--amber-soft);color:var(--amber)}
+ul{padding-left:1.2rem}
+li{margin:.3rem 0}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em;background:var(--mono-ground);padding:.05em .3em;border-radius:3px}
+.decisions li{margin:.6rem 0}
+.foot{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--rule);font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){ .rail li a{transition:color .15s} }
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Cycles">
+  <p class="eyebrow">2026-09-07 · one day, ten cycles</p>
+  <ol>
+    <li><a href="#answer"><span class="n">—</span>The answer</a></li>
+    <li><a href="#numbers"><span class="n">—</span>The day in numbers</a></li>
+    <li><a href="#c0"><span class="n">0</span>Build the loop</a></li>
+    <li><a href="#c1"><span class="n">1</span>First decisions</a></li>
+    <li><a href="#c2"><span class="n">2</span>Write-back</a></li>
+    <li><a href="#c3"><span class="n">3</span>Self-pacing</a></li>
+    <li><a href="#c4"><span class="n">4</span>The ceiling</a></li>
+    <li><a href="#c5"><span class="n">5</span>Asking back</a></li>
+    <li><a href="#c6"><span class="n">6</span>Shipping at rung 2</a></li>
+    <li><a href="#c7"><span class="n">7</span>Parked workers</a></li>
+    <li><a href="#c8"><span class="n">8</span>Recipes learn</a></li>
+    <li><a href="#c9"><span class="n">9</span>Capacity, honestly</a></li>
+    <li><a href="#c10"><span class="n">10</span>Wrap-up</a></li>
+    <li><a href="#voice"><span class="n">—</span>In its own words</a></li>
+    <li><a href="#operator"><span class="n">—</span>For the operator</a></li>
+  </ol>
+</nav>
+
+<main>
+<h1>The App Master's First Day</h1>
+<p class="lede">Three App Master personas, one per real project, switched on at midnight and left to decide for themselves. Ten build-and-observe cycles later, this is what they did, what they could not do, and why.</p>
+
+<section id="answer">
+<h2><span class="n">THE QUESTION</span>Can an App Master drive a project autonomously this way?</h2>
+<div class="answer">
+<p><strong>Yes, up to the one act the mandate reserves for a person.</strong> Each App Master woke on its own schedule, read its six responsibilities and the project's state, decided which to run and how many, dispatched workers on Opus into isolated branches, filed what it found back into Personas, remembered coverage between wakes, and asked the operator for the decision it could not take.</p>
+<p><strong>The ceiling is the human accept.</strong> By 06:41 UTC every persona had swept its unchanged code, declared KPIs for its uncovered contexts and delivered every accepted idea it had. Seventy new backlog items sat pending. Ascent's seventh wake dispatched nothing and slept two hours, and said exactly why. From then on the loop's throughput was bounded by triage, which is the operator's, not the Director's, to open.</p>
+</div>
+</section>
+
+<section id="numbers">
+<h2><span class="n">EVIDENCE</span>The day in numbers</h2>
+<p>Read from the live ledger at 12:00 UTC, after the last merge had booted. Costs are the engine's estimate; the subscription pays.</p>
+<div class="tablewrap"><table>
+<tr><th>Measure</th><th class="num">Count</th><th>What it means</th></tr>
+<tr><td>Roster decisions</td><td class="num">45</td><td>One Opus call per wake: which charters, how many, what to remember, how long to sleep</td></tr>
+<tr><td>Charter dispatches</td><td class="num">50</td><td>Work actually started, each with a written reason; the rest deferred with a reason too</td></tr>
+<tr><td>Persona executions</td><td class="num">24</td><td>Scans, reviews and decision capture on Opus; 111 minutes, about $36 estimated</td></tr>
+<tr><td>Fleet worker sessions</td><td class="num">29</td><td>Code-authoring runs in isolated worktrees on <code>autopilot/*</code> branches</td></tr>
+<tr><td>Backlog items filed</td><td class="num">80</td><td>Through the new write-back routes and the repaired protocol text path; all still pending</td></tr>
+<tr><td>KPIs declared</td><td class="num">56</td><td>37 active and context-bound; 78 measurements, 55 of them production readings</td></tr>
+<tr><td>Ideas delivered to a branch</td><td class="num">3</td><td>Every accepted idea that existed; two premises found stale and corrected</td></tr>
+<tr><td>Operator asks raised</td><td class="num">5</td><td>Three pending in Approvals now; one was answered by an unattended review policy before a person could, which cycle 9 closed</td></tr>
+<tr><td>Self-chosen pacing now</td><td class="num">15 · 20 · 240</td><td>Minutes between wakes for personas-web, CandiDate and ascent</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 640 220" width="100%" role="img" aria-label="Decisions and dispatches per hour, 00:00 to 11:00 UTC">
+  <g>
+    <line x1="48" y1="180" x2="620" y2="180" stroke="var(--rule)" stroke-width="1"/>
+    <line x1="48" y1="20" x2="48" y2="180" stroke="var(--rule)" stroke-width="1"/>
+    <text x="40" y="184" text-anchor="end">0</text>
+    <text x="40" y="104" text-anchor="end">4</text>
+    <text x="40" y="24" text-anchor="end">8</text>
+    <line x1="48" y1="100" x2="620" y2="100" stroke="var(--rule)" stroke-dasharray="2 3"/>
+  </g>
+  <!-- hours 00..11, two bars each: decisions (accent), dispatches (amber). 20px per unit, baseline y=180 -->
+  <g fill="var(--accent)">
+    <rect x="60" y="160" width="14" height="20"/><rect x="106" y="120" width="14" height="60"/><rect x="152" y="120" width="14" height="60"/><rect x="198" y="120" width="14" height="60"/><rect x="244" y="60" width="14" height="120"/><rect x="290" y="120" width="14" height="60"/><rect x="336" y="100" width="14" height="80"/><rect x="382" y="120" width="14" height="60"/><rect x="428" y="80" width="14" height="100"/><rect x="474" y="100" width="14" height="80"/><rect x="520" y="60" width="14" height="120"/><rect x="566" y="180" width="14" height="0"/>
+  </g>
+  <g fill="var(--amber)">
+    <rect x="76" y="140" width="14" height="40"/><rect x="122" y="60" width="14" height="120"/><rect x="168" y="60" width="14" height="120"/><rect x="214" y="60" width="14" height="120"/><rect x="260" y="40" width="14" height="140"/><rect x="306" y="100" width="14" height="80"/><rect x="352" y="140" width="14" height="40"/><rect x="398" y="120" width="14" height="60"/><rect x="444" y="120" width="14" height="60"/><rect x="490" y="160" width="14" height="20"/><rect x="536" y="100" width="14" height="80"/><rect x="582" y="180" width="14" height="0"/>
+  </g>
+  <g>
+    <text x="75" y="198" text-anchor="middle">00</text><text x="121" y="198" text-anchor="middle">01</text><text x="167" y="198" text-anchor="middle">02</text><text x="213" y="198" text-anchor="middle">03</text><text x="259" y="198" text-anchor="middle">04</text><text x="305" y="198" text-anchor="middle">05</text><text x="351" y="198" text-anchor="middle">06</text><text x="397" y="198" text-anchor="middle">07</text><text x="443" y="198" text-anchor="middle">08</text><text x="489" y="198" text-anchor="middle">09</text><text x="535" y="198" text-anchor="middle">10</text><text x="581" y="198" text-anchor="middle">11</text>
+    <text x="334" y="214" text-anchor="middle">hour, UTC</text>
+  </g>
+</svg>
+<div class="legend"><span><i style="background:var(--accent)"></i>roster decisions</span><span><i style="background:var(--amber)"></i>charter dispatches</span></div>
+<figcaption>Decisions per hour stayed steady while dispatches fell after 06:00: the personas kept waking and kept choosing not to re-sweep unchanged code or deepen an unactioned backlog. Hour 11 is the merge window for cycles 8 and 9.</figcaption>
+</figure>
+</section>
+
+<section id="cycles">
+<h2><span class="n">THE JOURNEY</span>Ten cycles, each built from the last one's evidence</h2>
+<p>Every cycle followed the same shape: observe the live loop, read the ledger and the workers' transcripts, name the one thing the evidence said was wrong, build it in an isolated worktree with its tests, merge between wakes, observe again. The order below is the order it happened.</p>
+
+<article class="cycle" id="c0">
+<div class="meta">CYCLE 0 · 23:00 to 00:30 UTC · commits 2a483866d, 535fc1552, bf54ddc0c, 3814f20d3</div>
+<h3>Build the loop</h3>
+<dl>
+<dt>Found</dt><dd>App Master was already a runtime role in Rust, not a template. The living-agent attention loop was all admission and no decision: one lane per tick by fixed precedence, one dispatch per tick, least-recently-advanced pick, no priority anywhere, and <code>responsibility_id</code> never read on the trigger path. The 109 recipe rows in the live database still carried their June payloads; the v3 corpus had only ever reached fresh installs.</dd>
+<dt>Built</dt><dd>The corpus as a starting line (every recipe <code>draft</code>, unversioned) with two new recipes: accepted-idea delivery and project KPI stewardship. A headless adoption door on the loopback bridge. Charter priority and pacing. A decision lane that asks the persona's model for a bounded plan and dispatches to capacity, code work into isolated worktrees. A seeder that upgrades stale builtin payloads.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c1">
+<div class="meta">CYCLE 1 · 00:27 to 02:45 UTC · commit 85e0386dc</div>
+<h3>First decisions</h3>
+<dl>
+<dt>Measured</dt><dd>The first wakes went to the daily self-review and a memory pass; the loop idled at 900 seconds between ticks; two wake requests stayed queued because a wake was only consumed when the interval floor refused, which a fresh persona never hits.</dd>
+<dt>Changed</dt><dd>A wake means decide. The loop never idles while App Masters are on. Then CandiDate decided on Opus with real reasons ("280 of 285 contexts carry no active KPI", "oldest of 5 taskless ideas") and both workers delivered: one re-validated the idea, found its premise half stale, and committed the part that still applied.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c2">
+<div class="meta">CYCLE 2 · merged 02:43 UTC · commit 58dc4c06d</div>
+<h3>Write-back</h3>
+<dl>
+<dt>Measured</dt><dd>The workers wrote nothing back into Personas: the delivered idea stayed accepted with no task row, the steward's KPI existed only as code, findings were prose. A fleet session had no route and no working MCP: the sidecar was launched with the wrong token variable, and the protocol text parser had no <code>propose_backlog</code> key.</dd>
+<dt>Changed</dt><dd>Four bridge routes (file an idea, report an outcome, declare a KPI, record a measurement), a task row minted at dispatch, a write-back block in every worker's brief, in-flight work and last-dispatch outcomes in the decision prompt, a boot sweep for orphaned ledger rows, the MCP token, the parser key. Thirty-three items landed in the next wave, including a critique of the loop filed by a persona about itself.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c3">
+<div class="meta">CYCLE 3 · merged 05:34 UTC · commit c8f9a7da3</div>
+<h3>Self-pacing</h3>
+<dl>
+<dt>Measured</dt><dd>Every wake was spaced by a fixed 30-minute floor regardless of what the persona had in flight.</dd>
+<dt>Changed</dt><dd>The plan names its next wake (10 to 240 minutes, clamped); admission honours it for App Masters only. personas-web chose 15 then 12 minutes and its notes read like an operator's: "4th try, 3 prior deaths, brief: find WHY KPI declares don't persist". The fifth run fixed it.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c4">
+<div class="meta">CYCLE 4 · merged 06:44 UTC · commit 5c841775d</div>
+<h3>The ceiling</h3>
+<dl>
+<dt>Measured</dt><dd>Fleet workers rode the account's default model and three ended on the operator's own subscription limit, filed as finished work. And the finding that bounds the arc: with 60 pending and 0 accepted ideas, every persona had run out of permitted work.</dd>
+<dt>Changed</dt><dd>The fleet path pins the charter's model. A limit or a <code>FLEET:BLOCKED</code> end reads as failed. A dispatch whose worker died without writing back hands its idea back. The daily cap counts charter dispatches, not decision rows.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c5">
+<div class="meta">CYCLE 5 · merged 08:46 UTC · commit 4be3e1604</div>
+<h3>Asking back</h3>
+<dl>
+<dt>Measured</dt><dd>A persona told its worker to triage the backlog itself; the worker correctly refused ("no idea accept verb in the bridge; needs in-app triage") and was parked awaiting an answer nobody would give.</dd>
+<dt>Changed</dt><dd>The plan can carry up to three asks; each becomes a review in Approvals with the listed ideas and the actions to take, accepting applies the verdicts and wakes the persona. personas-web raised one within an hour of the merge. On the way, a pre-existing UI defect: every pending review had been rendering its title with no reasoning under it.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c6">
+<div class="meta">CYCLE 6 · merged 09:0x UTC · commit b73d89989</div>
+<h3>Shipping at rung 2</h3>
+<dl>
+<dt>Measured</dt><dd>Three delivery workers produced good commits and none pushed or opened a pull request: the Overnight engine's guardrail in their prompt forbade it while the mandate at rung 2 permits exactly that.</dd>
+<dt>Changed</dt><dd>A rung-aware brief: at rung 2 the worker may push its branch and open the pull request with the operator's authenticated <code>gh</code>, never merge, never touch the default branch or CI. No pull request had appeared by the end of cycle 9; the first delivery under the new brief is still owed.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c7">
+<div class="meta">CYCLE 7 · merged 09:5x UTC · commit c3e9c2151</div>
+<h3>Parked workers</h3>
+<dl>
+<dt>Measured</dt><dd>The parked worker held one of personas-web's two slots for over an hour.</dd>
+<dt>Changed</dt><dd>App Master runs are unattended runs: swept after 15 minutes awaiting input, the worker's own blocked line kept as the reason. Verified rather than assumed: fleet workers had never occupied the persona's concurrency slots at all.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c8">
+<div class="meta">CYCLE 8 · merged 11:0x UTC · commit 3ee4ef6ee</div>
+<h3>Recipes learn</h3>
+<dl>
+<dt>Measured</dt><dd>The scan recipes swept the same unchanged code repeatedly; the personas learned to defer them on their own. Delivery worked best of all six.</dd>
+<dt>Changed</dt><dd>Scans read their last sweep and stop on unchanged code; findings are filed once, above the project's own bar; delivery confirms its previous item and writes every outcome back; KPIs are declared before any probe. Six recipes, all still <code>draft</code>, upgraded in the live rows by the seeder.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c9">
+<div class="meta">CYCLE 9 · merged 11:0x UTC · commit c34b74c22</div>
+<h3>Capacity, honestly</h3>
+<dl>
+<dt>Measured</dt><dd>"Two parallel sessions per project" had been enforced by the persona's own reading of its ledger. And at 10:17 an unattended review policy auto-approved the operator ask as routine severity and applied the accept; a machine took the decision the mechanism exists to reserve for a person.</dd>
+<dt>Changed</dt><dd>Active fleet workers count against <code>max_concurrent</code>, with the breakdown in the prompt. Any review carrying <code>source = app_master_ask</code> is excluded from auto-triage at every severity.</dd>
+</dl>
+</article>
+
+<article class="cycle" id="c10">
+<div class="meta">CYCLE 10 · this page</div>
+<h3>Wrap-up</h3>
+<p>Nothing is pushed. Everything above is on <code>master</code>: about 45 commits since the morning pull, some 80 files, roughly 14,000 lines added, 140 tests, and the whole record in <code>docs/architecture/app-master-e2e.md</code>. The three App Masters are still on, pacing themselves, with three asks pending in Approvals and the first pull request under the rung-2 brief still owed.</p>
+</article>
+</section>
+
+<section id="voice">
+<h2><span class="n">EVIDENCE</span>In its own words</h2>
+<p>The coverage note each persona writes for its next wake is the most characteristic thing in this system. These are verbatim, from the ledger.</p>
+<div class="note"><span class="who">App Master CandiDate · wake 3 · 02:08 UTC</span>Wake 3: re-dispatched p1 KPI + p2 idea-delivery (last ran wake 1, gave work time to land). p3 security+static ran wake 2, resting. STILL NEVER-RUN: architecture-review(p4) + decision-capture(none) — rotate in next wake.</div>
+<div class="note"><span class="who">App Master ascent · wake 7 · 06:10 UTC · slept 120 minutes</span>Wake7: dispatched none. Loop operator-blocked: 27 pending/0 accepted—delivery(p2) starves w/o accepts. All code charters scanned unchanged code today (ctx 07-29); re-run=dupes. KPI 49/49, back-measure blocked on delivery.</div>
+<div class="note"><span class="who">App Master personas-web · 05:40 UTC · chose a 15-minute sleep</span>KPI(p1) 4th try—3 prior deaths (crash+Fable). Brief: NON-Fable, find WHY KPI declares don't persist (arch declared@03:38, still 78/78 none), get ≥1 PERSISTING. Sec(p3) paired to hedge+catch new CVEs.</div>
+<div class="note"><span class="who">App Master personas-web · 09:03 UTC · raised an ask</span>p1 KPI is the only turning loop (67->61 uncovered; 16 honest meters, 1 false-zero retracted). Backlog still 21 pending/0 accepted — RAISED accept_ideas ask this wake. Scanners+delivery deferred as blocked/clog-feeders.</div>
+<div class="note"><span class="who">App Master ascent · wake 9 · 11:28 UTC · slept 240 minutes, raised two asks</span>Wake9: dispatched none — same block as W8. Code unchanged (07-29); all code charters ran early today so re-run=dupes. Delivery starved (0 accepted/27 pending). Raised 2 asks: accept ideas + kill 7 zombie ALERT_WEBHOOK tasks (~12d).</div>
+<div class="note"><span class="who">A delivery worker · 02:2x UTC · idea e38c24b7</span>The idea's premise was overtaken on 2026-09-05 when all three "unshipped" events gained real emit sites. A "coming soon" chip today would have been the honesty defect inverted. What survived was the defect underneath.</div>
+</section>
+
+<section id="operator">
+<h2><span class="n">DECISIONS</span>For the operator</h2>
+<p>These are the things the Director measured and deliberately did not decide.</p>
+<ul class="decisions">
+<li><strong>Three asks are waiting in Approvals right now.</strong> <span class="pill">pending</span> Ascent asks you to accept a batch of its 27 pending ideas and to clear seven duplicate "Document ALERT_WEBHOOK_URL" tasks stuck in flight since August 26; CandiDate asks how to handle the structural accepted idea <code>a94f3c09</code> that keeps blocking its delivery loop. Each carries the listed items and the actions to take.</li>
+<li><strong>Open the accept door, or keep it human.</strong> <span class="pill amber">ceiling</span> Eighty items wait. The product already has <code>Action::BacklogTriage</code> under a project's <code>full</code> autopilot with mechanical triage rules; the App Masters now ask for accepts as reviews. Either the reviews get answered, or a policy accepts a class of items, or the loop stays bounded.</li>
+<li><strong>The unattended review policy is broader than its note says.</strong> With autonomous mode on it approves every pending review older than an hour of any severity except high or critical, ten per tick, labelled "low/medium" whatever they are. Asks are now exempt; the rest is as it was.</li>
+<li><strong>One idea was accepted by that policy, not by you.</strong> <code>e38c24b7</code>, the ATS webhook status item, already delivered on a branch. Left as it is and named here.</li>
+<li><strong>No pull request yet.</strong> Rung-2 shipping merged at 09:0x; no delivery has run under it since. The first PR from an App Master worker is the next thing to watch for.</li>
+<li><strong>Census is red on master for three rules from sibling sessions' files</strong>, not from this arc: <code>machine-specific-path-in-tooling</code> (<code>C:/Users/kazda/…</code> literals in <code>scripts/templates/_migration/*.mjs</code> and studio scripts), <code>unobservable-detached-task</code>, <code>gate-without-empty-input-guard</code>. Named, not edited behind their backs.</li>
+<li><strong>Merging restarts the dev app and kills running workers.</strong> The sweeps recover the state, at the cost of one wasted run per active persona. A production build would not have this problem; a dev loop does.</li>
+<li><strong>What is still draft.</strong> All 111 recipes. Promotion out of draft, and the registry migration, are yours; the corpus has now been used for a day rather than reviewed for an afternoon.</li>
+</ul>
+</section>
+
+<p class="foot">Record: <code>docs/architecture/app-master-e2e.md</code> · driver: <code>scripts/e2e/app-master-cycle.mjs</code> · evidence reports: <code>docs/architecture/app-master-e2e/cycles/</code> · state per project: <code>GET /dev-tools/app-master/{project}</code>. Timestamps UTC, 2026-09-07.</p>
+</main>
+</div>
