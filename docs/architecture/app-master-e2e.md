@@ -342,3 +342,18 @@ launcher exited cleanly at 06:53 (a closed window, most likely; the operator was
 a credential capture is logged at 07:15) and was relaunched; the test harness took fallback port
 17321 because 17320 was still held, which is the exact case the census rule fixed in `b04529574`
 guards against: the driver reads `PERSONAS_TEST_PORT` now.
+
+### Cycle 5 (built 08:00 UTC, branch `d22ddfa2e`)
+
+**Built:** the App Master asks the operator. The decision plan carries up to three asks
+(`accept_ideas | decision | unblock`, bounded, idea ids resolved by prefix and unknown ones
+dropped); each becomes a manual review in Overview > Approvals with the listed ideas and the
+actions to take. Accepting applies the idea verdict to every listed pending idea through the
+existing single verdict door and wakes the persona, so the answer lands within minutes instead
+of after a two-hour sleep; rejecting applies the reject with the note as reason; "decide later"
+changes nothing. Open asks are rendered back to the persona so it never repeats one, and the
+App Master state route reports `openAsks` and `lastNote`. An ask from a persona that has never
+executed cannot be filed (the reviews table anchors on an execution) and is deferred, like the
+probation code does. Found and fixed on the way: every pending review had been rendering its
+title with no reasoning under it, because the list folded `description` into `content` while
+the focus flow read a field that was never set. Full `npm run check` green.
