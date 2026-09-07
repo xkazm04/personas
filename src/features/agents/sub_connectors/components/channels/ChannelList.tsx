@@ -23,19 +23,30 @@ export const channelTypes: Array<{
      * required ones and blocked save with no way for the user to satisfy it.
      */
     optional?: boolean;
+    /**
+     * A destination, not a secret: rendered readable. Everything NOT flagged
+     * masks by default, so a field added without a verdict fails towards
+     * over-masking (the credential-capture-form golden path: the default is
+     * masked, and only a deliberate `public` flag opens it). The vault's own
+     * form for these same keys (`builtin_connectors.rs`: `webhook_url`,
+     * `bot_token`, `sendgrid_api_key` are all `"type":"password"`) masks
+     * them; this form rendered every field as plain text, so a Slack webhook
+     * URL or a Telegram bot token sat readable on screen and in screen-shares.
+     */
+    public?: boolean;
   }>;
 }> = [
   { type: 'slack', label: 'Slack', configFields: [
     { key: 'webhook_url', label: 'Notification delivery URL', placeholder: 'e.g. https://hooks.slack.com/services/T00.../B00.../xxxx' },
-    { key: 'channel', label: 'Channel (optional)', placeholder: '#general', optional: true },
+    { key: 'channel', label: 'Channel (optional)', placeholder: '#general', optional: true, public: true },
   ] },
   { type: 'telegram', label: 'Telegram', configFields: [
     { key: 'bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
-    { key: 'chat_id', label: 'Chat ID', placeholder: '123456789' },
+    { key: 'chat_id', label: 'Chat ID', placeholder: '123456789', public: true },
   ] },
   { type: 'email', label: 'Email', configFields: [
-    { key: 'to', label: 'To Address', placeholder: 'user@example.com' },
-    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app', optional: true },
+    { key: 'to', label: 'To Address', placeholder: 'user@example.com', public: true },
+    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app', optional: true, public: true },
     { key: 'sendgrid_api_key', label: 'SendGrid API Key', placeholder: 'SG.xxxx' },
   ] },
 ];
