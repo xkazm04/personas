@@ -299,3 +299,14 @@ path pushes no `--model`, so the workers rode the account default instead of the
 and the registry filed the limit as a finished task. Cycle 4 builds: `--model` on the fleet path
 from the charter's override, a limit or `FLEET:BLOCKED` end reported as `failed` in the decision
 context, and a sweep that closes a dispatch-minted task whose worker ended without writing back.
+
+**Cycle 3 observed (05:45 to 06:10 UTC):** self-pacing is used. personas-web chose 15 then 12
+minute sleeps and the admission log now says "interval floor refuses, 10 minutes of sleep left".
+Its notes read like an operator's: "KPI (p1) 4th try, 3 prior deaths (crash + Fable). Brief:
+NON-Fable, find WHY KPI declares don't persist, get one PERSISTING"; the fifth steward run then
+took the project from 78 to 74 contexts without a KPI with four active, context-bound meters, so
+the persona diagnosed and fixed its own worker's mistake across wakes. CandiDate was refused by
+the daily cap (`runs_today 26, cap 24`): every wake writes a decide row plus one per dispatch, so
+the default cap of 24 passes is reached after about eight wakes; handed to cycle 4 as P4 (count
+charter dispatches only, App Master default 96). Across the day so far: 28 KPIs declared (15
+active, 13 proposed), 33 measurements (20 local, 13 production), well over forty backlog items.
