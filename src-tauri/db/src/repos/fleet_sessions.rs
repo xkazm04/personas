@@ -190,6 +190,75 @@ pub fn list_runs(
     })
 }
 
+/// How many of ONE run label's sessions are still occupying a slot.
+///
+/// The slot arithmetic an App Master persona's wake does
+/// (`engine::subscription::attention::decide_free_capacity`) counts executions
+/// out of the live tracker — and a code charter is dispatched as a headless
+/// FLEET session, which creates no execution and therefore never appears
+/// there. This is the other half of that count, and it reads the DURABLE table
+/// rather than the in-memory registry on purpose: the number must survive an
+/// app restart (the registry does not) and must be reachable from a test with
+/// nothing but `init_test_db()`.
+///
+/// Two filters, both the caller's to choose:
+/// - `active_states` is the caller's vocabulary, not this module's. The tokens
+///   are `types::state_to_token`'s and live in the app crate; passing them in
+///   keeps one spelling of the state machine rather than a second copy here.
+///   An EMPTY slice counts nothing and says so by returning `0` — never "all
+///   states", which is how an accidental empty list would silently uncap a
+///   concurrency limit.
+/// - `since_ms` drops rows whose `last_activity_ms` is older than it. A worker
+///   parked in `awaiting_input` is swept by the fleet's unattended sweeper, but
+///   the sweep runs on a ticker; without this bound a worker that nobody will
+///   ever answer holds a slot for however long the sweeper takes to notice.
+///   Pass the same cutoff that sweeper uses. The cost is symmetric and
+///   deliberate: a genuinely busy worker that emits no hook for that long is
+///   also not counted, which errs toward dispatching rather than toward a
+///   persona that has silently stopped working.
+pub fn count_active_for_run_label(
+    pool: &DbPool,
+    run_label: &str,
+    active_states: &[&str],
+    since_ms: i64,
+) -> Result<usize, AppError> {
+    if active_states.is_empty() {
+        return Ok(0);
+    }
+    timed_query!(
+        "fleet_sessions",
+        "fleet_sessions::count_active_for_run_label",
+        {
+            let conn = pool.get()?;
+            // Explicitly numbered from ?3 — bare `?` would be numbered by
+            // SQLite relative to what came before it, which is exactly the
+            // kind of positional coupling this repo's row mapping bans.
+            let placeholders = (3..3 + active_states.len())
+                .map(|i| format!("?{i}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let sql = format!(
+                "SELECT COUNT(id) AS n
+                 FROM fleet_sessions
+                 WHERE run_label = ?1
+                   AND last_activity_ms >= ?2
+                   AND state IN ({placeholders})"
+            );
+            let mut args: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(2 + active_states.len());
+            args.push(&run_label);
+            args.push(&since_ms);
+            for s in active_states {
+                args.push(s);
+            }
+            // By NAME, not by index — the projection is named `n` for exactly
+            // that reason, and a positional read here would be one more site
+            // bound to an order instead of a name.
+            let n: i64 = conn.query_row(&sql, args.as_slice(), |r| r.get("n"))?;
+            Ok(n.max(0) as usize)
+        }
+    )
+}
+
 /// Retention: drop terminal rows last touched before `cutoff_ms`. Called once
 /// on boot — a 24h-old exited session has no recovery value.
 pub fn prune_exited_before(pool: &DbPool, cutoff_ms: i64) -> Result<usize, AppError> {
@@ -201,6 +270,111 @@ pub fn prune_exited_before(pool: &DbPool, cutoff_ms: i64) -> Result<usize, AppEr
         )?;
         Ok(n)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// The states an App Master wake treats as "this worker still holds one of
+    /// my slots". Spelled out here so the test fails if the production caller
+    /// silently narrows the set.
+    const ACTIVE: &[&str] = &["spawning", "running", "awaiting_input", "idle"];
+
+    fn row(id: &str, label: &str, state: &str, last_activity_ms: i64) -> FleetSessionRow {
+        FleetSessionRow {
+            id: id.into(),
+            claude_session_id: format!("cs-{id}"),
+            cwd: "C:/tmp".into(),
+            project_label: "personas".into(),
+            name: None,
+            title: None,
+            args_json: "[]".into(),
+            mode: "headless".into(),
+            state: state.into(),
+            state_reason: None,
+            run_id: Some("run-1".into()),
+            run_label: Some(label.into()),
+            created_at_ms: 1,
+            last_activity_ms,
+        }
+    }
+
+    #[test]
+    fn counts_only_active_states_of_the_named_run_label() {
+        let pool = init_test_db().unwrap();
+        let label = "app-master:p1";
+        for (i, state) in ACTIVE.iter().enumerate() {
+            upsert(&pool, &row(&format!("a{i}"), label, state, 1_000)).unwrap();
+        }
+        // Terminal / dormant states hold nothing.
+        for (i, state) in ["finished", "exited", "stale", "hibernated"]
+            .iter()
+            .enumerate()
+        {
+            upsert(&pool, &row(&format!("t{i}"), label, state, 1_000)).unwrap();
+        }
+        // Another persona's workers, and an operator's own run, are not mine.
+        upsert(&pool, &row("other", "app-master:p2", "running", 1_000)).unwrap();
+        upsert(&pool, &row("human", "my notes", "running", 1_000)).unwrap();
+
+        assert_eq!(
+            count_active_for_run_label(&pool, label, ACTIVE, 0).unwrap(),
+            ACTIVE.len(),
+            "one per active state, and nothing else"
+        );
+        assert_eq!(
+            count_active_for_run_label(&pool, "app-master:p2", ACTIVE, 0).unwrap(),
+            1
+        );
+        assert_eq!(
+            count_active_for_run_label(&pool, "app-master:nobody", ACTIVE, 0).unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn the_cutoff_drops_a_worker_that_has_gone_quiet() {
+        let pool = init_test_db().unwrap();
+        let label = "app-master:p1";
+        upsert(&pool, &row("fresh", label, "running", 10_000)).unwrap();
+        upsert(&pool, &row("parked", label, "awaiting_input", 1_000)).unwrap();
+
+        assert_eq!(
+            count_active_for_run_label(&pool, label, ACTIVE, 0).unwrap(),
+            2,
+            "no cutoff — both still hold a slot"
+        );
+        assert_eq!(
+            count_active_for_run_label(&pool, label, ACTIVE, 5_000).unwrap(),
+            1,
+            "the parked worker is older than the cutoff and stops holding one"
+        );
+        // The boundary is inclusive: a row touched exactly at the cutoff counts.
+        assert_eq!(
+            count_active_for_run_label(&pool, label, ACTIVE, 10_000).unwrap(),
+            1
+        );
+        assert_eq!(
+            count_active_for_run_label(&pool, label, ACTIVE, 10_001).unwrap(),
+            0
+        );
+    }
+
+    /// An empty state list must count NOTHING. The dangerous reading is "no
+    /// filter, so every row" — that would uncap the persona limit this count
+    /// exists to enforce, in the one case (a caller bug) where it is least
+    /// likely to be noticed.
+    #[test]
+    fn an_empty_state_list_counts_nothing() {
+        let pool = init_test_db().unwrap();
+        upsert(&pool, &row("a", "app-master:p1", "running", 1)).unwrap();
+        assert_eq!(
+            count_active_for_run_label(&pool, "app-master:p1", &[], 0).unwrap(),
+            0
+        );
+    }
 }
 
 fn map_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<FleetSessionRow> {
