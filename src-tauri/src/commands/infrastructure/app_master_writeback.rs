@@ -575,7 +575,9 @@ pub fn write_back_brief(project_id: &str, idea_id: Option<&str>) -> String {
              {{\"outcome\":\"delivered\",\"note\":\"what shipped\",\
              \"branch\":\"...\",\"commit\":\"...\"}}\n\
              - ...or {{\"outcome\":\"declined\",\"note\":\"why this should not be built\"}}\n\
-             - ...or {{\"outcome\":\"blocked\",\"note\":\"what stopped you\"}}\n"
+             - ...or {{\"outcome\":\"blocked\",\"note\":\"what stopped you\"}}\n\
+             Add \"pr_url\":\"<url>\" to that call when you opened a pull request — \
+             it is how the next wake sees the PR at all.\n"
         ));
     }
     s.push_str(&format!(
@@ -648,6 +650,7 @@ mod tests {
             "delivered",
             "declined",
             "blocked",
+            "\"pr_url\"",
         ] {
             assert!(s.contains(needle), "the brief must name `{needle}`:\n{s}");
         }

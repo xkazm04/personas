@@ -111,6 +111,76 @@ pub fn unattended_worktree_guardrails(branch: &str, worktree_path: &str) -> Stri
     )
 }
 
+// ----------------------------------------------------------------------------
+// The mandate half — a worker whose scope rung permits shipping
+// ----------------------------------------------------------------------------
+
+/// Rule 2 of [`UNATTENDED_DISPATCH_GUARDRAILS`] verbatim — the never-ship rule.
+///
+/// A separate const for the same reason [`RULE_1_MAKE_A_BRANCH`] is one: the
+/// rung-aware variant replaces exactly this rule and inherits every other, and
+/// `the_rung_variants_share_one_tail` fails the moment the two texts drift.
+const RULE_2_NEVER_SHIP: &str = "2. Do NOT push, do NOT merge, do NOT open pull \
+requests. Your branch is reviewed by a human in the morning.\n";
+
+/// The App Master scope rung ([`crate::app_master::RUNG_BRANCH`]) at which a
+/// worker may open a branch and a pull request on its own authority.
+///
+/// Duplicated as a plain integer rather than imported so this module stays the
+/// pure prompt vocabulary it has always been; `the_pr_rung_matches_the_mandate`
+/// pins the two together.
+pub const RUNG_MAY_OPEN_PR: u8 = 2;
+
+/// Rule 2 for a worker dispatched at [`RUNG_MAY_OPEN_PR`] or above.
+///
+/// The never-ship rule was written for the Overnight Portfolio Engine, whose
+/// workers are anonymous fixes nobody asked for; an App Master at rung 2 holds
+/// a mandate that explicitly permits "open branch/PR" and forbids only the
+/// merge. Measured 2026-09-07: three delivery workers committed on their
+/// branches and none pushed or opened a PR — obeying the prompt, which
+/// contradicted the mandate and won, because it is the prompt.
+///
+/// The ceiling does not move: merge, a push to the default branch, branch
+/// protection and CI stay forbidden here exactly as the mandate states them.
+pub fn worktree_ship_rule(branch: &str, gh_authenticated: bool) -> String {
+    let mut s = format!(
+        "2. You MAY push your branch `{branch}` to the origin and open a pull \
+request against the default branch with `gh pr create` (title, body with the \
+checklist and evidence, base = default branch) when `gh` is authenticated; you \
+may NOT merge, may NOT push to the default branch, may NOT change branch \
+protection or CI. If `gh` is not authenticated, leave the branch ready and say \
+so.\n"
+    );
+    if !gh_authenticated {
+        s.push_str(
+            "   `gh` is NOT authenticated on this machine — this was checked at \
+dispatch, so do not spend a turn discovering it. Commit, leave the branch ready \
+for review, and say in your final line that the PR was not opened.\n",
+        );
+    }
+    s
+}
+
+/// [`unattended_worktree_guardrails`] with rule 2 decided by the dispatching
+/// charter's scope rung. Below [`RUNG_MAY_OPEN_PR`] the text is byte-identical
+/// to the rung-less variant.
+pub fn unattended_worktree_guardrails_at_rung(
+    branch: &str,
+    worktree_path: &str,
+    rung: u8,
+    gh_authenticated: bool,
+) -> String {
+    let base = unattended_worktree_guardrails(branch, worktree_path);
+    if rung < RUNG_MAY_OPEN_PR {
+        return base;
+    }
+    base.replacen(
+        RULE_2_NEVER_SHIP,
+        &worktree_ship_rule(branch, gh_authenticated),
+        1,
+    )
+}
+
 /// Compose the full task text a headless unattended worker is seeded with.
 pub fn unattended_task_text(prompt: &str) -> String {
     format!(
@@ -127,6 +197,28 @@ pub fn unattended_worktree_task_text(prompt: &str, branch: &str, worktree_path: 
         "{}\n\n{}",
         prompt.trim_end(),
         unattended_worktree_guardrails(branch, worktree_path)
+    )
+}
+
+/// [`unattended_worktree_task_text`] for a worker dispatched under a scope
+/// rung — the App Master's code-charter lane.
+///
+/// Below [`RUNG_MAY_OPEN_PR`] this is byte-identical to
+/// [`unattended_worktree_task_text`] (pinned by
+/// `a_low_rung_worker_reads_exactly_the_legacy_text`). At or above it, rule 2
+/// becomes [`worktree_ship_rule`] so the prompt stops contradicting the
+/// mandate the persona was hired under.
+pub fn unattended_worktree_task_text_at_rung(
+    prompt: &str,
+    branch: &str,
+    worktree_path: &str,
+    rung: u8,
+    gh_authenticated: bool,
+) -> String {
+    format!(
+        "{}\n\n{}",
+        prompt.trim_end(),
+        unattended_worktree_guardrails_at_rung(branch, worktree_path, rung, gh_authenticated)
     )
 }
 
@@ -355,6 +447,109 @@ mod tests {
         );
         assert!(text.starts_with("Fix the flaky retry test."));
         assert!(text.contains("ALREADY on branch"));
+    }
+
+    // -- the mandate half (scope rung) ---------------------------------------
+
+    #[test]
+    fn the_rung_variants_share_one_tail() {
+        // Same contract as `the_two_guardrail_variants_share_one_tail`: if the
+        // literal in the big const is edited without editing
+        // `RULE_2_NEVER_SHIP`, the replace silently becomes a no-op and a
+        // rung-2 worker would keep reading "do NOT open pull requests".
+        assert!(UNATTENDED_DISPATCH_GUARDRAILS.contains(RULE_2_NEVER_SHIP));
+        // And the shared const itself is UNTOUCHED — the Overnight Portfolio
+        // Engine still dispatches anonymous fixes that may never ship.
+        assert!(UNATTENDED_DISPATCH_GUARDRAILS.contains("do NOT open pull requests"));
+        assert!(!UNATTENDED_DISPATCH_GUARDRAILS.contains("gh pr create"));
+        assert!(!unattended_task_text("Fix it.").contains("gh pr create"));
+    }
+
+    #[test]
+    fn the_pr_rung_matches_the_mandate() {
+        // The engine's own ladder is the authority; this module carries the
+        // number as a literal so it stays pure prompt vocabulary.
+        assert_eq!(RUNG_MAY_OPEN_PR, crate::app_master::RUNG_BRANCH);
+    }
+
+    #[test]
+    fn a_low_rung_worker_reads_exactly_the_legacy_text() {
+        for rung in [0u8, 1] {
+            for gh in [true, false] {
+                assert_eq!(
+                    unattended_worktree_task_text_at_rung(
+                        "Fix the flaky retry test.",
+                        "autopilot/fix-a",
+                        "C:/data/worktrees/p/fix-a",
+                        rung,
+                        gh,
+                    ),
+                    unattended_worktree_task_text(
+                        "Fix the flaky retry test.",
+                        "autopilot/fix-a",
+                        "C:/data/worktrees/p/fix-a",
+                    ),
+                    "rung {rung} / gh {gh} must be byte-identical to the legacy text"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_rung_two_worker_may_open_the_pull_request_but_never_merge() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_OPEN_PR,
+            true,
+        );
+        assert!(text.starts_with("Deliver idea 297f6ba4."));
+        // The instruction that made three delivery workers stop at a commit is
+        // GONE, not merely qualified.
+        assert!(!text.contains("do NOT open pull requests"));
+        assert!(!text.contains("Do NOT push, do NOT merge"));
+        // …replaced by the mandate's own ceiling.
+        assert!(text.contains("gh pr create"));
+        assert!(text.contains("push your branch `autopilot/deliver-297f6ba4`"));
+        assert!(text.contains("may NOT merge"));
+        assert!(text.contains("may NOT push to the default branch"));
+        assert!(text.contains("branch protection"));
+        // gh IS authenticated here — do not tell the worker otherwise.
+        assert!(!text.contains("NOT authenticated on this machine"));
+        // Rule 1 and everything after rule 2 survive untouched.
+        for rule in [
+            "ALREADY on branch `autopilot/deliver-297f6ba4`",
+            "NEVER run `git checkout`",
+            "3. Do NOT run destructive commands",
+            "4. If the fix requires a decision",
+            "NOBODY IS THERE",
+            "FLEET:BLOCKED",
+            "FLEET:DONE",
+        ] {
+            assert!(text.contains(rule), "missing: {rule}");
+        }
+    }
+
+    #[test]
+    fn an_unauthenticated_gh_is_stated_rather_than_discovered() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_OPEN_PR,
+            false,
+        );
+        assert!(text.contains("`gh` is NOT authenticated on this machine"));
+        assert!(text.contains("say in your final line that the PR was not opened"));
+        // The permission itself is still stated — the rung did not change.
+        assert!(text.contains("gh pr create"));
+        assert!(text.contains("may NOT merge"));
+        // A rung above 2 is not a lower ceiling: it reads the same rule.
+        assert_eq!(
+            unattended_worktree_guardrails_at_rung("b", "p", 9, false),
+            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, false),
+        );
     }
 
     // -- the structural half --------------------------------------------------
