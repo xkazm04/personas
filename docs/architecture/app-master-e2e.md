@@ -463,3 +463,10 @@ review beside it is approved. The builder measured that policy's real reach: wit
 mode on it approves every pending review older than an hour of any severity except high or
 critical, ten per tick, under a note that calls them "low/medium" whatever they are. Reported
 for the operator; not widened beyond the ask exclusion. Merges together with cycle 8.
+
+### Cycles 8 and 9 merged (11:1x UTC, `3ee4ef6ee`, `c34b74c22`)
+
+The first merge-when-idle attempt silently did nothing (its error was filtered out of the
+log while a sibling commit landed); the second, in the foreground with errors visible, merged
+both cleanly. The seeder upgrades the six tuned recipe rows on this boot; the fleet-capacity
+accounting and the ask exclusion from auto-triage are live from this boot.
