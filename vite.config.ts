@@ -272,7 +272,17 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      // Measured 2026-09-07: the watcher was walking 66k files under
+      // .claude/worktrees (agent worktrees, edited constantly by sibling
+      // sessions) and target-v3, so every agent write triggered an HMR
+      // rebuild in a window nobody was looking at (about half a core,
+      // sustained). Worktrees have their own dev server if they need one.
+      ignored: [
+        "**/src-tauri/**",
+        "**/.claude/worktrees/**",
+        "**/target-v3/**",
+        "**/target/**",
+      ],
     },
   },
 }));
