@@ -32,6 +32,11 @@ if (bundle.version !== 3) {
 }
 
 const files = fs.readdirSync(HERE).filter((f) => f.endsWith('.json'));
+if (files.length === 0) {
+  // "Looked at nothing" must not exit 0 as if it had merged something.
+  console.error(`refusing: no recipe files found in ${HERE}`);
+  process.exit(1);
+}
 let added = 0, replaced = 0;
 for (const f of files) {
   const p = JSON.parse(fs.readFileSync(path.join(HERE, f), 'utf8'));

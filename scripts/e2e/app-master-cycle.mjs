@@ -26,7 +26,9 @@ import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 
-process.env.PERSONAS_BASE ||= 'http://127.0.0.1:17320';
+// The harness port is discovered, never pinned: PERSONAS_TEST_PORT is what the
+// test-automation server itself honours, so a fallback bind still gets driven.
+process.env.PERSONAS_BASE ||= `http://127.0.0.1:${process.env.PERSONAS_TEST_PORT || 17320}`;
 const bridge = await import('../test/bridge.mjs');
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
