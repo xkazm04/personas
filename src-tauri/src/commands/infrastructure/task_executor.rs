@@ -164,7 +164,12 @@ fn gather_task_context(
 /// Idempotent by construction: dev_memories has a unique index on
 /// (project_id, source_kind, source_id), so a retried task cannot inflate the
 /// record with duplicate outcomes.
-fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: bool, detail: &str) {
+/// `pub(crate)` so the headless write-back door
+/// ([`super::app_master_writeback`]) closes a task through the SAME learning
+/// write-backs `finalize_task` uses. A worker-reported outcome must teach the
+/// project exactly what an in-app run teaches it, and the only way to guarantee
+/// that is to call this rather than to copy it.
+pub(crate) fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: bool, detail: &str) {
     let task = match repo::get_task_by_id(pool, task_id) {
         Ok(t) => t,
         Err(e) => {
@@ -348,7 +353,8 @@ struct FinalizeOpts<'a> {
 ///
 /// Best-effort throughout: a task's terminal state must never depend on the
 /// projections hanging off it.
-fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: bool) {
+/// `pub(crate)` for the same reason as [`record_task_outcome`] — see its note.
+pub(crate) fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: bool) {
     let task = match repo::get_task_by_id(pool, task_id) {
         Ok(t) => t,
         Err(e) => {

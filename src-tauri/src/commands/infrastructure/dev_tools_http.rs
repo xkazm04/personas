@@ -42,6 +42,14 @@
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
 //!
+//! Write-back routes for workers — the door a dispatched App Master run reports
+//! through (`app_master_writeback`). Without them a headless run's only output
+//! was a git commit, and the loop re-offered work it had already done:
+//!   POST /ideas/{idea_id}/outcome           → { outcome: delivered|declined|blocked, note?, branch?, commit?, pr_url? }
+//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, … }
+//!   POST /kpis                              → declare a KPI { project_id, name, measure_kind?, … }
+//!   POST /kpis/{kpi_id}/measure             → record a reading { value, source?, env?, evidence?, note? }
+//!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
 //! walks the KPI proposals through the operator in waves. Everything it writes
@@ -59,6 +67,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 use crate::commands::infrastructure::app_master_adopt;
+use crate::commands::infrastructure::app_master_writeback;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -120,6 +129,11 @@ pub fn router(app: AppHandle) -> Router {
         .route("/patterns/{id}", get(pattern_get))
         .route("/app-master/adopt", post(app_master_adopt_route))
         .route("/app-master/{project_id}", get(app_master_state))
+        // Worker write-back (see the module header).
+        .route("/ideas", post(file_idea_route))
+        .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
+        .route("/kpis", post(create_kpi_route))
+        .route("/kpis/{kpi_id}/measure", post(measure_kpi_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -1651,4 +1665,79 @@ async fn app_master_state(
         })?
         .map(Json)
         .map_err(status_for)
+}
+
+// ============================================================================
+// Worker write-back — the four routes a dispatched App Master run reports on
+// ============================================================================
+//
+// Same shape as the two adapters above: the operation lives in
+// `app_master_writeback`, it is BLOCKING (rusqlite end to end), so it runs on
+// the blocking pool and a panic there becomes a 500 that says so rather than a
+// request that never answers. `status_for` maps a refused token to 400 and an
+// unknown id to 404 — a worker that mis-spells a status must be told which of
+// the two it got wrong.
+
+/// Run one blocking write-back operation and map both failure shapes.
+async fn writeback<T, F>(op_name: &'static str, f: F) -> Result<Json<T>, (StatusCode, String)>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, AppError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("{op_name}: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn idea_outcome_route(
+    State(s): State<DevToolsHttp>,
+    Path(idea_id): Path<String>,
+    Json(b): Json<app_master_writeback::IdeaOutcomeInput>,
+) -> Result<Json<app_master_writeback::IdeaOutcomeResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("idea outcome", move || {
+        app_master_writeback::record_idea_outcome(&pool, &idea_id, &b)
+    })
+    .await
+}
+
+async fn file_idea_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_writeback::FileIdeaInput>,
+) -> Result<Json<app_master_writeback::FileIdeaResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("file idea", move || {
+        app_master_writeback::file_backlog_idea(&pool, &b)
+    })
+    .await
+}
+
+async fn create_kpi_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_writeback::CreateKpiInput>,
+) -> Result<Json<DevKpi>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("create kpi", move || {
+        app_master_writeback::create_project_kpi(&pool, &b)
+    })
+    .await
+}
+
+async fn measure_kpi_route(
+    State(s): State<DevToolsHttp>,
+    Path(kpi_id): Path<String>,
+    Json(b): Json<app_master_writeback::MeasureKpiInput>,
+) -> Result<Json<crate::db::models::DevKpiMeasurement>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("measure kpi", move || {
+        app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
+    })
+    .await
 }

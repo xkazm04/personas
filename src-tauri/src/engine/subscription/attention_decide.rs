@@ -38,6 +38,40 @@ pub(crate) const MAX_NAMED_IDEAS: usize = 10;
 
 // ── Inputs ────────────────────────────────────────────────────────────────
 
+/// How far the charter's LAST dispatch actually got.
+///
+/// The ledger row for a dispatch closes at SPAWN, with verdict `dispatched` —
+/// which is a statement about starting, not about finishing. Cycle 1 measured
+/// what that costs: at 01:33 UTC CandiDate deferred its KPI charter as "still
+/// in flight" when the fleet session had reported `FLEET:DONE` twenty-five
+/// minutes earlier. The ledger was not wrong, it was just silent about the
+/// half the decision needed. This carries the worker's own end state back.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct LastDispatch {
+    /// When the dispatch was opened (the ledger row's `started_at`).
+    pub at: String,
+    /// `fleet` (a headless session in an authoring worktree) or `execution`.
+    pub worker: String,
+    /// [`DISPATCH_RUNNING`] | [`DISPATCH_FINISHED`] | [`DISPATCH_FAILED`] |
+    /// [`DISPATCH_UNKNOWN`]. `unknown` is a real answer — the row may have been
+    /// pruned — and must never be read as "still running".
+    pub state: String,
+    /// What the worker declared, when it declared anything. Bounded.
+    pub summary: Option<String>,
+}
+
+/// The worker has not reported an end yet.
+pub(crate) const DISPATCH_RUNNING: &str = "running";
+/// The worker declared it was done.
+pub(crate) const DISPATCH_FINISHED: &str = "finished";
+/// The worker stopped without declaring done.
+pub(crate) const DISPATCH_FAILED: &str = "failed";
+/// The worker's row could not be found — pruned, or never persisted.
+pub(crate) const DISPATCH_UNKNOWN: &str = "unknown";
+
+/// Hard bound on a last-dispatch summary carried into the prompt.
+pub(crate) const MAX_DISPATCH_SUMMARY_CHARS: usize = 200;
+
 /// One charter as the decision sees it — flattened out of
 /// `PersonaResponsibility` + the ledger so the prompt renderer and the parser
 /// share one shape and neither needs a database.
@@ -61,11 +95,33 @@ pub(crate) struct DecisionCharter {
     pub last_started_at: Option<String>,
     /// The verdict that row closed with (`dispatched` / `failed` / …).
     pub last_verdict: Option<String>,
+    /// Where the last DECIDED dispatch of this charter actually got to.
+    /// `None` = it has never been dispatched by the decision lane.
+    pub last_dispatch: Option<LastDispatch>,
     /// This charter's runs author code in a real repository, so a dispatch
     /// must go to an isolated worktree rather than the operator's checkout.
     pub writes_code: bool,
     /// The project this charter is bound to, when it is bound to one.
     pub project_id: Option<String>,
+}
+
+/// How many in-flight tasks are named in the prompt.
+pub(crate) const MAX_NAMED_IN_FLIGHT: usize = 10;
+
+/// One `running`/`queued` task the project already has under way.
+///
+/// The undispatched-idea sensor goes quiet the moment a task row exists, which
+/// tells the decision that something WAS dispatched but nothing about whether
+/// it is still going. Without this the same charter looks equally dispatchable
+/// on the next wake, and the loop's own worker becomes invisible to it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct InFlightTask {
+    /// The backlog idea this task was promoted from, when it was promoted from
+    /// one. `None` for a task somebody created directly.
+    pub idea_id: Option<String>,
+    pub title: String,
+    /// When the run actually started; `None` for a task still `queued`.
+    pub started_at: Option<String>,
 }
 
 /// What one of the persona's projects looks like right now — the facts a
@@ -78,6 +134,8 @@ pub(crate) struct ProjectSnapshot {
     pub undispatched_idea_count: usize,
     /// Up to [`MAX_NAMED_IDEAS`] of them, as `(id, title)`.
     pub undispatched_ideas: Vec<(String, String)>,
+    /// Up to [`MAX_NAMED_IN_FLIGHT`] tasks already `running` or `queued`.
+    pub in_flight_tasks: Vec<InFlightTask>,
     pub pending_idea_count: usize,
     pub context_count: usize,
     /// Newest `dev_contexts.updated_at` — how fresh the context map is.
@@ -313,6 +371,54 @@ pub(crate) fn parse_decision(
     })
 }
 
+/// The recipe whose runs deliver ONE accepted backlog idea. A dispatch of this
+/// charter is the only one that has an idea to write back about, which is why
+/// it is the only one that mints a `dev_tasks` row at dispatch time.
+pub(crate) const ACCEPTED_IDEA_DELIVERY_SLUG: &str = "accepted-idea-delivery";
+
+/// Pull the idea id a decision's own words name, if any.
+///
+/// The decision prompt lists undispatched ideas as `- <id>: <title>`, so a plan
+/// that picked one usually echoes the id — sometimes the full uuid, sometimes
+/// the 8-char prefix the app prints everywhere. Both are accepted; a full uuid
+/// wins over a bare prefix when both appear.
+///
+/// Pure and deliberately permissive: this only produces a CANDIDATE. The caller
+/// resolves it against `dev_ideas` scoped to the project, so a hex-looking word
+/// that is not an id simply fails to resolve and costs nothing. Being strict
+/// here instead would mean rejecting the real id whenever the model wrapped it
+/// in punctuation.
+pub(crate) fn extract_idea_id_token(text: &str) -> Option<String> {
+    let is_hex = |c: char| c.is_ascii_hexdigit();
+    let looks_like_uuid = |t: &str| {
+        t.len() == 36
+            && t.char_indices().all(|(i, c)| {
+                if [8, 13, 18, 23].contains(&i) {
+                    c == '-'
+                } else {
+                    is_hex(c)
+                }
+            })
+    };
+
+    let mut prefix: Option<String> = None;
+    for raw in text.split(|c: char| !(is_hex(c) || c == '-')) {
+        let tok = raw.trim_matches('-');
+        if tok.is_empty() {
+            continue;
+        }
+        if looks_like_uuid(tok) {
+            return Some(tok.to_ascii_lowercase());
+        }
+        // A bare prefix: 8..32 hex chars, no dashes. Shorter than 8 is not
+        // something anybody printed, and longer than 32 is not a uuid's hex.
+        if prefix.is_none() && (8..=32).contains(&tok.len()) && tok.chars().all(is_hex) {
+            prefix = Some(tok.to_ascii_lowercase());
+        }
+    }
+    prefix
+}
+
 /// Char-bounded truncation on a char boundary (the loop's existing helper is
 /// byte-budgeted; this one counts characters because the limits above are
 /// stated to the model in characters).
@@ -364,6 +470,13 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             "your parallel capacity is unlimited; this is the engine's free slots".to_string()
         }
     ));
+    s.push_str(
+        "- IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
+         flight — read its summary before deciding. Only `running` means a worker of \
+         yours is still going; `unknown` means its record is gone, not that it is alive. \
+         The same goes for a project's `in flight` tasks: those are already under way, \
+         so do not re-dispatch them.\n",
+    );
     s.push_str(
         "- EVERY charter must appear exactly once, in `dispatch` or in `defer`. \
          A deferral with a reason is a decision; silence is not.\n\n",
@@ -424,6 +537,18 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 .map(|v| format!(" ({v})"))
                 .unwrap_or_default(),
         ));
+        if let Some(d) = &c.last_dispatch {
+            s.push_str(&format!(
+                "  last dispatch: {} {}{}\n",
+                d.at,
+                d.state,
+                d.summary
+                    .as_deref()
+                    .filter(|x| !x.trim().is_empty())
+                    .map(|x| format!(" — {x}"))
+                    .unwrap_or_default(),
+            ));
+        }
         if c.writes_code {
             s.push_str(
                 "  note: this charter authors code. Its run is dispatched into an \
@@ -461,6 +586,25 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             ));
             for (id, title) in &p.undispatched_ideas {
                 s.push_str(&format!("    - {id}: {title}\n"));
+            }
+        }
+        if p.in_flight_tasks.is_empty() {
+            s.push_str("  in flight: nothing\n");
+        } else {
+            s.push_str(&format!(
+                "  in flight ({} task(s) — DO NOT RE-DISPATCH these):\n",
+                p.in_flight_tasks.len()
+            ));
+            for t in &p.in_flight_tasks {
+                s.push_str(&format!(
+                    "    - {}{} (started {})\n",
+                    t.title,
+                    t.idea_id
+                        .as_deref()
+                        .map(|i| format!(" [idea {i}]"))
+                        .unwrap_or_default(),
+                    t.started_at.as_deref().unwrap_or("not yet — queued"),
+                ));
             }
         }
         s.push_str(&format!(
@@ -711,6 +855,12 @@ mod tests {
                         coverage_note: Some("docs charter deferred twice".into()),
                     }),
                     writes_code: true,
+                    last_dispatch: Some(LastDispatch {
+                        at: "2026-09-06T10:00:00Z".into(),
+                        worker: "fleet".into(),
+                        state: DISPATCH_FINISHED.into(),
+                        summary: Some("shipped the parser".into()),
+                    }),
                     ..charter("r2", Some(1))
                 },
                 charter("r1", None),
@@ -720,12 +870,106 @@ mod tests {
                 project_name: Some("Ascent".into()),
                 undispatched_idea_count: 12,
                 undispatched_ideas: vec![("idea_a".into(), "Retire the legacy shim".into())],
+                in_flight_tasks: vec![InFlightTask {
+                    idea_id: Some("idea_b".into()),
+                    title: "Wire the connector".into(),
+                    started_at: Some("2026-09-07T01:00:00Z".into()),
+                }],
                 pending_idea_count: 4,
                 context_count: 208,
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
             }],
         }
+    }
+
+    #[test]
+    fn prompt_shows_in_flight_work_and_the_last_dispatch_outcome() {
+        let p = render_decision_prompt(&ctx_fixture());
+
+        // The rule, stated before the data — the same discipline the priority
+        // and capacity rules follow.
+        assert!(p.contains("is NOT in flight"));
+        assert!(p.contains("do not re-dispatch them"));
+
+        // The charter's last dispatch, with the state and what it declared.
+        assert!(
+            p.contains("last dispatch: 2026-09-06T10:00:00Z finished — shipped the parser"),
+            "cycle 1 deferred a charter as in-flight 25 minutes after its \
+             session reported done; the prompt must carry the end state:\n{p}"
+        );
+        // A charter never dispatched by the decide lane says nothing at all,
+        // rather than an invented "unknown".
+        assert_eq!(
+            p.matches("last dispatch:").count(),
+            1,
+            "only the charter that HAS one reports one"
+        );
+
+        // The project's own in-flight work.
+        assert!(p.contains("in flight (1 task(s)"));
+        assert!(p.contains("Wire the connector [idea idea_b] (started 2026-09-07T01:00:00Z)"));
+    }
+
+    #[test]
+    fn a_project_with_nothing_running_says_so_explicitly() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].in_flight_tasks.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("in flight: nothing"),
+            "a measured empty is not the same as an absent line"
+        );
+    }
+
+    #[test]
+    fn a_queued_in_flight_task_says_it_has_not_started() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].in_flight_tasks = vec![InFlightTask {
+            idea_id: None,
+            title: "Sweep the census".into(),
+            started_at: None,
+        }];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("Sweep the census (started not yet — queued)"));
+        assert!(!p.contains("[idea "), "no idea id means no bracket at all");
+    }
+
+    // -- idea-id extraction (pure) ------------------------------------------
+
+    #[test]
+    fn extract_idea_id_prefers_a_full_uuid_and_accepts_a_printed_prefix() {
+        let uuid = "297f6ba4-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
+        assert_eq!(
+            extract_idea_id_token(&format!("Deliver idea {uuid} on its own branch.")),
+            Some(uuid.to_string())
+        );
+        // The 8-char prefix the app prints everywhere.
+        assert_eq!(
+            extract_idea_id_token("Deliver the accepted idea 297f6ba4 (the retry helper)."),
+            Some("297f6ba4".into())
+        );
+        // A full uuid beats a bare prefix even when the prefix comes first.
+        assert_eq!(
+            extract_idea_id_token(&format!("deadbeef … but really {uuid}")),
+            Some(uuid.to_string())
+        );
+        // Case is normalised so the DB prefix match is not case-dependent.
+        assert_eq!(
+            extract_idea_id_token("idea 297F6BA4"),
+            Some("297f6ba4".into())
+        );
+    }
+
+    #[test]
+    fn extract_idea_id_returns_nothing_when_the_brief_names_no_id() {
+        assert_eq!(extract_idea_id_token(""), None);
+        assert_eq!(
+            extract_idea_id_token("Review the overview dashboard and tighten its loading states."),
+            None
+        );
+        // Too short to be anything anybody printed.
+        assert_eq!(extract_idea_id_token("see face and bad"), None);
     }
 
     #[test]

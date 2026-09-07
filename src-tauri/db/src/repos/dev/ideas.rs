@@ -2,7 +2,7 @@ use crate::models::DevIdea;
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use std::collections::HashMap;
 
 /// Archive every PENDING idea carrying one (origin, dedup_key) pair. Was
@@ -305,6 +305,85 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
             rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev idea {id}")),
             other => AppError::Database(other),
         })
+    })
+}
+
+/// The projection [`row_to_idea`] actually consumes, named beside the mapper
+/// that reads it so the two cannot drift.
+///
+/// Deliberately NOT retrofitted onto the pre-existing `SELECT *` queries in
+/// this file: doing that in the same change would take the census's
+/// `select-star-in-repo` count DOWN through its baseline, which the ratchet
+/// treats as a signal to investigate, not as a free win. New queries use it;
+/// converting the old ones is its own change.
+const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
+     reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
+     origin, use_case_id, evidence, dedup_key, verify_state, verify_checked_at, \
+     verify_evidence, created_at, updated_at";
+
+/// The idea holding `dedup_key` in this project, in ANY status.
+///
+/// The mirror of [`create_idea_deduped`]'s guard: that door answers "was this
+/// already filed" with `Ok(None)`, which tells a caller it may not write but
+/// not WHAT is already there. A headless filer needs the existing row to report
+/// back, or a re-file is indistinguishable from a failure.
+pub fn find_idea_by_dedup_key(
+    pool: &DbPool,
+    project_id: &str,
+    dedup_key: &str,
+) -> Result<Option<DevIdea>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_dedup_key", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2 \
+             ORDER BY created_at DESC, id DESC LIMIT 1"
+        ))?;
+        stmt.query_row(params![project_id, dedup_key], row_to_idea)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Resolve an idea by an id PREFIX inside one project.
+///
+/// The App Master's own decision brief names an idea the way the decision
+/// prompt showed it — often the 8-char prefix the UI and the ledger print, not
+/// the full uuid. `Ok(None)` means either "no such idea in this project" or
+/// "the prefix is ambiguous"; both are the same answer to the caller (it cannot
+/// act) and collapsing them keeps the caller from acting on a coin-flip. An
+/// exact full-id match always wins over a prefix, so a complete uuid is never
+/// refused for being a prefix of something else.
+pub fn find_idea_by_id_prefix(
+    pool: &DbPool,
+    project_id: &str,
+    prefix: &str,
+) -> Result<Option<DevIdea>, AppError> {
+    let prefix = prefix.trim();
+    // A very short prefix matches half the table; 8 hex chars is what the app
+    // prints, so that is the shortest thing a caller can have MEANT.
+    if prefix.len() < 8 {
+        return Ok(None);
+    }
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_id_prefix", {
+        let conn = pool.get()?;
+        // LIMIT 2, so an ambiguous prefix is DETECTED rather than silently
+        // resolved to whichever row the planner happened to visit first.
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE project_id = ?1 AND id LIKE ?2 || '%' \
+             ORDER BY id ASC LIMIT 2"
+        ))?;
+        let mut rows = stmt
+            .query_map(params![project_id, prefix], row_to_idea)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        match rows.len() {
+            0 => Ok(None),
+            1 => Ok(rows.pop()),
+            _ => {
+                // Ambiguous — unless one of them IS the id verbatim.
+                Ok(rows.into_iter().find(|i| i.id == prefix))
+            }
+        }
     })
 }
 

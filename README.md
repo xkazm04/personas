@@ -418,6 +418,34 @@ curl -s "${AUTH[@]}" "$B/app-master/<project_id>"    # the current adoption, or 
 (adoption prepares the App Master; enabling it is a separate act), `name` to
 `App Master <project name>`.
 
+##### Write-back routes for workers
+
+A dispatched App Master run is a headless session in an isolated worktree: it has a repository and a
+model, and these four routes are its **only** way back into Personas. Without them a run's work ends
+at a git commit — the idea it delivered stays `accepted` with no task, so the next wake's
+"accepted ideas with no task" sensor offers it again. Every dispatch brief names them, along with the
+handshake file and the header above.
+
+```bash
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas/<idea_id>/outcome" -d '{"outcome":"delivered","note":"what shipped","branch":"autopilot/x","commit":"abc1234","pr_url":"..."}'
+#   outcome: delivered | declined | blocked. Finds (or mints) the idea's dev_tasks row and closes it
+#   -> completed / cancelled / failed respectively; `declined` also rejects the idea through the one
+#   verdict door, with `note` as the reason. -> { ideaId, ideaStatus, task, taskCreated, taskStatus }
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas"   -d '{"project_id":"<id>","title":"...","description":"...","reasoning":"...","category":"technical","effort":2,"impact":4,"risk":1}'
+#   -> { idea, created, dedupKey }. Deduped on a normalized title, so re-filing is safe and
+#   `created:false` hands back the row that already holds the key (in ANY status, rejected included).
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis"   -d '{"project_id":"<id>","name":"Rust clippy findings","measure_kind":"codebase","unit":"findings","direction":"down","target_value":0}'
+#   -> the DevKpi row. `status` defaults to `proposed` (pass `active` to claim it is readable now).
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis/<kpi_id>/measure"   -d '{"value":5,"evidence":"cargo clippy -> 5","source":"scan"}'
+#   -> the measurement row. `env` defaults to `production` and rolls current_value forward;
+#   `local`/`test` route to the simulation door and deliberately do not.
+```
+
+`400` names the offending token and the vocabulary it had to come from (task, KPI and measurement
+fields are all schema CHECK-constrained); `404` means the idea, project or KPI id does not exist.
+Everything lands through the same repo functions the UI uses — a worker-written row is
+indistinguishable from one written by a click. Code: `app_master_writeback.rs`.
+
 The call is idempotent: the persona is keyed by its codebase pin plus name, each charter by its
 recipe slug, so re-running with the same body updates in place. A slug you drop from `recipes`
 **suspends** its charter rather than deleting it — the charter carries the coverage memory the
