@@ -1,0 +1,1639 @@
+{
+  "adoption": null,
+  "before": {
+    "at": "2026-09-07T02:00:05.607Z",
+    "personas": [
+      {
+        "id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "name": "App Master CandiDate",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "name": "App Master ascent",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "name": "App Master personas-web",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      }
+    ],
+    "charters": [
+      {
+        "id": "resp_92b25dd4e5164085b5655612e422995b",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_83ac74a619384d658bd8c8963067e8f5",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_2af71f3e635e44e098f7bcc601268187",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_20a9e9f18a9d4cf187014f4a47ccb4bb",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_a499e9da1dbd4329ae084868cc6ef705",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_c37e892cb19546c3b806b0d1efec957a",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_6e089fb08ed7439e99f9ca56c2166e00",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_f93bf9fb14d443729b55e711c896c14d",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T00:59:07.947848300+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T00:59:07.947848300+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_e8cfb8fc4a714b758e01fd824ae3e89c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "att_b2c3ebf5d5a44ed1ad3738d7ca6f8c2d",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.017065800+00:00",
+        "completed_at": "2026-09-07T01:38:25.017065800+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":9,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_21f3f133a47143508325e7099b2967ba",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.016894+00:00",
+        "completed_at": "2026-09-07T01:38:25.016894+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":9,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_489072e57c204779a50b5c3ca68bac77",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.016663+00:00",
+        "completed_at": "2026-09-07T01:38:25.016663+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":4,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_91a1a2193df34eb6b389f12eddf8e625",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:34:19.240332200+00:00",
+        "completed_at": "2026-09-07T01:34:19.241473800+00:00",
+        "stats": "{\"charterId\":\"resp_ae43c5c7a30e4009b6bb3c1262ec0c08\",\"executionId\":\"e3b6fea6-27f5-46db-b022-8426bf66606b\",\"reason\":\"Second-highest never-run charter (p3), also flagged starving last wake. Cheap first pass that turns tool output into concrete work; complements the security scan without overlapping it, fitting the 2-slot capacity.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_f8f6121657d54d398d0d0757899badff",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:34:19.238212400+00:00",
+        "completed_at": "2026-09-07T01:34:19.240252500+00:00",
+        "stats": "{\"charterId\":\"resp_7232a702472c46b2854016f2f55a0b32\",\"executionId\":\"ffd9ebae-d615-4c7e-997c-1afe8456dfda\",\"reason\":\"Highest-priority never-run charter (p3), and my last-wake note flagged it as starving. CandiDate handles PII, billing, AI-pipeline cost, and ATS webhooks — a security baseline has never been taken, so unknown exposure is highest-value gap this wake.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_ed7d231280914eb49b24b502792053e4",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:33:25.042765400+00:00",
+        "completed_at": "2026-09-07T01:34:19.242094400+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_de35d6e2bfb14829875ca4bb2e4670a6\",\"reason\":\"Dispatched last wake into a worktree; that KPI-stewardship run is still in flight. Re-dispatching now would duplicate/conflict. Let it land, then re-attack the 280/285 KPI-less gap.\"},{\"charterId\":\"resp_7ce9498b75d0478e99ab12a508cca26f\",\"reason\":\"Dispatched last wake on idea 297f6ba4; that delivery is still in flight. Avoid a parallel duplicate branch — verify it merged before carrying the next accepted idea.\"},{\"charterId\":\"resp_e8cfb8fc4a714b758e01fd824ae3e89c\",\"reason\":\"Never-run but p4 — outranked this wake by the ",
+        "reason": ""
+      },
+      {
+        "id": "att_ea34ac249a0e4c11932b6880f2402c9e",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:09.090082900+00:00",
+        "completed_at": "2026-09-07T01:29:09.092674800+00:00",
+        "stats": "{\"charterId\":\"resp_af8d7ce1b1ac49f18f590d697e7486c4\",\"executionId\":\"45ef0cb6-9646-4233-98eb-f304b9168752\",\"reason\":\"Never run, priority 3, independent of the running KPI charter and the empty idea backlog. Pairs with the security scan under my capacity of 2 and gives a first structural-hygiene baseline.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_fc39a283e8f6440a8be66fc0426ee466",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:09.070418300+00:00",
+        "completed_at": "2026-09-07T01:29:09.089868+00:00",
+        "stats": "{\"charterId\":\"resp_e10b4df94acd4a59a021cc8f44add113\",\"executionId\":\"e0a10313-0eeb-4722-820a-d85b3f75cc6a\",\"reason\":\"Never run, priority 3, and fully actionable regardless of idea/KPI state — the two higher charters are blocked (KPI run already started today, delivery has 0 accepted ideas to carry). First security baseline for personas-web.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_c55a2960bc7542f596de64628efd171e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:07.501019300+00:00",
+        "completed_at": "2026-09-07T01:29:07.513234100+00:00",
+        "stats": "{\"charterId\":\"resp_9556c94da7b4453ab1b3270736a58dd0\",\"executionId\":\"12753a61-9a5d-4dfd-bc92-571a52c7bc98\",\"reason\":\"Highest-priority never-run charter after KPI (priority 3); a first-ever security baseline on an unscanned codebase is high-value standing work and fits the second parallel slot.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_949c3a6a2bff49efbfbdd2671b750008",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:06.952448400+00:00",
+        "completed_at": "2026-09-07T01:29:07.499866200+00:00",
+        "stats": "{\"branch\":\"autopilot/project-kpi-and-coverage-stewardship\",\"charterId\":\"resp_8ee9eabb9ec64ff8b1343d1bdce9f22e\",\"sessionId\":\"bcb8921d-7be0-4a9a-9036-a49022482668\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\32c9b23b-9000-4852-b3f4-5300f4d0eaf5\\\\project-kpi-and-coverage-stewardship\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_74c32fbeded3431ea1d5d68c1f96e912",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:28:25.038381500+00:00",
+        "completed_at": "2026-09-07T01:29:09.093519200+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_69705ff8979841c5b0d938e44fcd394a\",\"reason\":\"Priority 1, but a run already started today (2026-09-07T00:55:33) and is in flight — re-dispatching would double-run. Let it finish; it directly targets the 78 KPI-less contexts.\"},{\"charterId\":\"resp_83ac74a619384d658bd8c8963067e8f5\",\"reason\":\"Nothing to carry: 0 accepted ideas with no task and 0 pending ideas. No-op until the idea backlog has an accepted item.\"},{\"charterId\":\"resp_2af71f3e635e44e098f7bcc601268187\",\"reason\":\"Priority 4 and below the two priority-3 charters that filled my capacity of 2 this wake.\"},{\"ch",
+        "reason": ""
+      },
+      {
+        "id": "att_2f724009026b414cbcbedb718abde18d",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:28:25.033994800+00:00",
+        "completed_at": "2026-09-07T01:28:25.033994800+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T01:28:25.032656700+00:00\"}"
+      },
+      {
+        "id": "att_ba25c23ab5aa400aad43afad7b3bafe4",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:28:25.032656700+00:00",
+        "completed_at": "2026-09-07T01:29:07.513719100+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_a499e9da1dbd4329ae084868cc6ef705\",\"reason\":\"Nothing to carry: 0 accepted ideas with no task and 0 pending ideas. No item exists to deliver this wake despite priority 2.\"},{\"charterId\":\"resp_c37e892cb19546c3b806b0d1efec957a\",\"reason\":\"Priority 3 tie with the dispatched security scan; parallel capacity of 2 is spent. Next in line for the following wake.\"},{\"charterId\":\"resp_6e089fb08ed7439e99f9ca56c2166e00\",\"reason\":\"Priority 4, ranked below the dispatched work; no structural incident signal forcing it ahead this wake.\"},{\"charterId\":\"resp_20a9e9f18a9d4cf187014f4a",
+        "reason": ""
+      },
+      {
+        "id": "att_b9127b0928194fac9c5bbb3448f88038",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:03:25.010616600+00:00",
+        "completed_at": "2026-09-07T01:03:25.010616600+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":4,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_30fa8b2a08a94a5894afb7984a49c3db",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:59:05.202841900+00:00",
+        "completed_at": "2026-09-07T00:59:07.947323900+00:00",
+        "stats": "{\"branch\":\"autopilot/accepted-idea-delivery-to-the-main-branch\",\"charterId\":\"resp_7ce9498b75d0478e99ab12a508cca26f\",\"sessionId\":\"09c36c90-d79d-4f84-8c9f-dda548faafca\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\a9a1ef97-c684-4c32-b622-44cd4ea1ea05\\\\accepted-idea-delivery-to-the-main-branch\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_776ceddd82834a099a5db3cc0511a174",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:59:03.063415800+00:00",
+        "completed_at": "2026-09-07T00:59:05.195349100+00:00",
+        "stats": "{\"branch\":\"autopilot/project-kpi-and-coverage-stewardship\",\"charterId\":\"resp_de35d6e2bfb14829875ca4bb2e4670a6\",\"sessionId\":\"0de7aca1-25f5-44d3-a921-bed3282690e0\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\a9a1ef97-c684-4c32-b622-44cd4ea1ea05\\\\project-kpi-and-coverage-stewardship\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_69057538feb448b089c64ae7836c5eea",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:58:25.014511600+00:00",
+        "completed_at": "2026-09-07T00:58:25.014511600+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:55:33.080578500+00:00\"}"
+      },
+      {
+        "id": "att_d1255361ddd940369d8f66ce94f3eb81",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:58:25.014253400+00:00",
+        "completed_at": "2026-09-07T00:58:25.014253400+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:58:25.013168700+00:00\"}"
+      },
+      {
+        "id": "att_48f5bc8dcea8420693c0e4c1a64f99af",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:58:25.013168700+00:00",
+        "completed_at": "2026-09-07T00:59:07.948644800+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_7232a702472c46b2854016f2f55a0b32\",\"reason\":\"Priority 3; both dispatch slots spent on p1/p2 which have concrete state evidence. No urgent security signal surfaced this wake.\"},{\"charterId\":\"resp_ae43c5c7a30e4009b6bb3c1262ec0c08\",\"reason\":\"Priority 3; capacity full. Static-analysis debt is real but not decaying faster than the KPI/delivery gaps chosen this wake.\"},{\"charterId\":\"resp_e8cfb8fc4a714b758e01fd824ae3e89c\",\"reason\":\"Priority 4; lower than the four ahead of it and capacity is 2.\"},{\"charterId\":\"resp_f93bf9fb14d443729b55e711c896c14d\",\"reason\":\"No declared ",
+        "reason": ""
+      },
+      {
+        "id": "att_82836405843d45dd9d39a99e9c34ad4c",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:55:33.080578500+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_1130076c7435406c9c8190c11918048f",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:54:58.807318400+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_3a39ea1f40c04f52b547dc1db888dd5e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:54:58.805684200+00:00",
+        "completed_at": "2026-09-07T00:54:58.805684200+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:54:58.804390800+00:00\"}"
+      },
+      {
+        "id": "att_c875a09c27354a9ab1b3b5bee5f2516f",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:54:58.804390800+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_69fbed1c35374a2b992d03fc1c4a045d",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "improve",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:48:26.982360900+00:00",
+        "completed_at": "2026-09-07T00:48:26.984909300+00:00",
+        "stats": "{\"executionId\":\"11fdbba3-5316-4626-8fe7-428898574a21\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_2a69a5e1f9934adda2e54ca4590b563f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:48:26.981933900+00:00",
+        "completed_at": "2026-09-07T00:48:26.981933900+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":15,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_ad7cfb6af8b54c38948bf09cd87571bc",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "noop",
+        "started_at": "2026-09-07T00:33:28.074986800+00:00",
+        "completed_at": "2026-09-07T00:33:39.113606500+00:00",
+        "stats": "{\"consumed_through\":\"2026-09-07T00:28:30.945092200+00:00\",\"created\":0,\"episodes_fed\":1,\"rejected\":0,\"selfModelDiffsProposed\":0,\"skipped_tombstoned\":0,\"summary\":\"Only one episode was available: a completed attention-lane self-review run (improve lane, about 54 seconds, roughly half a dollar) whose excerpt shows the task framing but none of the review's conclusions or filed backlog entries. Nothing durable about the world or the persona's craft can be supported from that evidence alone, so no facts or self-model edits are proposed this pass.\",\"updated\":0}",
+        "reason": "{\"verdict\":\"admit\",\"kind\":\"first_cycle\",\"chars\":3062}"
+      },
+      {
+        "id": "att_8b45e35c43704db78d95afeafde84d5c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "maintenance",
+        "verdict": "enqueued",
+        "started_at": "2026-09-07T00:33:26.976806100+00:00",
+        "completed_at": "2026-09-07T00:33:26.977046900+00:00",
+        "stats": "{\"jobId\":\"pjob_b0e5873b\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_909cb37287444856892ff7416f5d5d7b",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "improve",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:27:36.452548100+00:00",
+        "completed_at": "2026-09-07T00:27:36.454736100+00:00",
+        "stats": "{\"executionId\":\"b5345527-178d-4884-868c-4fcbac01e2ae\"}",
+        "reason": ""
+      }
+    ],
+    "executions": [
+      {
+        "id": "e3b6fea6-27f5-46db-b022-8426bf66606b",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T01:34:19.241141500+00:00",
+        "completed_at": "2026-09-07T01:43:34.506731200+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 2.344563,
+        "error": null
+      },
+      {
+        "id": "ffd9ebae-d615-4c7e-997c-1afe8456dfda",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T01:34:19.239699500+00:00",
+        "completed_at": "2026-09-07T01:41:40.251299200+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.6196870000000003,
+        "error": null
+      },
+      {
+        "id": "45ef0cb6-9646-4233-98eb-f304b9168752",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:09.091569500+00:00",
+        "completed_at": "2026-09-07T01:36:23.483080500+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.221969,
+        "error": null
+      },
+      {
+        "id": "e0a10313-0eeb-4722-820a-d85b3f75cc6a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:09.072288800+00:00",
+        "completed_at": "2026-09-07T01:33:37.602252600+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.3894875,
+        "error": null
+      },
+      {
+        "id": "12753a61-9a5d-4dfd-bc92-571a52c7bc98",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:07.512630600+00:00",
+        "completed_at": "2026-09-07T01:32:58.276230+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.2087085,
+        "error": null
+      },
+      {
+        "id": "11fdbba3-5316-4626-8fe7-428898574a21",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "status": "completed",
+        "started_at": "2026-09-07T00:48:26.984299900+00:00",
+        "completed_at": "2026-09-07T00:49:28.775639500+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 0.31260750000000004,
+        "error": null
+      },
+      {
+        "id": "b5345527-178d-4884-868c-4fcbac01e2ae",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T00:27:36.454162+00:00",
+        "completed_at": "2026-09-07T00:28:30.938436700+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 0.502405,
+        "error": null
+      }
+    ],
+    "fleet": [
+      {
+        "id": "bcb8921d-7be0-4a9a-9036-a49022482668",
+        "project_label": "project-kpi-and-coverage-stewardship",
+        "title": "KPI Coverage Gap Closure",
+        "state": "finished",
+        "state_reason": "Task complete: Defined six measured KPIs with targets and named sources for 3 of the 10 KPI-less contexts, recorded one baseline (chart DOM-test coverage 33.3%), and filed backlog K1–K9 in docs/kpi on commit 8ad39c6",
+        "run_label": "app-master:c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "created_at_ms": 1788744547499,
+        "last_activity_ms": 1788745973287
+      },
+      {
+        "id": "09c36c90-d79d-4f84-8c9f-dda548faafca",
+        "project_label": "accepted-idea-delivery-to-the-main-branch",
+        "title": "IMMEDIATE Transactions Upgrade",
+        "state": "finished",
+        "state_reason": "Task complete: idea 297f6ba4 re-validated (premise half stale, ask sound) and delivered as 3935d589: close/reopen run tx.immediate(), the snapshot abort is reproduced as a test control, docs and guidance corrected; ",
+        "run_label": "app-master:ed72935c-8128-4a60-bed8-d0d97b878712",
+        "created_at_ms": 1788742747947,
+        "last_activity_ms": 1788744113501
+      },
+      {
+        "id": "0de7aca1-25f5-44d3-a921-bed3282690e0",
+        "project_label": "project-kpi-and-coverage-stewardship",
+        "title": "KPI Coverage Baseline Pass",
+        "state": "finished",
+        "state_reason": "Task complete: The named doc was already updated in this turn: `docs/features/scheduling/README.md` gained a surface-table row for the probe and a \"Measurement — the self-scheduling booking rate\" section under Data …",
+        "run_label": "app-master:ed72935c-8128-4a60-bed8-d0d97b878712",
+        "created_at_ms": 1788742745195,
+        "last_activity_ms": 1788744263192
+      }
+    ],
+    "episodes": [
+      {
+        "id": "ep_997bd75f76214d2d812e9eef2c61aa29",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3069,
+        "created_at": "2026-09-07T01:43:34.516064+00:00"
+      },
+      {
+        "id": "ep_ea3a2892f36147be84aacba61aef277c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3065,
+        "created_at": "2026-09-07T01:41:40.277174800+00:00"
+      },
+      {
+        "id": "ep_139de0cc38e34bcfaa4724e8ddad97e2",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3069,
+        "created_at": "2026-09-07T01:36:23.490226600+00:00"
+      },
+      {
+        "id": "ep_ff5ac3aa6b7b4568a05be1c9f4fab6f7",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3065,
+        "created_at": "2026-09-07T01:33:37.612793+00:00"
+      },
+      {
+        "id": "ep_8c3f859c05544b78b9015dfe18b8a295",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3067,
+        "created_at": "2026-09-07T01:32:58.289153700+00:00"
+      },
+      {
+        "id": "ep_3addd952af43481f94cf51793dac1ab3",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3060,
+        "created_at": "2026-09-07T00:49:28.798683700+00:00"
+      },
+      {
+        "id": "ep_13c1aecda0154f8cb6e4a96a0f4b1f46",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3062,
+        "created_at": "2026-09-07T00:28:30.945092200+00:00"
+      }
+    ],
+    "ideas": [
+      {
+        "project": "CandiDate",
+        "accepted": 5,
+        "archived": 62,
+        "pending": 41
+      },
+      {
+        "project": "ascent",
+        "accepted": 7
+      },
+      {
+        "project": "personas-web"
+      }
+    ],
+    "kpiMeasurements": [
+      {
+        "project_id": "c76fe554-e790-4c45-a927-115a24eacfff",
+        "n": 7,
+        "newest": "2026-07-30 11:07:54"
+      }
+    ],
+    "repos": [
+      {
+        "project": "CandiDate",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-07 03:15:45 +0200"
+          },
+          {
+            "branch": "autopilot/accepted-idea-delivery-to-the-main-branch",
+            "at": "2026-09-07 03:07:33 +0200"
+          }
+        ],
+        "worktrees": 3
+      },
+      {
+        "project": "ascent",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-07 03:45:23 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-6",
+            "at": "2026-08-27 16:54:42 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-5",
+            "at": "2026-08-27 16:02:33 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-4",
+            "at": "2026-08-27 10:47:07 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-2",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-3",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench",
+            "at": "2026-08-26 20:27:33 +0200"
+          },
+          {
+            "branch": "autopilot/env-example-alert-webhook",
+            "at": "2026-08-26 18:18:24 +0200"
+          }
+        ],
+        "worktrees": 28
+      },
+      {
+        "project": "personas-web",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-06 10:50:01 +0200"
+          }
+        ],
+        "worktrees": 20
+      }
+    ],
+    "settings": [
+      {
+        "key": "autonomous_attention_loop",
+        "value": "true"
+      }
+    ]
+  },
+  "after": {
+    "at": "2026-09-07T02:00:05.762Z",
+    "personas": [
+      {
+        "id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "name": "App Master CandiDate",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "name": "App Master ascent",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "name": "App Master personas-web",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      }
+    ],
+    "charters": [
+      {
+        "id": "resp_92b25dd4e5164085b5655612e422995b",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_83ac74a619384d658bd8c8963067e8f5",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_2af71f3e635e44e098f7bcc601268187",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:09.092775300+00:00\",\"coverageNote\":\"KPI charter (p1) already started 2026-09-07 — check its outcome next wake; 78 contexts still lack active KPI. Delivery (p2) idle: 0 accepted ideas. Dispatched security + static-analysis (both never-run p3). Arch review & decision-capture still never run.\"}"
+      },
+      {
+        "id": "resp_20a9e9f18a9d4cf187014f4a47ccb4bb",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_a499e9da1dbd4329ae084868cc6ef705",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_c37e892cb19546c3b806b0d1efec957a",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_6e089fb08ed7439e99f9ca56c2166e00",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:29:07.513302700+00:00\",\"coverageNote\":\"Wake 1: dispatched KPI-stewardship (closing 10 no-KPI contexts) + security-scan (baseline). Never-run remaining: static-analysis, architecture-review, decision-capture — rotate these in next. Idea-delivery blocked while backlog is 0/0; recheck idea counts each wake.\"}"
+      },
+      {
+        "id": "resp_f93bf9fb14d443729b55e711c896c14d",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T00:59:07.947848300+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T00:59:07.947848300+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"lastDispatchedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      },
+      {
+        "id": "resp_e8cfb8fc4a714b758e01fd824ae3e89c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": "{\"lastDecidedAt\":\"2026-09-07T01:34:19.241544600+00:00\",\"coverageNote\":\"Wake 2: dispatched never-run p3 security-scan + p3 static-analysis. Still never-run: architecture-review (p4), decision-capture (none) — rotate next. Deferred p1 KPI + p2 idea-delivery as in-flight from wake 1; verify their branches landed before re-dispatch.\"}"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "att_b2c3ebf5d5a44ed1ad3738d7ca6f8c2d",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.017065800+00:00",
+        "completed_at": "2026-09-07T01:38:25.017065800+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":9,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_21f3f133a47143508325e7099b2967ba",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.016894+00:00",
+        "completed_at": "2026-09-07T01:38:25.016894+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":9,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_489072e57c204779a50b5c3ca68bac77",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:38:25.016663+00:00",
+        "completed_at": "2026-09-07T01:38:25.016663+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":4,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_91a1a2193df34eb6b389f12eddf8e625",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:34:19.240332200+00:00",
+        "completed_at": "2026-09-07T01:34:19.241473800+00:00",
+        "stats": "{\"charterId\":\"resp_ae43c5c7a30e4009b6bb3c1262ec0c08\",\"executionId\":\"e3b6fea6-27f5-46db-b022-8426bf66606b\",\"reason\":\"Second-highest never-run charter (p3), also flagged starving last wake. Cheap first pass that turns tool output into concrete work; complements the security scan without overlapping it, fitting the 2-slot capacity.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_f8f6121657d54d398d0d0757899badff",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:34:19.238212400+00:00",
+        "completed_at": "2026-09-07T01:34:19.240252500+00:00",
+        "stats": "{\"charterId\":\"resp_7232a702472c46b2854016f2f55a0b32\",\"executionId\":\"ffd9ebae-d615-4c7e-997c-1afe8456dfda\",\"reason\":\"Highest-priority never-run charter (p3), and my last-wake note flagged it as starving. CandiDate handles PII, billing, AI-pipeline cost, and ATS webhooks — a security baseline has never been taken, so unknown exposure is highest-value gap this wake.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_ed7d231280914eb49b24b502792053e4",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:33:25.042765400+00:00",
+        "completed_at": "2026-09-07T01:34:19.242094400+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_de35d6e2bfb14829875ca4bb2e4670a6\",\"reason\":\"Dispatched last wake into a worktree; that KPI-stewardship run is still in flight. Re-dispatching now would duplicate/conflict. Let it land, then re-attack the 280/285 KPI-less gap.\"},{\"charterId\":\"resp_7ce9498b75d0478e99ab12a508cca26f\",\"reason\":\"Dispatched last wake on idea 297f6ba4; that delivery is still in flight. Avoid a parallel duplicate branch — verify it merged before carrying the next accepted idea.\"},{\"charterId\":\"resp_e8cfb8fc4a714b758e01fd824ae3e89c\",\"reason\":\"Never-run but p4 — outranked this wake by the ",
+        "reason": ""
+      },
+      {
+        "id": "att_ea34ac249a0e4c11932b6880f2402c9e",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:09.090082900+00:00",
+        "completed_at": "2026-09-07T01:29:09.092674800+00:00",
+        "stats": "{\"charterId\":\"resp_af8d7ce1b1ac49f18f590d697e7486c4\",\"executionId\":\"45ef0cb6-9646-4233-98eb-f304b9168752\",\"reason\":\"Never run, priority 3, independent of the running KPI charter and the empty idea backlog. Pairs with the security scan under my capacity of 2 and gives a first structural-hygiene baseline.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_fc39a283e8f6440a8be66fc0426ee466",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:09.070418300+00:00",
+        "completed_at": "2026-09-07T01:29:09.089868+00:00",
+        "stats": "{\"charterId\":\"resp_e10b4df94acd4a59a021cc8f44add113\",\"executionId\":\"e0a10313-0eeb-4722-820a-d85b3f75cc6a\",\"reason\":\"Never run, priority 3, and fully actionable regardless of idea/KPI state — the two higher charters are blocked (KPI run already started today, delivery has 0 accepted ideas to carry). First security baseline for personas-web.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_c55a2960bc7542f596de64628efd171e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:07.501019300+00:00",
+        "completed_at": "2026-09-07T01:29:07.513234100+00:00",
+        "stats": "{\"charterId\":\"resp_9556c94da7b4453ab1b3270736a58dd0\",\"executionId\":\"12753a61-9a5d-4dfd-bc92-571a52c7bc98\",\"reason\":\"Highest-priority never-run charter after KPI (priority 3); a first-ever security baseline on an unscanned codebase is high-value standing work and fits the second parallel slot.\",\"worker\":\"execution\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_949c3a6a2bff49efbfbdd2671b750008",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:29:06.952448400+00:00",
+        "completed_at": "2026-09-07T01:29:07.499866200+00:00",
+        "stats": "{\"branch\":\"autopilot/project-kpi-and-coverage-stewardship\",\"charterId\":\"resp_8ee9eabb9ec64ff8b1343d1bdce9f22e\",\"sessionId\":\"bcb8921d-7be0-4a9a-9036-a49022482668\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\32c9b23b-9000-4852-b3f4-5300f4d0eaf5\\\\project-kpi-and-coverage-stewardship\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_74c32fbeded3431ea1d5d68c1f96e912",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:28:25.038381500+00:00",
+        "completed_at": "2026-09-07T01:29:09.093519200+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_69705ff8979841c5b0d938e44fcd394a\",\"reason\":\"Priority 1, but a run already started today (2026-09-07T00:55:33) and is in flight — re-dispatching would double-run. Let it finish; it directly targets the 78 KPI-less contexts.\"},{\"charterId\":\"resp_83ac74a619384d658bd8c8963067e8f5\",\"reason\":\"Nothing to carry: 0 accepted ideas with no task and 0 pending ideas. No-op until the idea backlog has an accepted item.\"},{\"charterId\":\"resp_2af71f3e635e44e098f7bcc601268187\",\"reason\":\"Priority 4 and below the two priority-3 charters that filled my capacity of 2 this wake.\"},{\"ch",
+        "reason": ""
+      },
+      {
+        "id": "att_2f724009026b414cbcbedb718abde18d",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:28:25.033994800+00:00",
+        "completed_at": "2026-09-07T01:28:25.033994800+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T01:28:25.032656700+00:00\"}"
+      },
+      {
+        "id": "att_ba25c23ab5aa400aad43afad7b3bafe4",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T01:28:25.032656700+00:00",
+        "completed_at": "2026-09-07T01:29:07.513719100+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_a499e9da1dbd4329ae084868cc6ef705\",\"reason\":\"Nothing to carry: 0 accepted ideas with no task and 0 pending ideas. No item exists to deliver this wake despite priority 2.\"},{\"charterId\":\"resp_c37e892cb19546c3b806b0d1efec957a\",\"reason\":\"Priority 3 tie with the dispatched security scan; parallel capacity of 2 is spent. Next in line for the following wake.\"},{\"charterId\":\"resp_6e089fb08ed7439e99f9ca56c2166e00\",\"reason\":\"Priority 4, ranked below the dispatched work; no structural incident signal forcing it ahead this wake.\"},{\"charterId\":\"resp_20a9e9f18a9d4cf187014f4a",
+        "reason": ""
+      },
+      {
+        "id": "att_b9127b0928194fac9c5bbb3448f88038",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T01:03:25.010616600+00:00",
+        "completed_at": "2026-09-07T01:03:25.010616600+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":4,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_30fa8b2a08a94a5894afb7984a49c3db",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:59:05.202841900+00:00",
+        "completed_at": "2026-09-07T00:59:07.947323900+00:00",
+        "stats": "{\"branch\":\"autopilot/accepted-idea-delivery-to-the-main-branch\",\"charterId\":\"resp_7ce9498b75d0478e99ab12a508cca26f\",\"sessionId\":\"09c36c90-d79d-4f84-8c9f-dda548faafca\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\a9a1ef97-c684-4c32-b622-44cd4ea1ea05\\\\accepted-idea-delivery-to-the-main-branch\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_776ceddd82834a099a5db3cc0511a174",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:59:03.063415800+00:00",
+        "completed_at": "2026-09-07T00:59:05.195349100+00:00",
+        "stats": "{\"branch\":\"autopilot/project-kpi-and-coverage-stewardship\",\"charterId\":\"resp_de35d6e2bfb14829875ca4bb2e4670a6\",\"sessionId\":\"0de7aca1-25f5-44d3-a921-bed3282690e0\",\"worker\":\"fleet\",\"worktreePath\":\"C:\\\\Users\\\\kazda\\\\AppData\\\\Roaming\\\\com.personas.desktop\\\\worktrees\\\\a9a1ef97-c684-4c32-b622-44cd4ea1ea05\\\\project-kpi-and-coverage-stewardship\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_69057538feb448b089c64ae7836c5eea",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:58:25.014511600+00:00",
+        "completed_at": "2026-09-07T00:58:25.014511600+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:55:33.080578500+00:00\"}"
+      },
+      {
+        "id": "att_d1255361ddd940369d8f66ce94f3eb81",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:58:25.014253400+00:00",
+        "completed_at": "2026-09-07T00:58:25.014253400+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:58:25.013168700+00:00\"}"
+      },
+      {
+        "id": "att_48f5bc8dcea8420693c0e4c1a64f99af",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:58:25.013168700+00:00",
+        "completed_at": "2026-09-07T00:59:07.948644800+00:00",
+        "stats": "{\"deferred\":[{\"charterId\":\"resp_7232a702472c46b2854016f2f55a0b32\",\"reason\":\"Priority 3; both dispatch slots spent on p1/p2 which have concrete state evidence. No urgent security signal surfaced this wake.\"},{\"charterId\":\"resp_ae43c5c7a30e4009b6bb3c1262ec0c08\",\"reason\":\"Priority 3; capacity full. Static-analysis debt is real but not decaying faster than the KPI/delivery gaps chosen this wake.\"},{\"charterId\":\"resp_e8cfb8fc4a714b758e01fd824ae3e89c\",\"reason\":\"Priority 4; lower than the four ahead of it and capacity is 2.\"},{\"charterId\":\"resp_f93bf9fb14d443729b55e711c896c14d\",\"reason\":\"No declared ",
+        "reason": ""
+      },
+      {
+        "id": "att_82836405843d45dd9d39a99e9c34ad4c",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:55:33.080578500+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_1130076c7435406c9c8190c11918048f",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:54:58.807318400+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_3a39ea1f40c04f52b547dc1db888dd5e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:54:58.805684200+00:00",
+        "completed_at": "2026-09-07T00:54:58.805684200+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"in_flight\",\"started_at\":\"2026-09-07T00:54:58.804390800+00:00\"}"
+      },
+      {
+        "id": "att_c875a09c27354a9ab1b3b5bee5f2516f",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "decide",
+        "verdict": "started",
+        "started_at": "2026-09-07T00:54:58.804390800+00:00",
+        "completed_at": null,
+        "stats": null,
+        "reason": ""
+      },
+      {
+        "id": "att_69fbed1c35374a2b992d03fc1c4a045d",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "lane": "improve",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:48:26.982360900+00:00",
+        "completed_at": "2026-09-07T00:48:26.984909300+00:00",
+        "stats": "{\"executionId\":\"11fdbba3-5316-4626-8fe7-428898574a21\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_2a69a5e1f9934adda2e54ca4590b563f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "refused",
+        "started_at": "2026-09-07T00:48:26.981933900+00:00",
+        "completed_at": "2026-09-07T00:48:26.981933900+00:00",
+        "stats": null,
+        "reason": "{\"kind\":\"interval_floor\",\"minutes_since\":15,\"interval_minutes\":30}"
+      },
+      {
+        "id": "att_ad7cfb6af8b54c38948bf09cd87571bc",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": null,
+        "verdict": "noop",
+        "started_at": "2026-09-07T00:33:28.074986800+00:00",
+        "completed_at": "2026-09-07T00:33:39.113606500+00:00",
+        "stats": "{\"consumed_through\":\"2026-09-07T00:28:30.945092200+00:00\",\"created\":0,\"episodes_fed\":1,\"rejected\":0,\"selfModelDiffsProposed\":0,\"skipped_tombstoned\":0,\"summary\":\"Only one episode was available: a completed attention-lane self-review run (improve lane, about 54 seconds, roughly half a dollar) whose excerpt shows the task framing but none of the review's conclusions or filed backlog entries. Nothing durable about the world or the persona's craft can be supported from that evidence alone, so no facts or self-model edits are proposed this pass.\",\"updated\":0}",
+        "reason": "{\"verdict\":\"admit\",\"kind\":\"first_cycle\",\"chars\":3062}"
+      },
+      {
+        "id": "att_8b45e35c43704db78d95afeafde84d5c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "maintenance",
+        "verdict": "enqueued",
+        "started_at": "2026-09-07T00:33:26.976806100+00:00",
+        "completed_at": "2026-09-07T00:33:26.977046900+00:00",
+        "stats": "{\"jobId\":\"pjob_b0e5873b\"}",
+        "reason": ""
+      },
+      {
+        "id": "att_909cb37287444856892ff7416f5d5d7b",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "lane": "improve",
+        "verdict": "dispatched",
+        "started_at": "2026-09-07T00:27:36.452548100+00:00",
+        "completed_at": "2026-09-07T00:27:36.454736100+00:00",
+        "stats": "{\"executionId\":\"b5345527-178d-4884-868c-4fcbac01e2ae\"}",
+        "reason": ""
+      }
+    ],
+    "executions": [
+      {
+        "id": "e3b6fea6-27f5-46db-b022-8426bf66606b",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T01:34:19.241141500+00:00",
+        "completed_at": "2026-09-07T01:43:34.506731200+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 2.344563,
+        "error": null
+      },
+      {
+        "id": "ffd9ebae-d615-4c7e-997c-1afe8456dfda",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T01:34:19.239699500+00:00",
+        "completed_at": "2026-09-07T01:41:40.251299200+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.6196870000000003,
+        "error": null
+      },
+      {
+        "id": "45ef0cb6-9646-4233-98eb-f304b9168752",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:09.091569500+00:00",
+        "completed_at": "2026-09-07T01:36:23.483080500+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.221969,
+        "error": null
+      },
+      {
+        "id": "e0a10313-0eeb-4722-820a-d85b3f75cc6a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:09.072288800+00:00",
+        "completed_at": "2026-09-07T01:33:37.602252600+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.3894875,
+        "error": null
+      },
+      {
+        "id": "12753a61-9a5d-4dfd-bc92-571a52c7bc98",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "status": "completed",
+        "started_at": "2026-09-07T01:29:07.512630600+00:00",
+        "completed_at": "2026-09-07T01:32:58.276230+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 1.2087085,
+        "error": null
+      },
+      {
+        "id": "11fdbba3-5316-4626-8fe7-428898574a21",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "status": "completed",
+        "started_at": "2026-09-07T00:48:26.984299900+00:00",
+        "completed_at": "2026-09-07T00:49:28.775639500+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 0.31260750000000004,
+        "error": null
+      },
+      {
+        "id": "b5345527-178d-4884-868c-4fcbac01e2ae",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "status": "completed",
+        "started_at": "2026-09-07T00:27:36.454162+00:00",
+        "completed_at": "2026-09-07T00:28:30.938436700+00:00",
+        "model_used": "claude-opus-4-8",
+        "cost_usd": 0.502405,
+        "error": null
+      }
+    ],
+    "fleet": [
+      {
+        "id": "bcb8921d-7be0-4a9a-9036-a49022482668",
+        "project_label": "project-kpi-and-coverage-stewardship",
+        "title": "KPI Coverage Gap Closure",
+        "state": "finished",
+        "state_reason": "Task complete: Defined six measured KPIs with targets and named sources for 3 of the 10 KPI-less contexts, recorded one baseline (chart DOM-test coverage 33.3%), and filed backlog K1–K9 in docs/kpi on commit 8ad39c6",
+        "run_label": "app-master:c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "created_at_ms": 1788744547499,
+        "last_activity_ms": 1788745973287
+      },
+      {
+        "id": "09c36c90-d79d-4f84-8c9f-dda548faafca",
+        "project_label": "accepted-idea-delivery-to-the-main-branch",
+        "title": "IMMEDIATE Transactions Upgrade",
+        "state": "finished",
+        "state_reason": "Task complete: idea 297f6ba4 re-validated (premise half stale, ask sound) and delivered as 3935d589: close/reopen run tx.immediate(), the snapshot abort is reproduced as a test control, docs and guidance corrected; ",
+        "run_label": "app-master:ed72935c-8128-4a60-bed8-d0d97b878712",
+        "created_at_ms": 1788742747947,
+        "last_activity_ms": 1788744113501
+      },
+      {
+        "id": "0de7aca1-25f5-44d3-a921-bed3282690e0",
+        "project_label": "project-kpi-and-coverage-stewardship",
+        "title": "KPI Coverage Baseline Pass",
+        "state": "finished",
+        "state_reason": "Task complete: The named doc was already updated in this turn: `docs/features/scheduling/README.md` gained a surface-table row for the probe and a \"Measurement — the self-scheduling booking rate\" section under Data …",
+        "run_label": "app-master:ed72935c-8128-4a60-bed8-d0d97b878712",
+        "created_at_ms": 1788742745195,
+        "last_activity_ms": 1788744263192
+      }
+    ],
+    "episodes": [
+      {
+        "id": "ep_997bd75f76214d2d812e9eef2c61aa29",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3069,
+        "created_at": "2026-09-07T01:43:34.516064+00:00"
+      },
+      {
+        "id": "ep_ea3a2892f36147be84aacba61aef277c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3065,
+        "created_at": "2026-09-07T01:41:40.277174800+00:00"
+      },
+      {
+        "id": "ep_139de0cc38e34bcfaa4724e8ddad97e2",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3069,
+        "created_at": "2026-09-07T01:36:23.490226600+00:00"
+      },
+      {
+        "id": "ep_ff5ac3aa6b7b4568a05be1c9f4fab6f7",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3065,
+        "created_at": "2026-09-07T01:33:37.612793+00:00"
+      },
+      {
+        "id": "ep_8c3f859c05544b78b9015dfe18b8a295",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3067,
+        "created_at": "2026-09-07T01:32:58.289153700+00:00"
+      },
+      {
+        "id": "ep_3addd952af43481f94cf51793dac1ab3",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3060,
+        "created_at": "2026-09-07T00:49:28.798683700+00:00"
+      },
+      {
+        "id": "ep_13c1aecda0154f8cb6e4a96a0f4b1f46",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3062,
+        "created_at": "2026-09-07T00:28:30.945092200+00:00"
+      }
+    ],
+    "ideas": [
+      {
+        "project": "CandiDate",
+        "accepted": 5,
+        "archived": 62,
+        "pending": 41
+      },
+      {
+        "project": "ascent",
+        "accepted": 7
+      },
+      {
+        "project": "personas-web"
+      }
+    ],
+    "kpiMeasurements": [
+      {
+        "project_id": "c76fe554-e790-4c45-a927-115a24eacfff",
+        "n": 7,
+        "newest": "2026-07-30 11:07:54"
+      }
+    ],
+    "repos": [
+      {
+        "project": "CandiDate",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-07 03:15:45 +0200"
+          },
+          {
+            "branch": "autopilot/accepted-idea-delivery-to-the-main-branch",
+            "at": "2026-09-07 03:07:33 +0200"
+          }
+        ],
+        "worktrees": 3
+      },
+      {
+        "project": "ascent",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-07 03:45:23 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-6",
+            "at": "2026-08-27 16:54:42 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-5",
+            "at": "2026-08-27 16:02:33 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-4",
+            "at": "2026-08-27 10:47:07 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-2",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-3",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench",
+            "at": "2026-08-26 20:27:33 +0200"
+          },
+          {
+            "branch": "autopilot/env-example-alert-webhook",
+            "at": "2026-08-26 18:18:24 +0200"
+          }
+        ],
+        "worktrees": 28
+      },
+      {
+        "project": "personas-web",
+        "branches": [
+          {
+            "branch": "autopilot/project-kpi-and-coverage-stewardship",
+            "at": "2026-09-06 10:50:01 +0200"
+          }
+        ],
+        "worktrees": 20
+      }
+    ],
+    "settings": [
+      {
+        "key": "autonomous_attention_loop",
+        "value": "true"
+      }
+    ]
+  }
+}
