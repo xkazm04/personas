@@ -215,8 +215,13 @@ impl ReactiveSubscription for AttentionSubscription {
         Duration::from_secs(300)
     }
 
+    /// Same as the active interval on purpose. Cycle 1 (2026-09-07) measured
+    /// the 900 s idle fallback stretching three App Masters' first decisions
+    /// over most of an hour: the plan is a handful of indexed reads, and a
+    /// switched-on persona that waits fifteen minutes between wakes is not
+    /// idle, it is starved.
     fn idle_interval(&self) -> Duration {
-        Duration::from_secs(900)
+        Duration::from_secs(300)
     }
 
     fn initial_delay(&self) -> Duration {
@@ -261,8 +266,23 @@ impl ReactiveSubscription for AttentionSubscription {
                 "persona_attention: tick summary"
             );
         }
+        let woke = counts.woke;
         if let Some(plan) = dispatch {
             execute_dispatch(self.state.clone(), self.app.clone(), plan);
+        }
+        // A tick serves one persona. When this tick spent a wake and other
+        // wake requests are still queued, re-arm the signal so the next persona
+        // is served on the next loop iteration instead of a poll later. Gated
+        // on progress: a wake-holder refused in-flight leaves its request
+        // queued, and re-arming on that would spin the loop.
+        if woke > 0 {
+            let pool = self.pool.clone();
+            let pending = tokio::task::spawn_blocking(move || read_wake_requests(&pool))
+                .await
+                .unwrap_or_default();
+            if !pending.is_empty() {
+                super::attention_wake_signal().notify_one();
+            }
         }
     }
 }
@@ -284,6 +304,8 @@ pub(crate) struct TickCounts {
     pub idle: usize,
     /// The lane dispatched this tick, if any (one per tick).
     pub dispatched: Option<&'static str>,
+    /// Wake requests consumed at admission this tick.
+    pub woke: usize,
 }
 
 /// What the executor must spawn. Maintenance is absent by design: its whole
@@ -383,19 +405,34 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                 continue;
             }
         };
-        let persona = match admission {
+        let (persona, woke) = match admission {
             Admission::Refused(reason) => {
                 counts.refused += 1;
                 record_refusal_if_work_pends(pool, pid, persona_charters, &reason, &mut counts);
                 continue;
             }
-            Admission::Admitted(p) => p,
+            Admission::Admitted { persona, woke } => (persona, woke),
         };
+        if woke {
+            counts.woke += 1;
+        }
 
         // 5. Lane choice — arrivals > maintenance > improve > advance.
-        let Some(work) = find_work(pool, pid, persona_charters)? else {
-            counts.idle += 1; // plain nothing-to-do: no rows
-            continue;
+        //
+        // A WAKE is the operator switching an App Master on, and what they
+        // asked for is the decision: "reconcile your responsibilities and
+        // decide what needs doing". Cycle 1 measured the plain precedence
+        // spending the first two wakes of every new App Master on the daily
+        // self-review and a memory pass, with the decision an hour away. So a
+        // woken App Master decides first; the other lanes take later ticks.
+        let work = if woke && is_app_master(persona_charters) {
+            LaneWork::Decide
+        } else {
+            let Some(work) = find_work(pool, pid, persona_charters)? else {
+                counts.idle += 1; // plain nothing-to-do: no rows
+                continue;
+            };
+            work
         };
 
         // 6. Ledger discipline: the DECISION row opens BEFORE any spawn.
@@ -549,7 +586,11 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
 
 enum Admission {
     /// Boxed: `Persona` is a wide row and this enum lives on the happy path.
-    Admitted(Box<Persona>),
+    /// `woke` is true when a pending wake request was consumed on the way in.
+    Admitted {
+        persona: Box<Persona>,
+        woke: bool,
+    },
     Refused(AttentionRefusal),
 }
 
@@ -581,8 +622,18 @@ fn admit_persona(
     // rung and only this one — the in-flight probe above already ran, and
     // quiet hours, the daily cap and the budget below still refuse. Switching
     // a persona on is permission to start, not permission to exceed its
-    // declared limits. The request is consumed here, so the bypass is spent
-    // once even if the persona is then refused by a later rung.
+    // declared limits. The request is consumed as soon as the persona passes
+    // the in-flight probe, whether or not the floor would have refused: a
+    // persona with no completed pass yet has no floor to spend it on, and a
+    // wake that lingered until its first refusal was the reason cycle 1's
+    // App Masters never reached their decision.
+    let woke = consume_wake_request(pool, persona_id);
+    if woke {
+        tracing::info!(
+            persona_id,
+            "persona_attention: wake request admits the persona for one pass"
+        );
+    }
     let interval = charters
         .iter()
         .filter_map(|c| c.cadence.interval_minutes)
@@ -592,12 +643,7 @@ fn admit_persona(
     if let Some(last) = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)? {
         let minutes = last.completed_at.as_deref().and_then(minutes_since_ts);
         if let Some(refusal) = interval_floor_refusal(minutes, interval) {
-            if consume_wake_request(pool, persona_id) {
-                tracing::info!(
-                    persona_id,
-                    "persona_attention: wake request spends the interval floor for one pass"
-                );
-            } else {
+            if !woke {
                 return Ok(Admission::Refused(refusal));
             }
         }
@@ -673,7 +719,10 @@ fn admit_persona(
         }
     }
 
-    Ok(Admission::Admitted(Box::new(persona)))
+    Ok(Admission::Admitted {
+        persona: Box::new(persona),
+        woke,
+    })
 }
 
 /// A refusal that suppressed real pending work lands in the ledger; a refusal
@@ -2777,6 +2826,40 @@ mod attention_tests {
         let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
         assert!(dispatch.is_none());
         assert_eq!(counts.refused, 1, "one bypass, not a standing exemption");
+        Ok(())
+    }
+
+    /// Cycle 1 (2026-09-07) measured three freshly switched-on App Masters
+    /// spending their first wakes on the daily self-review and a memory pass,
+    /// with the decision the better part of an hour away. A wake now means
+    /// "decide": a woken App Master takes the decide lane ahead of improve, and
+    /// the request is consumed at admission even when no interval floor stood
+    /// in its way (a fresh persona has no completed pass to measure a floor
+    /// from, so the old floor-only consumption left its request standing).
+    #[test]
+    fn a_woken_app_master_decides_before_its_daily_self_review() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+        // Improve is deliberately NOT consumed: without the wake it would win.
+        request_wake(&pool, "am");
+
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.woke, 1, "the wake was consumed at admission");
+        assert_eq!(counts.dispatched, Some(LANE_DECIDE), "a wake means decide");
+        let plan = dispatch.expect("decide dispatch planned");
+        assert!(matches!(plan.work, DispatchWork::Decide { .. }));
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "consumed even though no floor refused"
+        );
+        record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
+
+        // Without a wake the plain precedence stands again: the next admitted
+        // pass (after the floor, simulated by clearing history) is improve's.
+        let (counts, _) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.woke, 0, "no standing exemption");
         Ok(())
     }
 

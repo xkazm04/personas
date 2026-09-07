@@ -171,3 +171,28 @@ before trusting a build after a sibling worktree has compiled.
 ## 4. Cycle log
 
 (appended per cycle: what ran, what the evidence said, what changed)
+
+### Cycle 1 (2026-09-07, 00:27 to 00:49 UTC)
+
+**Ran:** headless adoption of the three App Masters (idempotent, verified twice), attention loop
+switched on, personas enabled by `set_persona_enabled`, observed 15 minutes.
+
+**Evidence:** CandiDate's first wake went to the `improve` lane (a 54 s Opus self-review, one
+episode, one execution), its second to `maintenance` (memory consolidation, noop). The next tick
+came 15 minutes later, not 5: the loop had dropped to its 900 s idle interval. That tick served
+one persona again (ascent, `improve`). No App Master reached the decision lane in the window; the
+wake requests for ascent and personas-web were still queued because a wake was only consumed when
+the interval floor refused, and a fresh persona has no completed pass for a floor to measure.
+
+**Diagnosis:** the loop's own pacing starved the decision: fixed precedence (arrivals >
+maintenance > improve > decide), one persona per tick, and an idle interval that treats three
+switched-on App Masters as an idle system.
+
+**Changed:** a wake request is consumed at admission and sends an App Master straight to the
+decision lane; a tick that spent a wake re-arms the wake signal while other requests are queued,
+so the next persona is served on the next loop iteration; the idle interval now equals the active
+one. Pinned by `a_woken_app_master_decides_before_its_daily_self_review`.
+
+**Process lesson:** any edit under `src-tauri/src` restarts the dev app, which resets an
+observation window mid-flight (the fleet sessions it spawned die with it). Edit between windows,
+never during one.
