@@ -134,7 +134,21 @@ function renderMd(o) {
   L.push('## Connector types', '');
   if (o.connector_types.length) {
     L.push(wrap(`${o.connector_types.map((c) => '`' + c + '`').join(', ')}.`), '');
-    L.push(wrap('Types, never connectors. Adoption resolves each to any connector whose catalog `categories` include it, and the concrete knowledge lives in [`examples/`](examples/).'), '');
+    // The examples link is emitted ONLY when there is something behind it. A recipe
+    // that declares connector types but has written no connector-specific knowledge
+    // yet was getting a link to a directory that does not exist, which reads as a
+    // missing file rather than as an honest absence. Naming each example instead of
+    // linking the folder is what the worked example does by hand, and a renderer that
+    // cannot reproduce its own exemplar is a renderer nobody will trust with it.
+    const ex = (o.examples || []).filter((e) => e && e.connector);
+    if (ex.length) {
+      const links = ex.map((e) => `[${e.connector}](examples/${e.connector}.md)`
+        + (e.connector_type ? ` for \`${e.connector_type}\`` : '')).join(', ');
+      L.push(wrap('Types, never connectors. Adoption resolves each to any connector whose catalog `categories` include it, and the concrete knowledge lives in '
+        + `[\`examples/\`](examples/): ${links}.`), '');
+    } else {
+      L.push(wrap('Types, never connectors. Adoption resolves each to any connector whose catalog `categories` include it. No connector-specific knowledge has been written for this recipe yet.'), '');
+    }
   } else {
     L.push(wrap(NO_CONNECTOR), '');
   }
@@ -172,9 +186,27 @@ const lessonsSeed = (o) => [
 
 const dirFor = (o) => path.join(LANE, o.domain, o.path.split('/')[1], o.slug);
 
+// A recipe authored directly in the lane has no row in the migration bundle, so the
+// bundle lookup is a fallback rather than the primary: find the directory in the lane
+// first. Without this, `render` works only for migrated slugs and a hand-authored
+// recipe has no way to produce its RECIPE.md except by hand, which is the one thing
+// this tool exists to prevent.
+const findInLane = (slug) => {
+  if (!fs.existsSync(LANE)) return null;
+  for (const domain of fs.readdirSync(LANE, { withFileTypes: true })) {
+    if (!domain.isDirectory()) continue;
+    const domainDir = path.join(LANE, domain.name);
+    for (const topic of fs.readdirSync(domainDir, { withFileTypes: true })) {
+      if (!topic.isDirectory()) continue;
+      const f = path.join(domainDir, topic.name, slug, 'recipe.json');
+      if (fs.existsSync(f)) return f;
+    }
+  }
+  return null;
+};
+
 const readJson = (slug) => {
-  const p = get(slug);
-  const f = path.join(dirFor(p), 'recipe.json');
+  const f = findInLane(slug) || path.join(dirFor(get(slug)), 'recipe.json');
   if (!fs.existsSync(f)) die(`${f} does not exist - run \`scaffold ${slug}\` first`);
   return JSON.parse(fs.readFileSync(f, 'utf8'));
 };
