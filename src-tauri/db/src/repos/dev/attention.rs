@@ -626,6 +626,14 @@ fn undispatched_ideas_rows(
     // idea back. Interpolated rather than bound because the prefix is a
     // compile-time constant with no LIKE wildcard in it (see its doc).
     let abandoned = super::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
+    // A PLATFORM ESCALATION is deliberately invisible to this sensor. It is an
+    // item about the Personas app itself, filed by a persona that works on
+    // something else, and it waits for a human or the orchestrator — the App
+    // Master whose decide lane reads this feed has no worktree that can deliver
+    // it. Measured 2026-09-08: five bank App Masters dispatched delivery workers
+    // into their own repos for Personas defects and every one ended
+    // `FLEET:BLOCKED` naming a file under `personas/src-tauri/`.
+    let platform = super::ideas::PLATFORM_ESCALATION_SCAN_TYPE;
     let sql = format!(
         "SELECT i.id, i.title, i.project_id, p.name AS project_name, i.category,
                 i.origin, i.priority, i.impact, i.effort,
@@ -633,6 +641,7 @@ fn undispatched_ideas_rows(
          FROM dev_ideas i
          LEFT JOIN dev_projects p ON p.id = i.project_id
          WHERE i.status = 'accepted'
+           AND i.scan_type <> '{platform}'
            AND NOT EXISTS (
                  SELECT 1 FROM dev_tasks t
                  WHERE t.source_idea_id = i.id

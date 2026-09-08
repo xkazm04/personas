@@ -2634,6 +2634,7 @@ pub async fn run_execution(
                                                 impact: input_val.get("impact").and_then(|v| v.as_i64()).map(|v| v as i32),
                                                 effort: input_val.get("effort").and_then(|v| v.as_i64()).map(|v| v as i32),
                                                 risk: input_val.get("risk").and_then(|v| v.as_i64()).map(|v| v as i32),
+                                                target: input_val.get("target").and_then(|v| v.as_str()).map(String::from),
                                             }),
                                             _ => None,
                                         };

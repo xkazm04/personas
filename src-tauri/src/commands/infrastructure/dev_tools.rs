@@ -1327,6 +1327,20 @@ pub async fn dispatch_ideas_core(
             });
             continue;
         }
+        // G22 — the backstop, at the door itself. A platform escalation is an
+        // item about the Personas app filed by a persona that works on
+        // something else; no unattended selector may hand it to a worker, whose
+        // worktree is this project's checkout and cannot reach the fix. A HUMAN
+        // dispatching it deliberately is a different act and is allowed: they
+        // may have opened the right repo.
+        if unattended && idea.scan_type == repo::PLATFORM_ESCALATION_SCAN_TYPE {
+            skipped.push(DispatchSkip {
+                idea_id: id,
+                reason: "is a platform escalation — it waits for a human or the orchestrator"
+                    .into(),
+            });
+            continue;
+        }
         // Dispatching IS the decision — route it through the shared verdict core
         // so the memory + adoption write-backs happen exactly as they would from
         // a click. Idempotent, so an already-accepted idea costs nothing.
@@ -1997,7 +2011,15 @@ pub fn run_triage_rules_core(
                 );
                 outcome.ideas_affected += 1;
                 if accepted {
-                    outcome.accepted_idea_ids.push(idea.id.clone());
+                    // G22: a rule may still ACCEPT a platform escalation — the
+                    // verdict is a judgement about the item's merit. What it
+                    // may not do is hand it to the overnight dispatcher: the
+                    // fix lives in the Personas repo and the worker would be
+                    // spawned in this project's checkout. Measured 2026-09-08:
+                    // every such dispatch ended `FLEET:BLOCKED`.
+                    if idea.scan_type != repo::PLATFORM_ESCALATION_SCAN_TYPE {
+                        outcome.accepted_idea_ids.push(idea.id.clone());
+                    }
                 } else {
                     outcome.rejected_count += 1;
                 }

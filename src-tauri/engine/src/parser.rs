@@ -688,6 +688,10 @@ fn parse_propose_backlog(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         impact: int_field(msg, "impact"),
         effort: int_field(msg, "effort"),
         risk: int_field(msg, "risk"),
+        // `"platform"` when the item is about the Personas app itself rather
+        // than the persona's own repo. Absent is `project`, so nothing an
+        // older model emits changes meaning.
+        target: str_field(msg, "target"),
     })
 }
 
@@ -1519,6 +1523,7 @@ mod tests {
                 impact,
                 effort,
                 risk,
+                ..
             } => {
                 assert_eq!(title, "Extract the retry helper");
                 assert_eq!(description.as_deref(), Some("three copies in the engine"));
@@ -1545,6 +1550,26 @@ mod tests {
                 assert_eq!(impact, Some(3), "a stringified score is still a score");
                 assert_eq!(effort, None, "an absent score stays absent, never 0");
             }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    /// G22: a persona may say whose backlog its item belongs on. Absent is
+    /// `project`, so every payload emitted before this field existed keeps its
+    /// exact meaning.
+    #[test]
+    fn test_propose_backlog_carries_an_explicit_target() {
+        let marked = r#"{"propose_backlog": {"title": "Bind capability parameters before dispatch", "target": "platform"}}"#;
+        match extract_protocol_message(marked).expect("parses") {
+            ProtocolMessage::ProposeBacklog { target, .. } => {
+                assert_eq!(target.as_deref(), Some("platform"))
+            }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+
+        let unmarked = r#"{"propose_backlog": {"title": "SEPA pacs.008 validation"}}"#;
+        match extract_protocol_message(unmarked).expect("parses") {
+            ProtocolMessage::ProposeBacklog { target, .. } => assert_eq!(target, None),
             other => panic!("Expected ProposeBacklog, got {other:?}"),
         }
     }
