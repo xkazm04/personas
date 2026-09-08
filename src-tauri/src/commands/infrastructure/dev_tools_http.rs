@@ -36,12 +36,20 @@
 //!   POST /scan-use-cases                    → start a feature scan { project_id } → { scan_id }
 //!   GET  /use-case-scan-status/{scan_id}    → { status, error, lines }
 //!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
-//!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
+//!   GET  /contexts/{project_id}             → every context + its `source` provenance
+//!                                             (`declared` = from the project's own map; absent = derived by the scan)
+//!   POST /contexts/{project_id}/declare     → DECLARE the context map, same JSON as a committed
+//!                                             `context-map.json` { groups?: [...], contexts: [...] }.
+//!                                             Upserts groups/contexts stamped `source: declared`;
+//!                                             a malformed body is a 400 naming the field. `contexts: []`
+//!                                             is a valid declaration of emptiness.
 //!   POST /retire-contexts                   → delete contexts by explicit id { project_id, context_ids }
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
 //!   POST /kpi-update                        → fix a KPI's definition (description, measure_config, …)
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
-//!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
+//!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs).
+//!                                             REFUSES (400) when `context-map.json` is git-tracked — that file is
+//!                                             the project's declaration, not an export target.
 //!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
@@ -86,6 +94,7 @@ use tauri::{AppHandle, Manager};
 use crate::commands::infrastructure::app_master_adopt;
 use crate::commands::infrastructure::app_master_writeback;
 use crate::commands::infrastructure::architect_adopt;
+use crate::commands::infrastructure::context_declaration;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -100,7 +109,7 @@ use crate::commands::infrastructure::project_scaffold;
 use crate::commands::infrastructure::use_case_scan::{
     launch_use_case_scan, use_case_scan_status_json,
 };
-use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
+use crate::db::models::{DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
@@ -133,6 +142,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpi-rebind", post(kpi_rebind))
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
+        .route("/contexts/{project_id}/declare", post(declare_contexts))
         .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/dedupe-contexts", post(dedupe_contexts))
         .route("/retire-contexts", post(retire_contexts))
@@ -874,14 +884,62 @@ async fn list_context_groups(
 /// Every context in the project — the sweep walks this list, one context scan
 /// at a time, and needs `file_paths` to rank which ones are worth covering
 /// first.
+///
+/// Each row carries a `source`: `"declared"` when it came from the project's own
+/// context map (a committed `context-map.json`, or `POST …/declare`), and
+/// `"derived"` when the code scan inferred it. A caller that cannot tell those
+/// apart cannot tell a project's statement about itself from Personas' last
+/// guess — which is the whole reason the declaration door exists.
 async fn list_contexts(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,
-) -> Result<Json<Vec<DevContext>>, (StatusCode, String)> {
+) -> Result<Json<Vec<Value>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    repo::list_contexts_by_project(&db(&s), &project_id, None)
-        .map(Json)
-        .map_err(err)
+    let pool = db(&s);
+    let contexts = repo::list_contexts_by_project(&pool, &project_id, None).map_err(err)?;
+    let sources = repo::get_context_sources(&pool, &project_id).map_err(err)?;
+    Ok(Json(
+        contexts
+            .into_iter()
+            .map(|c| {
+                let source = sources
+                    .get(&c.id)
+                    .cloned()
+                    .unwrap_or_else(|| "derived".to_string());
+                let mut v = serde_json::to_value(&c).unwrap_or_else(|_| serde_json::json!({}));
+                if let Some(obj) = v.as_object_mut() {
+                    obj.insert("source".to_string(), Value::String(source));
+                }
+                v
+            })
+            .collect(),
+    ))
+}
+
+/// DECLARE this project's context map, without committing a file first.
+///
+/// Same JSON body as a git-tracked `context-map.json`, same validation, same
+/// `source: declared` provenance — so an App Master that has just worked out
+/// how its project is organised can say so from inside its run, and the next
+/// scan reads a declaration instead of re-deriving zero contexts from a tree of
+/// documents. `contexts: []` declares emptiness and is accepted.
+async fn declare_contexts(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    let map = context_declaration::parse_declared_map(&body.to_string()).map_err(bad_request)?;
+    let summary =
+        context_declaration::apply_declared_map(&db(&s), &project_id, &map).map_err(err)?;
+    Ok(Json(serde_json::json!({
+        "project_id": project_id,
+        "source": "declared",
+        "groups_upserted": summary.groups_upserted,
+        "contexts_upserted": summary.contexts_upserted,
+        "contexts_pruned": summary.contexts_pruned,
+        "files_declared": summary.files_declared,
+    })))
 }
 
 #[derive(Deserialize)]
@@ -919,7 +977,11 @@ async fn export_context_map(
     // project's registered root, same rule as a scan.
     let root = confine_to_project_root(&project.root_path, b.root_path.as_deref().unwrap_or(""))
         .map_err(bad_request)?;
-    let contexts = write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(err)?;
+    // A tracked `context-map.json` makes this a refusal, not a failure: the
+    // caller asked to overwrite the project's own declaration. That is a 400
+    // with the reason, not a 500.
+    let contexts =
+        write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(status_for)?;
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
     ))
@@ -997,14 +1059,20 @@ async fn consolidate_contexts_route(
     )
     .map_err(err)?;
     if !b.dry_run {
-        let exported =
-            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
+        // The merge has already landed in the database. A refused export (the
+        // project's `context-map.json` is committed, so it is a declaration and
+        // not ours to overwrite) is reported in the response rather than raised
+        // as a failure, which would report the whole consolidation as not having
+        // happened when it did.
+        match write_context_map_artifacts(&pool, &b.project_id, &project.root_path) {
+            Ok(exported) => out["exportedContexts"] = serde_json::json!(exported),
+            Err(e) => out["exportSkipped"] = serde_json::json!(e.to_string()),
+        }
         let _ = crate::commands::infrastructure::context_map_export::write_backlog_digest(
             &pool,
             &b.project_id,
             &project.root_path,
         );
-        out["exportedContexts"] = serde_json::json!(exported);
     }
     out["audit"] = attach_audit(&pool, &b.project_id);
     Ok(Json(out))
@@ -1065,9 +1133,12 @@ async fn repair_cross_refs_route(
     if b.apply && plan.contexts_written > 0 {
         // Repair, then export — the same discipline the consolidate route
         // follows, so context-map.json can't keep publishing the dead pointers.
-        let exported =
-            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
-        out["exportedContexts"] = serde_json::json!(exported);
+        // A declared (git-tracked) map refuses the export; the repair still
+        // happened, so say so rather than failing the whole call.
+        match write_context_map_artifacts(&pool, &b.project_id, &project.root_path) {
+            Ok(exported) => out["exportedContexts"] = serde_json::json!(exported),
+            Err(e) => out["exportSkipped"] = serde_json::json!(e.to_string()),
+        }
     }
     out["audit"] = attach_audit(&pool, &b.project_id);
     Ok(Json(out))

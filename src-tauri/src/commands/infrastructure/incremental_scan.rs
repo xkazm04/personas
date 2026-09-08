@@ -59,10 +59,14 @@ const SKIP_DIRS: &[&str] = &[
 /// absence still tracked) but never streamed to the LLM. Conservative on
 /// purpose — false negatives here just mean "this file won't drive a context
 /// update", not "this file is invisible".
+/// `sh` joined the list on 2026-09-08: a documentation-first repository whose
+/// only executable content is `tools/*.sh` had those files invisible to the
+/// walker, so a delta scan could not see one change and the doc-evidence path in
+/// `context_generation` could map a file the hash cache did not know about.
 const SOURCE_EXTENSIONS: &[&str] = &[
     "rs", "ts", "tsx", "js", "jsx", "mjs", "py", "go", "java", "kt", "swift", "c", "cpp", "cc",
     "h", "hpp", "cs", "rb", "php", "scala", "lua", "ex", "exs", "vue", "svelte", "sql", "toml",
-    "yaml", "yml", "json", "md", "mdx",
+    "yaml", "yml", "json", "md", "mdx", "sh",
 ];
 
 /// Cap per-file size; anything larger is skipped entirely (no hash, no scan).

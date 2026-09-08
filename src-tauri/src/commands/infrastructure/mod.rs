@@ -14,6 +14,7 @@ pub mod cloud;
 pub mod cloud_sync;
 pub mod context_audit;
 pub mod context_consolidate;
+pub mod context_declaration;
 pub mod context_fingerprints;
 pub mod context_generation;
 pub mod context_map_export;

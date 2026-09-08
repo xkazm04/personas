@@ -317,6 +317,10 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ("team_assignments", "goal_id"),
         ("dev_contexts", "category"),
         ("dev_contexts", "business_feature"),
+        // Provenance: without it a declared context (from the project's own
+        // committed context-map.json) is indistinguishable from one the scan
+        // guessed at.
+        ("dev_contexts", "source"),
         ("dev_context_groups", "domain"),
         ("persona_memories", "derived_from"),
         ("persona_memory_review_proposal", "team_id"),

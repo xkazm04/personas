@@ -73,6 +73,11 @@ struct DeltaBriefing<'a> {
     unchanged_count: i32,
 }
 
+// `too_many_arguments`: the prompt builder takes one flag per mode the prompt
+// can be in (rescan, delta, subtree, documentation-first). Same shape and same
+// reasoning as `run_context_generation` below — a parameter struct here would
+// be a struct whose only consumer is the one call site.
+#[allow(clippy::too_many_arguments)]
 fn build_context_generation_prompt(
     project_id: &str,
     project_name: &str,
@@ -81,6 +86,7 @@ fn build_context_generation_prompt(
     delta: Option<&DeltaBriefing<'_>>,
     subtree: Option<&str>,
     group_names: &[String],
+    docs_as_evidence: bool,
 ) -> String {
     let mode_section = if let Some(summary) = existing_context_summary {
         let delta_section = if let Some(d) = delta {
@@ -253,10 +259,39 @@ is coverage and speed, not ceremony.
         ""
     };
 
+    // Documentation-first repository: there is almost no code here, and a scan
+    // that insists on code produces nothing at all. Measured on six bank repos
+    // (governance.yaml + docs/ + tools/ + a 39-line server): 0 contexts, every
+    // proposal dropped by the write filter. Say plainly that documents ARE the
+    // substance here, because the granularity band below otherwise reads as an
+    // instruction to emit nothing.
+    let doc_evidence_section = if docs_as_evidence {
+        r#"
+## DOCUMENTATION-FIRST REPOSITORY — documents are the substance
+
+This project has fewer than 20 hand-written code files. Its real content is in
+its documents, declarations and scripts, and for THIS scan they count as context
+evidence: `.md`, `.yaml`/`.yml`, `.sh`, `.toml` and `.json` may appear in
+`file_paths` exactly like source files.
+
+- Emit at least one context per top-level area that carries substance — `docs/`,
+  `tools/`, and the root-level declaration files (`governance.yaml`, `README.md`,
+  manifests) taken together as one context.
+- The 10-30 file granularity band does NOT apply here. A five-file `docs/`
+  context is correct; refusing to emit it is not.
+- Describe what each area GOVERNS or ENABLES, not what it is made of. A
+  governance charter's business purpose is the rules it sets, not "YAML".
+- Still skip generated output and vendored trees.
+"#
+    } else {
+        ""
+    };
+
     format!(
         r#"# Context Map Generator
 
 You are analyzing a codebase to create a **Context Map** — a structured inventory of business-feature contexts that maps the codebase into logical, domain-driven groups.
+{doc_evidence_section}
 
 ## Project Information
 - **Project ID**: {project_id}
@@ -1069,8 +1104,46 @@ pub(crate) const SOURCE_EXTS: &[&str] = &[
     "css", "scss",
 ];
 
+/// Extensions a context may claim ONLY in a documentation-first project — one
+/// with fewer than `DOC_EVIDENCE_CODE_FLOOR` hand-written code files.
+///
+/// Measured 2026-09-08 on six bank repositories whose whole substance is
+/// `governance.yaml`, `docs/*.md`, `tools/*.sh` and a 39-line hello-world
+/// server: the scan mapped **0 contexts**. The model saw those files (the
+/// walker's `SOURCE_EXTENSIONS` already includes md/yaml/json/toml) and even
+/// proposed contexts for them — `is_mappable_path` then dropped every path, so
+/// each context was skipped as "every path was generated or non-source" and the
+/// scan reported success over an empty map.
+///
+/// This does NOT relax the rule for a real codebase, and the reason the narrow
+/// list exists is unchanged: in a repo with code, a context claiming `.md`/
+/// `.json` maps description rather than implementation, and locale JSON is how
+/// a subtree scan once produced 15 `section-locales-*` contexts. The exemption
+/// is conditional on there being almost no code to map instead.
+pub(crate) const DOC_EVIDENCE_EXTS: &[&str] = &["md", "mdx", "yaml", "yml", "sh", "toml", "json"];
+
+/// Below this many code files, documents count as context evidence.
+///
+/// Reuses the scanner's existing floor rather than inventing a second one:
+/// `COVERAGE_REGRESSION_FLOOR` is already the count below which this module
+/// declares a map too small for ratios to mean anything. A repository with
+/// fewer code files than that cannot produce a code-derived map worth guarding,
+/// which is exactly the condition under which its documents are the map.
+pub(crate) const DOC_EVIDENCE_CODE_FLOOR: usize = COVERAGE_REGRESSION_FLOOR;
+
 /// Is this repo-relative path something a context is allowed to claim?
+///
+/// Code only. A documentation-first project goes through
+/// `is_mappable_path_with_docs`.
 pub(crate) fn is_mappable_path(path: &str) -> bool {
+    is_mappable_path_with_docs(path, false)
+}
+
+/// The same gate, with document evidence admitted when `docs_count_as_evidence`
+/// — i.e. when the project has fewer than `DOC_EVIDENCE_CODE_FLOOR` code files.
+/// Directory exclusions (hidden dirs, `NON_SOURCE_DIRS`) are unchanged in both
+/// modes, so `locales/en.json` stays unmappable either way.
+pub(crate) fn is_mappable_path_with_docs(path: &str, docs_count_as_evidence: bool) -> bool {
     let norm = path.replace('\\', "/");
     let mut segments: Vec<&str> = norm.split('/').filter(|s| !s.is_empty()).collect();
     // The last segment is the FILENAME; everything before it is a directory.
@@ -1101,6 +1174,7 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
         Some((_, ext)) => {
             let lower = ext.to_ascii_lowercase();
             SOURCE_EXTS.contains(&lower.as_str())
+                || (docs_count_as_evidence && DOC_EVIDENCE_EXTS.contains(&lower.as_str()))
         }
         None => false,
     }
@@ -1231,6 +1305,53 @@ async fn run_context_generation(
     delta_mode: bool,
     subtree: Option<&str>,
 ) -> Result<ContextGenSummary, AppError> {
+    // ---- Declared-map branch --------------------------------------------------
+    // A git-TRACKED `context-map.json` is the project's own statement about how
+    // it is organised, and it outranks anything an LLM can infer from the files.
+    // This runs FIRST — before the delta cache, before the lazy clear, before
+    // the CLI spawn — because every one of those steps is a way of guessing at
+    // an answer the project has already given. A malformed declaration is a
+    // refusal, not a fallback: see `context_declaration`.
+    if let Some(declared) =
+        super::context_declaration::read_tracked_declaration(std::path::Path::new(root_path))?
+    {
+        let summary = super::context_declaration::apply_declared_map(pool, project_id, &declared)?;
+        CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Milestone] Declared map: {}/context-map.json is committed, so it is authoritative — no LLM run. \
+                     {} group(s), {} context(s), {} file path(s) upserted; {} stale declared context(s) pruned.",
+                    root_path,
+                    summary.groups_upserted,
+                    summary.contexts_upserted,
+                    summary.files_declared,
+                    summary.contexts_pruned,
+                ),
+            );
+        if summary.contexts_upserted == 0 {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                "[Milestone] The declaration lists no contexts. That is an answer, not a gap — \
+                 the scan does not derive over it."
+                    .to_string(),
+            );
+        }
+        return Ok(ContextGenSummary {
+            scan_id: scan_id.to_string(),
+            groups_created: summary.groups_upserted as i32,
+            contexts_created: summary.contexts_upserted as i32,
+            files_mapped: summary.files_declared as i32,
+            // Nothing was inferred, so no reference was invented and none had to
+            // be dropped.
+            db_tables_dropped: 0,
+            cross_refs_dropped: 0,
+            status: "completed".to_string(),
+            error: None,
+        });
+    }
+
     let is_rescan = existing_summary.is_some();
 
     // A full rescan DELETEs unpinned contexts and recreates them under fresh
@@ -1368,6 +1489,24 @@ async fn run_context_generation(
     } else {
         (None, None)
     };
+    // Documentation-first projects: below the scanner's own floor of hand-written
+    // code files, documents and declarations count as context evidence — for the
+    // prompt AND for the write filter below, which must agree or the model emits
+    // contexts that are silently dropped (the measured 0-context outcome).
+    let code_files = count_source_files(root_path, subtree).unwrap_or(0);
+    let docs_as_evidence = code_files < DOC_EVIDENCE_CODE_FLOOR;
+    if docs_as_evidence {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Milestone] Documentation-first repository: {code_files} code file(s), below the \
+                 floor of {DOC_EVIDENCE_CODE_FLOOR}. Documents, declarations and scripts count as \
+                 context evidence for this scan."
+            ),
+        );
+    }
+
     let prompt_text = build_context_generation_prompt(
         project_id,
         project_name,
@@ -1380,6 +1519,7 @@ async fn run_context_generation(
             .into_iter()
             .map(|g| g.name)
             .collect::<Vec<_>>(),
+        docs_as_evidence,
     );
 
     // Spawn CLI in the project root so Claude can explore it. Subscription
@@ -1613,8 +1753,10 @@ async fn run_context_generation(
                                 // shape) is not a context at all, so skip it entirely
                                 // rather than writing an empty one.
                                 let dropped = file_paths.len();
-                                let file_paths: Vec<String> =
-                                    file_paths.into_iter().filter(|p| is_mappable_path(p)).collect();
+                                let file_paths: Vec<String> = file_paths
+                                    .into_iter()
+                                    .filter(|p| is_mappable_path_with_docs(p, docs_as_evidence))
+                                    .collect();
                                 let dropped = dropped - file_paths.len();
                                 if file_paths.is_empty() {
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
@@ -2875,6 +3017,97 @@ mod tests {
         for p in ["messages/en.json", "README.md", "Cargo.toml", "ci.yaml"] {
             assert!(!is_mappable_path(p), "{p} must not be mappable");
         }
+    }
+
+    /// The measured 0-context outcome, and its fix, in one test.
+    ///
+    /// Six bank repositories whose whole substance is `governance.yaml`,
+    /// `docs/*.md` and `tools/*.sh` mapped to nothing: the model proposed
+    /// contexts and `is_mappable_path` dropped every path, so each context was
+    /// skipped as "every path was generated or non-source". Under the
+    /// documentation-first flag those same paths are claimable, while the
+    /// exclusions that made the narrow list necessary still hold.
+    #[test]
+    fn a_documentation_first_tree_can_claim_its_documents() {
+        let docs_only = [
+            "governance.yaml",
+            "docs/charter.md",
+            "docs/operations.md",
+            "tools/verify.sh",
+            "manifest.toml",
+            "policies/limits.json",
+        ];
+        for p in docs_only {
+            assert!(
+                !is_mappable_path_with_docs(p, false),
+                "{p} must stay unmappable for a codebase"
+            );
+            assert!(
+                is_mappable_path_with_docs(p, true),
+                "{p} must be claimable in a documentation-first repo"
+            );
+        }
+        // The exemption is about EXTENSIONS, never about the directory rules —
+        // locale JSON and generated trees stay out in both modes, which is the
+        // whole reason the narrow list existed.
+        for p in [
+            "public/section-locales/ar/common.json",
+            "locales/en.json",
+            "node_modules/pkg/readme.md",
+            "target/doc/index.md",
+            ".github/workflows/ci.yaml",
+        ] {
+            assert!(
+                !is_mappable_path_with_docs(p, true),
+                "{p} must not be mappable even in a documentation-first repo"
+            );
+        }
+    }
+
+    /// The floor and the prompt are the other two halves of the same rule: the
+    /// write filter opening up is useless if the model was never told, and both
+    /// must key off the same measured count.
+    #[test]
+    fn the_doc_evidence_floor_and_prompt_agree_on_a_docs_only_tree() {
+        let dir = std::env::temp_dir().join(format!("personas-docs-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("docs")).expect("mkdir");
+        std::fs::create_dir_all(dir.join("tools")).expect("mkdir");
+        std::fs::write(dir.join("governance.yaml"), "rules: []\n").expect("write");
+        std::fs::write(dir.join("docs/charter.md"), "# Charter\n").expect("write");
+        std::fs::write(dir.join("tools/verify.sh"), "#!/bin/sh\n").expect("write");
+        // One hello-world server, exactly like the measured repositories.
+        std::fs::write(dir.join("server.js"), "console.log('hi')\n").expect("write");
+
+        let root = dir.to_string_lossy().to_string();
+        let code_files = count_source_files(&root, None).expect("walkable");
+        assert_eq!(code_files, 1, "only the hello-world server is code");
+        assert!(
+            code_files < DOC_EVIDENCE_CODE_FLOOR,
+            "{code_files} code files is under the floor of {DOC_EVIDENCE_CODE_FLOOR}"
+        );
+
+        let prompt = build_context_generation_prompt(
+            "p1",
+            "open-bank",
+            &root,
+            None,
+            None,
+            None,
+            &[],
+            code_files < DOC_EVIDENCE_CODE_FLOOR,
+        );
+        assert!(
+            prompt.contains("DOCUMENTATION-FIRST REPOSITORY"),
+            "the model must be told its documents count"
+        );
+        assert!(prompt.contains("docs/"), "the top-level areas are named");
+
+        // A normal codebase is told nothing of the sort.
+        let code_prompt =
+            build_context_generation_prompt("p1", "open-bank", &root, None, None, None, &[], false);
+        assert!(!code_prompt.contains("DOCUMENTATION-FIRST REPOSITORY"));
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

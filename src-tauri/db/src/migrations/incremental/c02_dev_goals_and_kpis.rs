@@ -681,6 +681,26 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // Provenance: WHERE a context came from. NULL (the default for every
+    // existing row) means "derived by the code scan"; 'declared' means the row
+    // was upserted from a git-TRACKED `context-map.json` the project committed,
+    // or through the `/dev-tools/contexts/{id}/declare` door. Without this the
+    // two are indistinguishable, so a rescan cannot tell a project's own
+    // declaration from its own last guess — and a documentation-first repo
+    // (governance.yaml + docs/ + tools/) that the code scan maps to zero
+    // contexts has no way to say so authoritatively.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_contexts.source",
+            description: "Add provenance (declared|NULL=derived) to dev_contexts",
+            already_applied: |conn| has_column(conn, "dev_contexts", "source"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_contexts ADD COLUMN source TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
     run_step(
         conn,
         IncrementalMigration {

@@ -282,6 +282,54 @@ pub fn set_context_pinned(pool: &DbPool, id: &str, pinned: bool) -> Result<DevCo
     })
 }
 
+/// Provenance value for a context upserted from a project's own declaration —
+/// a git-tracked `context-map.json` or the `/dev-tools/contexts/{id}/declare`
+/// door. A NULL `source` means the context was derived by the code scan.
+pub const CONTEXT_SOURCE_DECLARED: &str = "declared";
+
+/// Stamp (or clear) a context's provenance. Mirrors `set_context_pinned` — the
+/// same one-column write on an existing row — so the declaration path does not
+/// need a second `create_context` signature carrying a fifteenth argument.
+pub fn set_context_source(pool: &DbPool, id: &str, source: Option<&str>) -> Result<(), AppError> {
+    timed_query!("dev_contexts", "dev_contexts::set_context_source", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE dev_contexts SET source = ?1, updated_at = ?2 WHERE id = ?3",
+            params![source, chrono::Utc::now().to_rfc3339(), id],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("Dev context {id}")));
+        }
+        Ok(())
+    })
+}
+
+/// `{context_id: source}` for every context in the project that carries one.
+/// Absent from the map means derived. Kept separate from `DevContext` on
+/// purpose: provenance is scan bookkeeping, and widening the ts-rs-exported
+/// model would ripple into every binding consumer for a field only the scan and
+/// the bridge read.
+pub fn get_context_sources(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<HashMap<String, String>, AppError> {
+    timed_query!("dev_contexts", "dev_contexts::get_context_sources", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, source FROM dev_contexts WHERE project_id = ?1 AND source IS NOT NULL",
+        )?;
+        let rows = stmt.query_map(params![project_id], |row| {
+            Ok((row.get::<_, String>("id")?, row.get::<_, String>("source")?))
+        })?;
+        let mut map = HashMap::new();
+        for row in rows {
+            let (id, source) = row.map_err(AppError::Database)?;
+            map.insert(id, source);
+        }
+        Ok(map)
+    })
+}
+
 pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
     timed_query!(
         "dev_context_groups",
