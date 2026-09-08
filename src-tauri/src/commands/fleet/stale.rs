@@ -555,6 +555,17 @@ fn tick_once(app: &AppHandle) {
                 base.remove(&session.id);
                 continue;
             }
+            // G25b (measured 2026-09-08): a reaped one-shot worker has no
+            // process, so nothing about it can be "growing" or "stale". The
+            // CLI appends bookkeeping records (attachment, last-prompt) after
+            // its final message; read as transcript growth, that revived a
+            // reaped `Finished` row to `Running` and six minutes later this
+            // sweep stamped it `Stale` — a delivered charter re-read as a
+            // stall. Once reaped, the row is history: leave it alone.
+            if session.reaped {
+                base.remove(&session.id);
+                continue;
+            }
             // Never-attached spawn: still `Spawning`, no Claude session id ever
             // bound, and no activity since spawn → claude never actually came up
             // (folder-trust prompt hang, crash, or failed start). Flag it
