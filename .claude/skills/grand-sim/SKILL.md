@@ -1,7 +1,7 @@
 ---
 name: grand-sim
-description: The Grand Simulation - an autonomous organisation of personas builds a fake banking system for one million users from scratch, on this machine, across sessions. Modes design | hire | build | load | reflect | status. State in .claude/grand-sim/, the map in the Obsidian vault.
-version: 0.1.0
+description: The Grand Simulation - an autonomous organisation of personas builds a fake banking system for one million users from scratch, on this machine, across sessions. Modes status | act0 | design | hire | build | load | reflect. State in .claude/grand-sim/, the map in the Obsidian vault.
+version: 0.2.0
 ---
 
 # /grand-sim — the Grand Simulation
@@ -45,10 +45,22 @@ the cap, and the open asks in Approvals. Print one table: act, projects with the
 last note and next wake, open asks, active personas / cap, queued and running tasks, memory
 headroom. Nothing else.
 
+### `act0` (Act 0 exit)
+Entry: the app is up with the test-automation server (`npm run tauri:dev:test`, with
+`PERSONAS_HEADLESS_BRIDGE=1` in its environment) and the dev-tools handshake exists. Steps: run
+`node scripts/e2e/sim-act0-dryrun.mjs` (throwaway workspace + project with a repository, protect,
+adopt an App Master and the Architect, switches, enable within the cap) and read every line: each
+door must answer, the workspace must list as protected, and the enable must land inside the cap.
+Then `node scripts/e2e/sim-uat-fixtures.mjs --workspace <the throwaway>` must print the fixture
+section with the Architect and the App Master present. Exit: both scripts green, quoted in the act
+note. The throwaway workspace stays (it is protected by design); disable its two personas.
+
 ### `design` (Act 1)
-Entry: the Act-0 services exist (the checklist in the map). Steps: switch the simulation
-settings on (headless bridge, cap 10, autopilot `full` with the low-risk triage rule for each
-project); create the workspace and protect it; adopt the Architect
+Entry: `act0` passed. Steps: switch the simulation settings on with
+`node scripts/e2e/sim-switches.mjs --projects <names>` (attention loop, cap 10, autopilot `full`,
+the risk-below-3 triage rule per project; the headless kp bridge is an environment variable of
+the app process); create the workspace and protect it (`POST /dev-tools/projects/create` creates
+both, `POST /dev-tools/workspaces/{id}/protect` tags it); adopt the Architect
 (`POST /dev-tools/architect/adopt`) with the five Architect recipes; enable it; observe until it has
 written the solution design, created the projects, adopted an App Master each, set goals and
 posted the first directive. Exit: six projects registered, six App Masters adopted, a design
@@ -93,9 +105,13 @@ proposal decided with a reason; lessons landed.
   watchdog's ten-minute limit and all five were killed mid-run (2026-09-07). Resume, never
   restart, a killed builder: its worktree holds its work.
 
-## Owed to this skill (Act 0 in progress)
+## Act 0 ledger (2026-09-08)
 
-`POST /dev-tools/projects/create` and `GET /dev-tools/workspaces` (sim-projects),
-`max_active_personas` and the fleet dispatch cap (sim-caps), channel authority and `say`
-(sim-channels), workspace-bound charters and `POST /dev-tools/architect/adopt`, the outbound hire,
-the Architect recipes under `scripts/templates/_architect/`, the `/uat` scenario file.
+Merged on master: `POST /dev-tools/projects/create`, `GET /dev-tools/workspaces`, the protect
+tag (`232fbffde`); `max_active_personas` and the fleet dispatch cap (`47cf93ed6`); channel
+authority, persona-to-persona wake and `say` (`b30fa597c`); workspace-bound charters, the
+Architect door and the five Architect recipes in the bundle (`9071b88ed`); the switches script
+(`a5319790a`), the dry-run driver (`c0cc02df3`), the `/uat` shape and fixture generator
+(`f00f23623`). Still owed: the outbound hire and hired-role enrolment (G2, G8), runner worktree
+isolation (G12), the `acceptance-certification` recipe (needs the bank repositories), the
+registry's banking bundle (G9, the operator's registry work), and the first `act0` run.
