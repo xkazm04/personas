@@ -40,6 +40,7 @@ pub mod llm_spend;
 pub mod memory_health;
 pub mod memory_ledger;
 pub mod overnight;
+pub mod project_scaffold;
 pub mod qwen_engine;
 pub mod registry_coverage;
 pub mod registry_sync;

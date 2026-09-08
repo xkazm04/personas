@@ -12,6 +12,7 @@ fn row_to_workspace(row: &Row) -> rusqlite::Result<DevWorkspace> {
         color: row.get("color")?,
         description: row.get("description")?,
         adopt_default_skills: row.get::<_, i64>("adopt_default_skills")? != 0,
+        last_working_version: row.get::<_, i64>("last_working_version")? != 0,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -133,9 +134,13 @@ pub fn update_workspace(
 /// workspace's knowledge and adoption rows go with it (explicit deletes:
 /// SQLite FK cascade only fires with `PRAGMA foreign_keys=ON`, which we don't
 /// rely on here).
+///
+/// **Refuses** when the workspace is tagged `last_working_version` (see
+/// [`super::protection`]).
 pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_workspaces", "dev_workspaces::delete_workspace", {
         let mut conn = pool.get()?;
+        super::protection::ensure_workspace_deletable(&conn, id)?;
         let tx = conn.transaction()?;
         // Membership is a dev_projects column, so unassigning members is that
         // repo's query, not this one's.

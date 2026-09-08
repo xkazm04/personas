@@ -167,6 +167,12 @@ export function ExtractionMenu({
     color: workspace.color,
     description: null,
     adopt_default_skills: workspace.adoptDefaultSkills,
+    // The store's `Workspace` view model does not carry the never-delete tag,
+    // and this shim exists only to hand the miners a workspace identity — the
+    // tag is enforced in Rust at the delete doors, never read here. `false` is
+    // the shim's honest "not known", not a claim that the workspace is
+    // unprotected.
+    last_working_version: false,
     created_at: '',
     updated_at: '',
   };

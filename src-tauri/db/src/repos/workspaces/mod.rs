@@ -42,6 +42,9 @@ pub mod playbooks;
 /// The bridge from an adopted practice to real backlog work in `dev_ideas`, and
 /// back again as adoption state.
 pub mod practice_ideas;
+/// The `last_working_version` never-delete tag and the guards every delete
+/// door that could reach a protected workspace's data calls.
+pub mod protection;
 
 // The pre-split module carried one `mod tests` block spanning five domains
 // (knowledge taxonomies, applicability, the adoption state machine, mining and
