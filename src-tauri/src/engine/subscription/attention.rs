@@ -2204,7 +2204,14 @@ fn build_improve_task() -> String {
          were repeatedly slow or wrong about.\n\
          File ONE propose_backlog entry per improvement idea about your own \
          prompt, charters, cadence or tooling. Do NOT change anything in this \
-         pass — review and propose only.\n\n\
+         pass — review and propose only.\n\
+         Set \"target\":\"platform\" on any entry whose fix belongs to the \
+         PERSONAS APP itself — its attention loop, charters, wake cadence, \
+         prompt assembly, parameter binding, dev-tools or database — rather \
+         than to the codebase you own. Those are routed to the platform's own \
+         backlog; filed against your project they would dispatch a worker into \
+         a repository that cannot reach the fix. Everything else is \
+         \"target\":\"project\", which is the default when you omit it.\n\n\
          Additionally, if the review reveals a STANDING responsibility you \
          keep serving without a charter for it, you may propose ONE draft \
          charter by emitting this JSON on its own line in your final report \

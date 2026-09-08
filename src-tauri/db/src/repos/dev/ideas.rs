@@ -1040,9 +1040,382 @@ pub fn bulk_delete_ideas(pool: &DbPool, ids: &[String]) -> Result<usize, AppErro
     })
 }
 
+// ============================================================================
+// Platform escalations — an idea about the Personas app, filed by a persona
+// that works on something else
+// ============================================================================
+
+/// The `scan_type` a platform escalation carries.
+///
+/// NOT an `origin`: `dev_ideas.origin` is the closed `FINDING_ORIGINS` allowlist
+/// (`create_finding` validates it, an exhaustive `Record<FindingOrigin, …>` in
+/// `FindingBadge.tsx` renders it, and every entry needs a label in 14 locales),
+/// and every origin there also publishes `signal.raised`, which the dispatch ops
+/// route off — the exact auto-dispatch a platform escalation must NOT get. So
+/// this follows the `APP_MASTER_SCAN_TYPE` precedent instead
+/// (`commands/infrastructure/app_master_writeback.rs`): `origin` stays NULL and
+/// the producer is named by `scan_type`, exactly as a scanner idea does.
+///
+/// It is also the token every automatic-dispatch selector excludes on — see
+/// `attention::undispatched_ideas_rows` and `dispatch_ideas_core`.
+pub const PLATFORM_ESCALATION_SCAN_TYPE: &str = "platform_escalation";
+
+/// Dedup key for a platform escalation.
+///
+/// Its own key space (not `scan:…`) because the identity is the SUBJECT alone:
+/// four App Masters on four different bank repos filing the same Personas defect
+/// are one item with four witnesses, so no scope may enter the key. Measured
+/// 2026-09-08: "Bind capability parameters before dispatch" was filed by four
+/// personas and "Gate the improve lane on at least one completed prior episode"
+/// by four more.
+pub fn platform_escalation_dedup_key(title: &str) -> String {
+    format!("platform:{}", normalize_idea_title(title))
+}
+
+/// What [`file_platform_escalation`] did.
+#[derive(Debug, Clone)]
+pub struct PlatformEscalation {
+    pub idea: DevIdea,
+    /// True when this filing joined an idea that already existed — the caller
+    /// filed a witness, not a new item.
+    pub deduped: bool,
+}
+
+/// File one platform escalation onto the platform project, or attach this filer
+/// to the escalation already there.
+///
+/// `filing` is one JSON object naming who filed it (persona + the project they
+/// work on). It is appended to `evidence.filings`, so the row records every
+/// witness rather than only the first — which is what makes a four-persona
+/// finding legible as one item with four witnesses.
+///
+/// Never `Ok(None)`: a duplicate is not a dropped item here, it is a second
+/// witness on the one that exists.
+pub fn file_platform_escalation(
+    pool: &DbPool,
+    platform_project_id: &str,
+    title: &str,
+    description: Option<&str>,
+    category: Option<&str>,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+    filing: &serde_json::Value,
+) -> Result<PlatformEscalation, AppError> {
+    // The shared vocabulary, not a hand-written sentence — the neighbours in
+    // this file open-code it, and the census counts them (`hand-rolled-emptiness-refusal`).
+    personas_core::validation::require_non_empty("Title", title)?;
+    let dedup_key = platform_escalation_dedup_key(title);
+
+    if let Some(existing) = find_idea_by_dedup_key(pool, platform_project_id, &dedup_key)? {
+        let evidence = append_filing(existing.evidence.as_deref(), filing);
+        let idea = set_idea_evidence(pool, &existing.id, &evidence)?;
+        return Ok(PlatformEscalation {
+            idea,
+            deduped: true,
+        });
+    }
+
+    let evidence = append_filing(None, filing);
+    timed_query!("dev_ideas", "dev_ideas::file_platform_escalation", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let canonical_category = category
+            .and_then(crate::models::IdeaCategory::from_token)
+            .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY);
+        let conn = pool.get()?;
+        let inserted = conn.execute(
+            "INSERT INTO dev_ideas (id, project_id, scan_type, category, title, description, status, effort, impact, risk, evidence, dedup_key, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?10, ?11, ?12, ?12)",
+            params![
+                id,
+                platform_project_id,
+                PLATFORM_ESCALATION_SCAN_TYPE,
+                canonical_category.as_str(),
+                title,
+                description,
+                effort,
+                impact,
+                risk,
+                evidence,
+                dedup_key,
+                now
+            ],
+        );
+        drop(conn);
+        match inserted {
+            Ok(_) => Ok(PlatformEscalation {
+                idea: get_idea_by_id(pool, &id)?,
+                deduped: false,
+            }),
+            // Lost the dedup race to a concurrent filer. The partial UNIQUE
+            // index is the real guarantee; the lookup above is the fast path.
+            // Re-read and attach the witness to whatever won.
+            Err(e) => {
+                let err = AppError::Database(e);
+                if !is_dedup_unique_violation(&err) {
+                    return Err(err);
+                }
+                let existing = find_idea_by_dedup_key(pool, platform_project_id, &dedup_key)?
+                    .ok_or_else(|| {
+                        AppError::Internal(
+                            "platform escalation lost a dedup race to a row that is not there"
+                                .into(),
+                        )
+                    })?;
+                let evidence = append_filing(existing.evidence.as_deref(), filing);
+                Ok(PlatformEscalation {
+                    idea: set_idea_evidence(pool, &existing.id, &evidence)?,
+                    deduped: true,
+                })
+            }
+        }
+    })
+}
+
+/// Append one filing to an evidence blob's `filings` array, returning the new
+/// blob. Tolerates evidence that is absent, unparseable, or not an object —
+/// a witness must never be lost to a malformed neighbour, so anything
+/// unreadable is preserved verbatim under `priorEvidence`.
+fn append_filing(existing: Option<&str>, filing: &serde_json::Value) -> String {
+    let mut root = match existing.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(raw) => match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(serde_json::Value::Object(map)) => serde_json::Value::Object(map),
+            _ => serde_json::json!({ "priorEvidence": raw }),
+        },
+        None => serde_json::json!({}),
+    };
+    let filings = root
+        .as_object_mut()
+        .expect("root is an object by construction")
+        .entry("filings")
+        .or_insert_with(|| serde_json::Value::Array(Vec::new()));
+    if !filings.is_array() {
+        *filings = serde_json::Value::Array(Vec::new());
+    }
+    if let Some(arr) = filings.as_array_mut() {
+        arr.push(filing.clone());
+    }
+    root.to_string()
+}
+
+/// Replace an idea's `evidence` blob. Private: the only legitimate reason to
+/// rewrite evidence today is attaching another witness to a platform
+/// escalation, and a public setter would invite overwriting a sensor's reading.
+fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::set_idea_evidence", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_ideas SET evidence = ?1, updated_at = ?2 WHERE id = ?3",
+            params![evidence, now, id],
+        )?;
+        drop(conn);
+        get_idea_by_id(pool, id)
+    })
+}
+
 // Phase 1 backlog memory spine tests (docs/plans/backlog-memory-loop.md) live in
 // their own file for size; `#[path]` keeps them a child module of this one, so
 // `use super::*` still reaches the repo's private items.
 #[cfg(test)]
 #[path = "ideas_backlog_tests.rs"]
 mod backlog_memory_tests;
+
+#[cfg(test)]
+mod platform_escalation_tests {
+    use super::*;
+    use crate::repos::dev::projects::create_project;
+
+    fn filing(persona: &str, project: &str) -> serde_json::Value {
+        serde_json::json!({
+            "personaName": persona,
+            "projectName": project,
+        })
+    }
+
+    /// Four App Masters filing the same Personas defect are ONE item with four
+    /// witnesses — the measured case ("Bind capability parameters before
+    /// dispatch", filed by four different App Masters on 2026-09-08).
+    #[test]
+    fn a_second_filer_joins_the_escalation_instead_of_stacking_a_duplicate() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let first = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Bind capability parameters before dispatch",
+            Some("they arrive as literal {{param.*}} placeholders"),
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+        assert!(!first.deduped, "the first filing creates the item");
+
+        // A reworded second filing — `normalize_idea_title` drops the filler
+        // words, so the two collapse onto one key.
+        let second = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Bind the capability parameters before a dispatch",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Meridian", "meridian-bank"),
+        )
+        .unwrap();
+        assert!(second.deduped, "the second filing joins the first");
+        assert_eq!(second.idea.id, first.idea.id, "one row, not two");
+
+        assert_eq!(
+            list_ideas(&pool, Some(&platform.id), None, None, None, None)
+                .unwrap()
+                .len(),
+            1,
+            "the platform backlog holds exactly one item"
+        );
+
+        let evidence: serde_json::Value =
+            serde_json::from_str(second.idea.evidence.as_deref().unwrap()).unwrap();
+        let filings = evidence["filings"].as_array().unwrap();
+        assert_eq!(filings.len(), 2, "both witnesses are recorded");
+        assert_eq!(filings[0]["personaName"], "App Master Aurora");
+        assert_eq!(filings[1]["projectName"], "meridian-bank");
+    }
+
+    /// The escalation is tagged so every automatic-dispatch selector can see it.
+    #[test]
+    fn an_escalation_carries_the_platform_scan_type_and_a_null_origin() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let filed = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Fix personas_get — broken column reference",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+
+        assert_eq!(filed.idea.scan_type, PLATFORM_ESCALATION_SCAN_TYPE);
+        assert_eq!(filed.idea.origin, None, "origin is a closed allowlist");
+        assert_eq!(filed.idea.status, "pending");
+    }
+
+    /// The mechanical triage rule may still ACCEPT a platform escalation — but
+    /// the undispatched-idea sensor, which is what the App Master's decide lane
+    /// reads to pick work, must never offer it. A normal accepted idea on the
+    /// same project still shows, so the exclusion is the scan_type and not the
+    /// query going blind.
+    #[test]
+    fn an_accepted_escalation_is_invisible_to_the_undispatched_sensor() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let escalation = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Harden the attention-pass runner against the AmbientContextFusion panic",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+        update_idea(
+            &pool,
+            &escalation.idea.id,
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let ordinary = create_idea(
+            &pool,
+            Some(&platform.id),
+            None,
+            "team_proposed",
+            None,
+            "Ship the release notes generator",
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let offered =
+            crate::repos::dev::attention::list_undispatched_ideas(&pool, Some(&platform.id), None)
+                .unwrap();
+        let ids: Vec<&str> = offered.iter().map(|i| i.id.as_str()).collect();
+        assert!(
+            !ids.contains(&escalation.idea.id.as_str()),
+            "a platform escalation is never auto-dispatched, got {ids:?}"
+        );
+        assert!(
+            ids.contains(&ordinary.id.as_str()),
+            "an ordinary accepted idea is still offered, got {ids:?}"
+        );
+    }
+
+    #[test]
+    fn unreadable_prior_evidence_is_preserved_rather_than_dropped() {
+        let merged = append_filing(Some("not json at all"), &filing("A", "p"));
+        let parsed: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        assert_eq!(parsed["priorEvidence"], "not json at all");
+        assert_eq!(parsed["filings"].as_array().unwrap().len(), 1);
+    }
+}

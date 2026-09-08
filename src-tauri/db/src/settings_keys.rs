@@ -864,8 +864,18 @@ pub const KP_BASE_URL_DEFAULT: Option<&str> = None;
 /// Engine-managed, never user-set — hence its place in [`AUDIT_EXCLUDED_KEYS`].
 pub const EXECUTIONS_FTS_STALE: &str = "executions_fts_stale";
 
+/// The `dev_projects` row that IS this app's own repository.
+///
+/// Set it when the path heuristic in `engine::platform_backlog` cannot resolve
+/// the Personas checkout on its own — a moved checkout, a symlinked root, or a
+/// packaged build whose compile-time root no longer exists. It is what a
+/// platform escalation (a backlog item a persona raised about the Personas app
+/// rather than about its own project) is filed against.
+pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
+    PLATFORM_PROJECT_ID,
     EXECUTIONS_FTS_STALE,
     OLLAMA_API_KEY,
     DELEGATE_MODEL,
