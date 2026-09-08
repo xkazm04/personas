@@ -227,6 +227,7 @@ mod tests {
             supersedes_id: None,
             contradicts_id: None,
             updated_at: "2025-01-01T00:00:00+00:00".to_string(),
+            expires_at: None,
         }
     }
 

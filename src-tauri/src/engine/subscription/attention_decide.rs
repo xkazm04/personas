@@ -56,6 +56,33 @@ pub(crate) const MAX_ASK_IDEA_IDS: usize = 10;
 pub(crate) const MAX_ASK_OPTIONS: usize = 6;
 pub(crate) const MAX_ASK_OPTION_CHARS: usize = 120;
 
+// ── The channel (Grand Simulation G3 / G11) ───────────────────────────────
+
+/// How many channel lines one wake is shown.
+pub(crate) const MAX_CHANNEL_LINES: i64 = 10;
+/// Hard bound on one rendered channel body. Long enough for a real directive,
+/// short enough that ten of them cannot crowd out the charters.
+pub(crate) const MAX_CHANNEL_BODY_CHARS: usize = 400;
+
+/// How many messages ONE wake may post into its channel.
+///
+/// Same reasoning as [`MAX_ASKS`]: a wake that writes five messages has not
+/// decided anything, it has held a meeting. Three is enough to answer the
+/// authority that spoke, ask one sibling, and tell the team one thing.
+pub(crate) const MAX_SAY: usize = 3;
+/// Hard bound on one posted message.
+pub(crate) const MAX_SAY_BODY_CHARS: usize = 600;
+/// `Say::to` for "the whole team", as opposed to a persona id.
+pub(crate) const SAY_TO_TEAM: &str = "team";
+
+/// The three authorities a channel message may carry. Mirrors
+/// `personas_db::repos::resources::team_channel::AUTHORITIES` — the repo
+/// validates the same vocabulary at its own door, and this module never
+/// produces a word that one would refuse.
+pub(crate) const AUTHORITY_DIRECTIVE: &str = "directive";
+pub(crate) const AUTHORITY_REQUEST: &str = "request";
+pub(crate) const AUTHORITY_NOTE: &str = "note";
+
 /// The operator is asked to accept (or reject) named backlog items.
 pub(crate) const ASK_ACCEPT_IDEAS: &str = "accept_ideas";
 /// The operator is asked to choose between options only they can choose between.
@@ -246,6 +273,47 @@ pub(crate) struct OpenAsk {
     pub age_minutes: Option<i64>,
 }
 
+/// One thing that was said in a channel this persona can hear.
+///
+/// The gap this closes, measured 2026-09-07: a persona heard a channel in
+/// exactly two ways — injected at a team-assignment step boundary, or through
+/// the arrivals lane, whose predicate was `author_kind = 'user'`. Neither
+/// reaches the App Master's standing decision, so a persona that had just been
+/// told what to build by the workspace's Architect made its plan without
+/// knowing it had been told anything.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ChannelLine {
+    /// The message id — what a reply stamps as `replyTo`.
+    pub id: String,
+    /// Who spoke, as `Label (kind)`. The label is the row's `author_label` or
+    /// the author persona's name; the operator has neither and renders as
+    /// `the operator (user)`.
+    pub from: String,
+    /// The author's persona id when a persona spoke — what a reply addressed
+    /// back to them is `to`. `None` for the operator and for Athena, neither
+    /// of which is addressable as a channel destination.
+    pub from_id: Option<String>,
+    /// [`AUTHORITY_DIRECTIVE`] | [`AUTHORITY_REQUEST`] | [`AUTHORITY_NOTE`],
+    /// or `None` for "declared none" — which is NOT `note`, and the prompt
+    /// prints it as `unranked` rather than inventing a rank.
+    pub authority: Option<String>,
+    /// Bounded to [`MAX_CHANNEL_BODY_CHARS`] by the gatherer.
+    pub body: String,
+    /// How long ago it was said. `None` = the timestamp could not be parsed,
+    /// and the prompt then prints no age rather than a fabricated one.
+    pub age_minutes: Option<i64>,
+    /// It named this persona in `addressed_to`, rather than reaching it as a
+    /// directive to the whole team.
+    pub addressed_to_me: bool,
+}
+
+/// A persona this one shares a team with — the set `say.to` may name.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ChannelPeer {
+    pub id: String,
+    pub name: String,
+}
+
 /// Everything the decision is allowed to know.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct DecisionContext {
@@ -284,6 +352,18 @@ pub(crate) struct DecisionContext {
     /// Asks this persona has already put to the operator and nobody has
     /// answered yet.
     pub open_asks: Vec<OpenAsk>,
+    /// What was said in the channels this persona can hear, newest first, at
+    /// most [`MAX_CHANNEL_LINES`].
+    pub channel: Vec<ChannelLine>,
+    /// The personas this one shares a team with — the only ids `say.to` may
+    /// name. Empty means it can still speak to `team`, and every named id is
+    /// dropped.
+    pub peers: Vec<ChannelPeer>,
+    /// This persona holds a charter with `spec.authority = true`, so it may
+    /// write [`AUTHORITY_DIRECTIVE`]. Everyone else is downgraded to
+    /// [`AUTHORITY_REQUEST`] — rank is what the operator granted, not what the
+    /// model claimed.
+    pub may_direct: bool,
 }
 
 // ── Output ────────────────────────────────────────────────────────────────
@@ -329,6 +409,47 @@ pub(crate) struct OperatorAsk {
     pub options: Vec<String>,
 }
 
+/// One message the plan posts into its channel.
+///
+/// The other direction of [`ChannelLine`]: until this existed an App Master
+/// could read nothing from a channel and write nothing into one, so a
+/// directive from an authority had no possible answer and a question for a
+/// sibling had to be routed through the operator's review queue.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct Say {
+    /// [`SAY_TO_TEAM`] or a peer persona id. An id outside
+    /// [`DecisionContext::peers`] is dropped by the parser.
+    pub to: String,
+    /// [`AUTHORITY_REQUEST`] or [`AUTHORITY_NOTE`].
+    /// [`AUTHORITY_DIRECTIVE`] is downgraded to `request` unless the persona
+    /// holds an authority charter.
+    pub authority: String,
+    /// Bounded to [`MAX_SAY_BODY_CHARS`].
+    pub body: String,
+    /// The channel message being answered, when this is an answer.
+    pub reply_to: Option<String>,
+}
+
+/// Who a plan may address, and with what rank. Derived from the context, so
+/// the rule the prompt states and the rule the parser enforces come from one
+/// place.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct SayPolicy {
+    /// Peer persona ids `say.to` may name.
+    pub peer_ids: Vec<String>,
+    /// Whether [`AUTHORITY_DIRECTIVE`] survives the parse.
+    pub may_direct: bool,
+}
+
+impl SayPolicy {
+    pub(crate) fn from_context(ctx: &DecisionContext) -> Self {
+        Self {
+            peer_ids: ctx.peers.iter().map(|p| p.id.clone()).collect(),
+            may_direct: ctx.may_direct,
+        }
+    }
+}
+
 /// A parsed, bounded, capacity-capped plan.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct DecisionPlan {
@@ -336,6 +457,15 @@ pub(crate) struct DecisionPlan {
     pub defer: Vec<DecisionDeferral>,
     /// What this wake needs a person to decide. At most [`MAX_ASKS`].
     pub asks: Vec<OperatorAsk>,
+    /// What this wake says in its channel. At most [`MAX_SAY`].
+    pub say: Vec<Say>,
+    /// `say.to` values naming a persona this one shares no team with. Kept
+    /// rather than silently discarded, for the same reason
+    /// [`Self::dropped_unknown`] is: a plan that invents a colleague is a plan
+    /// that did not read its roster, and the ledger should show it happened.
+    pub dropped_unknown_say: Vec<String>,
+    /// How many `say` entries asked for `directive` and were downgraded.
+    pub say_downgraded: usize,
     /// The plan's message to its own next wake.
     pub note: Option<String>,
     /// How long the persona chose to sleep before waking again, in minutes,
@@ -413,11 +543,29 @@ struct WireAsk {
 }
 
 #[derive(serde::Deserialize)]
+struct WireSay {
+    #[serde(default)]
+    to: Option<String>,
+    #[serde(default)]
+    authority: Option<String>,
+    #[serde(default)]
+    body: Option<String>,
+    /// `replyTo` is what the prompt asks for; `reply_to` is accepted for the
+    /// same reason `charter_id` is.
+    #[serde(rename = "replyTo", alias = "reply_to", default)]
+    reply_to: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
 struct WirePlan {
     #[serde(default)]
     dispatch: Vec<WireItem>,
     #[serde(default)]
     defer: Vec<WireItem>,
+    /// Absent is an empty list, never a parse failure: a wake with nothing to
+    /// say is the normal wake.
+    #[serde(default)]
+    say: Vec<WireSay>,
     /// Absent (the common case) is an empty list, never a parse failure: a plan
     /// with nothing to ask is the normal plan.
     #[serde(default)]
@@ -444,10 +592,15 @@ struct WirePlan {
 ///
 /// `charters` supplies both the id allowlist and the priorities — one argument
 /// instead of two that could disagree.
-pub(crate) fn parse_decision(
+/// `say_policy` decides who this persona may address and whether it may write
+/// a directive; [`SayPolicy::from_context`] derives it from the same context
+/// the prompt was rendered from, so the rule the model is told and the rule
+/// enforced here cannot drift apart.
+pub(crate) fn parse_decision_with(
     raw: &str,
     charters: &[DecisionCharter],
     free_capacity: usize,
+    say_policy: &SayPolicy,
 ) -> Result<DecisionPlan, DecisionError> {
     if raw.trim().is_empty() {
         return Err(DecisionError::Empty);
@@ -539,16 +692,91 @@ pub(crate) fn parse_decision(
     let next_wake_minutes = wire.next_wake_minutes.as_ref().and_then(clamp_next_wake);
 
     let asks = parse_asks(wire.asks);
+    let (say, dropped_unknown_say, say_downgraded) = parse_say(wire.say, say_policy);
 
     Ok(DecisionPlan {
         dispatch,
         defer,
         asks,
+        say,
+        dropped_unknown_say,
+        say_downgraded,
         note,
         next_wake_minutes,
         dropped_unknown,
         trimmed_for_capacity,
     })
+}
+
+/// Read the channel list: cap it, bound the bodies, resolve the destination
+/// against the peer allowlist, and clamp the authority to what this persona
+/// was actually granted.
+///
+/// Returns `(kept, dropped destination ids, downgrade count)`. Pure — the
+/// caller logs, because a pure function that writes to `tracing` cannot be
+/// tested for what it decided, only for what it returned.
+fn parse_say(wire: Vec<WireSay>, policy: &SayPolicy) -> (Vec<Say>, Vec<String>, usize) {
+    let mut kept: Vec<Say> = Vec::new();
+    let mut dropped: Vec<String> = Vec::new();
+    let mut downgraded = 0usize;
+
+    for s in wire {
+        if kept.len() >= MAX_SAY {
+            break;
+        }
+        // A message with nothing in it is not a message. Dropped before the
+        // destination is resolved so an empty body never fills a slot.
+        let body = bound(s.body.unwrap_or_default().trim(), MAX_SAY_BODY_CHARS);
+        if body.is_empty() {
+            continue;
+        }
+        // An absent or blank destination is the whole team: the persona said
+        // something without naming anybody, which is exactly what a team
+        // channel is for. Only a NAMED id can be wrong.
+        let raw_to = s.to.unwrap_or_default().trim().to_string();
+        let to = if raw_to.is_empty() || raw_to.eq_ignore_ascii_case(SAY_TO_TEAM) {
+            SAY_TO_TEAM.to_string()
+        } else if policy.peer_ids.iter().any(|p| p == &raw_to) {
+            raw_to
+        } else {
+            if !dropped.contains(&raw_to) {
+                dropped.push(raw_to);
+            }
+            continue;
+        };
+
+        let asked = s
+            .authority
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase()
+            .to_string();
+        let authority = match asked.as_str() {
+            AUTHORITY_DIRECTIVE if policy.may_direct => AUTHORITY_DIRECTIVE,
+            AUTHORITY_DIRECTIVE => {
+                downgraded += 1;
+                AUTHORITY_REQUEST
+            }
+            AUTHORITY_REQUEST => AUTHORITY_REQUEST,
+            // Absent or unrecognised is `note`, not a dropped message: the
+            // safe direction is the one that wakes nobody. `request` and
+            // `directive` are claims about other personas' attention, and a
+            // model that did not state one has not made that claim.
+            _ => AUTHORITY_NOTE,
+        };
+
+        kept.push(Say {
+            to,
+            authority: authority.to_string(),
+            body,
+            reply_to: s
+                .reply_to
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty()),
+        });
+    }
+
+    (kept, dropped, downgraded)
 }
 
 /// Read the ask list: bound every string, cap every list, drop what says
@@ -958,6 +1186,28 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          asks; `kind` is `{ASK_ACCEPT_IDEAS}`, `{ASK_DECISION}` or \
          `{ASK_UNBLOCK}`.\n"
     ));
+    s.push_str(&format!(
+        "- ANSWER THE CHANNEL: a `{AUTHORITY_DIRECTIVE}` from the operator or an \
+         authority persona is an instruction you must reflect in this plan — \
+         dispatch, defer or ask accordingly, and answer it. A \
+         `{AUTHORITY_REQUEST}` deserves an answer. A `{AUTHORITY_NOTE}` is \
+         context. Speak with `say` (at most {MAX_SAY} messages); `to` is \
+         `{SAY_TO_TEAM}` or one of the persona ids listed under WHO YOU CAN \
+         ADDRESS, and `replyTo` is the channel message id you are answering.\n"
+    ));
+    if !ctx.may_direct {
+        s.push_str(&format!(
+            "  You may write `{AUTHORITY_REQUEST}` or `{AUTHORITY_NOTE}`. You do \
+             NOT hold an authority charter, so a `{AUTHORITY_DIRECTIVE}` you \
+             write is recorded as a `{AUTHORITY_REQUEST}`.\n"
+        ));
+    } else {
+        s.push_str(&format!(
+            "  You hold an AUTHORITY charter: a `{AUTHORITY_DIRECTIVE}` you write \
+             reaches every member of your team and each of them must reflect it. \
+             Use it for what the whole team must do, not for a question.\n"
+        ));
+    }
     s.push_str(
         "- EVERY charter must appear exactly once, in `dispatch` or in `defer`. \
          A deferral with a reason is a decision; silence is not.\n\n",
@@ -983,6 +1233,42 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             ));
         }
         s.push('\n');
+    }
+
+    // --- What the channel says ---
+    //
+    // Before the charters, like the open asks and for the same reason: a
+    // directive is a CONSTRAINT on the plan, not a fact to reason from. A
+    // persona that reads its roster first and the channel afterwards has
+    // already decided by the time it is told what it was asked to do.
+    if !ctx.channel.is_empty() {
+        s.push_str("WHAT THE CHANNEL SAYS (newest first)\n");
+        for line in &ctx.channel {
+            s.push_str(&format!(
+                "- [{}] {}{}{}\n",
+                line.authority.as_deref().unwrap_or("unranked"),
+                line.from,
+                if line.addressed_to_me {
+                    " — TO YOU"
+                } else {
+                    ""
+                },
+                match line.age_minutes {
+                    Some(m) => format!(" — {m} minute(s) ago"),
+                    None => String::new(),
+                }
+            ));
+            s.push_str(&format!("    id: {}\n", line.id));
+            s.push_str(&format!("    {}\n", line.body.replace('\n', " ")));
+        }
+        s.push('\n');
+    }
+    if !ctx.peers.is_empty() {
+        s.push_str("WHO YOU CAN ADDRESS (say.to)\n");
+        for p in &ctx.peers {
+            s.push_str(&format!("- {}: {}\n", p.id, p.name));
+        }
+        s.push_str(&format!("- {SAY_TO_TEAM}: everyone on your team\n\n"));
     }
 
     // --- The charters ---
@@ -1136,13 +1422,19 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          {MAX_ASK_WHY_CHARS} characters>\",\
          \"ideaIds\":[\"<ids copied from the list above>\"],\
          \"options\":[\"<what the operator may choose>\"]}}],\
+         \"say\":[{{\"to\":\"{SAY_TO_TEAM}|<a persona id from the list above>\",\
+         \"authority\":\"{AUTHORITY_REQUEST}|{AUTHORITY_NOTE}\",\
+         \"body\":\"<what you are saying, at most {MAX_SAY_BODY_CHARS} characters>\",\
+         \"replyTo\":\"<the channel message id you are answering, or omit>\"}}],\
          \"note\":\"<what your next wake should know about coverage, \
          at most {MAX_NOTE_CHARS} characters>\",\
          \"nextWakeMinutes\":<integer {MIN_NEXT_WAKE_MINUTES}-{MAX_NEXT_WAKE_MINUTES}, \
          or omit this field>}}\n\
          `dispatch` may be empty, and so may `asks` — omit `asks` entirely when \
-         nothing needs a person. Charter ids must be copied exactly from the \
-         list above; an invented id is dropped.\n"
+         nothing needs a person, and `say` when nothing needs saying. \
+         Charter ids must be copied exactly from the list above; an invented id \
+         is dropped, and so is a `say.to` naming somebody you share no team \
+         with.\n"
     ));
     s
 }
@@ -1152,6 +1444,20 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The parse under the CLOSED channel policy: no peer ids known, no
+    /// authority granted. Every test written before the channel existed
+    /// exercises exactly this, and it is also the honest default for a caller
+    /// with no channel — a named `say.to` is dropped and a `directive` is
+    /// downgraded. The channel's own behaviour is tested through
+    /// [`parse_decision_with`] with a policy that grants something.
+    fn parse_decision(
+        raw: &str,
+        charters: &[DecisionCharter],
+        free_capacity: usize,
+    ) -> Result<DecisionPlan, DecisionError> {
+        parse_decision_with(raw, charters, free_capacity, &SayPolicy::default())
+    }
 
     fn charter(id: &str, priority: Option<u8>) -> DecisionCharter {
         DecisionCharter {
@@ -1775,6 +2081,12 @@ mod tests {
                 kpi_coverage_gap: Some(41),
             }],
             open_asks: Vec::new(),
+            // The channel is empty in the base fixture on purpose: every
+            // prompt assertion written before G3 must keep holding for a
+            // persona nobody has spoken to.
+            channel: Vec::new(),
+            peers: Vec::new(),
+            may_direct: false,
         }
     }
 
@@ -2078,6 +2390,256 @@ mod tests {
         // With nothing open the section is absent entirely rather than an
         // empty heading the model has to interpret.
         assert!(!render_decision_prompt(&ctx_fixture()).contains("ALREADY WITH THE OPERATOR"));
+    }
+
+    // -- G3/G11: the channel ------------------------------------------------
+
+    fn open_policy() -> SayPolicy {
+        SayPolicy {
+            peer_ids: vec!["architect".into(), "sibling".into()],
+            may_direct: false,
+        }
+    }
+
+    fn say_reply(raw: &str, policy: &SayPolicy) -> DecisionPlan {
+        parse_decision_with(raw, &roster(), 3, policy).expect("parses")
+    }
+
+    #[test]
+    fn parse_say_bounds_the_list_the_body_and_the_vocabulary() {
+        let long = "x".repeat(MAX_SAY_BODY_CHARS + 50);
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "say": [
+                { "to": "team", "authority": "note", "body": "starting on the ledger" },
+                { "to": "architect", "authority": "request", "body": "which queue?",
+                  "replyTo": "tcm-1" },
+                // Unrecognised authority is context, not a dropped message.
+                { "to": "sibling", "authority": "shouting", "body": long },
+                // Past the cap — never written.
+                { "to": "team", "authority": "note", "body": "and another thing" },
+            ],
+        })
+        .to_string();
+        let plan = say_reply(&raw, &open_policy());
+        assert_eq!(plan.say.len(), MAX_SAY, "at most three per wake");
+        assert_eq!(plan.say[0].to, SAY_TO_TEAM);
+        assert_eq!(plan.say[0].authority, AUTHORITY_NOTE);
+        assert_eq!(plan.say[1].to, "architect");
+        assert_eq!(plan.say[1].authority, AUTHORITY_REQUEST);
+        assert_eq!(plan.say[1].reply_to.as_deref(), Some("tcm-1"));
+        assert_eq!(plan.say[2].authority, AUTHORITY_NOTE, "unknown rank = note");
+        assert_eq!(plan.say[2].body.chars().count(), MAX_SAY_BODY_CHARS);
+        assert!(plan.dropped_unknown_say.is_empty());
+        assert_eq!(plan.say_downgraded, 0);
+
+        // A blank body is not a message and must not consume a slot.
+        let plan = say_reply(
+            &serde_json::json!({
+                "dispatch": [],
+                "say": [
+                    { "to": "team", "body": "   " },
+                    { "to": "team", "body": "the real one" },
+                ],
+            })
+            .to_string(),
+            &open_policy(),
+        );
+        assert_eq!(plan.say.len(), 1);
+        assert_eq!(plan.say[0].body, "the real one");
+    }
+
+    #[test]
+    fn parse_say_drops_a_destination_the_persona_shares_no_team_with() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "say": [
+                { "to": "ghost", "authority": "request", "body": "are you there" },
+                { "to": "ghost", "authority": "note", "body": "again" },
+                { "to": "architect", "authority": "note", "body": "on it" },
+                // An absent or blank destination is the whole team — only a
+                // NAMED id can be wrong.
+                { "authority": "note", "body": "no destination named" },
+            ],
+        })
+        .to_string();
+        let plan = say_reply(&raw, &open_policy());
+        assert_eq!(plan.say.len(), 2);
+        assert_eq!(plan.say[0].to, "architect");
+        assert_eq!(plan.say[1].to, SAY_TO_TEAM);
+        assert_eq!(
+            plan.dropped_unknown_say,
+            vec!["ghost".to_string()],
+            "recorded once, not once per attempt"
+        );
+
+        // The closed default policy knows no peers at all: `team` still works,
+        // every named id is dropped.
+        let plan = say_reply(&raw, &SayPolicy::default());
+        assert_eq!(plan.say.len(), 1);
+        assert_eq!(plan.say[0].to, SAY_TO_TEAM);
+        assert_eq!(
+            plan.dropped_unknown_say,
+            vec!["ghost".to_string(), "architect".to_string()]
+        );
+    }
+
+    #[test]
+    fn parse_say_downgrades_a_directive_without_an_authority_charter() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "say": [
+                { "to": "team", "authority": "DIRECTIVE", "body": "everyone ship a health check" },
+                { "to": "architect", "authority": "directive", "body": "and you too" },
+            ],
+        })
+        .to_string();
+
+        let plan = say_reply(&raw, &open_policy());
+        assert_eq!(plan.say[0].authority, AUTHORITY_REQUEST);
+        assert_eq!(plan.say[1].authority, AUTHORITY_REQUEST);
+        assert_eq!(plan.say_downgraded, 2, "both downgrades are counted");
+
+        // The same plan from a persona the operator DID grant authority.
+        let granted = SayPolicy {
+            may_direct: true,
+            ..open_policy()
+        };
+        let plan = say_reply(&raw, &granted);
+        assert_eq!(plan.say[0].authority, AUTHORITY_DIRECTIVE);
+        assert_eq!(plan.say_downgraded, 0);
+    }
+
+    #[test]
+    fn a_plan_that_says_nothing_is_the_normal_plan() {
+        let plan = say_reply(
+            "{\"dispatch\":[{\"charterId\":\"r1\"}],\"defer\":[]}",
+            &open_policy(),
+        );
+        assert!(plan.say.is_empty());
+        assert!(plan.dropped_unknown_say.is_empty());
+        assert_eq!(plan.say_downgraded, 0);
+    }
+
+    fn ctx_with_channel() -> DecisionContext {
+        DecisionContext {
+            channel: vec![
+                ChannelLine {
+                    id: "tcm-1".into(),
+                    from: "Architect (persona)".into(),
+                    from_id: Some("architect".into()),
+                    authority: Some(AUTHORITY_DIRECTIVE.into()),
+                    body: "every service exposes /health".into(),
+                    age_minutes: Some(42),
+                    addressed_to_me: false,
+                },
+                ChannelLine {
+                    id: "tcm-2".into(),
+                    from: "the operator (user)".into(),
+                    from_id: None,
+                    authority: None,
+                    body: "line one\nline two".into(),
+                    age_minutes: None,
+                    addressed_to_me: true,
+                },
+            ],
+            peers: vec![ChannelPeer {
+                id: "architect".into(),
+                name: "Architect".into(),
+            }],
+            ..ctx_fixture()
+        }
+    }
+
+    #[test]
+    fn prompt_renders_the_channel_with_the_rule_that_governs_it() {
+        let p = render_decision_prompt(&ctx_with_channel());
+
+        // The rule, stated before the data.
+        assert!(p.contains("- ANSWER THE CHANNEL:"), "{p}");
+        assert!(p.contains("a `directive` from the operator or an authority persona is an instruction you must reflect in this plan"), "{p}");
+        assert!(p.contains("dispatch, defer or ask accordingly, and answer it"));
+        assert!(p.contains("A `request` deserves an answer"));
+        assert!(p.contains("A `note` is context"));
+
+        // The data.
+        assert!(p.contains("WHAT THE CHANNEL SAYS (newest first)"));
+        assert!(
+            p.contains("- [directive] Architect (persona) — 42 minute(s) ago"),
+            "{p}"
+        );
+        assert!(p.contains("    id: tcm-1"));
+        assert!(p.contains("every service exposes /health"));
+        // A message that named this persona says so; one that reached it by
+        // rank does not.
+        assert!(
+            p.contains("- [unranked] the operator (user) — TO YOU\n"),
+            "{p}"
+        );
+        // No authority declared prints `unranked`, never a fabricated `note`.
+        assert!(!p.contains("- [note] the operator"));
+        // An age nobody could compute prints no age.
+        assert!(!p.contains("0 minute(s) ago"));
+        // A body's newlines are flattened so one message stays one line.
+        assert!(p.contains("    line one line two\n"), "{p}");
+
+        // Who it may address, and the ceiling on its own rank.
+        assert!(p.contains("WHO YOU CAN ADDRESS (say.to)"));
+        assert!(p.contains("- architect: Architect"));
+        assert!(p.contains("- team: everyone on your team"));
+        assert!(p.contains("You do NOT hold an authority charter"), "{p}");
+
+        // And the wire the parser reads.
+        assert!(p.contains("\"say\":[{\"to\":\"team|<a persona id from the list above>\""));
+        assert!(p.contains("\"replyTo\":\"<the channel message id you are answering, or omit>\""));
+    }
+
+    #[test]
+    fn prompt_states_the_authority_ceiling_it_actually_has() {
+        let mut ctx = ctx_with_channel();
+        ctx.may_direct = true;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("You hold an AUTHORITY charter"), "{p}");
+        assert!(!p.contains("You do NOT hold an authority charter"));
+
+        // A persona with no channel and no peers gets neither section — an
+        // empty heading is something the model has to interpret.
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(!p.contains("WHAT THE CHANNEL SAYS (newest first)"));
+        // The HEADING is absent; the RULE above still names the section, which
+        // is why this asserts on the heading's own form rather than the phrase.
+        assert!(!p.contains("WHO YOU CAN ADDRESS (say.to)"));
+        // …but it is still told the rule, because it can still speak to its
+        // team even when nobody has spoken to it.
+        assert!(p.contains("- ANSWER THE CHANNEL:"));
+    }
+
+    #[test]
+    fn the_channel_prompt_and_the_say_parser_agree() {
+        let ctx = ctx_with_channel();
+        let _ = render_decision_prompt(&ctx);
+        let reply = serde_json::json!({
+            "dispatch": [],
+            "defer": [],
+            "say": [{
+                "to": "architect",
+                "authority": AUTHORITY_REQUEST,
+                "body": "health checks land with the gateway next wake",
+                "replyTo": "tcm-1",
+            }],
+        })
+        .to_string();
+        let plan = parse_decision_with(
+            &reply,
+            &ctx.charters,
+            ctx.free_capacity,
+            &SayPolicy::from_context(&ctx),
+        )
+        .expect("parses");
+        assert_eq!(plan.say.len(), 1);
+        assert_eq!(plan.say[0].to, "architect");
+        assert_eq!(plan.say[0].reply_to.as_deref(), Some("tcm-1"));
+        assert!(plan.dropped_unknown_say.is_empty());
     }
 
     #[test]

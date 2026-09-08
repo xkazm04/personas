@@ -873,7 +873,8 @@ fn find_work(
         persona_id,
         ARRIVALS_MIN_AGE_MINUTES,
         ARRIVALS_LOOKBACK_DAYS,
-    )?;
+    )?
+    .map(|a| (a.message_id.clone(), arrivals_content(&a)));
     let maintenance = matches!(
         crate::engine::persona_brain::sleep_cycle::admit(pool, persona_id, false)?,
         CycleVerdict::Admit(_)
@@ -887,6 +888,70 @@ fn find_work(
         advance,
         improve,
         is_app_master(charters),
+    ))
+}
+
+/// What the persona is actually handed for an arrivals wake.
+///
+/// The operator's own chat is passed through UNCHANGED — that path predates
+/// this function and its content is rendered by the channel follow-up prompt
+/// as the user's message; wrapping it would change what a conversation looks
+/// like for every persona in the app.
+///
+/// A message that arrived from a TEAM channel is different in kind, and the
+/// difference is the whole point of G3: the persona is being told something by
+/// somebody who is not the operator, and what it must do about it depends on
+/// two facts a body cannot carry — who spoke and with what authority. An
+/// unranked line from a teammate and a directive from the workspace Architect
+/// are the same string and opposite obligations.
+///
+/// It also names where the ANSWER goes. The reply this wake writes lands in
+/// the persona's own channel (that is what the follow-up path does, and it is
+/// what closes the "unanswered" predicate); speaking back into the TEAM
+/// channel is the decision lane's `say`. Saying so is the difference between a
+/// persona that answers the wrong room and one that answers both.
+fn arrivals_content(a: &team_channel::ChannelArrival) -> String {
+    if a.team_id.is_none() && a.author_kind == "user" {
+        return a.body.clone();
+    }
+    let who = a
+        .author_label
+        .as_deref()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .unwrap_or(match a.author_kind.as_str() {
+            "user" => "The operator",
+            "athena" => "Athena",
+            "slack" => "Somebody on Slack",
+            _ => "A teammate",
+        });
+    let rank = match a.authority.as_deref() {
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_DIRECTIVE) => {
+            "a DIRECTIVE — an instruction you must reflect in what you do next"
+        }
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_REQUEST) => {
+            "a REQUEST — it wants an answer from you"
+        }
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_NOTE) => {
+            "a NOTE — context, not an order"
+        }
+        // Declared none. Not "note": nobody said it was context either.
+        _ => "no declared authority",
+    };
+    let scope = if a.addressed_to_me {
+        "addressed to you"
+    } else {
+        "addressed to your whole team"
+    };
+    bound_task(format!(
+        "{who} spoke in your team channel, {scope}, carrying {rank}.\n\n\
+         What they said (channel message {id}):\n{body}\n\n\
+         Answer it. Your reply here is written back into your own channel; to \
+         speak in the TEAM channel — to answer the author there, or to ask a \
+         teammate — use the `say` list of your next decision, quoting \
+         `replyTo: \"{id}\"`.\n",
+        id = a.message_id,
+        body = a.body,
     ))
 }
 
@@ -1096,6 +1161,22 @@ fn build_decision_context(
         })
         .collect();
 
+    let channel = read_channel_lines(pool, &persona.id);
+    let peers = team_channel::addressable_peers(pool, &persona.id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id = %persona.id, error = %e,
+                "persona_attention: could not read the addressable peers — \
+                 this wake can speak to its team but name nobody");
+            Vec::new()
+        })
+        .into_iter()
+        .map(|(id, name)| attention_decide::ChannelPeer { id, name })
+        .collect();
+    // Rank is a property of what the OPERATOR granted. A persona holding a
+    // charter with `spec.authority` may write a directive; nobody else can,
+    // however the model words its plan.
+    let may_direct = charters.iter().any(|c| c.spec.authority == Some(true));
+
     Ok(attention_decide::DecisionContext {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
@@ -1113,7 +1194,77 @@ fn build_decision_context(
         charters: decision_charters,
         projects,
         open_asks,
+        channel,
+        peers,
+        may_direct,
     })
+}
+
+/// What was said in the channels this persona can hear, newest first.
+///
+/// Best-effort, like [`list_open_asks`] and for the same reason: this feeds a
+/// prompt, and an unreadable channel is a poorer decision, not a failed wake.
+/// The cost of the empty branch is a plan made without the channel — which is
+/// exactly the state every App Master was in before G3, so the degraded path
+/// is the old behaviour rather than a new failure.
+fn read_channel_lines(pool: &DbPool, persona_id: &str) -> Vec<attention_decide::ChannelLine> {
+    let rows = match team_channel::recent_channel_lines_for_persona(
+        pool,
+        persona_id,
+        attention_decide::MAX_CHANNEL_LINES,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the channel — deciding without it");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .map(|r| attention_decide::ChannelLine {
+            // Only a PERSONA is addressable back. The operator and Athena
+            // author rows with no persona id, and a `say.to` naming one would
+            // be dropped by the parser anyway — carrying None says so here.
+            from_id: match r.author_kind.as_str() {
+                "persona" => r.author_id.clone(),
+                _ => None,
+            },
+            from: channel_from_label(&r.author_kind, r.author_label.as_deref()),
+            age_minutes: minutes_since_ts(&r.created_at),
+            body: bound_channel_body(&r.body),
+            id: r.id,
+            authority: r.authority,
+            addressed_to_me: r.addressed_to_me,
+        })
+        .collect()
+}
+
+/// `Label (kind)`, with a stated fallback per author kind. The operator has no
+/// persona row to resolve a name from, so printing an empty label — or the
+/// bare word `user` — would leave the persona guessing who spoke.
+fn channel_from_label(author_kind: &str, author_label: Option<&str>) -> String {
+    let who = author_label
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .unwrap_or(match author_kind {
+            "user" => "the operator",
+            "athena" => "Athena",
+            "slack" => "Slack",
+            _ => "a persona",
+        });
+    format!("{who} ({author_kind})")
+}
+
+/// Bound one channel body for the prompt, on a char boundary.
+fn bound_channel_body(body: &str) -> String {
+    let trimmed = body.trim();
+    if trimmed.chars().count() <= attention_decide::MAX_CHANNEL_BODY_CHARS {
+        return trimmed.to_string();
+    }
+    trimmed
+        .chars()
+        .take(attention_decide::MAX_CHANNEL_BODY_CHARS)
+        .collect()
 }
 
 /// One unanswered operator ask, as it sits in `persona_manual_reviews`.
@@ -1985,9 +2136,15 @@ async fn run_decision_lane(
     )
     .await;
 
+    let say_policy = attention_decide::SayPolicy::from_context(&context);
     let plan = match reply.map_err(|e| e.to_string()).and_then(|text| {
-        attention_decide::parse_decision(&text, &context.charters, context.free_capacity)
-            .map_err(|e| e.to_string())
+        attention_decide::parse_decision_with(
+            &text,
+            &context.charters,
+            context.free_capacity,
+            &say_policy,
+        )
+        .map_err(|e| e.to_string())
     }) {
         Ok(plan) => plan,
         Err(why) => {
@@ -2066,6 +2223,22 @@ async fn run_decision_lane(
     // recorded in the ledger row so the operator can see the question was put.
     let asks = raise_asks(&pool, &context, &plan.asks);
 
+    // What this wake says out loud. After the dispatch for the same reason an
+    // ask is: speaking must never cost the loop work it could have started.
+    if !plan.dropped_unknown_say.is_empty() {
+        tracing::warn!(persona_id, dropped = ?plan.dropped_unknown_say,
+            "persona_attention: the decision addressed personas it shares no team with");
+    }
+    if plan.say_downgraded > 0 {
+        tracing::info!(
+            persona_id,
+            downgraded = plan.say_downgraded,
+            "persona_attention: the decision wrote a directive without an authority \
+             charter — recorded as a request"
+        );
+    }
+    let said = write_plan_says(&pool, &context, &plan.say);
+
     let dispatched_ids: Vec<&str> = plan
         .dispatch
         .iter()
@@ -2102,10 +2275,114 @@ async fn run_decision_lane(
         "droppedUnknown": plan.dropped_unknown,
         "trimmedForCapacity": plan.trimmed_for_capacity,
         "asks": asks,
+        "said": said,
+        "droppedUnknownSay": plan.dropped_unknown_say,
+        "sayDowngraded": plan.say_downgraded,
         "note": plan.note,
         "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
     }))
+}
+
+/// Post the plan's `say` list into the persona's team channel, and report the
+/// message ids it actually wrote.
+///
+/// **Which channel.** The project's team first — a persona's charters name a
+/// project, `dev_projects.team_id` names that project's team, and that is the
+/// room the App Master's work is discussed in. Only when no project-bound
+/// charter resolves to a live team does this fall back to the persona's first
+/// team membership (oldest first — see `team_ids_for_persona` for why that is
+/// the only stable tiebreak). A persona on NO team cannot speak, and says so
+/// once in the log rather than failing the wake: it had nothing to lose that
+/// it had before.
+///
+/// Best-effort per message. One refused post (an empty body the parser let
+/// through as bounded whitespace, a team deleted between the gather and the
+/// write) must not cost the wake its other messages or its dispatch record.
+fn write_plan_says(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    says: &[attention_decide::Say],
+) -> Vec<serde_json::Value> {
+    if says.is_empty() {
+        return Vec::new();
+    }
+    let Some(team_id) = decision_channel_team(pool, context) else {
+        tracing::warn!(persona_id = %context.persona_id, count = says.len(),
+            "persona_attention: the decision had something to say and the persona \
+             belongs to no team — nothing was posted");
+        return Vec::new();
+    };
+
+    let mut written = Vec::new();
+    for say in says {
+        let addressed_to = if say.to == attention_decide::SAY_TO_TEAM {
+            None
+        } else {
+            Some(vec![say.to.clone()])
+        };
+        match team_channel::create_persona_directed(
+            pool,
+            &context.persona_id,
+            &team_id,
+            &say.body,
+            addressed_to,
+            Some(&say.authority),
+            say.reply_to.clone(),
+        ) {
+            Ok(message) => written.push(serde_json::json!({
+                "messageId": message.id,
+                "teamId": team_id,
+                "to": say.to,
+                "authority": say.authority,
+                "replyTo": say.reply_to,
+            })),
+            Err(e) => tracing::warn!(
+                persona_id = %context.persona_id, team_id = %team_id, error = %e,
+                "persona_attention: could not post a decision message into the channel"
+            ),
+        }
+    }
+    written
+}
+
+/// The team the decision speaks into. See [`write_plan_says`] for the rule.
+fn decision_channel_team(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+) -> Option<String> {
+    for charter in &context.charters {
+        let Some(project_id) = charter
+            .project_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            continue;
+        };
+        match crate::db::repos::dev_tools::get_project_by_id(pool, project_id) {
+            Ok(project) => {
+                if let Some(team_id) = project
+                    .team_id
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|t| !t.is_empty())
+                {
+                    return Some(team_id.to_string());
+                }
+            }
+            Err(e) => tracing::warn!(project_id, error = %e,
+                "persona_attention: could not resolve the project's team for a channel post"),
+        }
+    }
+    match team_channel::team_ids_for_persona(pool, &context.persona_id) {
+        Ok(ids) => ids.into_iter().next(),
+        Err(e) => {
+            tracing::warn!(persona_id = %context.persona_id, error = %e,
+                "persona_attention: could not read this persona's team memberships");
+            None
+        }
+    }
 }
 
 /// What this wake may start, and the two counts it was derived from.
@@ -5727,5 +6004,287 @@ mod attention_tests {
             active_fleet_states(),
             ["spawning", "running", "awaiting_input", "idle"]
         );
+    }
+
+    // -- G3/G11: hearing the channel and speaking into it --------------------
+
+    fn seed_team_row(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES (?1, ?1, datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    fn join_team_row(pool: &DbPool, team_id: &str, persona_id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_team_members
+                (id, team_id, persona_id, role, position_x, position_y, created_at)
+             VALUES (?1, ?2, ?3, 'worker', 0, 0, datetime('now'))",
+            params![format!("mem-{team_id}-{persona_id}"), team_id, persona_id],
+        )?;
+        Ok(())
+    }
+
+    /// A project that owns a team, the way `ensure_project_team` leaves it.
+    /// Written directly rather than through `create_project` because that door
+    /// mints its own uuid and these tests need a project id they can name.
+    fn seed_project_with_team(
+        pool: &DbPool,
+        project_id: &str,
+        team_id: &str,
+    ) -> Result<(), AppError> {
+        seed_team_row(pool, team_id)?;
+        pool.get()?.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, team_id,
+                                       created_at, updated_at)
+             VALUES (?1, ?1, ?2, 'active', ?3, datetime('now'), datetime('now'))",
+            params![project_id, format!("/tmp/{project_id}"), team_id],
+        )?;
+        Ok(())
+    }
+
+    /// The charters this persona holds, as the tick would hand them to the
+    /// context gatherer.
+    fn charters_of(pool: &DbPool, persona_id: &str) -> Vec<PersonaResponsibility> {
+        responsibilities::list_by_persona(pool, persona_id, false).unwrap()
+    }
+
+    /// The wake text a persona is handed must NAME the author and the rank —
+    /// an unranked line from a teammate and a directive from the Architect are
+    /// the same string and opposite obligations.
+    #[test]
+    fn the_arrivals_text_names_the_author_the_rank_and_where_the_answer_goes() {
+        let directive = team_channel::ChannelArrival {
+            message_id: "tcm-9".into(),
+            body: "every service exposes /health".into(),
+            author_kind: "persona".into(),
+            author_label: Some("Architect".into()),
+            authority: Some("directive".into()),
+            team_id: Some("t1".into()),
+            addressed_to_me: false,
+        };
+        let text = arrivals_content(&directive);
+        assert!(
+            text.contains("Architect spoke in your team channel"),
+            "{text}"
+        );
+        assert!(text.contains("addressed to your whole team"));
+        assert!(text.contains("a DIRECTIVE"));
+        assert!(text.contains("channel message tcm-9"));
+        assert!(text.contains("every service exposes /health"));
+        // Where the answer goes: this reply lands in the persona's own
+        // channel, the TEAM answer rides the next decision's `say`.
+        assert!(text.contains("`say` list of your next decision"), "{text}");
+        assert!(text.contains("replyTo: \\\"tcm-9\\\"") || text.contains("replyTo: \"tcm-9\""));
+
+        // Declared no authority is NOT `note` — nobody said it was context.
+        let unranked = team_channel::ChannelArrival {
+            authority: None,
+            author_label: None,
+            addressed_to_me: true,
+            ..directive.clone()
+        };
+        let text = arrivals_content(&unranked);
+        assert!(text.contains("A teammate spoke"), "{text}");
+        assert!(text.contains("addressed to you"));
+        assert!(text.contains("no declared authority"));
+
+        // The operator's own chat is passed through UNCHANGED — wrapping it
+        // would change what a conversation looks like for every persona.
+        let chat = team_channel::ChannelArrival {
+            message_id: "tcm-1".into(),
+            body: "hey, can you check the deploy?".into(),
+            author_kind: "user".into(),
+            author_label: None,
+            authority: None,
+            team_id: None,
+            addressed_to_me: false,
+        };
+        assert_eq!(arrivals_content(&chat), "hey, can you check the deploy?");
+    }
+
+    /// The decision reads the channel it can hear, and the label falls back
+    /// per author kind rather than printing an empty name.
+    #[test]
+    fn the_decision_context_carries_the_channel_its_peers_and_its_rank() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_persona(&pool, "master")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        join_team_row(&pool, "t1", "master")?;
+        seed_project_charter(&pool, "master", "Deliver", "proj");
+
+        team_channel::create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "every service exposes /health",
+            None,
+            Some("directive"),
+            None,
+        )?;
+
+        let persona = persona_repo::get_by_id(&pool, "master")?;
+        let charters = charters_of(&pool, "master");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+
+        assert_eq!(ctx.channel.len(), 1);
+        let line = &ctx.channel[0];
+        assert_eq!(line.from, "architect (persona)");
+        assert_eq!(line.from_id.as_deref(), Some("architect"));
+        assert_eq!(line.authority.as_deref(), Some("directive"));
+        assert!(!line.addressed_to_me);
+        assert_eq!(
+            ctx.peers.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
+            vec!["architect"]
+        );
+        // No authority charter: this persona may ask, never order.
+        assert!(!ctx.may_direct);
+
+        // The label falls back per author kind — the operator has no persona
+        // row to resolve a name from.
+        assert_eq!(channel_from_label("user", None), "the operator (user)");
+        assert_eq!(channel_from_label("athena", None), "Athena (athena)");
+        assert_eq!(
+            channel_from_label("persona", Some("  ")),
+            "a persona (persona)"
+        );
+        assert_eq!(
+            channel_from_label("persona", Some("Arch")),
+            "Arch (persona)"
+        );
+        Ok(())
+    }
+
+    /// `spec.authority` is what grants rank, and it comes off the charter the
+    /// operator wrote — not off anything the model says.
+    #[test]
+    fn an_authority_charter_is_what_lets_a_persona_direct() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        let charter_id = seed_project_charter(&pool, "architect", "Design the bank", "proj");
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                spec: Some(crate::db::models::ResponsibilitySpec {
+                    authority: Some(true),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )?;
+
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let charters = charters_of(&pool, "architect");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        assert!(ctx.may_direct, "the charter grants it");
+        Ok(())
+    }
+
+    /// The write half of G11: each `say` lands as a real channel row on the
+    /// PROJECT's team, addressed as the plan asked, and the decide row records
+    /// the ids so a human can find what the persona said.
+    #[test]
+    fn the_decision_speaks_into_its_projects_team_channel() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_persona(&pool, "master")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        join_team_row(&pool, "t1", "master")?;
+        seed_project_charter(&pool, "master", "Deliver", "proj");
+
+        let persona = persona_repo::get_by_id(&pool, "master")?;
+        let charters = charters_of(&pool, "master");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+
+        let said = write_plan_says(
+            &pool,
+            &ctx,
+            &[
+                attention_decide::Say {
+                    to: attention_decide::SAY_TO_TEAM.into(),
+                    authority: attention_decide::AUTHORITY_NOTE.into(),
+                    body: "starting on the ledger".into(),
+                    reply_to: None,
+                },
+                attention_decide::Say {
+                    to: "architect".into(),
+                    authority: attention_decide::AUTHORITY_REQUEST.into(),
+                    body: "which queue should the ledger publish to?".into(),
+                    reply_to: Some("tcm-1".into()),
+                },
+            ],
+        );
+        assert_eq!(said.len(), 2);
+        assert_eq!(said[0]["teamId"], "t1", "the PROJECT's team");
+
+        let rows = team_channel::list_for_team(&pool, "t1", 10, None)?;
+        assert_eq!(rows.len(), 2);
+        let to_team = rows.iter().find(|r| r.addressed_to.is_none()).unwrap();
+        assert_eq!(to_team.author_kind, "persona");
+        assert_eq!(to_team.author_id.as_deref(), Some("master"));
+        assert_eq!(to_team.authority.as_deref(), Some("note"));
+        // A directed message is injectable, so the step-boundary injection
+        // carries it as well as the arrivals wake.
+        assert_eq!(to_team.consumer, "inject");
+
+        let directed = rows.iter().find(|r| r.addressed_to.is_some()).unwrap();
+        assert_eq!(
+            directed.addressed_to.as_deref(),
+            Some("[\"architect\"]"),
+            "addressed_to is the JSON array the injection LIKE-matches"
+        );
+        assert_eq!(directed.authority.as_deref(), Some("request"));
+        assert_eq!(directed.reply_to.as_deref(), Some("tcm-1"));
+
+        // And what it said is now something the Architect's own wake hears.
+        pool.get()?.execute(
+            "UPDATE team_channel_messages SET created_at = datetime('now', '-1 hours')
+             WHERE id = ?1",
+            params![directed.id],
+        )?;
+        let heard = team_channel::oldest_unanswered_persona_message(&pool, "architect", 10, 7)?
+            .expect("the addressee hears the answer");
+        assert_eq!(heard.message_id, directed.id);
+        assert!(heard.addressed_to_me);
+        Ok(())
+    }
+
+    /// A persona on no team cannot speak, and that costs the wake nothing it
+    /// had before — the plan's dispatch is already recorded.
+    #[test]
+    fn a_persona_with_no_team_says_nothing_and_still_decides() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "lonely")?;
+        seed_charter(&pool, "lonely", "Charter A", &one_outcome());
+        let persona = persona_repo::get_by_id(&pool, "lonely")?;
+        let charters = charters_of(&pool, "lonely");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        assert!(ctx.channel.is_empty());
+        assert!(ctx.peers.is_empty());
+
+        let said = write_plan_says(
+            &pool,
+            &ctx,
+            &[attention_decide::Say {
+                to: attention_decide::SAY_TO_TEAM.into(),
+                authority: attention_decide::AUTHORITY_NOTE.into(),
+                body: "anybody there".into(),
+                reply_to: None,
+            }],
+        );
+        assert!(said.is_empty());
+        Ok(())
     }
 }
