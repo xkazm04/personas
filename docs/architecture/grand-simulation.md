@@ -206,3 +206,9 @@ when they have earned it:
   recipes merged into the bundle); the five Architect recipes drafted (`24bb2f7be`); the
   `/grand-sim` skill skeleton (`6443930c1`); vault map and session note. Owed by the operator:
   the location of the prepared ticket section syntax; the five open decisions in §5.
+
+- 2026-09-08 morning: caps (G4, G5) and one-step project creation with the never-delete tag (G6)
+  merged (`47cf93ed6`, `232fbffde`); both builders also repaired the app crate's test binary,
+  broken at the base by two files outside this arc. The five builders had been killed overnight
+  by the tool watchdog (five cargo jobs on one target); resumed one at a time. The dev app exited
+  cleanly twice during the operator's working hours; not relaunched without their word. G12 found.
