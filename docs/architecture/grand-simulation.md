@@ -106,12 +106,14 @@ Workspace "Bank"  (dev_workspaces)                      last working version is 
  ├─ Architect (cross-project persona, workspace-bound charters)
  │    designs the solution → creates projects (repo + registration in one step)
  │    → adopts an App Master per project → sets Goals → speaks in the workspace channel
- ├─ Project: bank-core (accounts, ledger, payments)        App Master + hired roles
- ├─ Project: bank-contracts (contract exchange, e-sign)    App Master + hired roles
- ├─ Project: bank-lending (loans, scoring)                 App Master + hired roles
- ├─ Project: bank-invest (investments, portfolios)         App Master + hired roles
- ├─ Project: bank-edge (API gateway, auth, channels)       App Master + hired roles
- └─ Project: bank-platform (infra as code, queues, observability, load test)  App Master + roles
+ ├─ Project: bank-core (accounts, ledger, payments)   MONEY-PATH · the largest by an order of
+ │      magnitude (14 reference services, the ledger alone 27 migrations): hires first and most
+ ├─ Project: bank-contracts (contract exchange, e-sign)    designed from parts, no reference model
+ ├─ Project: bank-lending (loans, scoring)                 MONEY-PATH
+ ├─ Project: bank-invest (investments, portfolios)         designed from scratch, no reference at all
+ ├─ Project: bank-edge (API gateway, auth, channels)       consent, SCA, sanctions are money-path
+ └─ Project: bank-platform (infra as code, queues, observability, load test,
+        AND the gate manifest the other five run: gates.yaml with self-tests)  App Master + roles
 kp (the hiring product): composes roles from a need + the repo dossier, dispatches persona requests
 ai-registry: recipes the roles adopt; a new banking knowledge bundle; lessons flow back
 /uat: Characters (a retail customer, a teller, a compliance officer, a fraud analyst, an SRE)
@@ -126,9 +128,18 @@ can resume from any act:
 | 0 Foundation | the headless services in §4 exist and are proven by a dry run on a throwaway workspace | the gap list below, each with a test |
 | 1 Architect | an empty workspace holds a solution design, the six projects with repositories, one App Master each, workspace goals, and the first channel directive | `GET /dev-tools/app-master/{project}` for six projects; the design doc in `bank-platform` |
 | 2 Hiring | each App Master has asked kp for at least one role and the role runs as a persona with a charter | `hired_agents` in kp, personas with `kpLink` in Personas |
-| 3 Build | every project has a walking skeleton (service, schema, queue, test, container), the platform runs them together with Docker Compose | `docker compose ps` green; the Architect's goals moving |
-| 4 Load | a load test at a scale that stands in for a million users (synthetic accounts, payment bursts through the queues) with a stated envelope | a load report with p95 latencies and the machine's resource ceiling respected |
-| 5 Reflection | personas have proposed responsibility changes, the Architect has adjusted scope, lessons have reached the registry | `responsibility_draft` proposals, recipe `LESSONS.md` entries, `/uat` findings drained |
+| 3 Build | every project has a walking skeleton (service, schema, queue, test, container) and every money-path service carries the per-service contract (hexagonal layout with a pure domain, `openapi.yaml`, a first migration, an idempotency key on every write, a transactional outbox, an injected clock, a threat model, domain metrics, a runbook); the platform runs them together with Docker Compose plus Postgres, Kafka, Temporal, Keycloak and OPA | `docker compose ps` green; the Architect's goals moving; the contract certified per service |
+| 3b Gates | `bank-platform` ships a `gates.yaml` the other five projects run: at least twelve gates, each with `min_subjects`, `rationale`, `review_after` and a self-test that proves its red state is reachable | the manifest, and one deliberately broken subject turning a gate red |
+| 4 Load | the corrected envelope (§5: 100k accounts, 600 payments a minute for 20 minutes, p95 under 1 s, failed requests under 1%, checks 1.0) runs against the composed stack | a load report with the percentiles, the failed-request rate, and the machine's resource ceiling respected |
+| 4b Abuse | an abuse-smoke suite per project where every request is invalid by construction and the rejection is the subject: no token and malformed token answer 401/403, a NUL byte answers 400 and never 500, an enumeration sweep never answers 200 | the suite green, and one deliberately weakened route turning it red |
+| 5 Reflection | personas have proposed responsibility changes, the Architect has adjusted scope, lessons have reached the registry; each project carries a compliance matrix (regulation to control to artefact) and an ADR index with decision status separate from delivery status | `responsibility_draft` proposals, recipe `LESSONS.md` entries, `/uat` findings drained, the matrices and ADR indexes present |
+
+Acts 3b and 4b, the per-service contract in Act 3 and the matrices in Act 5 come from the
+reference digest (§7.2 there); they are what make the build enterprise-grade rather than six
+walking skeletons. Act 1's target list also grows: each repository carries a `version.txt`, a
+`governance.yaml`-shaped self-declaration (data domain, datastore, classification, retention,
+lineage), a per-project `CLAUDE.md`, conventional commits, and a named BIAN Service Domain per
+service.
 
 **Roles, as charters.** Architect: solution design, project creation, App Master adoption, goal
 setting, channel direction, scope adjustment (workspace-bound). App Master: the six charters of
@@ -183,10 +194,25 @@ registry where one fits.
   dialog (9 messages) worth keeping for realism, or should the App Master's need text go straight
   to compose?
 - Which charters the Architect holds on day one, and whether it may also hire.
-- The load envelope that stands in for a million users on this machine (proposal: 1M synthetic
+- The load envelope that stands in for a million users on this machine. ~~Proposal: 1M synthetic
   accounts in the store, 10k payments per minute through the queue for 10 minutes, p95 under
-  200 ms at the gateway, memory under 60% of the machine).
-- The `/uat` Characters for the bank (proposal: five, above).
+  200 ms at the gateway.~~ **Corrected 2026-09-08 against the reference's only measurement**
+  (open-bank-oss `perf/reports/2026-07-10-money-path-write-benchmark.md`: 16.7 req/s, p95 2.25 s
+  on an M2 Max with a JDBC pool of 5): 100,000 seeded accounts, 600 payments per minute sustained
+  for 20 minutes, p95 under 1 s at the gateway, `http_req_failed` under 0.01, checks rate exactly
+  1.0, machine memory under 60%. The million-user figure is stated as arithmetic from the
+  measured ceiling, the way the reference states its Tier-A, never as a run. See
+  [`grand-simulation/open-bank-reference.md`](grand-simulation/open-bank-reference.md) §7.1.
+- The `/uat` Characters for the bank (proposal: nine, in
+  [`grand-simulation/uat-scenario.md`](grand-simulation/uat-scenario.md)).
+
+**The reference architecture (operator, 2026-09-08).** The bank is designed against
+[JiRaska/open-bank-oss](https://github.com/JiRaska/open-bank-oss): 74 `openbank-*` modules, a
+declared money-path subset with stricter rules, ISO 20022 / SEPA / PSD2 / DORA / BIAN mappings, a
+per-service `governance.yaml` self-declaration, and 217 governance gates each with a self-test.
+The digest that turns it into requirements, per-service contract, agent charters and the act
+targets is [`grand-simulation/open-bank-reference.md`](grand-simulation/open-bank-reference.md);
+its §8 edits are applied to this plan, the Architect recipes and the `/uat` scenario.
 
 ## 6. The `/uat` dimension (G10), proposed shape
 

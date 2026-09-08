@@ -30,6 +30,12 @@ repositories; the App Master of each repository copies the section into its own 
 Provenance rule carried over from `/uat` v1.6: every fixture line names its source row id and
 `updated_at`, so a later run can tell simulation residue from product data.
 
+Reachability rule from the reference (its abuse-smoke lane: "a 200 or 5xx on any probe is a
+finding, not a pass"): a fixture that answers 401 to the identity a journey will actually use is
+rejection evidence, not a baseline. The generator's next revision records, per fixture line,
+whether the row is reachable with the journey's own identity, not only that the row exists. Until
+then a Character's L2 preflight checks it by hand.
+
 ## Direction 2 — `/uat` scenarios drive the simulation (Characters and journeys)
 
 The bank has no users, so its Characters are the closest thing to a product owner it will have.
@@ -44,9 +50,15 @@ Architect scaffolds the overlay.
 | SME treasurer (Tomas) | business, batch payer | pay 300 invoices on the 25th, reconcile the next morning | 3 h in spreadsheets | a batch never half-executes |
 | Loan officer (Petra) | internal, back office | decide 40 applications a day inside policy | 20 min each by hand | every decision carries its reasons and its policy version |
 | Compliance officer (Marek) | internal, control | prove every contract exchange is signed by both parties and immutable | a day per audit | an audit trail that needs no explanation |
-| Fraud analyst (Eva) | internal, real time | see a suspicious pattern within a minute of it starting | never, without tooling | a false positive rate a human can live with |
+| Fraud analyst (Eva) | internal, real time | see a suspicious pattern within a minute of it starting | never, without tooling | every alert names the signal that fired and the window it fired over (the reference's fraud service is a velocity-counter signal plane with no rule engine, so a rate-based bar would judge a thing that does not exist) |
 | Investor (Lukas) | consumer, cautious | put money in a fund and understand what it costs | an hour reading PDFs | fees and risk stated before the button |
 | Platform SRE (Nadia) | internal, operations | keep the bank up under the month-end wave | on call | the queue depth and the error budget, on one screen |
+| TPP developer (Ondrej) | external, integrator | read a customer's account through the open-banking API with the customer's consent | weeks of bilateral integration | consent, SCA and the scope of the read are visible in one decision log |
+| Auditor (Hana) | external, evidence | prove that every gate the bank claims to run actually ran and could fail | a week of sampling | a green gate that checked nothing is her finding, not a pass |
+
+The TPP developer and the auditor come from the reference (`open-bank-reference.md` §8.5): the
+first is the only Character who exercises the edge project's main external surface, the second
+separates the evidence function from Marek's control function.
 
 Journeys (goals with a user-POV definition of done, never step scripts):
 
@@ -58,6 +70,9 @@ Journeys (goals with a user-POV definition of done, never step scripts):
 - `invest-in-a-fund` — Lukas buys units, sees the fee, and can sell.
 - `month-end-under-load` — Nadia watches the load act (below) with no data loss and a known error budget.
 - `architect-notices-an-unowned-project` — a project without an App Master is named in the Architect's next decision (Personas-side journey, verifiable from the decision ledger).
+- `erase-a-customer` — Jana asks to be forgotten: the account is tombstoned, the backup copy is crypto-shredded, and the ledger entries that must survive ten years remain with the party pseudonymised. GDPR Article 17 against a ten-year retention policy, the hardest real conflict in the reference, and fully reproducible on one machine.
+- `recall-a-payment` — Tomas paid the wrong supplier: a `camt.056` cancellation request, a `pacs.004` return, and an audit trail showing who authorised the recall under four eyes.
+- `a-tpp-reads-an-account` — Ondrej's read: consent granted, SCA satisfied with dynamic linking, the read scoped to the consent, the whole decision visible in one policy decision log.
 
 The scenario object both `/grand-sim load` and `/uat run` read lives beside the bank
 repositories as `scenario.json`:
@@ -69,21 +84,25 @@ repositories as `scenario.json`:
   "journeys": ["pay-a-friend", "batch-payroll", "month-end-under-load"],
   "load": {
     "standsFor": "1,000,000 users",
-    "envelope": { "accounts": 100000, "paymentsPerMinute": 2000, "batchSize": 300, "durationMinutes": 30 },
+    "envelope": { "accounts": 100000, "paymentsPerMinute": 600, "batchSize": 300, "durationMinutes": 20 },
     "guardrails": { "maxMachineMemoryPct": 60, "maxCpuPct": 70 }
   },
   "acceptance": {
     "dataLoss": 0,
-    "p99LatencyMs": 500,
-    "errorBudgetPct": 0.1
+    "p95LatencyMs": 1000,
+    "httpReqFailedRate": 0.01,
+    "checksRate": 1.0
   }
 }
 ```
 
-`load.envelope` is the operator's open decision 4 written as numbers. The figures above are a
-proposal sized for one machine: a hundred thousand accounts and two thousand payments a minute
-for thirty minutes exercises queues and async paths without pretending the machine is a data
-centre. `/uat` L2 for `month-end-under-load` is the load act itself: the driver is the load
+`load.envelope` is the operator's open decision 4 written as numbers, corrected on 2026-09-08
+against the reference's only real measurement (16.7 requests a second, p95 2.25 s, on a machine
+comparable to this one): a hundred thousand accounts and six hundred payments a minute for twenty
+minutes exercises queues and async paths without pretending the machine is a data centre. The
+acceptance carries the reference's rule verbatim in spirit: a request that did not answer 200
+invalidates the percentile, so `checksRate` must be exactly 1.0 and the failed-request rate under
+one percent before any latency figure counts. `/uat` L2 for `month-end-under-load` is the load act itself: the driver is the load
 generator, the journal is the metrics capture, and the Character judging it is the SRE.
 
 ## Who does what, inside the simulation
