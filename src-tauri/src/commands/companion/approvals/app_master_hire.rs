@@ -59,6 +59,25 @@ pub(crate) struct BindingOutcome {
     pub notes: Vec<String>,
 }
 
+/// How this hire was REQUESTED, as opposed to what kp composed.
+///
+/// Both fields come from the top level of the persona-request body, beside
+/// `appMaster` rather than inside it: they describe the circumstances of the
+/// ask, and kp's role contract has no room for either. Carried as one struct so
+/// adding a third circumstance does not mean a third positional `bool` at a
+/// call site where nobody could tell them apart.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct HireOrigin<'a> {
+    /// Nobody is watching this hire land. Enrols the mandate charter in the
+    /// attention loop (`cadence.attention_enabled`), which is otherwise OFF by
+    /// operator decision — an unattended run has no operator to switch it on.
+    pub simulation: bool,
+    /// The Personas persona whose decision asked for this role, when a persona
+    /// asked rather than a person. Recorded in the hire's setup notes so the
+    /// roster can answer "who wanted this?".
+    pub origin_persona_id: &'a str,
+}
+
 /// Read the `appMaster` block off a stored approval payload.
 pub(crate) fn app_master_block(params: &serde_json::Value) -> Option<&serde_json::Value> {
     params.get("appMaster").filter(|v| v.is_object())
@@ -857,6 +876,7 @@ fn persist_mandate(
     persona_id: &str,
     app_name: &str,
     am: &serde_json::Value,
+    origin: HireOrigin<'_>,
     notes: &mut Vec<String>,
 ) -> Option<String> {
     let scope_rung = am
@@ -941,7 +961,12 @@ fn persist_mandate(
     };
     let title = format!("App master for {app_name}");
     match personas_engine::responsibility::record_hire(db, &record, &title) {
-        Ok(row) => Some(row.id),
+        Ok(row) => {
+            if origin.simulation {
+                enrol_in_attention_loop(db, &row, notes);
+            }
+            Some(row.id)
+        }
         Err(e) => {
             // This one matters more than the others: without the record, the
             // mandate is not enforced and no probation review will ever fire.
@@ -951,6 +976,46 @@ fn persist_mandate(
             ));
             None
         }
+    }
+}
+
+/// Turn on the mandate charter's attention cadence for a SIMULATION hire.
+///
+/// Written as an update immediately after the insert rather than as a field on
+/// `MandateRecord`, deliberately: `record_hire`'s contract is kp's role shape,
+/// and `attention_enabled` is not something kp knows about or should be able to
+/// set. The hire door owns the circumstance, so the hire door applies it.
+///
+/// Failure is a NOTE, never an error — matching every other step in this file.
+/// The persona and its mandate are already real by this point; a charter that
+/// did not get enrolled is a persona that will not wake on its own, which the
+/// operator can fix from the Life tab, and which is a far better outcome than
+/// unwinding a completed hire.
+fn enrol_in_attention_loop(
+    db: &crate::db::DbPool,
+    row: &crate::db::models::PersonaResponsibility,
+    notes: &mut Vec<String>,
+) {
+    let mut cadence = row.cadence.clone();
+    if cadence.attention_enabled {
+        return;
+    }
+    cadence.attention_enabled = true;
+    match crate::db::repos::core::responsibilities::update(
+        db,
+        &row.id,
+        crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+            cadence: Some(cadence),
+            ..Default::default()
+        },
+    ) {
+        Ok(_) => notes.push(
+            "Enrolled in the attention loop (simulation hire): this App master wakes and              decides on its own cadence, without an operator switching it on."
+                .to_string(),
+        ),
+        Err(e) => notes.push(format!(
+            "NOT ENROLLED IN THE ATTENTION LOOP ({e}) — this was requested as a simulation              hire, but the mandate charter's attention cadence is still off, so the persona              will not wake on its own"
+        )),
     }
 }
 
@@ -1117,8 +1182,20 @@ pub(crate) fn bind_app_master(
     persona_id: &str,
     persona_name: &str,
     am: &serde_json::Value,
+    origin: HireOrigin<'_>,
 ) -> BindingOutcome {
     let mut out = BindingOutcome::default();
+
+    // Recorded FIRST, so it survives every early return below: a hire that
+    // fails to bind a project still came from somewhere, and "who asked for
+    // this?" is exactly the question an operator has when they find a persona
+    // they did not create.
+    if !origin.origin_persona_id.is_empty() {
+        out.notes.push(format!(
+            "Hired from a Personas-originated need: persona `{}` asked kp for this role.",
+            origin.origin_persona_id
+        ));
+    }
 
     let project_id = match ensure_project(db, am, persona_name, &mut out.notes) {
         Ok(id) => id,
@@ -1147,8 +1224,15 @@ pub(crate) fn bind_app_master(
     out.trigger_ids = trigger_ids;
     out.unsupported_triggers = unsupported;
     set_probation_autopilot(db, &project_id, &mut out.notes);
-    out.responsibility_id =
-        persist_mandate(db, &project_id, persona_id, &app_name, am, &mut out.notes);
+    out.responsibility_id = persist_mandate(
+        db,
+        &project_id,
+        persona_id,
+        &app_name,
+        am,
+        origin,
+        &mut out.notes,
+    );
 
     // (h) LAST, and only once the mandate is durable. The core identity memory
     // states the rung, the owner and the budget as facts about this hire; if
@@ -1466,8 +1550,16 @@ mod tests {
 
         let am = spec();
         let mut notes = Vec::new();
-        let resp_id = persist_mandate(&pool, "proj-am", "p-am", "kp", &am, &mut notes)
-            .expect("the charter row persists");
+        let resp_id = persist_mandate(
+            &pool,
+            "proj-am",
+            "p-am",
+            "kp",
+            &am,
+            HireOrigin::default(),
+            &mut notes,
+        )
+        .expect("the charter row persists");
         assert!(resp_id.starts_with("resp_"), "{resp_id}");
 
         let outcome = BindingOutcome {
@@ -1499,8 +1591,10 @@ mod tests {
         );
         assert_eq!(row.source, "kp-hire");
         assert_eq!(row.status, "active");
-        // KEEP false (operator-confirmed): hiring must not silently enrol the
-        // persona in the attention loop.
+        // KEEP false (operator-confirmed): an ORDINARY hire must not silently
+        // enrol the persona in the attention loop. The simulation hire is the
+        // one documented exception — see the test below, which asserts the
+        // other half of this rule so neither can be changed alone.
         assert!(!row.cadence.attention_enabled);
         // The link's probation deadline is the same row's, read back through
         // the accessor the stamp uses.
@@ -1519,7 +1613,15 @@ mod tests {
         let mut notes = Vec::new();
         // `p-ghost` was never inserted: the charter INSERT fails its persona
         // FK — the "MANDATE NOT PERSISTED" path.
-        let resp_id = persist_mandate(&pool, "proj-am", "p-ghost", "kp", &am, &mut notes);
+        let resp_id = persist_mandate(
+            &pool,
+            "proj-am",
+            "p-ghost",
+            "kp",
+            &am,
+            HireOrigin::default(),
+            &mut notes,
+        );
         assert_eq!(resp_id, None);
         assert!(
             notes.iter().any(|n| n.contains("MANDATE NOT PERSISTED")),
@@ -1542,5 +1644,98 @@ mod tests {
         // A pointer to nothing is stamped as nothing — never rebuilt as the
         // legacy `app_master_mandate:` key, which names a deleted row.
         assert_eq!(link.mandate_key, "");
+    }
+
+    // -- G8: the simulation hire arrives enrolled --------------------------
+
+    /// The other half of the operator-confirmed rule asserted above: a hire
+    /// that declares `simulation` DOES enrol, because there is no operator in
+    /// an unattended run to switch the loop on afterwards.
+    #[test]
+    fn a_simulation_hire_enrols_the_mandate_in_the_attention_loop() {
+        let pool = crate::db::init_test_db().unwrap();
+        insert_persona(&pool, "p-sim");
+
+        let am = spec();
+        let mut notes = Vec::new();
+        let resp_id = persist_mandate(
+            &pool,
+            "proj-am",
+            "p-sim",
+            "kp",
+            &am,
+            HireOrigin {
+                simulation: true,
+                origin_persona_id: "p-architect",
+            },
+            &mut notes,
+        )
+        .expect("the mandate persists");
+
+        let row = crate::db::repos::core::responsibilities::get_by_id(&pool, &resp_id)
+            .unwrap()
+            .expect("the charter row exists");
+        assert!(
+            row.cadence.attention_enabled,
+            "a simulation hire wakes on its own; nobody is watching to enable it"
+        );
+        assert!(
+            notes
+                .iter()
+                .any(|n| n.contains("Enrolled in the attention loop")),
+            "the enrolment is visible in setup_detail: {notes:?}"
+        );
+    }
+
+    /// The asker is recorded on the persona's setup notes, and it survives a
+    /// binding that never gets as far as a project.
+    #[test]
+    fn the_asking_persona_is_named_in_the_setup_notes() {
+        let pool = crate::db::init_test_db().unwrap();
+        insert_persona(&pool, "p-sim2");
+
+        // An `appMaster` block with no resolvable project takes the earliest
+        // return in `bind_app_master` — the note must already be there.
+        let outcome = bind_app_master(
+            &pool,
+            "p-sim2",
+            "kp",
+            &serde_json::json!({}),
+            HireOrigin {
+                simulation: true,
+                origin_persona_id: "p-architect",
+            },
+        );
+        assert!(
+            outcome
+                .notes
+                .iter()
+                .any(|n| n.contains("p-architect") && n.contains("Personas-originated need")),
+            "the asker is recorded even when the binding fails early: {:?}",
+            outcome.notes
+        );
+    }
+
+    /// An ordinary hire says nothing about an origin it does not have — an
+    /// empty id must not produce a note naming nobody.
+    #[test]
+    fn an_operator_hire_records_no_origin_note() {
+        let pool = crate::db::init_test_db().unwrap();
+        insert_persona(&pool, "p-plain");
+        let outcome = bind_app_master(
+            &pool,
+            "p-plain",
+            "kp",
+            &serde_json::json!({}),
+            HireOrigin::default(),
+        );
+        assert!(
+            !outcome
+                .notes
+                .iter()
+                .any(|n| n.contains("Personas-originated need")),
+            "{:?}",
+            outcome.notes
+        );
     }
 }

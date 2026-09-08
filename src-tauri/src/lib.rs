@@ -1696,6 +1696,7 @@ pub fn run() {
             commands::infrastructure::app_master_adopt::adopt_app_master,
             commands::infrastructure::project_scaffold::create_project_repository,
             commands::infrastructure::architect_adopt::adopt_architect,
+            commands::infrastructure::kp_hire::request_hire_from_kp,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,

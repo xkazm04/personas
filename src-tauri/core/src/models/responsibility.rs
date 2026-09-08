@@ -432,7 +432,16 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub authority: Option<bool>,
-    /// True for a charter that may request a hire from kp.
+    /// May a wake of this charter ask kp for a NEW ROLE — the decision plan's
+    /// `hires` verb?
+    ///
+    /// Absent (the overwhelming case) is `false`: hiring spends money and adds
+    /// a persona against the app-wide active cap, so it is opt-in per charter
+    /// rather than a capability every App Master gets by holding a mandate. Two
+    /// other doors grant it without the flag being set by hand: the charter's
+    /// provenance (adopted from the `workforce-planning` recipe) and
+    /// [`Self::authority`] — the Architect, which designs the org, may staff
+    /// it. See `attention_decide::may_hire`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub can_hire: Option<bool>,

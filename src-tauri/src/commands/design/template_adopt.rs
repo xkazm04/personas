@@ -2579,6 +2579,8 @@ pub(crate) fn map_use_case_to_charter_input(
         // Channel rank is granted, never adopted: a template says nothing
         // about whether the persona holding this charter may direct a team.
         authority: None,
+        // A legacy use case never described hiring, so it does not grant it.
+        // `None` is read as `false`, and the operator opts a charter in.
         can_hire: None,
     };
 

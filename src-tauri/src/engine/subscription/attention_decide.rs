@@ -56,6 +56,27 @@ pub(crate) const MAX_ASK_IDEA_IDS: usize = 10;
 pub(crate) const MAX_ASK_OPTIONS: usize = 6;
 pub(crate) const MAX_ASK_OPTION_CHARS: usize = 120;
 
+/// How many roles ONE wake may ask kp for.
+///
+/// One. A hire is not a task: it spends real money at kp, it mints a persona
+/// that counts against the app-wide active cap, and the need that justifies it
+/// has to be argued in prose. A wake that names two roles has not decided which
+/// one is missing — and unlike a dispatch, a hire the persona gets wrong cannot
+/// be un-run by waiting for the next wake.
+pub(crate) const MAX_HIRES: usize = 1;
+/// Hard bound on one hire's `need` — the whole brief kp composes a role from.
+/// The same ceiling as [`MAX_BRIEF_CHARS`]: a need is a brief addressed to
+/// another product rather than to a worker, and it crosses an HTTP boundary
+/// into a text field kp bounds again on its own side.
+pub(crate) const MAX_HIRE_NEED_CHARS: usize = 1200;
+
+/// The recipe a charter is adopted from when hiring IS its job.
+///
+/// A charter minted from this recipe may use the `hires` verb without the
+/// operator setting `spec.canHire` by hand — the provenance is the permission,
+/// the same way [`ACCEPTED_IDEA_DELIVERY_SLUG`] is what licenses a dispatch to
+/// mint a task row.
+pub(crate) const WORKFORCE_PLANNING_SLUG: &str = "workforce-planning";
 // ── The channel (Grand Simulation G3 / G11) ───────────────────────────────
 
 /// How many channel lines one wake is shown.
@@ -212,6 +233,44 @@ pub(crate) struct DecisionCharter {
     pub dispatch_model: String,
     /// The project this charter is bound to, when it is bound to one.
     pub project_id: Option<String>,
+    /// May a wake holding this charter ask kp for a new role?
+    ///
+    /// `spec.canHire == true`, or the charter was adopted from
+    /// [`WORKFORCE_PLANNING_SLUG`]. Read by [`may_hire`] over the whole roster,
+    /// not per charter: hiring is a property of the PERSONA's mandate, and the
+    /// need a hire names is about a responsibility that has no holder — which
+    /// by definition is not one of the charters in front of it.
+    pub can_hire: bool,
+    /// `spec.authority` — this charter directs a team (the Architect's shape).
+    ///
+    /// Carried here so [`may_hire`] can read it: the persona that designs the
+    /// organisation is the one that may staff it, and requiring the operator to
+    /// ALSO tick `canHire` on an authority charter would be a second switch for
+    /// a decision already made once.
+    pub authority: bool,
+}
+
+/// Does this roster license the `hires` verb?
+///
+/// The permission is deliberately a roster-level OR rather than a per-item gate
+/// on the hire itself: a hire's `need` describes work NOBODY holds, so there is
+/// no charter for it to name and nothing to attach the permission to. One
+/// hiring charter is what makes the persona a hiring persona.
+///
+/// Three doors, any one of which grants it:
+/// 1. `spec.canHire` — the operator ticked it on this charter;
+/// 2. the `workforce-planning` provenance — hiring IS the charter's job;
+/// 3. `spec.authority` — the Architect. A persona trusted to direct a team is
+///    trusted to say the team is short a role; splitting those into two
+///    switches would mean an Architect could design an org it may not staff.
+///
+/// This is the LICENCE only. Whether a licensed hire actually goes out is a
+/// second question the executor asks — see the active-persona cap in
+/// `engine::kp_hire_request`.
+pub(crate) fn may_hire(charters: &[DecisionCharter]) -> bool {
+    charters.iter().any(|c| {
+        c.can_hire || c.authority || c.recipe_slug.as_deref() == Some(WORKFORCE_PLANNING_SLUG)
+    })
 }
 
 /// How many in-flight tasks are named in the prompt.
@@ -504,6 +563,30 @@ pub(crate) struct OperatorAsk {
     pub options: Vec<String>,
 }
 
+/// One role the plan wants kp to compose and send back as a persona.
+///
+/// The counterpart of [`OperatorAsk`] pointed at the other product rather than
+/// at a person: an ask waits for a human, a hire does not. Both exist for the
+/// same reason — a wake that can neither dispatch nor explain itself has only
+/// its own coverage note to write into.
+///
+/// No `Eq`: `budget_usd` is an `f64`, and the plan types this one is nested in
+/// drop `Eq` with it. Nothing compares plans for total equality; the tests use
+/// `assert_eq!`, which needs only `PartialEq`.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(crate) struct HireRequest {
+    /// The work, the evidence and the acceptance in prose, bounded to
+    /// [`MAX_HIRE_NEED_CHARS`]. kp composes the whole role from this.
+    pub need: String,
+    /// The project the hired role would belong to. `None` = the persona's own
+    /// project, resolved by the executor from the decision context.
+    pub project_id: Option<String>,
+    /// A monthly ceiling in USD the asker proposes. Advisory: kp's composer
+    /// decides the budget block, and this is the asker's own estimate of what
+    /// the work is worth.
+    pub budget_usd: Option<f64>,
+}
+
 /// One message the plan posts into its channel.
 ///
 /// The other direction of [`ChannelLine`]: until this existed an App Master
@@ -546,12 +629,22 @@ impl SayPolicy {
 }
 
 /// A parsed, bounded, capacity-capped plan.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+///
+/// `Eq` was dropped when `hires` arrived — see [`HireRequest`].
+#[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct DecisionPlan {
     pub dispatch: Vec<DecisionItem>,
     pub defer: Vec<DecisionDeferral>,
     /// What this wake needs a person to decide. At most [`MAX_ASKS`].
     pub asks: Vec<OperatorAsk>,
+    /// Roles this wake wants kp to compose. At most [`MAX_HIRES`], and empty
+    /// unless the roster licenses hiring ([`may_hire`]).
+    pub hires: Vec<HireRequest>,
+    /// How many hires were dropped because the roster does not license the
+    /// verb. Kept rather than silently discarded, for the same reason
+    /// [`DecisionPlan::dropped_unknown`] is: a plan that reaches for a
+    /// capability it does not hold is a fact the ledger should carry.
+    pub dropped_unlicensed_hires: usize,
     /// What this wake says in its channel. At most [`MAX_SAY`].
     pub say: Vec<Say>,
     /// `say.to` values naming a persona this one shares no team with. Kept
@@ -638,6 +731,19 @@ struct WireAsk {
 }
 
 #[derive(serde::Deserialize)]
+struct WireHire {
+    #[serde(default)]
+    need: Option<String>,
+    #[serde(rename = "projectId", alias = "project_id", default)]
+    project_id: Option<String>,
+    /// `serde_json::Value` for the same reason `next_wake_minutes` is: a model
+    /// that writes `"$200"` or `"200/mo"` must lose only its budget suggestion
+    /// — which kp overrides with its own composer anyway — and not the hire.
+    #[serde(rename = "budgetUsd", alias = "budget_usd", default)]
+    budget_usd: Option<serde_json::Value>,
+}
+
+#[derive(serde::Deserialize)]
 struct WireSay {
     #[serde(default)]
     to: Option<String>,
@@ -665,6 +771,10 @@ struct WirePlan {
     /// with nothing to ask is the normal plan.
     #[serde(default)]
     asks: Vec<WireAsk>,
+    /// Absent is an empty list, like `asks`. Dropped entirely unless the roster
+    /// licenses hiring — see [`may_hire`].
+    #[serde(default)]
+    hires: Vec<WireHire>,
     #[serde(default)]
     note: Option<String>,
     /// Deliberately `serde_json::Value` rather than `Option<u32>`: a model that
@@ -789,10 +899,21 @@ pub(crate) fn parse_decision_with(
     let asks = parse_asks(wire.asks);
     let (say, dropped_unknown_say, say_downgraded) = parse_say(wire.say, say_policy);
 
+    // The licence is checked HERE rather than at execution so that a plan from
+    // an unlicensed roster carries the count it lost, and the ledger can show
+    // that the model reached for a capability the persona does not hold.
+    let (hires, dropped_unlicensed_hires) = if may_hire(charters) {
+        (parse_hires(wire.hires), 0)
+    } else {
+        (Vec::new(), wire.hires.len())
+    };
+
     Ok(DecisionPlan {
         dispatch,
         defer,
         asks,
+        hires,
+        dropped_unlicensed_hires,
         say,
         dropped_unknown_say,
         say_downgraded,
@@ -801,6 +922,46 @@ pub(crate) fn parse_decision_with(
         dropped_unknown,
         trimmed_for_capacity,
     })
+}
+
+/// Read the hire list: bound the need, cap the list at [`MAX_HIRES`], drop what
+/// says nothing.
+///
+/// A hire with no `need` is dropped without ceremony — the need IS the request;
+/// kp composes the entire role from that prose and has nothing to work from
+/// without it. Unlike an ask, there is no title to fall back on.
+///
+/// `projectId` is NOT validated against the persona's projects here: this module
+/// is DB-free by construction, and the executor resolves an unnamed or unknown
+/// project to the persona's own. `budgetUsd` is read leniently and dropped when
+/// it is not a finite positive number — kp's composer owns the budget block, so
+/// a fumbled suggestion must not cost the persona its hire.
+fn parse_hires(wire: Vec<WireHire>) -> Vec<HireRequest> {
+    let mut hires: Vec<HireRequest> = Vec::new();
+    for h in wire {
+        if hires.len() >= MAX_HIRES {
+            break;
+        }
+        let need = bound(h.need.unwrap_or_default().trim(), MAX_HIRE_NEED_CHARS);
+        if need.is_empty() {
+            continue;
+        }
+        let project_id = h
+            .project_id
+            .map(|p| p.trim().to_string())
+            .filter(|p| !p.is_empty());
+        let budget_usd = h
+            .budget_usd
+            .as_ref()
+            .and_then(|v| v.as_f64())
+            .filter(|n| n.is_finite() && *n > 0.0);
+        hires.push(HireRequest {
+            need,
+            project_id,
+            budget_usd,
+        });
+    }
+    hires
 }
 
 /// Read the channel list: cap it, bound the bodies, resolve the destination
@@ -1296,6 +1457,23 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          asks; `kind` is `{ASK_ACCEPT_IDEAS}`, `{ASK_DECISION}` or \
          `{ASK_UNBLOCK}`.\n"
     ));
+    // Rendered ONLY for a roster that licenses hiring. A rule describing a verb
+    // the parser will drop is worse than no rule: it invites the model to spend
+    // its answer on a request that cannot land, and then says nothing about why
+    // the request vanished.
+    if may_hire(&ctx.charters) {
+        s.push_str(&format!(
+            "- HIRE: when a responsibility of yours has no holder and the work is \
+             real, name the need once; a hire is a request to kp, and the role \
+             arrives as a persona within the active cap. Put it in `hires` with \
+             the work, the evidence that it is needed, and what you would accept \
+             as done — in prose, at most {MAX_HIRE_NEED_CHARS} characters, \
+             because kp composes the whole role from that text and nothing else. \
+             At most {MAX_HIRES} per wake. Hire for work NOBODY holds; a \
+             responsibility you already hold and cannot get to is a capacity \
+             problem, not a hiring one.\n"
+        ));
+    }
     s.push_str(&format!(
         "- ANSWER THE CHANNEL: a `{AUTHORITY_DIRECTIVE}` from the operator or an \
          authority persona is an instruction you must reflect in this plan — \
@@ -1557,6 +1735,19 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          is dropped, and so is a `say.to` naming somebody you share no team \
          with.\n"
     ));
+    // Appended rather than folded into the object literal above, because the
+    // key exists only for a roster that may hire and the literal is shared.
+    if may_hire(&ctx.charters) {
+        s.push_str(&format!(
+            "The same object may carry ONE more optional key, \
+             `\"hires\":[{{\"need\":\"<the work, the evidence, and what you would \
+             accept as done, at most {MAX_HIRE_NEED_CHARS} characters>\",\
+             \"projectId\":\"<omit for your own project>\",\
+             \"budgetUsd\":<a number, or omit>}}]`. \
+             Omit `hires` entirely — which is the normal answer — unless a \
+             responsibility genuinely has no holder.\n"
+        ));
+    }
     s
 }
 
@@ -2902,5 +3093,160 @@ mod tests {
         assert_eq!(plan.dispatch[0].charter_id, "r2");
         assert_eq!(plan.defer.len(), 1);
         assert!(plan.dropped_unknown.is_empty());
+    }
+
+    // -- parse: the `hires` verb -------------------------------------------
+
+    /// A roster that licenses hiring, two ways: an explicit `spec.canHire` and
+    /// the `workforce-planning` provenance.
+    fn hiring_roster() -> Vec<DecisionCharter> {
+        let mut rs = roster();
+        rs[0].can_hire = true;
+        rs
+    }
+
+    fn planner_roster() -> Vec<DecisionCharter> {
+        let mut rs = roster();
+        rs[0].recipe_slug = Some(WORKFORCE_PLANNING_SLUG.to_string());
+        rs
+    }
+
+    fn authority_roster() -> Vec<DecisionCharter> {
+        let mut rs = roster();
+        rs[0].authority = true;
+        rs
+    }
+
+    #[test]
+    fn a_roster_licenses_hiring_by_flag_provenance_or_authority() {
+        assert!(!may_hire(&roster()), "a plain roster may not hire");
+        assert!(may_hire(&hiring_roster()), "spec.canHire licenses it");
+        assert!(
+            may_hire(&planner_roster()),
+            "the workforce-planning recipe licenses it without the flag"
+        );
+        assert!(
+            may_hire(&authority_roster()),
+            "the Architect designs the org, so it may staff it — without a second switch"
+        );
+    }
+
+    #[test]
+    fn parse_reads_a_hire_beside_an_empty_dispatch() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "hires": [{
+                "need": "Nobody owns the payment ledger's reconciliation. Three \
+                         nights of settlement runs ended with an unexplained \
+                         delta. Done = a nightly job that reconciles and files a \
+                         discrepancy report.",
+                "projectId": "proj-bank-core",
+                "budgetUsd": 40.0,
+            }],
+            "note": "asked kp for a reconciliation role",
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &hiring_roster(), 3).expect("parses");
+        assert_eq!(plan.hires.len(), 1);
+        let h = &plan.hires[0];
+        assert!(h.need.starts_with("Nobody owns the payment ledger"));
+        assert_eq!(h.project_id.as_deref(), Some("proj-bank-core"));
+        assert_eq!(h.budget_usd, Some(40.0));
+        assert_eq!(plan.dropped_unlicensed_hires, 0);
+
+        // snake_case rides too, and an absent `hires` is an empty list.
+        let snake = "{\"dispatch\":[],\"hires\":[{\"need\":\"n\",\
+                     \"project_id\":\"p1\",\"budget_usd\":12}]}";
+        let s = parse_decision(snake, &hiring_roster(), 3).expect("parses");
+        assert_eq!(s.hires[0].project_id.as_deref(), Some("p1"));
+        assert_eq!(s.hires[0].budget_usd, Some(12.0));
+        assert!(parse_decision("{\"dispatch\":[]}", &hiring_roster(), 3)
+            .expect("parses")
+            .hires
+            .is_empty());
+    }
+
+    /// The licence is the whole gate: an unlicensed roster keeps the plan, drops
+    /// the hire, and COUNTS the drop so the ledger can show it happened.
+    #[test]
+    fn an_unlicensed_roster_drops_the_hire_and_counts_it() {
+        let raw = serde_json::json!({
+            "dispatch": [{ "charterId": "r2", "reason": "due", "brief": "go" }],
+            "hires": [{ "need": "someone to do the thing" }],
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &roster(), 3).expect("parses");
+        assert!(plan.hires.is_empty(), "an unlicensed roster may not hire");
+        assert_eq!(plan.dropped_unlicensed_hires, 1);
+        assert_eq!(
+            plan.dispatch.len(),
+            1,
+            "the rest of the plan survives the dropped verb"
+        );
+    }
+
+    #[test]
+    fn parse_bounds_and_caps_the_hire_list() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "hires": (0..4)
+                .map(|i| serde_json::json!({ "need": format!("{} need {i}", "x".repeat(5_000)) }))
+                .collect::<Vec<_>>(),
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &hiring_roster(), 3).expect("parses");
+        assert_eq!(plan.hires.len(), MAX_HIRES, "one hire per wake");
+        assert_eq!(
+            plan.hires[0].need.chars().count(),
+            MAX_HIRE_NEED_CHARS,
+            "the need is bounded in CHARACTERS"
+        );
+    }
+
+    /// A need is the whole request, so a hire without one is nothing. A fumbled
+    /// budget costs only the budget — kp's composer owns that block anyway.
+    #[test]
+    fn a_hire_without_a_need_is_dropped_and_a_fumbled_budget_is_not_fatal() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "hires": [{ "need": "   ", "budgetUsd": 10 }],
+        })
+        .to_string();
+        assert!(parse_decision(&raw, &hiring_roster(), 3)
+            .expect("parses")
+            .hires
+            .is_empty());
+
+        for bad in [
+            serde_json::json!("$200/mo"),
+            serde_json::json!(-5),
+            serde_json::json!(0),
+        ] {
+            let raw = serde_json::json!({
+                "dispatch": [],
+                "hires": [{ "need": "a real need", "budgetUsd": bad }],
+            })
+            .to_string();
+            let plan = parse_decision(&raw, &hiring_roster(), 3).expect("parses");
+            assert_eq!(plan.hires.len(), 1, "the hire survives its own bad budget");
+            assert_eq!(plan.hires[0].budget_usd, None);
+        }
+    }
+
+    /// The rule and the contract clause are rendered together, and only for a
+    /// roster that may hire — a rule for a verb the parser drops is worse than
+    /// no rule at all.
+    #[test]
+    fn the_hire_rule_is_rendered_only_for_a_licensed_roster() {
+        let mut ctx = ctx_fixture();
+        assert!(
+            !render_decision_prompt(&ctx).contains("- HIRE:"),
+            "a plain roster is not told about a verb it cannot use"
+        );
+
+        ctx.charters = hiring_roster();
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("- HIRE:"), "the rule appears");
+        assert!(p.contains("\"hires\""), "and so does the contract clause");
     }
 }
