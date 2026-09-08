@@ -2348,7 +2348,7 @@ mod tests {
             let conn = pool.get().unwrap();
             conn.execute(
                 "UPDATE personas SET model_profile = ?1 WHERE id = ?2",
-                params![r#"{"model":"claude-opus-4-8"}"#, id],
+                params![r#"{"model":"claude-opus-5"}"#, id],
             )
             .unwrap();
         }
@@ -2359,7 +2359,7 @@ mod tests {
                 .model_profile
                 .as_deref()
                 .unwrap_or_default()
-                .contains("claude-opus-4-8"),
+                .contains("claude-opus-5"),
             "a user-customized model must survive re-seed, got {:?}",
             overridden.model_profile,
         );

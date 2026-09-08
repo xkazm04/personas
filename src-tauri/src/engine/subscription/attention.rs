@@ -8,7 +8,9 @@
 //! once per day, via `count_today(lane='improve')`), then advancement resumes
 //! for the rest of the day; without the preemption, advance always has a
 //! candidate and the self-review would be unreachable — for the FIRST persona
-//! that clears the admission ladder (first refusal wins, in order):
+//! that clears the admission ladder, where "first" means most deserving and
+//! NOT oldest ([`order_least_recently_served`]: a pending wake, then least
+//! recently served, then roster age) — first refusal wins, in order:
 //!
 //! 1. **in-flight** — an open attention ledger row younger than
 //!    [`IN_FLIGHT_WINDOW_MINUTES`]; older open rows are ignored and counted
@@ -380,6 +382,60 @@ pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Option<Plann
     }
 }
 
+/// One persona's ordering inputs for [`order_least_recently_served`], read
+/// once per tick. Borrowed throughout — nothing here is owned or cloned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct AttentionOrderRow<'a> {
+    pub persona_id: &'a str,
+    /// The newest non-refusal attention-ledger `started_at` for this persona
+    /// (`attention_ledger::latest_started_per_persona`). `None` = never
+    /// served, which is the most overdue a persona can be.
+    ///
+    /// INVARIANT: every writer stamps `chrono::Utc::now().to_rfc3339()`, so
+    /// these strings share one offset (`+00:00`) and compare correctly
+    /// lexicographically — the same assumption the table's own
+    /// `MAX(started_at)` / `ORDER BY started_at` already rest on.
+    pub last_served_at: Option<&'a str>,
+    /// Roster-age tiebreak: the `created_at` of this persona's earliest
+    /// charter, i.e. exactly the order the age-based loop used to iterate.
+    pub created_at: &'a str,
+    /// The operator switched this persona on and it is owed a pass NOW.
+    pub wake_pending: bool,
+}
+
+/// Order the tick's personas by NEED, not by age.
+///
+/// The loop dispatches ONE persona per tick and used to iterate the roster in
+/// creation order, so a persona was reached only when every older persona was
+/// refused or idle in the same tick. Measured 2026-09-08 in the Grand
+/// Simulation: the two oldest personas took four dispatches in an hour, the
+/// newest took two and ran 45 minutes past its own `nextWakeMinutes: 30`.
+/// With a growing roster that is seniority starvation, not scheduling.
+///
+/// The total order, most-deserving first:
+/// 1. **a pending wake request** — the operator is asking now, and a wake is
+///    already privileged at the interval-floor rung (`admit_persona`);
+/// 2. **least recently served** — ascending by the newest non-refusal ledger
+///    `started_at`; a persona never served has `None`, which sorts first;
+/// 3. **roster age** — ascending `created_at`, the old behaviour, kept as the
+///    tiebreak so a tie is broken the way it always was;
+/// 4. **persona id** — so the order is total and reproducible even when two
+///    personas were created in the same millisecond.
+///
+/// This changes only WHICH persona is considered first. The one-dispatch-per-
+/// tick rule, the lane priority, the interval floors and the whole admission
+/// ladder are untouched: a persona reached first still has to clear them.
+pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
+    rows.sort_by(|a, b| {
+        // `true` must come first, so compare b→a on this key only.
+        b.wake_pending
+            .cmp(&a.wake_pending)
+            .then_with(|| a.last_served_at.cmp(&b.last_served_at))
+            .then_with(|| a.created_at.cmp(b.created_at))
+            .then_with(|| a.persona_id.cmp(b.persona_id))
+    });
+}
+
 /// The decision half: roster → admission ladder per persona → lane choice for
 /// the first admitted persona → ledger `started` row + built payload.
 /// Maintenance executes fully here (enqueue is DB-only).
@@ -391,19 +447,43 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
         return Ok((counts, None));
     }
 
-    // 4. Group per persona, preserving roster order (created ASC).
-    let mut order: Vec<&str> = Vec::new();
+    // 4. Group per persona (charters arrive created ASC, so a group's first
+    //    charter carries the persona's roster position).
+    let mut roster: Vec<&str> = Vec::new();
     let mut grouped: HashMap<&str, Vec<&PersonaResponsibility>> = HashMap::new();
     for c in &charters {
         let entry = grouped.entry(c.persona_id.as_str()).or_default();
         if entry.is_empty() {
-            order.push(c.persona_id.as_str());
+            roster.push(c.persona_id.as_str());
         }
         entry.push(c);
     }
-    counts.personas = order.len();
+    counts.personas = roster.len();
 
-    for pid in order {
+    // 4b. …then order by NEED. Two reads for the whole tick, not per persona.
+    //     `read_wake_requests` only LOOKS: the request is spent inside
+    //     `admit_persona`, exactly once, as before.
+    let served: HashMap<String, String> =
+        attention_ledger::latest_started_per_persona(pool, KIND_ATTENTION)?
+            .into_iter()
+            .collect();
+    let wake_requests = read_wake_requests(pool);
+    let mut order: Vec<AttentionOrderRow<'_>> = roster
+        .iter()
+        .map(|pid| AttentionOrderRow {
+            persona_id: pid,
+            last_served_at: served.get(*pid).map(String::as_str),
+            created_at: grouped[pid]
+                .first()
+                .map(|c| c.created_at.as_str())
+                .unwrap_or(""),
+            wake_pending: wake_requests.iter().any(|w| w == pid),
+        })
+        .collect();
+    order_least_recently_served(&mut order);
+
+    for row in order {
+        let pid = row.persona_id;
         let persona_charters = &grouped[pid];
         let admission = match admit_persona(pool, pid, persona_charters, &mut counts) {
             Ok(a) => a,
@@ -2300,8 +2380,50 @@ async fn spawn_attention_execution(
 
 // ── The decide lane's executor ─────────────────────────────────────────────
 
-/// How long the decision call may take before the wake gives up and falls back.
-const DECISION_TIMEOUT: Duration = Duration::from_secs(180);
+/// Floor of the decision call's budget — what a decision gets before the
+/// portfolio adds anything. See [`decision_timeout`].
+const DECISION_TIMEOUT_BASE: Duration = Duration::from_secs(360);
+/// Added per project the decision prompt renders. See [`decision_timeout`].
+const DECISION_TIMEOUT_PER_PROJECT: Duration = Duration::from_secs(60);
+/// Ceiling regardless of portfolio size — a wake holds a slot while it waits,
+/// so the budget must stay bounded no matter how large a context gets.
+const DECISION_TIMEOUT_MAX: Duration = Duration::from_secs(600);
+
+/// How long ONE decision call may take before the wake gives up and falls back
+/// to the deterministic `advance` pick.
+///
+/// **Flat 180 s until 2026-09-08, and it was measured too low the moment a
+/// prompt grew.** The Architect of the Grand Simulation decided in **81 s**
+/// (12:12:38 → 12:13:59) while its prompt was small; its very next decision —
+/// after the workspace section, three new plan verbs and a six-project
+/// portfolio entered that prompt — hit the ceiling, and the ledger row reads
+/// `"reason":"app_master_decision timed out after 180s"` with
+/// `"fallback":"advance"`. That wake spent an execution on the fallback lane
+/// and decided nothing.
+///
+/// The two costs are wildly asymmetric: waiting longer costs some seconds of
+/// one cheap model call; giving up costs a WHOLE wake. So the ceiling sits
+/// well above the largest decision anyone has observed rather than near it —
+/// the base alone is ~4.4× the 81 s measurement — and it grows with the one
+/// thing the prompt demonstrably grows with, the portfolio the persona is
+/// asked to reason over. Six projects reaches the 10-minute cap; a
+/// project-bound App Master with one stays at 7.
+///
+/// The fallback itself is deliberately untouched: the ledger reason line above
+/// is what made this visible, and it must keep saying so (`oneshot.rs:275`
+/// formats the real duration, so it stays honest as this rule changes).
+fn decision_timeout(context: &attention_decide::DecisionContext) -> Duration {
+    // Every project the prompt renders, from BOTH shapes: a project-bound App
+    // Master carries `projects`, the workspace-bound Architect carries the
+    // workspace's own list. Summed rather than picked so neither shape is
+    // silently charged zero.
+    let projects =
+        context.projects.len() + context.workspace.as_ref().map_or(0, |w| w.projects.len());
+    let projects = u32::try_from(projects).unwrap_or(u32::MAX);
+    DECISION_TIMEOUT_BASE
+        .saturating_add(DECISION_TIMEOUT_PER_PROJECT.saturating_mul(projects))
+        .min(DECISION_TIMEOUT_MAX)
+}
 /// Hard ceiling on how many charters ONE wake may dispatch, independent of the
 /// persona's declared concurrency. A `max_concurrent` of 20 is a statement
 /// about how many runs may COEXIST, not about how many a single autonomous
@@ -2354,7 +2476,7 @@ async fn run_decision_lane(
         &prompt,
         &context.model,
         crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
-        DECISION_TIMEOUT,
+        decision_timeout(&context),
     )
     .await;
 
@@ -4485,6 +4607,168 @@ mod attention_tests {
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
     }
 
+    // -- pure: the decision call's budget ------------------------------------
+
+    /// The rule, pinned: a floor well above the largest observed decision, a
+    /// minute per project the prompt renders, and a hard cap.
+    #[test]
+    fn the_decision_budget_grows_with_the_portfolio_and_stops_at_the_cap() {
+        let ctx = |projects: usize, workspace_projects: Option<usize>| {
+            attention_decide::DecisionContext {
+                projects: vec![Default::default(); projects],
+                workspace: workspace_projects.map(|n| attention_decide::WorkspaceView {
+                    projects: vec![Default::default(); n],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }
+        };
+
+        // No portfolio at all → the floor, which is already 4.4× the 81 s the
+        // Architect's first (small-prompt) decision actually took.
+        assert_eq!(decision_timeout(&ctx(0, None)), Duration::from_secs(360));
+        assert!(
+            decision_timeout(&ctx(0, None)) > Duration::from_secs(180),
+            "the 180 s that timed out live must not be reachable again"
+        );
+
+        // A project-bound App Master with one codebase.
+        assert_eq!(decision_timeout(&ctx(1, None)), Duration::from_secs(420));
+
+        // The Architect's shape: the projects come from the WORKSPACE view,
+        // and the six-project portfolio that blew the old ceiling now reaches
+        // the cap rather than the fallback lane.
+        assert_eq!(decision_timeout(&ctx(0, Some(6))), Duration::from_secs(600));
+
+        // Both lists are counted, so neither shape is charged zero.
+        assert_eq!(decision_timeout(&ctx(2, Some(2))), Duration::from_secs(600));
+        assert_eq!(decision_timeout(&ctx(1, Some(1))), Duration::from_secs(480));
+
+        // The cap holds against an absurd portfolio — a wake holds a slot
+        // while it waits.
+        assert_eq!(decision_timeout(&ctx(500, None)), DECISION_TIMEOUT_MAX);
+    }
+
+    // -- pure: roster order (fairness) ---------------------------------------
+
+    fn order_row<'a>(
+        pid: &'a str,
+        last_served: Option<&'a str>,
+        created: &'a str,
+    ) -> AttentionOrderRow<'a> {
+        AttentionOrderRow {
+            persona_id: pid,
+            last_served_at: last_served,
+            created_at: created,
+            wake_pending: false,
+        }
+    }
+
+    fn ordered<'a>(mut rows: Vec<AttentionOrderRow<'a>>) -> Vec<&'a str> {
+        order_least_recently_served(&mut rows);
+        rows.into_iter().map(|r| r.persona_id).collect()
+    }
+
+    /// Need beats age: the persona served longest ago goes first, whatever
+    /// the roster says, and a persona never served goes ahead of all of them.
+    #[test]
+    fn least_recently_served_orders_by_need_not_by_age() {
+        // Oldest persona was served most recently; newest was served longest
+        // ago. The old created-ASC loop returned exactly the wrong order.
+        let rows = vec![
+            order_row(
+                "old",
+                Some("2026-09-08T12:50:00+00:00"),
+                "2026-09-06T09:00:00+00:00",
+            ),
+            order_row(
+                "mid",
+                Some("2026-09-08T12:20:00+00:00"),
+                "2026-09-07T09:00:00+00:00",
+            ),
+            order_row(
+                "new",
+                Some("2026-09-08T11:05:00+00:00"),
+                "2026-09-08T12:12:00+00:00",
+            ),
+        ];
+        assert_eq!(ordered(rows), vec!["new", "mid", "old"]);
+
+        // Never served (None) is the most overdue there is — ahead of every
+        // persona that has a stamp, however old.
+        let rows = vec![
+            order_row(
+                "served",
+                Some("2026-01-01T00:00:00+00:00"),
+                "2026-09-06T09:00:00+00:00",
+            ),
+            order_row("fresh", None, "2026-09-08T12:12:00+00:00"),
+        ];
+        assert_eq!(ordered(rows), vec!["fresh", "served"]);
+    }
+
+    /// The order is TOTAL and reproducible: equal need falls back to roster
+    /// age, and an exact tie there falls back to the persona id.
+    #[test]
+    fn least_recently_served_is_total_and_reproducible() {
+        let same = Some("2026-09-08T12:00:00+00:00");
+        let rows = vec![
+            order_row("b", same, "2026-09-07T09:00:00+00:00"),
+            order_row("a", same, "2026-09-06T09:00:00+00:00"),
+        ];
+        assert_eq!(ordered(rows), vec!["a", "b"], "equal need → roster age");
+
+        let created = "2026-09-06T09:00:00+00:00";
+        let rows = vec![
+            order_row("zz", same, created),
+            order_row("aa", same, created),
+        ];
+        assert_eq!(ordered(rows), vec!["aa", "zz"], "equal age → id");
+
+        // Same input in the other input order → same output.
+        let rows = vec![
+            order_row("aa", same, created),
+            order_row("zz", same, created),
+        ];
+        assert_eq!(ordered(rows), vec!["aa", "zz"], "input order is irrelevant");
+    }
+
+    /// A pending WAKE REQUEST outranks the overdue ordering — a wake is the
+    /// operator asking now.
+    #[test]
+    fn a_pending_wake_request_is_served_before_the_most_overdue() {
+        let mut woken = order_row(
+            "woken",
+            Some("2026-09-08T12:59:00+00:00"),
+            "2026-09-08T12:12:00+00:00",
+        );
+        woken.wake_pending = true;
+        let rows = vec![
+            order_row("starved", None, "2026-09-06T09:00:00+00:00"),
+            woken,
+        ];
+        assert_eq!(
+            ordered(rows),
+            vec!["woken", "starved"],
+            "the wake wins even against a never-served persona"
+        );
+
+        // Two wakes among themselves fall back to the same overdue rule.
+        let mut w1 = order_row(
+            "w1",
+            Some("2026-09-08T12:00:00+00:00"),
+            "2026-09-06T09:00:00+00:00",
+        );
+        w1.wake_pending = true;
+        let mut w2 = order_row(
+            "w2",
+            Some("2026-09-08T11:00:00+00:00"),
+            "2026-09-07T09:00:00+00:00",
+        );
+        w2.wake_pending = true;
+        assert_eq!(ordered(vec![w1, w2]), vec!["w2", "w1"]);
+    }
+
     // -- DB: the tick paths --------------------------------------------------
 
     fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
@@ -4584,6 +4868,104 @@ mod attention_tests {
         .unwrap();
         attention_ledger::complete(pool, &id, "dispatched", "", None, None, None).unwrap();
         backdate_completed(pool, &id, 60).unwrap();
+    }
+
+    /// A completed pass that started `minutes_ago` — the "last served" stamp
+    /// the fairness ordering reads. Deliberately older than today so
+    /// `count_today` ignores it and no daily gate is spent.
+    fn seed_prior_pass(pool: &DbPool, persona_id: &str, minutes_ago: i64) -> Result<(), AppError> {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            None,
+            KIND_ATTENTION,
+            Some(LANE_ADVANCE),
+        )?;
+        attention_ledger::complete(pool, &id, "dispatched", "", None, None, None)?;
+        let ts = (chrono::Utc::now() - chrono::Duration::minutes(minutes_ago)).to_rfc3339();
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET started_at = ?1, completed_at = ?1 WHERE id = ?2",
+            params![ts, id],
+        )?;
+        Ok(())
+    }
+
+    /// **The starvation case, end to end.** Three eligible personas; the
+    /// NEWEST is the most overdue and the OLDEST was served most recently.
+    /// The age-ordered loop dispatched the oldest every tick and the newest
+    /// only when everyone senior refused; the need-ordered loop serves the
+    /// newest first, and three consecutive ticks serve all three exactly once.
+    #[test]
+    fn the_newest_persona_is_served_first_when_it_is_the_most_overdue() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        // Seeded in roster order: p_old is the senior persona.
+        for pid in ["p_old", "p_mid", "p_new"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        // …and served in the OPPOSITE order of need: the senior persona had
+        // the most recent pass, the newest persona the oldest one.
+        seed_prior_pass(&pool, "p_old", 2880)?; // 2 days ago
+        seed_prior_pass(&pool, "p_mid", 3000)?;
+        seed_prior_pass(&pool, "p_new", 3120)?; // longest ago = most overdue
+
+        // Tick 1 — the most overdue persona, which is also the newest.
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.personas, 3, "all three are on the roster");
+        assert_eq!(counts.refused, 0, "all three are eligible — nobody refused");
+        let first = dispatch.expect("a dispatch");
+        assert_eq!(
+            first.persona_id, "p_new",
+            "need, not age: the age-ordered loop would have picked p_old here"
+        );
+
+        // Tick 2 — p_new now holds an open row (in-flight), so the next most
+        // overdue goes. Ordering picked the queue, the ladder still gates it.
+        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_mid");
+
+        // Tick 3 — the senior persona, last, because it was served last.
+        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_old");
+
+        // Exactly one new pass each: still ONE dispatch per tick.
+        for pid in ["p_old", "p_mid", "p_new"] {
+            let started = ledger_rows(&pool, pid)
+                .into_iter()
+                .filter(|r| r.verdict == "started")
+                .count();
+            assert_eq!(started, 1, "{pid} was dispatched exactly once");
+        }
+        Ok(())
+    }
+
+    /// A pending wake request jumps the overdue queue: the operator switching
+    /// a persona on is asking for it NOW, ahead of the most starved persona.
+    #[test]
+    fn a_wake_request_outranks_the_overdue_ordering_in_a_real_tick() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_starved", "p_woken"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        seed_prior_pass(&pool, "p_starved", 4320)?; // 3 days ago — the most overdue
+        seed_prior_pass(&pool, "p_woken", 2880)?;
+        request_wake(&pool, "p_woken");
+
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_woken");
+        assert_eq!(
+            counts.woke, 1,
+            "the wake was consumed by the persona it named"
+        );
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "ordering only LOOKS at the request; admission spends it, once"
+        );
+        Ok(())
     }
 
     #[test]

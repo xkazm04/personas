@@ -1286,7 +1286,7 @@ async fn call_claude_oneshot(
     let text = call_claude_text(
         pool,
         prompt,
-        "claude-opus-4-8",
+        personas_core::model_ids::OPUS_CURRENT,
         oneshot::leg::CONSOLIDATION,
         CONSOLIDATION_TIMEOUT,
     )

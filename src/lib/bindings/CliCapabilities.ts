@@ -5,7 +5,7 @@
  */
 export type CliCapabilities = { 
 /**
- * Model the CLI resolved to (e.g. `claude-opus-4-8[1m]`).
+ * Model the CLI resolved to (e.g. `claude-opus-5[1m]`).
  */
 model: string, 
 /**

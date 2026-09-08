@@ -30,7 +30,7 @@ pub const ALIAS_OPUS: &str = "opus";
 /// to today; bump them here when the vendor ships a successor.
 pub const HAIKU_CURRENT: &str = "claude-haiku-4-5-20251001";
 pub const SONNET_CURRENT: &str = "claude-sonnet-4-6";
-pub const OPUS_CURRENT: &str = "claude-opus-4-8";
+pub const OPUS_CURRENT: &str = "claude-opus-5";
 
 /// Tier defaults consumed by headless judges, lab runs, capability fallbacks
 /// and settings defaults. Named by the *job* so a caller never has to know
@@ -51,6 +51,11 @@ pub const RETIRED: &[&str] = &[
     "claude-sonnet-4-20250514",
     "claude-opus-4-20250514",
     "claude-sonnet-4-5-20250514",
+    // Superseded by `claude-opus-5` (2026-09-08). The `opus` tier slug in
+    // `personas_engine::prompt::capabilities` resolved to this id as a bare
+    // literal for two weeks after the successor shipped — the exact failure
+    // this module was built to make a one-file diff.
+    "claude-opus-4-8",
 ];
 
 /// True when `model` is a dated id the vendor no longer serves.

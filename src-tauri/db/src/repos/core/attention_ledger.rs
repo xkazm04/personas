@@ -295,6 +295,44 @@ pub fn latest_started_per_responsibility(
     )
 }
 
+/// Per-PERSONA newest `started_at` for `kind`, refusals excluded — the
+/// attention loop's fairness input (least-recently-served persona first,
+/// derived from history rather than from roster age).
+///
+/// A refused row is not a service: the interval floor refuses most ticks by
+/// design, so counting refusals would make a starved persona look freshly
+/// served and freeze the very starvation this read exists to break. A persona
+/// with no non-refusal row at all is simply absent from the result, which the
+/// caller reads as "never served" and sorts first.
+pub fn latest_started_per_persona(
+    pool: &DbPool,
+    kind: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::latest_started_per_persona",
+        {
+            let conn = pool.conn("attention_ledger::latest_started_per_persona")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT persona_id, MAX(started_at) AS latest
+                 FROM persona_attention_ledger
+                 WHERE kind = ?1 AND verdict != 'refused'
+                 GROUP BY persona_id",
+            )?;
+            let rows = stmt.query_map(params![kind], |r| {
+                Ok((
+                    r.get::<_, String>("persona_id")?,
+                    r.get::<_, String>("latest")?,
+                ))
+            })?;
+            Ok(collect_rows(
+                rows,
+                "attention_ledger::latest_started_per_persona",
+            ))
+        }
+    )
+}
+
 /// How many passes of `kind` started today (UTC), for the max-runs-per-day
 /// cap. `lane = Some(..)` narrows to one lane; `None` counts every lane.
 /// Refusal rows are excluded — a refused pass never ran, and counting it

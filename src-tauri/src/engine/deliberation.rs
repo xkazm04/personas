@@ -473,7 +473,7 @@ pub struct ModeratorContext {
 /// The moderator (orchestrator) runs on Opus — promoted from Haiku to test how
 /// far a more capable conversation manager pushes flow efficiency. Reasoning
 /// effort isn't exposed on the headless `claude -p` path, so it runs at default.
-pub const MODERATOR_MODEL: &str = "claude-opus-4-8";
+pub const MODERATOR_MODEL: &str = personas_core::model_ids::OPUS_CURRENT;
 /// Track (child) moderator — Sonnet. A track is one scoped checklist item, so a
 /// cheaper conversation manager suffices; keeps the Opus tax on the parent only.
 pub const TRACK_MODERATOR_MODEL: &str = "claude-sonnet-4-6";

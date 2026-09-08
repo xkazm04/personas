@@ -1160,9 +1160,9 @@ mod tests {
     fn summarize_extracts_structured_rollup() {
         let raw = lines(&[
             r#"{"type":"user","cwd":"/proj","timestamp":"2026-05-31T10:00:00Z","message":{"role":"user","content":"do the thing"}}"#,
-            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:05Z","message":{"role":"assistant","model":"claude-opus-4-8","content":[{"type":"text","text":"ok"},{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Bash","input":{"command":"ls"}}],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
+            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:05Z","message":{"role":"assistant","model":"claude-opus-5","content":[{"type":"text","text":"ok"},{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Bash","input":{"command":"ls"}}],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
             r#"{"type":"user","timestamp":"2026-05-31T10:00:06Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"done"}]}}"#,
-            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:10Z","message":{"role":"assistant","model":"claude-opus-4-8","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Write","input":{"file_path":"/proj/b.rs"}}],"usage":{"input_tokens":50,"output_tokens":10}}}"#,
+            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:10Z","message":{"role":"assistant","model":"claude-opus-5","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Write","input":{"file_path":"/proj/b.rs"}}],"usage":{"input_tokens":50,"output_tokens":10}}}"#,
             "   ",
             "{not valid json",
         ]);
@@ -1176,7 +1176,7 @@ mod tests {
         assert_eq!(s.tokens.cache_read, 2000);
         // Latest assistant turn's input(50) + cache_read(0) = current context.
         assert_eq!(s.last_context_tokens, 50);
-        assert_eq!(s.models, vec!["claude-opus-4-8".to_string()]);
+        assert_eq!(s.models, vec!["claude-opus-5".to_string()]);
         // a.rs appears twice but is deduped; sorted.
         assert_eq!(
             s.files_touched,
