@@ -93,19 +93,33 @@ async function up() {
   const deadline = Date.now() + HEALTH_TIMEOUT_MS;
   while (Date.now() < deadline) {
     await sleep(5000);
-    if (await healthy() && handshake()) { log(`up after ${Math.round((Date.now() - (deadline - HEALTH_TIMEOUT_MS)) / 1000)} s`); return; }
-    if (!pidAlive(child.pid)) { log('the launcher exited before the app answered; read the log'); process.exit(1); }
+    if (await healthy() && handshake()) {
+      // Record the LISTENER, not just the launcher: measured 2026-09-08, the
+      // `cmd /c npm run` wrapper exits during the cargo build while the app it
+      // started runs on, so a later `status` reads "gone" for a healthy app and
+      // `down` kills nothing. The launcher pid is kept for the log's sake.
+      const app = listenerPid(TEST_PORT);
+      fs.writeFileSync(APP_JSON, JSON.stringify({ pid: app ?? child.pid, launcherPid: child.pid, startedAt: new Date().toISOString(), port: TEST_PORT, log: APP_LOG }, null, 2));
+      log(`up after ${Math.round((Date.now() - (deadline - HEALTH_TIMEOUT_MS)) / 1000)} s; app pid ${app ?? child.pid}`);
+      return;
+    }
+    // The launcher exiting is only fatal while nothing of the build is alive:
+    // Vite holds :1420 long before the app answers on the test port.
+    if (!pidAlive(child.pid) && !listenerPid(1420) && !listenerPid(TEST_PORT)) { log('the launcher exited and nothing is listening; read the log'); process.exit(1); }
   }
   log('boot timeout; the process is still running, read the log'); process.exit(1);
 }
 
 async function down() {
   const rec = recorded();
-  if (!rec) { log('nothing recorded; refusing to stop an instance this script did not start'); return; }
-  if (pidAlive(rec.pid)) {
-    execSync(`taskkill /PID ${rec.pid} /T /F`, { stdio: 'ignore' });
-    log(`stopped pid ${rec.pid} and its tree`);
-  } else log(`pid ${rec.pid} already gone`);
+  const killed = [];
+  const kill = (pid, what) => { if (!pid || killed.includes(pid)) return; try { execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore' }); killed.push(pid); log(`stopped ${what} pid ${pid} and its tree`); } catch { log(`${what} pid ${pid} already gone`); } };
+  if (!rec && !(await healthy())) { log('nothing recorded and nothing answering; nothing to stop'); return; }
+  if (rec && pidAlive(rec.pid)) kill(rec.pid, 'recorded');
+  // The tree can outlive its recorded root, so finish by the ports the app owns:
+  // the test server, then Vite, which otherwise orphans on :1420.
+  if (await healthy()) kill(listenerPid(TEST_PORT), 'test-server listener');
+  kill(listenerPid(1420), 'vite');
   fs.rmSync(APP_JSON, { force: true });
   await sleep(1500);
   log(`test server now ${(await healthy()) ? 'STILL answering (another instance)' : 'down'}`);
