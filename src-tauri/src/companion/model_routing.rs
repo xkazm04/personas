@@ -22,7 +22,7 @@ pub struct TurnTier {
 /// candidate (reinforced Sonnet@high, 96.5%) waits on corpus v3 + a judge
 /// pass before main turns move.
 pub const MAIN: TurnTier = TurnTier {
-    model: "claude-opus-4-8",
+    model: personas_core::model_ids::OPUS_CURRENT,
     effort: Some("low"),
 };
 

@@ -186,7 +186,7 @@ async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<String, 
     let text = call_claude_text(
         pool,
         prompt,
-        "claude-opus-4-8",
+        personas_core::model_ids::OPUS_CURRENT,
         oneshot::leg::REFLECTION,
         REFLECTION_TIMEOUT,
     )

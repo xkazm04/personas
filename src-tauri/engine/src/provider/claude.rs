@@ -215,7 +215,7 @@ impl CliProvider for ClaudeProvider {
         //   sandboxed ones, breaking the Bash tool under bazel / EDR-protected
         //   Go workflows (any tool-using persona). 2.1.156 fixes Opus 4.8
         //   thinking blocks being modified into API errors — personas runs 4.8
-        //   (Athena's `claude-opus-4-8` pin + the `opus` alias auto-resolve),
+        //   (Athena's `claude-opus-5` pin + the `opus` alias auto-resolve),
         //   so the 2.1.154 floor exposed every 4.8 spawn. 2.1.163 also fixes
         //   `claude -p` hanging forever after its final result when a
         //   backgrounded command never exits (stdin closed) — squarely

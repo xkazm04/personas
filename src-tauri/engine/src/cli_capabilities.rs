@@ -61,7 +61,7 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CliCapabilities {
-    /// Model the CLI resolved to (e.g. `claude-opus-4-8[1m]`).
+    /// Model the CLI resolved to (e.g. `claude-opus-5[1m]`).
     pub model: String,
     /// CLI version from the init event (e.g. `2.1.177`).
     pub cli_version: Option<String>,

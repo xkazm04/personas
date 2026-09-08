@@ -697,7 +697,7 @@ mod tests {
                     name: "premium".into(),
                     task_complexity: TaskComplexity::Critical,
                     provider: "claude_code".into(),
-                    model: Some("claude-opus-4-8".into()),
+                    model: Some("claude-opus-5".into()),
                     enabled: true,
                 },
             ],

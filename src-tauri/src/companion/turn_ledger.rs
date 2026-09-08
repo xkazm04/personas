@@ -517,7 +517,7 @@ mod tests {
             &TurnRecord {
                 origin: "chat".into(),
                 trigger_kind: None,
-                model: Some("claude-opus-4-8".into()),
+                model: Some("claude-opus-5".into()),
                 usage: Some(CliUsage {
                     cost_usd: Some(0.42),
                     input_tokens: Some(100),
@@ -702,7 +702,7 @@ mod tests {
             &pool,
             ORIGIN_MAINTENANCE,
             "consolidation",
-            "claude-opus-4-8",
+            "claude-opus-5",
             Some(CliUsage {
                 cost_usd: Some(0.062),
                 input_tokens: Some(4100),
