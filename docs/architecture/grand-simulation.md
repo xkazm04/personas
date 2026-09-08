@@ -203,6 +203,16 @@ where the work is one of the obligations the reference digest names.
 
 ## 5. Open decisions for the operator
 
+> **Accepted as proposed, 2026-09-08.** The operator took every item below in its current state
+> rather than add to an already complex scenario: the bank lives in `C:\Users\kazda\kiro\bank\`;
+> kp's one-call route is the hire path (built); the Architect holds the five Architect recipes on
+> day one and may hire; the load envelope is the corrected one; the `/uat` roster is the nine
+> Characters in `grand-simulation/uat-scenario.md`. Two further directions from the same message:
+> the orchestrating session owns the app process (launches, monitors, restarts it itself, through
+> `scripts/e2e/sim-app.mjs`), and every session enters through the `/grande` skill, which prepares
+> the environment, reads the Obsidian map and continues from the recorded state. The simulation is
+> expected to take many sessions over many days, quality over quantity.
+
 - The dedicated folder for the bank's repositories (proposal: `C:\Users\kazda\kiro\bank\`).
 - kp changes: a one-call "compose and dispatch from a need" route is the smallest; is the intake
   dialog (9 messages) worth keeping for realism, or should the App Master's need text go straight
