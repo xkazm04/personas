@@ -45,6 +45,7 @@ mod e20_persona_run_paging_index;
 mod e21_chain_trace_ordering_index;
 mod e22_dev_notes;
 mod e23_model_requested;
+mod e24_channel_authority;
 mod e24_workspace_protection;
 
 mod c01_plugin_tables;
@@ -87,6 +88,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e22_dev_notes::run(conn)?;
     e23_model_requested::run(conn)?;
     e24_workspace_protection::run(conn)?;
+    e24_channel_authority::run(conn)?;
 
     Ok(())
 }

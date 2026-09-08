@@ -30,6 +30,21 @@ assignmentId: string | null,
  */
 consumer: string, 
 /**
+ * How much weight the message carries: `'directive'` (an instruction the
+ * addressee must reflect in its own plan) | `'request'` (deserves an
+ * answer) | `'note'` (context). `NULL` for every row written before the
+ * field existed, and for the writers that never state one — absent is
+ * NOT `note`, because a backfill would invent an authority nobody
+ * declared.
+ *
+ * Validated at the repo door (`team_channel::create_with_authority`),
+ * not by a CHECK: this table carries no CHECK on `author_kind` or
+ * `consumer` either, and a CHECK added by `ALTER TABLE` would apply to
+ * upgrade databases while the canonical `CREATE TABLE` left fresh ones
+ * without it.
+ */
+authority: string | null, 
+/**
  * JSON `[{step_id, persona_id, at}]` delivery receipts.
  */
 deliveries: string | null, createdAt: string, };

@@ -581,6 +581,9 @@ mod tests {
             consumer: "display".into(),
             deliveries: None,
             created_at: "2026-08-04 10:00:00".into(),
+            // The relay is blind to rank: it mirrors what was said, not how
+            // much weight it carries.
+            authority: None,
         }
     }
 

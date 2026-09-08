@@ -417,6 +417,21 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub pacing: Option<ResponsibilityPacing>,
+    /// This charter speaks with AUTHORITY in a workspace channel: a message it
+    /// posts may carry `authority = 'directive'`, which every other member of
+    /// the team must reflect in its own plan.
+    ///
+    /// The Architect's charters carry it; nothing else does by default. A
+    /// persona holding no such charter that writes `"authority":"directive"`
+    /// in its plan is downgraded to `request` and the downgrade is logged —
+    /// rank is a property of what the operator granted, never of what the
+    /// model asked for.
+    ///
+    /// `None` is "not granted", identical in effect to `Some(false)`; the
+    /// tri-state exists only so an absent field stays absent on the wire.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub authority: Option<bool>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.

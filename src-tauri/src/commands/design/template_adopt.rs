@@ -2576,6 +2576,9 @@ pub(crate) fn map_use_case_to_charter_input(
         // bookkeeping and is never seeded.
         priority: None,
         pacing: None,
+        // Channel rank is granted, never adopted: a template says nothing
+        // about whether the persona holding this charter may direct a team.
+        authority: None,
     };
 
     CreatePersonaResponsibilityInput {

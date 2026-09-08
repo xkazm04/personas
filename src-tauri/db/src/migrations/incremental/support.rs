@@ -554,7 +554,11 @@ pub(super) fn research_lab_align_columns(conn: &Connection) {
             consumer      TEXT NOT NULL DEFAULT 'inject',
             deliveries    TEXT,
             created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-            persona_id    TEXT
+            persona_id    TEXT,
+            -- 'directive' | 'request' | 'note', or NULL for none declared.
+            -- Vocabulary enforced at the repo door, not by a CHECK -- see
+            -- e24_channel_authority for why.
+            authority     TEXT
         );",
     );
     let _ = ddl_step(
