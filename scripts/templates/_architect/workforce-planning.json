@@ -8,8 +8,8 @@
   "description": {
     "need": "Work stalls for a reason nobody writes down: a responsibility that has no holder. Each project owner feels it locally and asks for help in their own words, so the same missing role gets requested three times under three names while a role that was hired for work that has since ended keeps its seat. Nothing reads the asks together, nothing compares them against what the goals are actually doing, and a request written as a job title carries none of the evidence a hiring system would need to compose anything useful from it.",
     "input": "The asks the project owners have raised, the state of the goals across the portfolio including which are stalled and for how long, the roles that already exist and what each is holding, the responsibilities the design implies that nobody has claimed, and whatever ceiling the workspace places on how many roles may be active at once.",
-    "coreAction": "Decide which roles the workspace is actually missing, by reading the owners' asks against the evidence in the goals rather than taking each ask at face value, and describe each real gap as the work it is: what has to be done, what evidence says it is not being done now, and how anyone would know the role succeeded. Send that to the hiring system, judge what comes back against the need as written, and retire the roles whose work has ended.",
-    "output": "A short set of role needs, each naming its work, its evidence and its acceptance in a form a hiring system can compose a job description from; requests sent for the ones that were real; an accepted or returned verdict recorded against each arrival with the reason; and a retirement list for roles whose work ended, so the active count reflects the work rather than the history."
+    "coreAction": "Decide which roles the workspace is actually missing, by reading the owners' asks against the evidence in the goals rather than taking each ask at face value, and describe each real gap as the work it is: what has to be done, what evidence says it is not being done now, how anyone would know the role succeeded, and what the role is allowed and not allowed to touch. Send that to the hiring system, judge what comes back against the need as written, and retire the roles whose work has ended.",
+    "output": "A short set of role needs, each naming its work, its evidence, its acceptance, the tools it may use and the tools it may not, and the acts it may never perform without a person, in a form a hiring system can compose a job description from; requests sent for the ones that were real; an accepted or returned verdict recorded against each arrival with the reason; and a retirement list for roles whose work ended, so the active count reflects the work rather than the history."
   },
   "activities": [
     {
@@ -24,7 +24,7 @@
     },
     {
       "id": "describe",
-      "label": "Write each need as work, evidence and acceptance, not as a job title",
+      "label": "Write each need as work, evidence, acceptance and privilege boundary, not as a job title",
       "kind": "act"
     },
     {
@@ -63,8 +63,17 @@
       "statement": "Each need is written so a hiring system can compose a job description from it without asking a follow up question.",
       "successCriteria": [
         "Each need states the work, the evidence the work is not being done, and the acceptance that would show the role succeeded",
-        "The need names the scope the role would hold and the surfaces it must reach, not a seniority label",
+        "The need names the scope the role would hold, the surfaces it must reach and the ones it must not, not a seniority label",
         "A need that cannot state its acceptance is held back rather than sent, because a role nobody can judge is a role nobody can retire"
+      ]
+    },
+    {
+      "id": "the-privilege-boundary-is-part-of-the-need",
+      "statement": "Every need states what the role may reach and what it may never do alone, so the boundary arrives with the role rather than being decided later by whoever deploys it.",
+      "successCriteria": [
+        "Each need lists the tools the role is allowed and the tools it is explicitly denied, and a denial names the act it prevents rather than a category",
+        "Each need names the acts that always require a person, and for each one what the person is deciding, so the gate is a decision and not a rubber stamp",
+        "A role is never specified with more privilege than the person it works for holds, and a need that would require that is refused and raised instead of sent"
       ]
     },
     {
@@ -95,7 +104,7 @@
       ]
     }
   ],
-  "guidance": "A role is a gap in the work, not a title somebody wanted. Ask for one only when a responsibility has no holder and the evidence says so: a goal stalled, an ask repeated, work queued behind nobody. Describe the work and how anyone would know the role succeeded, and let the hiring system compose the description from that rather than writing it yourself. What comes back is accepted against the need you wrote, or sent back with what is missing. Retire a role whose work ended.",
+  "guidance": "A role is a gap in the work, not a title somebody wanted. Ask for one only when a responsibility has no holder and the evidence says so: a goal stalled, an ask repeated, work queued behind nobody. Describe the work, how anyone would know the role succeeded, and where its authority stops, because a privilege boundary settled at deployment is settled by whoever is deploying. A role holds less than the person it works for, never more. What comes back is accepted against the need you wrote, or sent back with what is missing. Retire a role whose work ended.",
   "connectorTypes": [
     "project_management",
     "integration"
@@ -120,6 +129,7 @@
     "How many roles may be active at once here, since the ceiling turns every request into a trade and the trade cannot be made without the number",
     "How an owner raises an ask in this workspace, because a request this work never sees is the failure it exists to fix",
     "Which hiring system composes the descriptions and what it needs in a need, since the whole second outcome is written against that system's intake",
+    "Which acts in this workspace always require a person and which tools are never granted to a hired role, because the privilege boundary is written from the operator's own rules and cannot be inferred from the work",
     "How far this work may go on its own, from proposing a need through to sending the request and accepting what comes back, because a role arriving is a change to the workspace",
     "What counts as work ending for a role here, since retirement without a definition becomes either never or arbitrary"
   ],
@@ -144,7 +154,7 @@
       "title": "A bank portfolio asking for its first specialist roles",
       "connector": "personas",
       "connectorType": "project_management",
-      "notes": "Six project owners asking at once produce overlapping asks that read as different roles: two ask for someone to own the queue topology, which is one platform responsibility, while a compliance responsibility nobody asked for at all is visible only in the design as a context with no holder. Reading the asks against the goals rather than one at a time is what separates those two cases."
+      "notes": "Six project owners asking at once produce overlapping asks that read as different roles: two ask for someone to own the queue topology, which is one platform responsibility, while a compliance responsibility nobody asked for at all is visible only in the design as a context with no holder. Reading the asks against the goals rather than one at a time is what separates those two cases. The privilege half of each need is where a bank differs from most portfolios. The reference this is designed against keeps a registry of eighteen agent charters beside its rules file, and each one declares the tools it may call, the tools it is denied, and the acts that always need a person. A ledger engineer there is allowed to branch, sign a commit and open a pull request, and is denied merging, approving and every money moving call; the acts requiring a person are the merge itself, accepting a new architecture decision, and a threat model whenever the change moves money or a trust boundary. The rule the whole registry rests on is one sentence: an agent never holds more privilege than a human, it holds less."
     }
   ],
   "lessons": [],

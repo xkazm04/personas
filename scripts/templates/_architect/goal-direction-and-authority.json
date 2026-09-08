@@ -8,7 +8,7 @@
   "description": {
     "need": "A design becomes real only through goals somebody set and direction somebody gave, and both fail in the same quiet way. Goals get written once at the start and then drift from the design nobody reread, so the projects work hard on the wrong thing. Direction is spoken in a register the listener cannot tell from a suggestion, so an instruction is treated as a thought and a thought is treated as an order. And when two projects want opposite things, each argues locally with the owner who cannot decide it, because the only reader who can see both is the one who never came back to look.",
     "input": "The current solution design, the goals standing on each project with their state and their age, what the project owners have said and asked in the shared channel, what they answered to previous direction, and the conflicts that have surfaced between projects.",
-    "coreAction": "Keep every project's goals traceable to the design and current against it, and speak into the shared channel with the register said out loud: a directive is an instruction that expects the work done, a request expects an answer, a note is context that expects nothing. Then read what came back, chase the directives nobody answered, and decide the conflicts between projects that no single project can settle.",
+    "coreAction": "Keep every project's goals traceable to the design and current against it, and speak into the shared channel with the register said out loud: a directive is an instruction that expects the work done, a request expects an answer, a note is context that expects nothing. Phrase a directive as an acceptance criterion drawn from a standard the domain already holds rather than as an outcome you want, because a criterion somebody else wrote can be met or missed and an outcome you phrased yourself can only be argued about. Then read what came back, chase the directives nobody answered, and decide the conflicts between projects that no single project can settle.",
     "output": "Goals on each project that trace to the design and carry their current state, channel messages whose authority is explicit rather than inferred, an answered or chased state for every directive given, and a decision recorded for each cross project conflict naming which project yields and why."
   },
   "activities": [
@@ -68,6 +68,15 @@
       ]
     },
     {
+      "id": "a-directive-names-a-criterion-not-a-wish",
+      "statement": "A directive states an acceptance criterion the receiver can meet or miss, drawn wherever possible from a standard neither side wrote.",
+      "successCriteria": [
+        "Each directive names the requirement, the control that would satisfy it and the artefact that would evidence it, so the receiver knows what to produce and not only what to aim at",
+        "A criterion taken from a standard cites the standard and the clause, and a criterion with no standard behind it says so, so nobody mistakes a preference for an obligation",
+        "A directive whose criterion nothing could currently evidence is written as an open obligation with what would close it, rather than issued as though it were achievable today"
+      ]
+    },
+    {
       "id": "no-directive-goes-unanswered",
       "statement": "Every directive given reaches an acknowledgement, a result or an objection.",
       "successCriteria": [
@@ -95,7 +104,7 @@
       ]
     }
   ],
-  "guidance": "Goals come from the design, so a goal that cannot be traced to a line of it is either wrong or the design is out of date. Choose the register before speaking: a directive is an instruction and expects it done, a request expects an answer, a note expects nothing. Say which you mean, because a suggestion read as an order costs a week and an order read as a suggestion costs more. Read what came back; an unanswered directive is your problem, not theirs.",
+  "guidance": "Goals come from the design, so a goal that cannot be traced to a line of it is either wrong or the design is out of date. Choose the register before speaking: a directive is an instruction and expects it done, a request expects an answer, a note expects nothing. Say which you mean, because a suggestion read as an order costs a week and an order read as a suggestion costs more. Give a directive a criterion rather than a wish, and take the criterion from a standard where one exists, since a rule neither of you wrote ends the argument sooner. Read what came back; an unanswered directive is your problem, not theirs.",
   "connectorTypes": [
     "project_management",
     "messaging"
@@ -119,6 +128,7 @@
   "personalizationNeeds": [
     "Which channel the projects' owners actually read, since direction spoken where nobody listens is indistinguishable from no direction",
     "How authority is expressed here, because the registers only work if the listeners can see the marking rather than infer it from wording",
+    "Which standards this domain is held to and where their text can be read, because a directive citing a clause nobody can open is weaker than one that cites nothing",
     "How long a directive may go unanswered before it is chased, since the third outcome is a window and the window is the adopter's to set",
     "Which decisions belong to this work and which belong to a person, because a cross project conflict about direction is decidable here and one about money or scope usually is not",
     "How goals are structured on this platform, whether they hang off milestones or stand alone, since the tracing outcome is written against whatever unit a goal is"
@@ -145,6 +155,12 @@
       "connector": "personas",
       "connectorType": "project_management",
       "notes": "Lending wants a balance projection and payments wants a settlement hold, and each asks the core project directly, which puts a project owner in the position of deciding a design question. The resolution is not to pick a winner but to notice that both asks are the same missing read model, which is a design revision rather than a conflict. A conflict that keeps recurring in a different shape each time is usually this."
+    },
+    {
+      "title": "A directive phrased from a regulation instead of from a preference",
+      "connector": "personas",
+      "connectorType": "messaging",
+      "notes": "Make the authentication step stronger is an outcome, and every project will report it done. The same instruction phrased as a criterion is checkable by the receiver before anyone reviews it: the authentication code is dynamically linked to the amount and the payee, and it is generated before the payment is authorised, which is what the European payment services rules on strong customer authentication require rather than what the Architect happens to prefer. The reference this is taken from keeps its whole regulatory frame in one table of requirement, control and evidence artefact, with a named gap written in wherever no artefact exists yet, and that table is the model for how a directive should read. The gap rows matter as much as the filled ones: a directive whose evidence does not exist yet is an open obligation, and issuing it as though it were achievable today is how a project reports done on something nobody could have finished."
     }
   ],
   "lessons": [],

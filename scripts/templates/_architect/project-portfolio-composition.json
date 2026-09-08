@@ -8,8 +8,8 @@
   "description": {
     "need": "A solution design that never becomes projects is a drawing. The step from one to the other is where portfolios go wrong quietly: a service in the design that nobody created a home for, a repository that exists on disk but was never registered so no persona can reach it, a project standing with no owner because adoption was left for later, two projects that both believe they own the same context, and a project created with no goal at all, whose team then invents its own direction from whatever it can see.",
     "input": "The current solution design with its contexts, services, data owners and exclusions; the workspace as it stands, with whatever projects, repositories and App Masters already exist in it; and the charters and recipes available to adopt.",
-    "coreAction": "Turn the design into a portfolio that matches it: create each missing repository and register it as a project in the workspace in one act, adopt an App Master on each with the charters that context actually needs, set each project's first goals from the design's own words, then read the portfolio back against the design and resolve every orphan, every duplicate owner and every project standing without direction.",
-    "output": "A workspace whose projects correspond one to one with the design's contexts, each with a real repository, an App Master holding named charters, and first goals traceable to a line of the design; plus a reconciliation note listing what was created, what already existed, and every mismatch that could not be resolved and who has to decide it."
+    "coreAction": "Turn the design into a portfolio that matches it: create each missing repository and register it as a project in the workspace in one act, have each project declare itself in a machine readable file the moment it exists, adopt an App Master on each with the charters that context actually needs, set each project's first goals from the design's own words, then read the portfolio back against the design and resolve every orphan, every duplicate owner and every project standing without direction.",
+    "output": "A workspace whose projects correspond one to one with the design's contexts, each with a real repository, a self declaration committed in that repository naming its data domain, its store, its classification, its retention and its lineage in both directions, an App Master holding named charters, and first goals traceable to a line of the design; plus a reconciliation note listing what was created, what already existed, and every mismatch that could not be resolved and who has to decide it."
   },
   "activities": [
     {
@@ -25,6 +25,11 @@
     {
       "id": "create",
       "label": "Create each missing repository and register it as a project in the workspace in one act",
+      "kind": "act"
+    },
+    {
+      "id": "declare",
+      "label": "Have each project commit a self declaration of its data domain, store, classification, retention and lineage",
       "kind": "act"
     },
     {
@@ -68,6 +73,15 @@
       ]
     },
     {
+      "id": "every-project-declares-itself-in-a-file",
+      "statement": "Every project carries a self declaration in its own repository, so the portfolio is readable by a machine rather than only by whoever wrote the design.",
+      "successCriteria": [
+        "Each project's declaration names its data domain, its primary store, the classification of what it holds, how long it keeps it, and its lineage upstream and downstream by project name",
+        "The declaration carries curatorial facts a person decides and nothing a build could derive, because a file mixing the two drifts on every release and stops being trusted",
+        "A declared lineage edge that no code backs is listed as unverified rather than believed, since a declaration nobody checks is a claim and not a fact"
+      ]
+    },
+    {
       "id": "no-project-stands-without-an-owner",
       "statement": "No project stands in the workspace without an App Master holding named charters.",
       "successCriteria": [
@@ -95,7 +109,7 @@
       ]
     }
   ],
-  "guidance": "Create the project and the repository in one act; a repository nobody registered is invisible and a project with no repository has nowhere to build. One context, one project, one App Master, and if two projects would touch the same data one of them is wrong. Give each App Master the charters its context needs rather than the full set. Set the first goals from the design so the project starts pointed somewhere, then read the portfolio as a whole for the service nobody took.",
+  "guidance": "Create the project and the repository in one act; a repository nobody registered is invisible and a project with no repository has nowhere to build. Make each project declare itself in a file before anyone owns it, because a portfolio only a person can read is a portfolio that drifts the first week nobody rereads it. One context, one project, one App Master, and if two projects would touch the same data one of them is wrong. Give each App Master the charters its context needs rather than the full set. Set the first goals from the design, then read the portfolio as a whole for the service nobody took.",
   "connectorTypes": [
     "project_management",
     "source_control"
@@ -119,6 +133,7 @@
   "personalizationNeeds": [
     "Where new repositories are allowed to be created on this machine or host, since creating one in the wrong place is not reversible by the same work that created it",
     "What a new repository must contain before it counts as created here, for example a readme, a licence, a project marker or a first commit",
+    "What the self declaration has to carry in this workspace and where it lives in a repository, since the fields are the adopter's vocabulary and a declaration in an unpredictable place is one no reader will find",
     "Which charters exist and which of them an App Master should hold by default, because handing every project the full set is the same as handing it none",
     "How far this work may go without asking, from proposing the portfolio through to creating repositories and adopting owners, since creation is not a reversible act",
     "Whether an existing project may be re bound to a different context, or whether that is always a person's decision"
@@ -145,7 +160,7 @@
       "title": "A six project bank portfolio from one design",
       "connector": "personas",
       "connectorType": "project_management",
-      "notes": "A design separating a bank into core ledger, contracts, lending, investments, edge and platform becomes six projects, and the reconciliation is where the value shows: the platform project has no business context of its own and exists only because queues, infrastructure and the load harness need an owner, which is exactly the kind of project a mechanical one to one mapping from contexts would never create."
+      "notes": "A design separating a bank into core ledger, contracts, lending, investments, edge and platform becomes six projects, and the reconciliation is where the value shows: the platform project has no business context of its own and exists only because queues, infrastructure, the gate manifest and the load harness need an owner, which is exactly the kind of project a mechanical one to one mapping from contexts would never create. The declare step earns its place in the same portfolio. The reference this is taken from reached seventy four modules and its hand written architecture document had already drifted from the directory listing, which is why every service there now ships a small declaration file of curatorial facts and the architecture prose is treated as the thing that lags. The ledger project's declaration is nine facts plus its lineage, and its header states the rule that keeps it honest: declared facts only, with anything a build could derive kept out."
     }
   ],
   "lessons": [],

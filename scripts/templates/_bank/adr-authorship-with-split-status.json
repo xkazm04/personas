@@ -1,0 +1,177 @@
+{
+  "id": "5a668b06-8c76-42c0-b4ba-d8de0ec79bba",
+  "slug": "adr-authorship-with-split-status",
+  "title": "Architecture decision records with decision status split from delivery status",
+  "status": "draft",
+  "path": "software_engineering/engineering-records",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A decision record says accepted and everyone downstream reads it as built. They are two different facts with two different owners and two different dates, and collapsing them costs twice: a compliance answer cites an accepted decision whose implementation was never deployed, and a team builds against a control that exists only in a document. This is not hypothetical. In the reference this work is designed against, one decision stands accepted while the compliance mapping that reads it records its topology as not deployed, and an independent review control reads restored, narrowed to a fraction of the fleet, and advisory rather than required, while the decision behind it says only that it was accepted.",
+    "input": "The decision being recorded or revisited: the forces acting on it, the alternatives considered, what was chosen and what that rejects, the consequences a later reader inherits; and separately, what of that decision exists in the code today, over what scope, and what evidence says so.",
+    "coreAction": "Record the decision and its delivery as two statuses that move independently and carry their own dates. Accepted says a choice was made and by whom; delivered says how much of it exists in the code and what proves it. Revisit the second whenever the code moves, name the scope wherever delivery covered less than the decision decided, and never let the first status imply the second.",
+    "output": "A decision record carrying its context, the choice, the alternatives it rejects and the consequences, with a decision status and a delivery status stated separately and each dated; a named scope wherever delivery narrowed rather than a silent reduction; an evidence pointer for whatever is claimed delivered; and an index in which a reader can see, per decision, the gap between what was chosen and what actually runs."
+  },
+  "activities": [
+    {
+      "id": "frame",
+      "label": "Read the forces, the alternatives and what already exists in the code",
+      "kind": "observe"
+    },
+    {
+      "id": "choose",
+      "label": "Decide the choice and name the alternatives it rejects, with the forces that decided it",
+      "kind": "decide"
+    },
+    {
+      "id": "record",
+      "label": "Write the record with its decision status, carrying no claim about delivery",
+      "kind": "act"
+    },
+    {
+      "id": "verify-delivery",
+      "label": "Read what of the decision exists in the code today and what evidences it",
+      "kind": "observe"
+    },
+    {
+      "id": "state-the-gap",
+      "label": "State the delivery status and the scope it really covers, dated, beside the decision status",
+      "kind": "deliver"
+    },
+    {
+      "id": "index",
+      "label": "Keep an index a reader can walk to see, per decision, what was chosen against what runs",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "accepted-never-implies-built",
+      "statement": "No reader can mistake a decision that was made for a decision that runs.",
+      "successCriteria": [
+        "Every record carries two statuses, one for the decision and one for its delivery, each with its own date and its own owner",
+        "A record whose delivery status has never been set reads as undelivered rather than as delivered, since absence is not evidence of arrival",
+        "Nobody has to open the code to learn whether an accepted decision is running, because the record answers that question directly"
+      ]
+    },
+    {
+      "id": "a-narrowing-is-recorded-as-a-narrowing",
+      "statement": "A decision delivered over less than it decided says so, in the scope's own words.",
+      "successCriteria": [
+        "The delivery status names the scope actually covered rather than repeating the scope the decision described",
+        "The proportion covered is stated wherever it can be measured, so a narrow delivery cannot be read as a whole one",
+        "A control delivered as advisory rather than required says which it is, because a control nothing blocks on changes behaviour only for the people who already agreed with it"
+      ]
+    },
+    {
+      "id": "delivery-is-claimed-against-evidence",
+      "statement": "Every delivery claim points at something a reader can go and look at.",
+      "successCriteria": [
+        "Each delivery status names the artefact, the code path or the check that evidences it",
+        "A delivery claimed with no evidence is recorded as claimed rather than as delivered, and the two words are kept distinct in the index",
+        "Evidence that disappears returns the delivery status to undelivered rather than leaving the earlier claim standing on nothing"
+      ]
+    },
+    {
+      "id": "the-record-outlives-the-people-who-made-it",
+      "statement": "A later reader can tell whether the reasons behind a decision still hold, without asking anyone who was there.",
+      "successCriteria": [
+        "The forces, the alternatives and the consequences are written, not only the choice, since the choice alone cannot be reassessed",
+        "A superseded decision points to the one that replaced it and stays readable, because a decision deleted takes its reasoning with it",
+        "A reversal records what changed in the world, not only that the decision changed"
+      ]
+    },
+    {
+      "id": "the-index-shows-the-gap-at-a-glance",
+      "statement": "The set of decisions that were accepted and never built is a list somebody reads, not a discovery somebody makes.",
+      "successCriteria": [
+        "The index lists every decision with both statuses and both dates, so the accepted but undelivered set can be read in one pass",
+        "A decision missing from the index fails loudly rather than being skipped, since an index that visits fewer records than exist is broken rather than complete",
+        "The size of the gap is stated as a number the portfolio can be held to, so a growing gap is visible before anyone asks about it"
+      ]
+    }
+  ],
+  "guidance": "Two statuses, two dates, two owners. Accepted means a choice was made; delivered means some of it runs and something proves it. Keep the second honest by naming the scope, because a control narrowed to a fraction of the fleet and made advisory is not the control the decision described. Write the forces and the alternatives, since a later reader needs to know whether the reasons still hold. Where nobody has checked delivery, write undelivered rather than nothing at all.",
+  "connectorTypes": [
+    "source_control",
+    "knowledge_base",
+    "ci_cd"
+  ],
+  "connectorRoles": [
+    {
+      "role": "record_home",
+      "type": "source_control",
+      "note": "the checkout the records live in, versioned beside the code whose delivery they claim, so a superseded text stays readable"
+    },
+    {
+      "role": "index_home",
+      "type": "knowledge_base",
+      "note": "where the records are read together and the gap between decided and delivered is visible at once rather than record by record"
+    },
+    {
+      "role": "verification",
+      "type": "ci_cd",
+      "note": "where a delivery claim is held against the code, so a record saying delivered while the code says otherwise is caught by something other than a person's memory"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A decision being made is a real event and the only moment its forces and alternatives are still known well enough to write down. A self paced pass is needed beside it for the delivery half, because nothing fires when an accepted decision fails to get built: the gap grows through absence, and an absence produces no commit, no merge and no arrival that anything could react to."
+  },
+  "personalizationNeeds": [
+    "Where decision records live here and what a record must carry before it is accepted, since a record admitted without its alternatives is a memo and cannot be reassessed later",
+    "Who may set the decision status and who may set the delivery status, because one person holding both is exactly how the two collapse back into one",
+    "What counts as evidence of delivery in this workspace, whether a check, a deployed artefact or a named code path, since the evidence outcome is written against whatever is actually verifiable here",
+    "How a decision is superseded rather than deleted here, because the reasoning is the part a later reader needs and it is the part deletion takes first",
+    "Whether this work may set a delivery status or only propose one, since a delivery status the recorder sets alone is a self assessment wearing the shape of a fact"
+  ],
+  "dependencies": [
+    "a place decision records live under version control, since the outcome about superseded records depends on the previous text staying readable",
+    "read access to the code a delivery status claims, because a delivery status set without reading the code is precisely the defect this work exists to end"
+  ],
+  "examples": [
+    {
+      "title": "Decision records in the project's own checkout",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "Keeping records in the checkout gives the supersession outcome for free: the previous text is a commit away rather than a paragraph somebody overwrote. It also puts the record next to the code its delivery status claims, which is what makes the delivery half cheap to re read. The habit worth building is to touch the delivery status in the same change that moves the code, since a status updated in a separate later pass is one nobody will run."
+    },
+    {
+      "title": "A control that was accepted, then restored, narrowed and made advisory",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference's own compliance mapping is the clearest evidence for why the two statuses have to be separate. Its FINOS AIGF row for independent review of AI authored changes reads restored 2026-08-09, NARROWED (ADR-0251), covering money path plus governance scope only, about 16.3% of fleet PR volume, and advisory, never required. Every one of those qualifications lives in the delivery status; the decision behind it is simply accepted. The same file records ADR-0031's AI gateway topology as not deployed while the ADR stands, and summarises its fourteen control families as 4 implemented, 9 partial, 1 gap. Two gates exist because declarations and code drift apart on their own: eu-ai-act-inventory-drift and ai-act-high-risk-inventory-vs-code."
+    },
+    {
+      "title": "An index kept where the readers already read",
+      "connector": "obsidian",
+      "connectorType": "knowledge_base",
+      "notes": "The gap between decided and delivered is only useful if somebody sees it without going looking, which argues for keeping the index where the portfolio's readers already are rather than only in the repository. The trade is that a knowledge surface has weaker history than a checkout, so the records stay in version control and the index is derived. One asymmetry is worth stating plainly for an organisation of agents: in the reference there is no architect agent at all. Its architecture decisions are human, recorded as ADRs, and the agents only detect drift from them. This recipe is written inside that asymmetry, which is why nothing here proposes that the same worker both decide and certify delivery."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project whose decision records this pass writes or revisits. Records are held per project, since a decision's delivery status is a claim about one codebase."
+    },
+    {
+      "name": "decision_id",
+      "type": "text",
+      "required": false,
+      "description": "The record this pass writes or revisits. Empty means re read every record's delivery status against the code, which is the only way the index outcome can be met."
+    },
+    {
+      "name": "set_delivery",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass may set delivery statuses or only propose them. Where the same worker both decides and certifies, a proposal is the honest shape."
+    }
+  ]
+}

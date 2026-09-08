@@ -1,0 +1,166 @@
+{
+  "id": "32aae844-5393-464a-a82c-75bb6564b09f",
+  "slug": "service-self-declaration-and-lineage",
+  "title": "Service self declaration and lineage maintenance",
+  "status": "draft",
+  "path": "data_ai/data-access",
+  "domain": "data_ai",
+  "description": {
+    "need": "What a service holds, where it holds it, how long it must keep it and who it reads from are questions asked at the worst possible moments: during an incident, during an audit, and when a schema changes under a consumer nobody knew existed. Answered from a hand written architecture document they are answered wrongly, because a document describing seventy odd services has already drifted from the directory listing by the time anyone rereads it. And a declaration nobody checks is worse than no declaration at all: it carries the authority of a fact while being a claim, and the lineage edge it names may have been deleted a year ago.",
+    "input": "The service as it stands: the store it writes to and the database it owns, what it holds and how sensitive that is, how long the rules it answers to require it to keep that, what it reads from and what reads from it, and the code that would prove or disprove each of those edges.",
+    "coreAction": "Keep one small declaration per service holding only the facts a person decides and a build cannot derive: the data domain it belongs to, its primary store and the database it owns, the classification of what it holds, its retention period, and its lineage in both directions with the relation type and what flows across each edge. Then hold every declared edge against the code, because a declaration whose edges nobody verifies is a claim wearing a fact's clothes.",
+    "output": "A declaration committed in the service's own repository naming its data domain, primary datastore, owned database, lineage role, classification, retention period and its upstream and downstream edges; every edge either backed by code a reader can find or listed as unverified with the reason; derived values deliberately absent so nothing in the file moves without a person deciding it; and, across the portfolio, one shape a machine can read at once rather than a narrative only a person can."
+  },
+  "activities": [
+    {
+      "id": "read-the-service",
+      "label": "Read what the service stores, what it reads from, and what reads from it",
+      "kind": "observe"
+    },
+    {
+      "id": "separate-the-curatorial",
+      "label": "Decide which facts a person owns and which a build already derives elsewhere",
+      "kind": "decide"
+    },
+    {
+      "id": "declare",
+      "label": "Write the declaration with the curatorial facts and the lineage in both directions",
+      "kind": "act"
+    },
+    {
+      "id": "verify-the-edges",
+      "label": "Hold each declared edge against the code that would prove it",
+      "kind": "act"
+    },
+    {
+      "id": "report-the-unverifiable",
+      "label": "Report every edge no code backs, as unverified rather than as fact",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-declaration-holds-only-what-a-person-decides",
+      "statement": "Every field in the declaration is a fact somebody chose, and nothing in it is a value a build could have worked out.",
+      "successCriteria": [
+        "A field the code, the migrations or the running configuration already determine is deliberately absent, and the file says where that value really lives",
+        "Runtime state and drift are recorded where they are measured rather than here, since a curatorial file carrying derived values changes on every release and stops being read as a decision",
+        "A field nobody can answer is left out with the open question recorded, rather than filled with a plausible default that later reads as a choice"
+      ]
+    },
+    {
+      "id": "what-the-service-holds-is-stated-plainly",
+      "statement": "A reader learns where the data lives, how sensitive it is and how long it stays, without opening the configuration.",
+      "successCriteria": [
+        "The declaration names the data domain, the primary datastore and the database this service owns, so ownership is a stated fact rather than an inference from a connection string",
+        "The classification and the retention period are both present, since a retention with no classification cannot be justified and a classification with no retention cannot be met",
+        "A service that holds no durable data says so explicitly, because an absent declaration and a declaration of nothing are different facts and only one of them is a decision"
+      ]
+    },
+    {
+      "id": "every-declared-edge-is-backed-by-code",
+      "statement": "Each lineage edge the declaration claims can be found in the code, or is recorded as unverified.",
+      "successCriteria": [
+        "Each edge names the service at the other end, the relation type and what flows across it, in words specific enough to look for",
+        "Each edge is either verifiable in the code, through a declared client or an overlapping message topic, or it is listed as unverified with the reason and a date",
+        "An edge the code shows and the declaration omits is a finding against the declaration rather than against the code, since the code is the thing that is true"
+      ]
+    },
+    {
+      "id": "the-machine-readable-file-outranks-the-prose",
+      "statement": "The declaration is the surface a check reads, and any narrative document about the portfolio is treated as the thing that lags it.",
+      "successCriteria": [
+        "The facts a check needs live in the declaration rather than only in prose, so a stale paragraph cannot be the only record of a fact",
+        "A portfolio document that disagrees with the declarations is corrected against them, never the other way round",
+        "A graph derived from the declarations is regenerated rather than hand maintained, because a hand curated index of a portfolio this size drifts faster than anyone rereads it"
+      ]
+    },
+    {
+      "id": "the-portfolio-can-be-read-at-once",
+      "statement": "Every service carries a declaration in the same shape, so the whole portfolio is one readable set rather than a service by service investigation.",
+      "successCriteria": [
+        "The declarations validate against one schema, so a file that drifts from the vocabulary is refused rather than accepted and quietly misread",
+        "A service with no declaration fails loudly rather than being skipped, since a walk that visits fewer services than exist is broken and not clean",
+        "The count of services declared is stated with every pass, so found nothing and looked at nothing can be told apart"
+      ]
+    }
+  ],
+  "guidance": "Declare only what a person decides. Anything a build can derive belongs where it is derived, because a curatorial file carrying derived values changes on every release and stops being read as a decision. Name lineage in both directions, then go and find the code that proves each edge; an edge nobody verified is a claim wearing a fact's clothes. Prefer a small file a check can read to a long document only a person can, and let the document be the thing that lags.",
+  "connectorTypes": [
+    "source_control",
+    "ci_cd"
+  ],
+  "connectorRoles": [
+    {
+      "role": "declaration_home",
+      "type": "source_control",
+      "note": "the checkout the declaration is committed in, beside the code that has to back its edges, so the two move in one change or visibly do not"
+    },
+    {
+      "role": "verification",
+      "type": "ci_cd",
+      "note": "where the declaration is held against the code on every change, so an edge that stops being backed is caught by the change that removed it rather than by an audit months later"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A change to what the service stores or who it talks to is the moment the declaration stops being true, and it is the only moment the author still remembers why. A self paced pass earns its place beside it because an edge can rot without this service changing at all: the consumer at the other end removes its client, and nothing in this repository moves, so nothing fires. Only a periodic re verification of the whole set finds an edge that decayed from the far side."
+  },
+  "personalizationNeeds": [
+    "Which fields this workspace's declaration carries and what vocabulary each is drawn from, since a free text classification cannot be compared across services and a fixed one can",
+    "Where the declaration lives in a repository, because a reader who has to search for it will settle for the prose document instead and inherit its drift",
+    "What counts as code backing an edge here, whether a declared client, an overlapping message topic or something else, since the verification outcome is written against whatever this stack makes findable",
+    "How long each class of data must be retained under the rules this domain answers to, because retention is a legal fact the service cannot derive from itself and the wrong number is invisible until it is expensive",
+    "Where an unverifiable edge may be recorded as an exception and who rereads that list, since an exception nobody revisits becomes a permanent hole in the one check that was supposed to close it"
+  ],
+  "dependencies": [
+    "a schema the declaration is validated against, without which the shape drifts service by service and the portfolio stops being one readable set",
+    "read access to the service's own code, since the verification outcome is a search for the client or the topic that backs each declared edge and cannot be met from the declaration alone"
+  ],
+  "examples": [
+    {
+      "title": "A ledger service declaration as the worked shape",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference's per service declaration is ADR-0071, with its schema at openbank-libs/governance/governance.schema.json and the gate governance-manifest enforcing that every service carries one. openbank-ledger-service/governance.yaml in full is nine curatorial facts plus lineage: dataDomain core, primaryDatastore PostgreSQL, databaseName openbank_ledger, dataLineageRole both, dataClassification confidential, retentionPolicy 10 years, evidenceExported true, then lineage.upstream naming transaction-service with relationType api and the description posts GL, and databaseLineage.ownedDatabases. Its header states the rule that makes the file trustworthy: declarative, curatorial facts only, with derived fields such as Flyway and apiVersion and all runtime drift living elsewhere. That is nine facts, not ninety, and the discipline is in what it refuses to hold."
+    },
+    {
+      "title": "Holding a declared edge against the code",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The enforced gate lineage-code-audit is the half most declarations never get: it checks that every declared lineage edge is backed by code, grep verifiable through a declared REST client annotation or an overlapping message topic, or else explicitly allowlisted. Two consequences are worth carrying into any stack. The verification is a text search rather than a runtime trace, which is why the edge description has to be specific enough to search for. And the allowlist is the dangerous half: an edge nobody could verify is a hole, and an allowlist entry that has stopped matching anything is a stale exemption rather than a settled question."
+    },
+    {
+      "title": "The document that drifted, and why the declaration replaced it",
+      "connector": "github",
+      "connectorType": "source_control",
+      "notes": "The reference reached seventy four openbank modules and its hand written ARCHITECTURE.md had already drifted from the directory listing, carrying services it did not mention at all. The response was structural rather than editorial: ADR-0029 D1 and D3 retired the hand curated manifest and derive service-graph.json and catalog.json in CI from the declarations instead. The ledger service goes further and has no README.md whatsoever, keeping its narrative in CLAUDE.md and governance.yaml, which is a deliberate choice worth copying: the human readable file that drifts was replaced by machine readable files that gates check. Its own money path rules file is likewise wider than the prose table beside it, and the reference's instruction to readers is to treat the machine readable list as authoritative and the prose as lagging."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "service_id",
+      "type": "text",
+      "required": true,
+      "description": "The service whose declaration this pass writes and verifies. One service per pass, because a declaration written for two services belongs to neither."
+    },
+    {
+      "name": "verify_only",
+      "type": "boolean",
+      "required": false,
+      "description": "Hold the existing declaration against the code without editing it. The honest first pass on a service somebody else declared, since the verdict is worth more than the correction."
+    },
+    {
+      "name": "include_downstream",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass also verifies the edges that read from this service, which needs the consumers' code and is not always reachable. Left false, the downstream edges are reported as unverified rather than as absent."
+    }
+  ]
+}

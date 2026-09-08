@@ -1,0 +1,178 @@
+{
+  "id": "081fbc58-a350-423d-90af-06150376ad1d",
+  "slug": "governance-drift-audit",
+  "title": "Governance drift audit of declarations against code",
+  "status": "draft",
+  "path": "software_engineering/codebase-health",
+  "domain": "software_engineering",
+  "description": {
+    "need": "Every declaration in a governed system is a claim about the code. A decision record claims a control exists, a charter claims an agent may reach exactly these tools and no others, a manifest claims a set of checks runs, a baseline claims a number that has been held. Each was true the day it was written and nothing rereads it, so the governance surface slowly becomes an accurate description of a codebase that no longer exists. The worst case is not a claim that fails loudly. It is a check that quietly stopped running while every report continued to say success, which is a failure that looks exactly like health.",
+    "input": "The declarations the system holds and what each one claims: decision statuses, agent charters with their tool grants and their human gates, the manifest of checks with what each expects to find, the baselines, the inventories and the exemption lists; and against them the code, the running configuration and the run records that would confirm or refute each claim.",
+    "coreAction": "Read every declaration against the code that would prove it, and keep three verdicts apart: a claim the code confirms, a claim the code refutes, and a claim nothing could have tested either way. Include the checks themselves in the audit rather than trusting their verdicts, because a verifier that can be switched off by the thing it verifies is not one. Then propose every correction and make none of them.",
+    "output": "A finding per declaration the code refutes, naming the declaration, the evidence and the correction proposed; a separate list of claims nothing could confirm or refute, which is the more dangerous list and is never folded into the first; evidence that each declared check actually ran rather than only that it reported success; a count of what was read against what was expected, so found nothing and looked at nothing stay distinguishable; and a record that every correction left this work as a proposal for somebody else to dispose of."
+  },
+  "activities": [
+    {
+      "id": "inventory",
+      "label": "Read every declaration the system holds and what each one claims about the code",
+      "kind": "observe"
+    },
+    {
+      "id": "confront",
+      "label": "Hold each claim against the code, the running configuration and the run records",
+      "kind": "observe"
+    },
+    {
+      "id": "check-the-checkers",
+      "label": "Decide, per declared check, whether it actually ran, separately from what it reported",
+      "kind": "decide"
+    },
+    {
+      "id": "classify",
+      "label": "Separate confirmed, refuted and untestable, since the third is the one that hides",
+      "kind": "decide"
+    },
+    {
+      "id": "propose",
+      "label": "Propose a correction for every refuted claim, and apply none of them",
+      "kind": "deliver"
+    },
+    {
+      "id": "report",
+      "label": "Report the untestable claims with what would make each one testable",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "a-refuted-claim-becomes-a-proposal-not-an-edit",
+      "statement": "Nothing this work audits is changed by this work, so every correction has a second reader.",
+      "successCriteria": [
+        "Each refuted claim leaves the pass as a correction somebody else disposes of, with the evidence attached to it",
+        "No declaration, charter, manifest or baseline is edited here, because an auditor that repairs what it audits has removed the only independent reading",
+        "A correction nobody adopted stays open and is named again in the next pass, rather than being applied to stop it recurring in the report"
+      ]
+    },
+    {
+      "id": "looked-at-nothing-is-not-found-nothing",
+      "statement": "A pass that examined nothing is a failure, and it is never reported as a clean result.",
+      "successCriteria": [
+        "Each pass states how many declarations of each kind it read and how many it expected to find, and a pass that read fewer fails rather than reporting clean",
+        "A claim nothing could confirm or refute is listed apart from a claim the code confirmed, since only the first is a hole in the audit itself",
+        "An exemption that no longer matches anything is reported as stale, because an exemption nobody rereads is a permanent grant that was written as a temporary one"
+      ]
+    },
+    {
+      "id": "the-checks-are-audited-and-not-believed",
+      "statement": "Every declared check is shown to have run and to be capable of failing, independently of the verdict it reported.",
+      "successCriteria": [
+        "Each check's own run record is read, so a check that never executed can be told apart from one that executed and passed",
+        "A check that has only ever passed is treated as unproven until something has demonstrated that its failing state is reachable",
+        "A verifier whose execution depends on the same condition as the thing it verifies is reported as a finding, because it can be switched off by exactly what it was meant to catch"
+      ]
+    },
+    {
+      "id": "a-charter-claims-no-more-privilege-than-the-system-grants",
+      "statement": "What an agent's charter says it may reach and what the running system lets it reach are the same set, in both directions.",
+      "successCriteria": [
+        "Each charter's tool grants and denials are held against what the running configuration actually permits, and a difference either way is a finding",
+        "A grant the charter denies but the system allows is a finding, and so is a grant the charter names that nothing implements, since the second means the charter is describing a system that does not exist",
+        "A charter claiming more privilege than the person it works for holds is reported for refusal rather than quietly reconciled downward to whatever the system happened to allow"
+      ]
+    },
+    {
+      "id": "the-audit-is-comparable-across-passes",
+      "statement": "Each pass can be read against the last, so a finding that keeps returning is recognised as a different problem from a finding that is new.",
+      "successCriteria": [
+        "Each pass records what it read, what it found and what it could not test, in a form the next pass is written to be compared against",
+        "A recurring finding is reported as recurring, naming how many passes it has survived, since survival is itself the evidence that proposing was not enough",
+        "A pass that found nothing states what it read in order to reach that, so a genuinely clean result can be distinguished from a broken walk"
+      ]
+    }
+  ],
+  "guidance": "Every declaration is a claim about the code, and each of them was true when it was written. Read them against what runs, and keep three verdicts apart: confirmed, refuted, and untestable. The third is the one to worry about. Audit the checks themselves and not only what they reported, because a verifier that can be switched off by the thing it verifies is not one. Then propose and stop, since an auditor that fixes what it audits has removed the second reader.",
+  "connectorTypes": [
+    "source_control",
+    "ci_cd",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "declaration_home",
+      "type": "source_control",
+      "note": "the checkout holding both the declarations and the code they claim, since the whole audit is a comparison inside one tree"
+    },
+    {
+      "role": "run_records",
+      "type": "ci_cd",
+      "note": "where each declared check's own execution history is read, so a check that passed can be told apart from a check that never ran"
+    },
+    {
+      "role": "proposal_surface",
+      "type": "project_management",
+      "note": "where a proposed correction is filed for somebody else to dispose of; this work never holds the write that closes its own finding"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "time",
+    "rationale": "Drift accumulates with every merge and nothing announces it, so an audit waiting for an event waits for something that never fires: a declaration does not emit anything when it stops being true. A fixed cadence is honest here in a way it would not be for work driven by arrivals, because the subject is the whole declaration set rather than one item, and a pass that finds nothing still has to say what it read. The reference runs its own governance auditor daily and reacts to merges as well, which is the same judgement reached from the other side."
+  },
+  "personalizationNeeds": [
+    "Which declarations this workspace holds and where each kind lives, since an audit that does not know the full set cannot tell found nothing from looked at nothing",
+    "How many declarations of each kind are expected to exist, because that floor is the only thing that turns a silent walk over an empty directory into a failure",
+    "Where a proposed correction is filed and who disposes of it, since a proposal with no reader is a finding this work has quietly absorbed while appearing to report it",
+    "Where each check's own execution history can be read, because the outcome about auditing the checks needs the run record itself and cannot be met from a summary verdict",
+    "Which claims are deliberately unverifiable here and why, so the untestable list stays a real hole rather than becoming a list of things everybody already knew"
+  ],
+  "dependencies": [
+    "read access to both the declarations and the code they claim, since the work is a comparison and half of it is not an audit",
+    "an execution history per declared check, without which a check that never ran cannot be distinguished from one that ran and passed",
+    "a place a proposed correction can be filed, because this work proposes and never disposes, and a proposal with nowhere to go becomes an edit sooner or later"
+  ],
+  "examples": [
+    {
+      "title": "A project checkout as the declaration_home role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The audit is cheapest where the declarations and the code live in one tree, because most of the work is a search: does anything in this repository implement the client, the topic, the check or the grant that this file claims. The parity gates in the reference are all of this shape, comparing a declaration to code rather than code to itself: agent-charter-registry-parity, agent-model-parity, agent-bounded-write-surface and mcp-charter-data-scope-binding for the agent plane; eu-ai-act-inventory-drift and ai-act-high-risk-inventory-vs-code for the inventories; gates-not-deregistered and enforcement-reachability for the manifest itself; service-runbook-drift and lineage-code-audit for the per service declarations. Reading that list is the fastest way to see what kinds of drift are worth looking for."
+    },
+    {
+      "title": "The verifier that could be switched off by what it verified",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The sharpest lesson in the reference is recorded in the comment on its gate agent-review-proof-falsifiable, and it is the reason this recipe audits the checks and not only their verdicts. The script that gate falsifies is the proof that an independent review happened, and its predecessor was retired because ADR-0154's step to verify the fallback actually reviewed carried the SAME if: condition as the review it verified. Across ten consecutive runs both were skipped while every run concluded success. The sentence to carry is the one the comment ends on: a verifier that can be switched off by the thing it verifies is not one. The same repository generalises it into a rule for every check it declares, that a gate which has only ever passed is unfalsified, and it runs each gate's own self test immediately before the gate and skips the gate entirely when that self test gives the wrong verdict."
+    },
+    {
+      "title": "A propose only lane as the proposal_surface role",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "The propose only shape is not caution, it is what makes the audit worth anything, and the reference states it twice in different words. ADR-0031's governing sentence is that agents propose and governance disposes, and that an agent never holds more privilege than a human, it holds less. Its FINOS AIGF mapping states the same rule as the one implemented control the whole agent plane rests on: every agent output is a proposal, never auto-remediation. A workspace that files findings as proposals somebody accepts gives this recipe its second reader for free, and the practical consequence is that a recurring finding is real signal: it means the proposals were seen and not adopted, which is a different conversation from the finding itself."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project whose declarations this pass audits. The comparison is against one codebase, so a pass spanning projects cannot report a count against a floor."
+    },
+    {
+      "name": "declaration_kind",
+      "type": "text",
+      "required": false,
+      "description": "Audit one kind of declaration, for example charters or the check manifest. Empty means all of them, which is the only way the counting outcome can be met."
+    },
+    {
+      "name": "since",
+      "type": "text",
+      "required": false,
+      "description": "Read execution histories from this point forward. Empty means since the last pass, so a check that stopped running in between is not missed by a window that started after it."
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "id": "71ff0a02-82ad-4c10-9710-8312f91e53a1",
+  "slug": "money-path-service-certification",
+  "title": "Money path service certification against a declared contract",
+  "status": "draft",
+  "path": "software_engineering/project-stewardship",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A service carrying nine of its ten obligations reads exactly like one carrying ten, and the difference only shows on the day the missing one was the one that mattered. The obligations that protect money are the ones nobody notices missing: a write endpoint that shipped without an idempotency key, a domain layer that quietly took a framework dependency, a migration with no rollback note, a timestamp read from the wall clock instead of an injected one. The reference this work is written against states the cost in the rationale of its own gate `idempotency-coverage-money-path`: a duplicate POST on a money path endpoint is a double debit, and without a ratchet a new endpoint ships without a key and nothing objects.",
+    "input": "One service, the per service contract its project declared, the service's own tree as it stands today, and whatever the last certification of this service recorded.",
+    "coreAction": "Read one service against the contract its own project declared, obligation by obligation, and give each one a verdict backed by the file that carries it or the absence that proves it missing. Keep three verdicts apart rather than two: carried, absent, and not checkable from here, because a certification that cannot tell absent from unlooked at is worth nothing. File every gap as an idea naming the obligation it violates, and change no code, because a reader that repairs what it finds stops being able to report what it found.",
+    "output": "A certification for one service listing every obligation the project declared, each with a verdict and the evidence behind it; one idea filed per gap naming the obligation it violates and where it was looked for; a separate list of obligations that could not be checked from here with what would make them checkable; and a refusal rather than a green verdict where the project has declared no contract at all."
+  },
+  "activities": [
+    {
+      "id": "read-the-contract",
+      "label": "Read the per service contract the project declared, and stop where none exists",
+      "kind": "observe"
+    },
+    {
+      "id": "walk",
+      "label": "Walk the service against each declared obligation in turn, collecting what proves it and what proves it missing",
+      "kind": "observe"
+    },
+    {
+      "id": "judge",
+      "label": "Decide per obligation between carried, absent and not checkable from here",
+      "kind": "decide"
+    },
+    {
+      "id": "file",
+      "label": "File each gap as an idea naming the obligation it violates and where it was looked for",
+      "kind": "act"
+    },
+    {
+      "id": "certify",
+      "label": "Publish the certification with every verdict and the evidence behind each one",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-contract-is-the-projects-not-the-readers",
+      "statement": "The obligations checked are the ones the project declared, read at the moment of the certification.",
+      "successCriteria": [
+        "The certification names the contract it read and the version or revision of it, so a later reader can tell which obligations were in force",
+        "An obligation the reader believes in but the contract does not carry is raised as a proposal against the contract, never checked as though it were declared",
+        "A service certified against a contract that has since changed is marked stale rather than left standing as current"
+      ]
+    },
+    {
+      "id": "every-obligation-carries-a-verdict-and-its-evidence",
+      "statement": "Every declared obligation ends the read with a verdict a third party could check without repeating the work.",
+      "successCriteria": [
+        "A carried verdict names the file, the directory or the declaration that carries it, not a summary of it",
+        "An absent verdict names where the obligation was looked for, so an absence caused by looking in the wrong place is visible",
+        "No obligation ends the pass without a verdict, and a pass that ran out of budget says which obligations it never reached"
+      ]
+    },
+    {
+      "id": "absent-and-unchecked-are-never-collapsed",
+      "statement": "An obligation nobody could check from here is reported as unchecked, never as carried and never as absent.",
+      "successCriteria": [
+        "The certification carries a third list, and it is empty only when the pass really did reach every obligation",
+        "Each unchecked obligation names what would make it checkable, whether that is access, a running instance or a tool the pass did not have",
+        "A summary count states the three numbers separately, so nobody reads a certification as complete when a third of it was unreachable"
+      ]
+    },
+    {
+      "id": "a-gap-becomes-an-idea-and-not-a-repair",
+      "statement": "Every gap leaves this work as a filed idea, and the service's code is exactly as it was found.",
+      "successCriteria": [
+        "Each idea names the obligation it violates, the evidence of the gap and the service it belongs to, so it can be picked up without rereading the service",
+        "The certification changes no file in the service under read, and a pass that did is reported as a failure of this work",
+        "A gap already filed by an earlier pass is linked rather than filed again, so the backlog counts services and not certifications"
+      ]
+    },
+    {
+      "id": "no-contract-means-a-refusal-not-a-pass",
+      "statement": "A service whose project has declared no contract ends in a refusal that says so, not in a green certification.",
+      "successCriteria": [
+        "The refusal names what it would have read and who owns declaring it, so the missing contract becomes somebody's work",
+        "No certification record is written for a service that was never held against anything",
+        "A contract that exists but declares nothing checkable is treated the same way as none, with the reason recorded"
+      ]
+    }
+  ],
+  "guidance": "Certify against the contract the project wrote, never against the one you remember. An obligation you could not check is not an obligation carried, and saying so is the whole value of the read. File what you find as ideas and fix nothing: the moment a certifier repairs a gap it loses the ability to report the gap rate honestly. Where no contract has been declared, refuse and say what would have been read, because a green verdict against nothing is worse than no verdict.",
+  "connectorTypes": [
+    "source_control",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "service_repository",
+      "type": "source_control",
+      "note": "the checkout holding the service being read, walked file by file rather than described from memory"
+    },
+    {
+      "role": "contract_home",
+      "type": "source_control",
+      "note": "where the project's declared per service contract lives; often a sibling platform checkout rather than the service's own"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where a gap is filed as an idea against the service that owns it"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A merge wave reaching the service is the moment a certification is worth the most and costs the least, because the diff that just landed is the likeliest place an obligation was dropped. A self paced pass belongs beside it, since obligations also go missing without any diff at all: a contract gains an obligation the service never met, an allowlist entry expires, a dependency stops carrying something it used to. Neither of those has an event, and only a periodic read finds them."
+  },
+  "personalizationNeeds": [
+    "Where the project's per service contract is declared and in what shape, because this work reads whatever the project wrote and cannot invent the obligation list without becoming the author of it",
+    "Which services in this project are on the value path, since the reference's whole structural idea is that a named subset carries stricter obligations and certifying every service to the same bar wastes the distinction",
+    "How an idea is filed in this workspace and what it must carry to be actionable, because a gap recorded only in a certification is a gap nobody will pick up",
+    "How much of the service this pass may read and how deep, since a full walk of a large service and a walk of its declaration files are different costs with different confidence",
+    "Whether a running instance is available to the pass, because several obligations are only checkable against a running service and the third verdict exists exactly for the ones that are not"
+  ],
+  "dependencies": [
+    "a readable checkout of the service, since every verdict rests on a file rather than on a description of one",
+    "a declared per service contract to read against, without which this work refuses rather than proceeds",
+    "a place to file ideas, because a certification with nowhere to send its gaps produces a document and no work"
+  ],
+  "examples": [
+    {
+      "title": "A registered local checkout in the service_repository role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "builtin-codebase reads files in a registered checkout, which is enough for most of the contract, and the obligations split cleanly into what a tree can prove and what it cannot. The reference's own per service contract is the model for the list. Layout is ADR-0002, a pure domain that must not depend on the framework, enforced by gate `domain-purity-gate`. The published contract is ADR-0048 with gates `api-contract-gate` and `openapi-route-conformance`, which asserts every route published and every route served. Migrations carry a forward step and an in file rollback note, gate `db-migration-gate`. Writes carry an idempotency key, gate `idempotency-coverage-money-path`. Events leave through a transactional outbox, ADR-0003, gates `outbox-has-writer` and `outbox-dispatch-enabled-guard`, the second existing because the dispatch flag defaults to off. Time comes from an injected clock, gate `clock-injection-gate`. A structured threat model is a definition of done artefact, ADR-0030 D2, gate `threat-model-coverage`. A runbook exists and has not drifted, gate `service-runbook-drift`. The service declares itself, ADR-0071, gate `governance-manifest`. Domain metrics and the runbook's accuracy are the two that a tree alone cannot settle, which is why the third verdict exists."
+    },
+    {
+      "title": "A platform repository holding the contract in the contract_home role",
+      "connector": "github",
+      "connectorType": "source_control",
+      "notes": "The contract usually belongs to the platform project rather than to the service being read, which is what keeps the obligations the same across every service and stops each project inventing its own bar. Binding contract_home to a different checkout than service_repository is the common case, not the exception. builtin-github's documented PAT scopes cover reading the file and opening an issue, but not reading check runs, so this work reports what it read in the tree and never what a remote pipeline concluded."
+    },
+    {
+      "title": "The project backlog as the place a gap lands",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "A gap filed as an idea carries the obligation it violates in its own title, which is what lets the backlog be counted by obligation rather than by service later. Filing rather than fixing is what makes the gap rate a real measurement across a fleet: a certifier that repaired as it went would leave every service green and no evidence of which obligations the fleet keeps dropping."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "service_id",
+      "type": "text",
+      "required": true,
+      "description": "The one service to certify. One service per pass: a run that widens to the whole project produces a summary nobody can act on and evidence nobody can check."
+    },
+    {
+      "name": "contract_ref",
+      "type": "text",
+      "required": false,
+      "description": "Pointer to the declared contract version to read against. Empty means read the current contract from wherever the contract_home role is bound, and refuse if there is none."
+    },
+    {
+      "name": "file_gaps",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass files its gaps as ideas or only reports them. A first certification of an unfamiliar service is often worth reading before it is worth filing."
+    }
+  ]
+}

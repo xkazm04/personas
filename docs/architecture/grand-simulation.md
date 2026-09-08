@@ -143,9 +143,12 @@ service.
 
 **Roles, as charters.** Architect: solution design, project creation, App Master adoption, goal
 setting, channel direction, scope adjustment (workspace-bound). App Master: the six charters of
-the first day plus a hiring charter ("ask kp for a role when a responsibility has no holder").
-Hired roles: whatever kp composes, adopted through the build session with recipes from the
-registry where one fits.
+the first day plus a hiring charter ("ask kp for a role when a responsibility has no holder"), and
+from 2026-09-08 the four enterprise-grade charters in `scripts/templates/_app_master/` (service
+contract stewardship, gate authorship, threat and evidence on money-path projects only, acceptance
+certification). Hired roles: whatever kp composes, adopted through the build session with recipes
+from the registry where one fits, and from the ten craft payloads in `scripts/templates/_bank/`
+where the work is one of the obligations the reference digest names.
 
 ## 3. Gaps (measured, not guessed) and what closes each
 
@@ -159,7 +162,7 @@ registry where one fits.
 | G6 | No one-step repository + project creation | `POST /dev-tools/projects/create {workspace, name, template}`: `git init` under the dedicated root (`~/.personas/sim/<workspace>/<name>` or an operator path), a README and `.personas/project.json`, then `register_project`, assign to the workspace | small |
 | G7 | The kp hire needs a human click | `PERSONAS_HEADLESS_BRIDGE=1` already auto-executes; the simulation runs the app in that mode; the App Master's own ask mechanism keeps the operator informed | config |
 | G8 | ~~Hired App Masters are not enrolled in the attention loop (`attention_enabled = false`)~~ **CLOSED** | the hire door sets it, and only when the request body carries `"simulation": true` — `HireOrigin` in `app_master_hire.rs`, applied as an update immediately after `record_hire` rather than as a field on `MandateRecord`, because `attention_enabled` is not something kp knows about or should be able to set. An ORDINARY hire keeps today's operator-confirmed OFF, and both halves of that rule are now asserted by adjacent tests so neither can be changed alone. The same body's `originPersonaId` is recorded in the hired persona's setup notes, so the roster can answer "who asked for this?". kp passes both through as top-level keys (`DispatchPassthrough`), each omitted when it has nothing to say. | small |
-| G9 | No banking knowledge in the registry; recipes docs stale | a `banking` bundle seeded from the Architect's design plus kp's Česká spořitelna corpus; the lane's three declarations corrected to the 113-recipe reality | registry, medium |
+| G9 | No banking knowledge in the registry; recipes docs stale | **Partially served from inside Personas as of 2026-09-08**: the fourteen new payloads in `scripts/templates/_bank/` (10) and `scripts/templates/_app_master/` (4) carry the enterprise-grade banking obligations the digest extracted, each grounded in a named gate id or ADR, and they reach a hired role through adoption without the registry lane existing. What that does NOT close is the registry side, which stays the operator's work: there is still no `banking` knowledge bundle, so nothing here is versioned, proposal-governed or reachable by a repo that is not this workspace, and lessons from these charters have nowhere to be promoted to. Still owed: a `banking` bundle seeded from the Architect's design plus kp's Česká spořitelna corpus, and the lane's three declarations corrected to the real recipe count | registry, medium |
 | G10 | `/uat` has no scenario object or fixture generator | a **scenario file** in the overlay (`uat/scenarios/*.md`: Characters × Journeys × fixture set × load envelope) and a fixture generator that reads the simulation's own data (accounts, contracts, loans) into `env.md`'s table; findings drain into the projects' backlogs through the write-back route | medium, skill-side |
 | G11 | Persona → persona addressing in the decision | the decision plan gains `say: [{to, body, authority}]` so an App Master can answer the Architect and ask a sibling; written through the channel table | small |
 | G12 | ~~The runner arm executes in the project's ROOT checkout — a backlog wave dispatched through `dev_tools_start_auto_run` edits the operator's live tree while they are working in it~~ **CLOSED** | `run_task_execution` (`task_executor.rs`) — the one point all three arms (single execute, batch, auto-run) funnel through — resolves an isolated worktree before it spawns, through the **same** `personas_engine::unattended_worktree::prepare_authoring_worktree` the fleet arm already authors with, so there is one branch namespace, one free-slot rule and one dependency borrow for both arms. One worktree per task at `<app_data>/worktrees/<project_id>/<slug>` on `autopilot/<slug>`, reused on a retry via the task row; the exec dir (and with it the CLI's transcript) and the auto-PR push all follow it. A project whose root is not a git work tree still runs, in the root, with the reason logged, emitted to the live panel and written to the row (`worktree_fallback_reason`) — never silently. Migration `e26_runner_task_worktree` adds `worktree_path` / `worktree_branch` / `worktree_fallback_reason` to `dev_tasks`. The worktree is left in place for merge/review; only the existing prune sweep retires it. | small |
@@ -186,6 +189,17 @@ registry where one fits.
    the six projects with triage rules that auto-accept low-risk items (the first day's ceiling).
 7. **The skill** `/grand-sim` with acts as modes (`design | hire | build | load | reflect | status`),
    state under `.claude/grand-sim/`, and an Obsidian folder `Grand Simulation/` for the map.
+8. **The recipe corpus the roles adopt**, in three seed directories under `scripts/templates/`:
+   `_architect/` (5, workspace-bound, amended 2026-09-08 against the reference digest's §8.2),
+   `_app_master/` (6 project-bound, four of them new from §8.3: `service-contract-stewardship`,
+   `gate-authorship`, `threat-and-evidence` for money-path projects only, `acceptance-certification`)
+   and the new `_bank/` (10 craft recipes from §8.4: money-path service certification, gate
+   authorship from a recurring defect, regulatory acceptance mapping, threat model for a money path,
+   load envelope authorship, abuse-path smoke, service self-declaration and lineage, contract-first
+   API stewardship, ADR authorship with split status, governance drift audit). All are `status:
+   draft` with no version; each merges into `_recipe_seeds.json` through the same
+   `_app_master/merge-into-bundle.mjs --dir <folder> --owner <name>`, idempotent by recipe id.
+   **Bundle: 116 recipes before, 130 after.**
 
 ## 5. Open decisions for the operator
 

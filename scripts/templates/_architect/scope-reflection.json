@@ -8,8 +8,8 @@
   "description": {
     "need": "The people doing the work are the first to see where their scope is wrong, and in an organisation of agents they say so in writing: a proposal to take on a responsibility nobody holds, to give one up, to split one that turned out to be two. Those proposals then sit unread, because reading them is nobody's job and answering one means deciding whether it changes a single charter or the whole design. The same happens to lessons: each one is filed where it was learned, so the next holder of the same work learns it again from scratch.",
     "input": "The proposals the personas have filed against their own responsibilities, the lessons they have written from their runs, the charters as they currently stand, the solution design the charters were derived from, and whatever evidence each proposal attached.",
-    "coreAction": "Read what the workers proposed about their own scope and decide, for each one, what it would actually change: a charter, the design, or nothing. Apply the ones that hold, decline the rest with a reason the proposer can argue with, and separate the lessons that only apply where they were learned from the ones any holder of that work would want, promoting only the second kind.",
-    "output": "Every proposal answered with applied, declined or escalated and the reason recorded against it; the charters and the design carrying the changes that were accepted, each traceable to the proposal that caused it; and the lessons that generalise promoted to where the next holder will read them, with the rest left where they belong."
+    "coreAction": "Read what the workers proposed about their own scope and decide, for each one, what it would actually change: a charter, the design, a gate, or nothing. A gate is the verdict whenever the lesson is mechanical and would otherwise be a paragraph nobody reads at the moment it matters, because a rule that generalises should refuse the mistake rather than describe it. Apply the ones that hold, decline the rest with a reason the proposer can argue with, and separate the lessons that only apply where they were learned from the ones any holder of that work would want, promoting only the second kind.",
+    "output": "Every proposal answered with applied, declined or escalated and the reason recorded against it; the charters and the design carrying the changes that were accepted, each traceable to the proposal that caused it; a check written wherever the lesson was mechanical, carrying what it expects to find, why it exists, when it should be re examined and a proof that its failing state is reachable; and the lessons that generalise promoted to where the next holder will read them, with the rest left where they belong."
   },
   "activities": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "id": "classify",
-      "label": "Decide what each proposal would change: a charter, the design, or nothing",
+      "label": "Decide what each proposal would change: a charter, the design, a gate, or nothing",
       "kind": "decide"
     },
     {
@@ -29,7 +29,7 @@
     },
     {
       "id": "apply",
-      "label": "Apply the accepted changes to the charters or the design",
+      "label": "Apply the accepted changes to the charters, the design or the gate manifest",
       "kind": "act"
     },
     {
@@ -55,11 +55,22 @@
     },
     {
       "id": "each-change-lands-at-the-right-altitude",
-      "statement": "Each accepted proposal changes the thing it actually affects, a charter or the design, never both by accident.",
+      "statement": "Each accepted proposal changes the thing it actually affects, a charter, the design or a gate, never two of them by accident.",
       "successCriteria": [
         "Each verdict states which artefact it changes before the change is made",
         "A proposal that would move a boundary between two contexts is treated as a design revision, not as a charter edit on one side",
-        "A charter edit that contradicts the design is refused and raised as a design question instead"
+        "A charter edit that contradicts the design is refused and raised as a design question instead",
+        "A proposal whose content is a rule that can be checked mechanically is answered with a gate rather than with a charter sentence, because a sentence is read by whoever already agreed with it"
+      ]
+    },
+    {
+      "id": "a-mechanical-lesson-becomes-a-check-not-a-paragraph",
+      "statement": "A lesson that generalises and can be checked mechanically leaves this pass as a check that refuses the mistake, not as prose describing it.",
+      "successCriteria": [
+        "Each gate written here declares how many subjects it expects to find, so a run that looked at nothing fails instead of reporting green",
+        "Each gate carries the reason it exists and a date it should be re examined, so a rule outliving its cause is visible rather than permanent",
+        "Each gate carries a proof that its failing state is reachable, run before the gate itself, because a check that has only ever passed has never been shown to work",
+        "A lesson that cannot be checked mechanically stays prose, and the verdict says which of the two it was and why"
       ]
     },
     {
@@ -90,10 +101,11 @@
       ]
     }
   ],
-  "guidance": "A proposal from the persona doing the work is evidence, not noise: it saw the boundary from inside. Decide what it changes before deciding whether to accept it, because a charter edit and a design revision are different acts with different costs. Decline plainly and say why, so the same proposal does not return next month unchanged. A lesson is general only if another holder of the same work would want it; everything else stays where it was learned.",
+  "guidance": "A proposal from the persona doing the work is evidence, not noise: it saw the boundary from inside. Decide what it changes before deciding whether to accept it, because a charter edit, a design revision and a gate are three acts with three costs. Prefer the gate whenever the lesson is mechanical: a rule written as prose is read by the people who already knew it, and a rule written as a check refuses the mistake at the moment it is made. Decline plainly and say why. A lesson is general only if another holder of the same work would want it.",
   "connectorTypes": [
     "project_management",
-    "knowledge_base"
+    "knowledge_base",
+    "source_control"
   ],
   "connectorRoles": [
     {
@@ -105,6 +117,11 @@
       "role": "knowledge_home",
       "type": "knowledge_base",
       "note": "where the design lives and where a lesson that generalises is promoted to"
+    },
+    {
+      "role": "gate_manifest",
+      "type": "source_control",
+      "note": "the checkout holding the manifest of mechanical checks, where a proposal classified as a gate is written; unbound where the workspace has no such manifest, and the gate verdict is then unavailable rather than silently downgraded to prose"
     }
   ],
   "recommendedTrigger": {
@@ -116,11 +133,14 @@
     "Which changes this work may apply on its own and which need a person, since widening a persona's own scope is a decision some operators keep",
     "What the shared knowledge lane is and whether promotion into it is a direct write or a proposal, because the fourth outcome changes shape between the two",
     "How charters are stored and versioned here, since the traceability outcome depends on the previous version staying readable",
-    "What this workspace counts as a general lesson, because the line between general and local is the one judgement this work makes most often"
+    "What this workspace counts as a general lesson, because the line between general and local is the one judgement this work makes most often",
+    "Where mechanical checks are declared here and who owns that manifest, since the gate verdict writes into somebody else's project and a verdict with nowhere to land quietly becomes prose again",
+    "What a new check has to declare before it may be added, for example an expected yield, a reason, a review date and a proof that it can fail, because those fields are what separate a gate from a rule nobody has tested"
   ],
   "dependencies": [
     "a place personas can file proposals about their own responsibilities, without which there is nothing to read",
-    "a current solution design, since half the verdicts are about whether a proposal is a charter matter or a design matter"
+    "a current solution design, since half the verdicts are about whether a proposal is a charter matter or a design matter",
+    "a manifest of mechanical checks that can be added to, because the gate verdict is only available where a declared home for checks already exists"
   ],
   "examples": [
     {
@@ -140,6 +160,12 @@
       "connector": "personas",
       "connectorType": "project_management",
       "notes": "One asks to take on a responsibility, the other asks to give the same one up. Answered separately both are reasonable and the result is a gap or an overlap. Read together they are one design revision, which is exactly the case the classify step exists for, and it is only visible to a reader holding every proposal at once."
+    },
+    {
+      "title": "A proposal answered with a gate rather than with a charter sentence",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "A project owner proposes adding to its own charter that write endpoints on the money path must carry an idempotency key, having shipped a duplicate charge. Accepted as a charter edit it protects one project and only while that owner holds it. Accepted as a gate it protects every project from the next author who never reads the charter. The reference this is taken from declares two hundred and seventeen such checks in one manifest, and three of them check the declarations rather than the code, refusing a check that does not say how much it expects to find. Its own idempotency check states plainly why it exists: a duplicate write on a money path endpoint is a double debit, and without a ratchet a new endpoint ships without a key and nothing objects. The rule that makes the whole set trustworthy is the one worth copying above all: a check that has only ever passed is unfalsified, so the proof that it can fail is run first and the check is skipped when that proof gives the wrong verdict."
     }
   ],
   "lessons": [],
