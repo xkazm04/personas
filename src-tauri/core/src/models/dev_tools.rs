@@ -1388,6 +1388,18 @@ pub struct DevTask {
     pub parent_task_id: Option<String>,
     /// 1 for an original task; `parent.attempt + 1` for each re-attempt.
     pub attempt: i32,
+    /// The directory this run's CLI was actually spawned in — the isolated
+    /// authoring worktree, or the project root when isolation was refused.
+    /// `None` until the task starts running (and for every task written before
+    /// the runner isolated its work, G12).
+    pub worktree_path: Option<String>,
+    /// `autopilot/<slug>` — the branch `worktree_path` is checked out on.
+    /// `None` ⟺ the run was NOT isolated; this is the branch a reviewer merges.
+    pub worktree_branch: Option<String>,
+    /// Why isolation was refused, when it was. `None` ⟺ the run WAS isolated.
+    /// The mirror of `worktree_branch`, so a fallback into the operator's own
+    /// checkout is recorded on the row rather than only in a log line.
+    pub worktree_fallback_reason: Option<String>,
 }
 
 /// The task status vocabulary. `pending` is NOT in it — a legacy writer used it
