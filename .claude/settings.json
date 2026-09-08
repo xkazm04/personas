@@ -1,1 +1,16 @@
-{}
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/build/guard-whole-read.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
