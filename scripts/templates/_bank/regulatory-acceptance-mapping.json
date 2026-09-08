@@ -1,0 +1,177 @@
+{
+  "id": "25f466a4-6e0a-485b-b0f5-4c7fe2ced850",
+  "slug": "regulatory-acceptance-mapping",
+  "title": "Regulatory acceptance mapping to controls and evidence",
+  "status": "draft",
+  "path": "legal_compliance/compliance-monitoring",
+  "domain": "legal_compliance",
+  "description": {
+    "need": "A compliance claim costs nothing to write and everything to defend. The usual document lists regulations beside the words compliant or in progress, which tells a reader neither what satisfies the requirement nor where to look for proof, and the first person to ask for the proof discovers that half the rows were intentions. The reference this is written against solved it with a shape rather than a longer document: one table, one artefact path per requirement, and a named gap written in wherever no artefact exists. Its own evidence pack does exactly that for DORA, mapping Art. 5 and 6 to `docs/bcp/dora-ictrm.md` and `docs/threat-models/`, Art. 8 to per service SBOMs and a third party register, Art. 9 to policy authorization and pull request time vulnerability checks, and Art. 11(3)(c) to `docs/bcp/dr-test-log.md`, and it names four gaps rather than rounding them up.",
+    "input": "One named regulation with its text, the system as it stands with whatever controls it already runs, the artefacts that exist today and where they live, and the previous version of this mapping if there is one.",
+    "coreAction": "Break one named regulation into requirements small enough that a single control can answer each, decide which control does answer it, then go and look for the artefact that would evidence that control to somebody who does not trust you. A requirement whose artefact exists becomes a row. A requirement whose artefact does not exist yet becomes a named gap with what would close it, never a row with an intention in the evidence column, because a matrix is only worth reading if its rows are the ones that could survive being checked.",
+    "output": "One table for one regulation with a row per requirement naming the requirement, the control that satisfies it and the path to the artefact that evidences it; a separate list of named gaps, each with what would close it and who would close it; and a plain statement of how much of the regulation this mapping reached and what it deliberately did not, so nobody reads partial coverage as certification."
+  },
+  "activities": [
+    {
+      "id": "read-the-regulation",
+      "label": "Read the named regulation and the obligations it actually places on this system",
+      "kind": "observe"
+    },
+    {
+      "id": "decompose",
+      "label": "Separate it into requirements small enough for one control to answer each",
+      "kind": "decide"
+    },
+    {
+      "id": "map",
+      "label": "Decide the control that satisfies each requirement, in the system as it stands",
+      "kind": "decide"
+    },
+    {
+      "id": "find-the-evidence",
+      "label": "Look for the artefact that would evidence each control to somebody who does not trust the claim",
+      "kind": "observe"
+    },
+    {
+      "id": "name-the-gaps",
+      "label": "Write each requirement with no artefact as a named gap with what would close it",
+      "kind": "act"
+    },
+    {
+      "id": "publish",
+      "label": "Publish the table, the gaps and the coverage this mapping actually reached",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "every-row-is-requirement-control-and-artefact",
+      "statement": "Every row in the table names all three, and a row missing any of them is not in the table.",
+      "successCriteria": [
+        "Each row cites the requirement by its clause or article rather than by a paraphrase, so a reader can go and check what it actually says",
+        "Each row names the control in the system's own vocabulary, so somebody can find the thing that does the work rather than the thing that describes it",
+        "Each row names the artefact by path, and a path that does not resolve is treated as a gap rather than as a row"
+      ]
+    },
+    {
+      "id": "a-requirement-without-evidence-is-a-named-gap",
+      "statement": "A requirement nothing evidences yet is written down as a gap, not rounded up into coverage.",
+      "successCriteria": [
+        "The gap names what artefact would close it and roughly what producing that artefact involves",
+        "The gap names who owns closing it, so a gap list is work rather than a lament",
+        "A control that exists but produces no artefact is a gap in this mapping's terms, and the row says which of the two is missing"
+      ]
+    },
+    {
+      "id": "the-mapping-states-its-own-coverage",
+      "statement": "The mapping says how much of the regulation it reached, in its own voice, before anybody has to ask.",
+      "successCriteria": [
+        "The document states which parts of the regulation were mapped and which were deliberately not, with the reason",
+        "A mapping produced by reading rather than by assessment says so, so nobody mistakes it for a certification somebody qualified issued",
+        "The coverage statement is a number or a list, not an adjective, so a later pass can tell whether coverage moved"
+      ]
+    },
+    {
+      "id": "the-artefact-is-checked-not-assumed",
+      "statement": "Every artefact cited was opened during this pass, not remembered from the last one.",
+      "successCriteria": [
+        "The pass records which artefacts it opened and which it could not reach, and an unreachable artefact does not hold up a row",
+        "An artefact that exists but no longer says what the row claims is reported as drifted, which is a different finding from missing",
+        "A row carried forward from a previous mapping without its artefact being reopened is marked as unverified this pass"
+      ]
+    },
+    {
+      "id": "the-mapping-is-reread-when-the-system-moves",
+      "statement": "The mapping is a living document that a change in the system can invalidate, and it says when it was last true.",
+      "successCriteria": [
+        "The document carries the date of the pass and the revision of the system it was read against",
+        "A control removed or replaced since the last pass invalidates its rows rather than leaving them standing",
+        "A regulation with a dated obligation ahead of it carries that date in the table, so a deadline is visible before it is missed"
+      ]
+    }
+  ],
+  "guidance": "One row per requirement, and a row is only a row when its evidence exists. A control you intend to build is a gap with a plan, not coverage. Point at the artefact by path, because a matrix that cites a promise is exactly what an auditor exists to catch. Say how much of the regulation you covered and which parts you did not, in your own voice, since a mapping claiming completeness it never measured is worse than one admitting a third.",
+  "connectorTypes": [
+    "knowledge_base",
+    "source_control",
+    "documentation"
+  ],
+  "connectorRoles": [
+    {
+      "role": "regulation_source",
+      "type": "knowledge_base",
+      "note": "where the regulation's text is held and read from, so a requirement is cited rather than recalled"
+    },
+    {
+      "role": "evidence_repository",
+      "type": "source_control",
+      "note": "the checkout the artefacts live in, opened during the pass rather than trusted from a previous one"
+    },
+    {
+      "role": "matrix_home",
+      "type": "documentation",
+      "note": "where the table and its gap list are published, readable by everyone the regulation reaches"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "time",
+    "rationale": "Several of the regulations this work maps demand a periodic review in their own text, which makes a calendar the honest cadence rather than an imposed one: the European operational resilience rules name an annual review of the risk framework and an annual threat led penetration test, and a mapping that is a year old has been read against a system that no longer exists. A change in the system is the other real trigger and belongs beside the schedule, because a control removed between two annual passes leaves rows standing that nothing satisfies."
+  },
+  "personalizationNeeds": [
+    "Which regulations this system is actually subject to and in which jurisdiction, because mapping a regulation that does not apply costs the same as mapping one that does and buys nothing",
+    "Where the artefacts live and what counts as an artefact here, since a screenshot, a signed bundle and a generated report have different weight and the adopter's auditor decides which",
+    "Whether anybody qualified reviews this mapping or whether it stands as an internal read, because the coverage statement has to say which and a mapping that overstates its own standing is the failure this work exists to prevent",
+    "Which deadlines already apply to this system, since a dated obligation belongs in the table from the first pass rather than arriving with the deadline",
+    "How a gap becomes work in this workspace, because a gap list that reaches no backlog is read once and then quoted as though it had been closed"
+  ],
+  "dependencies": [
+    "the text of the regulation being mapped, since a requirement paraphrased from memory is the first place a mapping goes wrong",
+    "read access to the artefacts, because the whole difference between this and a compliance claim is that the artefacts were opened"
+  ],
+  "examples": [
+    {
+      "title": "An evidence pack in the matrix_home role",
+      "connector": "obsidian",
+      "connectorType": "documentation",
+      "notes": "The reference's `docs/compliance/evidence-pack.md` is the shape to copy and its gaps are the reason it is credible. It maps European operational resilience articles to artefact paths one by one: Art. 5 and 6 to `docs/bcp/dora-ictrm.md` plus `docs/threat-models/`, Art. 8 to per service SBOMs and a third party register, Art. 9 to policy authorization, mutual TLS on the event bus, identity, secrets and pull request time vulnerability checks, Art. 10 and 17 to `docs/bcp/incident-response.md` with its incident tiers, Art. 11 to `docs/bcp/bcp-policy.md` with recovery tiers, Art. 11(3)(c) to `docs/bcp/dr-test-log.md` and a restore verification workflow, and Art. 12 to write ahead log archiving with a fourteen day retention and point in time recovery. It then declares four gaps rather than rounding them up: no incident register store, threat led testing planned only, automated restore verification incomplete, and third party controls partial. The digest's own conclusion is the lesson worth carrying, that the shape matters more than the article list."
+    },
+    {
+      "title": "A checkout in the evidence_repository role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "Most artefacts worth citing are files under version control, which is what makes the path in a row checkable and what makes drift detectable: a row can point at a document that still exists but no longer says what the row claims. The reference's control family mapping shows how to write an honest self report against exactly this: fourteen families with a declared coverage of four implemented, nine partial and one gap, and the partial ones named in its own words, that policy enforcement is not fleet wide, that attestation admission is audit rather than enforce, that a planned gateway topology is not deployed, and that automated restore verification is a skeleton that hard fails rather than reporting a hollow pass. Naming a hollow pass as a defect is the standard this work is held to."
+    },
+    {
+      "title": "A published standard read in the regulation_source role",
+      "connector": "obsidian",
+      "connectorType": "knowledge_base",
+      "notes": "A requirement is cited by clause, and the reference's own service domain mapping shows why the coverage statement is not optional. That document maps twenty five service domains to services and labels itself descriptive and uncertified, with coverage of roughly a third of a typical retail bank's domains and four critical areas named as missing. A mapping that says that about itself can be built on. One that omits it will be read as a claim its author never made."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "regulation",
+      "type": "text",
+      "required": true,
+      "description": "The one regulation to map, named. One per pass: a table covering three regulations at once is a table nobody can hold against any of them."
+    },
+    {
+      "name": "scope",
+      "type": "textarea",
+      "required": false,
+      "description": "Which parts of the system this mapping covers. Empty means the whole project, and whatever it is, it lands in the coverage statement rather than staying implicit."
+    },
+    {
+      "name": "reopen_evidence",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether every cited artefact is opened again this pass or carried forward from the previous mapping. Carrying forward is faster and marks its rows unverified, which is honest; claiming otherwise is not."
+    }
+  ]
+}

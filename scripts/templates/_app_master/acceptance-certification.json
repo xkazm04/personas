@@ -1,0 +1,177 @@
+{
+  "id": "718d5822-be60-4fba-ab41-f65969f821e0",
+  "slug": "acceptance-certification",
+  "title": "Acceptance certification by representative users across two levels",
+  "status": "draft",
+  "path": "software_engineering/delivery",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A project's own checks answer whether the code does what its authors meant. Nothing in them answers whether a representative user can finish the job they came for, at a standard a senior person in that role would accept. So a project accumulates green gates and shipping waves while a journey nobody walks end to end has been broken for a month. The two honest failures are opposite and both common: certifying only against a model of the surface, which is cheap and never touches the running system, and certifying only in a live browser, which is slow enough that it happens once and then never again.",
+    "input": "The representative users this project has defined, each with the job they came to do and the standard they would judge it by; the journeys those users walk; the wave that has just merged; the surface as the code describes it; the running system where one exists; and the findings from earlier certifications with their state.",
+    "coreAction": "Certify the project's journeys through the eyes of its representative users at two levels with different costs and different truth. Run the cheap theoretical level over the surface the code describes after every merged wave, because it is affordable often enough to catch a regression the week it lands. Run the empirical level against the running system once per act, because it is the only level that can contradict the first one. Judge each journey through its user's own lens rather than against a feature list, and file every finding as an item the project delivers.",
+    "output": "A certification per journey and per user at the level it was run, each with a verdict, the evidence behind it, and what the user could not finish; every finding filed as an item carrying its origin, its journey, its user and its impact; a standing comparison of what the theoretical level claimed against what the empirical level found, so a level that keeps being contradicted is visible; and, where the certification reported any timing at all, the rule that a step which did not answer successfully invalidates the figure rather than being excluded from it."
+  },
+  "activities": [
+    {
+      "id": "read-the-users",
+      "label": "Read the representative users, their jobs and the standard each would judge by",
+      "kind": "observe"
+    },
+    {
+      "id": "choose-level",
+      "label": "Decide which level this pass runs: theoretical after a wave, empirical once per act",
+      "kind": "decide"
+    },
+    {
+      "id": "walk",
+      "label": "Walk each journey at that level through its user's own lens",
+      "kind": "act"
+    },
+    {
+      "id": "judge",
+      "label": "Decide each journey's verdict and what the user could not finish",
+      "kind": "decide"
+    },
+    {
+      "id": "file",
+      "label": "File each finding as an item carrying its origin, journey, user and impact",
+      "kind": "act"
+    },
+    {
+      "id": "reconcile",
+      "label": "Compare what the theoretical level claimed against what the empirical level found",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "both-levels-run-at-their-own-cadence",
+      "statement": "The cheap level runs after every merged wave and the expensive one runs once per act, and a project that has only ever run one of them knows which.",
+      "successCriteria": [
+        "Each certification states its level, the wave or act it belongs to, and when the other level last ran",
+        "A theoretical level that has run many times with no empirical level behind it is reported as unverified rather than as a passing project",
+        "An empirical level that has never run at all is a finding in its own right, because a certification that only ever reads a model of the surface has never touched the system"
+      ]
+    },
+    {
+      "id": "the-verdict-is-the-users-not-the-features",
+      "statement": "Each journey is judged by whether its representative user could finish the job at the standard that user would accept, not by whether the features it uses exist.",
+      "successCriteria": [
+        "Each verdict names the user, the job and the standard it was judged against, in that user's own terms",
+        "A journey whose every feature works but which the user could not finish is a failure, and the report says at which step they stopped",
+        "A user with no distinct, realistic data of their own is reported as untestable rather than certified, because a user indistinguishable from another user proves nothing"
+      ]
+    },
+    {
+      "id": "a-failed-step-invalidates-the-figure-it-sits-in",
+      "statement": "Any timing or rate this certification reports is computed only over runs where every step answered successfully.",
+      "successCriteria": [
+        "A journey step that did not answer successfully invalidates the percentile it sits in rather than being dropped from the sample, and the report states this rather than assuming the reader knows",
+        "Each reported figure carries the count of successful runs it was computed over and the count of failed steps beside it",
+        "A certification whose failure rate is above the ceiling it declared reports no percentile at all, because a fast figure computed over the requests that survived is the most flattering number a broken system can produce"
+      ]
+    },
+    {
+      "id": "every-finding-becomes-a-deliverable-item",
+      "statement": "Every finding leaves this work as an item in the project's backlog, tagged with where it came from.",
+      "successCriteria": [
+        "Each item names its origin as this certification, its journey, its user and its impact, so a triage reading a mixed backlog can tell these apart from every other source",
+        "A finding is filed rather than fixed here, because a certification that repairs what it found has certified its own work",
+        "A finding that reappears in a later certification is linked to the earlier item rather than filed twice, so a fix that did not hold is visible"
+      ]
+    },
+    {
+      "id": "the-two-levels-are-held-against-each-other",
+      "statement": "What the cheap level claimed is compared against what the expensive level found, so a level that is systematically wrong is caught rather than trusted.",
+      "successCriteria": [
+        "Each empirical pass lists the journeys where its verdict differed from the theoretical one, in both directions",
+        "A theoretical level that repeatedly passes a journey the empirical level fails is treated as a defect in the surface model, not as noise",
+        "A pass where the two agreed on everything says so and says how many journeys that was, because agreement over three journeys is not the same claim as agreement over thirty"
+      ]
+    }
+  ],
+  "guidance": "Certify through a user's eyes, not against a feature list: the question is whether they finished the job at the standard they would accept. Run the cheap level often enough to catch a regression the week it lands, and the expensive one often enough that the cheap one can be contradicted. Report no percentile over runs that failed; a fast figure computed over the requests that survived is the most flattering number a broken system can give you. File what you find and repair none of it.",
+  "connectorTypes": [
+    "source_control",
+    "browser_automation",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "project_repository",
+      "type": "source_control",
+      "note": "the checkout the surface model is derived from and where the users, journeys and their fixture expectations are kept"
+    },
+    {
+      "role": "live_surface",
+      "type": "browser_automation",
+      "note": "the running system the empirical level is walked against; unbound where the project has no running surface yet, and the empirical level is then reported as never run rather than quietly skipped"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where each finding is filed as an item carrying its origin, journey, user and impact"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A merged wave is the event for the cheap level, and running it then is the entire reason it is worth having: a regression found the week it landed costs a fraction of one found at the end of an act. The expensive level has a different clock, an act rather than a wave, and nothing fires at the end of an act, so that half is self paced by design. Two cadences on one piece of work is the shape here, and collapsing them to one is how a project ends up with either an unaffordable certification or one that never touches the running system."
+  },
+  "personalizationNeeds": [
+    "Who this project's representative users are, what job each came to do and the standard each would judge by, because a certification with no users is a feature checklist wearing another name",
+    "What counts as a wave and what counts as an act here, since the two cadences in the first outcome are the adopter's units and not this work's",
+    "Where the running system can be reached for the empirical level, or plainly that there is none yet, because an unbound surface must be reported rather than silently skipped",
+    "How a finding is filed here and what field carries its origin, since the whole fourth outcome rests on a later triage being able to tell these items from every other source",
+    "What error ceiling this project declares for a journey, because the third outcome refuses to report a percentile above it and the ceiling is not something this work can invent"
+  ],
+  "dependencies": [
+    "a defined set of representative users with distinct, realistic data each, without which the second outcome cannot be met and the certification is theatre",
+    "a running system reachable from this machine for the empirical level, wherever one exists; where none does, the level is reported as never run rather than assumed passed"
+  ],
+  "examples": [
+    {
+      "title": "The theoretical level over a surface model derived from the checkout",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The cheap level reads the surface the code describes rather than the running system, which is what makes it affordable after every wave and what limits what it can claim. Its verdicts are about whether a journey is reachable and coherent, never about whether it works, and reporting them as though they were the second thing is the failure the fifth outcome exists to catch."
+    },
+    {
+      "title": "The empirical level walked against the running system once per act",
+      "connector": "desktop-browser",
+      "connectorType": "browser_automation",
+      "notes": "Serial by nature and expensive, which is why its cadence is the act rather than the wave. It is also the only level that can contradict the first one, so a project that runs it once and then never again has bought a single snapshot rather than a control. Where the project has no running surface yet the role goes unbound and the certification reports the empirical level as never run, which is a finding and not a gap in the report."
+    },
+    {
+      "title": "The percentile rule taken verbatim from a load baseline",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference this rule comes from writes it into every read baseline it publishes: the failed request rate must stay under 0.01 and the checks rate must be exactly 1.0, because a route that did not answer 200 invalidates the percentile. The instinct generalises past load testing and is the reason it belongs in an acceptance certification too. A latency figure computed over the requests that survived is not a slightly optimistic figure, it is a figure about a different system: the one where the broken paths did not exist. The same reference's own abuse suite states the mirror rule for the cases where failure is the expected answer, that a 200 or a 5xx on a probe designed to be rejected is a finding rather than a pass."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation App Master charters"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project being certified. The users and journeys are this project's own, because a certification borrowed from another project's users certifies nothing about this one."
+    },
+    {
+      "name": "level",
+      "type": "text",
+      "required": false,
+      "description": "Which level this pass runs, theoretical or empirical. Empty means decide from what has happened since the last pass: a wave merged with no theoretical pass behind it asks for the first, an act ending with no empirical pass asks for the second."
+    },
+    {
+      "name": "journey",
+      "type": "text",
+      "required": false,
+      "description": "A single journey to certify, by name. Empty means every journey defined for the project, which is the only way the comparison between the two levels is meaningful."
+    }
+  ]
+}

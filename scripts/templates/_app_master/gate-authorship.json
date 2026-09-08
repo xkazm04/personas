@@ -1,0 +1,156 @@
+{
+  "id": "7b018b85-3e64-4654-b2c5-140c3aefc9c8",
+  "slug": "gate-authorship",
+  "title": "Gate authorship as a project owner's answer to a recurring defect",
+  "status": "draft",
+  "path": "software_engineering/codebase-health",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A defect happens, gets fixed, and the fix ends as a sentence: a line in a conventions file, a paragraph in a review, a lesson on a charter. Then it happens again, to a different author who never read the sentence, and the second fix produces a second sentence. Prose is read by the people who already agree with it, which is why the only reader a written rule reliably reaches is its author. Meanwhile the manifest of mechanical checks belongs to another project, so writing into it means asking somebody else, and asking is exactly the step that a note lets you skip.",
+    "input": "The defects this project has seen, with how many times each has now occurred and in which services; the rules currently written only as prose in this project's conventions and charters; the shared manifest of mechanical checks and who owns it; and the checks already in that manifest, so a rule that is already covered is not proposed twice.",
+    "coreAction": "Decide which of this project's recurring defects is a rule rather than an accident, and answer it with a check in the shared manifest rather than another sentence. That means proving recurrence before proposing, deciding whether the rule generalises past this project or belongs only here, carrying the proposal to whoever owns the manifest instead of writing into their project unasked, and then keeping the check alive afterwards: honouring its review date, graduating it from advisory to enforced or retiring it, and noticing when it has quietly stopped finding anything.",
+    "output": "A short set of proposed checks, each traceable to a named defect that has occurred at least twice with the occurrences cited; each carried to the manifest's owner as a proposal with its expected yield, its reason and a review date; an adopted or declined verdict recorded against each with the reason; and a standing state for every check this project has authored, so one past its review date, one that has never found anything, and one still advisory long after its enforcement date are all visible rather than assumed healthy."
+  },
+  "activities": [
+    {
+      "id": "count",
+      "label": "Read this project's defects and count how many times each has now happened",
+      "kind": "observe"
+    },
+    {
+      "id": "test-generality",
+      "label": "Decide which recurrences are a rule, and whether the rule reaches past this project",
+      "kind": "decide"
+    },
+    {
+      "id": "propose",
+      "label": "Carry each rule to the manifest's owner as a check with its yield, its reason and its review date",
+      "kind": "act"
+    },
+    {
+      "id": "tend",
+      "label": "Read back the checks this project authored against their review dates and their findings",
+      "kind": "observe"
+    },
+    {
+      "id": "record",
+      "label": "Write each verdict and each check's current state where the next author will read it",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "a-check-is-proposed-only-after-a-second-occurrence",
+      "statement": "Every check proposed traces to a defect that has actually happened more than once, with the occurrences named.",
+      "successCriteria": [
+        "Each proposal cites at least two occurrences by service, change and date, rather than describing a defect that could happen",
+        "A defect that has happened once is left as a fix and a note, and the note says it is waiting for a second occurrence rather than pretending to be a rule",
+        "A rule already covered by a check in the manifest is answered with that check's name instead of a second proposal"
+      ]
+    },
+    {
+      "id": "the-rule-lands-at-the-right-scope",
+      "statement": "A rule that reaches past this project goes to the shared manifest, and one that does not stays inside this project rather than being imposed on its neighbours.",
+      "successCriteria": [
+        "Each proposal states whether the rule is general or local, and a general claim names at least one other project it would bind",
+        "A local rule is written where only this project runs it, and the reason it is local is recorded so a later reader can revisit that judgement",
+        "A general rule is proposed to the manifest's owner and never written into their project directly, because a check nobody agreed to own is a check nobody maintains"
+      ]
+    },
+    {
+      "id": "every-proposed-check-can-fail",
+      "statement": "Every check this project proposes carries a proof that its failing state is reachable, and the proof is exercised before the check is trusted.",
+      "successCriteria": [
+        "Each proposal ships a deliberately failing subject and the verdict that subject must produce, so the check has been observed to fail and not only to pass",
+        "Each proposal declares how many subjects it expects to find, so a run that looked at nothing fails loudly instead of reporting green",
+        "A check that cannot state a failing case is withdrawn rather than adopted, because a check that has only ever passed has never been shown to work"
+      ]
+    },
+    {
+      "id": "authored-checks-are-tended-not-abandoned",
+      "statement": "A check this project authored stays owned by it: its review date is honoured, its status moves, and a check that stopped finding anything is examined rather than trusted.",
+      "successCriteria": [
+        "Each pass lists this project's checks with their review dates and flags the ones past due",
+        "A check still advisory past the date it was meant to become enforcing is raised as a decision, not left as a permanent warning nobody reads",
+        "A check whose subject count has fallen to zero is investigated as a probably broken matcher before it is celebrated as a fixed codebase"
+      ]
+    }
+  ],
+  "guidance": "Wait for the second occurrence. One defect is an accident and a check written from it will spend its life finding nothing. When it recurs, answer it with a check rather than another sentence, because prose is read by whoever already knew. Decide whether the rule binds anyone but you, and if it does, ask the manifest's owner rather than writing into their project. Ship a failing case with every proposal. Then come back: a check nobody tends outlives its reason and eventually protects nothing.",
+  "connectorTypes": [
+    "source_control",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "project_repository",
+      "type": "source_control",
+      "note": "this project's checkout, where the defects and the prose rules are read and a local check is written"
+    },
+    {
+      "role": "gate_manifest",
+      "type": "source_control",
+      "note": "the checkout holding the shared manifest of mechanical checks, owned by another project; this work proposes into it and never writes into it unasked"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where the defect history is read from and where a proposal and its verdict are recorded"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "The second occurrence of a defect is the event, and it is the only moment the evidence for a rule is complete: proposing on the first is guesswork, and waiting for the third means the third one happened. A self paced pass earns its place beside it for the whole fourth outcome, which has no event at all. Nothing fires when a review date passes, when an advisory check quietly never graduates, or when a matcher breaks and starts finding nothing."
+  },
+  "personalizationNeeds": [
+    "Where the shared manifest of mechanical checks lives, who owns it and how a proposal reaches them, because the whole scope outcome is the difference between proposing and writing into somebody else's project",
+    "What a check has to declare in this manifest before it may be adopted, for example an expected yield, a reason, a review date and a failing case, since those fields are what separate a check from an untested rule",
+    "How this project records a defect and its occurrences, because the recurrence count is the evidence the first outcome rests on and a defect history nobody keeps makes the count unprovable",
+    "Whether an advisory check must carry a date it becomes enforcing here, since a status that never has to move is how an advisory check becomes permanent",
+    "How far this work may go on its own, from proposing a check through to adopting a local one, because a check that blocks other people's work is an authority the operator grants"
+  ],
+  "dependencies": [
+    "a manifest of mechanical checks that can be proposed into, without which a general rule has nowhere to land and correctly stays prose",
+    "a defect history with occurrences attached, since a recurrence that cannot be cited cannot be proposed from"
+  ],
+  "examples": [
+    {
+      "title": "A shared gate manifest owned by a platform project",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference this shape comes from keeps 217 checks in one declarative manifest rather than as 217 separate steps, and its own header explains why: the checks used to be 79 sequential steps in a workflow file, which was serial and unaddressable because a check WAS a step, so nothing could enumerate the set. Declaring them makes the set enumerable, runnable outside the pipeline and parallelisable. Three of its checks police the declarations rather than the code: `gate-subject-floor` refuses a check that does not declare how many subjects it expects, `gate-selftest-declaration` refuses one with no failing case, and `advisory-gate-registration` (ADR-0144) refuses an advisory check with no date it becomes enforcing. `gates-not-deregistered` catches silent removal, and `gate-invocation-reachability` catches a check that is declared but never actually runs. The rule the whole set rests on is worth carrying verbatim into any manifest: a gate that has only ever passed is unfalsified, and the runner therefore executes the failing case FIRST and skips the check entirely when that verdict is wrong."
+    },
+    {
+      "title": "The proposal and its verdict recorded in the project's backlog",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "A proposal into another project's manifest is asynchronous by nature, so it has a state worth tracking rather than a return value. Recording it as an item is also what makes the fourth outcome computable: the review dates and the graduation dates of every check this project authored are rows somewhere rather than dates in the manifest of a project this one does not own."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation App Master charters"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project whose defects are read and whose authored checks are tended. The recurrence evidence is this project's own history."
+    },
+    {
+      "name": "defect_ref",
+      "type": "text",
+      "required": false,
+      "description": "The defect that woke this pass, by its identifier. Empty means read the whole defect history for recurrences and tend every check this project has authored."
+    },
+    {
+      "name": "propose_only",
+      "type": "boolean",
+      "required": false,
+      "description": "Produce the proposals and the tending report without sending anything to the manifest's owner. The honest default on a first pass, where the recurrence evidence is the thing a person wants to see before a check binds anyone."
+    }
+  ]
+}

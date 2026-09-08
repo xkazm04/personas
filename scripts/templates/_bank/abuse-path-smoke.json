@@ -1,0 +1,178 @@
+{
+  "id": "ddf68b6b-6d94-429a-a850-75675baff262",
+  "slug": "abuse-path-smoke",
+  "title": "Abuse path smoke suite where the rejection is the subject",
+  "status": "draft",
+  "path": "software_engineering/codebase-health",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A test suite proves the happy path and then stops, so the only requests anybody exercises are the ones a well behaved client sends. The rejection path is the one an attacker walks and the one nobody tests, and it fails in two directions at once: a route that answers a request carrying no credential has already leaked, and a route that answers a malformed one with a server error has told the caller that the guard was never reached. Worse than either, a suite of invalid requests that has only ever been green has never been shown to detect anything, so its greenness is evidence of nothing at all.",
+    "input": "The routes the service actually serves and which identity may reach each one, the authentication and authorization boundary as the design states it, the status class the platform requires for each class of abuse, a second real identity whose identifiers can be swept for, and a target isolated enough that one route can be deliberately weakened and put back.",
+    "coreAction": "Build a suite in which every request is invalid by construction, and assert the exact status class each abuse must produce rather than asserting that nothing broke. A 200 on any probe is a finding and a 5xx on any probe is a finding, because the first means the guard did not run and the second means something behind it answered instead. Then prove the suite itself by weakening one route on purpose and watching it turn red.",
+    "output": "A probe suite covering every abuse class the platform names, each probe asserting the status class its rejection must fall in; a run report naming every probe that did not produce its required class, as a finding rather than a flake; a coverage statement against the platform's declared security baseline, with the classes nobody has probed named as uncovered; and a dated falsification record in which one deliberately weakened route turned the suite red, so the suite's own detection is evidenced rather than assumed."
+  },
+  "activities": [
+    {
+      "id": "enumerate",
+      "label": "Read the routes served and which identity is allowed to reach each one",
+      "kind": "observe"
+    },
+    {
+      "id": "classify-the-abuse",
+      "label": "Decide which abuse classes apply here and the status class each one must produce",
+      "kind": "decide"
+    },
+    {
+      "id": "build-the-probes",
+      "label": "Write one probe per class, each request invalid by construction",
+      "kind": "act"
+    },
+    {
+      "id": "falsify",
+      "label": "Weaken one route deliberately and confirm the suite turns red before trusting it",
+      "kind": "act"
+    },
+    {
+      "id": "run",
+      "label": "Fire the suite at an isolated target and collect every probe that missed its class",
+      "kind": "act"
+    },
+    {
+      "id": "report",
+      "label": "Report each miss as a finding naming the class it failed to produce",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-rejection-is-the-subject-not-the-setup",
+      "statement": "Every probe is a claim about how the system refuses, not a claim that the system survived.",
+      "successCriteria": [
+        "Each probe names the abuse it carries and the status class the rejection must fall in, written before the probe is run",
+        "A probe that answers 200 is a finding and a probe that answers 5xx is a finding, since the first means the guard did not run and the second means something behind it did",
+        "No probe passes on the absence of an exception or on a request merely completing, because a suite of invalid requests that passes on absence measures nothing"
+      ]
+    },
+    {
+      "id": "each-abuse-class-has-its-required-status-class",
+      "statement": "Each class of malformed or unauthenticated request has one required answer, and anything else is a defect.",
+      "successCriteria": [
+        "A request with no token and a request with a malformed token are both refused with 401 or 403, never answered and never a server error",
+        "A query parameter carrying a NUL byte is refused with 400, 401 or 403 and never with 500, because a 500 there is the parser answering where the guard should have",
+        "An oversized header is refused with 400, 401 or 431 rather than accepted, truncated or crashed on"
+      ]
+    },
+    {
+      "id": "an-answered-enumeration-is-the-disclosure-itself",
+      "statement": "A sweep across identifiers that belong to someone else is refused, and a single answer is the breach rather than a step towards one.",
+      "successCriteria": [
+        "An enumeration sweep answers 401, 403 or 404 on every identifier, and a 200 anywhere in the sweep fails the run",
+        "The sweep uses identifiers that really belong to a second identity, since invented identifiers can be refused for existing rather than for belonging to somebody else",
+        "A 200 in the sweep is reported as an insecure direct object reference with the identifier and the caller, not as an intermittent probe to be rerun"
+      ]
+    },
+    {
+      "id": "the-suite-has-been-shown-to-fail",
+      "statement": "The suite has been observed turning red for a real weakness, so its green runs mean something.",
+      "successCriteria": [
+        "One route is deliberately weakened, the suite turns red on it, and the route is restored, with the date recorded beside the suite",
+        "A suite that has never been falsified is declared unproven rather than trusted, whatever its run history says",
+        "The falsification is repeated whenever the suite is restructured, because a refactor can disconnect every assertion at once without changing a single verdict"
+      ]
+    },
+    {
+      "id": "coverage-is-measured-against-a-declared-baseline",
+      "statement": "What the suite covers is measured against the platform's own security baseline, not against the size of the suite.",
+      "successCriteria": [
+        "The platform's mechanically checkable baseline is the list coverage is counted against, and the count is stated with every run",
+        "An abuse class the baseline names with no probe behind it is recorded as uncovered rather than omitted from the report",
+        "The covered set only ratchets upward, so a probe removed is a decision somebody made rather than a number that quietly fell"
+      ]
+    }
+  ],
+  "guidance": "Every request here is invalid by construction, so the rejection is the subject and not the setup. Assert the status class, never the absence of an error: a 200 and a 500 are both findings, and one of them is the disclosure itself. Prove the suite before you trust it by weakening a route on purpose and watching it go red. A rejection suite that has only ever been green has never rejected anything, and its greenness is evidence of nothing.",
+  "connectorTypes": [
+    "source_control",
+    "containers",
+    "ci_cd"
+  ],
+  "connectorRoles": [
+    {
+      "role": "service_repository",
+      "type": "source_control",
+      "note": "the checkout where the probe suite is written and kept beside the routes it probes, so a new route and its probes move in one change"
+    },
+    {
+      "role": "target_environment",
+      "type": "containers",
+      "note": "the isolated running stack the probes are fired at, isolated enough that one route can be deliberately weakened and restored without anyone else noticing"
+    },
+    {
+      "role": "pipeline",
+      "type": "ci_cd",
+      "note": "where the suite runs on every change, so a route that starts answering an abuse is caught by the change that made it answer"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A route changing is the event that matters, because a boundary usually weakens through a change somebody made for another reason entirely and the suite is cheapest to believe when it runs against that change. A self paced pass belongs beside it for the falsification outcome, which no change triggers: nobody merges a commit that weakens a route on purpose, so the proof that the suite can fail has to be scheduled by whoever holds it or it never happens."
+  },
+  "personalizationNeeds": [
+    "Which status class this platform requires for each abuse, since the classes are a policy decision and a suite asserting the wrong ones stays green while the boundary leaks",
+    "Which target the probes may be fired at, and how a route is weakened and restored there, because the falsification step is destructive by design and must never touch a surface somebody is using",
+    "Which identities exist and which of them may legitimately reach which route, since an enumeration probe needs a second real identity and a sweep over invented identifiers proves only that invented things do not exist",
+    "What the platform's declared security baseline is and where its mechanically checkable subset is recorded, because coverage is counted against that list rather than against how many probes the suite happens to hold",
+    "Whether a finding here blocks a release, since a suite whose findings never block is a report, and the whole discipline of treating a 200 as a failure only holds where the failure costs something"
+  ],
+  "dependencies": [
+    "a probe runner that can assert a status class per request rather than only a success or a failure, since every assertion in this suite is about which refusal happened",
+    "an isolated target the suite can be fired at, because the reference's own probe lanes each carry a blocker and the most common one is a missing isolated target",
+    "the ability to deploy a deliberately weakened route and restore it, without which the falsification outcome cannot be met and the suite stays unproven"
+  ],
+  "examples": [
+    {
+      "title": "The service checkout in the service_repository role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "builtin-codebase reaches a registered checkout and can run the suite where it lives, which is what keeps the probes beside the routes rather than in a separate security repository nobody updates when a route is added. Keeping them together also makes the coverage question answerable in one place: the routes served and the probes written are in the same tree, so a route with no probe is a diff away rather than a discovery."
+    },
+    {
+      "title": "The reference's security-abuse-smoke lane as the model",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference declares fourteen k6 lanes in perf/scenarios.yaml, and security-abuse-smoke is the most transferable of them. Its own statement of intent is the rule this recipe is built on: every request is invalid by construction, the rejection path IS the subject, and a 200 or 5xx on any probe is a finding, not a pass. Its concrete assertions are the ones to copy verbatim: no token and malformed token probes must answer 401 or 403, a NUL byte query parameter must answer 400, 401 or 403 and never 500, an enumeration sweep must answer 401, 403 or 404 because 200 = IDOR, and an oversized header must answer 400, 401 or 431. Coverage is counted against the security baseline the same repository declares, OWASP ASVS L3 for all services, whose mechanically checkable subset lives in .github/asvs-l3-baseline.txt and is enforced by the gate asvs-l3-mechanical-subset. Note the honest caveat the reference carries with it: every one of its fourteen lanes has a blocker recorded, most often a missing isolated target, so an abuse suite with nowhere to fire is the normal first state and should be reported as unrun rather than as passing."
+    },
+    {
+      "title": "A bank edge project writing its first abuse suite",
+      "connector": "github",
+      "connectorType": "source_control",
+      "notes": "The edge project owns consent, authentication and the third party surface, which makes it the project where an answered probe costs the most and the one where the enumeration sweep is least theoretical: account identifiers are the thing external callers already hold. Two lessons show up immediately in a project like this. The sweep needs two real consented identities to be meaningful, which means the suite depends on the same fixture discipline the rest of the testing does. And the falsification run is what turns the suite from a formality into a control, because the first time it is done it usually reveals that one assertion was reading the wrong field and had never been capable of failing."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "service_id",
+      "type": "text",
+      "required": true,
+      "description": "The service whose rejection paths this suite probes. One service per run, because a suite spanning services cannot say which boundary answered."
+    },
+    {
+      "name": "target_ref",
+      "type": "text",
+      "required": false,
+      "description": "Which isolated target the probes are fired at. Empty means the target declared for this service; a run with no reachable target reports unrun rather than passing."
+    },
+    {
+      "name": "falsify",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this run also proves the suite by weakening one route and confirming it turns red. A suite where this has never been true is unproven, so it cannot stay false forever."
+    }
+  ]
+}

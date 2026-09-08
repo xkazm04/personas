@@ -70,10 +70,22 @@ function runInSandbox(args, { recipes } = {}) {
 
 const before = JSON.parse(fs.readFileSync(SEEDS, 'utf8'));
 
+/**
+ * How many payloads `_app_master/` actually holds. Derived, never hardcoded: this
+ * assertion used to read `(0 added, 2 replaced)` and the directory grew to six on
+ * 2026-09-08, which would have failed a test whose subject had not changed at all.
+ * What the case pins is the invariant (nothing added, every payload replaced in
+ * place), not the size of the directory.
+ */
+const APP_MASTER_PAYLOADS = fs
+  .readdirSync(path.join(HERE, '_app_master'))
+  .filter((f) => f.endsWith('.json')).length;
+
 test('with no flags the merge is unchanged: the App Master rows, replaced in place', () => {
+  assert.ok(APP_MASTER_PAYLOADS > 0, '_app_master holds no payloads; the case would prove nothing');
   const { proc, bundle } = runInSandbox([]);
   assert.equal(proc.status, 0, proc.stderr);
-  assert.match(proc.stdout, /\(0 added, 2 replaced\)/);
+  assert.match(proc.stdout, new RegExp(`\\(0 added, ${APP_MASTER_PAYLOADS} replaced\\)`));
   assert.equal(bundle.recipe_count, before.recipe_count, 'no row was added or lost');
   assert.deepEqual(bundle, before, 'the default merge is byte-for-byte a no-op');
 });

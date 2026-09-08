@@ -1,0 +1,177 @@
+{
+  "id": "0a06c2a6-6f3c-4e84-9d7c-b740bf14db99",
+  "slug": "contract-first-api-stewardship",
+  "title": "Contract first API stewardship across three version axes",
+  "status": "draft",
+  "path": "software_engineering/release",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A service has three versions and most teams keep one. The contract it publishes, the routes it actually serves and the artefact it releases each move for their own reason, and collapsing them into a single number makes every one of them wrong: a breaking change ships under a patch bump because the release axis never noticed, a route is served that no consumer could have planned for because it was never published, and a published route answers 404 because it was removed and the document was not. In an organisation where several agents change the same portfolio in the same hour, a single shared version file makes it worse still, because it is a merge conflict by construction and every worker meets it.",
+    "input": "The contract the service publishes and the version it declares, the routes the running code actually serves, the release version carried by the artefact, the tag and the image, whatever expectations consumers have recorded against this provider, and what changed since the last release.",
+    "coreAction": "Keep the published contract, the served routes and the released artefact on three separate axes and in agreement: publish before you serve, move the contract's major only when the contract breaks and carry that break into the route prefix, and move the release on its own trigger. Reconcile in both directions, because a route served but unpublished and a route published but unserved are different defects and only one of them looks like a missing feature.",
+    "output": "A published contract whose major agrees with the version the service declares and with the route prefix it serves; a reconciliation naming every route served but unpublished and every route published but unserved, each with a verdict; a release version equal in the artefact, the tag and the image, moved on its own trigger and per service rather than per portfolio; and a replay of every consumer expectation recorded against this provider, with the consumers that have recorded none named as uncovered rather than counted as passing."
+  },
+  "activities": [
+    {
+      "id": "read-the-three-axes",
+      "label": "Read the published contract, the routes the code serves and the version the artefact carries",
+      "kind": "observe"
+    },
+    {
+      "id": "reconcile",
+      "label": "Decide whether each disagreement is a contract fault, a code fault or a release fault",
+      "kind": "decide"
+    },
+    {
+      "id": "publish",
+      "label": "Change the contract first, moving its major only when the contract breaks",
+      "kind": "act"
+    },
+    {
+      "id": "align-the-release",
+      "label": "Move the release version on its own trigger, one release unit per service",
+      "kind": "act"
+    },
+    {
+      "id": "replay-expectations",
+      "label": "Replay every recorded consumer expectation against the provider as it now stands",
+      "kind": "act"
+    },
+    {
+      "id": "report",
+      "label": "Report each unpublished route, each unserved route and each consumer with nothing recorded",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-three-axes-move-independently-and-agree",
+      "statement": "The contract, the routes and the release each move for their own reason, and where they must agree they demonstrably do.",
+      "successCriteria": [
+        "The contract's major, the version the service declares and the route prefix it serves are the same number, and a disagreement fails rather than being noted",
+        "The release version is equal in the artefact, the tag and the image, and all three are set from one place rather than typed three times",
+        "A change that moves one axis states which of the others it deliberately does not move, so nobody reads a patch release as evidence that the contract held"
+      ]
+    },
+    {
+      "id": "every-route-is-both-published-and-served",
+      "statement": "The set of routes the service publishes and the set it serves are the same set, and every exception is a decision on record.",
+      "successCriteria": [
+        "The reconciliation reports both directions, since a route served but unpublished is a surface no consumer could plan for and a route published but unserved is a promise that answers 404",
+        "The check reads the routes the running code actually serves rather than a second document describing them, because the document is the thing under test",
+        "A route deliberately unpublished, such as an operator only surface, is recorded with its reason so a decision is never reported as a defect"
+      ]
+    },
+    {
+      "id": "a-breaking-change-cannot-ship-quietly",
+      "statement": "A change that breaks a consumer is visible on the contract axis before it reaches anyone.",
+      "successCriteria": [
+        "Removing a field, narrowing an enum or tightening a requirement moves the contract's major and carries the route prefix with it",
+        "A contract version already published is refused rather than reused, so a consumer pinned to it keeps reading what it pinned",
+        "An enum whose values have drifted from the code is corrected in the contract rather than absorbed by the consumers, since the consumers cannot see which of the two is wrong"
+      ]
+    },
+    {
+      "id": "consumers-are-replayed-rather-than-assumed",
+      "statement": "What consumers expect is verified against the provider, and where nothing is recorded that absence is stated rather than treated as safety.",
+      "successCriteria": [
+        "Every recorded consumer expectation is replayed against the provider as it now stands, and a failure blocks the provider rather than the consumer",
+        "A consumer with no recorded expectation is named as uncovered, because a provider that passes every expectation it has is not the same as a provider that is safe to change",
+        "The coverage figure is stated with the run, so a green replay over three consumers out of eleven is never read as fleet coverage"
+      ]
+    },
+    {
+      "id": "the-release-unit-is-one-service",
+      "statement": "Each service releases on its own version, so no two services have to agree on a number to ship in the same week.",
+      "successCriteria": [
+        "No shared file carries a version every concurrent worker must edit, since that file is a merge conflict by construction rather than by accident",
+        "A release records which axis moved and why, so a reader can tell a contract break from a dependency bump without reading the diff",
+        "A service can release while its neighbours are mid change, and nothing in the release path requires the portfolio to be quiet"
+      ]
+    }
+  ],
+  "guidance": "Three axes, three triggers, one agreement. Publish the contract before you serve the route, and let the served routes be the thing under test rather than the document describing them. Move the contract's major only when the contract breaks, and carry the break into the prefix so a consumer can stay where it pinned. Release per service: a shared version file is a merge conflict every concurrent worker meets. Replay what consumers recorded, and assume nothing about the ones that recorded nothing.",
+  "connectorTypes": [
+    "source_control",
+    "ci_cd",
+    "integration"
+  ],
+  "connectorRoles": [
+    {
+      "role": "service_repository",
+      "type": "source_control",
+      "note": "the checkout holding the contract, the routes and the version file, where all three are changed in one commit or visibly are not"
+    },
+    {
+      "role": "release_pipeline",
+      "type": "ci_cd",
+      "note": "where the three axes are held against each other on every change and where the release artefact and its tag are cut"
+    },
+    {
+      "role": "contract_broker",
+      "type": "integration",
+      "note": "where consumers record their expectations and providers verify them; unbound where the portfolio has no broker, and the replay outcome then reads honestly as uncovered rather than as met"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A change to a route or a schema is the event, and it is the only moment at which the author still knows whether what they did breaks a consumer. A self paced pass belongs beside it because two of the outcomes drift with nothing changing in this repository at all: a consumer stops recording expectations, or a neighbouring service starts calling a route this one never published, and neither produces a commit here that anything could fire on."
+  },
+  "personalizationNeeds": [
+    "Where the contract is published in this stack and how the service declares the version it serves, since the agreement outcome is three specific places and they differ with every framework",
+    "What this platform counts as a breaking change, because the line between narrowing an enum and correcting it is a judgement no rule can make from the diff alone and getting it wrong is silent",
+    "Whether a contract broker exists here, since the replay outcome is real where one does and honestly uncovered where none does, and pretending otherwise is worse than admitting it",
+    "How the release version reaches the tag and the image, because three copies of one number is three chances to disagree and the path between them belongs to the adopter",
+    "Which routes are deliberately unpublished here, for example an operator only surface, so the reconciliation reports a decision as a decision rather than as a leak"
+  ],
+  "dependencies": [
+    "a way to read the routes the running code actually serves, since a reconciliation that reads the same document twice is not a reconciliation",
+    "a contract file the service publishes and a version the service declares, without which there are not three axes to keep apart and the whole work collapses to one number"
+  ],
+  "examples": [
+    {
+      "title": "The service checkout in the service_repository role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "builtin-codebase reaches a registered checkout, which is enough for the contract half: read the published contract, read the routes the code serves, and change the first before the second. The ordering is the whole discipline and it is easy to lose in a single commit, so the useful habit is to make the contract change reviewable on its own even when it lands together with the code that serves it."
+    },
+    {
+      "title": "The reference's contract and release invariants",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference states the contract axis as an invariant in its rules file and in ADR-0048: every service publishes src/main/resources/openapi.yaml, versioned on its own axis, and major(info.version) must equal openbank.api.version and the /api/v{N} URL segment. Five gates hold it up: api-contract-gate, openapi-route-conformance whose own description is every route published and every route served, openapi-version-not-taken, openapi-enum-domain-drift and openapi-server-port. The release axis is separate and equally explicit: version.txt, one per service, equal to quarkus.application.version, the git tag and the image tag, enforced by version-bump and release-registration-consistency. Two separate axes, two separate gate families, and neither one is allowed to stand in for the other."
+    },
+    {
+      "title": "One release unit per service, chosen because of concurrent agents",
+      "connector": "github",
+      "connectorType": "source_control",
+      "notes": "ADR-0029 put release-please into components mode, one release unit per service, and gave a reason that transfers directly to an organisation of agents: a global version file is a guaranteed merge-conflict point for concurrent agents. That is not a preference about tooling, it is a structural choice about who can work at the same time. The consumer axis is where the same reference is honest about its own gap: consumer driven contract testing is ADR-0063 with the gates pact-provider-replay-coverage and pacticipant-matches-module, and the roadmap still calls fleet Pact coverage a known gap. Copy the shape and copy the honesty with it, because a replay over the consumers that happen to have recorded something is not fleet coverage and should never be reported as it."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "service_id",
+      "type": "text",
+      "required": true,
+      "description": "The service whose three axes this pass reconciles. One service per pass, since the release axis is per service and a pass spanning two cannot report a release verdict for either."
+    },
+    {
+      "name": "axis",
+      "type": "text",
+      "required": false,
+      "description": "Reconcile one axis only: contract, routes or release. Empty means all three, which is the only way the agreement outcome can be met, so a single axis pass is a diagnosis rather than a certification."
+    },
+    {
+      "name": "replay_consumers",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass also replays the recorded consumer expectations. Left false, the consumer outcome reports as unrun rather than as passing."
+    }
+  ]
+}
