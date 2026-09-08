@@ -344,6 +344,122 @@ pub fn find_idea_by_dedup_key(
     })
 }
 
+/// What a re-filing did to an existing backlog row's 1–5 scales.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScaleBackfill {
+    /// Nothing was filled in: every scale the re-filing carried was already
+    /// set on the row, or it carried none.
+    Unchanged,
+    /// At least one NULL scale was filled from the re-filing.
+    Rated,
+}
+
+/// Fill an existing idea's MISSING 1–5 scales from a re-filing of the same
+/// dedup key.
+///
+/// The dedup guard makes a re-file a no-op, which is right for the TEXT of an
+/// idea and wrong for its scales: `dev_ideas.risk` is nullable, and the only
+/// rule that accepts an idea without a human (`dev_triage_rules`, typically
+/// `risk >= 1 AND risk < 3`) cannot see an unrated row at all. Measured
+/// 2026-09-08: 93 pending ideas across six projects, all but one project's
+/// unrated — so every App Master opened an ask asking a human to read them.
+/// A second filing that carries a score is new information; dropping it on
+/// the floor is what kept the backlog unreadable by the machine.
+///
+/// The write is deliberately one-directional: a NULL is filled, a value that
+/// is already there is NEVER overwritten. When the re-filing disagrees with a
+/// score that already exists, the FIRST rating stands and the disagreement is
+/// appended to `reasoning` — free text nothing parses, unlike `evidence`,
+/// which the findings spine writes structured — so a human triaging the row
+/// can see that two runs scored it differently.
+pub fn backfill_idea_scales(
+    pool: &DbPool,
+    idea_id: &str,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+) -> Result<(DevIdea, ScaleBackfill), AppError> {
+    let existing = get_idea_by_id(pool, idea_id)?;
+
+    let mut fills: Vec<(&'static str, i32)> = Vec::new();
+    let mut conflicts: Vec<String> = Vec::new();
+    for (name, held, incoming) in [
+        ("effort", existing.effort, effort),
+        ("impact", existing.impact, impact),
+        ("risk", existing.risk, risk),
+    ] {
+        match (held, incoming) {
+            (None, Some(v)) => fills.push((name, v)),
+            (Some(h), Some(i)) if h != i => conflicts.push(format!("{name} {h} (re-filed as {i})")),
+            _ => {}
+        }
+    }
+
+    if fills.is_empty() && conflicts.is_empty() {
+        return Ok((existing, ScaleBackfill::Unchanged));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::backfill_idea_scales", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut idx = 2u32;
+
+        for (name, value) in &fills {
+            // `name` is one of three literals above — never caller text.
+            sets.push(format!("{name} = ?{idx}"));
+            values.push(Box::new(*value));
+            idx += 1;
+        }
+        if !conflicts.is_empty() {
+            let note = format!("[re-file] kept the first rating: {}", conflicts.join(", "));
+            let reasoning = match existing.reasoning.as_deref() {
+                Some(r) if !r.trim().is_empty() => format!("{r}\n{note}"),
+                _ => note,
+            };
+            sets.push(format!("reasoning = ?{idx}"));
+            values.push(Box::new(reasoning));
+            idx += 1;
+        }
+
+        let sql = format!("UPDATE dev_ideas SET {} WHERE id = ?{idx}", sets.join(", "));
+        values.push(Box::new(idea_id.to_string()));
+
+        let conn = pool.get()?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
+
+        let outcome = if fills.is_empty() {
+            ScaleBackfill::Unchanged
+        } else {
+            ScaleBackfill::Rated
+        };
+        Ok((get_idea_by_id(pool, idea_id)?, outcome))
+    })
+}
+
+/// How many of a project's `pending` ideas carry no `risk` score.
+///
+/// The decide lane renders this beside the pending count: an unrated idea is
+/// invisible to the mechanical triage rule, so a backlog that is entirely
+/// unrated looks like work waiting on a human when it is really work waiting
+/// on a number.
+pub fn count_unrated_pending_ideas(pool: &DbPool, project_id: &str) -> Result<i64, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::count_unrated_pending_ideas", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_ideas \
+             WHERE project_id = ?1 AND status = 'pending' AND risk IS NULL",
+            params![project_id],
+            // Named, not positional: `positional-row-get` is a ratcheting
+            // census rule and a new `row.get(0)` raises it.
+            |r| r.get("n"),
+        )
+        .map_err(AppError::Database)
+    })
+}
+
 /// Resolve an idea by an id PREFIX inside one project.
 ///
 /// The App Master's own decision brief names an idea the way the decision

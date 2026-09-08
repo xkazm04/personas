@@ -56,7 +56,14 @@
 //! through (`app_master_writeback`). Without them a headless run's only output
 //! was a git commit, and the loop re-offered work it had already done:
 //!   POST /ideas/{idea_id}/outcome           → { outcome: delivered|declined|blocked, note?, branch?, commit?, pr_url? }
-//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, … }
+//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, risk (REQUIRED, 1-5), … }
+//!                                             `risk` is required: an unrated idea is never accepted
+//!                                             automatically. 1 documentation or a reversible local change ·
+//!                                             2 code behind a test · 3 touches a route, a contract or a schema ·
+//!                                             4 touches ledger, settlement or security semantics ·
+//!                                             5 irreversible or external. Risk 1-2 is accepted by the project's
+//!                                             mechanical triage rule without a human. Re-filing an idea that was
+//!                                             filed unrated fills its scales in and answers `outcome: "rated"`.
 //!   POST /kpis                              → declare a KPI { project_id, name, measure_kind?, … }
 //!   POST /kpis/{kpi_id}/measure             → record a reading { value, source?, env?, evidence?, note? }
 //!

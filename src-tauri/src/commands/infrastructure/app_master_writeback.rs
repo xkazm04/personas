@@ -339,7 +339,21 @@ pub struct FileIdeaResult {
     /// not treat it as a fresh item.
     pub created: bool,
     pub dedup_key: String,
+    /// What the filing actually did: `created`, `deduped`, or `rated`.
+    /// `rated` is a dedup hit whose MISSING 1-5 scales this filing supplied —
+    /// an unrated idea is one the project's mechanical triage rule can never
+    /// accept, so a re-file that carries a risk score changes the row's fate
+    /// and must not report itself as a plain duplicate.
+    pub outcome: String,
 }
+
+/// `FileIdeaResult::outcome` — a fresh row.
+pub const FILE_IDEA_CREATED: &str = "created";
+/// `FileIdeaResult::outcome` — the dedup guard matched and nothing changed.
+pub const FILE_IDEA_DEDUPED: &str = "deduped";
+/// `FileIdeaResult::outcome` — the dedup guard matched and this filing filled
+/// in at least one scale the existing row was missing.
+pub const FILE_IDEA_RATED: &str = "rated";
 
 /// File a `pending` backlog item on the project's behalf.
 ///
@@ -383,21 +397,38 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             idea,
             created: true,
             dedup_key,
+            outcome: FILE_IDEA_CREATED.to_string(),
         }),
         // The guard fired. Hand back what is already there — "already filed" and
         // "could not file" are different answers and the caller must be able to
         // tell them apart.
+        //
+        // A re-file is not always a no-op: the row already in the backlog may
+        // have been filed WITHOUT scales, and an unrated idea is one the
+        // project's triage rule can never accept. Fill in what it is missing
+        // (never overwriting a score that is already there) and say so.
         None => {
-            let idea =
+            let existing =
                 repo::find_idea_by_dedup_key(db, &project.id, &dedup_key)?.ok_or_else(|| {
                     AppError::Internal(format!(
                         "backlog item {dedup_key} was deduped but cannot be read back"
                     ))
                 })?;
+            let (idea, backfill) = repo::backfill_idea_scales(
+                db,
+                &existing.id,
+                input.effort,
+                input.impact,
+                input.risk,
+            )?;
             Ok(FileIdeaResult {
                 idea,
                 created: false,
                 dedup_key,
+                outcome: match backfill {
+                    repo::ScaleBackfill::Rated => FILE_IDEA_RATED.to_string(),
+                    repo::ScaleBackfill::Unchanged => FILE_IDEA_DEDUPED.to_string(),
+                },
             })
         }
     }
@@ -583,8 +614,14 @@ pub fn write_back_brief(project_id: &str, idea_id: Option<&str>) -> String {
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
-         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\"}} \
+         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"risk\":2}} \
          — file a backlog item (deduped; re-filing is safe)\n\
+         `risk` is REQUIRED: an unrated idea is never accepted automatically. \
+         1 documentation or a reversible local change · 2 code behind a test · \
+         3 touches a route, a contract or a schema · \
+         4 touches ledger, settlement or security semantics · 5 irreversible or external. \
+         Risk 1-2 is accepted by the project's triage rule without a human. \
+         Re-filing an item you first filed unrated fills its score in.\n\
          - POST /dev-tools/kpis \
          {{\"project_id\":\"{project_id}\",\"name\":\"...\",\"measure_kind\":\"codebase\"}} \
          — declare a meter\n\
@@ -867,9 +904,149 @@ mod tests {
         assert!(!second.created);
         assert_eq!(second.idea.id, first.idea.id);
         assert_eq!(second.dedup_key, first.dedup_key);
+        assert_eq!(first.outcome, FILE_IDEA_CREATED);
+        // Both filings carried the SAME scales, so nothing was rated.
+        assert_eq!(second.outcome, FILE_IDEA_DEDUPED);
         assert_eq!(
             repo::list_ideas(&pool, Some(&pid), None, None, None, None)?.len(),
             1
+        );
+        Ok(())
+    }
+
+    /// The G27 defect: `dev_ideas.risk` is nullable and the mechanical triage
+    /// rule (`risk >= 1 AND risk < 3`) cannot see an unrated row, so an idea
+    /// filed without a score can only ever move by a human reading it. A
+    /// re-filing that carries the score has to be able to fix that.
+    #[test]
+    fn re_filing_an_unrated_item_with_a_risk_score_rates_it() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "rate-app");
+        let unrated = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Split the settlement ledger writer".into(),
+            description: Some("one function does three things".into()),
+            reasoning: None,
+            category: Some("technical".into()),
+            effort: None,
+            impact: None,
+            risk: None,
+            context_id: None,
+        };
+
+        let first = file_backlog_idea(&pool, &unrated)?;
+        assert!(first.created);
+        assert_eq!(first.outcome, FILE_IDEA_CREATED);
+        assert_eq!(first.idea.risk, None, "filed with no score at all");
+
+        let rated = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                effort: Some(2),
+                impact: Some(4),
+                risk: Some(1),
+                ..unrated.clone()
+            },
+        )?;
+        assert!(!rated.created);
+        assert_eq!(rated.outcome, FILE_IDEA_RATED);
+        assert_eq!(rated.idea.id, first.idea.id);
+        assert_eq!(rated.idea.risk, Some(1));
+        assert_eq!(rated.idea.effort, Some(2));
+        assert_eq!(rated.idea.impact, Some(4));
+        // Rating is an UPDATE — the dedup guarantee is untouched.
+        assert_eq!(
+            repo::list_ideas(&pool, Some(&pid), None, None, None, None)?.len(),
+            1
+        );
+
+        // A third filing that adds nothing new is a plain duplicate again.
+        let again = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                effort: Some(2),
+                impact: Some(4),
+                risk: Some(1),
+                ..unrated.clone()
+            },
+        )?;
+        assert_eq!(again.outcome, FILE_IDEA_DEDUPED);
+        Ok(())
+    }
+
+    #[test]
+    fn re_filing_with_a_different_risk_keeps_the_first_and_records_the_note() -> Result<(), AppError>
+    {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "conflict-app");
+        let filed = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Rotate the settlement signing key".into(),
+            description: Some("the key is a year old".into()),
+            reasoning: Some("touches settlement".into()),
+            category: Some("technical".into()),
+            effort: None,
+            impact: None,
+            risk: Some(4),
+            context_id: None,
+        };
+        let first = file_backlog_idea(&pool, &filed)?;
+        assert_eq!(first.idea.risk, Some(4));
+
+        // A later run scores the same item as trivially safe. The FIRST rating
+        // stands — being re-filed is not a licence to talk a 4 down to a 1 —
+        // and the disagreement is recorded where a triaging human sees it.
+        let second = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                risk: Some(1),
+                ..filed.clone()
+            },
+        )?;
+        assert!(!second.created);
+        assert_eq!(second.outcome, FILE_IDEA_DEDUPED);
+        assert_eq!(second.idea.risk, Some(4), "the first rating stands");
+        let reasoning = second.idea.reasoning.clone().unwrap_or_default();
+        assert!(
+            reasoning.starts_with("touches settlement"),
+            "the original reasoning is kept: {reasoning}"
+        );
+        assert!(
+            reasoning.contains("[re-file] kept the first rating: risk 4 (re-filed as 1)"),
+            "the disagreement is recorded: {reasoning}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_different_title_still_creates_a_second_item() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "create-app");
+        let base = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Extract the retry helper".into(),
+            description: None,
+            reasoning: None,
+            category: Some("technical".into()),
+            effort: None,
+            impact: None,
+            risk: Some(2),
+            context_id: None,
+        };
+        let first = file_backlog_idea(&pool, &base)?;
+        let other = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                title: "Cache the exchange-rate lookup".into(),
+                ..base.clone()
+            },
+        )?;
+        assert_eq!(first.outcome, FILE_IDEA_CREATED);
+        assert_eq!(other.outcome, FILE_IDEA_CREATED);
+        assert_ne!(other.idea.id, first.idea.id);
+        assert_eq!(
+            repo::list_ideas(&pool, Some(&pid), None, None, None, None)?.len(),
+            2
         );
         Ok(())
     }

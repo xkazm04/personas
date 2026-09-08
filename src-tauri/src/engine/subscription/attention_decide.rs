@@ -389,6 +389,10 @@ pub(crate) struct ProjectSnapshot {
     /// Up to [`MAX_NAMED_IN_FLIGHT`] tasks already `running` or `queued`.
     pub in_flight_tasks: Vec<InFlightTask>,
     pub pending_idea_count: usize,
+    /// How many of those pending ideas carry no `risk` score. The mechanical
+    /// triage rule cannot see an unrated row, so this is the share of the
+    /// backlog that can only ever move by a human reading it.
+    pub unrated_pending_idea_count: usize,
     pub context_count: usize,
     /// Newest `dev_contexts.updated_at` — how fresh the context map is.
     pub context_newest_at: Option<String>,
@@ -2053,9 +2057,18 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             p.project_id
         ));
         s.push_str(&format!(
-            "  accepted ideas with no task: {} · pending ideas: {}\n",
-            p.undispatched_idea_count, p.pending_idea_count
+            "  accepted ideas with no task: {} · pending ideas: {} (unrated: {})\n",
+            p.undispatched_idea_count, p.pending_idea_count, p.unrated_pending_idea_count
         ));
+        if p.unrated_pending_idea_count > 0 {
+            s.push_str(
+                "  unrated ideas are never auto-accepted; re-file them with a risk score \
+                 (1 documentation or a reversible local change · 2 code behind a test · \
+                 3 touches a route, a contract or a schema · 4 touches ledger, settlement \
+                 or security semantics · 5 irreversible or external) — risk 1-2 is then \
+                 accepted by the project's rule without a human.\n",
+            );
+        }
         if !p.undispatched_ideas.is_empty() {
             let shown = p.undispatched_ideas.len();
             s.push_str(&format!(
@@ -2929,6 +2942,7 @@ mod tests {
                     started_at: Some("2026-09-07T01:00:00Z".into()),
                 }],
                 pending_idea_count: 4,
+                unrated_pending_idea_count: 0,
                 context_count: 208,
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
@@ -3089,6 +3103,27 @@ mod tests {
         assert!(p.contains("\"dispatch\""));
         assert!(p.contains("\"defer\""));
         assert!(p.contains(&MAX_NOTE_CHARS.to_string()));
+    }
+
+    /// G27: an unrated pending idea is invisible to `dev_triage_rules`
+    /// (`risk >= 1 AND risk < 3`), so it can only move by a human reading the
+    /// backlog. The decide lane has to SHOW that number, or the persona reads
+    /// "93 pending" and opens an ask instead of re-filing with a score.
+    #[test]
+    fn prompt_names_the_unrated_share_of_the_backlog() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].unrated_pending_idea_count = 3;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("pending ideas: 4 (unrated: 3)"), "{p}");
+        assert!(
+            p.contains("unrated ideas are never auto-accepted; re-file them with a risk score"),
+            "{p}"
+        );
+
+        // Nothing unrated — the advice is absent rather than a standing 0.
+        let clean = render_decision_prompt(&ctx_fixture());
+        assert!(clean.contains("pending ideas: 4 (unrated: 0)"));
+        assert!(!clean.contains("unrated ideas are never auto-accepted"));
     }
 
     /// The CAPACITY line must show the persona WHERE its missing slots went.

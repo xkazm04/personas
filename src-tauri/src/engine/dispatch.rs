@@ -1255,30 +1255,37 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     // status, including a human's earlier "no" — is suppressed
                     // rather than stacked. Project-less proposals have no dedup
                     // scope to key on, so they keep the ungated path.
-                    let outcome = match project_id.as_deref() {
-                        Some(pid) => {
-                            let key = crate::db::repos::dev_tools::scan_dedup_key(
+                    //
+                    // The dedup scope is computed BEFORE the insert so the
+                    // "already there" branch can find the row it collided with
+                    // and fill in the scales it is missing.
+                    let dedup_scope = project_id.as_deref().map(|pid| {
+                        (
+                            pid.to_string(),
+                            crate::db::repos::dev_tools::scan_dedup_key(
                                 "team_proposed",
                                 None,
                                 title,
-                            );
-                            crate::db::repos::dev_tools::create_idea_deduped(
-                                ctx.pool,
-                                pid,
-                                None,
-                                "team_proposed",
-                                category.as_deref(),
-                                title,
-                                description.as_deref(),
-                                None,
-                                *effort,
-                                *impact,
-                                *risk,
-                                None,
-                                None,
-                                &key,
-                            )
-                        }
+                            ),
+                        )
+                    });
+                    let outcome = match dedup_scope.as_ref() {
+                        Some((pid, key)) => crate::db::repos::dev_tools::create_idea_deduped(
+                            ctx.pool,
+                            pid,
+                            None,
+                            "team_proposed",
+                            category.as_deref(),
+                            title,
+                            description.as_deref(),
+                            None,
+                            *effort,
+                            *impact,
+                            *risk,
+                            None,
+                            None,
+                            key,
+                        ),
                         None => crate::db::repos::dev_tools::create_idea(
                             ctx.pool,
                             None,
@@ -1301,9 +1308,40 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         Ok(Some(idea)) => ctx
                             .logger
                             .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
-                        Ok(None) => ctx.logger.log(&format!(
-                            "[BACKLOG] Skipped '{title}' — already in the backlog"
-                        )),
+                        // A re-proposal is not always a no-op. The row already
+                        // in the backlog may have been filed WITHOUT scales,
+                        // and an unrated idea is one the project's mechanical
+                        // triage rule can never accept — so a second proposal
+                        // that carries a risk score is new information, not a
+                        // duplicate. Fill in only what is MISSING; a score that
+                        // is already there always stands.
+                        Ok(None) => {
+                            let rated = dedup_scope.as_ref().and_then(|(pid, key)| {
+                                let existing = crate::db::repos::dev_tools::find_idea_by_dedup_key(
+                                    ctx.pool, pid, key,
+                                )
+                                .ok()??;
+                                crate::db::repos::dev_tools::backfill_idea_scales(
+                                    ctx.pool,
+                                    &existing.id,
+                                    *effort,
+                                    *impact,
+                                    *risk,
+                                )
+                                .ok()
+                            });
+                            match rated {
+                                Some((idea, crate::db::repos::dev_tools::ScaleBackfill::Rated)) => {
+                                    ctx.logger.log(&format!(
+                                        "[BACKLOG] Rated '{title}' — scales filled in on the item already filed ({})",
+                                        idea.id
+                                    ))
+                                }
+                                _ => ctx.logger.log(&format!(
+                                    "[BACKLOG] Skipped '{title}' — already in the backlog"
+                                )),
+                            }
+                        }
                         Err(e) => ctx
                             .logger
                             .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),

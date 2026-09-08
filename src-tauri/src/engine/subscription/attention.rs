@@ -1970,6 +1970,16 @@ fn project_snapshot(
         0
     });
 
+    // Of those pending ideas, how many carry no risk score. An unrated idea is
+    // invisible to `dev_triage_rules`, so a backlog that is entirely unrated
+    // looks like work waiting on a human when it is work waiting on a number.
+    let unrated_pending_idea_count = ideas::count_unrated_pending_ideas(pool, project_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: unrated-idea count failed");
+            0
+        })
+        .max(0) as usize;
+
     let project_contexts = contexts::list_contexts_by_project(pool, project_id, None)
         .unwrap_or_else(|e| {
             tracing::warn!(project_id, error = %e, "persona_attention: context read failed");
@@ -2032,6 +2042,7 @@ fn project_snapshot(
             .collect(),
         in_flight_tasks,
         pending_idea_count,
+        unrated_pending_idea_count,
         context_count: project_contexts.len(),
         context_newest_at,
         kpi_coverage_gap,

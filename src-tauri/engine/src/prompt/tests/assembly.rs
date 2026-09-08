@@ -712,3 +712,49 @@ fn test_prompt_ends_with_execute_now() {
     let proto_pos = prompt.find("## Communication Protocols").unwrap();
     assert!(exec_pos > proto_pos);
 }
+
+/// G27 (measured 2026-09-08): 93 pending backlog ideas across six projects,
+/// all but one project's carrying no `risk`. `dev_ideas.risk` is nullable and
+/// the only rule that accepts an idea without a human — `dev_triage_rules`,
+/// `risk >= 1 AND risk < 3` — cannot see an unrated row, so every App Master
+/// ended up asking a person to read the backlog by hand. The scale has to be
+/// stated where the model reads, in the shape it writes.
+#[test]
+fn propose_backlog_documents_risk_as_required_and_names_the_scale() {
+    let persona = test_persona();
+    let prompt = assemble_prompt(
+        &persona,
+        &[],
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
+
+    assert!(prompt.contains("### propose_backlog"));
+    assert!(
+        prompt.contains("`risk` is REQUIRED."),
+        "the field must be stated as required, not optional"
+    );
+    assert!(
+        prompt.contains("An unrated idea is NEVER accepted automatically"),
+        "the consequence of omitting it must be stated"
+    );
+    assert!(
+        prompt.contains("accepts risk 1-2 without a human"),
+        "the model must know which scores clear triage mechanically"
+    );
+    // Every rung of the scale, so a score is a judgement and not a guess.
+    for rung in [
+        "1 = documentation or a reversible local change",
+        "2 = code behind a test",
+        "3 = touches a route, a contract or a schema",
+        "4 = touches ledger, settlement or security semantics",
+        "5 = irreversible or external",
+    ] {
+        assert!(prompt.contains(rung), "scale rung missing: {rung}");
+    }
+    assert!(prompt.contains("\"risk\": 1-5 (REQUIRED)"));
+}
