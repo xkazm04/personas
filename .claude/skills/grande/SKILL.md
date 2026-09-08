@@ -69,8 +69,10 @@ this session did not create.
    the last session left open, and what this session intends. Never re-derive what the map says.
 2. **Environment.** `git status` on the Personas checkout (classify foreign work; touch none of
    it); `git log --oneline -5` to see what siblings merged; memory headroom under 60%. kp must be
-   running for Act 2 onwards (`npm run dev` in `C:\Users\kazda\kiro\kp`) with
-   `KP_AUTOMATION_TOKEN` set in both processes' environments; the bank repositories live under
+   running for Act 2 onwards (`npm run dev` in `C:\Users\kazda\kiro\kp`). The shared secret
+   `KP_AUTOMATION_TOKEN` lives in `~/.personas/grande.env.json` (generated once, 2026-09-08) and in
+   kp's `.env.local`; `sim-app.mjs up` reads it from there, so an app launched before the file
+   existed must be restarted (`down`, then `up`). The bank repositories live under
    `C:\Users\kazda\kiro\bank\`.
 3. **The app.** `node scripts/e2e/sim-app.mjs up`: reuses a healthy instance, otherwise launches
    `npm run tauri:dev:test` detached with `PERSONAS_HEADLESS_BRIDGE=1`, waits for
