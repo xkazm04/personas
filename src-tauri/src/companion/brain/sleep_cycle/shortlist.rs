@@ -224,7 +224,6 @@ mod tests {
             importance: 3,
             confidence: 0.8,
             sources: vec!["ep_1".to_string()],
-            expires_at: None,
             supersedes_id: None,
             contradicts_id: None,
             updated_at: "2025-01-01T00:00:00+00:00".to_string(),
