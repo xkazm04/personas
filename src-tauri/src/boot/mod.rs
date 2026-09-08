@@ -80,7 +80,12 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         Some(Arc::new(pool.clone())),
     ));
 
-    workers::spawn_requeue_persisted(app, &engine, &pool);
+    // The durable-queue re-admission is spawned further down, after the
+    // engine handles are in Tauri's state map: a re-admitted execution reads
+    // `AmbientContextHandle` through `app.state()` on the desktop path, and
+    // spawning it here (before `manage`) made every restart with work in
+    // flight panic that work with "state() called before manage()" and mark
+    // it failed (measured 2026-09-08: two App Master wakes lost per restart).
 
     let auth = Arc::new(tokio::sync::RwLock::new(
         commands::infrastructure::auth::AuthStateInner::default(),
@@ -207,6 +212,11 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(state_arc.scheduler.clone());
     app.manage(state_arc.session_pool.clone());
     app.manage(state_arc.ambient_context.clone());
+
+    // Only now may persisted `queued` / mid-run executions be re-admitted:
+    // `start_execution` reaches the handles managed just above through
+    // `app.state()`, so this must follow every `manage` the engine reads.
+    workers::spawn_requeue_persisted(app, &engine, &pool);
 
     // Athena's proactive scheduler — the 5-min autonomy loop (fleet
     // reassess passes, execution review, message triage, stale-approval
