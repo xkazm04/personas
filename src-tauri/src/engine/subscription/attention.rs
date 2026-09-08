@@ -1106,6 +1106,10 @@ fn build_decision_context(
         free_capacity: 0,
         running_executions: 0,
         running_fleet: 0,
+        // The roster ceiling (G4). A failed read is reported as `None` — the
+        // CAPACITY block then simply omits the ROSTER line, which is honest;
+        // printing a fabricated "0 of 10" would be worse than saying nothing.
+        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool).ok(),
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
         now_utc: chrono::Utc::now().to_rfc3339(),

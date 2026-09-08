@@ -273,6 +273,15 @@ pub(crate) struct DecisionContext {
     /// session and no execution, so a persona reading only the tracker saw two
     /// workers in the fleet grid and "2 free" in its own prompt.
     pub running_fleet: usize,
+    /// The app-wide active-persona population and its cap (G4), or `None` when
+    /// the count could not be read.
+    ///
+    /// Rendered into the CAPACITY line, one field away from this persona's own
+    /// free slots, because they are two different ceilings and a loop that
+    /// confuses them asks for a hire it cannot have: `free_capacity` is how much
+    /// work THIS persona may start right now; this is how many personas the app
+    /// will let exist in the on state at all.
+    pub active_personas: Option<personas_engine::active_persona_cap::ActivePersonaHeadroom>,
     /// The wall clock at gather time, RFC-3339 UTC. Carried rather than read
     /// inside the renderer so [`render_decision_prompt`] stays a pure function
     /// of its context — and so a prompt in a ledger can be reproduced exactly.
@@ -933,6 +942,21 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ctx.running_executions,
         ctx.running_fleet,
     ));
+    if let Some(h) = ctx.active_personas {
+        // A SECOND ceiling, and the one a hiring charter walks into: the app
+        // refuses to switch on more personas than this, so an App Master with a
+        // responsibility nobody holds should read the free slots here before it
+        // asks kp for a role.
+        s.push_str(&format!(
+            "- ROSTER: {} of {} personas are active app-wide ({} slot(s) free). \
+             Asking for a NEW hire when 0 are free will be refused at adoption — \
+             say so in an ask instead, so a person can free a slot or raise the \
+             cap.\n",
+            h.active,
+            h.cap,
+            h.free(),
+        ));
+    }
     s.push_str(
         "- IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
          flight — read its summary before deciding. Only `running` means a worker of \
@@ -1731,6 +1755,13 @@ mod tests {
             free_capacity: 2,
             running_executions: 0,
             running_fleet: 1,
+            // G4: the roster ceiling, well below the cap so the fixture's other
+            // assertions read the ordinary case. `active_personas_line_*` below
+            // vary it.
+            active_personas: Some(personas_engine::active_persona_cap::ActivePersonaHeadroom {
+                active: 4,
+                cap: 10,
+            }),
             now_utc: "2026-09-07T02:30:00+00:00".into(),
             // Through the one door for model ids — a dated literal here would
             // rot the fixture the day the id retires.
@@ -1955,6 +1986,47 @@ mod tests {
             p.contains("2 execution(s) and 0 fleet worker(s) of yours are running"),
             "{p}"
         );
+    }
+
+    /// G4: the SECOND ceiling. `free_capacity` is how much work this persona
+    /// may start; the roster line is how many personas the app will let exist
+    /// switched on at all. An App Master with an unheld responsibility reads
+    /// this before it asks kp for a role.
+    #[test]
+    fn prompt_states_the_app_wide_roster_ceiling() {
+        let ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("- ROSTER: 4 of 10 personas are active app-wide (6 slot(s) free)"),
+            "{p}"
+        );
+
+        // At the cap the line says zero free and names the consequence, so the
+        // loop asks instead of dispatching a hire it cannot have.
+        let mut full = ctx_fixture();
+        full.active_personas = Some(personas_engine::active_persona_cap::ActivePersonaHeadroom {
+            active: 10,
+            cap: 10,
+        });
+        let p = render_decision_prompt(&full);
+        assert!(
+            p.contains("10 of 10 personas are active app-wide (0 slot(s) free)"),
+            "{p}"
+        );
+        assert!(p.contains("will be refused at adoption"), "{p}");
+    }
+
+    /// A count that could not be read prints NOTHING rather than a fabricated
+    /// "0 of 10" — the prompt's own standing rule for the clock and for
+    /// `lastDecidedAt`, applied to the roster.
+    #[test]
+    fn an_unreadable_roster_count_omits_the_line_entirely() {
+        let mut ctx = ctx_fixture();
+        ctx.active_personas = None;
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("ROSTER"), "{p}");
+        // The capacity line it sits under is untouched.
+        assert!(p.contains("- CAPACITY:"), "{p}");
     }
 
     #[test]

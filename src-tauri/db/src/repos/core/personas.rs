@@ -835,6 +835,61 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<Option<bool
     })
 }
 
+/// How many personas are ACTIVE right now, app-wide.
+///
+/// "Active" is `enabled = 1 AND COALESCE(lifecycle,'active') = 'active'` — the
+/// two columns together, because either one alone is a different population: a
+/// disabled persona still sits at lifecycle `active`, and a `draft` persona is
+/// created with `enabled = 1` by the build path. The `COALESCE` matches every
+/// other lifecycle read in this file; the column is `NOT NULL DEFAULT 'active'`
+/// but rows written before `c03_fleet_and_workspaces` predate it.
+///
+/// This is the number `personas_engine::active_persona_cap` compares against
+/// `settings_keys::MAX_ACTIVE_PERSONAS`.
+pub fn count_active(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("personas", "personas::count_active", {
+        let conn = pool.conn("personas::count_active")?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM personas \
+             WHERE enabled = 1 AND COALESCE(lifecycle, 'active') = 'active'",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.max(0) as usize)
+    })
+}
+
+/// The two columns [`count_active`] counts by, for ONE persona.
+/// `Ok(None)` = no such persona.
+///
+/// Returned as the raw pair rather than a pre-computed "is it active" boolean
+/// because the cap's callers need the *post-state* too: a door that flips
+/// `enabled` has to know the lifecycle it is flipping it against, and a door
+/// that also moves the lifecycle has to substitute its own. A collapsed boolean
+/// throws away exactly the half they need.
+///
+/// A cheap two-column read, deliberately not `get_by_id` — that one hydrates
+/// and decrypts the whole editor payload to answer a yes/no question.
+pub fn enabled_and_lifecycle(pool: &DbPool, id: &str) -> Result<Option<(bool, String)>, AppError> {
+    timed_query!("personas", "personas::enabled_and_lifecycle", {
+        let conn = pool.conn("personas::enabled_and_lifecycle")?;
+        let row: Option<(bool, String)> = conn
+            .query_row(
+                "SELECT enabled, COALESCE(lifecycle, 'active') AS lifecycle \
+                 FROM personas WHERE id = ?1",
+                params![id],
+                |r| {
+                    Ok((
+                        r.get::<_, i64>("enabled")? != 0,
+                        r.get::<_, String>("lifecycle")?,
+                    ))
+                },
+            )
+            .optional()?;
+        Ok(row)
+    })
+}
+
 /// Set a persona's lifecycle stage directly. Validates the value against the
 /// `PersonaLifecycle` enum. Used by the build promote path (→ `active`) and the
 /// build cancel/fail cleanup guard. Does NOT touch `enabled` — lifecycle and
