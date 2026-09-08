@@ -115,8 +115,12 @@ Entry: `act0` passed. Steps: switch the simulation settings on with
 `node scripts/e2e/sim-switches.mjs --projects <names>` (attention loop, cap 10, autopilot `full`,
 the risk-below-3 triage rule per project); create the workspace "Bank" and protect it
 (`POST /dev-tools/projects/create` creates both, `POST /dev-tools/workspaces/{id}/protect` tags
-it); adopt the Architect (`POST /dev-tools/architect/adopt`) with the five Architect recipes;
-enable it; observe until it has written the solution design, created the projects with their
+it); adopt the Architect (`POST /dev-tools/architect/adopt`) with the five Architect recipes and
+the explicit model id `claude-opus-5` (the `opus` tier slug resolves to `claude-opus-4-8`, G14);
+enable it; give it the owner's brief through its persona channel
+(`post_persona_channel_message`: goal, domains, the reference digest path, the accepted envelope,
+constraints, where the design lives) since a cold Architect otherwise designs against an assumed
+goal; observe until it has written the solution design, created the projects with their
 self-declarations, adopted an App Master each, set goals and posted the first directive. Exit:
 six projects registered under `C:\Users\kazda\kiro\bank\`, six App Masters adopted, a design
 document in the platform project naming bounded contexts, money-path services and a BIAN Service
