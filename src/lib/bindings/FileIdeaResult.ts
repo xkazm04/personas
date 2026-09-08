@@ -8,4 +8,12 @@ export type FileIdeaResult = { idea: DevIdea,
  * something a human has already said no to gets that row back, and must
  * not treat it as a fresh item.
  */
-created: boolean, dedupKey: string, };
+created: boolean, dedupKey: string, 
+/**
+ * What the filing actually did: `created`, `deduped`, or `rated`.
+ * `rated` is a dedup hit whose MISSING 1-5 scales this filing supplied —
+ * an unrated idea is one the project's mechanical triage rule can never
+ * accept, so a re-file that carries a risk score changes the row's fate
+ * and must not report itself as a plain duplicate.
+ */
+outcome: string, };
