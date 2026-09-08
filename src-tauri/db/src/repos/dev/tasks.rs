@@ -37,6 +37,13 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
             .get::<_, Option<i32>>("attempt")
             .unwrap_or(None)
             .unwrap_or(1),
+        // Runner-isolation columns (G12) — tolerant for the same reason as the
+        // retry-lineage pair above: a row read through a pre-migration
+        // connection, or one of this file's `SELECT *` queries against an old
+        // database, must still map.
+        worktree_path: row.get("worktree_path").unwrap_or(None),
+        worktree_branch: row.get("worktree_branch").unwrap_or(None),
+        worktree_fallback_reason: row.get("worktree_fallback_reason").unwrap_or(None),
     })
 }
 
@@ -319,6 +326,46 @@ pub fn update_task(
     })
 }
 
+/// Record where a run is actually executing (Grand Simulation G12).
+///
+/// A separate door rather than three more `Option` parameters on
+/// [`update_task`], which already takes nine: these three are written exactly
+/// once per run, by one caller, at a different moment from every other field —
+/// and they are the only fields whose *combination* carries meaning
+/// (`branch` xor `fallback_reason`), which a field-at-a-time signature hides.
+///
+/// Both `branch` and `fallback_reason` are always written, so a re-run that
+/// becomes isolated clears the previous run's fallback note and a re-run that
+/// falls back clears the stale branch. Stamps `updated_at` like every other
+/// real mutation — the task IS alive at this point, it is about to spawn.
+pub fn record_task_worktree(
+    pool: &DbPool,
+    id: &str,
+    path: &str,
+    branch: Option<&str>,
+    fallback_reason: Option<&str>,
+) -> Result<DevTask, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::record_task_worktree", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_tasks
+                SET worktree_path = ?1,
+                    worktree_branch = ?2,
+                    worktree_fallback_reason = ?3,
+                    updated_at = ?4
+              WHERE id = ?5",
+            params![
+                path,
+                branch,
+                fallback_reason,
+                chrono::Utc::now().to_rfc3339(),
+                id
+            ],
+        )?;
+        get_task_by_id(pool, id)
+    })
+}
+
 /// The projection [`row_to_task`] actually consumes, named beside the mapper
 /// that reads it so the two cannot drift.
 ///
@@ -328,7 +375,8 @@ pub fn update_task(
 /// its baseline in a change that is not about that.
 const TASK_COLUMNS: &str = "id, project_id, title, description, source_idea_id, goal_id, status, \
      session_id, progress_pct, output_lines, error, started_at, completed_at, created_at, \
-     updated_at, depth, parent_task_id, attempt";
+     updated_at, depth, parent_task_id, attempt, worktree_path, worktree_branch, \
+     worktree_fallback_reason";
 
 /// The newest `dev_tasks` row promoted from `idea_id`, or `None` when nobody
 /// ever dispatched it.

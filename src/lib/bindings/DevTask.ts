@@ -25,4 +25,22 @@ parent_task_id: string | null,
 /**
  * 1 for an original task; `parent.attempt + 1` for each re-attempt.
  */
-attempt: number, };
+attempt: number, 
+/**
+ * The directory this run's CLI was actually spawned in — the isolated
+ * authoring worktree, or the project root when isolation was refused.
+ * `None` until the task starts running (and for every task written before
+ * the runner isolated its work, G12).
+ */
+worktree_path: string | null, 
+/**
+ * `autopilot/<slug>` — the branch `worktree_path` is checked out on.
+ * `None` ⟺ the run was NOT isolated; this is the branch a reviewer merges.
+ */
+worktree_branch: string | null, 
+/**
+ * Why isolation was refused, when it was. `None` ⟺ the run WAS isolated.
+ * The mirror of `worktree_branch`, so a fallback into the operator's own
+ * checkout is recorded on the row rather than only in a log line.
+ */
+worktree_fallback_reason: string | null, };

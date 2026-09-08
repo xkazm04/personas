@@ -151,6 +151,7 @@ registry where one fits.
 | G9 | No banking knowledge in the registry; recipes docs stale | a `banking` bundle seeded from the Architect's design plus kp's Česká spořitelna corpus; the lane's three declarations corrected to the 113-recipe reality | registry, medium |
 | G10 | `/uat` has no scenario object or fixture generator | a **scenario file** in the overlay (`uat/scenarios/*.md`: Characters × Journeys × fixture set × load envelope) and a fixture generator that reads the simulation's own data (accounts, contracts, loans) into `env.md`'s table; findings drain into the projects' backlogs through the write-back route | medium, skill-side |
 | G11 | Persona → persona addressing in the decision | the decision plan gains `say: [{to, body, authority}]` so an App Master can answer the Architect and ask a sibling; written through the channel table | small |
+| G12 | ~~The runner arm executes in the project's ROOT checkout — a backlog wave dispatched through `dev_tools_start_auto_run` edits the operator's live tree while they are working in it~~ **CLOSED** | `run_task_execution` (`task_executor.rs`) — the one point all three arms (single execute, batch, auto-run) funnel through — resolves an isolated worktree before it spawns, through the **same** `personas_engine::unattended_worktree::prepare_authoring_worktree` the fleet arm already authors with, so there is one branch namespace, one free-slot rule and one dependency borrow for both arms. One worktree per task at `<app_data>/worktrees/<project_id>/<slug>` on `autopilot/<slug>`, reused on a retry via the task row; the exec dir (and with it the CLI's transcript) and the auto-PR push all follow it. A project whose root is not a git work tree still runs, in the root, with the reason logged, emitted to the live panel and written to the row (`worktree_fallback_reason`) — never silently. Migration `e26_runner_task_worktree` adds `worktree_path` / `worktree_branch` / `worktree_fallback_reason` to `dev_tasks`. The worktree is left in place for merge/review; only the existing prune sweep retires it. | small |
 
 ## 4. Headless services to prepare first (Act 0)
 
@@ -232,3 +233,8 @@ when they have earned it:
   broken at the base by two files outside this arc. The five builders had been killed overnight
   by the tool watchdog (five cargo jobs on one target); resumed one at a time. The dev app exited
   cleanly twice during the operator's working hours; not relaunched without their word. G12 found.
+  **G12 closed the same day**: the runner arm now resolves an isolated `autopilot/<slug>` worktree in
+  `run_task_execution` — the chokepoint all three arms share — reusing the fleet arm's
+  `prepare_authoring_worktree` rather than growing a second helper, with the exec dir, the CLI's
+  transcript and the auto-PR push following it, a never-silent fallback for a non-repository root,
+  and `e26_runner_task_worktree` recording path + branch + fallback reason on the task row.

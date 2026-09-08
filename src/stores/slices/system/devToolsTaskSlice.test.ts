@@ -46,6 +46,11 @@ function makeTask(overrides: Partial<DevTask> & { id: string }): DevTask {
     depth: 'quick',
     parent_task_id: null,
     attempt: 1,
+    // Runner isolation (G12): a task that has not run yet records nothing
+    // about where it will.
+    worktree_path: null,
+    worktree_branch: null,
+    worktree_fallback_reason: null,
     ...overrides,
   };
 }
