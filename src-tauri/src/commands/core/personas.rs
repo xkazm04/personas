@@ -117,6 +117,17 @@ pub fn set_persona_enabled(
     enabled: bool,
 ) -> Result<Persona, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
+    // G4: the app-wide active-persona cap. Checked BEFORE the write and only
+    // for an OFF→ON transition that actually lands inside the counted
+    // population — `check_enable_headroom` reads the row's own lifecycle, so
+    // switching a `draft` on (it is not counted) and re-enabling an already
+    // enabled persona both pass at the cap.
+    personas_engine::active_persona_cap::check_enable_headroom(
+        &state.db,
+        &persona_id,
+        enabled,
+        None,
+    )?;
     if let Some(true) = repo::set_enabled(&state.db, &persona_id, enabled)? {
         crate::engine::subscription::request_wake(&state.db, &persona_id);
     }
@@ -198,6 +209,19 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     validate_update_persona(&input)?;
+    // G4: the editor's own save is a door that can turn a persona on. Only an
+    // `enabled: true` in the payload is gated, and only when it (together with
+    // whatever lifecycle the same payload writes) moves the persona into the
+    // counted population — a save that carries `enabled: true` for a persona
+    // that is already active changes nothing and is never refused.
+    if input.enabled == Some(true) {
+        personas_engine::active_persona_cap::check_enable_headroom(
+            &state.db,
+            &id,
+            true,
+            input.lifecycle.as_deref(),
+        )?;
+    }
     let result = repo::update(&state.db, &id, input)?;
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();

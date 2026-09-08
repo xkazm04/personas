@@ -21,7 +21,44 @@ fn row_to_message(r: &Row) -> rusqlite::Result<TeamChannelMessage> {
         consumer: r.get("consumer")?,
         deliveries: r.get("deliveries")?,
         created_at: r.get("created_at")?,
+        authority: r.get("authority")?,
     })
+}
+
+// ---------------------------------------------------------------------------
+// Authority (Grand Simulation G3)
+// ---------------------------------------------------------------------------
+
+/// An instruction the addressee must reflect in its own plan.
+pub const AUTHORITY_DIRECTIVE: &str = "directive";
+/// A question or an ask that deserves an answer.
+pub const AUTHORITY_REQUEST: &str = "request";
+/// Context. Read it, answer it or don't.
+pub const AUTHORITY_NOTE: &str = "note";
+
+/// The whole vocabulary, in the order the prompt states it.
+pub const AUTHORITIES: [&str; 3] = [AUTHORITY_DIRECTIVE, AUTHORITY_REQUEST, AUTHORITY_NOTE];
+
+/// The repo door for the `authority` vocabulary.
+///
+/// `None` stays `None` — "no authority declared" is a real value and the
+/// column is nullable precisely so it can be said. Anything else must be one
+/// of [`AUTHORITIES`] exactly (trimmed, lowercased); an unknown word is
+/// REFUSED rather than coerced to `note`, because a caller that wrote
+/// `"urgent"` meant something and silently filing it as context would lose
+/// the fact that it did.
+fn normalize_authority(authority: Option<&str>) -> Result<Option<String>, AppError> {
+    let Some(raw) = authority.map(str::trim).filter(|a| !a.is_empty()) else {
+        return Ok(None);
+    };
+    let lowered = raw.to_ascii_lowercase();
+    if AUTHORITIES.contains(&lowered.as_str()) {
+        return Ok(Some(lowered));
+    }
+    Err(AppError::Validation(format!(
+        "Unknown channel authority '{raw}' — expected one of {}",
+        AUTHORITIES.join(", ")
+    )))
 }
 
 /// Post a message into a team's channel.
@@ -29,7 +66,67 @@ pub fn create(
     pool: &DbPool,
     input: CreateChannelMessageInput,
 ) -> Result<TeamChannelMessage, AppError> {
-    insert(pool, input, None)
+    insert(pool, input, None, None)
+}
+
+/// Post a message that states how much weight it carries — one of
+/// [`AUTHORITIES`], or `None` for "none declared".
+///
+/// Its own entry point rather than a field on [`CreateChannelMessageInput`],
+/// for the reason [`create_external`] documents below: the input struct has
+/// ~15 exhaustive literal call sites and none of them has an authority to
+/// state. Only the doors that genuinely rank a message reach for this one —
+/// the operator's directive and Athena's post today, the Architect's channel
+/// tomorrow.
+pub fn create_with_authority(
+    pool: &DbPool,
+    input: CreateChannelMessageInput,
+    authority: Option<&str>,
+) -> Result<TeamChannelMessage, AppError> {
+    let authority = normalize_authority(authority)?;
+    insert(pool, input, None, authority.as_deref())
+}
+
+/// Post a message a PERSONA authored into a team channel, addressed to the
+/// whole team or to named members.
+///
+/// The write half of the decision lane's `say` (G11) and the door the
+/// Architect's charter speaks through (G3). Distinct from [`create`] for the
+/// same reason [`create_external`] is: this writer owns three facts no generic
+/// caller should be able to set by accident — `author_kind` is always
+/// `'persona'`, `author_id` is always the speaking persona, and `consumer` is
+/// always `'inject'` so the step-boundary injection
+/// ([`list_injectable_for_persona`]) carries the message as well as the
+/// arrivals wake.
+///
+/// `authority` is validated here; a caller may not invent a rank word. Whether
+/// this persona is ALLOWED to say `directive` is decided upstream, by the
+/// charters it holds — the repo enforces the vocabulary, not the grant.
+pub fn create_persona_directed(
+    pool: &DbPool,
+    from_persona: &str,
+    team_id: &str,
+    body: &str,
+    addressed_to: Option<Vec<String>>,
+    authority: Option<&str>,
+    reply_to: Option<String>,
+) -> Result<TeamChannelMessage, AppError> {
+    let authority = normalize_authority(authority)?;
+    insert(
+        pool,
+        CreateChannelMessageInput {
+            team_id: team_id.to_string(),
+            author_kind: "persona".into(),
+            author_id: Some(from_persona.to_string()),
+            body: body.to_string(),
+            addressed_to,
+            reply_to,
+            assignment_id: None,
+            consumer: Some("inject".into()),
+        },
+        None,
+        authority.as_deref(),
+    )
 }
 
 /// Post a message authored by an EXTERNAL participant — today only the team
@@ -51,6 +148,7 @@ pub fn create_external(
         pool,
         input,
         if label.is_empty() { None } else { Some(label) },
+        None,
     )
 }
 
@@ -58,6 +156,7 @@ fn insert(
     pool: &DbPool,
     input: CreateChannelMessageInput,
     author_label: Option<&str>,
+    authority: Option<&str>,
 ) -> Result<TeamChannelMessage, AppError> {
     timed_query!("team_channel", "team_channel::create", {
         let body = input.body.trim();
@@ -75,8 +174,8 @@ fn insert(
         conn.execute(
             "INSERT INTO team_channel_messages
                 (id, team_id, author_kind, author_id, body, addressed_to, reply_to,
-                 assignment_id, consumer, deliveries, created_at, author_label)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'), ?10)",
+                 assignment_id, consumer, deliveries, created_at, author_label, authority)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'), ?10, ?11)",
             params![
                 id,
                 input.team_id,
@@ -88,6 +187,7 @@ fn insert(
                 input.assignment_id,
                 consumer,
                 author_label,
+                authority,
             ],
         )
         .map_err(AppError::Database)?;
@@ -429,17 +529,67 @@ pub fn create_persona_channel_message(
     })
 }
 
-/// The OLDEST user message in a persona's channel that never got an answer —
-/// the attention loop's arrivals-recovery probe (living-agent WP5).
+/// One message the attention loop's arrivals lane may wake a persona for.
 ///
-/// "Unanswered" is structural, matching the follow-up machinery in
-/// `commands::communication::persona_channel`:
-/// - no non-user row replies to it (`reply_to = message.id` — the reply
-///   writer and the failure writer both stamp `reply_to`, so a recorded
-///   failure counts as answered), AND
+/// Carries more than the `(id, body)` pair it replaced because the wake now
+/// has two sources with different provenance: the operator's own chat, and a
+/// team channel where somebody else — a persona or Athena — spoke. The task
+/// text the persona is handed must say WHO spoke and with WHAT AUTHORITY, and
+/// neither fact is recoverable from a body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelArrival {
+    pub message_id: String,
+    pub body: String,
+    /// `'user'` | `'persona'` | `'athena'` | `'slack'`.
+    pub author_kind: String,
+    /// The author's display name — the row's own `author_label` when it has
+    /// one, else the author persona's name. `None` for the operator, who has
+    /// no row to resolve a name from.
+    pub author_label: Option<String>,
+    /// `'directive'` | `'request'` | `'note'`, or `None` for "none declared".
+    pub authority: Option<String>,
+    /// The REAL team this was posted in; `None` when the arrival came from the
+    /// persona's own chat channel (whose `team_id` is the `persona:<id>`
+    /// sentinel and whose `persona_id` is the real scope key).
+    pub team_id: Option<String>,
+    /// `addressed_to` names this persona specifically, rather than the message
+    /// reaching it because it carries a directive to the whole team.
+    pub addressed_to_me: bool,
+}
+
+/// The OLDEST message this persona should be woken for and has not answered —
+/// the attention loop's arrivals lane (living-agent WP5, widened by G3).
+///
+/// **Two ways in, one predicate.**
+///
+/// 1. The persona's OWN channel, from the operator: `persona_id = P` and
+///    `author_kind = 'user'`. Unchanged — this is the whole rule the lane had
+///    until 2026-09-07, and it is why no persona could ever be woken by
+///    another one.
+/// 2. A team channel the persona is a MEMBER of, where a persona or Athena
+///    spoke, and the message either names it in `addressed_to` (the same JSON
+///    `LIKE` containment test [`list_injectable_for_persona`] uses — ids are
+///    uuids, so no false-substring risk) or carries
+///    [`AUTHORITY_DIRECTIVE`], which every member of the team must reflect.
+///
+/// **A message never wakes its own author** (`author_id != P`): an Architect
+/// directing its team would otherwise be its own first respondent, and would
+/// then answer itself forever.
+///
+/// "Unanswered" keeps its definition exactly:
+/// - no non-user row replies to it (`reply_to = message.id` — the reply writer
+///   and the failure writer both stamp `reply_to`, so a recorded failure
+///   counts as answered), AND
 /// - no queued/running execution holds its idempotency key
-///   (`channel:{persona_id}:{message_id}`) — a live run's own reply-waiter
-///   still owns the answer.
+///   (`channel:{P}:{message_id}`) — a live run's own reply-waiter still owns
+///   the answer.
+///
+/// The reply probe no longer re-scopes by `persona_id`: a team-channel message
+/// has none, so that clause would have made every team arrival permanently
+/// unanswered. `reply_to` alone is sufficient — it holds a uuid message id,
+/// which identifies exactly one row. The execution probe keys on the READING
+/// persona rather than `m.persona_id` for the same reason, and is identical
+/// for case 1 where the two are equal by construction.
 ///
 /// `min_age_minutes` keeps the loop off messages the live post path is still
 /// serving; `lookback_days` bounds how far back a recovery can resurrect.
@@ -450,23 +600,38 @@ pub fn oldest_unanswered_persona_message(
     persona_id: &str,
     min_age_minutes: i64,
     lookback_days: i64,
-) -> Result<Option<(String, String)>, AppError> {
+) -> Result<Option<ChannelArrival>, AppError> {
     timed_query!("team_channel", "team_channel::oldest_unanswered", {
         let conn = pool.get()?;
+        let needle = format!("%\"{persona_id}\"%");
         let mut stmt = conn.prepare_cached(
-            "SELECT m.id AS id, m.body AS body FROM team_channel_messages m
-             WHERE m.persona_id = ?1
-               AND m.author_kind = 'user'
+            "SELECT m.id AS id, m.body AS body, m.author_kind AS author_kind,
+                    COALESCE(m.author_label, a.name) AS label,
+                    m.authority AS authority,
+                    m.team_id AS team_id, m.persona_id AS scope_persona,
+                    (m.addressed_to LIKE ?4) AS addressed_to_me
+             FROM team_channel_messages m
+             LEFT JOIN personas a ON a.id = m.author_id
+             WHERE (
+                     (m.persona_id = ?1 AND m.author_kind = 'user')
+                     OR (
+                       m.author_kind IN ('persona', 'athena')
+                       AND (m.author_id IS NULL OR m.author_id != ?1)
+                       AND m.team_id IN (
+                         SELECT tm.team_id FROM persona_team_members tm
+                         WHERE tm.persona_id = ?1)
+                       AND (m.addressed_to LIKE ?4 OR m.authority = 'directive')
+                     )
+                   )
                AND datetime(m.created_at) <= datetime('now', ?2)
                AND datetime(m.created_at) >= datetime('now', ?3)
                AND NOT EXISTS (
                  SELECT 1 FROM team_channel_messages r
-                 WHERE r.persona_id = m.persona_id
-                   AND r.reply_to = m.id
+                 WHERE r.reply_to = m.id
                    AND r.author_kind != 'user')
                AND NOT EXISTS (
                  SELECT 1 FROM persona_executions e
-                 WHERE e.idempotency_key = 'channel:' || m.persona_id || ':' || m.id
+                 WHERE e.idempotency_key = 'channel:' || ?1 || ':' || m.id
                    AND e.status IN ('queued', 'running'))
              ORDER BY m.created_at ASC, m.id ASC
              LIMIT 1",
@@ -476,11 +641,164 @@ pub fn oldest_unanswered_persona_message(
                 persona_id,
                 format!("-{min_age_minutes} minutes"),
                 format!("-{lookback_days} days"),
+                needle,
             ],
-            |r| Ok((r.get::<_, String>("id")?, r.get::<_, String>("body")?)),
+            |r| {
+                // A row whose `persona_id` is set came from the persona's own
+                // chat lens, whose `team_id` is the `persona:<id>` sentinel —
+                // not a team anybody can post back into.
+                let scope_persona: Option<String> = r.get("scope_persona")?;
+                let team_id: Option<String> = match scope_persona {
+                    Some(_) => None,
+                    None => r.get("team_id")?,
+                };
+                Ok(ChannelArrival {
+                    message_id: r.get("id")?,
+                    body: r.get("body")?,
+                    author_kind: r.get("author_kind")?,
+                    author_label: r.get("label")?,
+                    authority: r.get("authority")?,
+                    team_id,
+                    addressed_to_me: r
+                        .get::<_, Option<bool>>("addressed_to_me")?
+                        .unwrap_or(false),
+                })
+            },
         )
         .optional()
         .map_err(AppError::Database)
+    })
+}
+
+// ---------------------------------------------------------------------------
+// What the channel says (the decision lane's read — G3)
+// ---------------------------------------------------------------------------
+
+/// One channel message as the App Master decision sees it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChannelLineRow {
+    pub id: String,
+    /// `'user'` | `'persona'` | `'athena'` | `'slack'`.
+    pub author_kind: String,
+    /// The author's persona id, when a persona authored it.
+    pub author_id: Option<String>,
+    /// Display name, resolved the same way [`ChannelArrival`] resolves it.
+    pub author_label: Option<String>,
+    pub authority: Option<String>,
+    pub body: String,
+    pub created_at: String,
+    /// `addressed_to` names this persona specifically.
+    pub addressed_to_me: bool,
+}
+
+/// The newest messages on the teams this persona belongs to, plus any message
+/// anywhere that names it in `addressed_to`. Newest-first; the caller bounds
+/// the body and reverses if it wants oldest-first.
+///
+/// Deliberately unfiltered by `authority` and by `consumer`: the decision is
+/// being shown the conversation, not a queue, and a `display` row somebody
+/// posted for humans is still something the App Master should know was said.
+///
+/// Deliberation turns are excluded. They ride this same table linked by
+/// `deliberation_id` and are firebreaked by that link (see
+/// [`post_deliberation_turn`]) — folding a moderated debate into a wake's
+/// standing context would put one lane's transcript inside another lane's
+/// judgment. Persona-chat rows are excluded for the same reason in reverse:
+/// they are the persona's own conversation with the operator, already served
+/// by the arrivals lane.
+pub fn recent_channel_lines_for_persona(
+    pool: &DbPool,
+    persona_id: &str,
+    limit: i64,
+) -> Result<Vec<ChannelLineRow>, AppError> {
+    timed_query!("team_channel", "team_channel::recent_channel_lines", {
+        let conn = pool.get()?;
+        let needle = format!("%\"{persona_id}\"%");
+        let mut stmt = conn.prepare(
+            "SELECT m.id AS id, m.author_kind AS author_kind, m.author_id AS author_id,
+                    COALESCE(m.author_label, a.name) AS label,
+                    m.authority AS authority, m.body AS body, m.created_at AS created_at,
+                    (m.addressed_to LIKE ?2) AS addressed_to_me
+             FROM team_channel_messages m
+             LEFT JOIN personas a ON a.id = m.author_id
+             WHERE m.persona_id IS NULL
+               AND m.deliberation_id IS NULL
+               AND (
+                 m.team_id IN (
+                   SELECT tm.team_id FROM persona_team_members tm
+                   WHERE tm.persona_id = ?1)
+                 OR m.addressed_to LIKE ?2
+               )
+             ORDER BY m.created_at DESC, m.id DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![persona_id, needle, limit], |r| {
+            Ok(ChannelLineRow {
+                id: r.get("id")?,
+                author_kind: r.get("author_kind")?,
+                author_id: r.get("author_id")?,
+                author_label: r.get("label")?,
+                authority: r.get("authority")?,
+                body: r.get("body")?,
+                created_at: r.get("created_at")?,
+                addressed_to_me: r
+                    .get::<_, Option<bool>>("addressed_to_me")?
+                    .unwrap_or(false),
+            })
+        })?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
+/// Every persona this one shares a team with — the set it may address by id.
+///
+/// The allowlist behind the decision plan's `say`: an id outside it is dropped
+/// rather than written, so a model that invents a colleague cannot post into a
+/// channel nobody asked it to reach.
+pub fn addressable_peers(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!("team_channel", "team_channel::addressable_peers", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT p.id AS id, p.name AS name
+             FROM persona_team_members m
+             JOIN persona_team_members me
+               ON me.team_id = m.team_id AND me.persona_id = ?1
+             JOIN personas p ON p.id = m.persona_id
+             WHERE m.persona_id != ?1
+             ORDER BY p.name ASC, p.id ASC",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| {
+            Ok((r.get::<_, String>("id")?, r.get::<_, String>("name")?))
+        })?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
+/// The team ids this persona belongs to, oldest membership first.
+///
+/// The decision lane's `say` writes into the FIRST of these when the persona's
+/// project-bound team cannot be resolved. Oldest-first because membership
+/// order is the only stable tiebreak available: a persona on two teams has no
+/// declared "primary", and picking by name or by id would change under a
+/// rename.
+pub fn team_ids_for_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<String>, AppError> {
+    timed_query!("team_channel", "team_channel::team_ids_for_persona", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT team_id FROM persona_team_members
+             WHERE persona_id = ?1 ORDER BY created_at ASC, id ASC",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| r.get::<_, String>("team_id"))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
     })
 }
 
@@ -525,6 +843,30 @@ mod tests {
         Ok(())
     }
 
+    fn seed_team(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES (?1, ?1, datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    fn join_team(pool: &DbPool, team_id: &str, persona_id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_team_members
+                (id, team_id, persona_id, role, position_x, position_y, created_at)
+             VALUES (?1, ?2, ?3, 'worker', 0, 0, datetime('now'))",
+            params![format!("m-{team_id}-{persona_id}"), team_id, persona_id],
+        )?;
+        Ok(())
+    }
+
+    /// The oldest arrival, with its age already outside the min-age window.
+    fn arrival(pool: &DbPool, persona_id: &str) -> Option<ChannelArrival> {
+        oldest_unanswered_persona_message(pool, persona_id, 10, 7).unwrap()
+    }
+
     #[test]
     fn oldest_unanswered_applies_all_four_filters() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
@@ -532,20 +874,23 @@ mod tests {
 
         // Too fresh: inside the min-age window → invisible.
         post_user(&pool, "p1", "just arrived");
-        assert_eq!(
-            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
-            None
-        );
+        assert_eq!(arrival(&pool, "p1"), None);
 
         // Old enough and unanswered → found; oldest wins over a newer one.
         let older = post_user(&pool, "p1", "lost message");
         backdate(&pool, &older, "-2 hours")?;
         let newer = post_user(&pool, "p1", "also lost");
         backdate(&pool, &newer, "-1 hours")?;
-        let hit = oldest_unanswered_persona_message(&pool, "p1", 10, 7)
-            .unwrap()
-            .expect("older row");
-        assert_eq!(hit, (older.clone(), "lost message".into()));
+        let hit = arrival(&pool, "p1").expect("older row");
+        assert_eq!(hit.message_id, older);
+        assert_eq!(hit.body, "lost message");
+        assert_eq!(hit.author_kind, "user");
+        // The operator has no persona row, so no label and no authority — the
+        // arrivals text must say "the operator", not print an empty name.
+        assert_eq!(hit.author_label, None);
+        assert_eq!(hit.authority, None);
+        // A persona-chat row is scoped by persona_id, never by a real team.
+        assert_eq!(hit.team_id, None);
 
         // A persona reply (even a FAILURE record) answers it.
         create_persona_channel_message(
@@ -562,10 +907,8 @@ mod tests {
             },
         )
         .unwrap();
-        let hit = oldest_unanswered_persona_message(&pool, "p1", 10, 7)
-            .unwrap()
-            .expect("newer row now oldest unanswered");
-        assert_eq!(hit.0, newer);
+        let hit = arrival(&pool, "p1").expect("newer row now oldest unanswered");
+        assert_eq!(hit.message_id, newer);
 
         // A queued/running execution holding the idempotency key hides it...
         pool.get()?.execute(
@@ -574,41 +917,241 @@ mod tests {
              VALUES ('ex1', 'p1', 'running', 'channel:p1:' || ?1, datetime('now'))",
             params![newer],
         )?;
-        assert_eq!(
-            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
-            None
-        );
+        assert_eq!(arrival(&pool, "p1"), None);
         // ...and a TERMINAL one does not (recovery may re-dispatch: the
         // idempotency key dedupes to this row instead of double-running).
         pool.get()?.execute(
             "UPDATE persona_executions SET status = 'failed' WHERE id = 'ex1'",
             [],
         )?;
-        assert_eq!(
-            oldest_unanswered_persona_message(&pool, "p1", 10, 7)
-                .unwrap()
-                .unwrap()
-                .0,
-            newer
-        );
+        assert_eq!(arrival(&pool, "p1").unwrap().message_id, newer);
 
         // The lookback bound: ancient messages stay buried.
         backdate(&pool, &newer, "-8 days")?;
         pool.get()?
             .execute("DELETE FROM persona_executions WHERE id = 'ex1'", [])?;
-        assert_eq!(
-            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
-            None
-        );
+        assert_eq!(arrival(&pool, "p1"), None);
 
         // Scoped per persona: another persona's silence is not ours.
         seed_persona(&pool, "p2")?;
         let other = post_user(&pool, "p2", "someone else");
         backdate(&pool, &other, "-1 hours")?;
-        assert_eq!(
-            oldest_unanswered_persona_message(&pool, "p1", 10, 7).unwrap(),
-            None
+        assert_eq!(arrival(&pool, "p1"), None);
+        Ok(())
+    }
+
+    // -- G3: authority, and a persona hearing another persona ---------------
+
+    #[test]
+    fn authority_vocabulary_is_enforced_at_the_door() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_team(&pool, "t1")?;
+
+        // The three words, case-insensitively, normalized to lowercase.
+        let m = create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "ship the ledger first",
+            None,
+            Some("DIRECTIVE"),
+            None,
+        )?;
+        assert_eq!(m.authority.as_deref(), Some(AUTHORITY_DIRECTIVE));
+        assert_eq!(m.author_kind, "persona");
+        assert_eq!(m.author_id.as_deref(), Some("architect"));
+        // A directed message is always injectable, so the step-boundary
+        // injection carries it as well as the arrivals wake.
+        assert_eq!(m.consumer, "inject");
+
+        // No authority declared stays NULL — absent is not `note`.
+        let plain = create_persona_directed(&pool, "architect", "t1", "fyi", None, None, None)?;
+        assert_eq!(plain.authority, None);
+
+        // An invented rank is refused, not filed as context.
+        assert!(matches!(
+            create_persona_directed(&pool, "architect", "t1", "b", None, Some("urgent"), None),
+            Err(AppError::Validation(_))
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn a_directed_message_wakes_its_addressee_and_nobody_else() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        for p in ["architect", "master_a", "master_b", "outsider"] {
+            seed_persona(&pool, p)?;
+        }
+        seed_team(&pool, "t1")?;
+        for p in ["architect", "master_a", "master_b"] {
+            join_team(&pool, "t1", p)?;
+        }
+
+        let directed = create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "answer me about the ledger",
+            Some(vec!["master_a".into()]),
+            Some(AUTHORITY_REQUEST),
+            None,
+        )?;
+        backdate(&pool, &directed.id, "-1 hours")?;
+
+        let hit = arrival(&pool, "master_a").expect("the addressee hears it");
+        assert_eq!(hit.message_id, directed.id);
+        assert_eq!(hit.author_kind, "persona");
+        assert_eq!(hit.author_label.as_deref(), Some("architect"));
+        assert_eq!(hit.authority.as_deref(), Some(AUTHORITY_REQUEST));
+        assert_eq!(hit.team_id.as_deref(), Some("t1"));
+        assert!(hit.addressed_to_me);
+
+        // A teammate the message does not name, and a persona outside the
+        // team, both stay asleep — a `request` reaches only its addressees.
+        assert_eq!(arrival(&pool, "master_b"), None);
+        assert_eq!(arrival(&pool, "outsider"), None);
+        // And the author is never its own respondent.
+        assert_eq!(arrival(&pool, "architect"), None);
+        Ok(())
+    }
+
+    #[test]
+    fn a_directive_wakes_every_team_member_but_not_its_author() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        for p in ["architect", "master_a", "master_b", "outsider"] {
+            seed_persona(&pool, p)?;
+        }
+        seed_team(&pool, "t1")?;
+        for p in ["architect", "master_a", "master_b"] {
+            join_team(&pool, "t1", p)?;
+        }
+
+        let directive = create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "every service exposes a health endpoint",
+            None, // whole team
+            Some(AUTHORITY_DIRECTIVE),
+            None,
+        )?;
+        backdate(&pool, &directive.id, "-1 hours")?;
+
+        for member in ["master_a", "master_b"] {
+            let hit = arrival(&pool, member).expect("a directive reaches every member");
+            assert_eq!(hit.message_id, directive.id);
+            assert_eq!(hit.authority.as_deref(), Some(AUTHORITY_DIRECTIVE));
+            // Not addressed to anyone in particular: it reached them by rank.
+            assert!(!hit.addressed_to_me);
+        }
+        assert_eq!(arrival(&pool, "architect"), None, "never its own author");
+        assert_eq!(arrival(&pool, "outsider"), None, "not on the team");
+
+        // Unanswered keeps its meaning across the team boundary: a persona
+        // reply stamped `reply_to` settles it for everyone, and a live run
+        // holding the per-reader idempotency key hides it for that reader
+        // alone.
+        pool.get()?.execute(
+            "INSERT INTO persona_executions
+                (id, persona_id, status, idempotency_key, created_at)
+             VALUES ('ex1', 'master_a', 'running', 'channel:master_a:' || ?1, datetime('now'))",
+            params![directive.id],
+        )?;
+        assert_eq!(arrival(&pool, "master_a"), None, "its own run owns it");
+        assert!(
+            arrival(&pool, "master_b").is_some(),
+            "another reader's run is not this reader's answer"
         );
+
+        create_persona_directed(
+            &pool,
+            "master_b",
+            "t1",
+            "acknowledged",
+            None,
+            Some(AUTHORITY_NOTE),
+            Some(directive.id.clone()),
+        )?;
+        assert_eq!(arrival(&pool, "master_b"), None, "answered");
+        Ok(())
+    }
+
+    #[test]
+    fn a_note_from_a_teammate_never_wakes_anybody() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        for p in ["architect", "master_a"] {
+            seed_persona(&pool, p)?;
+        }
+        seed_team(&pool, "t1")?;
+        for p in ["architect", "master_a"] {
+            join_team(&pool, "t1", p)?;
+        }
+        let note =
+            create_persona_directed(&pool, "architect", "t1", "thinking aloud", None, None, None)?;
+        backdate(&pool, &note.id, "-1 hours")?;
+        assert_eq!(arrival(&pool, "master_a"), None);
+        Ok(())
+    }
+
+    #[test]
+    fn the_decision_reads_its_teams_channel_and_its_peers() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        for p in ["architect", "master_a", "outsider"] {
+            seed_persona(&pool, p)?;
+        }
+        seed_team(&pool, "t1")?;
+        seed_team(&pool, "t2")?;
+        join_team(&pool, "t1", "architect")?;
+        join_team(&pool, "t1", "master_a")?;
+        join_team(&pool, "t2", "outsider")?;
+
+        let d = create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "ship the ledger",
+            None,
+            Some(AUTHORITY_DIRECTIVE),
+            None,
+        )?;
+        // Another team's traffic is not this persona's channel...
+        create_persona_directed(&pool, "outsider", "t2", "elsewhere", None, None, None)?;
+        // ...unless it names this persona.
+        let named = create_persona_directed(
+            &pool,
+            "outsider",
+            "t2",
+            "one question for you",
+            Some(vec!["master_a".into()]),
+            Some(AUTHORITY_REQUEST),
+            None,
+        )?;
+        // The persona's own chat with the operator stays out of it.
+        post_user(&pool, "master_a", "operator chat");
+
+        let lines = recent_channel_lines_for_persona(&pool, "master_a", 10)?;
+        let ids: Vec<&str> = lines.iter().map(|l| l.id.as_str()).collect();
+        assert!(ids.contains(&d.id.as_str()));
+        assert!(ids.contains(&named.id.as_str()));
+        assert_eq!(ids.len(), 2, "only its own channel and what names it");
+        let named_line = lines.iter().find(|l| l.id == named.id).unwrap();
+        assert!(named_line.addressed_to_me);
+        assert_eq!(named_line.author_label.as_deref(), Some("outsider"));
+        assert_eq!(named_line.authority.as_deref(), Some(AUTHORITY_REQUEST));
+
+        // The limit is a limit, newest-first.
+        assert_eq!(
+            recent_channel_lines_for_persona(&pool, "master_a", 1)?.len(),
+            1
+        );
+
+        // Peers: shared-team members only, never itself.
+        assert_eq!(
+            addressable_peers(&pool, "master_a")?,
+            vec![("architect".to_string(), "architect".to_string())]
+        );
+        assert_eq!(team_ids_for_persona(&pool, "master_a")?, vec!["t1"]);
         Ok(())
     }
 }

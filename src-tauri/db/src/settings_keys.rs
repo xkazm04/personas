@@ -72,6 +72,17 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// thing: the consult lane is off and executions run exactly as before.
 pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
 
+/// Absolute directory under which `create_project_repository` scaffolds new
+/// project repositories: `<root>/<workspace-slug>/<project-name>`.
+///
+/// Unset means the default computed by the caller that owns a path resolver —
+/// `<app data dir>/sim` (`commands::infrastructure::project_scaffold`). The
+/// key exists so the Grand Simulation's dedicated folder (the operator's
+/// proposal is `C:\Users\kazda\kiro\bank`) can be set once instead of being
+/// passed on every create call; an explicit `root` in the request still wins
+/// over both.
+pub const SIMULATION_PROJECTS_ROOT: &str = "simulation_projects_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -648,6 +659,36 @@ pub const MAX_PARALLEL_EXECUTIONS_MIN: usize = 1;
 /// per slot), so keep this aligned with `STRIP_SLOTS` in fleetStripModel.ts.
 pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 20;
 
+/// App-wide cap on how many personas may be ACTIVE at once, where active means
+/// `personas.enabled = 1 AND COALESCE(lifecycle,'active') = 'active'`.
+///
+/// This is a *population* cap, not a concurrency cap. [`MAX_PARALLEL_EXECUTIONS`]
+/// bounds how many executions run at the same moment; this one bounds how many
+/// personas are switched on at all — the thing that decides how much autonomous
+/// work the machine can start on its own. Nothing capped that until 2026-09-07
+/// (`docs/architecture/grand-simulation.md` §3 G4): `MAX_PERSONAS = 200` is
+/// bundle-import validation and the fleet's `live_slots` is soft and in memory.
+///
+/// Read at every door that turns a persona ON — never cached — through
+/// `personas_engine::active_persona_cap::active_persona_headroom`. A door that
+/// would push the count above the cap refuses with `AppError::Validation`
+/// naming both numbers; a call that leaves the count unchanged (re-enabling an
+/// already enabled persona) is never refused.
+///
+/// Stored as a positive-integer string; clamped to
+/// [`MAX_ACTIVE_PERSONAS_MIN`]..=[`MAX_ACTIVE_PERSONAS_MAX`].
+pub const MAX_ACTIVE_PERSONAS: &str = "max_active_personas";
+/// Default active-persona cap when the row is unset (or unparseable). Ten is
+/// the Grand Simulation's operator rule, adopted as the app-wide default.
+pub const MAX_ACTIVE_PERSONAS_DEFAULT: usize = 10;
+/// Minimum accepted cap. 0 would mean no persona could ever be switched on, so
+/// the floor is 1.
+pub const MAX_ACTIVE_PERSONAS_MIN: usize = 1;
+/// Upper guard rail. Well above the default so an operator can raise it, well
+/// below `MAX_PERSONAS` (200, the bundle-import ceiling) so it stays a
+/// deliberate limit rather than a formality.
+pub const MAX_ACTIVE_PERSONAS_MAX: usize = 50;
+
 /// Whether each team-member persona execution runs inside its own per-execution
 /// git worktree (on branch `personas/exec/<execution_id>`) instead of the shared
 /// per-persona scratch dir. Default OFF — opt-in only, because it mutates the
@@ -837,6 +878,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     KNOWLEDGE_REGISTRY_ROOT,
+    SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
@@ -907,6 +949,7 @@ const ALLOWED_KEYS: &[&str] = &[
     // write and the autonomous-deliberation toggle could never be enabled.
     AUTONOMOUS_DELIBERATION,
     MAX_PARALLEL_EXECUTIONS,
+    MAX_ACTIVE_PERSONAS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
@@ -1063,6 +1106,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             Ok(n) if n >= MAX_PARALLEL_EXECUTIONS_MIN && n <= MAX_PARALLEL_EXECUTIONS_MAX => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be an integer between {MAX_PARALLEL_EXECUTIONS_MIN} and {MAX_PARALLEL_EXECUTIONS_MAX}, got {value:?}"
+            )),
+        },
+        MAX_ACTIVE_PERSONAS => match value.parse::<usize>() {
+            Ok(n) if (MAX_ACTIVE_PERSONAS_MIN..=MAX_ACTIVE_PERSONAS_MAX).contains(&n) => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an integer between {MAX_ACTIVE_PERSONAS_MIN} and {MAX_ACTIVE_PERSONAS_MAX}, got {value:?}"
             )),
         },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
@@ -1362,6 +1411,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         MONTHLY_COST_CEILING_USD
         | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD
         | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
+        | MAX_ACTIVE_PERSONAS
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -1524,6 +1574,59 @@ mod tests {
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
+    }
+
+    #[test]
+    fn max_active_personas_key_and_value_validation() {
+        assert!(validate_key(MAX_ACTIVE_PERSONAS).is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "1").is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "10").is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "50").is_ok());
+        // 0 would mean no persona could ever be switched on -> rejected.
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "0").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "51").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "ten").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "-1").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, " 5 ").is_err());
+    }
+
+    /// The tripwire for the two caps the Settings UI re-declares.
+    ///
+    /// `src/features/settings/sub_limits/components/LimitsSettings.tsx` hands a
+    /// `NumberStepper` its `min` / `max` / default, so those six numbers exist
+    /// twice: here, where they are enforced, and there, where they are drawn.
+    /// The client cannot be the one to notice a change, because the change
+    /// happens HERE. So the tripwire lives here too, per
+    /// `docs/concepts/golden-paths/client-rule-mirroring.md` §"put the tripwire
+    /// on the side that changes" (precedent: `core/src/types.rs`'s TERMINAL /
+    /// ACTIVE pinning).
+    ///
+    /// **If this test fails, the stepper in that file is now wrong.** Update its
+    /// `CONCURRENCY_*` / `ROSTER_*` constants in the same change, then update
+    /// the numbers below. Do not just change the numbers below.
+    #[test]
+    fn the_settings_ui_steppers_bounds_are_pinned_here() {
+        assert_eq!(
+            (
+                MAX_PARALLEL_EXECUTIONS_MIN,
+                MAX_PARALLEL_EXECUTIONS_MAX,
+                MAX_PARALLEL_EXECUTIONS_DEFAULT
+            ),
+            (1, 20, 10),
+            "LimitsSettings.tsx CONCURRENCY_MIN / CONCURRENCY_MAX / \
+             CONCURRENCY_DEFAULT must be updated to match"
+        );
+        assert_eq!(
+            (
+                MAX_ACTIVE_PERSONAS_MIN,
+                MAX_ACTIVE_PERSONAS_MAX,
+                MAX_ACTIVE_PERSONAS_DEFAULT
+            ),
+            (1, 50, 10),
+            "LimitsSettings.tsx ROSTER_MIN / ROSTER_MAX / ROSTER_DEFAULT must \
+             be updated to match"
+        );
     }
 
     #[test]

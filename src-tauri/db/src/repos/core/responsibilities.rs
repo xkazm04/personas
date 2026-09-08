@@ -23,7 +23,7 @@ use personas_core::error::AppError;
 /// `row_to_responsibility` consumes, nothing else.
 const COLUMNS: &str = "id, persona_id, title, domain, outcomes, objectives, \
      scope_rung, refusal_classes, approval_gates, owner, cadence, \
-     budget_monthly_usd, tenure, status, project_id, source, \
+     budget_monthly_usd, tenure, status, project_id, workspace_id, source, \
      connectors, procedure, spec, created_at, updated_at";
 
 /// `COLUMNS` with every column qualified by `alias` — for joined queries
@@ -88,6 +88,7 @@ fn row_to_responsibility(row: &Row) -> rusqlite::Result<PersonaResponsibility> {
         budget_monthly_usd: row.get("budget_monthly_usd")?,
         status: row.get("status")?,
         project_id: row.get("project_id")?,
+        workspace_id: row.get("workspace_id")?,
         source: row.get("source")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -116,6 +117,10 @@ pub struct CreateResponsibilityInput<'a> {
     /// 'draft' | 'active' | 'suspended' | 'retired' (DB CHECK-enforced).
     pub status: &'a str,
     pub project_id: Option<&'a str>,
+    /// A `dev_workspaces` id for a cross-project charter. Mutually exclusive
+    /// with `project_id` — the engine's `validate` refuses the pair before any
+    /// call reaches here.
+    pub workspace_id: Option<&'a str>,
     pub source: &'a str,
     pub connectors: &'a [String],
     pub procedure: &'a str,
@@ -135,9 +140,9 @@ pub fn create(
                 (id, persona_id, title, domain, outcomes, objectives, scope_rung,
                  refusal_classes, approval_gates, owner, cadence, budget_monthly_usd,
                  tenure, status, project_id, source, connectors, procedure, spec,
-                 created_at, updated_at)
+                 workspace_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
-                     ?15, ?16, ?18, ?19, ?20, ?17, ?17)",
+                     ?15, ?16, ?18, ?19, ?20, ?21, ?17, ?17)",
             params![
                 id,
                 input.persona_id,
@@ -159,6 +164,7 @@ pub fn create(
                 to_json(&input.connectors, "connectors")?,
                 input.procedure,
                 to_json(input.spec, "spec")?,
+                input.workspace_id,
             ],
         )?;
         let mut stmt = conn.prepare_cached(&format!(
@@ -325,8 +331,8 @@ pub fn exists_for_persona_project(
 }
 
 /// Partial update. `None` = leave unchanged; the double-`Option` fields
-/// (`budget_monthly_usd`, `project_id`) clear with `Some(None)`. Status moves
-/// through [`set_status`], never here.
+/// (`budget_monthly_usd`, `project_id`, `workspace_id`) clear with
+/// `Some(None)`. Status moves through [`set_status`], never here.
 #[derive(Default)]
 pub struct UpdateResponsibilityInput {
     pub title: Option<String>,
@@ -341,6 +347,7 @@ pub struct UpdateResponsibilityInput {
     pub budget_monthly_usd: Option<Option<f64>>,
     pub tenure: Option<ResponsibilityTenure>,
     pub project_id: Option<Option<String>>,
+    pub workspace_id: Option<Option<String>>,
     pub connectors: Option<Vec<String>>,
     pub procedure: Option<String>,
     pub spec: Option<ResponsibilitySpec>,
@@ -466,6 +473,14 @@ pub fn update(
         push_field_param!(
             input.project_id,
             "project_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.workspace_id,
+            "workspace_id",
             sets,
             param_idx,
             param_values,
@@ -627,6 +642,7 @@ mod tests {
             tenure: &DEFAULT_TENURE,
             status: "active",
             project_id: None,
+            workspace_id: None,
             source: "operator",
             connectors: &[],
             procedure: "",
@@ -888,6 +904,68 @@ mod tests {
         assert!(exists_for_persona_project(&pool, "p1", "proj-a")?);
         assert!(!exists_for_persona_project(&pool, "p1", "proj-b")?);
         assert!(!exists_for_persona_project(&pool, "p2", "proj-a")?);
+        Ok(())
+    }
+
+    /// A workspace-bound charter round-trips through the named projection, and
+    /// the double-`Option` update clears it the same way `project_id` clears.
+    /// The two bindings are stored in DIFFERENT columns, so neither read can
+    /// borrow the other's value.
+    #[test]
+    fn workspace_binding_round_trips_and_clears_independently() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+
+        let architect = create(
+            &pool,
+            CreateResponsibilityInput {
+                title: "Design the enterprise solution",
+                workspace_id: Some("ws-bank"),
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(architect.workspace_id.as_deref(), Some("ws-bank"));
+        assert_eq!(
+            architect.project_id, None,
+            "a workspace charter has no project"
+        );
+
+        let app_master = create(
+            &pool,
+            CreateResponsibilityInput {
+                project_id: Some("proj-a"),
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(
+            app_master.workspace_id, None,
+            "a project charter has no workspace"
+        );
+
+        let fetched = get_by_id(&pool, &architect.id)?.expect("row");
+        assert_eq!(fetched.workspace_id.as_deref(), Some("ws-bank"));
+
+        // An untouched update leaves the binding alone…
+        let renamed = update(
+            &pool,
+            &architect.id,
+            UpdateResponsibilityInput {
+                title: Some("Renamed".into()),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(renamed.workspace_id.as_deref(), Some("ws-bank"));
+        // …and an explicit clear removes it without touching anything else.
+        let cleared = update(
+            &pool,
+            &architect.id,
+            UpdateResponsibilityInput {
+                workspace_id: Some(None),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(cleared.workspace_id, None);
+        assert_eq!(cleared.title, "Renamed", "unmentioned fields untouched");
         Ok(())
     }
 

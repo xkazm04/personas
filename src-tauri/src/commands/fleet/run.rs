@@ -91,6 +91,20 @@ pub fn begin_run(label: Option<String>) -> String {
     id
 }
 
+/// The label of the run open right now, if any is open and it is labelled.
+///
+/// Read-only and window-free — unlike [`claim_run_for_spawn`] it does not
+/// extend or mint anything. Added for the fleet dispatch drain (G5): a wave
+/// that spawns MINUTES after its dispatch has long fallen outside the dispatch
+/// window, so it would land in a fresh unlabelled run — and an overnight
+/// session with no `overnight:` label is one the fleet sweeper will park on an
+/// unanswered question forever instead of finishing. The drain captures the
+/// label at dispatch time and re-opens the run around each later wave.
+pub fn current_run_label() -> Option<String> {
+    let guard = active().lock().unwrap_or_else(|e| e.into_inner());
+    guard.as_ref().and_then(|r| r.label.clone())
+}
+
 /// Close the active run; the next spawn opens a fresh implicit one.
 pub fn end_run() {
     let mut guard = active().lock().unwrap_or_else(|e| e.into_inner());

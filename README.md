@@ -395,6 +395,57 @@ onboarding (`/passport-onboard`) deliberately stop to ask the operator questions
 `src-tauri/src/commands/infrastructure/dev_tools_http.rs`; identity rules:
 `src-tauri/db/src/project_identity.rs`; narrative: `docs/features/plugins/dev tools/cx-map.md`.
 
+##### Creating the repository too (`POST /projects/create`)
+
+`POST /projects` needs a folder that already exists. `POST /projects/create` makes one: it
+computes `<root>/<workspace-slug>/<name>`, `git init`s it, writes a `README.md`, a `.gitignore`
+and the template's skeleton, makes one `chore: scaffold <name>` commit, then registers the
+project and assigns it to the workspace — resolving the workspace by id or by name, and
+**creating** the workspace when the name matches none.
+
+```bash
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/projects/create" -d '{
+  "workspace": "Bank",
+  "name": "bank-core",
+  "description": "accounts, ledger, payments",
+  "techStack": "rust",
+  "template": "rust-service"
+}'
+#   -> { project, repositoryPath, workspaceId, created, workspaceCreated }
+```
+
+`template` is `empty` (default) | `rust-service` | `node-service` | `python-service`; the
+non-empty ones write a dependency-free hello server so the skeleton builds and runs offline.
+`techStack` also accepts the snake_case `tech_stack`. `root` (absolute) overrides the root for
+one call; otherwise the root is the `simulation_projects_root` setting, and unset that is
+`<app data dir>/sim` (`PERSONAS_DATA_DIR` overrides the app data dir, as it does for the
+authoring worktrees). Set the setting once when the repositories belong somewhere specific —
+the Grand Simulation's dedicated bank folder is the case this exists for.
+
+`400` when the target directory exists and is **not empty** (the response names the path), and
+when `name` is not a single directory component. A directory that already carries
+`.personas/project.json` is the exception: the call is idempotent, returns the same project and
+reports `"created": false`. Same operation as the Tauri command `create_project_repository`
+(`src/api/devTools/projectScaffold.ts`); implementation:
+`src-tauri/src/commands/infrastructure/project_scaffold.rs`.
+
+##### The never-delete tag (`GET /workspaces`, `POST /workspaces/{id}/protect`)
+
+A workspace can be tagged as the **last working version** — the state Personas must keep. While
+the tag is set, four delete doors refuse with
+`workspace <name> is protected as the last working version`: deleting one of its projects,
+deleting the workspace, deleting a member project's team, and the `replace` branch of a dev
+project import (which wipes a project's whole working graph without touching the project row).
+
+```bash
+curl -s "${AUTH[@]}" "$B/workspaces"          # -> [{ id, name, protected, projectCount }]
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" \
+  "$B/workspaces/<workspace-id>/protect" -d '{"lastWorkingVersion":true}'   # -> the workspace row
+```
+
+Guards: `src-tauri/db/src/repos/workspaces/protection.rs`; the column arrives in migration
+`e24_workspace_protection`.
+
 #### Registering an App Master headlessly
 
 An **App Master** is the accountable owner of one registered project: a persona pinned to that

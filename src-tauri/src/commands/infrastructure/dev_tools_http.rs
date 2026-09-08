@@ -22,6 +22,11 @@
 //! Endpoints (mounted under `/dev-tools`):
 //!   GET  /projects                          → list dev projects (find the project_id)
 //!   POST /projects                          → register a project { name, root_path, tech_stack? }
+//!   POST /projects/create                   → git init + scaffold + register + assign
+//!                                             { workspace, name, description?, techStack?,
+//!                                               template?, root? }
+//!   GET  /workspaces                        → { id, name, protected, projectCount }[]
+//!   POST /workspaces/{id}/protect           → { lastWorkingVersion } → the workspace row
 //!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode?, subtree? } → { scan_id }
 //!   GET  /scan-status/{scan_id}             → { status, error, lines }
 //!   GET  /scans/{project_id}                → every known context scan + its subtree (don't relaunch a running scope)
@@ -41,6 +46,8 @@
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
+//!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
+//!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
 //!
 //! Write-back routes for workers — the door a dispatched App Master run reports
 //! through (`app_master_writeback`). Without them a headless run's only output
@@ -68,6 +75,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::commands::infrastructure::app_master_adopt;
 use crate::commands::infrastructure::app_master_writeback;
+use crate::commands::infrastructure::architect_adopt;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -78,6 +86,7 @@ use crate::commands::infrastructure::kpi_scan::{
 use crate::commands::infrastructure::kpi_sim::{
     ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
 };
+use crate::commands::infrastructure::project_scaffold;
 use crate::commands::infrastructure::use_case_scan::{
     launch_use_case_scan, use_case_scan_status_json,
 };
@@ -96,6 +105,9 @@ pub struct DevToolsHttp {
 pub fn router(app: AppHandle) -> Router {
     Router::new()
         .route("/projects", get(list_projects).post(create_project))
+        .route("/projects/create", post(create_project_repository_route))
+        .route("/workspaces", get(list_workspaces_route))
+        .route("/workspaces/{id}/protect", post(protect_workspace_route))
         .route("/scan-codebase", post(scan_codebase))
         .route("/scan-status/{scan_id}", get(scan_status))
         .route("/scans/{project_id}", get(list_scans))
@@ -129,6 +141,8 @@ pub fn router(app: AppHandle) -> Router {
         .route("/patterns/{id}", get(pattern_get))
         .route("/app-master/adopt", post(app_master_adopt_route))
         .route("/app-master/{project_id}", get(app_master_state))
+        .route("/architect/adopt", post(architect_adopt_route))
+        .route("/architect/{workspace}", get(architect_state))
         // Worker write-back (see the module header).
         .route("/ideas", post(file_idea_route))
         .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
@@ -573,6 +587,108 @@ async fn create_project(
     )
     .map_err(err)?;
     Ok(Json(p))
+}
+
+// ============================================================================
+// One-step repository + project creation, and the never-delete tag
+// ============================================================================
+//
+// `POST /projects` registers a directory that already exists. These three are
+// the Grand Simulation's opening move (`docs/architecture/grand-simulation.md`
+// §3 G6 and rule 10): create the repository AND the project in one call, tag
+// the workspace whose data must never be deleted, and list workspaces so a
+// script can find the one it tagged.
+
+/// `git init` a new repository under the simulation root, scaffold it, and
+/// register it into a workspace. The whole operation lives in
+/// `project_scaffold`; this is the adapter.
+async fn create_project_repository_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<project_scaffold::CreateProjectRepositoryInput>,
+) -> Result<Json<project_scaffold::CreatedProjectRepository>, (StatusCode, String)> {
+    let pool = db(&s);
+    project_scaffold::create_project_repository_inner(s.app.clone(), pool, b)
+        .await
+        .map(Json)
+        .map_err(status_for)
+}
+
+/// One workspace as the listing reports it. `protected` is the
+/// `last_working_version` tag; `project_count` is what a script checks before
+/// deciding a workspace is the one it built.
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkspaceSummary {
+    id: String,
+    name: String,
+    protected: bool,
+    project_count: usize,
+}
+
+/// Blocking, and separated from the handler so the listing's shape is pinned
+/// by a test rather than by driving axum.
+fn workspace_summaries(pool: &DbPool) -> Result<Vec<WorkspaceSummary>, AppError> {
+    ws_repo::list_workspaces(pool)?
+        .into_iter()
+        .map(|w| {
+            let count = ws_repo::list_workspace_projects(pool, &w.id)?.len();
+            Ok(WorkspaceSummary {
+                id: w.id,
+                name: w.name,
+                protected: w.last_working_version,
+                project_count: count,
+            })
+        })
+        .collect()
+}
+
+async fn list_workspaces_route(
+    State(s): State<DevToolsHttp>,
+) -> Result<Json<Vec<WorkspaceSummary>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || workspace_summaries(&pool));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("list workspaces: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProtectWorkspaceBody {
+    /// Set the never-delete tag, or clear it.
+    last_working_version: bool,
+}
+
+async fn protect_workspace_route(
+    State(s): State<DevToolsHttp>,
+    Path(id): Path<String>,
+    Json(b): Json<ProtectWorkspaceBody>,
+) -> Result<Json<crate::db::models::DevWorkspace>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || {
+        crate::db::repos::workspaces::protection::set_workspace_protection(
+            &pool,
+            &id,
+            b.last_working_version,
+        )
+    });
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("protect workspace: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
 }
 
 #[derive(Deserialize)]
@@ -1668,6 +1784,50 @@ async fn app_master_state(
 }
 
 // ============================================================================
+// Architect adoption — the same door, one scope up (a workspace, not a project)
+// ============================================================================
+//
+// Two more adapters over `architect_adopt`, which shares its whole body with
+// `app_master_adopt`. Blocking for the same reasons (rusqlite + the manifest
+// file), so both run on the blocking pool.
+
+async fn architect_adopt_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<architect_adopt::AdoptArchitectInput>,
+) -> Result<Json<architect_adopt::ArchitectAdoption>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::adopt(&pool, &b));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect adopt: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn architect_state(
+    State(s): State<DevToolsHttp>,
+    Path(workspace): Path<String>,
+) -> Result<Json<Option<architect_adopt::ArchitectAdoption>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::current(&pool, &workspace));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect state: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
 // Worker write-back — the four routes a dispatched App Master run reports on
 // ============================================================================
 //
@@ -1740,4 +1900,54 @@ async fn measure_kpi_route(
         app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
     })
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::repos::workspaces::protection;
+    use personas_db::init_test_db;
+
+    /// `GET /dev-tools/workspaces` is how a script finds the simulation
+    /// workspace it built, so it must report the tag and the member count —
+    /// the two facts that distinguish "the one I made" from "an empty
+    /// leftover".
+    #[test]
+    fn the_workspace_listing_reports_the_tag_and_the_member_count() {
+        let pool = init_test_db().unwrap();
+        assert!(
+            workspace_summaries(&pool).unwrap().is_empty(),
+            "an empty app lists no workspaces"
+        );
+
+        let bank = ws_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let other = ws_repo::create_workspace(&pool, "Aside", None, None, false).unwrap();
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-core",
+            &std::env::temp_dir()
+                .join(format!("personas_ws_listing_{}", uuid::Uuid::new_v4()))
+                .to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        ws_repo::assign_project(&pool, &project.id, Some(&bank.id)).unwrap();
+        protection::set_workspace_protection(&pool, &bank.id, true).unwrap();
+
+        let rows = workspace_summaries(&pool).unwrap();
+        assert_eq!(rows.len(), 2, "{rows:?}");
+        let b = rows.iter().find(|r| r.id == bank.id).expect("Bank listed");
+        assert!(b.protected, "the tag reaches the listing");
+        assert_eq!(b.project_count, 1);
+        let a = rows
+            .iter()
+            .find(|r| r.id == other.id)
+            .expect("Aside listed");
+        assert!(!a.protected);
+        assert_eq!(a.project_count, 0);
+    }
 }

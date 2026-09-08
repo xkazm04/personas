@@ -226,7 +226,13 @@ mod tests {
             sources: vec!["ep_1".to_string()],
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
             updated_at: "2025-01-01T00:00:00+00:00".to_string(),
+            // Test-only repair, 2026-09-08 (sim-caps / G4-G5): `Fact` gained
+            // `expires_at` and this fixture was never updated, so the app
+            // crate's lib-test binary did not compile at `be50081ce`. See the
+            // note in `consolidation.rs`'s test module. `None` = the fixture's
+            // facts never expire, which is what every assertion here assumes.
         }
     }
 

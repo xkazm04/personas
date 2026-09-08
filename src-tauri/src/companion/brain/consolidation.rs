@@ -1332,6 +1332,7 @@ mod tests {
     use crate::companion::brain::episodic::{self, EpisodeRole};
     use crate::companion::brain::semantic::{FactInput, FactScope};
     use crate::companion::brain::test_home::TestHome;
+    use chrono::Utc;
 
     /// The sweep's throttle is a process-global atomic, so the tests that
     /// drive it must not run concurrently with each other.

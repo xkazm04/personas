@@ -10,6 +10,8 @@ import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
 import { DeploymentCard } from './DeploymentCard';
 import { useDeploymentTest } from '../../hooks/useDeploymentTest';
+import { useConfirmedRemoteAction } from '../../hooks/useConfirmedRemoteAction';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { silentCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -60,6 +62,21 @@ export function CloudDeploymentsPanel({
   const { tests, runTest, dismissResult } = useDeploymentTest();
   const enter = useRevealTracker('cloud-deployments');
   const showGhost = isFetching && deployments.length === 0;
+
+  // Undeploy shuts down an endpoint other systems may be calling: the card's
+  // trash icon now names the deployment and waits for the user to say so.
+  const { modal: confirmModal, confirmThen } = useConfirmedRemoteAction();
+  const confirmRemove = (id: string): Promise<void> => {
+    const d = deployments.find((x) => x.id === id);
+    return confirmThen(
+      {
+        title: t.deployment.deploy_card.remove_deployment,
+        confirmLabel: t.deployment.dashboard.action_undeploy,
+        details: [{ label: t.common.name, value: d ? (d.label || personaName(d.personaId)) : id }],
+      },
+      () => onRemove(id),
+    ).then(() => undefined);
+  };
 
   // Which personas are not yet deployed?
   const deployedPersonaIds = new Set(deployments.map((d) => d.personaId));
@@ -187,7 +204,7 @@ export function CloudDeploymentsPanel({
                 personaName={personaName(d.personaId)}
                 onPause={onPause}
                 onResume={onResume}
-                onRemove={onRemove}
+                onRemove={confirmRemove}
                 testRunning={tests[d.id]?.running}
                 testResult={tests[d.id]?.result}
                 onTest={runTest}
@@ -197,6 +214,7 @@ export function CloudDeploymentsPanel({
           ))}
         </div>
       )}
+      <ConfirmDestructiveModal {...confirmModal} />
     </div>
   );
 }

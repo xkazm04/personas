@@ -589,6 +589,18 @@ pub fn instant_adopt_template_inner(
 
     let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
 
+    // G4: the app-wide active-persona cap. `create_persona_atomically` writes
+    // `enabled = 1` and lets `lifecycle` take its `'active'` default, so every
+    // adoption through this door lands one more persona inside the counted
+    // population — hence the unconditional `true`. Checked here, immediately
+    // before the transaction, so a refusal leaves nothing half-adopted.
+    //
+    // This is also the team-preset door: `engine::team_preset_adopter` adopts
+    // each preset member through this same function, so a preset that would
+    // take the roster past the cap stops at the member that crosses it rather
+    // than being gated once for the whole preset.
+    personas_engine::active_persona_cap::check_active_persona_headroom(&state.db, true)?;
+
     // Atomic create: persona + tools + triggers in one transaction
     let (mut response, _import_result) =
         super::n8n_transform::confirmation::create_persona_atomically(&state.db, &draft, None)?;
@@ -2564,6 +2576,9 @@ pub(crate) fn map_use_case_to_charter_input(
         // bookkeeping and is never seeded.
         priority: None,
         pacing: None,
+        // Channel rank is granted, never adopted: a template says nothing
+        // about whether the persona holding this charter may direct a team.
+        authority: None,
         // A legacy use case never described hiring, so it does not grant it.
         // `None` is read as `false`, and the operator opts a charter in.
         can_hire: None,
@@ -2584,6 +2599,7 @@ pub(crate) fn map_use_case_to_charter_input(
         tenure: Default::default(),
         status,
         project_id: None,
+        workspace_id: None,
         connectors,
         procedure,
         spec,
@@ -2690,6 +2706,7 @@ pub(crate) fn charter_input_from_recipe(
         tenure: Default::default(),
         status: None,
         project_id: None,
+        workspace_id: None,
         connectors: resolved.bound_connectors(),
         procedure: recipe.guidance.trim().to_string(),
         spec,

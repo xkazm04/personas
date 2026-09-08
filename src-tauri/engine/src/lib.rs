@@ -41,6 +41,7 @@
 #![allow(clippy::unnecessary_map_or)]
 
 pub mod a2a;
+pub mod active_persona_cap;
 pub mod adoption_answers;
 pub mod ai_healing;
 #[cfg(feature = "desktop")]

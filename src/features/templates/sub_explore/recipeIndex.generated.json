@@ -506,6 +506,27 @@
     "status": "draft"
   },
   {
+    "id": "37bf4d36-0473-4ee8-ad75-aa94e8d6094b",
+    "name": "Workforce planning across a project portfolio",
+    "description": "Work stalls for a reason nobody writes down: a responsibility that has no holder. Each project owner feels it locally and asks for help in their own words, so the same missing role gets requested three times under three names while a role that was hired for work that has since ended keeps its seat. Nothing reads the asks together, nothing compares them against what the goals are actually doing, and a request written as a job title carries none of the evidence a hiring system would need to compose anything useful from it. Decide which roles the workspace is actually missing, by reading the owners' asks against the evidence in the goals rather than taking each ask at face value, and describe each real gap as the work it is: what has to be done, what evidence says it is not being done now, and how anyone would know the role succeeded. Send that to the hiring system, judge what comes back against the need as written, and retire the roles whose work has ended.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/goals-and-reviews",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "integration"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
+  },
+  {
     "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
     "name": "Watchlist technical signal digest",
     "description": "Indicator readings on a watchlist produce a verdict per ticker and no reasoning, so nobody can tell afterwards whether the method worked or whether one lucky call carried it. State a signal only when the indicators behind it agree enough to justify it, report the disagreement when they do not, and never fabricate a figure for a ticker the sources could not cover.",
@@ -995,6 +1016,27 @@
     "status": "draft"
   },
   {
+    "id": "6b5a25fd-e131-466b-bb9b-0706ae6fc9b9",
+    "name": "Scope reflection on personas' own proposals and lessons",
+    "description": "The people doing the work are the first to see where their scope is wrong, and in an organisation of agents they say so in writing: a proposal to take on a responsibility nobody holds, to give one up, to split one that turned out to be two. Those proposals then sit unread, because reading them is nobody's job and answering one means deciding whether it changes a single charter or the whole design. The same happens to lessons: each one is filed where it was learned, so the next holder of the same work learns it again from scratch. Read what the workers proposed about their own scope and decide, for each one, what it would actually change: a charter, the design, or nothing. Apply the ones that hold, decline the rest with a reason the proposer can argue with, and separate the lessons that only apply where they were learned from the ones any holder of that work would want, promoting only the second kind.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/decisions",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "knowledge_base"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
+  },
+  {
     "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
     "name": "Email inbox attention digest",
     "description": "Reading every unread message to find the few that matter costs more attention than the messages themselves, and a digest ranked by recency does not save any of it. Rank by a real signal, who the reader actually answers combined with what the message says, and surface a short accurate list rather than a complete one.",
@@ -1175,6 +1217,27 @@
     "status": "draft"
   },
   {
+    "id": "8a120b67-8c93-49a9-af3d-119cf7b23199",
+    "name": "Project portfolio composition from a solution design",
+    "description": "A solution design that never becomes projects is a drawing. The step from one to the other is where portfolios go wrong quietly: a service in the design that nobody created a home for, a repository that exists on disk but was never registered so no persona can reach it, a project standing with no owner because adoption was left for later, two projects that both believe they own the same context, and a project created with no goal at all, whose team then invents its own direction from whatever it can see. Turn the design into a portfolio that matches it: create each missing repository and register it as a project in the workspace in one act, adopt an App Master on each with the charters that context actually needs, set each project's first goals from the design's own words, then read the portfolio back against the design and resolve every orphan, every duplicate owner and every project standing without direction.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/architecture",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
+  },
+  {
     "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
     "name": "Cloud spend threshold watch",
     "description": "A budget is breached in the middle of a billing period, but nobody finds out until reconciliation, by which point the spend is already committed. Project the likely end-of-period total from the run rate and judge the trajectory rather than today's number, then stay quiet unless the projection or the actual crosses the threshold.",
@@ -1295,6 +1358,27 @@
     "toolCount": 0,
     "connectorTypes": [
       "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "98cffb7a-116f-4a27-86f5-7971b5965606",
+    "name": "Goal direction and channel authority across projects",
+    "description": "A design becomes real only through goals somebody set and direction somebody gave, and both fail in the same quiet way. Goals get written once at the start and then drift from the design nobody reread, so the projects work hard on the wrong thing. Direction is spoken in a register the listener cannot tell from a suggestion, so an instruction is treated as a thought and a thought is treated as an order. And when two projects want opposite things, each argues locally with the owner who cannot decide it, because the only reader who can see both is the one who never came back to look. Keep every project's goals traceable to the design and current against it, and speak into the shared channel with the register said out loud: a directive is an instruction that expects the work done, a request expects an answer, a note is context that expects nothing. Then read what came back, chase the directives nobody answered, and decide the conflicts between projects that no single project can settle.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/goals-and-reviews",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "messaging"
     ],
     "recommendedTrigger": "self_paced",
     "version": null,
@@ -2163,6 +2247,27 @@
     "toolCount": 0,
     "connectorTypes": [
       "knowledge_base"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "fc35b90c-49d8-4694-9c5b-c36ebb628d6b",
+    "name": "Enterprise solution design across a workspace",
+    "description": "An owner states a goal in the language of the business and the work starts anyway, one repository at a time, with nobody holding the whole. Two teams then own the same data under different names, a responsibility nobody claimed turns out to belong to everyone, the integration style is decided by whichever service was written first, and the load the system was supposed to carry is discovered at the end. None of that is visible from inside a single project, because a boundary is only wrong when seen against the boundary beside it. Decide where the seams of the system fall: which bounded contexts exist, which services carry which responsibility, who owns each piece of data, how the parts talk to each other and how much of that is asynchronous, what the non functional envelope is, and what is deliberately out of scope. Hold the design against reality as the projects build, and revise it when their evidence contradicts a boundary rather than defending the drawing.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/architecture",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
     ],
     "recommendedTrigger": "self_paced",
     "version": null,

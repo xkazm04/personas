@@ -641,8 +641,26 @@ async fn run_project_night(
                             crate::commands::fleet::run::begin_run(Some(
                                 personas_engine::unattended::overnight_run_label(&project.name),
                             ));
-                            let outcome =
-                                dispatch_ideas_core(pool, app, ids, "fleet", None, true).await;
+                            // G5: the night's own `capacity` IS this dispatch's
+                            // parallelism. It is already the live-cap
+                            // arithmetic (`dispatch_capacity`) that decided how
+                            // many sessions tonight may hold, and `ids` was cut
+                            // to it two statements ago — so passing it keeps
+                            // overnight's behaviour exactly as it was while the
+                            // fleet arm's new per-project cap is in force for
+                            // everyone else. Only a capacity above
+                            // `FLEET_MAX_PARALLEL_MAX` defers anything, and the
+                            // drain re-opens this run's label around each wave.
+                            let outcome = dispatch_ideas_core(
+                                pool,
+                                app,
+                                ids,
+                                "fleet",
+                                None,
+                                true,
+                                Some(capacity),
+                            )
+                            .await;
                             crate::commands::fleet::run::end_run();
                             match outcome {
                                 Ok(result) => {
