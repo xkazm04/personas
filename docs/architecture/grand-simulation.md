@@ -189,6 +189,14 @@ registry where one fits.
 
 ## 6. The `/uat` dimension (G10), proposed shape
 
+> **2026-09-08:** the shape below is now written out in
+> [`grand-simulation/uat-scenario.md`](grand-simulation/uat-scenario.md) (seven bank Characters,
+> eight journeys, the `scenario.json` object with a proposed load envelope, who runs what inside
+> the simulation), and direction 1 is built: `scripts/e2e/sim-uat-fixtures.mjs` reads the live
+> database and emits the FIXTURES section for one workspace with provenance per line. The
+> `acceptance-certification` charter recipe and the bank overlays themselves wait for the bank
+> repositories to exist.
+
 `/uat` evaluates by Characters × Journeys over a code-derived surface model (L1) and a live
 browser (L2); its fixtures are the per-app preconditions in `uat/env.md`, with the rule that a
 Character without distinct, realistic data is untestable. The simulation gives it what it lacks:
