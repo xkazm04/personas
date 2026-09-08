@@ -48,6 +48,9 @@
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
 //!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
+//!   POST /hire                              → ask kp to compose a role from a need and dispatch
+//!                                             it back as a persona { personaId, projectId, need,
+//!                                             budgetUsd?, dryRun? }
 //!
 //! Write-back routes for workers — the door a dispatched App Master run reports
 //! through (`app_master_writeback`). Without them a headless run's only output
@@ -94,6 +97,7 @@ use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseC
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
+use crate::engine::kp_hire_request;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -143,6 +147,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/app-master/{project_id}", get(app_master_state))
         .route("/architect/adopt", post(architect_adopt_route))
         .route("/architect/{workspace}", get(architect_state))
+        .route("/hire", post(hire_route))
         // Worker write-back (see the module header).
         .route("/ideas", post(file_idea_route))
         .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
@@ -1823,6 +1828,26 @@ async fn architect_state(
                 format!("architect state: task failed: {e}"),
             )
         })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
+//
+// The OUTBOUND hire. Personas' only other outbound call to kp is the report
+// push (`engine::kp_reporter`); this is the direction that asks for something.
+//
+// Not `spawn_blocking`: `request_hire` is already a future whose long pole is an
+// HTTP call to kp, and wrapping a future in the blocking pool would occupy a
+// blocking thread for minutes doing nothing but waiting.
+
+async fn hire_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<kp_hire_request::HireRequestInput>,
+) -> Result<Json<kp_hire_request::HireRequestOutcome>, (StatusCode, String)> {
+    let pool = db(&s);
+    kp_hire_request::request_hire(&pool, b.into())
+        .await
         .map(Json)
         .map_err(status_for)
 }

@@ -529,6 +529,8 @@ export type { HierarchySource } from "./HierarchySource";
 export type { HierarchySubject } from "./HierarchySubject";
 export type { HierarchyTechnique } from "./HierarchyTechnique";
 export type { HierarchyWarning } from "./HierarchyWarning";
+export type { HireRequestInput } from "./HireRequestInput";
+export type { HireRequestOutcome } from "./HireRequestOutcome";
 export type { IconGenSpendSummary } from "./IconGenSpendSummary";
 export type { IdeaCategory } from "./IdeaCategory";
 export type { IdeaOutcomeInput } from "./IdeaOutcomeInput";

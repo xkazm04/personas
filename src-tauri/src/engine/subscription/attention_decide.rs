@@ -241,6 +241,13 @@ pub(crate) struct DecisionCharter {
     /// need a hire names is about a responsibility that has no holder — which
     /// by definition is not one of the charters in front of it.
     pub can_hire: bool,
+    /// `spec.authority` — this charter directs a team (the Architect's shape).
+    ///
+    /// Carried here so [`may_hire`] can read it: the persona that designs the
+    /// organisation is the one that may staff it, and requiring the operator to
+    /// ALSO tick `canHire` on an authority charter would be a second switch for
+    /// a decision already made once.
+    pub authority: bool,
 }
 
 /// Does this roster license the `hires` verb?
@@ -249,10 +256,21 @@ pub(crate) struct DecisionCharter {
 /// on the hire itself: a hire's `need` describes work NOBODY holds, so there is
 /// no charter for it to name and nothing to attach the permission to. One
 /// hiring charter is what makes the persona a hiring persona.
+///
+/// Three doors, any one of which grants it:
+/// 1. `spec.canHire` — the operator ticked it on this charter;
+/// 2. the `workforce-planning` provenance — hiring IS the charter's job;
+/// 3. `spec.authority` — the Architect. A persona trusted to direct a team is
+///    trusted to say the team is short a role; splitting those into two
+///    switches would mean an Architect could design an org it may not staff.
+///
+/// This is the LICENCE only. Whether a licensed hire actually goes out is a
+/// second question the executor asks — see the active-persona cap in
+/// `engine::kp_hire_request`.
 pub(crate) fn may_hire(charters: &[DecisionCharter]) -> bool {
-    charters
-        .iter()
-        .any(|c| c.can_hire || c.recipe_slug.as_deref() == Some(WORKFORCE_PLANNING_SLUG))
+    charters.iter().any(|c| {
+        c.can_hire || c.authority || c.recipe_slug.as_deref() == Some(WORKFORCE_PLANNING_SLUG)
+    })
 }
 
 /// How many in-flight tasks are named in the prompt.
@@ -3093,13 +3111,23 @@ mod tests {
         rs
     }
 
+    fn authority_roster() -> Vec<DecisionCharter> {
+        let mut rs = roster();
+        rs[0].authority = true;
+        rs
+    }
+
     #[test]
-    fn a_roster_licenses_hiring_by_flag_or_by_provenance() {
+    fn a_roster_licenses_hiring_by_flag_provenance_or_authority() {
         assert!(!may_hire(&roster()), "a plain roster may not hire");
         assert!(may_hire(&hiring_roster()), "spec.canHire licenses it");
         assert!(
             may_hire(&planner_roster()),
             "the workforce-planning recipe licenses it without the flag"
+        );
+        assert!(
+            may_hire(&authority_roster()),
+            "the Architect designs the org, so it may staff it — without a second switch"
         );
     }
 

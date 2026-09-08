@@ -1160,6 +1160,7 @@ fn build_decision_context(
                 project_id: c.project_id.clone(),
                 dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
                 can_hire: c.spec.can_hire.unwrap_or(false),
+                authority: c.spec.authority.unwrap_or(false),
             }
         })
         .collect();
@@ -2437,6 +2438,19 @@ async fn run_decision_lane(
     }
     let said = write_plan_says(&pool, &context, &plan.say);
 
+    // What this wake asked kp to hire. Last of the three "after the dispatch"
+    // effects, and the only one that leaves the machine: a hire spends money at
+    // kp and mints a persona against the app-wide cap, so it must never cost
+    // the loop work it could have started on its own.
+    if plan.dropped_unlicensed_hires > 0 {
+        tracing::info!(
+            persona_id,
+            dropped = plan.dropped_unlicensed_hires,
+            "persona_attention: the decision asked to hire without a charter that licenses it"
+        );
+    }
+    let hired = run_plan_hires(&pool, &context, &plan.hires).await;
+
     let dispatched_ids: Vec<&str> = plan
         .dispatch
         .iter()
@@ -2476,10 +2490,90 @@ async fn run_decision_lane(
         "said": said,
         "droppedUnknownSay": plan.dropped_unknown_say,
         "sayDowngraded": plan.say_downgraded,
+        "hired": hired,
+        "droppedUnlicensedHires": plan.dropped_unlicensed_hires,
         "note": plan.note,
         "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
     }))
+}
+
+/// Ask kp for each role the plan named, and report what came back.
+///
+/// **Every outcome is data, never an early return.** A refused hire — no kp
+/// configured, no automation token, the active-persona cap full — is a normal
+/// answer to a normal question, and it must not fail the wake that also
+/// dispatched three charters. The reason is recorded per entry so the ledger
+/// row says WHY nothing was hired rather than leaving an empty list that reads
+/// like "it never asked".
+///
+/// **The project is resolved here, not in the parser.** `attention_decide` is
+/// DB-free by construction, so a `projectId` the model wrote is just a string
+/// until this point. An entry naming no project, or one the persona holds no
+/// charter for, falls back to the persona's own project — and a persona with no
+/// project at all cannot hire, because kp composes a role from a repository it
+/// has to be able to name.
+async fn run_plan_hires(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    hires: &[attention_decide::HireRequest],
+) -> Vec<serde_json::Value> {
+    let mut out = Vec::new();
+    for h in hires {
+        // The charter roster is the allowlist: a hire may only name a project
+        // this persona actually works on.
+        let owned = |id: &str| {
+            context
+                .charters
+                .iter()
+                .any(|c| c.project_id.as_deref() == Some(id))
+        };
+        let project_id = match h.project_id.as_deref() {
+            Some(p) if owned(p) => Some(p.to_string()),
+            _ => context.charters.iter().find_map(|c| c.project_id.clone()),
+        };
+        let Some(project_id) = project_id else {
+            tracing::info!(persona_id = %context.persona_id,
+                "persona_attention: a hire was dropped — the persona is bound to no project");
+            out.push(serde_json::json!({
+                "ok": false,
+                "error": "the asking persona holds no project-bound charter",
+            }));
+            continue;
+        };
+
+        let req = crate::engine::kp_hire_request::HireRequest {
+            persona_id: context.persona_id.clone(),
+            project_id: project_id.clone(),
+            need: h.need.clone(),
+            budget_usd: h.budget_usd,
+            dry_run: false,
+        };
+        match crate::engine::kp_hire_request::request_hire(pool, req).await {
+            Ok(o) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %project_id,
+                    intake_id = %o.intake_id, "persona_attention: asked kp for a role");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "intakeId": o.intake_id,
+                    "personaRequestId": o.persona_request_id,
+                    "jobTitle": o.job_title,
+                    "status": o.status,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %project_id,
+                    error = %e, "persona_attention: the hire request to kp was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
 }
 
 /// Post the plan's `say` list into the persona's team channel, and report the

@@ -37,9 +37,24 @@
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::db::DbPool;
+use personas_core::crypto::SecureString;
 use personas_core::error::AppError;
+use personas_core::validation::require_non_empty;
+
+impl From<HireRequestInput> for HireRequest {
+    fn from(i: HireRequestInput) -> Self {
+        Self {
+            persona_id: i.persona_id,
+            project_id: i.project_id,
+            need: i.need,
+            budget_usd: i.budget_usd,
+            dry_run: i.dry_run.unwrap_or(false),
+        }
+    }
+}
 
 /// Env var holding the shared secret kp checks against its own
 /// `KP_AUTOMATION_TOKEN`. Unset = this install may not ask kp for anything.
@@ -87,11 +102,38 @@ pub(crate) struct HireRequest {
     pub dry_run: bool,
 }
 
+/// The wire-facing input both outward doors take — the bridge route
+/// `POST /dev-tools/hire` and the Tauri command `request_hire_from_kp`.
+///
+/// Separate from [`HireRequest`] because that one is the module's internal
+/// argument (already-resolved ids, no serde) while this is what a caller sends.
+/// Keeping them apart is what lets `project_id` be optional here and required
+/// there: the door resolves it, the operation never guesses.
+#[derive(Debug, Clone, Default, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HireRequestInput {
+    /// The persona doing the asking.
+    pub persona_id: String,
+    /// The project the role would belong to.
+    pub project_id: String,
+    /// The work, the evidence, and the acceptance, in prose.
+    pub need: String,
+    #[serde(default)]
+    #[ts(optional)]
+    pub budget_usd: Option<f64>,
+    /// Compose at kp and return without dispatching.
+    #[serde(default)]
+    #[ts(optional)]
+    pub dry_run: Option<bool>,
+}
+
 /// What kp answered.
 ///
 /// Modelled on [`super::kp_reporter::RollupSummary`] — camelCase, and the
 /// things that did not happen are data rather than an absence.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct HireRequestOutcome {
     /// kp's intake row this need became.
@@ -120,7 +162,7 @@ pub struct HireRequestOutcome {
 /// without changing it there is a silent 400.
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-struct HireWireBody<'a> {
+pub(crate) struct HireWireBody<'a> {
     need: &'a str,
     project: HireWireProject<'a>,
     population: &'static str,
@@ -140,7 +182,7 @@ struct HireWireBody<'a> {
 
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-struct HireWireProject<'a> {
+pub(crate) struct HireWireProject<'a> {
     name: &'a str,
     root_path: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -148,10 +190,20 @@ struct HireWireProject<'a> {
 }
 
 /// Where to send the hire, and with what credential.
-#[derive(Debug, Clone)]
+///
+/// The token is a [`SecureString`], not a `String`: it is zeroized on drop and
+/// renders as `[REDACTED]` through both `Debug` and `Display`, so this struct
+/// can be logged or `{:?}`-formatted — which a `Debug` derive invites — without
+/// the credential riding along. It also has no `Serialize` impl, which makes
+/// putting this type on a wire a compile error rather than a leak.
+///
+/// No `Clone`: `SecureString` deliberately offers an explicit `duplicate()`
+/// instead, so every extra copy of a credential is a line someone wrote on
+/// purpose. Nothing here needs one — the endpoint is passed by reference.
+#[derive(Debug)]
 pub(crate) struct KpEndpoint {
     pub base_url: String,
-    pub token: String,
+    pub token: SecureString,
 }
 
 /// Resolve the kp base URL for this asker.
@@ -166,7 +218,10 @@ pub(crate) struct KpEndpoint {
 ///
 /// Returns `Ok(None)` when neither is set: an install with no kp is not an
 /// error until something actually tries to hire.
-pub(crate) fn resolve_base_url(pool: &DbPool, persona_id: &str) -> Result<Option<String>, AppError> {
+pub(crate) fn resolve_base_url(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Option<String>, AppError> {
     // A missing persona is not an error HERE: the settings fallback below may
     // still answer, and the caller's own "which persona is asking" check is a
     // better place to refuse an unknown id than a base-URL lookup is.
@@ -192,9 +247,9 @@ pub(crate) fn resolve_base_url(pool: &DbPool, persona_id: &str) -> Result<Option
 /// mean the same thing to an operator and conflating them the other way would
 /// send an empty header kp answers 401 to, hiding a configuration mistake
 /// behind an authentication failure.
-pub(crate) fn resolve_token() -> Result<String, AppError> {
+pub(crate) fn resolve_token() -> Result<SecureString, AppError> {
     match std::env::var(AUTOMATION_TOKEN_ENV) {
-        Ok(v) if !v.trim().is_empty() => Ok(v.trim().to_string()),
+        Ok(v) if !v.trim().is_empty() => Ok(SecureString::new(v.trim().to_string())),
         _ => Err(AppError::Forbidden(format!(
             "asking kp for a hire is disabled: set the {AUTOMATION_TOKEN_ENV} environment \
              variable to the same value as kp's KP_AUTOMATION_TOKEN"
@@ -243,15 +298,12 @@ fn project_facts(pool: &DbPool, project_id: &str) -> Result<ProjectFacts, AppErr
 /// the first [`MAX_NEED_CHARS`] characters of it. An EMPTY need is refused,
 /// because there is nothing for kp to compose from.
 pub(crate) fn bound_need(raw: &str) -> Result<String, AppError> {
-    let t = raw.trim();
-    if t.is_empty() {
-        return Err(AppError::Validation(
-            "a hire needs a `need`: the work, the evidence that it is needed, and what would \
-             count as done"
-                .to_string(),
-        ));
-    }
-    Ok(t.chars().take(MAX_NEED_CHARS).collect())
+    // `require_non_empty` rather than an open-coded `is_empty()` with its own
+    // hand-written sentence: the shared vocabulary keeps the FIELD NAME in the
+    // refusal, which is exactly what an inline check destroys at the moment it
+    // is applied (census `hand-rolled-emptiness-refusal`).
+    require_non_empty("need", raw)?;
+    Ok(raw.trim().chars().take(MAX_NEED_CHARS).collect())
 }
 
 /// Ask kp for a role.
@@ -269,6 +321,23 @@ pub(crate) async fn request_hire(
     req: HireRequest,
 ) -> Result<HireRequestOutcome, AppError> {
     let need = bound_need(&req.need)?;
+
+    // THE CAP, checked before anything leaves the process.
+    //
+    // A hire that lands mints a persona, so it raises the counted population —
+    // `raises_count = true`. Refusing HERE rather than at the arriving
+    // persona-request is what makes the cap mean something: kp would otherwise
+    // run a repository scan, an intake and a composer (all of them LLM calls,
+    // all of them billed) to produce a role Personas was always going to
+    // refuse. The refusal text comes from `active_persona_cap` so an operator
+    // meets one sentence at every door rather than a paraphrase per door.
+    //
+    // A DRY RUN is exempt: it mints nothing, and the whole point of a rehearsal
+    // is to see the role a full roster would have asked for.
+    if !req.dry_run {
+        personas_engine::active_persona_cap::check_active_persona_headroom(pool, true)?;
+    }
+
     let endpoint = resolve_endpoint(pool, &req.persona_id)?;
     let facts = project_facts(pool, &req.project_id)?;
 
@@ -314,7 +383,7 @@ pub(crate) async fn post_hire(
     let resp = crate::SHARED_HTTP
         .post(&url)
         .timeout(HIRE_TIMEOUT)
-        .header(AUTOMATION_TOKEN_HEADER, &endpoint.token)
+        .header(AUTOMATION_TOKEN_HEADER, endpoint.token.expose_secret())
         .json(body)
         .send()
         .await
@@ -343,11 +412,7 @@ pub(crate) async fn post_hire(
                 v.get("code")
                     .and_then(|c| c.as_str())
                     .map(str::to_string)
-                    .or_else(|| {
-                        v.get("error")
-                            .and_then(|c| c.as_str())
-                            .map(str::to_string)
-                    })
+                    .or_else(|| v.get("error").and_then(|c| c.as_str()).map(str::to_string))
             })
             .unwrap_or_else(|| detail.chars().take(200).collect());
         return Err(match status {
@@ -508,7 +573,7 @@ mod tests {
     fn endpoint(base: &str) -> KpEndpoint {
         KpEndpoint {
             base_url: base.to_string(),
-            token: "tok-test".into(),
+            token: SecureString::new("tok-test".to_string()),
         }
     }
 
@@ -555,7 +620,10 @@ mod tests {
         let v = serde_json::to_value(&b).unwrap();
         assert_eq!(v["dryRun"], serde_json::json!(true));
         let obj = v.as_object().unwrap();
-        assert!(!obj.contains_key("budgetUsd"), "an unstated budget is absent");
+        assert!(
+            !obj.contains_key("budgetUsd"),
+            "an unstated budget is absent"
+        );
 
         let plain = serde_json::to_value(body("n", false)).unwrap();
         assert!(
@@ -598,10 +666,12 @@ mod tests {
             MAX_NEED_CHARS
         );
         assert_eq!(bound_need("  hire me  ").unwrap(), "hire me");
-        assert!(matches!(
-            bound_need("   "),
-            Err(AppError::Validation(_))
-        ));
+        let empty = bound_need("   ").expect_err("an empty need is refused");
+        assert!(matches!(empty, AppError::Validation(_)));
+        assert!(
+            empty.to_string().contains("need"),
+            "the shared vocabulary keeps the field name in the refusal, got: {empty}"
+        );
     }
 
     /// The door is closed unless the operator opened it, and the refusal says
@@ -635,7 +705,11 @@ mod tests {
             blank.is_err(),
             "an empty variable means unset, not an empty credential"
         );
-        assert_eq!(good.unwrap(), "real-token", "the value is trimmed");
+        assert_eq!(
+            good.unwrap().expose_secret(),
+            "real-token",
+            "the value is trimmed"
+        );
     }
 
     // -- the send path, against a real loopback listener ---------------------
@@ -649,10 +723,7 @@ mod tests {
     async fn one_shot_kp(
         status: u16,
         payload: &'static str,
-    ) -> (
-        String,
-        tokio::task::JoinHandle<String>,
-    ) {
+    ) -> (String, tokio::task::JoinHandle<String>) {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
@@ -709,7 +780,8 @@ mod tests {
     /// `kp_reporter`'s swallow-everything discipline.
     #[tokio::test]
     async fn a_rejected_token_is_an_auth_error_naming_the_variable() {
-        let (base, server) = one_shot_kp(401, r#"{"error":"Unauthorized.","code":"UNAUTHORIZED"}"#).await;
+        let (base, server) =
+            one_shot_kp(401, r#"{"error":"Unauthorized.","code":"UNAUTHORIZED"}"#).await;
         let err = post_hire(&endpoint(&base), &body("n", false))
             .await
             .expect_err("401 is a failure");
@@ -720,9 +792,11 @@ mod tests {
 
     #[tokio::test]
     async fn a_refusal_surfaces_kps_stable_code_not_its_prose() {
-        let (base, server) =
-            one_shot_kp(409, r#"{"error":"Repo root not allow-listed.","code":"HIRE_ROOT_REFUSED"}"#)
-                .await;
+        let (base, server) = one_shot_kp(
+            409,
+            r#"{"error":"Repo root not allow-listed.","code":"HIRE_ROOT_REFUSED"}"#,
+        )
+        .await;
         let err = post_hire(&endpoint(&base), &body("n", false))
             .await
             .expect_err("409 is a failure");
@@ -768,6 +842,67 @@ mod tests {
             )
             .is_err(),
             "a schemeless host would be read as a RELATIVE url at send time"
+        );
+    }
+
+    /// The cap is checked BEFORE the network, so a full roster costs kp
+    /// nothing — no scan, no intake, no composer, no billed LLM call — and the
+    /// operator meets `active_persona_cap`'s own sentence rather than a
+    /// paraphrase of it.
+    #[tokio::test]
+    async fn a_full_active_persona_cap_refuses_the_hire_before_the_network() {
+        let pool = crate::db::init_test_db().unwrap();
+        // Cap of ONE with one enabled persona already active: the roster is
+        // exactly full, so a hire would be the one that overflows it. (Zero is
+        // not usable — the setting's own validator refuses it, min 1.)
+        {
+            use crate::db::PoolExt;
+            pool.conn("cap test")
+                .unwrap()
+                .execute(
+                    "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                     VALUES ('p-active', 'p-active', 'sp', 1, datetime('now'), datetime('now'))",
+                    [],
+                )
+                .unwrap();
+        }
+        crate::db::repos::core::settings::set(
+            &pool,
+            personas_db::settings_keys::MAX_ACTIVE_PERSONAS,
+            "1",
+        )
+        .expect("the cap is an allow-listed setting");
+        // Base URL points at a closed port: if the cap did NOT refuse, the
+        // failure would be a transport error, and this test would say so.
+        crate::db::repos::core::settings::set(
+            &pool,
+            personas_db::settings_keys::KP_BASE_URL,
+            "http://127.0.0.1:1",
+        )
+        .unwrap();
+        let restore = std::env::var(AUTOMATION_TOKEN_ENV).ok();
+        unsafe { std::env::set_var(AUTOMATION_TOKEN_ENV, "tok") };
+
+        let err = request_hire(
+            &pool,
+            HireRequest {
+                persona_id: "p1".into(),
+                project_id: "any".into(),
+                need: "a real need".into(),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect_err("a full cap refuses");
+
+        match restore {
+            Some(v) => unsafe { std::env::set_var(AUTOMATION_TOKEN_ENV, v) },
+            None => unsafe { std::env::remove_var(AUTOMATION_TOKEN_ENV) },
+        }
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+        assert!(
+            err.to_string().contains("max_active_personas"),
+            "the shared refusal names the setting to raise, got: {err}"
         );
     }
 
