@@ -75,7 +75,13 @@ async function up() {
     await sleep(1500);
   }
   const env = { ...process.env, PERSONAS_HEADLESS_BRIDGE: '1' };
-  if (!env.KP_AUTOMATION_TOKEN) log('KP_AUTOMATION_TOKEN is not set in this shell: outbound hires will be refused until it is');
+  // The shared secret lives outside every repository, in ~/.personas/grande.env.json, and the
+  // same value goes into kp's .env.local; the shell wins when it carries one.
+  if (!env.KP_AUTOMATION_TOKEN) {
+    try { env.KP_AUTOMATION_TOKEN = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.personas', 'grande.env.json'), 'utf8')).KP_AUTOMATION_TOKEN; } catch { /* absent: hires refuse, and the line below says so */ }
+  }
+  if (!env.KP_AUTOMATION_TOKEN) log('KP_AUTOMATION_TOKEN is set neither in this shell nor in ~/.personas/grande.env.json: outbound hires will be refused until it is');
+  else log('KP_AUTOMATION_TOKEN present for the app process');
   const out = fs.openSync(APP_LOG, 'a');
   fs.writeSync(out, `\n===== launch ${new Date().toISOString()} =====\n`);
   const child = spawn('cmd.exe', ['/c', 'npm run tauri:dev:test'], {
