@@ -1377,8 +1377,14 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
          Risk 1-2 is accepted by the project's triage rule without a human. \
          Re-filing an item you first filed unrated fills its score in.\n\
          - POST /dev-tools/kpis \
-         {{\"project_id\":\"{project_id}\",\"name\":\"...\",\"measure_kind\":\"codebase\"}} \
-         — declare a meter\n\
+         {{\"project_id\":\"{project_id}\",\"name\":\"...\",\
+         \"context_id\":\"<ctx>\",\"status\":\"active\",\
+         \"measure_kind\":\"codebase\",\"measure_config\":\"{{\\\"cmd\\\":\\\"...\\\"}}\",\
+         \"unit\":\"...\",\"direction\":\"down\",\
+         \"baseline_value\":0,\"target_value\":0}} \
+         — declare a meter; status active + context_id to count toward coverage\n\
+         - GET /dev-tools/kpis/{project_id} \
+         — read back what you filed (?status=active to see only active rows)\n\
          - POST /dev-tools/kpis/<kpi_id>/measure \
          {{\"value\":12.5,\"evidence\":\"the command and its output\"}} \
          — record a reading\n\
