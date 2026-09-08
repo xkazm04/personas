@@ -14,4 +14,12 @@ color: string | null, description: string | null,
  * Consent (set at creation) to populate the app's preset scan skills
  * into member projects when they are assigned to this workspace.
  */
-adopt_default_skills: boolean, created_at: string, updated_at: string, };
+adopt_default_skills: boolean, 
+/**
+ * The never-delete tag (Grand Simulation rule 10,
+ * `docs/architecture/grand-simulation.md`). When set, every delete door
+ * that would remove this workspace, one of its projects, that project's
+ * team, or that team's personas' charters refuses with
+ * `AppError::Validation`. Default `false`. Added 2026-09-07.
+ */
+last_working_version: boolean, created_at: string, updated_at: string, };

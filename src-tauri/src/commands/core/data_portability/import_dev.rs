@@ -181,6 +181,17 @@ pub(crate) fn import_dev_project_graph(
 
     match mode {
         ProjectImportMode::Replace { existing_id } => {
+            // The never-delete tag reaches here even though the project ROW
+            // survives a replace: `delete_project_children` wipes the whole
+            // working graph (goals, KPIs, contexts, ideas, milestones, tasks,
+            // memories) keyed by project id, so a guard placed only on
+            // `DELETE FROM dev_projects` would never see it.
+            if let Err(e) =
+                crate::db::repos::workspaces::protection::ensure_project_deletable(tx, existing_id)
+            {
+                warnings.push(format!("Project '{}': {e}", p.name));
+                return None;
+            }
             if let Err(e) = delete_project_children(tx, existing_id) {
                 warnings.push(format!(
                     "Project '{}': failed to clear existing rows for replace: {e}",

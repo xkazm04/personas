@@ -72,6 +72,17 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// thing: the consult lane is off and executions run exactly as before.
 pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
 
+/// Absolute directory under which `create_project_repository` scaffolds new
+/// project repositories: `<root>/<workspace-slug>/<project-name>`.
+///
+/// Unset means the default computed by the caller that owns a path resolver —
+/// `<app data dir>/sim` (`commands::infrastructure::project_scaffold`). The
+/// key exists so the Grand Simulation's dedicated folder (the operator's
+/// proposal is `C:\Users\kazda\kiro\bank`) can be set once instead of being
+/// passed on every create call; an explicit `root` in the request still wins
+/// over both.
+pub const SIMULATION_PROJECTS_ROOT: &str = "simulation_projects_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -846,6 +857,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     KNOWLEDGE_REGISTRY_ROOT,
+    SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
