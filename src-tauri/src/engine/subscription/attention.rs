@@ -2386,7 +2386,7 @@ async fn spawn_attention_execution(
     task: &str,
     capability_id: Option<&str>,
 ) -> Result<String, AppError> {
-    let input_data = serde_json::json!({
+    let mut input_data = serde_json::json!({
         "source": "attention",
         "_attention": {
             "ledgerId": ledger_id,
@@ -2395,6 +2395,19 @@ async fn spawn_attention_execution(
         },
         "task": task,
     });
+    // G23 (measured 2026-09-08): this envelope carried no `param.*` keys, and
+    // an adopted manifest persona has `personas.parameters = NULL`, so every
+    // `{{param.<key>}}` in the charter's rendered `## Capability Parameters`
+    // section reached the model as literal template syntax. Bind what the
+    // persona can know from its own rows; anything still unbound renders
+    // `(not provided)` in the assembler rather than `{{param.x}}`.
+    if let Some(obj) = input_data.as_object_mut() {
+        obj.extend(personas_engine::recipe_parameters::bind_context_parameters(
+            &state.db,
+            persona_id,
+            responsibility_id,
+        ));
+    }
     let execution = crate::commands::execution::executions::execute_persona_inner(
         state,
         app,

@@ -538,6 +538,69 @@ fn manifest_persona_derives_capability_parameters_from_charters() {
     assert!(!prompt.contains("## Capability Parameters"));
 }
 
+/// G23 (measured live 2026-09-08): every attention-loop charter dispatch
+/// logged `unresolved placeholder(s) shipped to the model as literal template
+/// syntax` for twelve `param.*` keys, and four App Masters filed the raw
+/// `{{param.workspace_id}}` text they read as a defect. The three rules that
+/// close it — a dispatch binding resolves, an unbindable key renders the
+/// marker rather than template syntax, and a persona-level parameter still
+/// outranks anything derived.
+#[test]
+fn dispatch_bound_params_resolve_and_unbound_ones_render_the_marker() {
+    let mut persona = test_persona();
+    persona.core_profile = Some(manifest_markdown());
+    // The persona owns `dry_run` — the highest rung of the precedence ladder.
+    persona.parameters = Some(
+        serde_json::json!([
+            { "key": "dry_run", "label": "Dry run", "type": "boolean", "value": true }
+        ])
+        .to_string(),
+    );
+    let mut ch = charter("resp_1", "Compose the portfolio");
+    ch.spec.input_schema = Some(serde_json::json!([
+        { "name": "workspace_id", "type": "text", "description": "The workspace being composed." },
+        { "name": "design_ref", "type": "text", "description": "Empty means read the current design." },
+        { "name": "max_requests", "type": "number", "default": 2 },
+        // Declared default `false`, but the persona's own parameter says true.
+        { "name": "dry_run", "type": "boolean", "default": false },
+    ]));
+    let charters = [ch];
+
+    // The envelope the attention loop now dispatches: `param.*` keys bound
+    // from the persona's own rows (`bind_context_parameters`).
+    let input = serde_json::json!({
+        "source": "attention",
+        "task": "Compose the portfolio",
+        "param.workspace_id": "ws_grand_sim",
+    });
+    let prompt = assemble_living_with_input(&persona, Some(&input), Some(&charters), None);
+
+    // (a) a bound key resolves to the dispatched value.
+    assert!(
+        prompt.contains("- Workspace id: ws_grand_sim"),
+        "a dispatch-bound param must resolve"
+    );
+    // …and a schema default answers where the dispatch had nothing.
+    assert!(
+        prompt.contains("- Max requests: 2"),
+        "a declared default must answer an unbound key"
+    );
+    // (b) a key NO source could bind renders the marker, not template syntax.
+    assert!(
+        prompt.contains("- Design ref: (not provided)"),
+        "an unbindable param must render the marker"
+    );
+    assert!(
+        !prompt.contains("{{param."),
+        "no `{{{{param.*}}}}` may reach the model as literal template syntax"
+    );
+    // (c) the persona's own parameter outranks the schema default.
+    assert!(
+        prompt.contains("- Dry run: true"),
+        "persona.parameters must still win over a derived default"
+    );
+}
+
 /// Episodes are derived-untrusted: the whole body sits inside the runtime
 /// nonce fence (stripping every `<untrusted_*>` block removes the episode
 /// text but keeps the section heading), rows cap at 8, and the given

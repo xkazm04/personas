@@ -331,7 +331,19 @@ pub fn assemble_prompt_with_skills(
         );
         if let Some(section) = crate::recipe_parameters::render_parameters_section(&charter_params)
         {
-            prompt.push_str(replace_variables(&section, persona, input_data).trim_start());
+            // G23 (measured 2026-09-08): a manifest persona has
+            // `parameters = NULL`, so before this every `{{param.*}}` in the
+            // section shipped to the model as literal template syntax. The
+            // schema's own `default` now answers under the dispatch's
+            // bindings, and whatever is STILL unbound renders
+            // `(not provided)` — never `{{param.x}}`. `replace_variables`
+            // keeps logging the unresolved keys, which is the operator's
+            // record that a value had no source.
+            let with_defaults =
+                crate::recipe_parameters::overlay_schema_defaults(input_data, &charter_params);
+            let resolved =
+                replace_variables(&section, persona, with_defaults.as_ref().or(input_data));
+            prompt.push_str(crate::recipe_parameters::mark_unbound_params(&resolved).trim_start());
             prompt.push_str("\n\n");
         }
     }
