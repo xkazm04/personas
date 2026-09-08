@@ -48,6 +48,7 @@ use crate::commands::infrastructure::app_master_adopt::{
 use crate::db::models::ResponsibilityStatus;
 use crate::db::repos::core::personas as personas_repo;
 use crate::db::repos::core::responsibilities as resp_repo;
+use crate::db::repos::workspaces::org as ws_repo;
 use crate::db::DbPool;
 use crate::engine::persona_brain::manifest;
 use crate::error::AppError;
@@ -93,6 +94,22 @@ pub struct AdoptArchitectInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub name: Option<String>,
+    /// The project this Architect calls **home**: a `dev_projects` id or name
+    /// that must already be a member of `workspace`. Written as
+    /// `design_context.homeProjectId`.
+    ///
+    /// Defaults to the workspace's **first project by `created_at`** — the
+    /// platform project, in the layout the simulation builds. Absent from a
+    /// workspace that holds no project yet, which is reported in `notes`
+    /// rather than invented.
+    ///
+    /// It is deliberately NOT `devProjectId`: that key is what makes a persona
+    /// a project's App Master, and an Architect reading as the platform
+    /// project's owner would send the next adoption looking for a project that
+    /// already has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub home_project: Option<String>,
 }
 
 /// What the adoption actually did. Every field is a fact; `notes` carries
@@ -116,6 +133,11 @@ pub struct ArchitectAdoption {
     #[ts(optional)]
     pub manifest_path: Option<String>,
     pub notes: Vec<String>,
+    /// The project this Architect calls home, as resolved. `None` when the
+    /// workspace holds no project yet — see `notes`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub home_project_id: Option<String>,
     /// Questions this Architect has put to the operator that nobody has
     /// answered. Empty on the adopt path — an adoption has not woken yet, so it
     /// cannot have asked anything.
@@ -138,8 +160,14 @@ pub fn adopt(pool: &DbPool, input: &AdoptArchitectInput) -> Result<ArchitectAdop
     let workspace = resolve_workspace(pool, &input.workspace)?;
     let workspace_id = workspace.id.clone();
     let workspace_name = workspace.name.clone();
-    let binding = Binding::Workspace(workspace);
 
+    // Resolved BEFORE the first write, like the recipes: a `homeProject` that
+    // names nothing in this workspace leaves the database untouched rather than
+    // half-adopting an Architect with no writing surface.
+    let (home_project_id, mut notes) =
+        resolve_home_project(pool, &workspace_id, input.home_project.as_deref())?;
+
+    let binding = Binding::Workspace(workspace);
     let done = adopt_bound(
         pool,
         AdoptedRole::Architect,
@@ -151,8 +179,10 @@ pub fn adopt(pool: &DbPool, input: &AdoptArchitectInput) -> Result<ArchitectAdop
             scope_rung: input.scope_rung,
             enabled: input.enabled,
             name: input.name.as_deref(),
+            home_project_id: home_project_id.as_deref(),
         },
     )?;
+    notes.extend(done.notes);
 
     Ok(ArchitectAdoption {
         persona_id: done.persona_id,
@@ -163,10 +193,80 @@ pub fn adopt(pool: &DbPool, input: &AdoptArchitectInput) -> Result<ArchitectAdop
         charters: done.charters,
         suspended: done.suspended,
         manifest_path: done.manifest_path,
-        notes: done.notes,
+        notes,
+        home_project_id,
         open_asks: Vec::new(),
         last_note: None,
     })
+}
+
+/// Resolve the Architect's home project inside ONE workspace, and say in a note
+/// what was decided.
+///
+/// The lookup is scoped to the workspace's membership on purpose: a workspace's
+/// Architect naming a project in a different workspace is a mistake, not a
+/// cross-workspace grant, and resolving it would give the Architect a writing
+/// surface nobody in its portfolio can see. `dev_projects.name` is not unique
+/// app-wide, so an unscoped by-name lookup would also be genuinely ambiguous.
+///
+/// Returns `(home project id, notes)`. `Ok((None, _))` means the workspace
+/// holds no project yet — a real state on the simulation's opening move, and
+/// one the Architect closes for itself with `createProjects`.
+fn resolve_home_project(
+    pool: &DbPool,
+    workspace_id: &str,
+    requested: Option<&str>,
+) -> Result<(Option<String>, Vec<String>), AppError> {
+    let mut members = ws_repo::list_workspace_projects(pool, workspace_id)?;
+    // Oldest first — the project the workspace was built around. The repo's own
+    // order is by name, which would make the home pin depend on what somebody
+    // called the sixth project.
+    members.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+
+    match requested.map(str::trim).filter(|r| !r.is_empty()) {
+        Some(needle) => {
+            let hit = members
+                .iter()
+                .find(|p| p.id == needle)
+                .or_else(|| members.iter().find(|p| p.name == needle))
+                .or_else(|| members.iter().find(|p| p.name.eq_ignore_ascii_case(needle)));
+            match hit {
+                Some(p) => Ok((
+                    Some(p.id.clone()),
+                    vec![format!("Home project: {} ({})", p.name, p.id)],
+                )),
+                None => Err(AppError::Validation(format!(
+                    "No project named `{needle}` belongs to this workspace. Its projects are: {}",
+                    if members.is_empty() {
+                        "(none)".to_string()
+                    } else {
+                        members
+                            .iter()
+                            .map(|p| p.name.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    }
+                ))),
+            }
+        }
+        None => match members.first() {
+            Some(p) => Ok((
+                Some(p.id.clone()),
+                vec![format!(
+                    "Home project defaulted to the workspace's oldest project: {} ({})",
+                    p.name, p.id
+                )],
+            )),
+            None => Ok((
+                None,
+                vec![
+                    "No home project: this workspace holds no project yet, so the Architect \
+                      has nowhere to write until it creates one."
+                        .to_string(),
+                ],
+            )),
+        },
+    }
 }
 
 /// The current adoption state for a workspace: the Architect persona, its
@@ -224,6 +324,11 @@ pub fn current(pool: &DbPool, workspace: &str) -> Result<Option<ArchitectAdoptio
     let manifest_path = manifest::read(&persona.id)
         .and(manifest::manifest_path(&persona.id).ok())
         .map(|p| p.to_string_lossy().to_string());
+    // Read back rather than recomputed: the state route reports what the
+    // persona actually carries, so an operator who repinned it by hand sees
+    // their own value and not this door's default.
+    let home_project_id =
+        personas_engine::design_context::home_project_id(persona.design_context.as_deref());
     Ok(Some(ArchitectAdoption {
         persona_id: persona.id,
         persona_name: persona.name,
@@ -234,6 +339,7 @@ pub fn current(pool: &DbPool, workspace: &str) -> Result<Option<ArchitectAdoptio
         suspended,
         manifest_path,
         notes: Vec::new(),
+        home_project_id,
         open_asks,
         last_note,
     }))
@@ -341,6 +447,7 @@ mod tests {
             scope_rung: None,
             enabled: None,
             name: None,
+            home_project: None,
         }
     }
 

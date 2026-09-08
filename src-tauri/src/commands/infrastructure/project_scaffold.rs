@@ -148,6 +148,11 @@ pub struct CreatedProjectRepository {
 /// directory between the root and the project. Never empty — a name made
 /// entirely of separators falls back to `workspace`, because a slug that
 /// collapses to nothing would silently scaffold one level too high.
+///
+/// Exposed as [`workspace_slug`] because the attention loop's `createProjects`
+/// verb derives its scaffold root from an existing member's path and has to
+/// recognise this exact directory level; deriving it from a second, private
+/// copy of the rule is how the two would come to disagree.
 fn slugify(raw: &str) -> String {
     let mut out = String::new();
     let mut last_dash = true; // leading dashes are suppressed
@@ -166,6 +171,14 @@ fn slugify(raw: &str) -> String {
     } else {
         trimmed.to_string()
     }
+}
+
+/// The directory level between the scaffold root and a project: the workspace's
+/// name, slugified. The one reader outside this module is the attention loop's
+/// `createProjects` verb, which walks a member project's path back up to the
+/// root and needs this rule to know it is looking at the right level.
+pub(crate) fn workspace_slug(workspace_name: &str) -> String {
+    slugify(workspace_name)
 }
 
 /// A project name has to be usable as ONE directory component: this is the

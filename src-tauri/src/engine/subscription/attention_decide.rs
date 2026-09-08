@@ -70,6 +70,90 @@ pub(crate) const MAX_HIRES: usize = 1;
 /// into a text field kp bounds again on its own side.
 pub(crate) const MAX_HIRE_NEED_CHARS: usize = 1200;
 
+// ── The authority verbs (Grand Simulation G13) ────────────────────────────
+//
+// Three verbs that exist for ONE shape of persona: the holder of a charter
+// carrying `spec.authority`. The Architect's manifest Mandate has always read
+// "You create projects, adopt App Masters, set goals" and until now the
+// decision plan had no verb for any of the three — the mandate named powers
+// with no door, so the only way the Architect could act on them was to ask the
+// operator to do it by hand.
+//
+// Licensed by [`may_command`], parsed here and executed by
+// `attention::run_plan_projects` / `run_plan_adoptions` / `run_plan_goals`,
+// which follow `run_plan_hires` exactly: after the dispatches, every outcome
+// recorded as data, never an early return, and never a failed wake.
+
+/// How many repositories ONE wake may create.
+///
+/// Three, not one: unlike a hire, a project costs nothing outside this machine
+/// and a portfolio is designed as a set — an Architect that has decided on a
+/// ledger service, a payments service and a gateway should not need three wakes
+/// to say so. It is still a cap, because a plan naming ten has stopped designing
+/// and started enumerating.
+pub(crate) const MAX_CREATE_PROJECTS: usize = 3;
+/// How many App Masters ONE wake may adopt. Same reasoning, and the second
+/// ceiling — the app-wide active-persona cap — is enforced at the executor,
+/// which is where the live count is.
+pub(crate) const MAX_ADOPT_APP_MASTERS: usize = 3;
+/// How many goals ONE wake may set. Higher than the other two because a goal is
+/// a row, not a repository or a persona: the cost of a wrong one is an edit.
+pub(crate) const MAX_SET_GOALS: usize = 5;
+
+/// Hard bound on a new project's name. It becomes ONE directory component; the
+/// scaffold door validates the characters and this bounds the length before the
+/// path is built.
+pub(crate) const MAX_PROJECT_NAME_CHARS: usize = 80;
+/// Hard bound on a new project's description — it lands in the README and the
+/// `dev_projects` row.
+pub(crate) const MAX_PROJECT_DESCRIPTION_CHARS: usize = 600;
+/// Hard bound on a declared tech stack.
+pub(crate) const MAX_TECH_STACK_CHARS: usize = 120;
+/// Hard bound on a project reference (an id or a name) in any of the three
+/// verbs. Long enough for a uuid and a generous display name.
+pub(crate) const MAX_PROJECT_REF_CHARS: usize = 120;
+/// Hard bound on one recipe slug named in an adoption.
+pub(crate) const MAX_RECIPE_SLUG_CHARS: usize = 80;
+/// How many recipes ONE adoption may name. The App Master door accepts a list
+/// and suspends what a later call drops; this bounds the list a model may write
+/// in one go.
+pub(crate) const MAX_ADOPTION_RECIPES: usize = 10;
+/// Hard bound on a goal's title — it is the row's display text.
+pub(crate) const MAX_GOAL_TITLE_CHARS: usize = 160;
+/// Hard bound on a goal's description.
+pub(crate) const MAX_GOAL_DESCRIPTION_CHARS: usize = 600;
+
+/// The model every App Master this loop adopts runs on.
+///
+/// Fixed here rather than left to the plan: the model is a cost and reliability
+/// decision the operator owns, and a decision lane that could name its
+/// subordinates' model could spend the operator's subscription on a choice
+/// nobody reviewed.
+///
+/// The TIER, not a dated id. `resolve_model_id` in the adoption door accepts
+/// either, and a literal `claude-opus-<n>` here would be a vendor-scheduled
+/// fact spelled at a call site — the `bare-model-id-literal` census rule's
+/// whole subject, and the reason the retired `*-20250514` ids outlived their
+/// retirement in the failover ladder. Naming the tier lets the one door that
+/// owns model ids decide which opus that is today.
+pub(crate) const ADOPTED_APP_MASTER_MODEL: &str = personas_core::model_ids::ALIAS_OPUS;
+
+/// Does this roster license the three authority verbs?
+///
+/// One door, not three: `spec.authority` is the operator's statement that this
+/// persona directs the organisation, and creating a project, giving it an owner
+/// and setting its goals are the same act at three grains. Splitting them into
+/// separate grants would mean an Architect could create a project it may not
+/// staff.
+///
+/// Deliberately NARROWER than [`may_hire`], which `spec.canHire` and the
+/// `workforce-planning` provenance also open: those two say "this persona may
+/// ask kp for a role", which is a request to another product. These verbs write
+/// this machine's own portfolio, and only the authority grant licenses them.
+pub(crate) fn may_command(charters: &[DecisionCharter]) -> bool {
+    charters.iter().any(|c| c.authority)
+}
+
 /// The recipe a charter is adopted from when hiring IS its job.
 ///
 /// A charter minted from this recipe may use the `hires` verb without the
@@ -394,6 +478,22 @@ pub(crate) struct WorkspaceView {
     pub active_personas: ActivePersonas,
 }
 
+/// The project a workspace-bound persona calls home — where its documents go.
+///
+/// `design_context.homeProjectId`, resolved to a row. Carried into the prompt
+/// so the Architect is told the actual path its solution design belongs at
+/// rather than being left to guess a directory on a machine it cannot list.
+/// `None` when the persona has no home pin, and the prompt then says so
+/// literally instead of naming a path nobody resolved.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct HomeProject {
+    pub id: String,
+    pub name: String,
+    /// `dev_projects.root_path` — the repository the run's working directory is
+    /// set to.
+    pub root_path: String,
+}
+
 /// An ask this persona already put to the operator that nobody has answered.
 ///
 /// Carried into the prompt so a blocked persona does not re-ask the same
@@ -518,6 +618,10 @@ pub(crate) struct DecisionContext {
     /// prompt then renders no workspace section at all rather than an empty
     /// one — the loop's own rule about figures it did not measure.
     pub workspace: Option<WorkspaceView>,
+    /// The project this persona writes into when it has no codebase of its own.
+    /// `None` for every project-bound App Master (which has a codebase) and for
+    /// a workspace whose Architect was adopted before it held any project.
+    pub home_project: Option<HomeProject>,
 }
 
 // ── Output ────────────────────────────────────────────────────────────────
@@ -587,6 +691,57 @@ pub(crate) struct HireRequest {
     pub budget_usd: Option<f64>,
 }
 
+/// One repository the plan wants created in its workspace.
+///
+/// Executed through `project_scaffold::create_in_root`, the same door
+/// `POST /dev-tools/projects/create` runs. Nothing here names a path: the root
+/// is derived at the executor from where the workspace's existing projects
+/// already live, so the Architect never has to know — or be able to name — a
+/// directory on this machine.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct NewProject {
+    /// The repository's folder name and the project's display name, bounded to
+    /// [`MAX_PROJECT_NAME_CHARS`]. The scaffold door validates the characters.
+    pub name: String,
+    pub description: Option<String>,
+    pub tech_stack: Option<String>,
+    /// The skeleton to scaffold, as the model wrote it. Matched against
+    /// `ProjectTemplate`'s kebab-case wire names by the executor; an
+    /// unrecognised word falls back to `empty` rather than costing the project.
+    pub template: Option<String>,
+}
+
+/// One App Master the plan wants adopted onto a project.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct NewAppMaster {
+    /// A project id or name. Resolved by the executor against THIS workspace
+    /// only — including the projects this same wake created.
+    pub project: String,
+    /// The recipes the adopted App Master holds, with the Architect's ordering.
+    pub recipes: Vec<AdoptionRecipe>,
+    /// Whether to switch the adopted persona on. Honoured only within the
+    /// app-wide active-persona cap: at the cap the adoption still happens, the
+    /// persona stays off, and the refusal text is recorded.
+    pub enabled: bool,
+}
+
+/// One recipe named in an adoption.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct AdoptionRecipe {
+    pub slug: String,
+    /// 1 (highest) .. 5. `None` lets the adopted persona use its judgment.
+    pub priority: Option<u8>,
+}
+
+/// One goal the plan wants set on a project in its workspace.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct NewGoal {
+    /// A project id or name, resolved the same way [`NewAppMaster::project`] is.
+    pub project: String,
+    pub title: String,
+    pub description: Option<String>,
+}
+
 /// One message the plan posts into its channel.
 ///
 /// The other direction of [`ChannelLine`]: until this existed an App Master
@@ -645,6 +800,20 @@ pub(crate) struct DecisionPlan {
     /// [`DecisionPlan::dropped_unknown`] is: a plan that reaches for a
     /// capability it does not hold is a fact the ledger should carry.
     pub dropped_unlicensed_hires: usize,
+    /// Repositories this wake wants created. At most [`MAX_CREATE_PROJECTS`],
+    /// and empty unless the roster licenses the authority verbs
+    /// ([`may_command`]).
+    pub create_projects: Vec<NewProject>,
+    /// App Masters this wake wants adopted. At most [`MAX_ADOPT_APP_MASTERS`],
+    /// same licence.
+    pub adopt_app_masters: Vec<NewAppMaster>,
+    /// Goals this wake wants set. At most [`MAX_SET_GOALS`], same licence.
+    pub goals: Vec<NewGoal>,
+    /// How many entries across the three authority verbs were dropped because
+    /// the roster does not license them. One count for the three, for the same
+    /// reason [`may_command`] is one door: they are one grant, so a plan that
+    /// reached for any of them reached past the same boundary.
+    pub dropped_unlicensed_commands: usize,
     /// What this wake says in its channel. At most [`MAX_SAY`].
     pub say: Vec<Say>,
     /// `say.to` values naming a persona this one shares no team with. Kept
@@ -744,6 +913,49 @@ struct WireHire {
 }
 
 #[derive(serde::Deserialize)]
+struct WireNewProject {
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
+    #[serde(rename = "techStack", alias = "tech_stack", default)]
+    tech_stack: Option<String>,
+    #[serde(default)]
+    template: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct WireAdoptionRecipe {
+    #[serde(default)]
+    slug: Option<String>,
+    /// `serde_json::Value` for the same reason `next_wake_minutes` is: a model
+    /// that writes `"1"` or `1.0` must lose only its ordering suggestion, not
+    /// the recipe — and not the whole adoption.
+    #[serde(default)]
+    priority: Option<serde_json::Value>,
+}
+
+#[derive(serde::Deserialize)]
+struct WireAdoptAppMaster {
+    #[serde(default)]
+    project: Option<String>,
+    #[serde(default)]
+    recipes: Vec<WireAdoptionRecipe>,
+    #[serde(default)]
+    enabled: Option<bool>,
+}
+
+#[derive(serde::Deserialize)]
+struct WireNewGoal {
+    #[serde(default)]
+    project: Option<String>,
+    #[serde(default)]
+    title: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
 struct WireSay {
     #[serde(default)]
     to: Option<String>,
@@ -775,6 +987,14 @@ struct WirePlan {
     /// licenses hiring — see [`may_hire`].
     #[serde(default)]
     hires: Vec<WireHire>,
+    /// The three authority verbs. Absent is an empty list, like `asks`, and
+    /// dropped entirely unless the roster licenses them — see [`may_command`].
+    #[serde(rename = "createProjects", alias = "create_projects", default)]
+    create_projects: Vec<WireNewProject>,
+    #[serde(rename = "adoptAppMasters", alias = "adopt_app_masters", default)]
+    adopt_app_masters: Vec<WireAdoptAppMaster>,
+    #[serde(default)]
+    goals: Vec<WireNewGoal>,
     #[serde(default)]
     note: Option<String>,
     /// Deliberately `serde_json::Value` rather than `Option<u32>`: a model that
@@ -908,12 +1128,36 @@ pub(crate) fn parse_decision_with(
         (Vec::new(), wire.hires.len())
     };
 
+    // The three authority verbs, gated HERE and for the same reason the hire is:
+    // an unlicensed plan keeps its dispatches, and the ledger carries the count
+    // it lost rather than a silence indistinguishable from "it never asked".
+    let (create_projects, adopt_app_masters, goals, dropped_unlicensed_commands) =
+        if may_command(charters) {
+            (
+                parse_new_projects(wire.create_projects),
+                parse_adoptions(wire.adopt_app_masters),
+                parse_goals(wire.goals),
+                0,
+            )
+        } else {
+            (
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+                wire.create_projects.len() + wire.adopt_app_masters.len() + wire.goals.len(),
+            )
+        };
+
     Ok(DecisionPlan {
         dispatch,
         defer,
         asks,
         hires,
         dropped_unlicensed_hires,
+        create_projects,
+        adopt_app_masters,
+        goals,
+        dropped_unlicensed_commands,
         say,
         dropped_unknown_say,
         say_downgraded,
@@ -962,6 +1206,146 @@ fn parse_hires(wire: Vec<WireHire>) -> Vec<HireRequest> {
         });
     }
     hires
+}
+
+// ── The authority verbs, parsed ────────────────────────────────────────────
+//
+// All three follow `parse_hires`: bound every string, cap the list, drop an
+// entry whose ONE indispensable field is missing, and keep everything else.
+// None of them resolves a project id — this module is DB-free by construction,
+// so a `project` the model wrote stays a string until the executor, which is
+// also the only place that knows which projects this wake just created.
+
+/// Read the project list: bound the strings, cap at [`MAX_CREATE_PROJECTS`],
+/// drop what has no name.
+///
+/// A project with no `name` is dropped without ceremony — the name is both the
+/// directory and the display, and the scaffold has nothing to make without it.
+/// The `template` is carried as the model's own word rather than parsed into an
+/// enum here: an unrecognised skeleton must cost the project its scaffold
+/// choice, not its existence, and the executor is where the enum lives.
+fn parse_new_projects(wire: Vec<WireNewProject>) -> Vec<NewProject> {
+    let mut out: Vec<NewProject> = Vec::new();
+    for p in wire {
+        if out.len() >= MAX_CREATE_PROJECTS {
+            break;
+        }
+        let name = bound(p.name.unwrap_or_default().trim(), MAX_PROJECT_NAME_CHARS);
+        if name.is_empty() {
+            continue;
+        }
+        // A wake that names the same project twice asked once. Deduped here so
+        // the second mention never consumes a slot the cap would have given a
+        // different project.
+        if out.iter().any(|x| x.name.eq_ignore_ascii_case(&name)) {
+            continue;
+        }
+        out.push(NewProject {
+            name,
+            description: bounded_option(p.description, MAX_PROJECT_DESCRIPTION_CHARS),
+            tech_stack: bounded_option(p.tech_stack, MAX_TECH_STACK_CHARS),
+            template: bounded_option(p.template, MAX_PROJECT_NAME_CHARS),
+        });
+    }
+    out
+}
+
+/// Read the adoption list: bound the strings, cap at [`MAX_ADOPT_APP_MASTERS`],
+/// drop what names no project.
+///
+/// An adoption with NO recipes is kept, not dropped: the adoption door accepts
+/// an empty list and reads it as "suspend everything this persona holds", which
+/// is a legitimate thing for an Architect to decide about a project whose owner
+/// should stand down. `enabled` defaults to true — an App Master adopted by the
+/// Architect's own decision and left switched off would need a second act
+/// nobody scheduled, and the active-persona cap is the real ceiling, enforced
+/// at the executor where the live count is.
+fn parse_adoptions(wire: Vec<WireAdoptAppMaster>) -> Vec<NewAppMaster> {
+    let mut out: Vec<NewAppMaster> = Vec::new();
+    for a in wire {
+        if out.len() >= MAX_ADOPT_APP_MASTERS {
+            break;
+        }
+        let project = bound(a.project.unwrap_or_default().trim(), MAX_PROJECT_REF_CHARS);
+        if project.is_empty() {
+            continue;
+        }
+        if out.iter().any(|x| x.project.eq_ignore_ascii_case(&project)) {
+            continue;
+        }
+        let mut recipes: Vec<AdoptionRecipe> = Vec::new();
+        for r in a.recipes {
+            if recipes.len() >= MAX_ADOPTION_RECIPES {
+                break;
+            }
+            let slug = bound(r.slug.unwrap_or_default().trim(), MAX_RECIPE_SLUG_CHARS);
+            if slug.is_empty() || recipes.iter().any(|x| x.slug == slug) {
+                continue;
+            }
+            recipes.push(AdoptionRecipe {
+                slug,
+                priority: r.priority.as_ref().and_then(clamp_priority),
+            });
+        }
+        out.push(NewAppMaster {
+            project,
+            recipes,
+            enabled: a.enabled.unwrap_or(true),
+        });
+    }
+    out
+}
+
+/// Read the goal list: bound the strings, cap at [`MAX_SET_GOALS`], drop what
+/// names no project or has no title.
+///
+/// Both fields are indispensable here, unlike the other two verbs: a goal with
+/// no title is a row nobody can read, and a goal with no project has nowhere to
+/// live — `dev_goals.project_id` is not nullable and there is no "the
+/// workspace's goals" table to fall back to.
+fn parse_goals(wire: Vec<WireNewGoal>) -> Vec<NewGoal> {
+    let mut out: Vec<NewGoal> = Vec::new();
+    for g in wire {
+        if out.len() >= MAX_SET_GOALS {
+            break;
+        }
+        let project = bound(g.project.unwrap_or_default().trim(), MAX_PROJECT_REF_CHARS);
+        let title = bound(g.title.unwrap_or_default().trim(), MAX_GOAL_TITLE_CHARS);
+        if project.is_empty() || title.is_empty() {
+            continue;
+        }
+        // Same title on the same project, twice in one wake, is one goal.
+        if out
+            .iter()
+            .any(|x| x.project.eq_ignore_ascii_case(&project) && same_ask_title(&x.title, &title))
+        {
+            continue;
+        }
+        out.push(NewGoal {
+            project,
+            title,
+            description: bounded_option(g.description, MAX_GOAL_DESCRIPTION_CHARS),
+        });
+    }
+    out
+}
+
+/// Bound an optional string and turn a blank one into `None` — a field the
+/// model wrote as `""` said nothing, and carrying it forward would put an empty
+/// description on a row.
+fn bounded_option(raw: Option<String>, max: usize) -> Option<String> {
+    raw.map(|s| bound(s.trim(), max)).filter(|s| !s.is_empty())
+}
+
+/// Read a charter priority leniently: 1..=5, anything else ignored.
+///
+/// Ignored rather than clamped, unlike `nextWakeMinutes`: `None` means "nobody
+/// ranked it and the judgment is the persona's", which is a real answer the
+/// roster already prints, so a fumbled number becomes the honest absence rather
+/// than a rank the Architect did not choose.
+fn clamp_priority(raw: &serde_json::Value) -> Option<u8> {
+    let n = raw.as_i64().or_else(|| raw.as_str()?.trim().parse().ok())?;
+    (1..=5).contains(&n).then_some(n as u8)
 }
 
 /// Read the channel list: cap it, bound the bodies, resolve the destination
@@ -1644,7 +2028,11 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     // what the goals are doing, and how much workforce headroom is left. An
     // App Master carries `workspace: None` and sees this section not at all.
     if let Some(w) = &ctx.workspace {
-        s.push_str(&render_workspace_section(w));
+        s.push_str(&render_workspace_section(
+            w,
+            may_command(&ctx.charters),
+            ctx.home_project.as_ref(),
+        ));
     }
 
     // --- The project(s) ---
@@ -1760,7 +2148,17 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
 /// Master has never decided prints `never decided`, and a workspace with no
 /// goals prints `(none)` — not `0% progress`, which would read as a measurement
 /// nobody took.
-fn render_workspace_section(w: &WorkspaceView) -> String {
+///
+/// `may_command` adds the three authority verbs at the end of the section, with
+/// their exact JSON shapes and the headroom each is capped by. Rendered only
+/// for a roster that holds them, for the reason the HIRE rule is: describing a
+/// verb the parser will drop invites the model to spend its answer on a request
+/// that cannot land, and then says nothing about why it vanished.
+fn render_workspace_section(
+    w: &WorkspaceView,
+    may_command: bool,
+    home: Option<&HomeProject>,
+) -> String {
     let mut s = String::new();
     s.push_str(&format!("YOUR WORKSPACE: {} ({})\n", w.name, w.id));
     s.push_str(&format!(
@@ -1812,6 +2210,68 @@ fn render_workspace_section(w: &WorkspaceView) -> String {
             ));
         }
     }
+
+    // Where the Architect's own output goes. Printed for every workspace holder,
+    // licensed or not: a persona that writes documents needs to know where they
+    // land, and that is true whether or not it may also create projects.
+    match home {
+        Some(h) => {
+            s.push_str(&format!(
+                "- your home: {} ({}) at {}\n",
+                h.name, h.id, h.root_path
+            ));
+            s.push_str(&format!(
+                "    Your solution design belongs at {}/docs/solution-design.md. Your run's \
+                 working directory IS that repository, so write the file — a design you only \
+                 describe in this answer is not a document anybody can read.\n",
+                h.root_path
+            ));
+        }
+        None => s.push_str(
+            "- your home: NONE — no project is pinned as your home, so a document you write \
+             this wake lands in a scratch directory nobody reads. Creating the workspace's \
+             first project is what closes that.\n",
+        ),
+    }
+
+    if may_command {
+        s.push_str(&format!(
+            "\nWHAT YOU MAY DO TO THE WORKSPACE (you hold an AUTHORITY charter)\n\
+             Three more verbs, in the SAME JSON object as `dispatch`. Each is optional; omit \
+             the key entirely — which is the normal answer — unless the portfolio needs it.\n\
+             - CREATE A PROJECT: \
+             `\"createProjects\":[{{\"name\":\"<one directory name, at most \
+             {MAX_PROJECT_NAME_CHARS} characters>\",\"description\":\"<what it is for>\",\
+             \"techStack\":\"<optional>\",\
+             \"template\":\"empty|rust-service|node-service|python-service\"}}]`. \
+             At most {MAX_CREATE_PROJECTS} per wake. ONE step does BOTH halves: the repository \
+             is git-initialised as a sibling of the projects listed above AND registered as a \
+             project of this workspace, so it appears in the list above on your next wake and \
+             can be given an owner and goals. It is never a bare folder on disk with no row \
+             behind it — that orphan is not a thing this verb can produce. You never name a \
+             path.\n\
+             - ADOPT AN APP MASTER: \
+             `\"adoptAppMasters\":[{{\"project\":\"<an id or a name from the list above>\",\
+             \"recipes\":[{{\"slug\":\"<recipe slug>\",\"priority\":1}}],\"enabled\":true}}]`. \
+             At most {MAX_ADOPT_APP_MASTERS} per wake, each on {ADOPTED_APP_MASTER_MODEL}. A \
+             project above reading `App Master: NONE` is the case this verb exists for. \
+             {free} of {cap} persona slot(s) are free right now: an adoption past that still \
+             happens and its App Master stays OFF until somebody frees a slot.\n\
+             - SET A GOAL: \
+             `\"goals\":[{{\"project\":\"<an id or a name from the list above>\",\
+             \"title\":\"<what is to be true, at most {MAX_GOAL_TITLE_CHARS} characters>\",\
+             \"description\":\"<optional>\"}}]`. At most {MAX_SET_GOALS} per wake.\n\
+             Every `project` is resolved inside THIS workspace, by id or by name, including a \
+             project you create in this same answer. A project you cannot name here is one you \
+             do not hold.\n",
+            free = w
+                .active_personas
+                .cap
+                .saturating_sub(w.active_personas.active),
+            cap = w.active_personas.cap,
+        ));
+    }
+
     s.push('\n');
     s
 }
@@ -2473,6 +2933,9 @@ mod tests {
             channel: Vec::new(),
             peers: Vec::new(),
             may_direct: false,
+            // Project-bound, so it writes into its own codebase and has no home
+            // pin. The G13 tests below supply one.
+            home_project: None,
         }
     }
 
@@ -3166,6 +3629,224 @@ mod tests {
             .is_empty());
     }
 
+    // -- parse + licence: the three AUTHORITY verbs (G13) -------------------
+
+    /// A wake that creates a project, gives it an owner and sets its goal — the
+    /// Architect's whole opening move, in one answer.
+    fn commanding_plan() -> String {
+        serde_json::json!({
+            "dispatch": [{ "charterId": "r2", "reason": "due", "brief": "go" }],
+            "createProjects": [{
+                "name": "ledger-service",
+                "description": "Double-entry ledger for every account movement.",
+                "techStack": "Rust, SQLite",
+                "template": "rust-service",
+            }],
+            "adoptAppMasters": [{
+                "project": "ledger-service",
+                "recipes": [{ "slug": "accepted-idea-delivery", "priority": 1 }],
+                "enabled": true,
+            }],
+            "goals": [{
+                "project": "ledger-service",
+                "title": "Every movement reconciles to the cent, nightly.",
+                "description": "No unexplained delta survives a settlement run.",
+            }],
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn only_an_authority_charter_licenses_the_workspace_verbs() {
+        assert!(!may_command(&roster()), "a plain roster commands nothing");
+        assert!(
+            !may_command(&hiring_roster()),
+            "canHire is a licence to ASK kp, not to write this machine's portfolio"
+        );
+        assert!(
+            !may_command(&planner_roster()),
+            "and neither is the workforce-planning provenance"
+        );
+        assert!(may_command(&authority_roster()), "spec.authority does");
+    }
+
+    #[test]
+    fn parse_reads_the_three_workspace_verbs_from_an_authority_roster() {
+        let plan = parse_decision(&commanding_plan(), &authority_roster(), 3).expect("parses");
+        assert_eq!(plan.dropped_unlicensed_commands, 0);
+
+        assert_eq!(plan.create_projects.len(), 1);
+        let p = &plan.create_projects[0];
+        assert_eq!(p.name, "ledger-service");
+        assert_eq!(p.tech_stack.as_deref(), Some("Rust, SQLite"));
+        assert_eq!(p.template.as_deref(), Some("rust-service"));
+        assert!(p
+            .description
+            .as_deref()
+            .unwrap()
+            .starts_with("Double-entry"));
+
+        assert_eq!(plan.adopt_app_masters.len(), 1);
+        let a = &plan.adopt_app_masters[0];
+        assert_eq!(a.project, "ledger-service");
+        assert!(a.enabled);
+        assert_eq!(a.recipes.len(), 1);
+        assert_eq!(a.recipes[0].slug, "accepted-idea-delivery");
+        assert_eq!(a.recipes[0].priority, Some(1));
+
+        assert_eq!(plan.goals.len(), 1);
+        assert_eq!(plan.goals[0].project, "ledger-service");
+        assert!(plan.goals[0].title.starts_with("Every movement"));
+
+        // The dispatch it also carried is untouched by any of it.
+        assert_eq!(plan.dispatch.len(), 1);
+        assert_eq!(plan.dispatch[0].charter_id, "r2");
+    }
+
+    /// snake_case rides on the two camelCase keys, and an absent key is an
+    /// empty list rather than a parse failure — the same contract `hires` has.
+    #[test]
+    fn the_workspace_verbs_accept_snake_case_and_are_optional() {
+        let snake = serde_json::json!({
+            "dispatch": [],
+            "create_projects": [{ "name": "gateway", "tech_stack": "Go" }],
+            "adopt_app_masters": [{ "project": "gateway" }],
+        })
+        .to_string();
+        let plan = parse_decision(&snake, &authority_roster(), 3).expect("parses");
+        assert_eq!(plan.create_projects[0].name, "gateway");
+        assert_eq!(plan.create_projects[0].tech_stack.as_deref(), Some("Go"));
+        // No recipes named is a legitimate adoption (the door reads it as
+        // "suspend what this persona holds"), and `enabled` defaults to on.
+        assert_eq!(plan.adopt_app_masters[0].recipes.len(), 0);
+        assert!(plan.adopt_app_masters[0].enabled);
+
+        let bare = parse_decision("{\"dispatch\":[]}", &authority_roster(), 3).expect("parses");
+        assert!(bare.create_projects.is_empty());
+        assert!(bare.adopt_app_masters.is_empty());
+        assert!(bare.goals.is_empty());
+        assert_eq!(bare.dropped_unlicensed_commands, 0);
+    }
+
+    /// The licence is the whole gate, exactly as it is for a hire: an
+    /// unlicensed roster keeps its dispatches, loses all three verbs, and the
+    /// ledger carries ONE count of what it lost.
+    #[test]
+    fn an_unlicensed_roster_drops_all_three_workspace_verbs_and_counts_them() {
+        let plan = parse_decision(&commanding_plan(), &roster(), 3).expect("parses");
+        assert!(plan.create_projects.is_empty());
+        assert!(plan.adopt_app_masters.is_empty());
+        assert!(plan.goals.is_empty());
+        assert_eq!(
+            plan.dropped_unlicensed_commands, 3,
+            "one count across the three verbs — they are one grant"
+        );
+        assert_eq!(
+            plan.dispatch.len(),
+            1,
+            "the rest of the plan survives the dropped verbs"
+        );
+        // And a canHire roster is unlicensed for THESE, while still hiring.
+        let hiring = parse_decision(&commanding_plan(), &hiring_roster(), 3).expect("parses");
+        assert_eq!(hiring.dropped_unlicensed_commands, 3);
+    }
+
+    #[test]
+    fn the_workspace_verbs_are_capped_bounded_and_deduped() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "createProjects": (0..6)
+                .map(|i| serde_json::json!({
+                    "name": format!("svc-{i}"),
+                    "description": "d".repeat(MAX_PROJECT_DESCRIPTION_CHARS + 50),
+                }))
+                .collect::<Vec<_>>(),
+            "adoptAppMasters": (0..6)
+                .map(|i| serde_json::json!({ "project": format!("svc-{i}") }))
+                .collect::<Vec<_>>(),
+            "goals": (0..9)
+                .map(|i| serde_json::json!({ "project": "svc-0", "title": format!("g{i}") }))
+                .collect::<Vec<_>>(),
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &authority_roster(), 3).expect("parses");
+        assert_eq!(plan.create_projects.len(), MAX_CREATE_PROJECTS);
+        assert_eq!(plan.adopt_app_masters.len(), MAX_ADOPT_APP_MASTERS);
+        assert_eq!(plan.goals.len(), MAX_SET_GOALS);
+        assert_eq!(
+            plan.create_projects[0]
+                .description
+                .as_deref()
+                .unwrap()
+                .len(),
+            MAX_PROJECT_DESCRIPTION_CHARS
+        );
+
+        // What says nothing is dropped, and a repeat is not a second slot.
+        let sparse = serde_json::json!({
+            "dispatch": [],
+            "createProjects": [
+                { "description": "no name at all" },
+                { "name": "ledger" },
+                { "name": "LEDGER", "description": "the same project, shouted" },
+            ],
+            "adoptAppMasters": [{ "recipes": [{ "slug": "x" }] }],
+            "goals": [
+                { "project": "ledger" },
+                { "title": "no project" },
+                { "project": "ledger", "title": "Reconcile nightly" },
+                { "project": "ledger", "title": "  reconcile NIGHTLY " },
+            ],
+        })
+        .to_string();
+        let plan = parse_decision(&sparse, &authority_roster(), 3).expect("parses");
+        assert_eq!(
+            plan.create_projects.len(),
+            1,
+            "a nameless project, and a repeat, are dropped"
+        );
+        assert_eq!(plan.create_projects[0].name, "ledger");
+        assert!(
+            plan.adopt_app_masters.is_empty(),
+            "an adoption with no project is dropped"
+        );
+        assert_eq!(
+            plan.goals.len(),
+            1,
+            "a goal needs both a project and a title, once"
+        );
+        assert_eq!(plan.goals[0].title, "Reconcile nightly");
+    }
+
+    /// A fumbled priority costs the recipe its ordering, never the adoption —
+    /// and it becomes the honest "nobody ranked it", not a rank the Architect
+    /// did not choose.
+    #[test]
+    fn an_unusable_adoption_priority_becomes_no_priority() {
+        let raw = serde_json::json!({
+            "dispatch": [],
+            "adoptAppMasters": [{
+                "project": "ledger",
+                "recipes": [
+                    { "slug": "a", "priority": 2 },
+                    { "slug": "b", "priority": "3" },
+                    { "slug": "c", "priority": 9 },
+                    { "slug": "d", "priority": "highest" },
+                    { "slug": "e" },
+                ],
+            }],
+        })
+        .to_string();
+        let plan = parse_decision(&raw, &authority_roster(), 3).expect("parses");
+        let rs = &plan.adopt_app_masters[0].recipes;
+        assert_eq!(rs.len(), 5, "every recipe survives its own priority");
+        assert_eq!(rs[0].priority, Some(2));
+        assert_eq!(rs[1].priority, Some(3), "a numeric string is read");
+        assert_eq!(rs[2].priority, None, "9 is outside 1..=5");
+        assert_eq!(rs[3].priority, None);
+        assert_eq!(rs[4].priority, None);
+    }
+
     /// The licence is the whole gate: an unlicensed roster keeps the plan, drops
     /// the hire, and COUNTS the drop so the ledger can show it happened.
     #[test]
@@ -3248,5 +3929,122 @@ mod tests {
         let p = render_decision_prompt(&ctx);
         assert!(p.contains("- HIRE:"), "the rule appears");
         assert!(p.contains("\"hires\""), "and so does the contract clause");
+    }
+
+    // -- prompt: the workspace section (G13) --------------------------------
+
+    /// The Architect's context: a workspace with one owned project and one
+    /// unowned one, and a home project to write into.
+    fn architect_ctx() -> DecisionContext {
+        let mut ctx = ctx_fixture();
+        ctx.persona_name = "Architect Bank".into();
+        ctx.charters = authority_roster();
+        ctx.may_direct = true;
+        ctx.workspace = Some(WorkspaceView {
+            id: "ws1".into(),
+            name: "Bank".into(),
+            projects: vec![
+                WorkspaceProject {
+                    id: "proj_platform".into(),
+                    name: "platform".into(),
+                    app_master: Some(WorkspaceAppMaster {
+                        persona_id: "am1".into(),
+                        last_note: Some("waiting on the ledger schema".into()),
+                        next_wake_minutes: Some(30),
+                        open_asks: 1,
+                    }),
+                },
+                WorkspaceProject {
+                    id: "proj_ledger".into(),
+                    name: "ledger-service".into(),
+                    app_master: None,
+                },
+            ],
+            goals: Vec::new(),
+            goal_count: 0,
+            active_personas: ActivePersonas { active: 4, cap: 10 },
+        });
+        ctx.home_project = Some(HomeProject {
+            id: "proj_platform".into(),
+            name: "platform".into(),
+            root_path: "/sim/bank/platform".into(),
+        });
+        ctx
+    }
+
+    #[test]
+    fn the_workspace_section_teaches_an_authority_holder_the_three_verbs() {
+        let p = render_decision_prompt(&architect_ctx());
+
+        assert!(p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
+        // The exact JSON shapes, not a paraphrase — the model copies these.
+        assert!(p.contains("\"createProjects\":[{\"name\":"));
+        assert!(p.contains("\"adoptAppMasters\":[{\"project\":"));
+        assert!(p.contains("\"goals\":[{\"project\":"));
+        assert!(p.contains("\"template\":\"empty|rust-service|node-service|python-service\""));
+        // The caps, per verb.
+        assert!(p.contains(&format!("At most {MAX_CREATE_PROJECTS} per wake")));
+        assert!(p.contains(&format!("At most {MAX_ADOPT_APP_MASTERS} per wake")));
+        assert!(p.contains(&format!("At most {MAX_SET_GOALS} per wake")));
+        // The headroom the adoption verb is really capped by — the number, not
+        // just the existence of a cap.
+        assert!(
+            p.contains("6 of 10 persona slot(s) are free right now"),
+            "the cap headroom is stated: {p}"
+        );
+        assert!(p.contains(ADOPTED_APP_MASTER_MODEL));
+        // And where the design goes, as a path it can actually write.
+        assert!(p.contains("/sim/bank/platform/docs/solution-design.md"));
+        assert!(p.contains("- your home: platform (proj_platform) at /sim/bank/platform"));
+        // The unowned project is still named as the case the verb exists for.
+        assert!(p.contains("App Master: NONE"));
+    }
+
+    /// A workspace holder WITHOUT authority sees the portfolio and nothing new:
+    /// a rule describing a verb the parser will drop is worse than no rule.
+    #[test]
+    fn a_workspace_holder_without_authority_is_told_none_of_it() {
+        let mut ctx = architect_ctx();
+        ctx.charters = roster();
+        ctx.may_direct = false;
+        let p = render_decision_prompt(&ctx);
+
+        assert!(
+            p.contains("YOUR WORKSPACE: Bank"),
+            "it still sees the portfolio"
+        );
+        assert!(!p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
+        assert!(!p.contains("createProjects"));
+        assert!(!p.contains("adoptAppMasters"));
+        assert!(!p.contains("persona slot(s) are free right now"));
+        // But it is still told where it writes — that is true with or without
+        // the verbs.
+        assert!(p.contains("- your home: platform"));
+    }
+
+    /// The App Master's prompt is byte-identical to what it was before any of
+    /// this existed: no workspace section, no verbs, no home line.
+    #[test]
+    fn an_app_master_sees_no_workspace_section_at_all() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(!p.contains("YOUR WORKSPACE"));
+        assert!(!p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
+        assert!(!p.contains("your home:"));
+    }
+
+    /// A home nobody resolved is said plainly, never invented as a path.
+    #[test]
+    fn a_workspace_with_no_home_says_so_rather_than_naming_a_path() {
+        let mut ctx = architect_ctx();
+        ctx.home_project = None;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("- your home: NONE"));
+        assert!(
+            !p.contains("solution-design.md"),
+            "no path is promised when none resolved: {p}"
+        );
+        // The verbs are still there — creating that first project is exactly
+        // what closes the gap the line just named.
+        assert!(p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
     }
 }
