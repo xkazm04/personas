@@ -2,6 +2,8 @@ pub mod app_master_adopt;
 /// The headless write-back door: how a dispatched App Master worker reports an
 /// idea's outcome, files a backlog item, and declares or measures a KPI.
 pub mod app_master_writeback;
+/// The cross-project twin of `app_master_adopt`: the Architect of a workspace.
+pub mod architect_adopt;
 pub mod auth;
 pub mod autopilot;
 #[cfg(feature = "desktop")]

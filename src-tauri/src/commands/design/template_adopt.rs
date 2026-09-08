@@ -2579,6 +2579,7 @@ pub(crate) fn map_use_case_to_charter_input(
         // Channel rank is granted, never adopted: a template says nothing
         // about whether the persona holding this charter may direct a team.
         authority: None,
+        can_hire: None,
     };
 
     CreatePersonaResponsibilityInput {
@@ -2596,6 +2597,7 @@ pub(crate) fn map_use_case_to_charter_input(
         tenure: Default::default(),
         status,
         project_id: None,
+        workspace_id: None,
         connectors,
         procedure,
         spec,
@@ -2702,6 +2704,7 @@ pub(crate) fn charter_input_from_recipe(
         tenure: Default::default(),
         status: None,
         project_id: None,
+        workspace_id: None,
         connectors: resolved.bound_connectors(),
         procedure: recipe.guidance.trim().to_string(),
         spec,

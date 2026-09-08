@@ -630,6 +630,16 @@ pub struct DesignContextData {
     /// untyped key would be silently DROPPED on the next round-trip.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub app_master: Option<AppMasterLink>,
+    /// Dev Tools WORKSPACE this persona is pinned to — the cross-project twin
+    /// of [`Self::dev_project_id`], set by the Architect adoption door. A
+    /// persona carrying this sees every project in the workspace rather than
+    /// one codebase; the two pins coexist (an Architect may also be pinned to
+    /// a project for its own connector reads) and neither implies the other.
+    /// Typed + defaulted for the same reason as `kp_link`: `DesignContextData`
+    /// has no serde catch-all, so an untyped key would be silently DROPPED on
+    /// the next round-trip.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
 }
 
 impl DesignContextData {
@@ -855,6 +865,10 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
             || data.archetype_id.is_some()
             || data.memory_strategy_id.is_some()
             || data.kp_link.is_some()
+            // The Architect's envelope may carry ONLY this key, so leaving it
+            // out would drop the workspace pin down the legacy path — exactly
+            // the `dev_project_id` defect the comment above records.
+            || data.workspace_id.is_some()
         {
             return data;
         }

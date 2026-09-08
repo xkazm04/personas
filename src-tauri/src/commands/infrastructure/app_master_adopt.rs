@@ -55,12 +55,13 @@ use personas_engine::responsibility::DOMAIN_SOFTWARE_ENGINEERING;
 
 use crate::commands::design::template_adopt::charter_input_from_recipe;
 use crate::db::models::{
-    CreatePersonaInput, DevProject, Persona, PersonaResponsibility, RecipeRef, RecipeSpec,
-    ResponsibilityStatus, UpdatePersonaInput, UpdatePersonaResponsibilityInput,
+    CreatePersonaInput, DevProject, DevWorkspace, Persona, PersonaResponsibility, RecipeRef,
+    RecipeSpec, ResponsibilityStatus, UpdatePersonaInput, UpdatePersonaResponsibilityInput,
 };
 use crate::db::repos::core::personas as personas_repo;
 use crate::db::repos::core::responsibilities as resp_repo;
 use crate::db::repos::dev::projects as projects_repo;
+use crate::db::repos::dev_workspaces as workspaces_repo;
 use crate::db::repos::resources::recipes as recipes_repo;
 use crate::db::DbPool;
 use crate::engine::persona_brain::manifest;
@@ -76,6 +77,9 @@ const CODEBASE_CONNECTOR: &str = "codebase";
 /// The name prefix that marks a persona as this door's App Master. Used to
 /// recognise an incumbent whose name the operator has since changed.
 const APP_MASTER_NAME_PREFIX: &str = "App Master";
+
+/// The same, for the workspace-bound Architect (`architect_adopt`).
+pub(crate) const ARCHITECT_NAME_PREFIX: &str = "Architect";
 
 /// Default model tier when the body names none.
 const DEFAULT_MODEL_SLUG: &str = "opus";
@@ -210,6 +214,160 @@ pub struct AppMasterOpenAsk {
 }
 
 // ---------------------------------------------------------------------------
+// What the adopted persona binds to
+// ---------------------------------------------------------------------------
+//
+// Everything from here to `adopt_bound` is the GENERALISED half of this door,
+// added for the Grand Simulation's Architect (`architect_adopt`, gap G1). The
+// App Master path below is one instantiation of it and behaves exactly as it
+// did before: a project binding, the `App Master ` prefix, the codebase
+// connector, the mandate law this file already rendered.
+
+/// What an adopted persona — and every charter it holds — binds to.
+///
+/// A project binding is the App Master's: the decision reads that codebase's
+/// ideas, contexts and KPIs. A workspace binding is the Architect's: the
+/// decision reads every project in the workspace. The two are stored in
+/// different columns and `personas_engine::responsibility::validate` refuses a
+/// charter carrying both, so this enum is the only place the choice is made.
+///
+/// `DevProject` is boxed: it is ~536 bytes against `DevWorkspace`'s handful, and
+/// an unboxed pair makes every `Binding` the size of the larger one
+/// (`clippy::large_enum_variant`). The enum is passed by reference everywhere,
+/// so the indirection costs one pointer hop on a path that already opened a
+/// database connection.
+pub(crate) enum Binding {
+    Project(Box<DevProject>),
+    Workspace(DevWorkspace),
+}
+
+impl Binding {
+    fn id(&self) -> &str {
+        match self {
+            Self::Project(p) => &p.id,
+            Self::Workspace(w) => &w.id,
+        }
+    }
+
+    /// The name the persona, its description and its manifest law are titled
+    /// after.
+    fn name(&self) -> &str {
+        match self {
+            Self::Project(p) => &p.name,
+            Self::Workspace(w) => &w.name,
+        }
+    }
+
+    fn project_id(&self) -> Option<&str> {
+        match self {
+            Self::Project(p) => Some(p.id.as_str()),
+            Self::Workspace(_) => None,
+        }
+    }
+
+    fn workspace_id(&self) -> Option<&str> {
+        match self {
+            Self::Project(_) => None,
+            Self::Workspace(w) => Some(w.id.as_str()),
+        }
+    }
+}
+
+/// The role the adoption installs. Everything that differs between an App
+/// Master and an Architect is one of these five answers; nothing else in
+/// [`adopt_bound`] branches on the role.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum AdoptedRole {
+    AppMaster,
+    Architect,
+}
+
+impl AdoptedRole {
+    /// The name prefix that recognises an incumbent whose name the operator
+    /// has since changed.
+    fn name_prefix(self) -> &'static str {
+        match self {
+            Self::AppMaster => APP_MASTER_NAME_PREFIX,
+            Self::Architect => ARCHITECT_NAME_PREFIX,
+        }
+    }
+
+    /// The connector every charter of this role reaches for, if any.
+    ///
+    /// `codebase` is a GlobalProbe builtin that resolves the persona's pinned
+    /// `devProjectId` at runtime — which the Architect does not have. Binding
+    /// it anyway would silently resolve the globally-first project, so the
+    /// Architect gets nothing here and reaches its projects through the
+    /// dev-tools bridge instead.
+    fn default_connector(self) -> Option<&'static str> {
+        match self {
+            Self::AppMaster => Some(CODEBASE_CONNECTOR),
+            Self::Architect => None,
+        }
+    }
+
+    fn description(self, binding_name: &str) -> String {
+        match self {
+            Self::AppMaster => format!(
+                "App Master for {binding_name} — accountable owner of the codebase's \
+                 continuing value."
+            ),
+            Self::Architect => format!(
+                "Architect for the {binding_name} workspace — designs the solution and \
+                 directs the projects that carry it."
+            ),
+        }
+    }
+
+    fn seed_system_prompt(self, binding_name: &str) -> String {
+        match self {
+            Self::AppMaster => seed_system_prompt(binding_name),
+            Self::Architect => architect_seed_system_prompt(binding_name),
+        }
+    }
+
+    fn mandate_law(self, binding_name: &str, mandate: &Mandate) -> String {
+        match self {
+            Self::AppMaster => render_mandate_law(binding_name, mandate),
+            Self::Architect => render_architect_mandate_law(binding_name, mandate),
+        }
+    }
+
+    fn boundaries_law(self) -> &'static str {
+        match self {
+            Self::AppMaster => BOUNDARIES_LAW,
+            Self::Architect => ARCHITECT_BOUNDARIES_LAW,
+        }
+    }
+}
+
+/// The options both adoption doors share. The binding itself is separate
+/// because that is the one field the two wire shapes spell differently
+/// (`project` vs `workspace`).
+pub(crate) struct AdoptionOptions<'a> {
+    pub recipes: &'a [AppMasterRecipeRequest],
+    pub model: Option<&'a str>,
+    pub max_concurrent: Option<i32>,
+    pub scope_rung: Option<u8>,
+    pub enabled: Option<bool>,
+    pub name: Option<&'a str>,
+}
+
+/// What one adoption did, before either door dresses it in its own wire type.
+/// Deliberately carries no `project_id` / `workspace_id`: the caller already
+/// holds the binding it passed in, and duplicating it here is how the two
+/// shapes would start to disagree.
+pub(crate) struct BoundAdoption {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub created: bool,
+    pub charters: Vec<AppMasterCharterOutcome>,
+    pub suspended: Vec<String>,
+    pub manifest_path: Option<String>,
+    pub notes: Vec<String>,
+}
+
+// ---------------------------------------------------------------------------
 // Project + model resolution
 // ---------------------------------------------------------------------------
 
@@ -242,6 +400,32 @@ fn resolve_project(pool: &DbPool, needle: &str) -> Result<DevProject, AppError> 
     Err(AppError::Validation(format!(
         "No dev project matches `{needle}` by id, name or root_path. Register it first \
          (POST /dev-tools/projects), or list the known ones (GET /dev-tools/projects)."
+    )))
+}
+
+/// Resolve `needle` to a workspace by id, then by name (exact before
+/// case-insensitive) — the same lenient order [`resolve_project`] accepts, for
+/// the same reason: a caller who has the workspace's name should not have to
+/// look up a uuid first.
+pub(crate) fn resolve_workspace(pool: &DbPool, needle: &str) -> Result<DevWorkspace, AppError> {
+    let needle = needle.trim();
+    personas_core::validation::require_non_empty("workspace", needle)?;
+
+    match workspaces_repo::get_workspace_by_id(pool, needle) {
+        Ok(w) => return Ok(w),
+        Err(AppError::NotFound(_)) => {}
+        Err(e) => return Err(e),
+    }
+    let all = workspaces_repo::list_workspaces(pool)?;
+    if let Some(w) = all.iter().find(|w| w.name == needle) {
+        return Ok(w.clone());
+    }
+    if let Some(w) = all.iter().find(|w| w.name.eq_ignore_ascii_case(needle)) {
+        return Ok(w.clone());
+    }
+    Err(AppError::Validation(format!(
+        "No dev workspace matches `{needle}` by id or name. Create it first, or list the \
+         known ones (dev_workspaces_list)."
     )))
 }
 
@@ -348,6 +532,75 @@ fn forbidden_class_line(class: ForbiddenClass) -> &'static str {
 /// The `# Boundaries` law body — the two limits this door is the author of.
 const BOUNDARIES_LAW: &str = "- Ship to the default branch only through the operator's \
      authenticated GitHub login and only when the mandate rung allows.\n\
+     - Never repair by deletion.\n";
+
+/// The `# Mandate` law body for an **Architect** — the cross-project role of
+/// the Grand Simulation (`docs/architecture/grand-simulation.md` §2).
+///
+/// Rendered from the same typed [`Mandate`] as the App Master's, and it quotes
+/// the engine's own forbidden-class wording verbatim through
+/// [`forbidden_class_line`] for exactly the reason
+/// [`render_mandate_law`] does: there must be ONE spelling of a class in this
+/// repository, and a second paraphrase of it would be a second rule.
+///
+/// What differs is the standing question and the six verbs. The Architect's
+/// scope rung governs the same ladder — it may not merge or deploy either —
+/// but the interesting limit is not the rung: it is that the Architect does
+/// not write application code at all. Its recipes write documents and call
+/// doors, and the projects it creates are where the code goes.
+fn render_architect_mandate_law(workspace_name: &str, mandate: &Mandate) -> String {
+    let mut out = format!(
+        "You are the ARCHITECT of the `{workspace_name}` workspace — the single reader who \
+         sees every project in it at once.\n\n\
+         Your standing question at the start of every cycle is \"does the portfolio still \
+         match the design, and what did the projects' own evidence change?\" — not \"what \
+         task was I given?\".\n\n\
+         MANDATE — what the role is:\n\
+         - You design and direct; you do not write application code.\n\
+         - You create projects, adopt App Masters, set goals, speak with authority, \
+         request roles, adjust scope.\n\
+         - Everything a project builds is built by its App Master and the roles hired into \
+         it. If you find yourself editing an application's source, you have taken \
+         somebody's work rather than directing it.\n\n\
+         MANDATE — how far you may go on your own:\n"
+    );
+    out.push_str(match mandate.scope_rung {
+        RUNG_READ => {
+            "- Rung 0 (read). Observe, measure and report. You may NOT write to the \
+             repository at all — not a branch, not a retry. Everything else is a proposal \
+             you hand to your owner.\n"
+        }
+        RUNG_RETRY => {
+            "- Rung 1 (retry). You may re-run existing work (a failed job, a flaky gate). \
+             You may NOT author a new change.\n"
+        }
+        _ => {
+            "- Rung 2 (open branch/PR). You may author a change and propose it on a \
+             branch. You may NOT merge, deploy, or push to the default branch — a human \
+             merges. Never commit to main/master.\n"
+        }
+    });
+    out.push_str(
+        "- Rung 3 (deploy/merge) and rung 4 (change the gates) are never granted to anyone \
+         in this version. Do not ask for them and do not route around them.\n",
+    );
+    if !mandate.forbidden_classes.is_empty() {
+        out.push_str(
+            "\nFORBIDDEN CHANGES — these are blocked mechanically at dispatch, counted as \
+             violations, and never rewritten into an allowed shape. Stop at the line and \
+             ask instead:\n",
+        );
+        for class in &mandate.forbidden_classes {
+            out.push_str(forbidden_class_line(*class));
+        }
+    }
+    out
+}
+
+/// The Architect's `# Boundaries` law body.
+const ARCHITECT_BOUNDARIES_LAW: &str = "- Direct through goals and the workspace channel, \
+     never by editing another persona's work.\n\
+     - Ask for a role rather than doing the role's work yourself.\n\
      - Never repair by deletion.\n";
 
 /// The `# Operation defaults` law body: what the adoption configured.
@@ -460,9 +713,15 @@ fn resolve_recipes(
     Ok(out)
 }
 
-/// Merge `devProjectId` into a persona's `design_context` without clobbering
-/// whatever else it holds (`useCases`, `summary`, the twin pin, …).
-fn design_context_with_pin(existing: Option<&str>, project_id: &str) -> String {
+/// Merge the binding's pin into a persona's `design_context` without
+/// clobbering whatever else it holds (`useCases`, `summary`, the twin pin, …).
+///
+/// A project binding writes `devProjectId` — the key the `codebase` connector
+/// resolves. A workspace binding writes `workspaceId` beside it, which is what
+/// `personas::list_by_dev_workspace` reads to find the incumbent Architect.
+/// Only the binding's OWN key is written: clearing the other one would unpin a
+/// codebase the operator bound by hand.
+fn design_context_with_pin(existing: Option<&str>, binding: &Binding) -> String {
     let mut dc: serde_json::Value = existing
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -470,10 +729,15 @@ fn design_context_with_pin(existing: Option<&str>, project_id: &str) -> String {
         .filter(serde_json::Value::is_object)
         .unwrap_or_else(|| serde_json::json!({}));
     if let Some(obj) = dc.as_object_mut() {
-        // `DesignContextData` is `rename_all = "camelCase"` → `devProjectId`.
+        // `DesignContextData` is `rename_all = "camelCase"` → `devProjectId`
+        // and `workspaceId`.
+        let key = match binding {
+            Binding::Project(_) => "devProjectId",
+            Binding::Workspace(_) => "workspaceId",
+        };
         obj.insert(
-            "devProjectId".to_string(),
-            serde_json::Value::String(project_id.to_string()),
+            key.to_string(),
+            serde_json::Value::String(binding.id().to_string()),
         );
     }
     dc.to_string()
@@ -493,57 +757,125 @@ fn seed_system_prompt(app_name: &str) -> String {
     )
 }
 
-/// Find the incumbent App Master for `project`, if any.
+/// The Architect's seed prompt — short for the same reason: the standing law
+/// lives in `manifest.md`, and a second copy in `system_prompt` would drift.
+fn architect_seed_system_prompt(workspace_name: &str) -> String {
+    format!(
+        "You are the Architect of the `{workspace_name}` workspace: the single reader who \
+         sees every project in it at once. Your mandate, your boundaries and your operating \
+         defaults are your manifest's law sections — read them as binding. You design and \
+         direct; you do not write application code. Each charter you hold names one recipe's \
+         worth of standing work; you decide which one moves the portfolio this cycle and you \
+         report whether it actually moved."
+    )
+}
+
+/// Find the incumbent holder of `binding`, if any: the persona already pinned
+/// to it, by exact name first and then by the role's name prefix (so an
+/// operator's rename does not mint a second one).
 fn find_incumbent(
     pool: &DbPool,
-    project_id: &str,
+    role: AdoptedRole,
+    binding: &Binding,
     desired_name: &str,
 ) -> Result<Option<Persona>, AppError> {
-    let pinned = personas_repo::list_by_dev_project(pool, project_id)?;
+    let pinned = match binding {
+        Binding::Project(p) => personas_repo::list_by_dev_project(pool, &p.id)?,
+        Binding::Workspace(w) => personas_repo::list_by_dev_workspace(pool, &w.id)?,
+    };
     let by_name = pinned.iter().find(|p| p.name == desired_name).cloned();
     if by_name.is_some() {
         return Ok(by_name);
     }
     Ok(pinned
         .into_iter()
-        .find(|p| p.name.starts_with(APP_MASTER_NAME_PREFIX)))
+        .find(|p| p.name.starts_with(role.name_prefix())))
 }
 
 /// Adopt (or re-adopt) the App Master for one project. The whole operation,
 /// with no Tauri or HTTP in sight — the command and the bridge route are both
 /// adapters over this.
 pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdoption, AppError> {
-    let project = resolve_project(pool, &input.project)?;
-    let model_id = resolve_model_id(input.model.as_deref())?;
-    let max_concurrent = input.max_concurrent.unwrap_or(DEFAULT_MAX_CONCURRENT);
-    let enabled = input.enabled.unwrap_or(false);
-    let scope_rung = input
+    let binding = Binding::Project(Box::new(resolve_project(pool, &input.project)?));
+    let project_id = binding.id().to_string();
+    let done = adopt_bound(
+        pool,
+        AdoptedRole::AppMaster,
+        &binding,
+        &AdoptionOptions {
+            recipes: &input.recipes,
+            model: input.model.as_deref(),
+            max_concurrent: input.max_concurrent,
+            scope_rung: input.scope_rung,
+            enabled: input.enabled,
+            name: input.name.as_deref(),
+        },
+    )?;
+
+    Ok(AppMasterAdoption {
+        persona_id: done.persona_id,
+        persona_name: done.persona_name,
+        project_id,
+        created: done.created,
+        charters: done.charters,
+        suspended: done.suspended,
+        manifest_path: done.manifest_path,
+        notes: done.notes,
+        // An adoption has not woken yet, so it has asked nothing and decided
+        // nothing. Reported empty rather than omitted: the shape is the same on
+        // both paths, and a reader never has to ask which one produced it.
+        open_asks: Vec::new(),
+        last_note: None,
+        // Re-read rather than reusing the pre-write measurement: this adoption
+        // may have just consumed a slot, and a caller deciding whether to hire
+        // again must see the count AFTER its own effect.
+        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
+    })
+}
+
+/// Adopt (or re-adopt) the holder of ONE binding. The generalised body both
+/// doors run: the App Master's project adoption above and the Architect's
+/// workspace adoption in `architect_adopt`.
+///
+/// The two rules in this module's header hold for both roles — partial success
+/// is reported in `notes` rather than rounded up, and nothing is invented to
+/// fill a gap — and so does the idempotency key: the persona by
+/// `(binding pin, name)`, each charter by `(persona_id, spec.recipeRef.slug)`.
+pub(crate) fn adopt_bound(
+    pool: &DbPool,
+    role: AdoptedRole,
+    binding: &Binding,
+    opts: &AdoptionOptions<'_>,
+) -> Result<BoundAdoption, AppError> {
+    let model_id = resolve_model_id(opts.model)?;
+    let max_concurrent = opts.max_concurrent.unwrap_or(DEFAULT_MAX_CONCURRENT);
+    let enabled = opts.enabled.unwrap_or(false);
+    let scope_rung = opts
         .scope_rung
         .unwrap_or(RUNG_BRANCH)
         .min(MAX_GRANTABLE_RUNG);
     let mut notes: Vec<String> = Vec::new();
-    if input.scope_rung.is_some_and(|r| r > MAX_GRANTABLE_RUNG) {
+    if opts.scope_rung.is_some_and(|r| r > MAX_GRANTABLE_RUNG) {
         notes.push(format!(
             "Requested scope rung {} is above the grantable ceiling; clamped to {}",
-            input.scope_rung.unwrap_or(scope_rung),
+            opts.scope_rung.unwrap_or(scope_rung),
             MAX_GRANTABLE_RUNG
         ));
     }
 
     // Every recipe resolves BEFORE the first write, so an unknown slug leaves
     // the database untouched rather than half-adopted.
-    let resolved = resolve_recipes(pool, &input.recipes)?;
+    let resolved = resolve_recipes(pool, opts.recipes)?;
 
-    let desired_name = input
+    let desired_name = opts
         .name
-        .as_deref()
         .map(str::trim)
         .filter(|n| !n.is_empty())
         .map(str::to_string)
-        .unwrap_or_else(|| format!("{APP_MASTER_NAME_PREFIX} {}", project.name));
+        .unwrap_or_else(|| format!("{} {}", role.name_prefix(), binding.name()));
 
     let model_profile = serde_json::json!({ "model": model_id }).to_string();
-    let incumbent = find_incumbent(pool, &project.id, &desired_name)?;
+    let incumbent = find_incumbent(pool, role, binding, &desired_name)?;
     let created = incumbent.is_none();
 
     // G4: the app-wide active-persona cap, checked before the first persona
@@ -555,7 +887,7 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
         Some(p) => personas_engine::active_persona_cap::check_enable_headroom(
             pool,
             &p.id,
-            input.enabled.unwrap_or(p.enabled),
+            opts.enabled.unwrap_or(p.enabled),
             Some(crate::db::models::PersonaLifecycle::Active.as_str()),
         )?,
         None => personas_engine::active_persona_cap::check_active_persona_headroom(pool, enabled)?,
@@ -570,12 +902,12 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
                 // A re-adoption refreshes charters; it does not switch a
                 // running persona off. `enabled` moves only when the request
                 // says so.
-                enabled: input.enabled,
+                enabled: opts.enabled,
                 max_concurrent: Some(max_concurrent),
                 model_profile: Some(Some(model_profile.clone())),
                 design_context: Some(Some(design_context_with_pin(
                     p.design_context.as_deref(),
-                    &project.id,
+                    binding,
                 ))),
                 lifecycle: Some(
                     crate::db::models::PersonaLifecycle::Active
@@ -590,15 +922,12 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
             pool,
             CreatePersonaInput {
                 name: desired_name.clone(),
-                system_prompt: seed_system_prompt(&project.name),
-                description: Some(format!(
-                    "App Master for {} — accountable owner of the codebase's continuing value.",
-                    project.name
-                )),
+                system_prompt: role.seed_system_prompt(binding.name()),
+                description: Some(role.description(binding.name())),
                 enabled: Some(enabled),
                 max_concurrent: Some(max_concurrent),
                 model_profile: Some(model_profile),
-                design_context: Some(design_context_with_pin(None, &project.id)),
+                design_context: Some(design_context_with_pin(None, binding)),
                 lifecycle: Some(
                     crate::db::models::PersonaLifecycle::Active
                         .as_str()
@@ -619,7 +948,8 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
     let (charters, suspended, charter_notes) = sync_charters(
         pool,
         &persona.id,
-        &project.id,
+        role,
+        binding,
         scope_rung,
         &model_id,
         &resolved,
@@ -634,7 +964,8 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
     let manifest_path = write_manifest_law(
         pool,
         &persona.id,
-        &project.name,
+        role,
+        binding.name(),
         &mandate,
         &model_id,
         max_concurrent,
@@ -642,34 +973,26 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
         &mut notes,
     );
 
-    Ok(AppMasterAdoption {
+    Ok(BoundAdoption {
         persona_id: persona.id,
         persona_name: persona.name,
-        project_id: project.id,
         created,
         charters,
         suspended,
         manifest_path,
         notes,
-        // An adoption has not woken yet, so it has asked nothing and decided
-        // nothing. Reported empty rather than omitted: the shape is the same on
-        // both paths, and a reader never has to ask which one produced it.
-        open_asks: Vec::new(),
-        last_note: None,
-        // Re-read rather than reusing the pre-write measurement: this adoption
-        // may have just consumed a slot, and a caller deciding whether to hire
-        // again must see the count AFTER its own effect.
-        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
     })
 }
 
 /// Bring the persona's recipe charters in line with the request: create what
 /// is new, update what exists, suspend what the request dropped.
 #[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 fn sync_charters(
     pool: &DbPool,
     persona_id: &str,
-    project_id: &str,
+    role: AdoptedRole,
+    binding: &Binding,
     scope_rung: u8,
     model_id: &str,
     resolved: &[ResolvedRecipe],
@@ -694,7 +1017,10 @@ fn sync_charters(
 
     for item in resolved {
         let mut charter = charter_input_from_recipe(persona_id, &item.spec, None);
-        charter.project_id = Some(project_id.to_string());
+        // ONE of the two, never both — `validate` refuses the pair, and the
+        // binding enum is what makes that unrepresentable here.
+        charter.project_id = binding.project_id().map(str::to_string);
+        charter.workspace_id = binding.workspace_id().map(str::to_string);
         charter.domain = Some(DOMAIN_SOFTWARE_ENGINEERING.to_string());
         charter.scope_rung = scope_rung;
         charter.status = Some(ResponsibilityStatus::Active.as_str().to_string());
@@ -710,8 +1036,11 @@ fn sync_charters(
             // A draft recipe has no version; the slug alone is the pointer.
             version: item.spec.version.clone().filter(|v| !v.trim().is_empty()),
         });
-        if !charter.connectors.iter().any(|c| c == CODEBASE_CONNECTOR) {
-            charter.connectors.insert(0, CODEBASE_CONNECTOR.to_string());
+        apply_role_grants(role, &item.slug, &mut charter.spec);
+        if let Some(connector) = role.default_connector() {
+            if !charter.connectors.iter().any(|c| c == connector) {
+                charter.connectors.insert(0, connector.to_string());
+            }
         }
 
         let outcome = match by_slug.get(&item.slug) {
@@ -729,6 +1058,7 @@ fn sync_charters(
                         scope_rung: Some(charter.scope_rung),
                         cadence: Some(charter.cadence.clone()),
                         project_id: Some(charter.project_id.clone()),
+                        workspace_id: Some(charter.workspace_id.clone()),
                         connectors: Some(charter.connectors.clone()),
                         procedure: Some(charter.procedure.clone()),
                         spec: Some(charter.spec.clone()),
@@ -801,6 +1131,35 @@ fn sync_charters(
     Ok((outcomes, suspended, notes))
 }
 
+/// The recipe slug whose charter carries the hiring grant. Named here rather
+/// than inferred from the recipe's own text: a grant that turns itself on
+/// because a description mentioned hiring is a grant nobody decided.
+const HIRING_RECIPE_SLUG: &str = "workforce-planning";
+
+/// Stamp the role's standing grants onto a charter's spec.
+///
+/// `authority` says this charter's holder speaks with authority in channels —
+/// the Architect's directives are instructions, not suggestions. `canHire` says
+/// this charter may request a hire from kp, and only the workforce-planning
+/// charter carries it: the Architect's other four design, compose, direct and
+/// reflect, and none of them has a reason to open a job.
+///
+/// An App Master gets neither, and both stay ABSENT rather than `false` on its
+/// charters — the wire rule this repo already follows for an unadopted field.
+fn apply_role_grants(
+    role: AdoptedRole,
+    slug: &str,
+    spec: &mut crate::db::models::ResponsibilitySpec,
+) {
+    if role != AdoptedRole::Architect {
+        return;
+    }
+    spec.authority = Some(true);
+    if slug == HIRING_RECIPE_SLUG {
+        spec.can_hire = Some(true);
+    }
+}
+
 /// Seed the manifest and write its three law sections. Best-effort by
 /// construction: the persona and its charters are already real, so every
 /// failure becomes a note and `None` is returned for the path.
@@ -808,6 +1167,7 @@ fn sync_charters(
 fn write_manifest_law(
     pool: &DbPool,
     persona_id: &str,
+    role: AdoptedRole,
     app_name: &str,
     mandate: &Mandate,
     model_id: &str,
@@ -826,8 +1186,8 @@ fn write_manifest_law(
         }
     };
     let sections = [
-        ("Mandate", render_mandate_law(app_name, mandate)),
-        ("Boundaries", BOUNDARIES_LAW.to_string()),
+        ("Mandate", role.mandate_law(app_name, mandate)),
+        ("Boundaries", role.boundaries_law().to_string()),
         (
             "Operation defaults",
             render_operation_defaults(model_id, max_concurrent, charters),

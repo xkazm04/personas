@@ -765,6 +765,29 @@ pub fn list_by_dev_project(pool: &DbPool, project_id: &str) -> Result<Vec<Person
     })
 }
 
+/// Every persona pinned to one dev WORKSPACE — the personas whose
+/// `design_context.workspaceId` names `workspace_id`.
+///
+/// The cross-project twin of [`list_by_dev_project`], and deliberately the
+/// same shape: the key is extracted in SQL so the scan never deserializes a
+/// design context it is going to skip, and the order is oldest first so the
+/// Architect adoption door treats the earliest match as the incumbent and
+/// re-running it converges on one persona instead of alternating.
+#[instrument(skip(pool))]
+pub fn list_by_dev_workspace(pool: &DbPool, workspace_id: &str) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::list_by_dev_workspace", {
+        let conn = pool.conn("personas::list_by_dev_workspace")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas
+             WHERE json_valid(design_context)
+               AND json_extract(design_context, '$.workspaceId') = ?1
+             ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map(params![workspace_id], row_to_persona)?;
+        Ok(collect_rows(rows, "personas::list_by_dev_workspace"))
+    })
+}
+
 /// Personas the user has starred — the Director's coaching scope. Excludes
 /// the Director itself is the caller's concern (cycle runners skip it).
 #[instrument(skip(pool))]

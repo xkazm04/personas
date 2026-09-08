@@ -34,6 +34,18 @@ owner: string, cadence: ResponsibilityCadence, budgetMonthlyUsd?: number, tenure
  */
 status: string, projectId?: string, 
 /**
+ * The `dev_workspaces` row this charter is bound to, for a CROSS-PROJECT
+ * holder — the Architect of the Grand Simulation, whose decision sees the
+ * whole workspace rather than one codebase.
+ *
+ * Mutually exclusive with [`Self::project_id`]: a charter binds to one
+ * project OR to one workspace, never both, and
+ * `personas_engine::responsibility::validate` refuses the pair. Both
+ * absent is still legal — that is an unbound charter, which is what every
+ * hand-authored one is.
+ */
+workspaceId?: string, 
+/**
  * Who authored the charter ('operator' | 'kp-hire' | 'migration' |
  * 'agent-proposed'; DB CHECK-enforced).
  */

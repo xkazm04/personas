@@ -144,4 +144,8 @@ pacing?: ResponsibilityPacing,
  * `None` is "not granted", identical in effect to `Some(false)`; the
  * tri-state exists only so an absent field stays absent on the wire.
  */
-authority?: boolean, };
+authority?: boolean, 
+/**
+ * True for a charter that may request a hire from kp.
+ */
+canHire?: boolean, };

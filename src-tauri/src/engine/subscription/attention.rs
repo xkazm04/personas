@@ -956,15 +956,42 @@ fn arrivals_content(a: &team_channel::ChannelArrival) -> String {
 }
 
 /// An **App Master** is a persona holding at least one admitted charter bound
-/// to a project. That is the whole test: a project-bound charter is what gives
-/// the decision something to be about (a codebase with ideas, contexts and
-/// KPIs), and a persona with none of them has nothing the decision could read.
+/// to a project **or to a workspace**. That is the whole test: a bound charter
+/// is what gives the decision something to be about, and a persona with none of
+/// them has nothing the decision could read.
+///
+/// The name is kept deliberately, and it is now wider than the role it is named
+/// after. A project-bound charter is an App Master's — the decision reads that
+/// codebase's ideas, contexts and KPIs. A **workspace**-bound charter is the
+/// **Architect**'s (Grand Simulation G1): the decision reads every project in
+/// the workspace instead, with the same lane, the same ledger and the same
+/// dispatch paths. Renaming this to `holds_a_bound_charter` would touch the
+/// lane constant (`LANE_DECIDE`), the daily-cap branch, the woken-persona
+/// branch and every test that names it, for no behavioural difference — so the
+/// widening is documented here rather than spelled in the identifier.
 pub(crate) fn is_app_master(charters: &[&PersonaResponsibility]) -> bool {
     charters.iter().any(|c| {
         c.project_id
             .as_deref()
             .is_some_and(|p| !p.trim().is_empty())
+            || c.workspace_id
+                .as_deref()
+                .is_some_and(|w| !w.trim().is_empty())
     })
+}
+
+/// The distinct workspace ids this persona's charters bind to, in roster order.
+/// Empty for every project-bound App Master.
+fn workspace_ids_of(charters: &[&PersonaResponsibility]) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+    for c in charters {
+        if let Some(ws) = c.workspace_id.as_deref().filter(|w| !w.trim().is_empty()) {
+            if !ids.iter().any(|x| x == ws) {
+                ids.push(ws.to_string());
+            }
+        }
+    }
+    ids
 }
 
 /// The lane priority — arrivals > maintenance > improve > advance — as one
@@ -1146,6 +1173,23 @@ fn build_decision_context(
         }
     }
 
+    // A WORKSPACE-bound holder (the Architect) is about every project in the
+    // workspace, and none of them is named on a charter. So the membership read
+    // supplies the project list, and each member then gets exactly the same
+    // per-project snapshot a project-bound App Master would have got — one
+    // rule, so the two roles never see the same project described two ways.
+    // Appended rather than substituted: a persona holding both kinds of charter
+    // is legal (each charter binds to one thing, not the persona), and dropping
+    // its project-bound half here would hide a codebase it actually owns.
+    let workspace = build_workspace_view(pool, charters);
+    if let Some(w) = &workspace {
+        for p in &w.projects {
+            if !project_ids.iter().any(|x| x == &p.id) {
+                project_ids.push(p.id.clone());
+            }
+        }
+    }
+
     let projects = project_ids
         .into_iter()
         .map(|project_id| project_snapshot(pool, &project_id, MAX_NAMED_IDEAS))
@@ -1201,6 +1245,155 @@ fn build_decision_context(
         channel,
         peers,
         may_direct,
+        workspace,
+    })
+}
+
+// ── The workspace view (the Architect's half of the decision context) ──────
+
+/// The app-wide ceiling on simultaneously enabled personas and the count
+/// against it, as the Architect is told them — the one number a workforce plan
+/// cannot be made without. Read from the same engine door every enable path
+/// enforces (`max_active_personas`, G4), so the prompt and the refusal agree.
+fn active_persona_headroom(pool: &DbPool) -> attention_decide::ActivePersonas {
+    match personas_engine::active_persona_cap::active_persona_headroom(pool) {
+        Ok(h) => attention_decide::ActivePersonas {
+            active: h.active,
+            cap: h.cap,
+        },
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: active-persona headroom read failed");
+            attention_decide::ActivePersonas {
+                active: 0,
+                cap: personas_engine::active_persona_cap::active_persona_cap(pool),
+            }
+        }
+    }
+}
+
+/// The workspace this persona holds, or `None` when no charter binds to one.
+///
+/// Best-effort field by field, exactly like [`project_snapshot`]: a workspace
+/// row that cannot be read yields `None` (the prompt then renders no workspace
+/// section rather than an empty one), and a member project whose App Master
+/// cannot be read contributes a project with `app_master: None` — which is a
+/// FACT the Architect acts on, so it is never inferred from a failed read: the
+/// membership read is what decides the project list, and the App Master lookup
+/// only ever adds detail to a project already on it.
+///
+/// Only the FIRST workspace is rendered when a persona somehow holds charters
+/// on two. That is not a shape the adoption door can produce, and picking one
+/// with a note beats rendering a merged portfolio nobody owns.
+fn build_workspace_view(
+    pool: &DbPool,
+    charters: &[&PersonaResponsibility],
+) -> Option<attention_decide::WorkspaceView> {
+    use attention_decide::{WorkspaceGoal, WorkspaceProject, WorkspaceView, MAX_WORKSPACE_GOALS};
+
+    let ids = workspace_ids_of(charters);
+    let workspace_id = ids.first()?;
+    if ids.len() > 1 {
+        tracing::warn!(
+            workspace_id = %workspace_id,
+            held = ids.len(),
+            "persona_attention: charters bind to more than one workspace — rendering the first"
+        );
+    }
+    let workspace = match crate::db::repos::dev_workspaces::get_workspace_by_id(pool, workspace_id)
+    {
+        Ok(w) => w,
+        Err(e) => {
+            tracing::warn!(workspace_id = %workspace_id, error = %e,
+                "persona_attention: workspace read failed — no workspace section this wake");
+            return None;
+        }
+    };
+
+    let members = crate::db::repos::dev_workspaces::list_workspace_projects(pool, workspace_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(workspace_id = %workspace_id, error = %e,
+                "persona_attention: workspace membership read failed");
+            Vec::new()
+        });
+
+    let projects: Vec<WorkspaceProject> = members
+        .iter()
+        .map(|p| WorkspaceProject {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            app_master: app_master_of_project(pool, &p.id),
+        })
+        .collect();
+
+    // One read for every goal in the app, then filtered to the member set —
+    // `list_all_goals` is the only cross-project goal read there is, and six
+    // per-project calls would cost six connections for the same rows.
+    let member_ids: std::collections::HashSet<&str> =
+        members.iter().map(|p| p.id.as_str()).collect();
+    let all_goals = crate::db::repos::dev::portfolio::list_all_goals(pool).unwrap_or_else(|e| {
+        tracing::warn!(workspace_id = %workspace_id, error = %e,
+            "persona_attention: workspace goal read failed");
+        Vec::new()
+    });
+    let mut goals: Vec<WorkspaceGoal> = all_goals
+        .into_iter()
+        .filter(|g| member_ids.contains(g.project_id.as_str()))
+        .map(|g| WorkspaceGoal {
+            project_id: g.project_id,
+            title: g.title,
+            status: g.status,
+            progress: g.progress,
+        })
+        .collect();
+    let goal_count = goals.len();
+    goals.truncate(MAX_WORKSPACE_GOALS);
+
+    Some(WorkspaceView {
+        id: workspace.id,
+        name: workspace.name,
+        projects,
+        goals,
+        goal_count,
+        active_personas: active_persona_headroom(pool),
+    })
+}
+
+/// The App Master of one project, as the Architect needs to see it: who it is,
+/// its own last word, the sleep it chose and how many questions it is waiting
+/// on. `None` when the project has no persona pinned to it — the state the
+/// Architect exists to notice.
+///
+/// Keyed on the project PIN (`design_context.devProjectId`), the same key
+/// `app_master_adopt::current` uses, so the two agree on who the owner is.
+/// Unlike that one this does NOT additionally require the `App Master ` name
+/// prefix: a project whose owner the operator renamed still has an owner, and
+/// reporting it as unowned would send the Architect to adopt a second one.
+fn app_master_of_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Option<attention_decide::WorkspaceAppMaster> {
+    let pinned = persona_repo::list_by_dev_project(pool, project_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e,
+                "persona_attention: App Master lookup failed — reported as unowned");
+            Vec::new()
+        })
+        .into_iter()
+        .next()?;
+    let charters = responsibilities::list_by_persona(pool, &pinned.id, false).unwrap_or_default();
+    Some(attention_decide::WorkspaceAppMaster {
+        last_note: newest_coverage_note_for(&charters),
+        next_wake_minutes: attention_decide::newest_next_wake_minutes(charters.iter().map(|c| {
+            (
+                c.spec
+                    .pacing
+                    .as_ref()
+                    .and_then(|p| p.last_decided_at.as_deref()),
+                c.spec.pacing.as_ref().and_then(|p| p.next_wake_minutes),
+            )
+        })),
+        open_asks: list_open_asks(pool, &pinned.id).len(),
+        persona_id: pinned.id,
     })
 }
 
@@ -3650,6 +3843,35 @@ mod attention_tests {
         assert!(is_app_master(&[&plain, &bound]), "one is enough");
     }
 
+    /// The same test admits a WORKSPACE-bound charter — the Architect (G1).
+    /// A blank workspace id is not a workspace, for the same reason a blank
+    /// project id is not a project.
+    #[test]
+    fn app_master_is_also_decided_by_a_workspace_bound_charter() {
+        let plain = charter_fixture("r1");
+        let mut ws = charter_fixture("r2");
+        ws.workspace_id = Some("ws_bank".into());
+        let mut blank = charter_fixture("r3");
+        blank.workspace_id = Some("  ".into());
+
+        assert!(is_app_master(&[&ws]), "a workspace charter reaches decide");
+        assert!(is_app_master(&[&plain, &ws]), "one is enough");
+        assert!(
+            !is_app_master(&[&plain, &blank]),
+            "a blank id is not a workspace"
+        );
+
+        // And the id-collection helper the workspace view keys on agrees:
+        // distinct, in roster order, blanks dropped.
+        let mut second = charter_fixture("r4");
+        second.workspace_id = Some("ws_other".into());
+        assert_eq!(workspace_ids_of(&[&plain, &blank]), Vec::<String>::new());
+        assert_eq!(
+            workspace_ids_of(&[&ws, &second, &ws]),
+            vec!["ws_bank".to_string(), "ws_other".to_string()]
+        );
+    }
+
     // -- pure: advance rotation ---------------------------------------------
 
     fn charter_fixture(id: &str) -> PersonaResponsibility {
@@ -3776,6 +3998,7 @@ mod attention_tests {
                 tenure: &Default::default(),
                 status: "active",
                 project_id: None,
+                workspace_id: None,
                 source: "operator",
                 connectors: &[],
                 procedure: "",
@@ -4192,6 +4415,46 @@ mod attention_tests {
                 tenure: &Default::default(),
                 status: "active",
                 project_id: Some(project_id),
+                workspace_id: None,
+                source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// The Architect's shape: the same charter with the binding one scope up.
+    fn seed_workspace_charter(
+        pool: &DbPool,
+        persona_id: &str,
+        title: &str,
+        workspace_id: &str,
+    ) -> String {
+        let cadence = ResponsibilityCadence {
+            attention_enabled: true,
+            ..Default::default()
+        };
+        responsibilities::create(
+            pool,
+            CreateResponsibilityInput {
+                persona_id,
+                title,
+                domain: "software_engineering",
+                outcomes: &one_outcome(),
+                objectives: &[],
+                scope_rung: 1,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &Default::default(),
+                status: "active",
+                project_id: None,
+                workspace_id: Some(workspace_id),
                 source: "operator",
                 connectors: &[],
                 procedure: "",
@@ -4508,6 +4771,172 @@ mod attention_tests {
             cap_refusal(&pool),
             Some((2, 2)),
             "the refusal keeps its shape: runs_today and cap"
+        );
+        Ok(())
+    }
+
+    /// A charter bound to a WORKSPACE makes the decision about the whole
+    /// portfolio: every member project gets the same snapshot a project-bound
+    /// App Master would have got, and the workspace view names each project's
+    /// owner, the goals across the portfolio and the active-persona headroom.
+    ///
+    /// The one assertion that is easy to lose: an unowned project must report
+    /// `app_master: None` rather than being dropped from the list. A missing
+    /// owner is the fact the Architect exists to notice, and a project silently
+    /// absent from its own portfolio reads as "nothing to do here".
+    #[test]
+    fn a_workspace_charter_aggregates_every_project_in_the_workspace() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+
+        let workspace = crate::db::repos::dev_workspaces::create_workspace(
+            &pool,
+            "Bank",
+            None,
+            Some("The simulation"),
+            false,
+        )?;
+        let core = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-core",
+            "/tmp/bank-core",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let edge = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-edge",
+            "/tmp/bank-edge",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        // A THIRD project outside the workspace — the view must not reach it.
+        let outside = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "not-the-bank",
+            "/tmp/not-the-bank",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        for p in [&core, &edge] {
+            crate::db::repos::dev_workspaces::assign_project(&pool, &p.id, Some(&workspace.id))?;
+        }
+
+        // bank-core has an App Master pinned to it; bank-edge has none.
+        seed_persona(&pool, "am-core")?;
+        persona_repo::update(
+            &pool,
+            "am-core",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({ "devProjectId": core.id }).to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        seed_project_charter(&pool, "am-core", "Deliver ideas", &core.id);
+
+        // One goal in the workspace and one outside it.
+        for (project_id, title) in [(&core.id, "Ship the ledger"), (&outside.id, "Not ours")] {
+            pool.get()?.execute(
+                "INSERT INTO dev_goals (id, project_id, order_index, title, status, progress,
+                                        created_at, updated_at)
+                 VALUES (?1, ?2, 0, ?3, 'in-progress', 40, datetime('now'), datetime('now'))",
+                params![format!("goal-{title}"), project_id, title],
+            )?;
+        }
+
+        let charter_id = seed_workspace_charter(
+            &pool,
+            "architect",
+            "Design the enterprise solution",
+            &workspace.id,
+        );
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(
+            is_app_master(&charters),
+            "a workspace-bound charter decides"
+        );
+
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let ctx = build_decision_context(&pool, &persona, &charters)?;
+
+        // Both member projects carry a full per-project snapshot, and the
+        // project outside the workspace carries none.
+        let mut snapshot_ids: Vec<&str> =
+            ctx.projects.iter().map(|p| p.project_id.as_str()).collect();
+        snapshot_ids.sort();
+        let mut want = vec![core.id.as_str(), edge.id.as_str()];
+        want.sort();
+        assert_eq!(snapshot_ids, want, "one snapshot per member project");
+        assert!(
+            !ctx.projects.iter().any(|p| p.project_id == outside.id),
+            "a project outside the workspace is not the Architect's"
+        );
+
+        let w = ctx.workspace.as_ref().expect("a workspace view");
+        assert_eq!(w.id, workspace.id);
+        assert_eq!(w.name, "Bank");
+        assert_eq!(w.projects.len(), 2);
+        let owned = w
+            .projects
+            .iter()
+            .find(|p| p.id == core.id)
+            .expect("bank-core");
+        assert_eq!(
+            owned.app_master.as_ref().map(|a| a.persona_id.as_str()),
+            Some("am-core"),
+            "the pinned persona is the project's App Master"
+        );
+        let unowned = w
+            .projects
+            .iter()
+            .find(|p| p.id == edge.id)
+            .expect("bank-edge");
+        assert!(
+            unowned.app_master.is_none(),
+            "a project with no owner is LISTED, with no owner — not dropped"
+        );
+
+        assert_eq!(
+            w.goal_count, 1,
+            "only the workspace's own goals are counted"
+        );
+        assert_eq!(w.goals.len(), 1);
+        assert_eq!(w.goals[0].title, "Ship the ledger");
+        assert_eq!(w.goals[0].project_id, core.id);
+        assert_eq!(w.goals[0].progress, 40);
+        assert_eq!(
+            w.active_personas.active, 2,
+            "both seeded personas are enabled"
+        );
+        assert_eq!(
+            w.active_personas.cap,
+            personas_engine::active_persona_cap::active_persona_cap(&pool)
+        );
+
+        // The prompt renders the section, and an App Master's prompt does not.
+        let rendered = attention_decide::render_decision_prompt(&ctx);
+        assert!(rendered.contains("YOUR WORKSPACE: Bank"));
+        assert!(rendered.contains("App Master: NONE"));
+        assert!(rendered.contains("Ship the ledger"));
+        assert!(rendered.contains("of 10 personas are active app-wide"));
+
+        let mut plain = ctx.clone();
+        plain.workspace = None;
+        assert!(
+            !attention_decide::render_decision_prompt(&plain).contains("YOUR WORKSPACE"),
+            "a project-bound App Master sees no workspace section at all"
         );
         Ok(())
     }

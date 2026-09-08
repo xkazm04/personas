@@ -432,6 +432,10 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub authority: Option<bool>,
+    /// True for a charter that may request a hire from kp.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub can_hire: Option<bool>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.
@@ -464,6 +468,18 @@ pub struct PersonaResponsibility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
+    /// The `dev_workspaces` row this charter is bound to, for a CROSS-PROJECT
+    /// holder — the Architect of the Grand Simulation, whose decision sees the
+    /// whole workspace rather than one codebase.
+    ///
+    /// Mutually exclusive with [`Self::project_id`]: a charter binds to one
+    /// project OR to one workspace, never both, and
+    /// `personas_engine::responsibility::validate` refuses the pair. Both
+    /// absent is still legal — that is an unbound charter, which is what every
+    /// hand-authored one is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspace_id: Option<String>,
     /// Who authored the charter ('operator' | 'kp-hire' | 'migration' |
     /// 'agent-proposed'; DB CHECK-enforced).
     pub source: String,
@@ -523,6 +539,11 @@ pub struct CreatePersonaResponsibilityInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
+    /// A `dev_workspaces` id for a cross-project charter. Mutually exclusive
+    /// with `project_id`; the create door refuses both together.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspace_id: Option<String>,
     #[serde(default)]
     pub connectors: Vec<String>,
     #[serde(default)]
@@ -532,7 +553,7 @@ pub struct CreatePersonaResponsibilityInput {
 }
 
 /// Wire input for the operator's partial-update door
-/// (`update_persona_responsibility`). `None` = leave unchanged; the two
+/// (`update_persona_responsibility`). `None` = leave unchanged; the three
 /// double-`Option` fields clear with an explicit JSON `null`. Status moves
 /// through `retire_persona_responsibility` / the repo's `set_status`, never
 /// here.
@@ -554,6 +575,10 @@ pub struct UpdatePersonaResponsibilityInput {
     pub tenure: Option<ResponsibilityTenure>,
     #[serde(default, deserialize_with = "crate::models::serde_util::double_option")]
     pub project_id: Option<Option<String>>,
+    /// Same double-`Option` contract as `project_id`: absent leaves the binding
+    /// alone, an explicit JSON `null` clears it.
+    #[serde(default, deserialize_with = "crate::models::serde_util::double_option")]
+    pub workspace_id: Option<Option<String>>,
     pub connectors: Option<Vec<String>>,
     pub procedure: Option<String>,
     pub spec: Option<ResponsibilitySpec>,

@@ -254,6 +254,87 @@ pub(crate) struct ProjectSnapshot {
     pub kpi_coverage_gap: Option<usize>,
 }
 
+// ── The workspace the Architect holds ──────────────────────────────────────
+//
+// Everything from here to `WorkspaceView` exists for ONE shape of persona: a
+// holder of workspace-bound charters (Grand Simulation G1). A project-bound App
+// Master never carries it, and `DecisionContext::workspace` stays `None` for
+// every persona that has held a charter until now.
+
+/// How many goals across the whole workspace are named in the prompt.
+///
+/// A portfolio of six projects with a dozen goals each would otherwise put a
+/// hundred lines of backlog in front of a decision that has to fit beside the
+/// charter roster and every project snapshot. The COUNT is always stated; the
+/// list is a sample, and the prompt says which.
+pub(crate) const MAX_WORKSPACE_GOALS: usize = 30;
+
+/// What one project in the workspace looks like TO THE ARCHITECT — not the
+/// same question [`ProjectSnapshot`] answers.
+///
+/// The Architect does not dispatch a project's backlog; it decides whether the
+/// project has an owner, whether that owner is stuck, and whether it is waiting
+/// on a person. So this carries the App Master's state, and the ideas/contexts/
+/// KPI figures stay in the per-project snapshot beside it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct WorkspaceProject {
+    pub id: String,
+    pub name: String,
+    /// The project's App Master, when one has been adopted. `None` is the fact
+    /// the Architect exists to notice: a project standing with no owner.
+    pub app_master: Option<WorkspaceAppMaster>,
+}
+
+/// One project's App Master as the Architect sees it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct WorkspaceAppMaster {
+    pub persona_id: String,
+    /// The newest coverage note its own decision lane wrote — the App Master's
+    /// last word about where it stands. `None` when it has never decided.
+    pub last_note: Option<String>,
+    /// The sleep it chose for itself, in minutes.
+    pub next_wake_minutes: Option<u32>,
+    /// How many questions it has put to the operator that nobody has answered.
+    pub open_asks: usize,
+}
+
+/// One goal anywhere in the workspace.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct WorkspaceGoal {
+    pub project_id: String,
+    pub title: String,
+    pub status: String,
+    pub progress: i32,
+}
+
+/// The app-wide active-persona count against its ceiling.
+///
+/// The Architect plans a workforce, so the one number it cannot decide without
+/// is how much headroom the machine has left (Grand Simulation rule 9, gap G4).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ActivePersonas {
+    /// Personas with `enabled = 1` right now, app-wide.
+    pub active: usize,
+    /// The ceiling those are counted against.
+    pub cap: usize,
+}
+
+/// Everything a WORKSPACE-bound decision is allowed to know beyond its own
+/// charters: the portfolio, who owns each project, what the goals are doing,
+/// and how many personas the machine is already running.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct WorkspaceView {
+    pub id: String,
+    pub name: String,
+    pub projects: Vec<WorkspaceProject>,
+    /// Up to [`MAX_WORKSPACE_GOALS`] goals across every project.
+    pub goals: Vec<WorkspaceGoal>,
+    /// How many goals there are in total, so a trimmed list never reads as the
+    /// whole portfolio.
+    pub goal_count: usize,
+    pub active_personas: ActivePersonas,
+}
+
 /// An ask this persona already put to the operator that nobody has answered.
 ///
 /// Carried into the prompt so a blocked persona does not re-ask the same
@@ -373,6 +454,11 @@ pub(crate) struct DecisionContext {
     /// [`AUTHORITY_REQUEST`] — rank is what the operator granted, not what the
     /// model claimed.
     pub may_direct: bool,
+    /// The workspace this persona holds, when its charters are workspace-bound
+    /// (the Architect). `None` for every project-bound App Master, and the
+    /// prompt then renders no workspace section at all rather than an empty
+    /// one — the loop's own rule about figures it did not measure.
+    pub workspace: Option<WorkspaceView>,
 }
 
 // ── Output ────────────────────────────────────────────────────────────────
@@ -1372,6 +1458,17 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     }
     s.push('\n');
 
+    // --- The workspace, for a cross-project holder ---
+    //
+    // Rendered ONLY for a persona whose charters bind to a workspace (the
+    // Architect). Placed before the per-project snapshots because it is the
+    // scope those snapshots sit inside: which projects exist, who owns each,
+    // what the goals are doing, and how much workforce headroom is left. An
+    // App Master carries `workspace: None` and sees this section not at all.
+    if let Some(w) = &ctx.workspace {
+        s.push_str(&render_workspace_section(w));
+    }
+
     // --- The project(s) ---
     s.push_str("PROJECT STATE\n");
     if ctx.projects.is_empty() {
@@ -1460,6 +1557,71 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          is dropped, and so is a `say.to` naming somebody you share no team \
          with.\n"
     ));
+    s
+}
+
+/// The `YOUR WORKSPACE` block — the Architect's half of the prompt. Pure, and
+/// split out of [`render_decision_prompt`] so the section can be asserted on
+/// its own and so the App Master's prompt is byte-identical to what it was
+/// before this existed.
+///
+/// Every "not measured" here is literal rather than a zero: a project whose App
+/// Master has never decided prints `never decided`, and a workspace with no
+/// goals prints `(none)` — not `0% progress`, which would read as a measurement
+/// nobody took.
+fn render_workspace_section(w: &WorkspaceView) -> String {
+    let mut s = String::new();
+    s.push_str(&format!("YOUR WORKSPACE: {} ({})\n", w.name, w.id));
+    s.push_str(&format!(
+        "- {} of {} personas are active app-wide. Every role you ask for is counted \
+         against that ceiling.\n",
+        w.active_personas.active, w.active_personas.cap
+    ));
+
+    s.push_str(&format!("- projects ({}):\n", w.projects.len()));
+    if w.projects.is_empty() {
+        s.push_str("    (none — this workspace holds no project yet)\n");
+    }
+    for p in &w.projects {
+        s.push_str(&format!("    - {} ({})\n", p.name, p.id));
+        match &p.app_master {
+            Some(am) => {
+                s.push_str(&format!(
+                    "      App Master: {} · next wake {} · {} open ask(s)\n",
+                    am.persona_id,
+                    am.next_wake_minutes
+                        .map(|m| format!("{m}m"))
+                        .unwrap_or_else(|| "unset".to_string()),
+                    am.open_asks,
+                ));
+                match am.last_note.as_deref().filter(|n| !n.trim().is_empty()) {
+                    Some(note) => s.push_str(&format!("      its last word: {note}\n")),
+                    None => s.push_str("      its last word: never decided\n"),
+                }
+            }
+            None => s.push_str("      App Master: NONE — this project has no accountable owner\n"),
+        }
+    }
+
+    s.push_str(&format!("- goals ({} in the workspace):\n", w.goal_count));
+    if w.goals.is_empty() {
+        s.push_str("    (none)\n");
+    } else {
+        if w.goals.len() < w.goal_count {
+            s.push_str(&format!(
+                "    showing {} of {}:\n",
+                w.goals.len(),
+                w.goal_count
+            ));
+        }
+        for g in &w.goals {
+            s.push_str(&format!(
+                "    - [{}] {} — {} ({}%)\n",
+                g.project_id, g.title, g.status, g.progress
+            ));
+        }
+    }
+    s.push('\n');
     s
 }
 
@@ -2072,6 +2234,8 @@ mod tests {
             // Through the one door for model ids — a dated literal here would
             // rot the fixture the day the id retires.
             model: personas_core::model_ids::DEFAULT_STRONG.into(),
+            // The App Master fixture: project-bound, so no workspace section.
+            workspace: None,
             charters: vec![
                 DecisionCharter {
                     priority: Some(1),
