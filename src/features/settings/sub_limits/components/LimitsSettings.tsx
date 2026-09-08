@@ -21,9 +21,12 @@ const CONCURRENCY_MIN = 1;
 const CONCURRENCY_MAX = 20;
 const CONCURRENCY_DEFAULT = 10;
 
-// App-wide ACTIVE-persona cap (max_active_personas). A population cap, not a
-// concurrency cap: the one above bounds how many executions run at the same
-// moment, this one bounds how many personas are switched on at all.
+// App-wide RUNNING-persona cap (max_active_personas). Two concurrency guards
+// side by side since 2026-09-08 (G17), not a population cap and a concurrency
+// cap: the one above bounds how many EXECUTIONS run at the same moment, this
+// one bounds how many distinct PERSONAS do. It used to bound how many personas
+// were switched on at all, which made it an organisation-size limit; the key
+// name is unchanged because the operator knows it.
 //
 // The three numbers below are pinned by a backend test that names this file and
 // these constant names, so a change to the enforced bounds fails there instead

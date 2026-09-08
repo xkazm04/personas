@@ -688,7 +688,7 @@ enum Admission {
     Refused(AttentionRefusal),
 }
 
-/// The five checks IN ORDER; the first refusal wins.
+/// The six checks IN ORDER; the first refusal wins.
 fn admit_persona(
     pool: &DbPool,
     persona_id: &str,
@@ -709,7 +709,33 @@ fn admit_persona(
         }
     }
 
-    // (b) interval floor: last completed pass + the interval the persona is
+    // (b) THE APP-WIDE CONCURRENCY CAP (`max_active_personas`, G17).
+    //
+    // This is where the cap lives as of 2026-09-08. It used to gate every door
+    // that turned a persona ON, which made it an organisation-size limit and
+    // stalled the Grand Simulation on a workspace that legitimately needed six
+    // App Masters. It now bounds how many DISTINCT personas may be RUNNING at
+    // once, and it is a DEFERRAL: the persona is served on a later tick, its
+    // ledger row names the cap and the live count, and nothing fails.
+    //
+    // Placed HERE — after the in-flight probe, BEFORE the wake request is
+    // consumed — on purpose. A machine-capacity "not now" is nobody's fault and
+    // must not spend the persona's one floor-skipping wake; every rung below is
+    // about what this persona is owed, and it keeps what it is owed. A persona
+    // that is already running is admitted by `dispatch_refusal` itself: it
+    // cannot consume a slot it is standing in.
+    //
+    // A failed read propagates rather than admitting optimistically — the same
+    // rule the cap module states: a guard that fails open under load is not a
+    // guard.
+    if let Some(h) = personas_engine::active_persona_cap::dispatch_refusal(pool, persona_id)? {
+        return Ok(Admission::Refused(AttentionRefusal::ConcurrencyCap {
+            running: h.running,
+            cap: h.cap,
+        }));
+    }
+
+    // (c) interval floor: last completed pass + the interval the persona is
     // owed. For an App Master that is its OWN last choice (`spec.pacing
     // .nextWakeMinutes`, written by the decision lane); for everyone else, the
     // most conservative declared interval (max over charters, default 30m).
@@ -750,7 +776,7 @@ fn admit_persona(
         }
     }
 
-    // (c) quiet hours: any charter's local window refuses; an unparseable
+    // (d) quiet hours: any charter's local window refuses; an unparseable
     // spec quiets nothing (lenient) and warns once per process.
     let now_minute = {
         use chrono::Timelike;
@@ -785,7 +811,7 @@ fn admit_persona(
         }
     }
 
-    // (d) daily cap: today's runs vs the most conservative declared cap (min
+    // (e) daily cap: today's runs vs the most conservative declared cap (min
     // over charters; a declared 0 = never).
     //
     // WHAT COUNTS AS A RUN DEPENDS ON THE SHAPE OF THE PERSONA. A one-lane
@@ -828,7 +854,7 @@ fn admit_persona(
         }));
     }
 
-    // (e) monthly budget — the SAME check execute_persona_inner runs
+    // (f) monthly budget — the SAME check execute_persona_inner runs
     // (get_monthly_spend vs persona.max_budget_usd), pre-flighted so the
     // ledger refuses loudly instead of the spawn failing Validation.
     // `0.0` spells "no limit" for max_budget_usd (the documented persona-
@@ -1335,9 +1361,10 @@ fn build_decision_context(
         free_capacity: 0,
         running_executions: 0,
         running_fleet: 0,
-        // The roster ceiling (G4). A failed read is reported as `None` — the
-        // CAPACITY block then simply omits the ROSTER line, which is honest;
-        // printing a fabricated "0 of 10" would be worse than saying nothing.
+        // The app-wide concurrency ceiling (G17). A failed read is reported as
+        // `None` — the CAPACITY block then simply omits the MACHINE line, which
+        // is honest; printing a fabricated "0 of 10" would be worse than saying
+        // nothing.
         active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool).ok(),
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
@@ -1356,20 +1383,25 @@ fn build_decision_context(
 
 // ── The workspace view (the Architect's half of the decision context) ──────
 
-/// The app-wide ceiling on simultaneously enabled personas and the count
-/// against it, as the Architect is told them — the one number a workforce plan
-/// cannot be made without. Read from the same engine door every enable path
-/// enforces (`max_active_personas`, G4), so the prompt and the refusal agree.
+/// How many personas the machine is running right now against the ceiling on
+/// that, as the Architect is told them.
+///
+/// **This is a concurrency figure, not a roster figure (G17).** Until
+/// 2026-09-08 it reported how many personas were switched on and the prompt
+/// told the Architect that every role it asked for was counted against that
+/// ceiling — which is no longer true and never should have been. Read from the
+/// same engine door the admission ladder defers on, so the prompt and the
+/// deferral agree.
 fn active_persona_headroom(pool: &DbPool) -> attention_decide::ActivePersonas {
     match personas_engine::active_persona_cap::active_persona_headroom(pool) {
         Ok(h) => attention_decide::ActivePersonas {
-            active: h.active,
+            running: h.running,
             cap: h.cap,
         },
         Err(e) => {
-            tracing::warn!(error = %e, "persona_attention: active-persona headroom read failed");
+            tracing::warn!(error = %e, "persona_attention: running-persona headroom read failed");
             attention_decide::ActivePersonas {
-                active: 0,
+                running: 0,
                 cap: personas_engine::active_persona_cap::active_persona_cap(pool),
             }
         }
@@ -2380,50 +2412,36 @@ async fn spawn_attention_execution(
 
 // ── The decide lane's executor ─────────────────────────────────────────────
 
-/// Floor of the decision call's budget — what a decision gets before the
-/// portfolio adds anything. See [`decision_timeout`].
-const DECISION_TIMEOUT_BASE: Duration = Duration::from_secs(360);
-/// Added per project the decision prompt renders. See [`decision_timeout`].
-const DECISION_TIMEOUT_PER_PROJECT: Duration = Duration::from_secs(60);
-/// Ceiling regardless of portfolio size — a wake holds a slot while it waits,
-/// so the budget must stay bounded no matter how large a context gets.
-const DECISION_TIMEOUT_MAX: Duration = Duration::from_secs(600);
+/// The decision call's ABSOLUTE ceiling — an anti-runaway backstop, not a
+/// latency budget (G18, 2026-09-08).
+///
+/// **This replaced a wall-clock timeout, and the history is the argument.** The
+/// budget was a flat 180 s, then a portfolio-scaled 360–600 s. The Architect of
+/// the Grand Simulation decided in **81 s** while its prompt was small; its next
+/// decision — after the workspace section, three plan verbs and a six-project
+/// portfolio entered that prompt — hit 180 s, and the one after that hit 480 s,
+/// leaving `persona_executions` row `0cea3b9a` at `status=running` with
+/// `log_file_path` NULL, zero cost and zero output. The second death proves the
+/// number was never the problem: that spawn produced NOTHING, and no ceiling
+/// distinguishes a spawn that reached no model call from a model thinking hard.
+///
+/// So the decision is supervised on LIVENESS instead
+/// (`oneshot::LIVENESS_PROBE_INTERVAL` / `LIVENESS_IDLE_LIMIT`): it may run as
+/// long as it is producing, and it is aborted the moment it goes silent, dies,
+/// or produces nothing at all — each with its own named reason in the ledger.
+/// This constant is only the outer bound underneath that rule, set far above any
+/// real decision precisely so it never fires on a healthy one. Nobody is waiting
+/// on this call; the fallback it protects costs a whole wake.
+const DECISION_BACKSTOP: Duration = Duration::from_secs(2 * 60 * 60);
 
-/// How long ONE decision call may take before the wake gives up and falls back
-/// to the deterministic `advance` pick.
+/// Where the wake resumes when the account hit its usage limit and the CLI did
+/// NOT state a reset time.
 ///
-/// **Flat 180 s until 2026-09-08, and it was measured too low the moment a
-/// prompt grew.** The Architect of the Grand Simulation decided in **81 s**
-/// (12:12:38 → 12:13:59) while its prompt was small; its very next decision —
-/// after the workspace section, three new plan verbs and a six-project
-/// portfolio entered that prompt — hit the ceiling, and the ledger row reads
-/// `"reason":"app_master_decision timed out after 180s"` with
-/// `"fallback":"advance"`. That wake spent an execution on the fallback lane
-/// and decided nothing.
-///
-/// The two costs are wildly asymmetric: waiting longer costs some seconds of
-/// one cheap model call; giving up costs a WHOLE wake. So the ceiling sits
-/// well above the largest decision anyone has observed rather than near it —
-/// the base alone is ~4.4× the 81 s measurement — and it grows with the one
-/// thing the prompt demonstrably grows with, the portfolio the persona is
-/// asked to reason over. Six projects reaches the 10-minute cap; a
-/// project-bound App Master with one stays at 7.
-///
-/// The fallback itself is deliberately untouched: the ledger reason line above
-/// is what made this visible, and it must keep saying so (`oneshot.rs:275`
-/// formats the real duration, so it stays honest as this rule changes).
-fn decision_timeout(context: &attention_decide::DecisionContext) -> Duration {
-    // Every project the prompt renders, from BOTH shapes: a project-bound App
-    // Master carries `projects`, the workspace-bound Architect carries the
-    // workspace's own list. Summed rather than picked so neither shape is
-    // silently charged zero.
-    let projects =
-        context.projects.len() + context.workspace.as_ref().map_or(0, |w| w.projects.len());
-    let projects = u32::try_from(projects).unwrap_or(u32::MAX);
-    DECISION_TIMEOUT_BASE
-        .saturating_add(DECISION_TIMEOUT_PER_PROJECT.saturating_mul(projects))
-        .min(DECISION_TIMEOUT_MAX)
-}
+/// One hour: long enough that a rolling window has usually turned over, short
+/// enough that a persona is not parked for a shift over a guess. The reason
+/// line always says the time was not stated, so a resume at this delay is never
+/// mistaken for one scheduled against a real reset.
+const USAGE_LIMIT_DEFAULT_RESUME_MINUTES: u32 = 60;
 /// Hard ceiling on how many charters ONE wake may dispatch, independent of the
 /// persona's declared concurrency. A `max_concurrent` of 20 is a statement
 /// about how many runs may COEXIST, not about how many a single autonomous
@@ -2471,14 +2489,28 @@ async fn run_decision_lane(
     }
 
     let prompt = attention_decide::render_decision_prompt(&context);
-    let reply = crate::companion::brain::oneshot::call_claude_text(
+    let reply = crate::companion::brain::oneshot::call_claude_outcome(
         &state.user_db,
         &prompt,
         &context.model,
         crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
-        decision_timeout(&context),
+        DECISION_BACKSTOP,
     )
     .await;
+
+    // A usage cap is not a dead end and must not be degraded like one: the
+    // fallback lane would spend an execution the account cannot pay for, and
+    // the persona would then sleep its ordinary interval and try again into the
+    // same wall. G18 — pause, record the reset, resume there.
+    let reply = match reply {
+        Ok(crate::companion::brain::oneshot::OneshotOutcome::UsageLimited(pause)) => {
+            return Ok(decide_paused_for_usage_limit(
+                &pool, ledger_id, &context, pause,
+            ));
+        }
+        Ok(crate::companion::brain::oneshot::OneshotOutcome::Text(text)) => Ok(text),
+        Err(e) => Err(e),
+    };
 
     let say_policy = attention_decide::SayPolicy::from_context(&context);
     let plan = match reply.map_err(|e| e.to_string()).and_then(|text| {
@@ -2670,6 +2702,106 @@ async fn run_decision_lane(
         "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
     }))
+}
+
+/// The account hit its usage limit mid-decision: pause, and re-arm at the reset
+/// (G18).
+///
+/// Three things happen, and the ORDER of the first two is the whole design:
+///
+/// 1. **The wake is not spent.** Nothing is dispatched, so an App Master's daily
+///    cap — which counts charter dispatches, not bookkeeping rows — is not
+///    charged, and no execution is started that the account cannot pay for.
+/// 2. **The persona is re-armed through its OWN pacing**, not a second
+///    scheduler. `write_back_pacing` writes `spec.pacing.nextWakeMinutes`, which
+///    is exactly what `admission_interval` reads for an App Master, so the
+///    admission ladder holds this persona until the reset and the ordinary
+///    300 s poll picks it up the moment the floor elapses. That survives a
+///    restart, because it is a row rather than a timer.
+///
+///    A wake REQUEST is deliberately not queued: `admit_persona` lets a wake
+///    request skip precisely the interval floor this function just set, so
+///    re-arming that way would wake the persona straight back into the wall
+///    every tick.
+/// 3. **The ledger says `paused`**, with the reset time, closing the row here so
+///    the verdict is `paused` rather than the `dispatched` the caller writes for
+///    every other decision outcome. `attention_ledger::complete` is a documented
+///    no-op on an already-closed row, so the caller's own call is harmless.
+///
+/// The clamp to `MIN_NEXT_WAKE_MINUTES..=MAX_NEXT_WAKE_MINUTES` is not a
+/// rounding error: a reset five hours out is pulled back to four, the persona
+/// wakes, finds the limit still in force, and pauses again. Self-correcting, and
+/// it keeps every pacing value inside the one range the rest of the loop trusts.
+fn decide_paused_for_usage_limit(
+    pool: &DbPool,
+    ledger_id: &str,
+    context: &attention_decide::DecisionContext,
+    pause: crate::companion::brain::oneshot::UsageLimitPause,
+) -> serde_json::Value {
+    let now = chrono::Utc::now();
+    let (raw_minutes, stated) = match pause.resets_at {
+        Some(reset) => {
+            let mins = (reset - now).num_minutes().max(0);
+            (u32::try_from(mins).unwrap_or(u32::MAX), true)
+        }
+        None => (USAGE_LIMIT_DEFAULT_RESUME_MINUTES, false),
+    };
+    let resume_in = raw_minutes.clamp(
+        attention_decide::MIN_NEXT_WAKE_MINUTES,
+        attention_decide::MAX_NEXT_WAKE_MINUTES,
+    );
+
+    let reason = if stated {
+        format!(
+            "usage limit reached; resuming in {resume_in}m (the limit resets at {})",
+            pause
+                .resets_at
+                .map(|t| t.to_rfc3339())
+                .unwrap_or_else(|| "unknown".into())
+        )
+    } else {
+        format!(
+            "usage limit reached; the CLI did not state a reset time, so resuming in \
+             {resume_in}m on the default delay"
+        )
+    };
+
+    tracing::info!(
+        persona_id = %context.persona_id,
+        resume_in_minutes = resume_in,
+        reset_stated = stated,
+        "persona_attention: the decision paused on the account's usage limit"
+    );
+
+    // No charter is named as dispatched — nothing ran. The note is what the
+    // NEXT wake reads back, so it says why this one produced nothing.
+    write_back_pacing(pool, context, &[], Some(&reason), Some(resume_in));
+
+    let stats = serde_json::json!({
+        "lane": LANE_DECIDE,
+        "model": context.model,
+        "verdict": "paused",
+        "pausedBy": "usage_limit",
+        "usageLimitScope": format!("{:?}", pause.scope),
+        "resetsAt": pause.resets_at.map(|t| t.to_rfc3339()),
+        "resetTimeStated": stated,
+        "resumeInMinutes": resume_in,
+        "detail": pause.detail,
+        "dispatched": 0,
+    });
+    if let Err(e) = attention_ledger::complete(
+        pool,
+        ledger_id,
+        "paused",
+        &reason,
+        None,
+        Some(&stats.to_string()),
+        None,
+    ) {
+        tracing::warn!(ledger_id, error = %e,
+            "persona_attention: failed to close the paused ledger row");
+    }
+    stats
 }
 
 /// Ask kp for each role the plan named, and report what came back.
@@ -3011,20 +3143,14 @@ fn run_plan_adoptions(
             continue;
         };
 
-        // The second ceiling. `enabled: false` cannot raise the count, so it is
-        // never checked and never refused.
-        let mut cap_refusal: Option<String> = None;
-        let enabled = if a.enabled {
-            match personas_engine::active_persona_cap::check_active_persona_headroom(pool, true) {
-                Ok(_) => true,
-                Err(e) => {
-                    cap_refusal = Some(e.to_string());
-                    false
-                }
-            }
-        } else {
-            false
-        };
+        // G17 (2026-09-08): an adoption the decision asked for is enabled if it
+        // said so, full stop. This block used to consult the active-persona cap
+        // and silently hand back an App Master that was switched OFF, which is
+        // the shape that stalled the simulation: the Architect covered its
+        // portfolio and none of the personas it created could run. The cap is
+        // now a concurrency guard applied at dispatch, so the roster the
+        // decision built stays whole and the loop paces it.
+        let enabled = a.enabled;
 
         let input = AdoptAppMasterInput {
             project: project_id.clone(),
@@ -3055,9 +3181,6 @@ fn run_plan_adoptions(
                     "created": done.created,
                     "enabled": enabled,
                     "charters": done.charters.iter().map(|c| c.slug.as_str()).collect::<Vec<_>>(),
-                    // Present only when the cap kept a requested `enabled` from
-                    // taking effect — the reason the persona is off.
-                    "capRefusal": cap_refusal,
                     "notes": done.notes,
                 }));
             }
@@ -4607,46 +4730,38 @@ mod attention_tests {
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
     }
 
-    // -- pure: the decision call's budget ------------------------------------
+    // -- pure: the decision call's backstop ----------------------------------
 
-    /// The rule, pinned: a floor well above the largest observed decision, a
-    /// minute per project the prompt renders, and a hard cap.
+    /// The decision is supervised on LIVENESS, and this constant is only the
+    /// outer bound underneath it (G18).
+    ///
+    /// This replaced `decision_timeout`, a portfolio-scaled wall clock whose
+    /// tests pinned 360/420/480/600 s. Both numbers it produced killed a real
+    /// decision, and the second one killed a spawn that had produced NOTHING —
+    /// which is the proof the rule was wrong rather than the number. What is
+    /// worth pinning now is that the backstop can never again land in the range
+    /// that did the damage.
     #[test]
-    fn the_decision_budget_grows_with_the_portfolio_and_stops_at_the_cap() {
-        let ctx = |projects: usize, workspace_projects: Option<usize>| {
-            attention_decide::DecisionContext {
-                projects: vec![Default::default(); projects],
-                workspace: workspace_projects.map(|n| attention_decide::WorkspaceView {
-                    projects: vec![Default::default(); n],
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }
-        };
-
-        // No portfolio at all → the floor, which is already 4.4× the 81 s the
-        // Architect's first (small-prompt) decision actually took.
-        assert_eq!(decision_timeout(&ctx(0, None)), Duration::from_secs(360));
+    fn the_decision_backstop_is_far_above_every_budget_that_ever_fired() {
+        for fired in [180u64, 360, 420, 480, 600] {
+            assert!(
+                DECISION_BACKSTOP > Duration::from_secs(fired),
+                "a decision must never again die at {fired}s"
+            );
+        }
+        // Liveness is what actually ends a stalled decision, so the backstop
+        // has to sit well clear of the idle window — otherwise it would be the
+        // rule and liveness the decoration.
         assert!(
-            decision_timeout(&ctx(0, None)) > Duration::from_secs(180),
-            "the 180 s that timed out live must not be reachable again"
+            DECISION_BACKSTOP > crate::companion::brain::oneshot::LIVENESS_IDLE_LIMIT * 10,
+            "the backstop must be an anti-runaway bound, not a latency budget"
         );
-
-        // A project-bound App Master with one codebase.
-        assert_eq!(decision_timeout(&ctx(1, None)), Duration::from_secs(420));
-
-        // The Architect's shape: the projects come from the WORKSPACE view,
-        // and the six-project portfolio that blew the old ceiling now reaches
-        // the cap rather than the fallback lane.
-        assert_eq!(decision_timeout(&ctx(0, Some(6))), Duration::from_secs(600));
-
-        // Both lists are counted, so neither shape is charged zero.
-        assert_eq!(decision_timeout(&ctx(2, Some(2))), Duration::from_secs(600));
-        assert_eq!(decision_timeout(&ctx(1, Some(1))), Duration::from_secs(480));
-
-        // The cap holds against an absurd portfolio — a wake holds a slot
-        // while it waits.
-        assert_eq!(decision_timeout(&ctx(500, None)), DECISION_TIMEOUT_MAX);
+        // And a resume delay has to be expressible in the pacing range the rest
+        // of the loop trusts.
+        assert!(
+            USAGE_LIMIT_DEFAULT_RESUME_MINUTES >= attention_decide::MIN_NEXT_WAKE_MINUTES
+                && USAGE_LIMIT_DEFAULT_RESUME_MINUTES <= attention_decide::MAX_NEXT_WAKE_MINUTES
+        );
     }
 
     // -- pure: roster order (fairness) ---------------------------------------
@@ -5445,6 +5560,111 @@ mod attention_tests {
         Ok(())
     }
 
+    // -- G17: the app-wide concurrency cap, at the admission ladder ---------
+
+    /// The cap's new enforcement point, end to end over a real tick.
+    ///
+    /// Three properties in one test because they are one behaviour: enabling is
+    /// never refused (the roster is unbounded), a full machine DEFERS rather
+    /// than fails, and the deferral names both numbers so an operator can act
+    /// on it.
+    #[test]
+    fn a_full_machine_defers_the_wake_and_the_ledger_names_the_cap() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "waiting")?;
+        seed_charter(&pool, "waiting", "Deliver the ledger", &one_outcome());
+
+        // A cap of ONE, and one OTHER persona holding a live execution. The
+        // waiting persona is enabled and has a charter with work: everything
+        // about it is ready except the machine.
+        seed_persona(&pool, "busy")?;
+        crate::db::repos::execution::executions::create(&pool, "busy", None, None, None, None)?;
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "a full machine starts nothing");
+        assert_eq!(counts.refused, 1);
+        let refusal = ledger_rows(&pool, "waiting")
+            .into_iter()
+            .find(|r| r.verdict == "refused")
+            .expect("the deferral is on the record");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "concurrency_cap");
+        assert_eq!(reason["running"], 1);
+        assert_eq!(reason["cap"], 1);
+
+        // The persona is SERVED on a later tick, not failed: free the slot and
+        // a later tick admits it, with no operator action of any kind.
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'completed' WHERE persona_id = 'busy'",
+            [],
+        )?;
+        // A refusal row closes with a completion of its own, so the interval
+        // floor would refuse the next tick for a reason that is not the one
+        // under test. Age every closed row past it — the same step
+        // `an_app_master_wakes_on_the_interval_it_chose_for_itself` takes.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET completed_at = ?1 WHERE completed_at IS NOT NULL",
+            params![(chrono::Utc::now() - chrono::Duration::hours(4)).to_rfc3339()],
+        )?;
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0);
+        assert!(dispatch.is_some(), "the freed slot is this persona's");
+        Ok(())
+    }
+
+    /// A machine-capacity deferral must not cost the persona its ONE
+    /// floor-skipping wake — that is why the rung sits above the wake
+    /// consumption rather than below it.
+    #[test]
+    fn a_concurrency_deferral_does_not_spend_the_wake_request() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "waiting")?;
+        seed_charter(&pool, "waiting", "Deliver the ledger", &one_outcome());
+        seed_persona(&pool, "busy")?;
+        crate::db::repos::execution::executions::create(&pool, "busy", None, None, None, None)?;
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+        request_wake(&pool, "waiting");
+        assert_eq!(read_wake_requests(&pool), vec!["waiting".to_string()]);
+
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert!(dispatch.is_none());
+        assert_eq!(counts.woke, 0, "no wake was spent on a machine deferral");
+        assert_eq!(
+            read_wake_requests(&pool),
+            vec!["waiting".to_string()],
+            "the request the operator's switch-on earned is still owed"
+        );
+        Ok(())
+    }
+
+    /// The old rule refused the ENABLE. A large roster is now free, and only
+    /// running work costs anything.
+    #[test]
+    fn a_large_roster_is_not_a_full_machine() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        // Twenty enabled personas against a cap of ten — under the old rule
+        // ten of these could not have existed switched on at all.
+        for i in 0..20 {
+            let id = format!("p{i}");
+            seed_persona(&pool, &id)?;
+            seed_charter(&pool, &id, "Deliver the ledger", &one_outcome());
+        }
+        assert_eq!(
+            personas_engine::active_persona_cap::active_persona_headroom(&pool)?.running,
+            0,
+            "twenty enabled personas doing nothing occupy no slot"
+        );
+        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0, "nobody is deferred on an idle machine");
+        assert!(dispatch.is_some());
+        Ok(())
+    }
+
     /// Stamp a persona's own sleep choice onto one charter, the way the
     /// decision lane's write-back does.
     fn record_wake_choice(pool: &DbPool, charter_id: &str, minutes: u32) {
@@ -5824,8 +6044,8 @@ mod attention_tests {
         assert_eq!(w.goals[0].project_id, core.id);
         assert_eq!(w.goals[0].progress, 40);
         assert_eq!(
-            w.active_personas.active, 2,
-            "both seeded personas are enabled"
+            w.active_personas.running, 0,
+            "two personas exist and neither is running anything (G17)"
         );
         assert_eq!(
             w.active_personas.cap,
@@ -5837,7 +6057,7 @@ mod attention_tests {
         assert!(rendered.contains("YOUR WORKSPACE: Bank"));
         assert!(rendered.contains("App Master: NONE"));
         assert!(rendered.contains("Ship the ledger"));
-        assert!(rendered.contains("of 10 personas are active app-wide"));
+        assert!(rendered.contains("of 10 personas are running work right now"));
 
         let mut plain = ctx.clone();
         plain.workspace = None;
@@ -6300,6 +6520,181 @@ mod attention_tests {
         write_back_pacing(&pool, &context, &[], None, Some(180));
         assert_eq!(stored(&a).unwrap().next_wake_minutes, Some(180));
         assert_eq!(stored(&b).unwrap().next_wake_minutes, Some(180));
+        Ok(())
+    }
+
+    // -- G18: a usage limit pauses the wake, it does not fail it ------------
+
+    /// The whole paused path, over a real database.
+    ///
+    /// Live evidence this exists for: a decision that ends because the ACCOUNT
+    /// hit its cap used to arrive as an ordinary `Err`, degrade to the
+    /// deterministic `advance` lane, and spend an execution the account could
+    /// not pay for — then sleep its ordinary interval and walk into the same
+    /// wall. A cap is not a dead end; it has a reset time.
+    #[test]
+    fn a_usage_limit_pauses_the_wake_and_re_arms_at_the_stated_reset() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        let resets = chrono::Utc::now() + chrono::Duration::minutes(90);
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Window,
+                resets_at: Some(resets),
+                detail: "Claude AI usage limit reached".into(),
+            },
+        );
+
+        // 1. The verdict is `paused`, distinct from the `dispatched` every
+        //    other decision outcome writes and from `failed`.
+        assert_eq!(stats["verdict"], "paused");
+        assert_eq!(stats["pausedBy"], "usage_limit");
+        assert_eq!(stats["dispatched"], 0);
+        assert_eq!(stats["resetTimeStated"], true);
+        // 89 or 90 depending on which side of a second the clock fell.
+        let resume = stats["resumeInMinutes"].as_u64().unwrap();
+        assert!((89..=90).contains(&resume), "resume in {resume}m");
+
+        // 2. The ledger row carries it, with the reset time in the reason —
+        //    the honesty the flat-timeout message used to provide.
+        let row = ledger_rows(&pool, "am")
+            .into_iter()
+            .find(|r| r.id == ledger_id)
+            .expect("the decision row");
+        assert_eq!(row.verdict, "paused");
+        assert!(row.reason.contains("usage limit reached"), "{}", row.reason);
+        assert!(
+            row.reason.contains(&resets.to_rfc3339()),
+            "the reset time must be readable in the row: {}",
+            row.reason
+        );
+        assert!(
+            row.completed_at.is_some(),
+            "the row is closed, not left open"
+        );
+
+        // 3. The persona is re-armed through its OWN pacing, so the admission
+        //    ladder holds it until the reset and the ordinary poll picks it up.
+        let pacing = responsibilities::get_by_id(&pool, &charter)?
+            .expect("charter")
+            .spec
+            .pacing
+            .expect("pacing written");
+        assert_eq!(pacing.next_wake_minutes, Some(resume as u32));
+        assert!(pacing.coverage_note.unwrap().contains("usage limit"));
+        assert!(
+            pacing.last_dispatched_at.is_none(),
+            "nothing was dispatched — the wake is not spent"
+        );
+        // And that pacing is what `admission_interval` will read back.
+        let stored = responsibilities::get_by_id(&pool, &charter)?.unwrap();
+        assert_eq!(
+            admission_interval(&[&stored]).1,
+            Some(resume as u32),
+            "the App Master's own floor now runs to the reset"
+        );
+
+        // 4. Nothing was started that the account cannot pay for.
+        assert_eq!(
+            attention_ledger::count_charter_dispatches_today(&pool, "am", KIND_ATTENTION)?,
+            0
+        );
+        Ok(())
+    }
+
+    /// A cap with no stated reset falls back to the default delay AND says so,
+    /// rather than presenting a guess as the provider's own answer.
+    #[test]
+    fn an_unstated_reset_resumes_on_the_default_delay_and_admits_it() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Window,
+                resets_at: None,
+                detail: "5-hour limit reached".into(),
+            },
+        );
+        assert_eq!(stats["resetTimeStated"], false);
+        assert_eq!(stats["resumeInMinutes"], USAGE_LIMIT_DEFAULT_RESUME_MINUTES);
+        assert_eq!(stats["resetsAt"], serde_json::Value::Null);
+
+        let row = ledger_rows(&pool, "am")
+            .into_iter()
+            .find(|r| r.id == ledger_id)
+            .expect("the decision row");
+        assert!(
+            row.reason.contains("did not state a reset time"),
+            "the guess must announce itself as one: {}",
+            row.reason
+        );
+        Ok(())
+    }
+
+    /// A reset further out than the pacing range is clamped, not dropped: the
+    /// persona wakes at the ceiling, finds the limit still on, and pauses again.
+    #[test]
+    fn a_reset_beyond_the_pacing_ceiling_is_clamped_and_retries() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        // A weekly cap: days away, far past MAX_NEXT_WAKE_MINUTES.
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Weekly,
+                resets_at: Some(chrono::Utc::now() + chrono::Duration::days(3)),
+                detail: "weekly limit reached".into(),
+            },
+        );
+        assert_eq!(
+            stats["resumeInMinutes"],
+            attention_decide::MAX_NEXT_WAKE_MINUTES,
+            "clamped into the range the rest of the loop trusts"
+        );
         Ok(())
     }
 
@@ -7817,12 +8212,17 @@ mod attention_tests {
         );
     }
 
-    /// `adoptAppMasters` pins an App Master to the named project. `enabled` is
-    /// honoured only within the app-wide cap: at the cap the adoption still
-    /// happens, the persona stays OFF, and the cap's own refusal text is what
-    /// the ledger carries.
+    /// `adoptAppMasters` pins an App Master to the named project, and `enabled`
+    /// is honoured UNCONDITIONALLY (G17, 2026-09-08).
+    ///
+    /// This test used to assert the opposite — at the cap the persona was
+    /// adopted and left switched OFF with the cap's refusal recorded. That is
+    /// exactly the shape that stalled the Grand Simulation: the Architect
+    /// covered its portfolio and none of the App Masters it created could run.
+    /// The cap is now a concurrency guard applied at dispatch, so a full
+    /// machine costs the new persona a wait, not its switch.
     #[test]
-    fn the_adopt_verb_pins_an_app_master_within_the_active_persona_cap() {
+    fn the_adopt_verb_pins_an_app_master_and_the_cap_never_switches_it_off() {
         // `adopt` seeds the persona's manifest on disk, and the brain root is a
         // process-global env var — take the one shared lock.
         let _home = crate::companion::brain::test_home::TestHome::new("g13_adopt");
@@ -7848,14 +8248,16 @@ mod attention_tests {
             out[0]
         );
         assert_eq!(out[0]["enabled"], serde_json::json!(true));
-        assert!(out[0]["capRefusal"].is_null());
         let pinned = persona_repo::list_by_dev_project(&pool, &platform.id).unwrap();
         assert_eq!(pinned.len(), 1, "one App Master pinned to the project");
         assert!(pinned[0].enabled);
         let adopted_id = pinned[0].id.clone();
 
-        // At the cap: re-adopting a DIFFERENT project's owner is still adopted,
-        // still pinned, but left off with the cap's own sentence recorded.
+        // At the cap: a DIFFERENT project's owner is adopted, pinned AND
+        // switched on. The machine paces it; the roster is not rationed.
+        // A cap of 1 with the whole roster enabled is the strictest setting the
+        // validator allows — under the old rule this second adoption came back
+        // disabled.
         let other = crate::db::repos::dev::projects::create_project(
             &pool,
             "ledger-service",
@@ -7868,15 +8270,7 @@ mod attention_tests {
         )
         .unwrap();
         crate::db::repos::dev_workspaces::assign_project(&pool, &other.id, Some(&ws_id)).unwrap();
-        settings::set(
-            &pool,
-            settings_keys::MAX_ACTIVE_PERSONAS,
-            &personas_engine::active_persona_cap::active_persona_headroom(&pool)
-                .unwrap()
-                .active
-                .to_string(),
-        )
-        .unwrap();
+        settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1").unwrap();
 
         let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform, &other]);
         let portfolio = WorkspaceProjects::of(&ctx);
@@ -7895,17 +8289,18 @@ mod attention_tests {
             serde_json::json!(true),
             "the adoption still happens"
         );
-        assert_eq!(out[0]["enabled"], serde_json::json!(false));
-        let refusal = out[0]["capRefusal"]
-            .as_str()
-            .expect("the cap's own sentence");
+        assert_eq!(
+            out[0]["enabled"],
+            serde_json::json!(true),
+            "the cap no longer switches an adopted App Master off"
+        );
         assert!(
-            refusal.contains("active personas") && refusal.contains("max_active_personas"),
-            "the refusal is the cap module's, not a paraphrase: {refusal}"
+            out[0].get("capRefusal").is_none(),
+            "the field itself is gone — there is no capacity refusal to report"
         );
         let second = persona_repo::list_by_dev_project(&pool, &other.id).unwrap();
-        assert_eq!(second.len(), 1, "pinned anyway — a slot can be freed later");
-        assert!(!second[0].enabled);
+        assert_eq!(second.len(), 1, "pinned to its project");
+        assert!(second[0].enabled, "and switched ON as the decision asked");
         assert_ne!(second[0].id, adopted_id, "a second, distinct App Master");
     }
 

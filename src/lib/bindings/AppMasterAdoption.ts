@@ -37,12 +37,13 @@ openAsks: Array<AppMasterOpenAsk>,
  */
 lastNote?: string, 
 /**
- * The app-wide active-persona population and its cap (G4), as measured
- * when this response was built.
+ * How many personas the machine is RUNNING and the ceiling on that (G17),
+ * as measured when this response was built.
  *
- * Reported on the state route because an App Master that is about to ask
- * kp for another role needs to see the ceiling BEFORE it asks — otherwise
- * the cap is only ever met as a refusal at the far end of a hire, after
- * the intake dialog, the compose and the human click.
+ * A concurrency reading, not a headcount: since 2026-09-08 nothing here
+ * refuses an adoption or a hire. It is reported so a headless caller can
+ * see how busy the machine is and pace itself — a full machine means the
+ * personas it starts will WAIT, which is a reason to finish work in flight
+ * before widening the front, not a reason not to hire.
  */
 activePersonas: ActivePersonaHeadroom, };
