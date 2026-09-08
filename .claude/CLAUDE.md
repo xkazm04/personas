@@ -172,6 +172,10 @@ src-tauri/
 
 ## Important Conventions
 
+### Git policy (harness-enforced)
+
+**Commit on the current branch; never push.** The owner pushes after reading the log. Do not push, force-push, or open a pull request unless this session's prompt asks for it. This line exists because the harness's own default for an unattended session is to push and open a draft PR when the file says nothing (measured 2026-09-08: without such a line the agent pushed; with it the agent stopped at the commit). The gate bypass is denied to agents at the permission layer (`.claude/settings.json` `permissions.deny`: `--no-verify`, force-push, `LEFTHOOK=0`) - do not work around it; if a gate is red, fix the tree.
+
 ### State Management
 - Zustand with slice pattern in `src/stores/slices/`
 - Use `useShallow` from zustand for selective subscriptions
