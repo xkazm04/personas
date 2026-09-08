@@ -1214,6 +1214,49 @@ fn is_coverage_regression(prior: usize, written: usize) -> bool {
     (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
 }
 
+/// The groups that ended a whole-tree scan holding no contexts at all.
+///
+/// An empty group is not a neutral leftover on a whole-tree scan: it is the
+/// model having named a business domain and then mapped none of it, and every
+/// surface downstream reads it as a real domain that merely happens to be
+/// empty. Measured on `bank-core`'s first scan (2026-09-08T19:50:01Z): two
+/// groups came back, `Service Foundation` holding one context and
+/// `Governance & Compliance` holding nothing, and the scan reported success.
+/// It could not have gone any other way — that repo's entire governance surface
+/// was `governance.yaml` and `docs/certifications/*.md`, `is_mappable_path`
+/// rejects both, so a context claiming them dies in the `[Skipped] … every path
+/// was generated or non-source` branch and the group it named is left standing
+/// and empty. Nothing between there and `[Complete]` looks at a group again.
+///
+/// `[Coverage]` structurally cannot catch this: its denominator is
+/// `count_source_files`, which filters on the SAME extension list, so that scan
+/// reported "Mapped 1 of 1 source files (100%)" with five of the repo's six
+/// files invisible and half its groups empty. A hundred-percent coverage line
+/// is precisely when nobody looks further, which is why this is reported on its
+/// own line rather than folded into that number.
+///
+/// Pure so it is testable without a scan, for the same reason as
+/// `is_coverage_regression`; it takes `(id, name)` pairs and the contexts'
+/// group ids rather than DB rows. Group order is preserved so the reported line
+/// reads in the same order as the Context Ledger.
+fn groups_without_contexts(
+    groups: &[(String, String)],
+    context_group_ids: &[Option<String>],
+) -> Vec<String> {
+    // Only a context that actually names a group occupies one. A `None` here is
+    // the orphaned-context bug `group_name_to_id` is seeded from the database to
+    // prevent, and counting it as an occupant would hide both faults at once.
+    let occupied: std::collections::HashSet<&str> = context_group_ids
+        .iter()
+        .filter_map(|g| g.as_deref())
+        .collect();
+    groups
+        .iter()
+        .filter(|(id, _)| !occupied.contains(id.as_str()))
+        .map(|(_, name)| name.clone())
+        .collect()
+}
+
 // `too_many_arguments`: this signature is wide and stays wide for now. The
 // workspace already carries 159 site-level allows on functions of the same
 // shape; these were simply the ones that never got one. Converting them to a
@@ -2016,6 +2059,13 @@ async fn run_context_generation(
         report_context_audit(app, scan_id, pool, project_id);
     }
 
+    // And the one thing the audit and `[Coverage]` both miss: a group this map
+    // published with nothing in it. Same gate as the audit — whole-tree scans
+    // only — and the same advisory contract.
+    if subtree.is_none() {
+        report_empty_groups(app, scan_id, pool, project_id);
+    }
+
     // Write the server-free harness docs (context-map.json + managed CLAUDE.md
     // section) into the managed project so a CLI opened there sees the map.
     write_harness_docs(app, scan_id, pool, project_id, root_path);
@@ -2570,6 +2620,68 @@ fn report_context_audit(
     }
 }
 
+/// Name the groups a whole-tree scan published with nothing in them, on the
+/// line the operator actually reads. See `groups_without_contexts` for the scan
+/// this exists because of and why `[Coverage]` scored it 100%.
+///
+/// Advisory by the same contract as `report_context_audit`: an empty group is a
+/// map-quality signal, not a corruption, and the map publishes either way.
+///
+/// Deliberately NOT a deletion. `stale_subtree_contexts` states the rule —
+/// groups are never deleted, because they are shared across subtrees and a
+/// missing group breaks every context that referenced it — and the choice
+/// between filling a group and dropping it is a judgement about the project,
+/// not about this scan. Naming it is what the operator was missing; they can
+/// act on it in the Context Ledger.
+///
+/// Whole-tree scans only. On a subtree scan an empty group is the ordinary
+/// mid-sweep state (its contexts live in a subtree this run was never shown),
+/// and a warning that fires every time is a warning people learn to skip.
+fn report_empty_groups(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) {
+    // Read failures return rather than defaulting to empty: `unwrap_or_default`
+    // here would turn "the database did not answer" into a confident "every
+    // group is fine", which is the wrong direction for a check whose whole job
+    // is to notice something missing.
+    let Ok(groups) = repo::list_context_groups(pool, project_id) else {
+        return;
+    };
+    let Ok(contexts) = repo::list_contexts_by_project(pool, project_id, None) else {
+        return;
+    };
+    let pairs: Vec<(String, String)> = groups
+        .iter()
+        .map(|g| (g.id.clone(), g.name.clone()))
+        .collect();
+    let assigned: Vec<Option<String>> = contexts.iter().map(|c| c.group_id.clone()).collect();
+    let empty = groups_without_contexts(&pairs, &assigned);
+    if empty.is_empty() {
+        return;
+    }
+    let names = empty.join(", ");
+    tracing::info!(
+        project_id,
+        empty_groups = %names,
+        "scan published group(s) holding no contexts"
+    );
+    CONTEXT_GEN_JOBS.emit_line(
+        app,
+        scan_id,
+        format!(
+            "[Empty group] {} of {} group(s) hold no contexts: {names}. Either the scan named a \
+             domain and never mapped it, or that domain's whole surface is docs/config — which a \
+             context may not claim, so no scan will ever fill it. Fill or delete them in the \
+             Context Ledger.",
+            empty.len(),
+            pairs.len()
+        ),
+    );
+}
+
 /// Write the project-side harness docs (`context-map.json` + the managed
 /// `CLAUDE.md` section) so a CLI working directly in the managed project sees
 /// the context map without Personas running. Best-effort: a failure here is
@@ -2721,6 +2833,84 @@ mod tests {
         // A scan that emitted nothing against a real map is the worst case and
         // must always trip.
         assert!(is_coverage_regression(285, 0));
+    }
+
+    // The scan this was written for, reproduced end to end.
+    //
+    // bank-core's first scan (2026-09-08T19:50:01Z) ran over six files and came
+    // back with two groups and one context: `Governance & Compliance` was
+    // created and never filled, and `[Complete]` plus a 100% `[Coverage]` line
+    // reported it as a clean scan. The premise half of this test is why no
+    // amount of better classification would have filled that group — every file
+    // that made the model name the domain is a file a context may not claim —
+    // so the honest fix is to say the group is empty, not to try to fill it.
+    #[test]
+    fn a_group_the_scan_could_not_fill_is_named() {
+        // The repo's whole mappable surface at that scan: one file.
+        assert!(is_mappable_path("src/main.rs"));
+        // Its whole governance & compliance surface, all of it unclaimable:
+        assert!(!is_mappable_path("governance.yaml"));
+        assert!(!is_mappable_path(
+            "docs/certifications/wave-1-service-contract.md"
+        ));
+
+        let groups = vec![
+            ("g-foundation".to_string(), "Service Foundation".to_string()),
+            (
+                "g-governance".to_string(),
+                "Governance & Compliance".to_string(),
+            ),
+        ];
+        // What actually landed: `core-server-scaffold`, in the first group.
+        let assigned = vec![Some("g-foundation".to_string())];
+        assert_eq!(
+            groups_without_contexts(&groups, &assigned),
+            vec!["Governance & Compliance".to_string()]
+        );
+    }
+
+    // The other half: it has to go quiet on a healthy map, or it becomes a line
+    // operators scroll past — which is how the empty group survived in the
+    // first place.
+    #[test]
+    fn groups_without_contexts_counts_only_a_real_occupant() {
+        let groups = vec![
+            ("g1".to_string(), "Service Foundation".to_string()),
+            ("g2".to_string(), "Governance & Compliance".to_string()),
+        ];
+
+        // Every group occupied: nothing to say.
+        assert!(groups_without_contexts(
+            &groups,
+            &[Some("g1".to_string()), Some("g2".to_string())]
+        )
+        .is_empty());
+        // Several contexts in one group still leave the other empty.
+        assert_eq!(
+            groups_without_contexts(&groups, &[Some("g1".to_string()), Some("g1".to_string())]),
+            vec!["Governance & Compliance".to_string()]
+        );
+        // An UNGROUPED context occupies nothing. Reading a NULL group_id as an
+        // occupant would hide the orphaned-context bug behind this one.
+        assert_eq!(
+            groups_without_contexts(&groups, &[None, Some("g1".to_string())]),
+            vec!["Governance & Compliance".to_string()]
+        );
+        // A context pointing at a group that no longer exists occupies nothing
+        // either — both groups are still empty and both get named, in ledger
+        // order rather than sorted.
+        assert_eq!(
+            groups_without_contexts(&groups, &[Some("g-deleted".to_string())]),
+            vec![
+                "Service Foundation".to_string(),
+                "Governance & Compliance".to_string()
+            ]
+        );
+        // A project with no groups has no empty ones, contexts or not.
+        assert!(groups_without_contexts(&[], &[Some("g1".to_string())]).is_empty());
+        // A scan that mapped nothing at all names every group it created,
+        // rather than going quiet exactly when the map is worst.
+        assert_eq!(groups_without_contexts(&groups, &[]).len(), 2);
     }
 
     // The three sites that key a group name have to agree, or a context lands
