@@ -394,6 +394,7 @@ fn synthetic_inner(i: u64, cwd: std::path::PathBuf) -> FleetSessionInner {
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
         dozing: false,
+        reaped: false,
         output: Arc::new(Mutex::new(
             crate::commands::fleet::registry::OutputRing::new(64 * 1024),
         )),

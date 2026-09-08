@@ -1747,6 +1747,13 @@ fn resolve_last_dispatch(
                         s.state_reason.as_deref(),
                     ) {
                         WorkerEndKind::Limit | WorkerEndKind::Blocked => DISPATCH_FAILED,
+                        // `Unknown` covers the UNMARKED end (a worker that did
+                        // the work and stopped without writing a completion
+                        // line — `classify::UNMARKED_END_PREFIX`): delivered,
+                        // pending verification. The persona reads the summary
+                        // and checks the branch; it does NOT re-dispatch, which
+                        // is what happened while such a worker was left to be
+                        // swept `stale` instead.
                         WorkerEndKind::Finished | WorkerEndKind::Unknown => DISPATCH_FINISHED,
                     },
                     // Ended without declaring done. Not necessarily a crash,
@@ -7240,6 +7247,42 @@ mod attention_tests {
             OPUS_CURRENT
         );
         Ok(())
+    }
+
+    /// G25: a worker that delivered and stopped WITHOUT the completion line is
+    /// parked `finished` with `classify::UNMARKED_END_PREFIX` as its reason.
+    /// The decision must read that as delivered-pending-verification — so the
+    /// persona verifies the branch — and never as a stall to re-dispatch.
+    #[test]
+    fn an_unmarked_fleet_worker_reads_as_finished_not_as_a_stall() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Ship the parser", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-unmarked" }),
+        );
+        // Verbatim from the worker measured on 2026-09-08.
+        let reason = crate::commands::fleet::classify::unmarked_finish_reason(
+            "Done. Delivery branch is clean, main fast-forwards onto it",
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-unmarked", "finished", Some(&reason)),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_FINISHED,
+            "an unmarked end is delivered work, not a stall to dispatch again"
+        );
+        // The persona is told what the worker actually said, so it can verify.
+        assert_eq!(d.summary.as_deref(), Some(reason.as_str()));
     }
 
     /// A worker the operator's own subscription refused did NOT finish the

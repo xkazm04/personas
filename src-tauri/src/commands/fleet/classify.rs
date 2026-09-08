@@ -133,6 +133,122 @@ pub fn worker_end_kind(state_reason: Option<&str>) -> WorkerEndKind {
     WorkerEndKind::Unknown
 }
 
+/// True when a fleet session's `run_label` marks it a **one-shot worker**: a
+/// charter dispatch that was handed ONE task, told to end its turn with a
+/// completion line, and has nobody behind it to type a second instruction.
+///
+/// This is the single door for "may this session's process be ended the moment
+/// its turn is over". It deliberately does NOT widen to
+/// [`personas_engine::unattended::is_unattended_run`]: the overnight lane also
+/// runs unattended, but its sessions are driven across several turns by the
+/// night's own dispatcher, and reaping one after its first `result` event would
+/// end a run mid-night. The App Master's decide lane is the measured one —
+/// `dispatch_into_worktree` spawns exactly one headless session per charter and
+/// never writes to it again.
+pub fn is_one_shot_worker_label(run_label: Option<&str>) -> bool {
+    personas_engine::unattended::is_app_master_run(run_label)
+}
+
+/// How a one-shot worker's completed turn should be settled.
+///
+/// [`worker_end_kind`] answers the same question for a session that has already
+/// stopped, from the `state_reason` it left behind. This one is asked at the
+/// moment the headless `result` event lands, from the turn's final assistant
+/// text — before any lifecycle lane has written a reason — and it carries the
+/// reason each outcome should be parked with.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WorkerTurnEnd {
+    /// The worker declared the task complete. Park `Finished` through
+    /// `mark_finished`, which stamps the `Task complete: ` prefix.
+    Declared { summary: String },
+    /// The worker declared itself blocked. Park `AwaitingInput` with the
+    /// declaration verbatim — the existing unattended sweep owns it from there.
+    Blocked { reason: String },
+    /// **G25**: the turn ended with no completion line at all. Park `Finished`
+    /// with `reason`, which reports exactly that and never forges a `Task
+    /// complete:` the worker did not declare. Measured 2026-09-08: eight App
+    /// Master workers ended this way ("Done. Delivery branch is clean, main
+    /// fast-forwards onto it"), were left `running`/`idle`, were swept `stale`
+    /// six minutes later, and their charters were re-dispatched.
+    Unmarked { reason: String },
+    /// A provider- or account-side refusal ended the turn. The lifecycle is
+    /// LEFT ALONE — `stale::limit_retry_pass` owns this lane and needs the
+    /// process alive to retry — but the banner is worth restamping as the
+    /// session's reason so every later reader sees the real cause.
+    Limit { banner: String },
+}
+
+/// Read the end of a one-shot worker's turn from its final assistant text.
+/// Pure; the caller does the parking. `None`/empty text is [`WorkerTurnEnd::Unmarked`]
+/// — a turn that said nothing certainly did not declare completion.
+pub fn worker_turn_end(final_text: Option<&str>) -> WorkerTurnEnd {
+    let text = final_text.map(str::trim).unwrap_or("");
+    match worker_end_kind(final_text) {
+        WorkerEndKind::Limit => WorkerTurnEnd::Limit {
+            banner: clip_to(text, SUMMARY_MAX),
+        },
+        WorkerEndKind::Blocked => WorkerTurnEnd::Blocked {
+            reason: clip_to(text, SUMMARY_MAX),
+        },
+        WorkerEndKind::Finished => WorkerTurnEnd::Declared {
+            summary: declared_summary(text),
+        },
+        WorkerEndKind::Unknown => WorkerTurnEnd::Unmarked {
+            reason: unmarked_finish_reason(text),
+        },
+    }
+}
+
+/// Opening of the `state_reason` an unmarked finish is parked with. Chosen so
+/// that reading it back through [`worker_end_kind`] yields `Unknown` — the
+/// verdict that already means "delivered, nothing declared" to the App Master's
+/// last-dispatch reader — and never `Finished`, which would claim a declaration.
+pub const UNMARKED_END_PREFIX: &str = "Turn ended without a completion line: ";
+
+/// How much of the final text the unmarked reason carries.
+const UNMARKED_TEXT_MAX: usize = 120;
+
+/// What an unmarked turn end is parked with. Newlines collapse to spaces: this
+/// string is a one-line tile reason, not a transcript.
+pub fn unmarked_finish_reason(final_text: &str) -> String {
+    let flat = final_text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if flat.is_empty() {
+        return format!("{UNMARKED_END_PREFIX}(no closing message)");
+    }
+    let mut body: String = flat.chars().take(UNMARKED_TEXT_MAX).collect();
+    if flat.chars().count() > UNMARKED_TEXT_MAX {
+        body.push('…');
+    }
+    format!("{UNMARKED_END_PREFIX}{body}")
+}
+
+/// The summary a declared completion carries: whatever follows the LAST done
+/// marker, with the brief's dash/colon separator stripped — the same shape the
+/// screen-side `mechanical_cue` reader extracts. Falls back to the first
+/// meaningful line when the marker is the last thing on the line.
+///
+/// `to_ascii_lowercase` (not `to_lowercase`) because the offset is used to
+/// index the ORIGINAL string: only the ASCII form is guaranteed to preserve
+/// byte lengths, and the markers are ASCII.
+fn declared_summary(text: &str) -> String {
+    let lower = text.to_ascii_lowercase();
+    let end = DONE_MARKERS
+        .iter()
+        .filter_map(|m| lower.rfind(m).map(|i| i + m.len()))
+        .max();
+    if let Some(end) = end {
+        let after = text[end..]
+            .trim_start()
+            .trim_start_matches(['—', '–', '-', ':'])
+            .trim_start();
+        let clipped = clip_to(after, SUMMARY_MAX);
+        if !clipped.is_empty() {
+            return clipped;
+        }
+    }
+    clip(text)
+}
+
 /// Longest summary carried out of a Done verdict.
 const SUMMARY_MAX: usize = 200;
 
@@ -308,12 +424,18 @@ fn is_stop_hook(rec: &Value) -> bool {
 }
 
 fn clip(text: &str) -> String {
+    clip_to(text, SUMMARY_MAX)
+}
+
+/// [`clip`] with an explicit budget: first non-empty line, `max` chars, `…` when
+/// something was dropped.
+fn clip_to(text: &str, max: usize) -> String {
     let one_line = text
         .split('\n')
         .find(|l| !l.trim().is_empty())
         .unwrap_or(text);
-    let mut out: String = one_line.trim().chars().take(SUMMARY_MAX).collect();
-    if one_line.trim().chars().count() > SUMMARY_MAX {
+    let mut out: String = one_line.trim().chars().take(max).collect();
+    if one_line.trim().chars().count() > max {
         out.push('…');
     }
     out
@@ -505,6 +627,109 @@ mod tests {
         assert_eq!(
             worker_end_kind(Some("Added a rate limit to the uploader")),
             WorkerEndKind::Unknown,
+        );
+    }
+
+    // ---- one-shot workers: the label, and the end of one turn --------------
+
+    #[test]
+    fn only_an_app_master_label_marks_a_one_shot_worker() {
+        assert!(is_one_shot_worker_label(Some("app-master:p-web-master")));
+        assert!(is_one_shot_worker_label(Some("  app-master:p-web-master")));
+        // The night's own dispatcher drives its sessions across several turns —
+        // reaping one after its first `result` would end a run mid-night.
+        assert!(!is_one_shot_worker_label(Some("overnight 2026-09-08")));
+        // A human run somebody named after the feature is never machine work.
+        assert!(!is_one_shot_worker_label(Some("app master notes")));
+        assert!(!is_one_shot_worker_label(None));
+    }
+
+    #[test]
+    fn a_declared_completion_ends_the_turn_finished_with_the_payload() {
+        assert_eq!(
+            worker_turn_end(Some("FLEET:DONE — rebased and pushed")),
+            WorkerTurnEnd::Declared {
+                summary: "rebased and pushed".into()
+            }
+        );
+        // The `Task complete:` form the brief also permits.
+        assert_eq!(
+            worker_turn_end(Some("Task complete: shipped the parser")),
+            WorkerTurnEnd::Declared {
+                summary: "shipped the parser".into()
+            }
+        );
+    }
+
+    #[test]
+    fn a_declared_block_ends_the_turn_blocked_verbatim() {
+        assert_eq!(
+            worker_turn_end(Some("FLEET:BLOCKED — the repo has no main branch")),
+            WorkerTurnEnd::Blocked {
+                reason: "FLEET:BLOCKED — the repo has no main branch".into()
+            }
+        );
+    }
+
+    #[test]
+    fn the_unmarked_turn_end_measured_on_2026_09_08_is_not_a_stall() {
+        // Verbatim from the App Master worker that ended its charter, wrote no
+        // completion line, was swept `stale` six minutes later, and had its
+        // charter re-dispatched. G25.
+        let observed = "Done. Delivery branch is clean, main fast-forwards onto it";
+        let end = worker_turn_end(Some(observed));
+        assert_eq!(
+            end,
+            WorkerTurnEnd::Unmarked {
+                reason: format!("Turn ended without a completion line: {observed}")
+            }
+        );
+        // And the reason it parks with must read back as UNKNOWN, not as a
+        // declaration: the App Master's last-dispatch reader maps `finished` +
+        // `Unknown` to delivered, and `finished` + `Finished` to the same — but
+        // `run::summary_from_reason` would report a forged `Task complete:` as
+        // a summary the worker never wrote.
+        let WorkerTurnEnd::Unmarked { reason } = end else {
+            unreachable!()
+        };
+        assert_eq!(worker_end_kind(Some(&reason)), WorkerEndKind::Unknown);
+        assert!(!reason.starts_with("Task complete:"));
+    }
+
+    #[test]
+    fn an_empty_or_missing_final_text_is_still_an_unmarked_end() {
+        for text in [None, Some(""), Some("   \n  ")] {
+            assert_eq!(
+                worker_turn_end(text),
+                WorkerTurnEnd::Unmarked {
+                    reason: "Turn ended without a completion line: (no closing message)".into()
+                },
+                "{text:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_long_unmarked_end_is_clipped_to_one_line_of_120() {
+        let long = format!("first line {}\nsecond line", "x".repeat(300));
+        let reason = unmarked_finish_reason(&long);
+        let body = reason.strip_prefix(UNMARKED_END_PREFIX).unwrap();
+        assert_eq!(body.chars().count(), 121, "120 chars plus the ellipsis");
+        assert!(body.ends_with('…'));
+        // Newlines collapse — a state_reason is one tile line, not a transcript.
+        assert!(!reason.contains('\n'));
+    }
+
+    #[test]
+    fn a_limit_banner_ends_the_turn_as_a_limit_and_not_as_work() {
+        assert_eq!(
+            worker_turn_end(Some(
+                "You've reached your Fable limit. Switch to another model, or manage usage"
+            )),
+            WorkerTurnEnd::Limit {
+                banner: "You've reached your Fable limit. Switch to another model, or manage usage"
+                    .into()
+            }
         );
     }
 

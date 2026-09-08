@@ -190,6 +190,8 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
         dozing: true,
+        // A rehydrated row has no process at all, so nothing to reap.
+        reaped: false,
         output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
         killer: None,
     }
@@ -341,6 +343,7 @@ mod tests {
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
             dozing: false,
+            reaped: false,
             output: Arc::new(Mutex::new(OutputRing::new(1024))),
             killer: None,
         }

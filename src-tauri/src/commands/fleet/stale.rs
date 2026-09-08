@@ -900,6 +900,7 @@ fn tick_once(app: &AppHandle) {
 
     limit_retry_pass(app, now);
     unattended_awaiting_pass(app, now);
+    one_shot_worker_reap_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
@@ -973,6 +974,88 @@ fn unattended_awaiting_pass(app: &AppHandle, now: i64) {
             );
             super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason));
         }
+    }
+}
+
+/// How long a ONE-SHOT worker may sit `Idle` — its turn over, nobody about to
+/// send it another — before the ticker settles it and frees its process.
+///
+/// Ten minutes, and the number is a BACKSTOP, not the mechanism: the headless
+/// lane settles and reaps a one-shot worker the moment its `result` event lands
+/// (`headless::settle_one_shot_turn`), so a session only reaches this window
+/// when that path did not run — an event the reader never saw, a `result`
+/// carrying no readable text, or a row rehydrated after a restart. Long enough
+/// that it can never race the completion path (which fires within seconds) and
+/// short enough that ~300 MB of dead worker is not held for an hour.
+///
+/// Deliberately NOT the 6-minute staleness cutoff, which answers a different
+/// question ("is this process still producing output") for every lane; nothing
+/// here changes that sweep for anybody.
+const ONE_SHOT_IDLE_REAP_SECS: i64 = 10 * 60;
+
+/// Backstop for one-shot charter workers (**G21 + G25**), in two shapes:
+///
+///   • a worker still `Idle` past [`ONE_SHOT_IDLE_REAP_SECS`] is finished as an
+///     unmarked end — the same verdict the completion path writes — and reaped;
+///   • a worker already `Finished` / `Exited` whose process is still resident
+///     is reaped, whichever lane parked it (the mechanical `FLEET:DONE` cue,
+///     `unattended_awaiting_pass` closing a blocked worker, a rehydrated row).
+///
+/// Scoped hard, mirroring the other machine-only passes: only sessions whose
+/// `run_label` marks them a one-shot charter dispatch, never an operator's own
+/// terminal and never an interactive conversation — those keep their process by
+/// design. A session parked on a LIMIT is skipped: `limit_retry_pass` owns it
+/// and needs the child alive to retry.
+fn one_shot_worker_reap_pass(app: &AppHandle, now: i64) {
+    use super::classify::{is_one_shot_worker_label, worker_end_kind, WorkerEndKind};
+    let idle_cutoff_ms = ONE_SHOT_IDLE_REAP_SECS * 1000;
+
+    // Pass A — snapshot under the lock; no kill, no emit while it is held.
+    // `Some(reason)` = finish it first; `None` = it is already terminal.
+    let candidates: Vec<(String, Option<String>)> = {
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                is_one_shot_worker_label(s.run_label.as_deref())
+                    && s.child_pid.is_some()
+                    && !s.reaped
+                    && !s.dozing
+            })
+            .filter_map(|s| match s.state {
+                FleetSessionState::Finished | FleetSessionState::Exited => {
+                    Some((s.id.clone(), None))
+                }
+                FleetSessionState::Idle
+                    if now - s.last_activity_ms >= idle_cutoff_ms
+                        && !matches!(
+                            worker_end_kind(s.state_reason.as_deref()),
+                            WorkerEndKind::Limit
+                        ) =>
+                {
+                    let reason = super::classify::unmarked_finish_reason(&format!(
+                        "no further turn for {} min after the last one",
+                        ONE_SHOT_IDLE_REAP_SECS / 60
+                    ));
+                    Some((s.id.clone(), Some(reason)))
+                }
+                _ => None,
+            })
+            .collect()
+    };
+
+    // Pass B — act outside the lock; both doors re-validate under their own.
+    for (sid, finish_reason) in candidates {
+        if let Some(reason) = finish_reason {
+            let Some(prev) = registry().finish_unmarked(&sid, &reason) else {
+                continue; // it went back to work between the snapshot and here
+            };
+            super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason.clone()));
+            super::debug_log::lifecycle(&sid, "finished (unmarked, idle backstop)", &reason);
+        }
+        super::headless::reap_now(app, &sid, "one-shot worker parked with a live process");
     }
 }
 
