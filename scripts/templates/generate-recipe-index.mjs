@@ -22,32 +22,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { exploreCategoryFor } from './_domain-categories.mjs';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const SEEDS = path.join(ROOT, 'scripts', 'templates', '_recipe_seeds.json');
 const OUT = path.join(ROOT, 'src', 'features', 'templates', 'sub_explore', 'recipeIndex.generated.json');
 
-// v3 domain family -> the explore category exploreDomains.ts already maps.
-// Families with no explore home land on 'operations', which is that file's
-// own documented catch-all, so nothing is orphaned.
-const DOMAIN_TO_EXPLORE_CATEGORY = {
-  software_engineering: 'development',
-  data_ai: 'analytics',
-  product_project: 'project_management',
-  sales_marketing: 'marketing',
-  creative_design: 'content',
-  finance_accounting: 'finance',
-  general_professional: 'productivity',
-  operations_logistics: 'operations',
-  customer_support: 'operations',
-  legal_compliance: 'operations',
-  hr_people: 'operations',
-  education_academic: 'content',
-  life_sciences_research: 'research',
-  healthcare_clinical: 'operations',
-  skilled_trades: 'operations',
-  frontline_service: 'operations',
-};
+// The v3 domain family -> explore category map moved to `_domain-categories.mjs`
+// when `merge-into-bundle.mjs` became its second reader: the merge files a seed
+// row under a category, this generator shows it under one, and two copies of the
+// table is how those two answers start to differ.
 
 function parseTags(raw) {
   if (Array.isArray(raw)) return raw.filter((t) => typeof t === 'string');
@@ -68,7 +53,7 @@ function build() {
   const rows = bundle.recipes.map((seed) => {
     const p = JSON.parse(seed.prompt_template);
     const domain = typeof p.domain === 'string' ? p.domain : '';
-    const category = DOMAIN_TO_EXPLORE_CATEGORY[domain] ?? 'operations';
+    const category = exploreCategoryFor(domain);
     const description = p.description && typeof p.description === 'object'
       ? [p.description.need, p.description.coreAction].filter(Boolean).join(' ')
       : (seed.description ?? '');

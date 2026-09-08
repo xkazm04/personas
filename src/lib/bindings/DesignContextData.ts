@@ -64,4 +64,15 @@ kpLink: KpLink | null,
  * reason as `kp_link`: `DesignContextData` has no serde catch-all, so an
  * untyped key would be silently DROPPED on the next round-trip.
  */
-appMaster: AppMasterLink | null, };
+appMaster: AppMasterLink | null, 
+/**
+ * Dev Tools WORKSPACE this persona is pinned to — the cross-project twin
+ * of [`Self::dev_project_id`], set by the Architect adoption door. A
+ * persona carrying this sees every project in the workspace rather than
+ * one codebase; the two pins coexist (an Architect may also be pinned to
+ * a project for its own connector reads) and neither implies the other.
+ * Typed + defaulted for the same reason as `kp_link`: `DesignContextData`
+ * has no serde catch-all, so an untyped key would be silently DROPPED on
+ * the next round-trip.
+ */
+workspaceId: string | null, };

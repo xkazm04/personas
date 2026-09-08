@@ -226,6 +226,7 @@ mod tests {
             sources: vec!["ep_1".to_string()],
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
             updated_at: "2025-01-01T00:00:00+00:00".to_string(),
         }
     }

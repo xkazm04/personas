@@ -63,9 +63,12 @@ headless routes `POST /api/dev/milestones/{id}/goals` and `POST /api/dev/goals/{
 `Action::GoalAdvancement` (default off) with a 2-hour per-goal cooldown and 3 per tick.
 
 **Workspaces and roles.** `dev_workspaces` with `dev_projects.workspace_id`; workspace knowledge,
-practices, harvest; cross-project reads (`portfolio.rs`, `cross_project.rs`). **Every persona
+practices, harvest; cross-project reads (`portfolio.rs`, `cross_project.rs`). ~~**Every persona
 binds to at most one project**; App-Master-ness is defined as holding a project-bound charter.
-No cross-project persona exists.
+No cross-project persona exists.~~ **Superseded by G1 (below), which closed it:** a charter now
+binds to a project OR a workspace, and the Architect is the first cross-project persona. The
+sentence above is the state measured 2026-09-07 and is kept because §3's gap table is written
+against it.
 
 **Caps.** No `max_active_personas` anywhere. Enforced: `max_parallel_executions` (default 10,
 1..20, hot-applied, over the cap queues) and per-persona `max_concurrent`. Soft, in memory:
@@ -137,7 +140,7 @@ registry where one fits.
 
 | # | Gap | Closes it | Size |
 |---|---|---|---|
-| G1 | No cross-project persona; App-Master-ness is project-bound | a **workspace-bound charter** (`persona_responsibilities.workspace_id`, spec `workspaceId`); `is_app_master` becomes "holds a project- or workspace-bound charter"; the decision context aggregates the workspace's projects (goals, App Master states, channel) | medium |
+| G1 | ~~No cross-project persona; App-Master-ness is project-bound~~ **CLOSED** | a **workspace-bound charter** (`persona_responsibilities.workspace_id`, migration `e25_workspace_charters`, mutually exclusive with `project_id` and refused as a pair by `personas_engine::responsibility::validate`); `is_app_master` now reads "holds a project- **or workspace**-bound charter" (`attention.rs`, renamed nothing — the widening is documented on the function); the decision context gains `workspace: Option<WorkspaceView>` (`attention_decide.rs`) carrying every member project with its App Master state, the goals across the portfolio (capped at 30, count always stated) and the active-persona figure, rendered under `YOUR WORKSPACE`; each member project also gets the same per-project snapshot an App Master would get. The door is `POST /dev-tools/architect/adopt` + `adopt_architect` (`architect_adopt.rs`), which shares its whole body with the App Master door through a `Binding::Project \| Binding::Workspace` enum. The five Architect recipes are merged into the seed bundle as owner `architect`. | medium |
 | G2 | Personas cannot ask kp for a hire | outbound **`request_hire`**: a bridge route and command that calls kp's intake (`POST /api/intake`, `/message`, `/compose-app-master` or the JD build) with a need text, and a kp route that composes and dispatches a persona request in one call for a headless caller; kp's bench driver already does the sequence | medium, both repos |
 | G3 | A persona's channel message never wakes another persona | arrivals lane accepts `author_kind IN ('user','athena','persona')` when `addressed_to` names the persona or the message carries a **directive** marker; a new `authority` on messages (`directive | note`) written by the Architect's charter and the operator; App Masters answer directives in their decision ("what the channel asked of me") | small |
 | G4 | No app-level active-persona cap | setting **`max_active_personas`** (default 10) enforced at `set_persona_enabled`, adoption doors and the kp hire; a refused enable returns the count; the decision context shows "N of 10 personas active" | small |
@@ -154,8 +157,17 @@ registry where one fits.
 1. **Workspace and project creation route** (G6) with the dedicated root and the never-delete rule
    encoded as a refusal in every delete path that meets a project tagged `last_working_version`.
 2. **Active-persona cap** (G4) and **fleet dispatch cap** (G5).
-3. **Workspace-bound charters and the Architect adoption door** (G1): `POST /dev-tools/architect/adopt
-   {workspace, recipes}` mirroring the App Master door.
+3. ~~**Workspace-bound charters and the Architect adoption door** (G1)~~ **DONE**:
+   `POST /dev-tools/architect/adopt {workspace, recipes[], model?, maxConcurrent?, scopeRung?,
+   enabled?, name?}` and `GET /dev-tools/architect/{workspace}`. It does not merely *mirror* the App
+   Master door — it IS that door, generalised over what the persona binds to, so the two cannot
+   drift in their idempotency key, their partial-success reporting or their manifest law. The
+   Architect's charters carry `spec.authority = true`, and `workforce-planning` additionally carries
+   `spec.canHire = true`. **One follow-up is deliberately left open:** the workspace view reports the
+   active-persona ceiling from a compiled-in constant, because G4's `max_active_personas` setting
+   did not exist on this branch and declaring the key locally is the shadow-key defect the census
+   rule `settings-key-declared-outside-registry` refuses. Once G4 lands, `active_persona_cap`
+   (`attention.rs`) becomes a one-line read of `settings_keys::MAX_ACTIVE_PERSONAS`.
 4. **Channel authority and persona wake** (G3, G11).
 5. **Outbound hire** (G2): Personas side first with kp's existing routes; then the one-call kp route.
 6. **Simulation switches**: headless bridge on, Opus for all agents, cap 10, autopilot `full` for

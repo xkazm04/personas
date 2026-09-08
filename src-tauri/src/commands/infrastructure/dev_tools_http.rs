@@ -41,6 +41,8 @@
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
 //!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
+//!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
+//!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
 //!
 //! Write-back routes for workers — the door a dispatched App Master run reports
 //! through (`app_master_writeback`). Without them a headless run's only output
@@ -68,6 +70,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::commands::infrastructure::app_master_adopt;
 use crate::commands::infrastructure::app_master_writeback;
+use crate::commands::infrastructure::architect_adopt;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -129,6 +132,8 @@ pub fn router(app: AppHandle) -> Router {
         .route("/patterns/{id}", get(pattern_get))
         .route("/app-master/adopt", post(app_master_adopt_route))
         .route("/app-master/{project_id}", get(app_master_state))
+        .route("/architect/adopt", post(architect_adopt_route))
+        .route("/architect/{workspace}", get(architect_state))
         // Worker write-back (see the module header).
         .route("/ideas", post(file_idea_route))
         .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
@@ -1661,6 +1666,50 @@ async fn app_master_state(
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("app-master state: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
+// Architect adoption — the same door, one scope up (a workspace, not a project)
+// ============================================================================
+//
+// Two more adapters over `architect_adopt`, which shares its whole body with
+// `app_master_adopt`. Blocking for the same reasons (rusqlite + the manifest
+// file), so both run on the blocking pool.
+
+async fn architect_adopt_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<architect_adopt::AdoptArchitectInput>,
+) -> Result<Json<architect_adopt::ArchitectAdoption>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::adopt(&pool, &b));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect adopt: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn architect_state(
+    State(s): State<DevToolsHttp>,
+    Path(workspace): Path<String>,
+) -> Result<Json<Option<architect_adopt::ArchitectAdoption>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::current(&pool, &workspace));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect state: task failed: {e}"),
             )
         })?
         .map(Json)

@@ -2564,6 +2564,9 @@ pub(crate) fn map_use_case_to_charter_input(
         // bookkeeping and is never seeded.
         priority: None,
         pacing: None,
+        // Standing grants of the Architect role; a legacy use case has none.
+        authority: None,
+        can_hire: None,
     };
 
     CreatePersonaResponsibilityInput {
@@ -2581,6 +2584,7 @@ pub(crate) fn map_use_case_to_charter_input(
         tenure: Default::default(),
         status,
         project_id: None,
+        workspace_id: None,
         connectors,
         procedure,
         spec,
@@ -2687,6 +2691,7 @@ pub(crate) fn charter_input_from_recipe(
         tenure: Default::default(),
         status: None,
         project_id: None,
+        workspace_id: None,
         connectors: resolved.bound_connectors(),
         procedure: recipe.guidance.trim().to_string(),
         spec,

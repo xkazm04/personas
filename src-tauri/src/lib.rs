@@ -1694,6 +1694,7 @@ pub fn run() {
             commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,
             commands::infrastructure::dev_tools_http::dev_tools_bridge_port,
             commands::infrastructure::app_master_adopt::adopt_app_master,
+            commands::infrastructure::architect_adopt::adopt_architect,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,

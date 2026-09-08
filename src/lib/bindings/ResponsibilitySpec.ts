@@ -129,4 +129,12 @@ priority?: number,
  * Coverage memory written back by the decision lane after every wake —
  * never authored by the operator. See [`ResponsibilityPacing`].
  */
-pacing?: ResponsibilityPacing, };
+pacing?: ResponsibilityPacing, 
+/**
+ * True for a charter whose holder speaks with authority in channels (the Architect).
+ */
+authority?: boolean, 
+/**
+ * True for a charter that may request a hire from kp.
+ */
+canHire?: boolean, };
