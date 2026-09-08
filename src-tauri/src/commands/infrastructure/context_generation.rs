@@ -418,6 +418,33 @@ pub fn group_key(name: &str) -> String {
     name.trim().to_lowercase()
 }
 
+/// Drop repeats while keeping the model's order.
+///
+/// THE MODEL CAN LIST THE SAME PATH TWICE IN ONE MESSAGE, and until this
+/// existed the ingest stored it verbatim. Measured 2026-09-08 on a subtree scan
+/// of `components/ui` in gravitone-gcloud: `signal-vocabulary` came back with 13
+/// path rows for 12 distinct files — `Tally.tsx` twice, in the SAME context. The
+/// scan's own coverage line is the only thing that noticed ("31 path slots for
+/// 30 distinct paths"), and once written it could not be repaired from outside:
+/// every `/dev-tools` repair route is context-level, so nothing reaches a path
+/// duplicated inside one context. A re-export reproduces it, because it is in
+/// the database.
+///
+/// Deduping HERE rather than at each write site is deliberate — this is the one
+/// boundary both `context_map_context` and `context_map_update` pass through, so
+/// a third message shape cannot reintroduce the bug by forgetting to call it.
+///
+/// Order is preserved rather than sorted: the model's ordering carries its own
+/// judgement about what the context leads with, and `entry_points` is derived
+/// from the same list.
+fn dedupe_keep_order(paths: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    paths
+        .into_iter()
+        .filter(|p| seen.insert(p.clone()))
+        .collect()
+}
+
 fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
     let val: serde_json::Value = serde_json::from_str(text).ok()?;
 
@@ -466,7 +493,7 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .get("description")
                 .and_then(|d| d.as_str())
                 .map(|s| s.to_string()),
-            file_paths: arr_to_vec("file_paths"),
+            file_paths: dedupe_keep_order(arr_to_vec("file_paths")),
             entry_points: arr_to_vec("entry_points"),
             keywords: arr_to_vec("keywords"),
             db_tables: arr_to_vec("db_tables"),
@@ -498,7 +525,7 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .get("description")
                 .and_then(|d| d.as_str())
                 .map(|s| s.to_string()),
-            file_paths: opt_arr("file_paths"),
+            file_paths: opt_arr("file_paths").map(dedupe_keep_order),
             keywords: opt_arr("keywords"),
         });
     }
@@ -2624,6 +2651,51 @@ fn write_harness_docs(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // A path listed twice in one message must reach the database once.
+    //
+    // The bug this pins: on 2026-09-08 a subtree scan of components/ui in
+    // gravitone-gcloud wrote `signal-vocabulary` with 13 path rows for 12
+    // distinct files — Tally.tsx twice, in the same context. Nothing downstream
+    // could repair it: every /dev-tools repair route is context-level, so a
+    // path duplicated INSIDE one context has no reachable fix, and a
+    // re-export reproduces it because it lives in the database.
+    #[test]
+    fn a_path_listed_twice_is_stored_once() {
+        let msg = r#"{"context_map_context": {"project_id": "p", "group_name": "G",
+            "name": "signal-vocabulary",
+            "file_paths": ["ui/Tally.tsx", "ui/Hint.tsx", "ui/Tally.tsx"]}}"#;
+        match parse_context_map_protocol(msg) {
+            Some(ContextMapProtocol::Context { file_paths, .. }) => {
+                assert_eq!(file_paths, vec!["ui/Tally.tsx", "ui/Hint.tsx"]);
+            }
+            other => panic!("expected a Context message, got {other:?}"),
+        }
+    }
+
+    // Order is the model's judgement about what the context leads with, and
+    // entry_points is derived from the same list — so dedupe must not sort.
+    #[test]
+    fn dedupe_keeps_the_models_order() {
+        let v = vec!["c.ts".into(), "a.ts".into(), "c.ts".into(), "b.ts".into()];
+        assert_eq!(dedupe_keep_order(v), vec!["c.ts", "a.ts", "b.ts"]);
+    }
+
+    // The update path is the other door into the same table.
+    #[test]
+    fn an_update_message_is_deduped_too() {
+        let msg = r#"{"context_map_update": {"context_id": "c1",
+            "file_paths": ["x.ts", "x.ts", "y.ts"]}}"#;
+        match parse_context_map_protocol(msg) {
+            Some(ContextMapProtocol::Update { file_paths, .. }) => {
+                assert_eq!(
+                    file_paths,
+                    Some(vec!["x.ts".to_string(), "y.ts".to_string()])
+                );
+            }
+            other => panic!("expected an Update message, got {other:?}"),
+        }
+    }
 
     // The guard that turns "a full rescan silently replaced a 117-context map
     // with 43" into a rollback. It has to fire on a collapse without firing on
