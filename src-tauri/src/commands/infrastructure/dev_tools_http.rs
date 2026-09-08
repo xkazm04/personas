@@ -38,18 +38,24 @@
 //!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
 //!   GET  /contexts/{project_id}             → every context + its `source` provenance
 //!                                             (`declared` = from the project's own map; absent = derived by the scan)
-//!   POST /contexts/{project_id}/declare     → DECLARE the context map, same JSON as a committed
+//!   POST /contexts/{project_id}/declare     → DECLARE the context map, same JSON as a declared
 //!                                             `context-map.json` { groups?: [...], contexts: [...] }.
 //!                                             Upserts groups/contexts stamped `source: declared`;
 //!                                             a malformed body is a 400 naming the field. `contexts: []`
-//!                                             is a valid declaration of emptiness.
+//!                                             is a valid declaration of emptiness. The body needs no
+//!                                             `"declared": true` marker (calling this IS the claim) — but
+//!                                             a persona persisting the same map to disk MUST write that
+//!                                             marker at the top level and commit it, or the scan reads
+//!                                             the file as a plain export artifact and ignores it.
 //!   POST /retire-contexts                   → delete contexts by explicit id { project_id, context_ids }
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
 //!   POST /kpi-update                        → fix a KPI's definition (description, measure_config, …)
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
 //!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs).
-//!                                             REFUSES (400) when `context-map.json` is git-tracked — that file is
-//!                                             the project's declaration, not an export target.
+//!                                             REFUSES (400) only when `context-map.json` is git-tracked AND
+//!                                             carries `"declared": true` — that file is the project's
+//!                                             declaration, not an export target. A tracked file without the
+//!                                             marker is an ordinary export artifact and is overwritten.
 //!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
 //!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
@@ -918,11 +924,17 @@ async fn list_contexts(
 
 /// DECLARE this project's context map, without committing a file first.
 ///
-/// Same JSON body as a git-tracked `context-map.json`, same validation, same
+/// Same JSON body as a declared `context-map.json`, same validation, same
 /// `source: declared` provenance — so an App Master that has just worked out
 /// how its project is organised can say so from inside its run, and the next
 /// scan reads a declaration instead of re-deriving zero contexts from a tree of
 /// documents. `contexts: []` declares emptiness and is accepted.
+///
+/// The body does not need the `"declared": true` marker: POSTing here IS the
+/// claim of authority. The marker exists for the FILE path, where the same
+/// bytes would otherwise be indistinguishable from the export's own output. A
+/// persona that also writes the map to `context-map.json` must add the marker
+/// and commit the file, or the next scan will ignore it.
 async fn declare_contexts(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,

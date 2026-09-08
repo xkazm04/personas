@@ -18,21 +18,30 @@
 //!
 //! This module is the read direction, and the rule that makes it safe:
 //!
-//! > **A `context-map.json` that is git-TRACKED is the project's declaration
-//! > and is authoritative. An untracked one is Personas' own export and is
-//! > ignored.**
+//! > **A `context-map.json` is the project's declaration when it is git-TRACKED
+//! > *and* carries the top-level marker `"declared": true`. Anything else at
+//! > that path is Personas' own export and is ignored.**
 //!
-//! Tracked-ness is the whole discriminator, because the export writes an
-//! untracked file into the same path — reading "the file exists" would feed the
-//! scan its own output. `git ls-files --error-unmatch` answers exactly the
-//! question ("did somebody commit this?"), costs one short subprocess, and
-//! degrades to "not declared" on any repo where git is absent.
+//! **Both halves are load-bearing, and the marker is the one that matters.**
+//! Tracked-ness alone is not authority: plenty of projects commit the file the
+//! export generates — **Personas' own repository does** — and treating mere
+//! presence as a declaration would silence that repo's scan and refuse its
+//! export, which is a regression and not a feature. The export **never writes
+//! the marker**, so a committed export artifact can never be mistaken for a
+//! statement of authority, and a project opts in by one deliberate edit. The
+//! tracked half still matters on top of it: a *generated* file is untracked, so
+//! requiring the commit keeps a stray local edit from steering the scan.
 //!
-//! A declaration is validated against the export's own schema before anything
-//! is written: a malformed file is a typed `AppError::Validation` naming the
-//! offending field, never a silent fall-back to the code scan. A declaration
-//! with zero contexts is still authoritative — it declares emptiness, and the
-//! scan must not answer it by guessing.
+//! `git ls-files --error-unmatch` answers the tracked half ("did somebody commit
+//! this?"), costs one short subprocess, and degrades to "not declared" on any
+//! repo where git is absent.
+//!
+//! A file that claims authority is validated against the export's own schema
+//! before anything is written: a malformed one is a typed `AppError::Validation`
+//! naming the offending field, never a silent fall-back to the code scan. A
+//! declaration with zero contexts is still authoritative — it declares
+//! emptiness, and the scan must not answer it by guessing. A file WITHOUT the
+//! marker is not validated at all — it is simply not this module's business.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -49,6 +58,12 @@ use super::context_generation::{group_key, CONTEXT_CATEGORIES, GROUP_DOMAINS};
 /// `context_map_export` writes, deliberately: a project declares by committing
 /// the file Personas would otherwise generate.
 pub const DECLARED_MAP_FILE: &str = "context-map.json";
+
+/// The top-level key a project sets to `true` to claim authority over its own
+/// context map. Absent from everything `context_map_export` writes, by
+/// construction — that is what keeps a committed export from reading back as a
+/// declaration.
+pub const DECLARATION_MARKER: &str = "declared";
 
 /// One group as declared. `color`/`domain` are optional; everything the export
 /// emits round-trips.
@@ -111,8 +126,8 @@ pub struct DeclarationSummary {
 /// `false` for: no such file, not a git repository, git not installed, or the
 /// file present but untracked (which is exactly what the export leaves behind).
 /// Bounded to one short `git` invocation, mirroring `context_map_export`'s
-/// `git_provenance`.
-pub fn is_tracked_declaration(root: &Path) -> bool {
+/// `git_provenance`. **Not authority on its own** — see `is_declared_map`.
+fn is_tracked(root: &Path) -> bool {
     if !root.join(DECLARED_MAP_FILE).is_file() {
         return false;
     }
@@ -126,23 +141,69 @@ pub fn is_tracked_declaration(root: &Path) -> bool {
     .is_some()
 }
 
+/// Does this file text claim authority — top-level `"declared": true`?
+///
+/// Deliberately total and quiet: anything that is not parseable JSON, is not an
+/// object, or lacks the marker simply does not claim authority. Nothing about a
+/// project's ordinary export artifact should be able to produce an error here,
+/// because the answer for that file is just "no".
+fn declares_authority(raw: &str) -> bool {
+    serde_json::from_str::<Value>(raw)
+        .ok()
+        .as_ref()
+        .and_then(|v| v.get(DECLARATION_MARKER))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Is there a declaration at `root` — tracked AND marked?
+///
+/// This is the predicate the export asks before overwriting the file, and the
+/// scan asks before believing it. A committed export artifact (no marker) is
+/// `false` on both counts: it keeps being exported, and it never steers a scan.
+pub fn is_declared_map(root: &Path) -> bool {
+    if !is_tracked(root) {
+        return false;
+    }
+    std::fs::read_to_string(root.join(DECLARED_MAP_FILE))
+        .map(|raw| declares_authority(&raw))
+        .unwrap_or(false)
+}
+
 /// The project's declaration, or `None` when it has not made one.
 ///
-/// `Err` means the project DID declare and the declaration is unusable — the
-/// caller must refuse, not fall back. Silently deriving from code over a
-/// malformed declaration would answer a project's explicit statement about
-/// itself with a guess, and look identical to success.
-pub fn read_tracked_declaration(root: &Path) -> Result<Option<DeclaredMap>, AppError> {
-    if !is_tracked_declaration(root) {
+/// `None` covers every "this is not a declaration" case, including a tracked
+/// file with no marker and a tracked file that is not even JSON — mere presence
+/// must never be able to silence a scan.
+///
+/// `Err` means the project DID claim authority (`"declared": true`) and the
+/// declaration is unusable — the caller must refuse, not fall back. Silently
+/// deriving from code over a malformed declaration would answer a project's
+/// explicit statement about itself with a guess, and look identical to success.
+pub fn read_declared_map(root: &Path) -> Result<Option<DeclaredMap>, AppError> {
+    if !is_tracked(root) {
         return Ok(None);
     }
     let path = root.join(DECLARED_MAP_FILE);
-    let raw = std::fs::read_to_string(&path).map_err(|e| {
-        AppError::Validation(format!(
-            "{DECLARED_MAP_FILE} is committed in {} but could not be read: {e}",
-            root.display()
-        ))
-    })?;
+    let Ok(raw) = std::fs::read_to_string(&path) else {
+        tracing::warn!(
+            root = %root.display(),
+            "context-map.json is tracked but unreadable; not treating it as a declaration"
+        );
+        return Ok(None);
+    };
+    if !declares_authority(&raw) {
+        // Not a declaration — the ordinary case for every project that simply
+        // committed the export's output. Only a file that cannot even be parsed
+        // is worth a line, because that one is a broken artifact either way.
+        if serde_json::from_str::<Value>(&raw).is_err() {
+            tracing::warn!(
+                root = %root.display(),
+                "context-map.json is tracked but not valid JSON; treating it as an export artifact, not a declaration"
+            );
+        }
+        return Ok(None);
+    }
     parse_declared_map(&raw).map(Some)
 }
 
@@ -192,6 +253,11 @@ fn string_array(
 /// Validate a declaration against the export schema documented at the top of
 /// `context_map_export.rs`. Pure — the whole point is that a project can be
 /// told what is wrong with its file without a scan, a database or a filesystem.
+///
+/// The `"declared": true` marker is NOT required here. On the file path the
+/// caller has already checked it (`read_declared_map`); on the route path the
+/// body is a declaration by construction — a caller that POSTs to
+/// `…/contexts/{id}/declare` has declared by the act of calling it.
 pub fn parse_declared_map(raw: &str) -> Result<DeclaredMap, AppError> {
     let doc: Value = serde_json::from_str(raw)
         .map_err(|e| invalid("document", &format!("is not valid JSON: {e}")))?;
@@ -461,14 +527,26 @@ mod tests {
             .id
     }
 
+    /// A project's declaration: the export's shape PLUS the authority marker.
     const MINIMAL: &str = r#"{
         "version": 2,
+        "declared": true,
         "groups": [{"id": "g1", "name": "Governance", "color": "amber", "domain": "data"}],
         "contexts": [
             {"name": "charter", "group": "Governance", "category": "config",
              "description": "The bank's written rules.",
              "file_paths": ["governance.yaml", "docs/charter.md"]}
         ]
+    }"#;
+
+    /// What the EXPORT writes — the same shape with no marker. Personas' own
+    /// repository commits a file of exactly this kind, which is the case the
+    /// marker exists to keep out of the read path.
+    const EXPORTED: &str = r#"{
+        "version": 2,
+        "generator": "personas-context-scan",
+        "groups": [{"id": "g1", "name": "Governance"}],
+        "contexts": [{"name": "charter", "group": "Governance", "file_paths": ["a.md"]}]
     }"#;
 
     // ---- parsing ------------------------------------------------------------
@@ -535,7 +613,7 @@ mod tests {
         }
     }
 
-    // ---- tracked-ness -------------------------------------------------------
+    // ---- authority ----------------------------------------------------------
 
     /// A git repo built by `git init`, so tracked and untracked are the real
     /// distinction and not a stand-in for one.
@@ -560,28 +638,77 @@ mod tests {
     fn an_untracked_map_is_not_a_declaration() {
         let dir = git_repo("untracked");
         std::fs::write(dir.join(DECLARED_MAP_FILE), MINIMAL).expect("write");
-        assert!(!is_tracked_declaration(&dir));
-        assert!(read_tracked_declaration(&dir).expect("no error").is_none());
+        assert!(!is_declared_map(&dir));
+        assert!(read_declared_map(&dir).expect("no error").is_none());
+    }
+
+    /// **The regression this marker exists to prevent.** Personas' own
+    /// repository commits the file its export writes. Tracked-ness alone would
+    /// make that file authoritative — silencing that repo's scan and refusing
+    /// its export. Without the marker it stays exactly what it is: an artifact.
+    #[test]
+    fn a_tracked_export_artifact_is_not_a_declaration() {
+        let dir = git_repo("tracked-export");
+        std::fs::write(dir.join(DECLARED_MAP_FILE), EXPORTED).expect("write");
+        git(&dir, &["add", DECLARED_MAP_FILE]);
+        assert!(is_tracked(&dir), "the file IS committed");
+        assert!(
+            !is_declared_map(&dir),
+            "…and committing it is still not a claim of authority"
+        );
+        assert!(read_declared_map(&dir).expect("no error").is_none());
+    }
+
+    /// A tracked file that is not even JSON must not be able to silence a scan
+    /// either — a half-written export is a broken artifact, not a declaration.
+    #[test]
+    fn a_tracked_unparseable_map_is_ignored_rather_than_fatal() {
+        let dir = git_repo("tracked-garbage");
+        std::fs::write(dir.join(DECLARED_MAP_FILE), "{ nope").expect("write");
+        git(&dir, &["add", DECLARED_MAP_FILE]);
+        assert!(!is_declared_map(&dir));
+        assert!(read_declared_map(&dir).expect("no error").is_none());
     }
 
     #[test]
-    fn a_tracked_map_is_a_declaration_and_a_malformed_one_refuses() {
+    fn a_tracked_marked_map_is_authoritative_and_a_malformed_one_refuses() {
         let dir = git_repo("tracked");
         std::fs::write(dir.join(DECLARED_MAP_FILE), MINIMAL).expect("write");
         git(&dir, &["add", DECLARED_MAP_FILE]);
-        assert!(is_tracked_declaration(&dir));
-        assert!(read_tracked_declaration(&dir).expect("no error").is_some());
+        assert!(is_declared_map(&dir));
+        assert!(read_declared_map(&dir).expect("no error").is_some());
 
-        // Same tracked path, now unusable: a refusal, never a silent fallback.
-        std::fs::write(dir.join(DECLARED_MAP_FILE), "{ nope").expect("write");
-        let err = read_tracked_declaration(&dir).expect_err("must refuse");
+        // Still claiming authority, now unusable: a refusal, never a silent
+        // fallback — the project said this file speaks for it.
+        std::fs::write(
+            dir.join(DECLARED_MAP_FILE),
+            r#"{"declared": true, "contexts": {}}"#,
+        )
+        .expect("write");
+        let err = read_declared_map(&dir).expect_err("must refuse");
         assert!(matches!(err, AppError::Validation(_)), "{err}");
+        assert!(err.to_string().contains("contexts"), "{err}");
     }
 
     #[test]
     fn a_missing_map_is_not_a_declaration() {
         let dir = git_repo("absent");
-        assert!(!is_tracked_declaration(&dir));
+        assert!(!is_declared_map(&dir));
+    }
+
+    #[test]
+    fn the_marker_must_be_exactly_true() {
+        assert!(declares_authority(r#"{"declared": true, "contexts": []}"#));
+        for raw in [
+            r#"{"contexts": []}"#,
+            r#"{"declared": false, "contexts": []}"#,
+            r#"{"declared": "true", "contexts": []}"#,
+            r#"{"declared": 1, "contexts": []}"#,
+            "not json",
+            "[]",
+        ] {
+            assert!(!declares_authority(raw), "{raw} must not claim authority");
+        }
     }
 
     // ---- applying -----------------------------------------------------------
@@ -620,18 +747,18 @@ mod tests {
         );
     }
 
-    /// End to end over a real `git init` tree: committing the file is what
-    /// turns it into a declaration, and the contexts it produces are stamped
-    /// `declared` — the property every consumer downstream reads.
+    /// End to end over a real `git init` tree: a committed, MARKED file is what
+    /// makes a declaration, and the contexts it produces are stamped `declared`
+    /// — the property every consumer downstream reads.
     #[test]
-    fn a_committed_map_becomes_declared_contexts() {
+    fn a_committed_marked_map_becomes_declared_contexts() {
         let dir = git_repo("e2e");
         std::fs::write(dir.join(DECLARED_MAP_FILE), MINIMAL).expect("write");
         git(&dir, &["add", DECLARED_MAP_FILE]);
 
         let pool = init_test_db().expect("test db");
         let project = seed_project(&pool, &dir.to_string_lossy());
-        let declared = read_tracked_declaration(&dir)
+        let declared = read_declared_map(&dir)
             .expect("read")
             .expect("a declaration");
         apply_declared_map(&pool, &project, &declared).expect("apply");

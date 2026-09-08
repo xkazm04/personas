@@ -1306,21 +1306,24 @@ async fn run_context_generation(
     subtree: Option<&str>,
 ) -> Result<ContextGenSummary, AppError> {
     // ---- Declared-map branch --------------------------------------------------
-    // A git-TRACKED `context-map.json` is the project's own statement about how
-    // it is organised, and it outranks anything an LLM can infer from the files.
-    // This runs FIRST — before the delta cache, before the lazy clear, before
-    // the CLI spawn — because every one of those steps is a way of guessing at
-    // an answer the project has already given. A malformed declaration is a
-    // refusal, not a fallback: see `context_declaration`.
+    // A `context-map.json` that is git-tracked AND carries `"declared": true` is
+    // the project's own statement about how it is organised, and it outranks
+    // anything an LLM can infer from the files. This runs FIRST — before the
+    // delta cache, before the lazy clear, before the CLI spawn — because every
+    // one of those steps is a way of guessing at an answer the project has
+    // already given. A malformed declaration is a refusal, not a fallback; a
+    // committed file WITHOUT the marker is just the export's own output and is
+    // ignored here entirely. See `context_declaration`.
     if let Some(declared) =
-        super::context_declaration::read_tracked_declaration(std::path::Path::new(root_path))?
+        super::context_declaration::read_declared_map(std::path::Path::new(root_path))?
     {
         let summary = super::context_declaration::apply_declared_map(pool, project_id, &declared)?;
         CONTEXT_GEN_JOBS.emit_line(
                 app,
                 scan_id,
                 format!(
-                    "[Milestone] Declared map: {}/context-map.json is committed, so it is authoritative — no LLM run. \
+                    "[Milestone] Declared map: {}/context-map.json is committed and marked \"declared\": true, \
+                     so it is authoritative — no LLM run. \
                      {} group(s), {} context(s), {} file path(s) upserted; {} stale declared context(s) pruned.",
                     root_path,
                     summary.groups_upserted,
