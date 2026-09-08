@@ -115,9 +115,13 @@ async function down() {
   const killed = [];
   const kill = (pid, what) => { if (!pid || killed.includes(pid)) return; try { execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore' }); killed.push(pid); log(`stopped ${what} pid ${pid} and its tree`); } catch { log(`${what} pid ${pid} already gone`); } };
   if (!rec && !(await healthy())) { log('nothing recorded and nothing answering; nothing to stop'); return; }
+  // The LAUNCHER first, and this order is the whole lesson: `tauri dev` supervises
+  // the app binary, so killing the binary alone makes it rebuild and come back,
+  // and the next `up` then dies on Vite's port with an empty log. Measured
+  // 2026-09-08 when a restart-after-merge looked like a launch failure.
+  if (rec?.launcherPid && pidAlive(rec.launcherPid)) kill(rec.launcherPid, 'launcher');
   if (rec && pidAlive(rec.pid)) kill(rec.pid, 'recorded');
-  // The tree can outlive its recorded root, so finish by the ports the app owns:
-  // the test server, then Vite, which otherwise orphans on :1420.
+  // Then whatever still holds the ports, in case the chain outlived its root.
   if (await healthy()) kill(listenerPid(TEST_PORT), 'test-server listener');
   kill(listenerPid(1420), 'vite');
   fs.rmSync(APP_JSON, { force: true });
