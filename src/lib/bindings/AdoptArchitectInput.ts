@@ -37,4 +37,20 @@ enabled?: boolean,
 /**
  * Persona name. Defaults to `Architect <workspace name>`.
  */
-name?: string, };
+name?: string, 
+/**
+ * The project this Architect calls **home**: a `dev_projects` id or name
+ * that must already be a member of `workspace`. Written as
+ * `design_context.homeProjectId`.
+ *
+ * Defaults to the workspace's **first project by `created_at`** — the
+ * platform project, in the layout the simulation builds. Absent from a
+ * workspace that holds no project yet, which is reported in `notes`
+ * rather than invented.
+ *
+ * It is deliberately NOT `devProjectId`: that key is what makes a persona
+ * a project's App Master, and an Architect reading as the platform
+ * project's owner would send the next adoption looking for a project that
+ * already has one.
+ */
+homeProject?: string, };

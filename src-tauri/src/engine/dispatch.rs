@@ -1125,15 +1125,19 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 ctx.logger
                     .log("[SIM] propose_backlog skipped (simulation run)");
             } else {
+                // The persona's codebase pin, or — for a WORKSPACE-bound
+                // persona, which has none — its home project. Before the
+                // fallback existed the Architect's proposals landed nowhere:
+                // `devProjectId` is absent on a workspace binding, so every
+                // item took the project-less branch and the workspace's own
+                // backlog stayed at zero while the run reported success.
                 let project_id =
                     crate::db::repos::core::personas::get_by_id(ctx.pool, ctx.persona_id)
                         .ok()
-                        .and_then(|p| p.design_context)
-                        .and_then(|dc| serde_json::from_str::<serde_json::Value>(&dc).ok())
-                        .and_then(|v| {
-                            v.get("devProjectId")
-                                .and_then(|x| x.as_str())
-                                .map(String::from)
+                        .and_then(|p| {
+                            personas_engine::design_context::working_project_id(
+                                p.design_context.as_deref(),
+                            )
                         });
                 // Backlog backpressure: producers SKIP their round when the
                 // project's pending backlog is already saturated. Without this
@@ -2178,6 +2182,132 @@ mod tests {
             priority: None,
             channel: channel.map(String::from),
         }
+    }
+
+    /// Mint a persona carrying `design_context` — the field the backlog verb
+    /// resolves its project from, and the one `mk_persona` leaves empty.
+    fn mk_pinned_persona(pool: &DbPool, name: &str, design_context: serde_json::Value) -> String {
+        let persona_id = mk_persona(pool, name);
+        crate::db::repos::core::personas::update(
+            pool,
+            &persona_id,
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(design_context.to_string())),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        persona_id
+    }
+
+    /// Drive one protocol message through the real dispatcher as `persona_id`.
+    fn dispatch_as(pool: &DbPool, persona_id: &str, msg: &ProtocolMessage) {
+        let exec_id = format!("exec-{}", uuid::Uuid::new_v4());
+        let emitter = CapturingEmitter::new();
+        let log_dir = std::env::temp_dir().join(format!("personas_dispatch_test_{exec_id}"));
+        let mut logger = ExecutionLogger::new(&log_dir, &exec_id).unwrap();
+        {
+            let mut ctx = DispatchContext::new(
+                &emitter,
+                pool,
+                &exec_id,
+                persona_id,
+                "proj-1",
+                "Test Persona",
+                None,
+                &mut logger,
+                Some(QualityGateConfig::default()),
+            );
+            dispatch(&mut ctx, msg);
+        }
+        let _ = std::fs::remove_dir_all(&log_dir);
+    }
+
+    fn mk_project(pool: &DbPool, name: &str) -> crate::db::models::DevProject {
+        crate::db::repos::dev_tools::create_project(
+            pool,
+            name,
+            // `dev_projects.root_path` is UNIQUE — a shared literal would fail
+            // the second project on a constraint, not on the thing under test.
+            &format!("/tmp/g13/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+    }
+
+    fn backlog_item(title: &str) -> ProtocolMessage {
+        ProtocolMessage::ProposeBacklog {
+            title: title.to_string(),
+            description: Some("from the solution design".into()),
+            category: Some("architecture".into()),
+            impact: None,
+            effort: None,
+            risk: None,
+        }
+    }
+
+    /// The backlog rows on one project, through the repo rather than a raw
+    /// checkout: a test that panics on pool acquire hides the same saturation
+    /// the product would (`pool-get-unwrapped`).
+    fn ideas_on(pool: &DbPool, project_id: &str) -> Vec<crate::db::models::DevIdea> {
+        crate::db::repos::dev_tools::list_ideas(pool, Some(project_id), None, None, None, None)
+            .unwrap()
+    }
+
+    /// G13: a WORKSPACE-bound persona has no `devProjectId`, so before the home
+    /// fallback existed every `propose_backlog` took the project-less branch —
+    /// the run reported success and the workspace's backlog stayed at zero.
+    /// Now the proposal lands on the persona's home project.
+    #[test]
+    fn propose_backlog_falls_back_to_the_home_project_for_a_workspace_persona() {
+        let pool = crate::db::init_test_db().unwrap();
+        let home = mk_project(&pool, "bank-platform");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "Architect Bank",
+            serde_json::json!({ "workspaceId": "ws1", "homeProjectId": home.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Split the ledger from the gateway"),
+        );
+
+        let landed = ideas_on(&pool, &home.id);
+        assert_eq!(landed.len(), 1, "the proposal landed on the home project");
+        assert_eq!(landed[0].title, "Split the ledger from the gateway");
+        assert_eq!(landed[0].status, "pending");
+    }
+
+    /// The codebase pin still wins: an App Master's proposals are untouched by
+    /// the fallback, even when a home pin sits beside them.
+    #[test]
+    fn propose_backlog_still_prefers_the_codebase_pin() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "ascent");
+        let home = mk_project(&pool, "platform");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Ascent",
+            serde_json::json!({ "devProjectId": owned.id, "homeProjectId": home.id }),
+        );
+
+        dispatch_as(&pool, &persona_id, &backlog_item("Retire the legacy shim"));
+
+        assert_eq!(
+            ideas_on(&pool, &owned.id).len(),
+            1,
+            "on the codebase it owns"
+        );
+        assert!(
+            ideas_on(&pool, &home.id).is_empty(),
+            "and not on the home pin"
+        );
     }
 
     /// A short note lands in the chat lane, announces itself on the persona

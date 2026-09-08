@@ -42,6 +42,7 @@
 use super::*;
 use std::cmp::Ordering as CmpOrdering;
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -1223,6 +1224,27 @@ fn build_decision_context(
     // however the model words its plan.
     let may_direct = charters.iter().any(|c| c.spec.authority == Some(true));
 
+    // The home project (G13): where a persona with no codebase of its own
+    // writes. Best-effort like every other field here — a pin whose project row
+    // is gone yields `None`, and the prompt says so literally rather than
+    // naming a path nobody resolved.
+    let home_project =
+        personas_engine::design_context::home_project_id(persona.design_context.as_deref())
+            .and_then(
+                |id| match crate::db::repos::dev_tools::get_project_by_id(pool, &id) {
+                    Ok(p) => Some(attention_decide::HomeProject {
+                        id: p.id,
+                        name: p.name,
+                        root_path: p.root_path,
+                    }),
+                    Err(e) => {
+                        tracing::warn!(persona_id = %persona.id, project_id = %id, error = %e,
+                "persona_attention: the home project pin does not resolve — no home this wake");
+                        None
+                    }
+                },
+            );
+
     Ok(attention_decide::DecisionContext {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
@@ -1248,6 +1270,7 @@ fn build_decision_context(
         peers,
         may_direct,
         workspace,
+        home_project,
     })
 }
 
@@ -2451,6 +2474,31 @@ async fn run_decision_lane(
     }
     let hired = run_plan_hires(&pool, &context, &plan.hires).await;
 
+    // The three AUTHORITY verbs (G13). After the dispatch for the same reason
+    // the hire is, and in this order because they depend on each other: a
+    // project must exist before it can be given an App Master or a goal, and a
+    // project this same wake created is a legitimate target for both.
+    if plan.dropped_unlicensed_commands > 0 {
+        tracing::info!(
+            persona_id,
+            dropped = plan.dropped_unlicensed_commands,
+            "persona_attention: the decision reached for a workspace verb without an \
+             authority charter"
+        );
+    }
+    let mut portfolio = WorkspaceProjects::of(&context);
+    let created_projects = run_plan_projects(
+        Some(&app),
+        &pool,
+        &context,
+        &plan.create_projects,
+        &mut portfolio,
+    )
+    .await;
+    let adopted_app_masters =
+        run_plan_adoptions(&pool, &context, &plan.adopt_app_masters, &portfolio);
+    let set_goals = run_plan_goals(&pool, &context, &plan.goals, &portfolio);
+
     let dispatched_ids: Vec<&str> = plan
         .dispatch
         .iter()
@@ -2492,6 +2540,10 @@ async fn run_decision_lane(
         "sayDowngraded": plan.say_downgraded,
         "hired": hired,
         "droppedUnlicensedHires": plan.dropped_unlicensed_hires,
+        "createdProjects": created_projects,
+        "adoptedAppMasters": adopted_app_masters,
+        "setGoals": set_goals,
+        "droppedUnlicensedCommands": plan.dropped_unlicensed_commands,
         "note": plan.note,
         "nextWakeMinutes": plan.next_wake_minutes,
         "runLabel": run_label,
@@ -2568,6 +2620,384 @@ async fn run_plan_hires(
                 out.push(serde_json::json!({
                     "ok": false,
                     "projectId": project_id,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+// ── The authority verbs, executed (Grand Simulation G13) ───────────────────
+//
+// Three functions with `run_plan_hires`'s exact discipline: every outcome is
+// data, a refusal is a normal answer recorded with its reason, and none of them
+// can fail the wake that also dispatched three charters. They run after the
+// dispatches so an act on the portfolio never costs the loop work it could have
+// started on its own.
+
+/// The projects the plan may name, and the workspace they belong to.
+///
+/// Built from the decision context and GROWN as the wake creates projects, so a
+/// project scaffolded in this same answer is a legitimate target for the
+/// adoption and goal verbs that follow it. Resolution is by id first and then by
+/// name (exact before case-insensitive), scoped to this workspace only — a
+/// name is not unique app-wide, and an Architect naming another workspace's
+/// project has made a mistake rather than a cross-workspace grant.
+struct WorkspaceProjects {
+    /// `None` for a persona holding no workspace-bound charter. Every verb then
+    /// refuses with that as its reason, rather than acting on a workspace it
+    /// does not hold.
+    workspace_id: Option<String>,
+    known: Vec<(String, String)>,
+}
+
+impl WorkspaceProjects {
+    fn of(context: &attention_decide::DecisionContext) -> Self {
+        match &context.workspace {
+            Some(w) => Self {
+                workspace_id: Some(w.id.clone()),
+                known: w
+                    .projects
+                    .iter()
+                    .map(|p| (p.id.clone(), p.name.clone()))
+                    .collect(),
+            },
+            None => Self {
+                workspace_id: None,
+                known: Vec::new(),
+            },
+        }
+    }
+
+    fn resolve(&self, needle: &str) -> Option<&str> {
+        let n = needle.trim();
+        self.known
+            .iter()
+            .find(|(id, _)| id == n)
+            .or_else(|| self.known.iter().find(|(_, name)| name == n))
+            .or_else(|| {
+                self.known
+                    .iter()
+                    .find(|(_, name)| name.eq_ignore_ascii_case(n))
+            })
+            .map(|(id, _)| id.as_str())
+    }
+
+    fn add(&mut self, id: String, name: String) {
+        if !self.known.iter().any(|(known, _)| known == &id) {
+            self.known.push((id, name));
+        }
+    }
+
+    /// The refusal every verb shares when the persona holds no workspace, or
+    /// names a project outside the one it holds.
+    fn no_such_project(&self, needle: &str) -> String {
+        match &self.workspace_id {
+            Some(_) => format!(
+                "no project named `{needle}` in this workspace (known: {})",
+                if self.known.is_empty() {
+                    "none".to_string()
+                } else {
+                    self.known
+                        .iter()
+                        .map(|(_, n)| n.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                }
+            ),
+            None => "the deciding persona holds no workspace-bound charter".to_string(),
+        }
+    }
+}
+
+/// Where a new repository goes: the parent directory that makes it a SIBLING of
+/// the workspace's existing projects.
+///
+/// The scaffold door lays projects out as `<root>/<workspace-slug>/<project>`,
+/// so an existing member's root path carries the answer two levels up. Derived
+/// rather than asked for: the Architect reasons about a portfolio, not about
+/// this machine's directory tree, and a verb that took a path would be a verb
+/// that could write anywhere.
+///
+/// `None` — no member project, or one laid out some other way — means the
+/// caller falls back to the configured simulation root, which is what a
+/// workspace's FIRST project has always used. The layout check is what keeps a
+/// project registered from an arbitrary directory (`C:\code\thing`) from
+/// deriving a root of `C:\`.
+fn sibling_root_for(pool: &DbPool, workspace_id: &str, workspace_name: &str) -> Option<PathBuf> {
+    let mut members = crate::db::repos::dev_workspaces::list_workspace_projects(pool, workspace_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(workspace_id, error = %e,
+                "persona_attention: workspace membership read failed — scaffolding at the \
+                 configured root");
+            Vec::new()
+        });
+    members.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    let slug = crate::commands::infrastructure::project_scaffold::workspace_slug(workspace_name);
+    for p in &members {
+        let path = Path::new(p.root_path.as_str());
+        let Some(parent) = path.parent() else {
+            continue;
+        };
+        if parent.file_name().and_then(|n| n.to_str()) != Some(slug.as_str()) {
+            continue;
+        }
+        if let Some(root) = parent.parent().filter(|r| r.is_dir()) {
+            return Some(root.to_path_buf());
+        }
+    }
+    None
+}
+
+/// Create each repository the plan named, and report what came back.
+///
+/// Every created project is added to `portfolio` before the next verb runs, so
+/// an adoption or a goal in the same answer may name it.
+///
+/// `app` is `Option` because it is needed for exactly ONE step — resolving the
+/// app-data default root for a workspace whose first project this is — and a
+/// caller with no Tauri handle in reach (a test, and any future headless
+/// caller) must get a recorded refusal rather than a guessed directory. Every
+/// other path here runs without it.
+async fn run_plan_projects(
+    app: Option<&AppHandle>,
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewProject],
+    portfolio: &mut WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    use crate::commands::infrastructure::project_scaffold::{
+        create_in_root, create_project_repository_inner, CreateProjectRepositoryInput,
+    };
+
+    let mut out = Vec::new();
+    for p in wanted {
+        let (Some(workspace_id), Some(workspace)) = (
+            portfolio.workspace_id.as_deref(),
+            context.workspace.as_ref(),
+        ) else {
+            out.push(serde_json::json!({
+                "ok": false,
+                "name": p.name,
+                "error": "the deciding persona holds no workspace-bound charter",
+            }));
+            continue;
+        };
+
+        let input = CreateProjectRepositoryInput {
+            // The workspace by ID, never by the name the model wrote: the
+            // scaffold door CREATES a workspace it cannot find by name, and an
+            // Architect with a typo would otherwise mint a second workspace and
+            // put the project in it.
+            workspace: workspace_id.to_string(),
+            name: p.name.clone(),
+            description: p.description.clone(),
+            tech_stack: p.tech_stack.clone(),
+            template: p.template.as_deref().and_then(parse_project_template),
+            root: None,
+        };
+        let outcome = match (sibling_root_for(pool, workspace_id, &workspace.name), app) {
+            (Some(root), _) => create_in_root(pool.clone(), input, root).await,
+            // No sibling to stand beside: the workspace's first project, which
+            // is exactly the case the scaffold door's own root resolution was
+            // written for.
+            (None, Some(app)) => {
+                create_project_repository_inner(app.clone(), pool.clone(), input).await
+            }
+            (None, None) => Err(AppError::Internal(
+                "no project in this workspace to scaffold beside, and no app handle to \
+                 resolve the default root"
+                    .into(),
+            )),
+        };
+        match outcome {
+            Ok(done) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %done.project.id,
+                    path = %done.repository_path,
+                    "persona_attention: the decision created a project");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": done.project.id,
+                    "name": done.project.name,
+                    "repositoryPath": done.repository_path,
+                    "created": done.created,
+                }));
+                portfolio.add(done.project.id, done.project.name);
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, name = %p.name, error = %e,
+                    "persona_attention: the decision's project creation was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "name": p.name,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+/// Read the plan's `template` word onto the scaffold's own enum.
+///
+/// `None` for an unrecognised word, which the scaffold door reads as its
+/// default (`empty`): a fumbled skeleton name must cost the project its
+/// scaffold choice, never the project.
+fn parse_project_template(
+    raw: &str,
+) -> Option<crate::commands::infrastructure::project_scaffold::ProjectTemplate> {
+    use crate::commands::infrastructure::project_scaffold::ProjectTemplate;
+    // Both separators, because the wire name is kebab-case and a model reading
+    // Rust-ish vocabulary sometimes writes snake_case.
+    match raw.trim().to_ascii_lowercase().replace('_', "-").as_str() {
+        "empty" => Some(ProjectTemplate::Empty),
+        "rust-service" => Some(ProjectTemplate::RustService),
+        "node-service" => Some(ProjectTemplate::NodeService),
+        "python-service" => Some(ProjectTemplate::PythonService),
+        _ => None,
+    }
+}
+
+/// Adopt each App Master the plan named, and report what came back.
+///
+/// **`enabled` is honoured only within the app-wide active-persona cap.** The
+/// headroom is checked HERE rather than left to the adoption door, because the
+/// door's answer at the cap is to refuse the whole adoption — which would cost
+/// a project its owner over a slot that can be freed later. Instead the persona
+/// is adopted switched OFF and the cap's own refusal text is recorded, so the
+/// ledger says why it is not running and the operator's next act is obvious.
+fn run_plan_adoptions(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewAppMaster],
+    portfolio: &WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    use crate::commands::infrastructure::app_master_adopt::{
+        adopt, AdoptAppMasterInput, AppMasterRecipeRequest,
+    };
+
+    let mut out = Vec::new();
+    for a in wanted {
+        let Some(project_id) = portfolio.resolve(&a.project).map(str::to_string) else {
+            let error = portfolio.no_such_project(&a.project);
+            tracing::info!(persona_id = %context.persona_id, project = %a.project, %error,
+                "persona_attention: an adoption named a project outside the workspace");
+            out.push(serde_json::json!({
+                "ok": false, "project": a.project, "error": error,
+            }));
+            continue;
+        };
+
+        // The second ceiling. `enabled: false` cannot raise the count, so it is
+        // never checked and never refused.
+        let mut cap_refusal: Option<String> = None;
+        let enabled = if a.enabled {
+            match personas_engine::active_persona_cap::check_active_persona_headroom(pool, true) {
+                Ok(_) => true,
+                Err(e) => {
+                    cap_refusal = Some(e.to_string());
+                    false
+                }
+            }
+        } else {
+            false
+        };
+
+        let input = AdoptAppMasterInput {
+            project: project_id.clone(),
+            recipes: a
+                .recipes
+                .iter()
+                .map(|r| AppMasterRecipeRequest {
+                    slug: r.slug.clone(),
+                    priority: r.priority,
+                })
+                .collect(),
+            model: Some(attention_decide::ADOPTED_APP_MASTER_MODEL.to_string()),
+            max_concurrent: None,
+            scope_rung: None,
+            enabled: Some(enabled),
+            name: None,
+        };
+        match adopt(pool, &input) {
+            Ok(done) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %project_id,
+                    adopted = %done.persona_id, enabled,
+                    "persona_attention: the decision adopted an App Master");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "personaId": done.persona_id,
+                    "personaName": done.persona_name,
+                    "created": done.created,
+                    "enabled": enabled,
+                    "charters": done.charters.iter().map(|c| c.slug.as_str()).collect::<Vec<_>>(),
+                    // Present only when the cap kept a requested `enabled` from
+                    // taking effect — the reason the persona is off.
+                    "capRefusal": cap_refusal,
+                    "notes": done.notes,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %project_id,
+                    error = %e, "persona_attention: the decision's adoption was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+/// Set each goal the plan named, and report what came back.
+fn run_plan_goals(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewGoal],
+    portfolio: &WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    let mut out = Vec::new();
+    for g in wanted {
+        let Some(project_id) = portfolio.resolve(&g.project) else {
+            let error = portfolio.no_such_project(&g.project);
+            tracing::info!(persona_id = %context.persona_id, project = %g.project, %error,
+                "persona_attention: a goal named a project outside the workspace");
+            out.push(serde_json::json!({
+                "ok": false, "project": g.project, "title": g.title, "error": error,
+            }));
+            continue;
+        };
+        match crate::db::repos::dev_tools::create_goal(
+            pool,
+            project_id,
+            &g.title,
+            g.description.as_deref(),
+            None,
+            None,
+            None,
+            None,
+        ) {
+            Ok(goal) => {
+                tracing::info!(persona_id = %context.persona_id, project_id, goal_id = %goal.id,
+                    "persona_attention: the decision set a goal");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "goalId": goal.id,
+                    "title": goal.title,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id, error = %e,
+                    "persona_attention: the decision's goal was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "title": g.title,
                     "error": e.to_string(),
                 }));
             }
@@ -6813,6 +7243,439 @@ mod attention_tests {
             }],
         );
         assert!(said.is_empty());
+        Ok(())
+    }
+
+    // -- the three AUTHORITY verbs, executed (G13) ---------------------------
+
+    /// A throwaway scaffold root that takes its repositories with it.
+    struct TempRoot(PathBuf);
+    impl TempRoot {
+        fn new(tag: &str) -> Self {
+            let p =
+                std::env::temp_dir().join(format!("personas_g13_{tag}_{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir_all(&p).unwrap();
+            Self(p)
+        }
+    }
+    impl Drop for TempRoot {
+        fn drop(&mut self) {
+            // Windows keeps `.git` objects read-only; a failed removal must not
+            // fail the test that already passed.
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// A workspace with ONE member project already laid out the way the
+    /// scaffold door lays them out: `<root>/<workspace-slug>/<project>`. That
+    /// layout is what `sibling_root_for` walks back up, so the fixture has to
+    /// be real directories on disk rather than a `/tmp/x` string.
+    fn seed_laid_out_workspace(
+        pool: &DbPool,
+        root: &TempRoot,
+        workspace_name: &str,
+        first_project: &str,
+    ) -> (String, crate::db::models::DevProject) {
+        let ws = crate::db::repos::dev_workspaces::create_workspace(
+            pool,
+            workspace_name,
+            None,
+            Some("the simulation"),
+            false,
+        )
+        .expect("workspace");
+        let dir = root
+            .0
+            .join(crate::commands::infrastructure::project_scaffold::workspace_slug(workspace_name))
+            .join(first_project);
+        std::fs::create_dir_all(&dir).expect("layout");
+        let project = crate::db::repos::dev::projects::create_project(
+            pool,
+            first_project,
+            &dir.to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("project");
+        crate::db::repos::dev_workspaces::assign_project(pool, &project.id, Some(&ws.id))
+            .expect("assign");
+        (ws.id, project)
+    }
+
+    /// The Architect's decision context over that workspace.
+    fn workspace_context(
+        persona_id: &str,
+        workspace_id: &str,
+        name: &str,
+        projects: &[&crate::db::models::DevProject],
+    ) -> attention_decide::DecisionContext {
+        attention_decide::DecisionContext {
+            persona_id: persona_id.to_string(),
+            persona_name: format!("Architect {name}"),
+            workspace: Some(attention_decide::WorkspaceView {
+                id: workspace_id.to_string(),
+                name: name.to_string(),
+                projects: projects
+                    .iter()
+                    .map(|p| attention_decide::WorkspaceProject {
+                        id: p.id.clone(),
+                        name: p.name.clone(),
+                        app_master: None,
+                    })
+                    .collect(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    /// `createProjects` makes a real git repository beside the workspace's
+    /// existing project AND the `dev_projects` row that owns it — the two
+    /// halves the live Architect refused to split, because a bare folder with
+    /// no row behind it is the orphan its own design exists to prevent.
+    #[tokio::test]
+    async fn the_create_verb_scaffolds_a_sibling_repository_and_registers_it() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("create");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let mut portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_projects(
+            None,
+            &pool,
+            &ctx,
+            &[attention_decide::NewProject {
+                name: "ledger-service".into(),
+                description: Some("Double-entry ledger.".into()),
+                tech_stack: Some("Rust".into()),
+                template: Some("rust-service".into()),
+            }],
+            &mut portfolio,
+        )
+        .await;
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        let project_id = out[0]["projectId"]
+            .as_str()
+            .expect("a project id")
+            .to_string();
+
+        // Half one: the repository, as a SIBLING of bank-platform.
+        let path = std::path::PathBuf::from(out[0]["repositoryPath"].as_str().unwrap());
+        assert!(
+            path.join(".git").exists(),
+            "git-initialised: {}",
+            path.display()
+        );
+        assert!(
+            path.join("Cargo.toml").exists(),
+            "the named template was scaffolded"
+        );
+        assert_eq!(
+            path.parent().unwrap(),
+            std::path::Path::new(&platform.root_path).parent().unwrap(),
+            "the new repository stands beside the existing one"
+        );
+
+        // Half two: the registered project, in THIS workspace.
+        let row = crate::db::repos::dev_tools::get_project_by_id(&pool, &project_id)
+            .expect("the dev_projects row exists");
+        assert_eq!(row.name, "ledger-service");
+        assert_eq!(row.workspace_id.as_deref(), Some(ws_id.as_str()));
+
+        // And the next verb in the same wake can name it.
+        assert_eq!(
+            portfolio.resolve("ledger-service"),
+            Some(project_id.as_str())
+        );
+    }
+
+    /// A wake with no sibling to stand beside and no Tauri handle is refused
+    /// with a reason, never with a guessed directory — and the refusal is data
+    /// in the ledger, not a failed wake.
+    #[tokio::test]
+    async fn the_create_verb_refuses_rather_than_guessing_a_root() {
+        let pool = init_test_db().unwrap();
+        let ws =
+            crate::db::repos::dev_workspaces::create_workspace(&pool, "Empty", None, None, false)
+                .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws.id, "Empty", &[]);
+        let mut portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_projects(
+            None,
+            &pool,
+            &ctx,
+            &[attention_decide::NewProject {
+                name: "first".into(),
+                ..Default::default()
+            }],
+            &mut portfolio,
+        )
+        .await;
+        assert_eq!(out[0]["ok"], serde_json::json!(false));
+        assert!(out[0]["error"].as_str().unwrap().contains("default root"));
+        assert!(
+            crate::db::repos::dev::projects::list_projects(&pool, None)
+                .unwrap()
+                .is_empty(),
+            "nothing was registered"
+        );
+    }
+
+    /// `adoptAppMasters` pins an App Master to the named project. `enabled` is
+    /// honoured only within the app-wide cap: at the cap the adoption still
+    /// happens, the persona stays OFF, and the cap's own refusal text is what
+    /// the ledger carries.
+    #[test]
+    fn the_adopt_verb_pins_an_app_master_within_the_active_persona_cap() {
+        // `adopt` seeds the persona's manifest on disk, and the brain root is a
+        // process-global env var — take the one shared lock.
+        let _home = crate::companion::brain::test_home::TestHome::new("g13_adopt");
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("adopt");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let want = |enabled: bool| attention_decide::NewAppMaster {
+            project: "bank-platform".into(),
+            recipes: Vec::new(),
+            enabled,
+        };
+
+        // Under the cap: adopted, pinned, and switched on.
+        let out = run_plan_adoptions(&pool, &ctx, &[want(true)], &portfolio);
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        assert_eq!(out[0]["enabled"], serde_json::json!(true));
+        assert!(out[0]["capRefusal"].is_null());
+        let pinned = persona_repo::list_by_dev_project(&pool, &platform.id).unwrap();
+        assert_eq!(pinned.len(), 1, "one App Master pinned to the project");
+        assert!(pinned[0].enabled);
+        let adopted_id = pinned[0].id.clone();
+
+        // At the cap: re-adopting a DIFFERENT project's owner is still adopted,
+        // still pinned, but left off with the cap's own sentence recorded.
+        let other = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "ledger-service",
+            &root.0.join("bank").join("ledger-service").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        crate::db::repos::dev_workspaces::assign_project(&pool, &other.id, Some(&ws_id)).unwrap();
+        settings::set(
+            &pool,
+            settings_keys::MAX_ACTIVE_PERSONAS,
+            &personas_engine::active_persona_cap::active_persona_headroom(&pool)
+                .unwrap()
+                .active
+                .to_string(),
+        )
+        .unwrap();
+
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform, &other]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+        let out = run_plan_adoptions(
+            &pool,
+            &ctx,
+            &[attention_decide::NewAppMaster {
+                project: other.id.clone(),
+                recipes: Vec::new(),
+                enabled: true,
+            }],
+            &portfolio,
+        );
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "the adoption still happens"
+        );
+        assert_eq!(out[0]["enabled"], serde_json::json!(false));
+        let refusal = out[0]["capRefusal"]
+            .as_str()
+            .expect("the cap's own sentence");
+        assert!(
+            refusal.contains("active personas") && refusal.contains("max_active_personas"),
+            "the refusal is the cap module's, not a paraphrase: {refusal}"
+        );
+        let second = persona_repo::list_by_dev_project(&pool, &other.id).unwrap();
+        assert_eq!(second.len(), 1, "pinned anyway — a slot can be freed later");
+        assert!(!second[0].enabled);
+        assert_ne!(second[0].id, adopted_id, "a second, distinct App Master");
+    }
+
+    /// `goals` writes a `dev_goals` row on the named project, and a project
+    /// outside the workspace is refused with a reason rather than resolved.
+    #[test]
+    fn the_goal_verb_writes_a_row_and_refuses_a_project_it_does_not_hold() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("goal");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        // A project in NO workspace — the Architect must not reach it.
+        let outsider = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "not-the-bank",
+            &root.0.join("elsewhere").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[
+                attention_decide::NewGoal {
+                    project: "bank-platform".into(),
+                    title: "Every movement reconciles to the cent, nightly.".into(),
+                    description: Some("No unexplained delta survives a run.".into()),
+                },
+                attention_decide::NewGoal {
+                    project: outsider.name.clone(),
+                    title: "Not yours to set".into(),
+                    description: None,
+                },
+            ],
+            &portfolio,
+        );
+
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        let goals =
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &platform.id, None).unwrap();
+        assert_eq!(goals.len(), 1);
+        assert_eq!(
+            goals[0].title,
+            "Every movement reconciles to the cent, nightly."
+        );
+        assert_eq!(
+            goals[0].description.as_deref(),
+            Some("No unexplained delta survives a run.")
+        );
+
+        assert_eq!(out[1]["ok"], serde_json::json!(false));
+        let refusal = out[1]["error"].as_str().unwrap();
+        assert!(
+            refusal.contains("not-the-bank"),
+            "the refusal names what was asked for: {refusal}"
+        );
+        assert!(
+            refusal.contains("bank-platform"),
+            "and lists what the workspace does hold: {refusal}"
+        );
+        assert!(
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &outsider.id, None)
+                .unwrap()
+                .is_empty(),
+            "nothing was written to a project outside the workspace"
+        );
+    }
+
+    /// A persona holding no workspace charter cannot reach any of the three
+    /// verbs, and says which of the two reasons applies.
+    #[test]
+    fn the_verbs_refuse_a_persona_that_holds_no_workspace() {
+        let pool = init_test_db().unwrap();
+        let ctx = attention_decide::DecisionContext {
+            persona_id: "p1".into(),
+            ..Default::default()
+        };
+        let portfolio = WorkspaceProjects::of(&ctx);
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[attention_decide::NewGoal {
+                project: "anything".into(),
+                title: "t".into(),
+                description: None,
+            }],
+            &portfolio,
+        );
+        assert_eq!(out[0]["ok"], serde_json::json!(false));
+        assert!(out[0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("no workspace-bound charter"));
+    }
+
+    /// The home pin reaches the decision context as a resolved row, so the
+    /// prompt can name a real path — and a pin whose project is gone reads as
+    /// no home rather than as a fabricated one.
+    #[test]
+    fn the_home_pin_reaches_the_decision_context() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("home");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect")?;
+        persona_repo::update(
+            &pool,
+            "architect",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({
+                        "workspaceId": ws_id,
+                        "homeProjectId": platform.id,
+                    })
+                    .to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let ctx = build_decision_context(&pool, &persona, &[])?;
+        let home = ctx.home_project.expect("the home resolved");
+        assert_eq!(home.id, platform.id);
+        assert_eq!(home.name, "bank-platform");
+        assert_eq!(home.root_path, platform.root_path);
+
+        // A pin to a project that no longer exists is no home, never a guess.
+        persona_repo::update(
+            &pool,
+            "architect",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({ "homeProjectId": "gone" }).to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        assert!(build_decision_context(&pool, &persona, &[])?
+            .home_project
+            .is_none());
         Ok(())
     }
 }

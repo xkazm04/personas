@@ -21,6 +21,11 @@ suspended: Array<string>,
  */
 manifestPath?: string, notes: Array<string>, 
 /**
+ * The project this Architect calls home, as resolved. `None` when the
+ * workspace holds no project yet — see `notes`.
+ */
+homeProjectId?: string, 
+/**
  * Questions this Architect has put to the operator that nobody has
  * answered. Empty on the adopt path — an adoption has not woken yet, so it
  * cannot have asked anything.

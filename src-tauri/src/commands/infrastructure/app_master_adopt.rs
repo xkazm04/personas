@@ -351,6 +351,15 @@ pub(crate) struct AdoptionOptions<'a> {
     pub scope_rung: Option<u8>,
     pub enabled: Option<bool>,
     pub name: Option<&'a str>,
+    /// The `dev_projects.id` a WORKSPACE-bound persona calls home — where its
+    /// documents go and which project its project-shaped verbs default to.
+    /// Written as `design_context.homeProjectId` beside the workspace pin.
+    ///
+    /// `None` on the App Master path and it always will be: a project-bound
+    /// persona already has `devProjectId`, which
+    /// `design_context::working_project_id` prefers, so a home pin there would
+    /// be a second answer to a question already answered.
+    pub home_project_id: Option<&'a str>,
 }
 
 /// What one adoption did, before either door dresses it in its own wire type.
@@ -721,7 +730,15 @@ fn resolve_recipes(
 /// `personas::list_by_dev_workspace` reads to find the incumbent Architect.
 /// Only the binding's OWN key is written: clearing the other one would unpin a
 /// codebase the operator bound by hand.
-fn design_context_with_pin(existing: Option<&str>, binding: &Binding) -> String {
+///
+/// `home_project_id` is written beside the workspace pin when the caller
+/// resolved one. It is written only when present, for the same reason: a
+/// re-adoption that names no home must not clear a home an earlier one set.
+fn design_context_with_pin(
+    existing: Option<&str>,
+    binding: &Binding,
+    home_project_id: Option<&str>,
+) -> String {
     let mut dc: serde_json::Value = existing
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -729,8 +746,8 @@ fn design_context_with_pin(existing: Option<&str>, binding: &Binding) -> String 
         .filter(serde_json::Value::is_object)
         .unwrap_or_else(|| serde_json::json!({}));
     if let Some(obj) = dc.as_object_mut() {
-        // `DesignContextData` is `rename_all = "camelCase"` → `devProjectId`
-        // and `workspaceId`.
+        // `DesignContextData` is `rename_all = "camelCase"` → `devProjectId`,
+        // `workspaceId` and `homeProjectId`.
         let key = match binding {
             Binding::Project(_) => "devProjectId",
             Binding::Workspace(_) => "workspaceId",
@@ -739,6 +756,12 @@ fn design_context_with_pin(existing: Option<&str>, binding: &Binding) -> String 
             key.to_string(),
             serde_json::Value::String(binding.id().to_string()),
         );
+        if let Some(home) = home_project_id.map(str::trim).filter(|h| !h.is_empty()) {
+            obj.insert(
+                "homeProjectId".to_string(),
+                serde_json::Value::String(home.to_string()),
+            );
+        }
     }
     dc.to_string()
 }
@@ -809,6 +832,10 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
             scope_rung: input.scope_rung,
             enabled: input.enabled,
             name: input.name.as_deref(),
+            // A project-bound persona already carries `devProjectId`, which the
+            // working-project read prefers. A home pin here would be a second
+            // answer to a question already answered.
+            home_project_id: None,
         },
     )?;
 
@@ -908,6 +935,7 @@ pub(crate) fn adopt_bound(
                 design_context: Some(Some(design_context_with_pin(
                     p.design_context.as_deref(),
                     binding,
+                    opts.home_project_id,
                 ))),
                 lifecycle: Some(
                     crate::db::models::PersonaLifecycle::Active
@@ -927,7 +955,7 @@ pub(crate) fn adopt_bound(
                 enabled: Some(enabled),
                 max_concurrent: Some(max_concurrent),
                 model_profile: Some(model_profile),
-                design_context: Some(design_context_with_pin(None, binding)),
+                design_context: Some(design_context_with_pin(None, binding, opts.home_project_id)),
                 lifecycle: Some(
                     crate::db::models::PersonaLifecycle::Active
                         .as_str()

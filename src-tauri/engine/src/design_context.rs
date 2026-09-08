@@ -69,6 +69,52 @@ pub fn pick_use_cases_array_mut(dc: &mut Value) -> Option<&mut Vec<Value>> {
     dc.get_mut(key).and_then(|v| v.as_array_mut())
 }
 
+// ── The project pins ───────────────────────────────────────────────────────
+//
+// Two keys, read as one question. `devProjectId` is the CODEBASE pin: it is
+// what the `codebase` connector resolves and what `app_master_of_project` keys
+// project ownership on, so writing it makes a persona that project's App
+// Master. `homeProjectId` is the workspace-bound persona's writing surface —
+// where its documents go and which project its project-shaped verbs default to
+// — and it claims no ownership at all.
+//
+// Every reader that wants "the project this persona works in" wants
+// [`working_project_id`], which prefers the codebase pin. Readers that
+// genuinely mean ownership keep reading `devProjectId` alone.
+//
+// Read off the RAW JSON rather than through `DesignContextData`: the strict
+// struct parse fails whole on one unexpected shape, and these call sites are
+// on paths (a protocol verb, an execution's working directory) where losing a
+// pin to a neighbouring field's drift would be silent.
+
+/// Read one string key out of a raw `design_context` JSON string.
+fn pin(design_context: Option<&str>, key: &str) -> Option<String> {
+    let dc: Value = serde_json::from_str(design_context?).ok()?;
+    dc.get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// The `dev_projects.id` this persona is pinned to as a CODEBASE
+/// (`design_context.devProjectId`). Ownership-bearing.
+pub fn pinned_project_id(design_context: Option<&str>) -> Option<String> {
+    pin(design_context, "devProjectId")
+}
+
+/// The `dev_projects.id` a workspace-bound persona calls home
+/// (`design_context.homeProjectId`). Carries no ownership.
+pub fn home_project_id(design_context: Option<&str>) -> Option<String> {
+    pin(design_context, "homeProjectId")
+}
+
+/// The project this persona works in: its codebase pin, or its home when it
+/// has no codebase of its own. `None` for a persona bound to neither.
+pub fn working_project_id(design_context: Option<&str>) -> Option<String> {
+    pinned_project_id(design_context).or_else(|| home_project_id(design_context))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,5 +177,31 @@ mod tests {
     fn pick_mut_returns_none_when_neither_key_present() {
         let mut v = serde_json::json!({"summary": "x"});
         assert!(pick_use_cases_array_mut(&mut v).is_none());
+    }
+
+    #[test]
+    fn the_codebase_pin_wins_over_the_home_pin() {
+        let dc = serde_json::json!({"devProjectId": "p1", "homeProjectId": "p2"}).to_string();
+        assert_eq!(pinned_project_id(Some(&dc)).as_deref(), Some("p1"));
+        assert_eq!(home_project_id(Some(&dc)).as_deref(), Some("p2"));
+        assert_eq!(working_project_id(Some(&dc)).as_deref(), Some("p1"));
+    }
+
+    #[test]
+    fn a_workspace_persona_works_in_its_home_project() {
+        let dc = serde_json::json!({"workspaceId": "w1", "homeProjectId": "p2"}).to_string();
+        assert_eq!(pinned_project_id(Some(&dc)), None);
+        assert_eq!(working_project_id(Some(&dc)).as_deref(), Some("p2"));
+    }
+
+    #[test]
+    fn a_persona_bound_to_neither_reads_as_none() {
+        assert_eq!(working_project_id(None), None);
+        assert_eq!(working_project_id(Some("not json")), None);
+        assert_eq!(working_project_id(Some("{}")), None);
+        // A blank pin is not a pin — an empty string would resolve to no
+        // project anyway, one lookup later and with a worse error.
+        let blank = serde_json::json!({"homeProjectId": "   "}).to_string();
+        assert_eq!(working_project_id(Some(&blank)), None);
     }
 }

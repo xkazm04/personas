@@ -753,11 +753,44 @@ pub async fn run_execution(
         }
     };
 
+    // The HOME project of a workspace-bound persona (the Architect): the
+    // repository its documents belong in. Resolved only when the persona has NO
+    // codebase pin of its own — a project-bound persona already answers this
+    // question with `devProjectId` and its worktree, and this must never move
+    // an App Master's run.
+    //
+    // Why an execution needs it: the Architect's charters produce documents, not
+    // code, and until now a document run had a scratch directory under the
+    // system temp dir for a working directory. The design it wrote landed there
+    // and the platform project's repository stayed empty.
+    let home_project_dir: Option<std::path::PathBuf> = {
+        let dc = persona.design_context.as_deref();
+        if personas_engine::design_context::pinned_project_id(dc).is_some() {
+            None
+        } else {
+            personas_engine::design_context::home_project_id(dc)
+                .and_then(|id| crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok())
+                .map(|p| std::path::PathBuf::from(p.root_path.as_str()))
+                // A recorded root that is not on this machine any more is not a
+                // working directory. Falling through to the scratch dir keeps
+                // the run alive, which is the behaviour every such run had
+                // before this pin existed.
+                .filter(|p| p.is_dir())
+        }
+    };
+
     // Create a stable per-persona working directory (persists across executions).
     // When isolation is active, use the per-execution worktree instead.
-    let exec_dir = match &exec_worktree {
-        Some(ws) => ws.path().to_path_buf(),
-        None => {
+    let exec_dir = match (&exec_worktree, &home_project_dir) {
+        (Some(ws), _) => ws.path().to_path_buf(),
+        (None, Some(home)) => {
+            logger.log(&format!(
+                "[HOME] no codebase pin; running in the persona's home project {}",
+                home.display()
+            ));
+            home.clone()
+        }
+        (None, None) => {
             let stable_dir = std::env::temp_dir()
                 .join("personas-workspace")
                 .join(&persona.id);

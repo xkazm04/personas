@@ -75,4 +75,22 @@ appMaster: AppMasterLink | null,
  * has no serde catch-all, so an untyped key would be silently DROPPED on
  * the next round-trip.
  */
-workspaceId: string | null, };
+workspaceId: string | null, 
+/**
+ * The project a WORKSPACE-bound persona writes into when it has no
+ * codebase of its own — the Architect's home.
+ *
+ * Deliberately NOT [`Self::dev_project_id`]. That key is what makes a
+ * persona a project's App Master (`app_master_of_project` keys the
+ * ownership lookup on it), so pinning the Architect there would report it
+ * as the platform project's owner and send a second App Master adoption
+ * looking for a project that already has one. This key carries the same
+ * fact the Architect actually needs — *where do my documents go, and which
+ * project do my project-shaped verbs default to* — without claiming
+ * ownership of anything.
+ *
+ * Read through `personas_engine::design_context::working_project_id`,
+ * which prefers `dev_project_id` and falls back here, so a project-bound
+ * persona is untouched by its existence.
+ */
+homeProjectId: string | null, };
