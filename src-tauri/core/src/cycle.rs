@@ -192,6 +192,14 @@ pub enum AttentionRefusal {
     /// The persona's monthly budget is spent — refuse loudly here instead of
     /// spawning into the execution path's Validation error.
     BudgetExhausted { spent_usd: f64, limit_usd: f64 },
+    /// The machine is already running as many DISTINCT personas as
+    /// `max_active_personas` allows, and this persona is not one of them.
+    ///
+    /// A DEFERRAL, not a failure: the persona is served on a later tick, once a
+    /// slot frees. Added 2026-09-08 when the cap moved off the enable doors —
+    /// it had been an organisation-size limit and is now the resource guard the
+    /// operator asked for. See `personas_engine::active_persona_cap`.
+    ConcurrencyCap { running: usize, cap: usize },
 }
 
 impl AttentionRefusal {
@@ -203,6 +211,7 @@ impl AttentionRefusal {
             Self::QuietHours { .. } => "quiet_hours",
             Self::DailyCapReached { .. } => "daily_cap_reached",
             Self::BudgetExhausted { .. } => "budget_exhausted",
+            Self::ConcurrencyCap { .. } => "concurrency_cap",
         }
     }
 
@@ -230,6 +239,10 @@ impl AttentionRefusal {
                 limit_usd,
             } => format!(
                 "monthly budget exhausted: ${spent_usd:.2} spent of the ${limit_usd:.2} limit"
+            ),
+            Self::ConcurrencyCap { running, cap } => format!(
+                "{running} of {cap} personas are already running; this one waits for a free \
+                 slot (raise max_active_personas to run more at once)"
             ),
         }
     }
@@ -429,12 +442,35 @@ mod tests {
                 spent_usd: 1.0,
                 limit_usd: 1.0,
             },
+            AttentionRefusal::ConcurrencyCap {
+                running: 10,
+                cap: 10,
+            },
         ] {
             let v: serde_json::Value =
                 serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
             assert_eq!(v["kind"], r.kind(), "{r:?}");
             assert!(!r.describe().is_empty());
         }
+    }
+
+    #[test]
+    fn the_concurrency_cap_refusal_names_both_numbers_and_the_setting() {
+        let r = AttentionRefusal::ConcurrencyCap {
+            running: 10,
+            cap: 10,
+        };
+        let json = serde_json::to_string(&r).unwrap();
+        assert!(json.contains(r#""kind":"concurrency_cap"#), "{json}");
+        assert!(json.contains(r#""running":10"#), "{json}");
+        assert!(json.contains(r#""cap":10"#), "{json}");
+        let d = r.describe();
+        assert!(d.contains("10 of 10 personas are already running"), "{d}");
+        assert!(d.contains("max_active_personas"), "{d}");
+        assert!(
+            d.contains("waits"),
+            "a deferral must not read as a failure: {d}"
+        );
     }
 
     #[test]

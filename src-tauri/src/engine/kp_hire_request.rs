@@ -322,22 +322,16 @@ pub(crate) async fn request_hire(
 ) -> Result<HireRequestOutcome, AppError> {
     let need = bound_need(&req.need)?;
 
-    // THE CAP, checked before anything leaves the process.
+    // G17 (2026-09-08): NO CAP CHECK HERE, deliberately.
     //
-    // A hire that lands mints a persona, so it raises the counted population —
-    // `raises_count = true`. Refusing HERE rather than at the arriving
-    // persona-request is what makes the cap mean something: kp would otherwise
-    // run a repository scan, an intake and a composer (all of them LLM calls,
-    // all of them billed) to produce a role Personas was always going to
-    // refuse. The refusal text comes from `active_persona_cap` so an operator
-    // meets one sentence at every door rather than a paraphrase per door.
-    //
-    // A DRY RUN is exempt: it mints nothing, and the whole point of a rehearsal
-    // is to see the role a full roster would have asked for.
-    if !req.dry_run {
-        personas_engine::active_persona_cap::check_active_persona_headroom(pool, true)?;
-    }
-
+    // This door used to refuse a hire when the enabled roster was full, so kp
+    // never spent a repository scan, an intake and a composer on a role
+    // Personas was going to refuse. That saving was real, but it was buying it
+    // with the wrong limit: `max_active_personas` is a concurrency guard, not a
+    // headcount, and an organisation that needs another role needs it whether
+    // or not the machine is busy this minute. A hired persona that arrives on a
+    // full machine is deferred by the attention loop until a slot frees; it is
+    // never un-hired.
     let endpoint = resolve_endpoint(pool, &req.persona_id)?;
     let facts = project_facts(pool, &req.project_id)?;
 
@@ -845,35 +839,70 @@ mod tests {
         );
     }
 
-    /// The cap is checked BEFORE the network, so a full roster costs kp
-    /// nothing — no scan, no intake, no composer, no billed LLM call — and the
-    /// operator meets `active_persona_cap`'s own sentence rather than a
-    /// paraphrase of it.
+    /// G17: a FULL MACHINE does not refuse a hire.
+    ///
+    /// Until 2026-09-08 this door checked `max_active_personas` before the
+    /// network on the reasoning that a full roster should cost kp nothing. The
+    /// operator retired that reasoning: the cap is a concurrency guard, and an
+    /// organisation that needs another role needs it whether or not the machine
+    /// is busy this minute. The hire now reaches the transport — asserted here
+    /// by the failure being a NETWORK failure against a closed port rather than
+    /// a capacity `Validation`.
     #[tokio::test]
-    async fn a_full_active_persona_cap_refuses_the_hire_before_the_network() {
+    async fn a_full_machine_does_not_refuse_the_hire() {
         let pool = crate::db::init_test_db().unwrap();
-        // Cap of ONE with one enabled persona already active: the roster is
-        // exactly full, so a hire would be the one that overflows it. (Zero is
-        // not usable — the setting's own validator refuses it, min 1.)
-        {
-            use crate::db::PoolExt;
-            pool.conn("cap test")
-                .unwrap()
-                .execute(
-                    "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
-                     VALUES ('p-active', 'p-active', 'sp', 1, datetime('now'), datetime('now'))",
-                    [],
-                )
-                .unwrap();
-        }
+        // A cap of ONE, every slot taken: one persona holding a live execution.
+        // (Zero is not usable — the setting's own validator refuses it, min 1.)
+        let persona = crate::db::repos::core::personas::create(
+            &pool,
+            crate::db::models::CreatePersonaInput {
+                name: "p-running".into(),
+                system_prompt: "sp".into(),
+                enabled: Some(true),
+                lifecycle: Some("active".into()),
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                project_id: None,
+            },
+        )
+        .unwrap();
+        crate::db::repos::execution::executions::create(&pool, &persona.id, None, None, None, None)
+            .unwrap();
         crate::db::repos::core::settings::set(
             &pool,
             personas_db::settings_keys::MAX_ACTIVE_PERSONAS,
             "1",
         )
         .expect("the cap is an allow-listed setting");
-        // Base URL points at a closed port: if the cap did NOT refuse, the
-        // failure would be a transport error, and this test would say so.
+        assert!(
+            personas_engine::active_persona_cap::active_persona_headroom(&pool)
+                .unwrap()
+                .is_full(),
+            "the machine is full"
+        );
+        // A real project, so the only thing left between here and the wire is
+        // the cap that no longer exists.
+        crate::db::repos::dev::projects::create_project(
+            &pool,
+            "hire-target",
+            "/tmp/hire-target",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        // Base URL points at a closed port: the hire is expected to REACH it.
         crate::db::repos::core::settings::set(
             &pool,
             personas_db::settings_keys::KP_BASE_URL,
@@ -887,22 +916,25 @@ mod tests {
             &pool,
             HireRequest {
                 persona_id: "p1".into(),
-                project_id: "any".into(),
+                project_id: "hire-target".into(),
                 need: "a real need".into(),
                 ..Default::default()
             },
         )
         .await
-        .expect_err("a full cap refuses");
+        .expect_err("nothing is listening on port 1");
 
         match restore {
             Some(v) => unsafe { std::env::set_var(AUTOMATION_TOKEN_ENV, v) },
             None => unsafe { std::env::remove_var(AUTOMATION_TOKEN_ENV) },
         }
-        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
         assert!(
-            err.to_string().contains("max_active_personas"),
-            "the shared refusal names the setting to raise, got: {err}"
+            !matches!(err, AppError::Validation(_)),
+            "a full machine must not produce a capacity refusal any more: {err:?}"
+        );
+        assert!(
+            !err.to_string().contains("max_active_personas"),
+            "the hire got past the cap and onto the wire, got: {err}"
         );
     }
 

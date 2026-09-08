@@ -189,13 +189,14 @@ pub struct AppMasterAdoption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub last_note: Option<String>,
-    /// The app-wide active-persona population and its cap (G4), as measured
-    /// when this response was built.
+    /// How many personas the machine is RUNNING and the ceiling on that (G17),
+    /// as measured when this response was built.
     ///
-    /// Reported on the state route because an App Master that is about to ask
-    /// kp for another role needs to see the ceiling BEFORE it asks — otherwise
-    /// the cap is only ever met as a refusal at the far end of a hire, after
-    /// the intake dialog, the compose and the human click.
+    /// A concurrency reading, not a headcount: since 2026-09-08 nothing here
+    /// refuses an adoption or a hire. It is reported so a headless caller can
+    /// see how busy the machine is and pace itself — a full machine means the
+    /// personas it starts will WAIT, which is a reason to finish work in flight
+    /// before widening the front, not a reason not to hire.
     pub active_personas: personas_engine::active_persona_cap::ActivePersonaHeadroom,
 }
 
@@ -905,20 +906,12 @@ pub(crate) fn adopt_bound(
     let incumbent = find_incumbent(pool, role, binding, &desired_name)?;
     let created = incumbent.is_none();
 
-    // G4: the app-wide active-persona cap, checked before the first persona
-    // write on either branch. Both branches write `lifecycle = 'active'`, so an
-    // adoption with `enabled: true` lands inside the counted population; an
-    // adoption that leaves `enabled` alone (the default, and the shape a
-    // re-adoption usually takes) does not raise the count and is never refused.
-    let _ = match &incumbent {
-        Some(p) => personas_engine::active_persona_cap::check_enable_headroom(
-            pool,
-            &p.id,
-            opts.enabled.unwrap_or(p.enabled),
-            Some(crate::db::models::PersonaLifecycle::Active.as_str()),
-        )?,
-        None => personas_engine::active_persona_cap::check_active_persona_headroom(pool, enabled)?,
-    };
+    // G17 (2026-09-08): adopting an App Master is never refused for capacity.
+    // The cap this door used to consult counted enabled ROWS; it now counts
+    // personas that are RUNNING and is enforced in the attention loop's
+    // admission ladder. An Architect may therefore give every project in its
+    // workspace an App Master, and the machine paces how many of them wake at
+    // once rather than refusing the workforce it was asked to build.
 
     let persona = match incumbent {
         Some(p) => personas_repo::update(
@@ -1631,14 +1624,15 @@ mod tests {
         );
     }
 
-    // -- G4: the app-wide active-persona cap, at this door ------------------
+    // -- G17: the app-wide concurrency cap, at this door --------------------
 
-    /// Fill the roster to the cap with ordinary active personas, so the next
-    /// activation anywhere in the app is the one that crosses it.
-    fn fill_roster_to_cap(pool: &DbPool) {
+    /// Fill every slot the machine has: `cap` DISTINCT personas each holding a
+    /// live execution. That is what "full" means since 2026-09-08 — a roster of
+    /// idle personas, however large, occupies nothing.
+    fn fill_machine_to_cap(pool: &DbPool) {
         let cap = personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT;
         for i in 0..cap {
-            personas_repo::create(
+            let p = personas_repo::create(
                 pool,
                 CreatePersonaInput {
                     name: format!("filler-{i}"),
@@ -1660,88 +1654,63 @@ mod tests {
                 },
             )
             .expect("filler persona");
+            personas_db::repos::execution::executions::create(pool, &p.id, None, None, None, None)
+                .expect("filler execution");
         }
         assert!(
             personas_engine::active_persona_cap::active_persona_headroom(pool)
                 .unwrap()
                 .is_full(),
-            "the roster is at the cap"
+            "every slot is taken"
         );
     }
 
+    /// The behaviour this door had until 2026-09-08, inverted.
+    ///
+    /// It used to refuse an enabled adoption once the ENABLED ROSTER reached
+    /// `max_active_personas`, which made the cap an organisation-size limit and
+    /// is what stopped the Grand Simulation's Architect from giving its six
+    /// projects six App Masters. An adoption is now never refused for capacity:
+    /// the persona is created, switched on as asked, and the attention loop
+    /// defers its first wake until the machine has a slot.
     #[test]
-    fn adopting_an_enabled_app_master_at_the_cap_is_refused_with_both_numbers() {
+    fn adopting_an_enabled_app_master_on_a_full_machine_is_allowed() {
         let _home = TestHome::new("app_master_adopt");
         let pool = init_test_db().expect("test db");
         let project = seed_project(&pool);
         seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
-        fill_roster_to_cap(&pool);
+        fill_machine_to_cap(&pool);
 
         let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
         body.enabled = Some(true);
-        let err = adopt(&pool, &body).expect_err("at the cap, an enabled adoption is refused");
-
-        assert!(
-            matches!(err, AppError::Validation(_)),
-            "a typed refusal, not an Internal: {err:?}"
-        );
-        let msg = err.to_string();
-        assert!(msg.contains("10 of 10 active personas"), "{msg}");
-        assert!(msg.contains("max_active_personas"), "{msg}");
-
-        // Refused BEFORE the first write: no half-adopted App Master is left.
-        assert!(
-            current(&pool, &project.id).unwrap().is_none(),
-            "a refused adoption leaves no persona behind"
-        );
-    }
-
-    /// The cap bounds ACTIVE personas, not adoptions. An App Master adopted
-    /// switched OFF costs no slot, so the door stays open at the cap — the
-    /// operator can still prepare a project and enable it once a slot frees.
-    #[test]
-    fn adopting_a_disabled_app_master_at_the_cap_is_allowed() {
-        let _home = TestHome::new("app_master_adopt");
-        let pool = init_test_db().expect("test db");
-        let project = seed_project(&pool);
-        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
-        fill_roster_to_cap(&pool);
-
-        // `enabled: None` is the door's own default (off).
-        let body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
-        let adoption = adopt(&pool, &body).expect("a disabled adoption costs no slot");
+        let adoption = adopt(&pool, &body).expect("capacity never refuses an adoption");
         assert!(adoption.created);
-        assert_eq!(
-            adoption.active_personas.active,
-            personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT,
-            "the count did not move"
+
+        let persona = personas_repo::get_by_id(&pool, &adoption.persona_id).unwrap();
+        assert!(
+            persona.enabled,
+            "switched ON as asked — the cap does not ration the roster"
+        );
+        assert!(
+            adoption.active_personas.is_full(),
+            "and the response still reports the machine is full, honestly"
         );
     }
 
-    /// The invariant that makes the cap a limit rather than a trap: an App
-    /// Master that is ALREADY active can be re-adopted at the cap, because the
-    /// count cannot rise.
+    /// A large roster is not a full machine. Twenty enabled personas doing
+    /// nothing leave every slot free.
     #[test]
-    fn re_adopting_an_already_active_app_master_at_the_cap_is_allowed() {
+    fn a_large_idle_roster_leaves_the_machine_empty() {
         let _home = TestHome::new("app_master_adopt");
         let pool = init_test_db().expect("test db");
         let project = seed_project(&pool);
         seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
-        seed_recipe(&pool, "accepted-idea-delivery", "Accepted idea delivery");
-
-        let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
-        body.enabled = Some(true);
-        let first = adopt(&pool, &body).expect("room for the first");
-        assert!(first.created);
-
-        // Now fill the rest of the roster: this App Master is one of the ten.
-        let cap = personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT;
-        for i in 0..(cap - 1) {
+        for i in 0..20 {
             personas_repo::create(
                 &pool,
                 CreatePersonaInput {
-                    name: format!("filler-{i}"),
-                    system_prompt: "You are a filler persona.".to_string(),
+                    name: format!("idle-{i}"),
+                    system_prompt: "You are an idle persona.".to_string(),
                     enabled: Some(true),
                     lifecycle: Some("active".to_string()),
                     description: None,
@@ -1760,31 +1729,25 @@ mod tests {
             )
             .unwrap();
         }
-        assert!(
-            personas_engine::active_persona_cap::active_persona_headroom(&pool)
-                .unwrap()
-                .is_full()
-        );
 
-        // A re-adoption that adds a charter must still go through at the cap.
-        let mut body2 = request(
-            &project.id,
-            &[
-                ("codebase-architecture-review", Some(2)),
-                ("accepted-idea-delivery", None),
-            ],
+        let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
+        body.enabled = Some(true);
+        let adoption = adopt(&pool, &body).expect("adopted");
+        assert_eq!(
+            adoption.active_personas.running, 0,
+            "twenty-one personas exist and none is running"
         );
-        body2.enabled = Some(true);
-        let second = adopt(&pool, &body2).expect("the incumbent keeps its own slot");
-        assert!(!second.created);
-        assert_eq!(second.persona_id, first.persona_id);
-        assert_eq!(second.charters.len(), 2);
+        assert_eq!(
+            adoption.active_personas.free(),
+            personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT
+        );
     }
 
-    /// The state route reports the ceiling, so a headless caller reading
-    /// `GET /dev-tools/app-master/{project}` sees it before it asks for a hire.
+    /// The state route reports the CONCURRENCY figure, so a headless caller
+    /// reading `GET /dev-tools/app-master/{project}` sees how busy the machine
+    /// is — not how many personas exist.
     #[test]
-    fn the_state_route_reports_the_app_wide_roster() {
+    fn the_state_route_reports_the_running_count_not_the_roster() {
         let _home = TestHome::new("app_master_adopt");
         let pool = init_test_db().expect("test db");
         let project = seed_project(&pool);
@@ -1792,13 +1755,25 @@ mod tests {
 
         let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
         body.enabled = Some(true);
-        adopt(&pool, &body).expect("adopted");
+        let adoption = adopt(&pool, &body).expect("adopted");
 
         let state = current(&pool, &project.id).unwrap().expect("an adoption");
         assert_eq!(
-            state.active_personas.active, 1,
-            "the App Master itself is the one active persona"
+            state.active_personas.running, 0,
+            "adopted and enabled, but it has not started anything yet"
         );
+
+        personas_db::repos::execution::executions::create(
+            &pool,
+            &adoption.persona_id,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let state = current(&pool, &project.id).unwrap().expect("an adoption");
+        assert_eq!(state.active_personas.running, 1, "now it holds a slot");
         assert_eq!(
             state.active_personas.cap,
             personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT

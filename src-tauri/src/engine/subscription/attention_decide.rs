@@ -450,15 +450,18 @@ pub(crate) struct WorkspaceGoal {
     pub progress: i32,
 }
 
-/// The app-wide active-persona count against its ceiling.
+/// How many personas the machine is RUNNING right now, against the ceiling on
+/// that.
 ///
 /// The Architect plans a workforce, so the one number it cannot decide without
-/// is how much headroom the machine has left (Grand Simulation rule 9, gap G4).
+/// is how much of the machine is already busy (Grand Simulation gap G17). Until
+/// 2026-09-08 this was a roster count and the prompt read as a headcount limit;
+/// it is a concurrency figure now, and the roster is unbounded.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct ActivePersonas {
-    /// Personas with `enabled = 1` right now, app-wide.
-    pub active: usize,
-    /// The ceiling those are counted against.
+    /// Personas holding a queued or running execution right now, app-wide.
+    pub running: usize,
+    /// The ceiling those are counted against (`max_active_personas`).
     pub cap: usize,
 }
 
@@ -1802,16 +1805,19 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ctx.running_fleet,
     ));
     if let Some(h) = ctx.active_personas {
-        // A SECOND ceiling, and the one a hiring charter walks into: the app
-        // refuses to switch on more personas than this, so an App Master with a
-        // responsibility nobody holds should read the free slots here before it
-        // asks kp for a role.
+        // A SECOND ceiling, and a different KIND of ceiling: the one above is
+        // this persona's own parallel capacity, this one is the machine's.
+        // Since 2026-09-08 it bounds how many personas RUN at once and no
+        // longer how many exist — hiring and adopting are never refused by it,
+        // so the useful thing to say is what a full machine costs (waiting),
+        // not what it forbids.
         s.push_str(&format!(
-            "- ROSTER: {} of {} personas are active app-wide ({} slot(s) free). \
-             Asking for a NEW hire when 0 are free will be refused at adoption — \
-             say so in an ask instead, so a person can free a slot or raise the \
-             cap.\n",
-            h.active,
+            "- MACHINE: {} of {} personas are running work right now ({} slot(s) free). \
+             This limits CONCURRENCY, never the size of the organisation: hiring and \
+             adopting are never refused by it. At 0 free, a persona you start simply \
+             waits for a slot instead of running now — so prefer finishing what is in \
+             flight over widening the front.\n",
+            h.running,
             h.cap,
             h.free(),
         ));
@@ -2162,9 +2168,9 @@ fn render_workspace_section(
     let mut s = String::new();
     s.push_str(&format!("YOUR WORKSPACE: {} ({})\n", w.name, w.id));
     s.push_str(&format!(
-        "- {} of {} personas are active app-wide. Every role you ask for is counted \
-         against that ceiling.\n",
-        w.active_personas.active, w.active_personas.cap
+        "- {} of {} personas are running work right now. That ceiling limits how many \
+         run AT ONCE; it does not limit how many you may hire or adopt.\n",
+        w.active_personas.running, w.active_personas.cap
     ));
 
     s.push_str(&format!("- projects ({}):\n", w.projects.len()));
@@ -2255,8 +2261,9 @@ fn render_workspace_section(
              \"recipes\":[{{\"slug\":\"<recipe slug>\",\"priority\":1}}],\"enabled\":true}}]`. \
              At most {MAX_ADOPT_APP_MASTERS} per wake, each on {ADOPTED_APP_MASTER_MODEL}. A \
              project above reading `App Master: NONE` is the case this verb exists for. \
-             {free} of {cap} persona slot(s) are free right now: an adoption past that still \
-             happens and its App Master stays OFF until somebody frees a slot.\n\
+             An adoption is never refused for capacity: {free} of {cap} machine slot(s) are \
+             free right now, and an App Master adopted onto a full machine is switched ON as \
+             asked and waits its turn to wake.\n\
              - SET A GOAL: \
              `\"goals\":[{{\"project\":\"<an id or a name from the list above>\",\
              \"title\":\"<what is to be true, at most {MAX_GOAL_TITLE_CHARS} characters>\",\
@@ -2267,7 +2274,7 @@ fn render_workspace_section(
             free = w
                 .active_personas
                 .cap
-                .saturating_sub(w.active_personas.active),
+                .saturating_sub(w.active_personas.running),
             cap = w.active_personas.cap,
         ));
     }
@@ -2874,11 +2881,11 @@ mod tests {
             free_capacity: 2,
             running_executions: 0,
             running_fleet: 1,
-            // G4: the roster ceiling, well below the cap so the fixture's other
-            // assertions read the ordinary case. `active_personas_line_*` below
-            // vary it.
+            // G17: the machine's concurrency ceiling, well below the cap so the
+            // fixture's other assertions read the ordinary case. The
+            // machine-line tests below vary it.
             active_personas: Some(personas_engine::active_persona_cap::ActivePersonaHeadroom {
-                active: 4,
+                running: 4,
                 cap: 10,
             }),
             now_utc: "2026-09-07T02:30:00+00:00".into(),
@@ -3118,43 +3125,54 @@ mod tests {
         );
     }
 
-    /// G4: the SECOND ceiling. `free_capacity` is how much work this persona
-    /// may start; the roster line is how many personas the app will let exist
-    /// switched on at all. An App Master with an unheld responsibility reads
-    /// this before it asks kp for a role.
+    /// G17: the SECOND ceiling, and a different KIND. `free_capacity` is how
+    /// much work THIS persona may start; the machine line is how many personas
+    /// may be running at once app-wide. It must not read as a headcount limit —
+    /// it did until 2026-09-08 and that is what stalled the simulation.
     #[test]
-    fn prompt_states_the_app_wide_roster_ceiling() {
+    fn prompt_states_the_app_wide_concurrency_ceiling() {
         let ctx = ctx_fixture();
         let p = render_decision_prompt(&ctx);
         assert!(
-            p.contains("- ROSTER: 4 of 10 personas are active app-wide (6 slot(s) free)"),
+            p.contains("- MACHINE: 4 of 10 personas are running work right now (6 slot(s) free)"),
             "{p}"
         );
+        assert!(
+            p.contains("never the size of the organisation"),
+            "the line must say what it does NOT limit: {p}"
+        );
 
-        // At the cap the line says zero free and names the consequence, so the
-        // loop asks instead of dispatching a hire it cannot have.
+        // At the cap the line says zero free and names the real consequence —
+        // waiting, not refusal.
         let mut full = ctx_fixture();
         full.active_personas = Some(personas_engine::active_persona_cap::ActivePersonaHeadroom {
-            active: 10,
+            running: 10,
             cap: 10,
         });
         let p = render_decision_prompt(&full);
         assert!(
-            p.contains("10 of 10 personas are active app-wide (0 slot(s) free)"),
+            p.contains("10 of 10 personas are running work right now (0 slot(s) free)"),
             "{p}"
         );
-        assert!(p.contains("will be refused at adoption"), "{p}");
+        assert!(
+            p.contains("waits for a slot instead of running now"),
+            "a full machine costs waiting, not refusal: {p}"
+        );
+        assert!(
+            !p.contains("refused at adoption"),
+            "adoption is never refused for capacity any more: {p}"
+        );
     }
 
     /// A count that could not be read prints NOTHING rather than a fabricated
     /// "0 of 10" — the prompt's own standing rule for the clock and for
-    /// `lastDecidedAt`, applied to the roster.
+    /// `lastDecidedAt`, applied to the machine line.
     #[test]
-    fn an_unreadable_roster_count_omits_the_line_entirely() {
+    fn an_unreadable_running_count_omits_the_line_entirely() {
         let mut ctx = ctx_fixture();
         ctx.active_personas = None;
         let p = render_decision_prompt(&ctx);
-        assert!(!p.contains("ROSTER"), "{p}");
+        assert!(!p.contains("- MACHINE:"), "{p}");
         // The capacity line it sits under is untouched.
         assert!(p.contains("- CAPACITY:"), "{p}");
     }
@@ -3962,7 +3980,10 @@ mod tests {
             ],
             goals: Vec::new(),
             goal_count: 0,
-            active_personas: ActivePersonas { active: 4, cap: 10 },
+            active_personas: ActivePersonas {
+                running: 4,
+                cap: 10,
+            },
         });
         ctx.home_project = Some(HomeProject {
             id: "proj_platform".into(),
@@ -3989,8 +4010,12 @@ mod tests {
         // The headroom the adoption verb is really capped by — the number, not
         // just the existence of a cap.
         assert!(
-            p.contains("6 of 10 persona slot(s) are free right now"),
-            "the cap headroom is stated: {p}"
+            p.contains("6 of 10 machine slot(s) are free right now"),
+            "the machine headroom is stated: {p}"
+        );
+        assert!(
+            p.contains("An adoption is never refused for capacity"),
+            "and it is stated as a pacing fact, not a limit on the roster: {p}"
         );
         assert!(p.contains(ADOPTED_APP_MASTER_MODEL));
         // And where the design goes, as a path it can actually write.

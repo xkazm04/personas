@@ -1018,17 +1018,12 @@ pub(crate) async fn execute_kp_hire_request(
         ..Default::default()
     };
 
-    // G4: the app-wide active-persona cap, checked before the hire commits.
-    //
-    // The row this door writes is a `draft` with `enabled = 1`, which the cap's
-    // own definition does NOT count — a draft is not active. It is gated anyway,
-    // and deliberately: a hire is a commitment to an active persona (the
-    // one-shot build ends in `promote_build_draft`, which moves it to
-    // `lifecycle = 'active'`), and the cheap place to say "no room" is before
-    // kp's intake dialog, the compose, the human click and a headless build
-    // session have all been spent. `raises_count: true` is therefore a
-    // statement about the hire's destination, not about the row it inserts.
-    personas_engine::active_persona_cap::check_active_persona_headroom(&state.db, true)?;
+    // G17 (2026-09-08): no capacity gate here. This door used to refuse a hire
+    // when the enabled roster was at `max_active_personas`, on the reasoning
+    // that a hire is a commitment to an active persona. The operator's ruling
+    // retired that: an organisation may hold any number of personas, and the
+    // cap is a resource guard on how many RUN at once, applied in the attention
+    // loop. A hire that lands on a busy machine simply waits its turn to wake.
 
     // 1. Create the draft persona (mirrors execute_build_oneshot).
     let description: String = mission.chars().take(200).collect();
