@@ -1179,6 +1179,11 @@ pub const DEV_MEMORY_SOURCES: &[&str] = &[
     "scan_funnel",
     "kp_dossier",
     "app_master_proposal",
+    // A role this project asked kp for. The project remembers what it hired and
+    // why, so the next wake that considers hiring can read that the gap was
+    // already named — the partial unique index on
+    // (project_id, source_kind, source_id) makes a repeated ask idempotent.
+    "hire_request",
 ];
 
 /// Project-scoped memory for the development loop (scan → triage → execute).

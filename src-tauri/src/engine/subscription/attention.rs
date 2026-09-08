@@ -1067,6 +1067,7 @@ fn build_decision_context(
                 scope_rung: c.scope_rung,
                 project_id: c.project_id.clone(),
                 dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
+                can_hire: c.spec.can_hire.unwrap_or(false),
             }
         })
         .collect();

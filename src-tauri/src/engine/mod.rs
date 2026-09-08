@@ -76,6 +76,7 @@ pub mod kb_ingest;
 pub mod kb_scan;
 pub mod knowledge;
 pub mod knowledge_consult;
+pub mod kp_hire_request;
 pub mod kp_reporter;
 pub mod leadership;
 pub mod llm_topology;

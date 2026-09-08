@@ -790,6 +790,27 @@ pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
 /// `commands::fleet::pairing`.
 pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
 
+/// Base URL of the kp instance Personas asks for a hire
+/// (`engine::kp_hire_request`), e.g. `http://127.0.0.1:3000`.
+///
+/// The FALLBACK, not the primary: a persona hired through kp already carries a
+/// typed `design_context.kpLink.baseUrl`, and that one wins because it names
+/// the instance that particular persona actually belongs to. This key answers
+/// for a persona kp never hired — the Architect, an operator-adopted App Master
+/// — which otherwise has no way to name kp at all.
+///
+/// NO COMPANION TOKEN KEY EXISTS, deliberately. The automation credential is
+/// read from the `KP_AUTOMATION_TOKEN` environment variable, because
+/// `app_settings.value` is plain `TEXT NOT NULL` with no encryption hook on the
+/// write path — which is exactly the condition the `settings-key-holding-secret`
+/// census rule names, and the three keys it already counts (`OLLAMA_API_KEY`,
+/// `LITELLM_MASTER_KEY`, `BROWSER_BRIDGE_PAIRING_TOKEN`) are the debt it exists
+/// to stop growing.
+pub const KP_BASE_URL: &str = "kp_base_url";
+/// Default for [`KP_BASE_URL`] — none. An unset key means "this install has no
+/// kp to ask", and the hire refuses rather than guessing a localhost port.
+pub const KP_BASE_URL_DEFAULT: Option<&str> = None;
+
 /// Durable "the executions search index is detached" marker, written by
 /// [`crate::damage::detach_derived_index`] when a derived-damage verdict drops
 /// the `executions_fts` sync triggers so canonical writes can continue.
@@ -898,6 +919,7 @@ const ALLOWED_KEYS: &[&str] = &[
     SCRATCHPAD_ENABLED,
     SKILLS_SIDECAR_ENABLED,
     FLEET_COMPANION_DEVICES,
+    KP_BASE_URL,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -996,6 +1018,24 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // owed" — a silently dropped wake is exactly the failure the durable
         // row exists to prevent.
         ATTENTION_WAKE_REQUESTS => validate_json_wellformed(key, value),
+        // The scheme is checked because the consumer concatenates this value
+        // into a URL. A bare host would produce `127.0.0.1:3000/api/...`, which
+        // reqwest reads as a RELATIVE url and refuses at send time — a failure
+        // that surfaces as "the hire did not go through", hours later, with the
+        // configuration that caused it nowhere in the message.
+        KP_BASE_URL => {
+            let v = value.trim();
+            if v.is_empty() {
+                return Err(format!("value for '{key}' must not be empty"));
+            }
+            if !(v.starts_with("http://") || v.starts_with("https://")) {
+                return Err(format!(
+                    "value for '{key}' must be an absolute URL starting with http:// or https://, \
+                     got {value:?}"
+                ));
+            }
+            Ok(())
+        }
         COMPANION_FLEET_BOLDNESS => match value {
             "cautious" | "balanced" | "bold" => Ok(()),
             _ => Err(format!(
@@ -1311,7 +1351,13 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | EXECUTION_WORKTREE_ISOLATION
         | SCRATCHPAD_ENABLED
         | SKILLS_SIDECAR_ENABLED
-        | FILE_WATCHER_DEBOUNCE_MS => "engine",
+        | FILE_WATCHER_DEBOUNCE_MS
+        // Where an outbound hire is sent. Audited as engine configuration
+        // rather than as a credential: it holds no secret (the token is an
+        // environment variable), but changing it re-points every hire this
+        // install makes at a different kp, which an operator must be able to
+        // see in the audit trail.
+        | KP_BASE_URL => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
         | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD

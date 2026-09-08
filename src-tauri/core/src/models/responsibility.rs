@@ -417,6 +417,19 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub pacing: Option<ResponsibilityPacing>,
+    /// May a wake of this charter ask kp for a NEW ROLE — the decision plan's
+    /// `hires` verb?
+    ///
+    /// Absent (the overwhelming case) is `false`: hiring spends money and adds
+    /// a persona against the app-wide active cap, so it is opt-in per charter
+    /// rather than a capability every App Master gets by holding a mandate. The
+    /// other door is the charter's provenance — a charter adopted from the
+    /// `workforce-planning` recipe is a hiring charter by construction and does
+    /// not need the flag set by hand (see
+    /// `attention_decide::WORKFORCE_PLANNING_SLUG`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub can_hire: Option<bool>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.
