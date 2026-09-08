@@ -378,6 +378,56 @@ pub fn list_in_flight_tasks(
     })
 }
 
+/// How many of a project's fleet-dispatched tasks are still holding a LIVE
+/// session, judged by the fleet registry rather than by `dev_tasks.status`.
+///
+/// The distinction is the whole point. A fleet dispatch stamps its task
+/// `running` the moment the spawn returns a session id and nothing ever stamps
+/// it back — the session's own death is recorded in `fleet_sessions.state` by
+/// the staleness ticker, not in the task row. So `COUNT(*) WHERE status =
+/// 'running'` is a count of dispatches ever made, not of workers alive, and a
+/// drain built on it would stay blocked forever after the first wave.
+///
+/// `live_states` is the caller's vocabulary (`spawning` | `running` |
+/// `awaiting_input` | …), passed in the same way
+/// [`crate::repos::fleet_sessions::count_active_for_run_label`] takes it —
+/// `FleetSessionState` lives in the app crate and the db crate cannot see it.
+/// An empty slice returns `0` without querying: no live state means nothing can
+/// be live.
+///
+/// The `JOIN` is what makes this project-scoped. `fleet_sessions` carries no
+/// project column at all — only `run_label`, `run_id` and `cwd` — so the task
+/// row is the only thing that ties a session to a project.
+pub fn count_live_fleet_tasks(
+    pool: &DbPool,
+    project_id: &str,
+    live_states: &[&str],
+) -> Result<usize, AppError> {
+    if live_states.is_empty() {
+        return Ok(0);
+    }
+    timed_query!("dev_tasks", "dev_tasks::count_live_fleet_tasks", {
+        let conn = pool.get()?;
+        let placeholders = (0..live_states.len())
+            .map(|i| format!("?{}", i + 2))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT COUNT(*) AS n FROM dev_tasks t \
+             JOIN fleet_sessions s ON s.id = t.session_id \
+             WHERE t.project_id = ?1 AND t.status = 'running' \
+               AND s.state IN ({placeholders})"
+        );
+        let mut args: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(live_states.len() + 1);
+        args.push(&project_id);
+        for st in live_states {
+            args.push(st);
+        }
+        let n: i64 = conn.query_row(&sql, args.as_slice(), |r| r.get("n"))?;
+        Ok(n.max(0) as usize)
+    })
+}
+
 pub fn delete_task(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_tasks", "dev_tasks::delete_task", {
         let conn = pool.get()?;
@@ -551,3 +601,164 @@ pub fn retry_task(pool: &DbPool, task_id: &str) -> Result<DevTask, AppError> {
 #[cfg(test)]
 #[path = "tasks_page_tests.rs"]
 mod page_tests;
+
+/// G5: `count_live_fleet_tasks` reads the fleet REGISTRY, not `dev_tasks.status`.
+#[cfg(test)]
+mod live_fleet_task_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::repos::dev::projects;
+    use crate::repos::fleet_sessions;
+    use crate::PoolExt;
+
+    /// The states the dispatch cap treats as holding a slot.
+    const LIVE: [&str; 3] = ["spawning", "running", "awaiting_input"];
+
+    fn session(id: &str, state: &str) -> fleet_sessions::FleetSessionRow {
+        fleet_sessions::FleetSessionRow {
+            id: id.into(),
+            claude_session_id: format!("cs-{id}"),
+            cwd: "/tmp/p".into(),
+            project_label: "personas".into(),
+            name: None,
+            title: None,
+            args_json: "[]".into(),
+            mode: "headless".into(),
+            state: state.into(),
+            state_reason: None,
+            run_id: Some("run-1".into()),
+            run_label: Some("dispatch".into()),
+            created_at_ms: 1,
+            last_activity_ms: 1_000,
+        }
+    }
+
+    fn mk_project(pool: &DbPool, name: &str) -> String {
+        projects::create_project(
+            pool,
+            name,
+            &format!("/tmp/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id
+    }
+
+    /// A task in `project`, at `task_status`, bound to a session in `state`.
+    fn dispatched(pool: &DbPool, project: &str, n: usize, state: &str, task_status: &str) {
+        let sid = format!("sess-{project}-{n}");
+        fleet_sessions::upsert(pool, &session(&sid, state)).unwrap();
+        let t = create_task(
+            pool,
+            Some(project),
+            &format!("task {n} {state}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_task(
+            pool,
+            &t.id,
+            None,
+            None,
+            Some(task_status),
+            Some(Some(sid.as_str())),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    fn running_tasks(pool: &DbPool, project: &str) -> i64 {
+        // Through `PoolExt::conn` and by column NAME, like production code:
+        // the census counts a test's `pool.get().unwrap()` and `row.get(0)`
+        // the same way it counts a repo's, and a fixture is not a licence.
+        let conn = pool.conn("test::running_tasks").unwrap();
+        conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_tasks \
+             WHERE project_id = ?1 AND status = 'running'",
+            params![project],
+            |r| r.get("n"),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn a_task_whose_session_has_ended_stops_being_counted() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "one");
+        // Three dispatches, all still `status = 'running'` in dev_tasks —
+        // nothing ever stamps a task back when its session dies.
+        for (i, state) in ["running", "finished", "exited"].iter().enumerate() {
+            dispatched(&pool, &p, i, state, "running");
+        }
+
+        // Reading the task status alone would say three are in flight.
+        assert_eq!(
+            running_tasks(&pool, &p),
+            3,
+            "the task rows all still say running"
+        );
+
+        // The registry says one. That is the number the cap uses; without it a
+        // drain would stay blocked forever after the first wave.
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(), 1);
+    }
+
+    #[test]
+    fn every_live_state_holds_a_slot_including_awaiting_input() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "two");
+        for (i, state) in LIVE.iter().enumerate() {
+            dispatched(&pool, &p, i, state, "running");
+        }
+        assert_eq!(
+            count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(),
+            3,
+            "a session parked on a question is still a live process"
+        );
+    }
+
+    #[test]
+    fn the_count_is_scoped_to_one_project() {
+        let pool = init_test_db().unwrap();
+        let a = mk_project(&pool, "alpha");
+        let b = mk_project(&pool, "beta");
+        let c = mk_project(&pool, "gamma");
+        dispatched(&pool, &a, 0, "running", "running");
+        dispatched(&pool, &b, 1, "running", "running");
+        dispatched(&pool, &b, 2, "running", "running");
+        assert_eq!(count_live_fleet_tasks(&pool, &a, &LIVE).unwrap(), 1);
+        assert_eq!(count_live_fleet_tasks(&pool, &b, &LIVE).unwrap(), 2);
+        assert_eq!(count_live_fleet_tasks(&pool, &c, &LIVE).unwrap(), 0);
+    }
+
+    #[test]
+    fn a_queued_task_holds_no_slot_even_with_a_live_session_row() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "queued");
+        // Bound to a live session but never started: `queued` is not in flight.
+        dispatched(&pool, &p, 0, "running", "queued");
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(), 0);
+    }
+
+    /// An empty vocabulary short-circuits rather than building `IN ()`, which
+    /// SQLite rejects as a syntax error.
+    #[test]
+    fn no_live_states_means_nothing_is_live() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "empty");
+        dispatched(&pool, &p, 0, "running", "running");
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &[]).unwrap(), 0);
+    }
+}

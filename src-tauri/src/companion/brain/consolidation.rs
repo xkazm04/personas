@@ -1332,6 +1332,15 @@ mod tests {
     use crate::companion::brain::episodic::{self, EpisodeRole};
     use crate::companion::brain::semantic::{FactInput, FactScope};
     use crate::companion::brain::test_home::TestHome;
+    // Test-only repair, 2026-09-08 (sim-caps / G4-G5): five sites below call
+    // `Utc::now()` and nothing imported it, so the app crate's WHOLE lib-test
+    // binary did not compile at `be50081ce`. `cargo check` without
+    // `--all-targets` never sees test code — the Rust twin of the "tsc skips
+    // test files" hole — so every gate stayed green while no app-crate test
+    // could be run at all. Unrelated to this branch's work; repaired here only
+    // because a test binary that will not link is a test binary that verifies
+    // nothing.
+    use chrono::Utc;
 
     /// The sweep's throttle is a process-global atomic, so the tests that
     /// drive it must not run concurrently with each other.

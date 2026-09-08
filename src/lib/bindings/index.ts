@@ -5,6 +5,7 @@
 
 export type { AccessLevel } from "./AccessLevel";
 export type { ActiveChain } from "./ActiveChain";
+export type { ActivePersonaHeadroom } from "./ActivePersonaHeadroom";
 export type { AdoptAppMasterInput } from "./AdoptAppMasterInput";
 export type { AdoptedTeamPresetFailure } from "./AdoptedTeamPresetFailure";
 export type { AdoptedTeamPresetMember } from "./AdoptedTeamPresetMember";

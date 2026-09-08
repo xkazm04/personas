@@ -185,6 +185,14 @@ pub struct AppMasterAdoption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub last_note: Option<String>,
+    /// The app-wide active-persona population and its cap (G4), as measured
+    /// when this response was built.
+    ///
+    /// Reported on the state route because an App Master that is about to ask
+    /// kp for another role needs to see the ceiling BEFORE it asks — otherwise
+    /// the cap is only ever met as a refusal at the far end of a hire, after
+    /// the intake dialog, the compose and the human click.
+    pub active_personas: personas_engine::active_persona_cap::ActivePersonaHeadroom,
 }
 
 /// One unanswered ask, as the state route reports it.
@@ -538,6 +546,21 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
     let incumbent = find_incumbent(pool, &project.id, &desired_name)?;
     let created = incumbent.is_none();
 
+    // G4: the app-wide active-persona cap, checked before the first persona
+    // write on either branch. Both branches write `lifecycle = 'active'`, so an
+    // adoption with `enabled: true` lands inside the counted population; an
+    // adoption that leaves `enabled` alone (the default, and the shape a
+    // re-adoption usually takes) does not raise the count and is never refused.
+    let _ = match &incumbent {
+        Some(p) => personas_engine::active_persona_cap::check_enable_headroom(
+            pool,
+            &p.id,
+            input.enabled.unwrap_or(p.enabled),
+            Some(crate::db::models::PersonaLifecycle::Active.as_str()),
+        )?,
+        None => personas_engine::active_persona_cap::check_active_persona_headroom(pool, enabled)?,
+    };
+
     let persona = match incumbent {
         Some(p) => personas_repo::update(
             pool,
@@ -633,6 +656,10 @@ pub fn adopt(pool: &DbPool, input: &AdoptAppMasterInput) -> Result<AppMasterAdop
         // both paths, and a reader never has to ask which one produced it.
         open_asks: Vec::new(),
         last_note: None,
+        // Re-read rather than reusing the pre-write measurement: this adoption
+        // may have just consumed a slot, and a caller deciding whether to hire
+        // again must see the count AFTER its own effect.
+        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
     })
 }
 
@@ -884,6 +911,7 @@ pub fn current(pool: &DbPool, project: &str) -> Result<Option<AppMasterAdoption>
         notes: Vec::new(),
         open_asks,
         last_note,
+        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool)?,
     }))
 }
 
@@ -1213,5 +1241,180 @@ mod tests {
             !law.lines().any(|l| l.trim_start().starts_with("# ")),
             "a law body may not introduce a heading"
         );
+    }
+
+    // -- G4: the app-wide active-persona cap, at this door ------------------
+
+    /// Fill the roster to the cap with ordinary active personas, so the next
+    /// activation anywhere in the app is the one that crosses it.
+    fn fill_roster_to_cap(pool: &DbPool) {
+        let cap = personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT;
+        for i in 0..cap {
+            personas_repo::create(
+                pool,
+                CreatePersonaInput {
+                    name: format!("filler-{i}"),
+                    system_prompt: "You are a filler persona.".to_string(),
+                    enabled: Some(true),
+                    lifecycle: Some("active".to_string()),
+                    description: None,
+                    structured_prompt: None,
+                    icon: None,
+                    color: None,
+                    max_concurrent: None,
+                    timeout_ms: None,
+                    model_profile: None,
+                    max_budget_usd: None,
+                    max_turns: None,
+                    design_context: None,
+                    notification_channels: None,
+                    project_id: None,
+                },
+            )
+            .expect("filler persona");
+        }
+        assert!(
+            personas_engine::active_persona_cap::active_persona_headroom(pool)
+                .unwrap()
+                .is_full(),
+            "the roster is at the cap"
+        );
+    }
+
+    #[test]
+    fn adopting_an_enabled_app_master_at_the_cap_is_refused_with_both_numbers() {
+        let _home = TestHome::new("app_master_adopt");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
+        fill_roster_to_cap(&pool);
+
+        let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
+        body.enabled = Some(true);
+        let err = adopt(&pool, &body).expect_err("at the cap, an enabled adoption is refused");
+
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "a typed refusal, not an Internal: {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(msg.contains("10 of 10 active personas"), "{msg}");
+        assert!(msg.contains("max_active_personas"), "{msg}");
+
+        // Refused BEFORE the first write: no half-adopted App Master is left.
+        assert!(
+            current(&pool, &project.id).unwrap().is_none(),
+            "a refused adoption leaves no persona behind"
+        );
+    }
+
+    /// The cap bounds ACTIVE personas, not adoptions. An App Master adopted
+    /// switched OFF costs no slot, so the door stays open at the cap — the
+    /// operator can still prepare a project and enable it once a slot frees.
+    #[test]
+    fn adopting_a_disabled_app_master_at_the_cap_is_allowed() {
+        let _home = TestHome::new("app_master_adopt");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
+        fill_roster_to_cap(&pool);
+
+        // `enabled: None` is the door's own default (off).
+        let body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
+        let adoption = adopt(&pool, &body).expect("a disabled adoption costs no slot");
+        assert!(adoption.created);
+        assert_eq!(
+            adoption.active_personas.active,
+            personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT,
+            "the count did not move"
+        );
+    }
+
+    /// The invariant that makes the cap a limit rather than a trap: an App
+    /// Master that is ALREADY active can be re-adopted at the cap, because the
+    /// count cannot rise.
+    #[test]
+    fn re_adopting_an_already_active_app_master_at_the_cap_is_allowed() {
+        let _home = TestHome::new("app_master_adopt");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
+        seed_recipe(&pool, "accepted-idea-delivery", "Accepted idea delivery");
+
+        let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
+        body.enabled = Some(true);
+        let first = adopt(&pool, &body).expect("room for the first");
+        assert!(first.created);
+
+        // Now fill the rest of the roster: this App Master is one of the ten.
+        let cap = personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT;
+        for i in 0..(cap - 1) {
+            personas_repo::create(
+                &pool,
+                CreatePersonaInput {
+                    name: format!("filler-{i}"),
+                    system_prompt: "You are a filler persona.".to_string(),
+                    enabled: Some(true),
+                    lifecycle: Some("active".to_string()),
+                    description: None,
+                    structured_prompt: None,
+                    icon: None,
+                    color: None,
+                    max_concurrent: None,
+                    timeout_ms: None,
+                    model_profile: None,
+                    max_budget_usd: None,
+                    max_turns: None,
+                    design_context: None,
+                    notification_channels: None,
+                    project_id: None,
+                },
+            )
+            .unwrap();
+        }
+        assert!(
+            personas_engine::active_persona_cap::active_persona_headroom(&pool)
+                .unwrap()
+                .is_full()
+        );
+
+        // A re-adoption that adds a charter must still go through at the cap.
+        let mut body2 = request(
+            &project.id,
+            &[
+                ("codebase-architecture-review", Some(2)),
+                ("accepted-idea-delivery", None),
+            ],
+        );
+        body2.enabled = Some(true);
+        let second = adopt(&pool, &body2).expect("the incumbent keeps its own slot");
+        assert!(!second.created);
+        assert_eq!(second.persona_id, first.persona_id);
+        assert_eq!(second.charters.len(), 2);
+    }
+
+    /// The state route reports the ceiling, so a headless caller reading
+    /// `GET /dev-tools/app-master/{project}` sees it before it asks for a hire.
+    #[test]
+    fn the_state_route_reports_the_app_wide_roster() {
+        let _home = TestHome::new("app_master_adopt");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
+
+        let mut body = request(&project.id, &[("codebase-architecture-review", Some(2))]);
+        body.enabled = Some(true);
+        adopt(&pool, &body).expect("adopted");
+
+        let state = current(&pool, &project.id).unwrap().expect("an adoption");
+        assert_eq!(
+            state.active_personas.active, 1,
+            "the App Master itself is the one active persona"
+        );
+        assert_eq!(
+            state.active_personas.cap,
+            personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT
+        );
+        assert_eq!(state.active_personas.free(), 9);
     }
 }

@@ -589,6 +589,18 @@ pub fn instant_adopt_template_inner(
 
     let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
 
+    // G4: the app-wide active-persona cap. `create_persona_atomically` writes
+    // `enabled = 1` and lets `lifecycle` take its `'active'` default, so every
+    // adoption through this door lands one more persona inside the counted
+    // population — hence the unconditional `true`. Checked here, immediately
+    // before the transaction, so a refusal leaves nothing half-adopted.
+    //
+    // This is also the team-preset door: `engine::team_preset_adopter` adopts
+    // each preset member through this same function, so a preset that would
+    // take the roster past the cap stops at the member that crosses it rather
+    // than being gated once for the whole preset.
+    personas_engine::active_persona_cap::check_active_persona_headroom(&state.db, true)?;
+
     // Atomic create: persona + tools + triggers in one transaction
     let (mut response, _import_result) =
         super::n8n_transform::confirmation::create_persona_atomically(&state.db, &draft, None)?;
