@@ -74,6 +74,19 @@ async function up() {
     try { execSync(`taskkill /PID ${vite} /T /F`, { stdio: 'ignore' }); } catch { /* already gone */ }
     await sleep(1500);
   }
+  // Cargo caches its `rustc -vV` probe in `<target>/.rustc_info.json`, and a
+  // dev run killed mid-flight can leave that file corrupt. Every later cargo
+  // invocation in that target then dies with
+  // `rustc.exe -vV (exit code: 0xc0000142, STATUS_DLL_INIT_FAILED)` while the
+  // same rustc runs perfectly by hand, so the failure reads as a broken
+  // toolchain and costs hours. Measured 2026-09-08: five consecutive failures
+  // in the shared target, a fresh target dir green, and one `rm` of this file
+  // green again. Deleting it costs one re-probe; keeping a bad one costs the
+  // whole session.
+  try {
+    const probe = path.join(ROOT, 'src-tauri', 'target', '.rustc_info.json');
+    if (fs.existsSync(probe)) { fs.rmSync(probe, { force: true }); log('cleared the cached rustc probe (a killed dev run can corrupt it)'); }
+  } catch { /* best effort: a probe we cannot remove is not a reason to refuse to launch */ }
   const env = { ...process.env, PERSONAS_HEADLESS_BRIDGE: '1' };
   // The shared secret lives outside every repository, in ~/.personas/grande.env.json, and the
   // same value goes into kp's .env.local; the shell wins when it carries one.
