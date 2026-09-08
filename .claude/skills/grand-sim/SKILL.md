@@ -88,6 +88,10 @@ proposal decided with a reason; lessons landed.
   runs a delete against it.
 - Evidence over narration: every act's exit is a query, a file, or a process list, quoted in the
   act note.
+- At most two Rust builders compile at once against the shared cargo target, and every cargo
+  invocation stays under eight minutes; five at once each blocked on the lock past the tool
+  watchdog's ten-minute limit and all five were killed mid-run (2026-09-07). Resume, never
+  restart, a killed builder: its worktree holds its work.
 
 ## Owed to this skill (Act 0 in progress)
 
