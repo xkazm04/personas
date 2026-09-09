@@ -2,6 +2,45 @@
 
 ## Active
 
+### grande-rung3-scales — grande: rung 3 grantable (App Master merges), filers score effort/risk/impact, two sibling fixes merged
+- **[2026-09-09 09:36]**
+- **Paths:** `src-tauri/engine/src/app_master.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `src-tauri/src/commands/companion/approvals/app_master_hire.rs` · `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/prompt/assemble.rs` · `src-tauri/src/engine/dispatch.rs` · `src-tauri/src/engine/execution.rs`
+- **Status:** started
+
+- **[2026-09-09 09:06]**
+- **Paths:** `src-tauri/src/engine/dispatch.rs`
+- **Status:** started
+
+### sweep-commands-communication-sec — scan-sweep security-auditor over commands-communication (+ unmapped src-tauri/src/notifications.rs)
+- **[2026-09-07 22:47]**
+- **Paths:** `src-tauri/src/notifications.rs` · `src-tauri/src/commands/communication/**` · `src-tauri/src/engine/automation_runner.rs`
+- **Status:** started
+
+- **[2026-09-07 22:27]**
+- **Paths:** `src-tauri/src/engine/kp_hire_request.rs` · `src-tauri/src/engine/attention_decide.rs` · `src-tauri/src/engine/attention.rs` · `src-tauri/src/engine/app_master_hire.rs` · `src-tauri/src/engine/approval_exec_core.rs`
+- **Status:** started
+
+### grand-simulation-act0 — Grand Simulation Act 0: plan, gaps, headless services (caps, project creation, architect, channels, hire)
+- **[2026-09-07 22:12]**
+- **Paths:** `src-tauri/**` · `docs/architecture/grand-simulation.md` · `scripts/e2e/**` · `.claude/skills/grand-sim/**`
+- **Status:** started
+
+- **[2026-09-07 22:11]**
+- **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **Status:** started
+
+- **[2026-09-07 22:06]**
+- **Paths:** `src/features/agents/sub_connectors/**`
+- **Status:** started
+
+- **[2026-09-07 13:01]**
+- **Paths:** `scripts/gate/**` · `scripts/census/lib/engine.mjs` · `scripts/census/run-census.mjs` · `docs/architecture/warm-verification-service.md` · `docs/architecture/linux-fleet-filesystem.md` · `docs/architecture/README.md` · `tsconfig.json` · `package.json` · `lefthook.yml`
+- **Status:** started
+
+- **[2026-09-06 23:58]**
+- **Paths:** `scripts/templates/**` · `src-tauri/**` · `src/features/agents/**` · `docs/**`
+- **Status:** started
+
 - **[2026-09-06 11:29]**
 - **Paths:** `src-tauri/**` · `scripts/templates/transform-recipes-v2-to-v3.mjs` · `src/lib/bindings/**`
 
@@ -653,6 +692,18 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### grande-g30-rules-on-file — grande: triage rules run when a persona files or rates an idea (G30)
+
+### sim-hire — Grand Sim G2: outbound hire (Personas request_hire + kp POST /api/agents/hire-from-need) - worktree sim-hire
+
+### scan-sweep-agents-deployment-registry — scan-sweep registry-conformance over agents-deployment
+
+### sweep-agents-connectors-sec — scan-sweep security-auditor over agents-connectors
+
+### app-master-e2e-cycles — App Master headless adoption + e2e improvement cycles (recipes draft baseline, self-pacing, orchestration)
+
+### gate-daemon — Warm verification service (gate daemon) + Linux fleet plan
 
 ### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
 
