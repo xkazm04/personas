@@ -151,8 +151,9 @@ pub const RUNG_MAY_OPEN_PR: u8 = 2;
 /// branches and none pushed or opened a PR — obeying the prompt, which
 /// contradicted the mandate and won, because it is the prompt.
 ///
-/// The ceiling does not move: merge, a push to the default branch, branch
-/// protection and CI stay forbidden here exactly as the mandate states them.
+/// At this rung merge, a push to the default branch, branch protection and
+/// CI stay forbidden exactly as the mandate states them; the merge arrives one
+/// rung up, in [`worktree_merge_rule`].
 pub fn worktree_ship_rule(branch: &str, gh_authenticated: bool) -> String {
     let mut s = format!(
         "2. You MAY push your branch `{branch}` to the origin and open a pull \
@@ -172,9 +173,46 @@ for review, and say in your final line that the PR was not opened.\n",
     s
 }
 
+/// The App Master scope rung ([`crate::app_master::RUNG_MERGE`]) at which a
+/// worker merges its own verified branch into the project's default branch.
+///
+/// Granted by the owner's decision of 2026-09-09 ("the App Master merges"):
+/// with the merge forbidden to every persona, six App Masters raised nine
+/// who-merges asks in twelve hours, and the first delivery worker to hold
+/// rung 3 still stopped at a commit because this text — the prompt — said
+/// "you may NOT merge" and the prompt wins. Pinned to the engine's ladder by
+/// `the_merge_rung_matches_the_mandate`.
+pub const RUNG_MAY_MERGE: u8 = 3;
+
+/// Rule 2 for a worker dispatched at [`RUNG_MAY_MERGE`] or above.
+///
+/// The merge happens from the project's MAIN checkout, never by a checkout in
+/// the worker's own worktree: the default branch is checked out there already
+/// (a second worktree cannot hold it), and rule 1 forbids the switch anyway.
+/// There is no origin and no pull request on the projects this rung was
+/// granted for — the local default branch is the integration branch. What the
+/// gates refuse stays unmerged; the gates themselves, CI and deployment stay
+/// out of reach exactly as the mandate states them.
+pub fn worktree_merge_rule(branch: &str) -> String {
+    format!(
+        "2. Your scope rung is 3 (merge): merge authority on this project is its \
+App Master's own, and you act for it. When your change is complete and the \
+project's own tests and gates pass on `{branch}`: from the project's MAIN \
+checkout — the parent directory of what `git rev-parse --git-common-dir` prints \
+inside this worktree; never a `git checkout` here — run `git merge --no-ff \
+{branch}` into the default branch (a fast-forward is fine when it has not \
+moved), run the tests once more on the merged result, and delete the branch. \
+There is no origin to push to and no pull request to open: the local default \
+branch IS the integration branch. If a test or a gate is red, leave the branch \
+unmerged and name the gate in your final line. You may NOT change branch \
+protection, CI or a gate you run, and you may NOT deploy.\n"
+    )
+}
+
 /// [`unattended_worktree_guardrails`] with rule 2 decided by the dispatching
 /// charter's scope rung. Below [`RUNG_MAY_OPEN_PR`] the text is byte-identical
-/// to the rung-less variant.
+/// to the rung-less variant; at [`RUNG_MAY_OPEN_PR`] the worker may open the
+/// pull request; at [`RUNG_MAY_MERGE`] and above it merges.
 pub fn unattended_worktree_guardrails_at_rung(
     branch: &str,
     worktree_path: &str,
@@ -185,11 +223,12 @@ pub fn unattended_worktree_guardrails_at_rung(
     if rung < RUNG_MAY_OPEN_PR {
         return base;
     }
-    base.replacen(
-        RULE_2_NEVER_SHIP,
-        &worktree_ship_rule(branch, gh_authenticated),
-        1,
-    )
+    let rule_2 = if rung >= RUNG_MAY_MERGE {
+        worktree_merge_rule(branch)
+    } else {
+        worktree_ship_rule(branch, gh_authenticated)
+    };
+    base.replacen(RULE_2_NEVER_SHIP, &rule_2, 1)
 }
 
 /// Compose the full task text a headless unattended worker is seeded with.
@@ -546,6 +585,48 @@ mod tests {
     }
 
     #[test]
+    fn the_merge_rung_matches_the_mandate() {
+        assert_eq!(RUNG_MAY_MERGE, crate::app_master::RUNG_MERGE);
+        assert_eq!(RUNG_MAY_MERGE, crate::app_master::MAX_GRANTABLE_RUNG);
+    }
+
+    /// The owner's decision of 2026-09-09: a rung-3 worker merges its own
+    /// verified branch into the local default branch, from the main checkout,
+    /// and is told so in the same rule slot that used to forbid it.
+    #[test]
+    fn a_rung_three_worker_merges_its_verified_branch_from_the_main_checkout() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_MERGE,
+            false,
+        );
+        assert!(text.starts_with("Deliver idea 297f6ba4."));
+        assert!(text.contains("Your scope rung is 3 (merge)"), "{text}");
+        assert!(text.contains("git merge --no-ff autopilot/deliver-297f6ba4"));
+        assert!(text.contains("git rev-parse --git-common-dir"));
+        assert!(text.contains("never a `git checkout` here"));
+        assert!(text.contains("no pull request to open"));
+        // Neither ceiling below it survives in the text.
+        assert!(!text.contains("may NOT merge"), "{text}");
+        assert!(!text.contains("gh pr create"));
+        assert!(!text.contains("Do NOT push, do NOT merge"));
+        // What stays forbidden stays forbidden.
+        assert!(text.contains("may NOT change branch protection, CI or a gate you run"));
+        assert!(text.contains("may NOT deploy"));
+        // Every other rule is inherited untouched: the worktree rule 1 and
+        // the headless tail.
+        assert!(text.contains("checked out in an ISOLATED git worktree"));
+        assert!(text.contains("FLEET:DONE"));
+        // A rung above the ceiling reads the merge rule, not a higher one.
+        assert_eq!(
+            unattended_worktree_guardrails_at_rung("b", "p", 9, false),
+            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_MERGE, false),
+        );
+    }
+
+    #[test]
     fn a_low_rung_worker_reads_exactly_the_legacy_text() {
         for rung in [0u8, 1] {
             for gh in [true, false] {
@@ -618,10 +699,11 @@ mod tests {
         // The permission itself is still stated — the rung did not change.
         assert!(text.contains("gh pr create"));
         assert!(text.contains("may NOT merge"));
-        // A rung above 2 is not a lower ceiling: it reads the same rule.
-        assert_eq!(
-            unattended_worktree_guardrails_at_rung("b", "p", 9, false),
-            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, false),
+        // Rung 2 reads the PR rule and nothing above it; rung 3 has its own
+        // (`a_rung_three_worker_merges_its_verified_branch_from_the_main_checkout`).
+        assert!(
+            !unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, false)
+                .contains("git merge --no-ff")
         );
     }
 
