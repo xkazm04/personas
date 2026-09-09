@@ -73,6 +73,7 @@
     "analyze": "cross-env ANALYZE=true vite build",
     "check:budget": "node scripts/check-bundle-budget.mjs",
     "check:assets": "node scripts/optimize-assets.mjs --dry-run",
+    "capture:canvas": "node scripts/capture-canvas.mjs",
     "check:themes": "node scripts/check-themes.mjs",
     "audit:security": "bash scripts/security-audit.sh",
     "clean:rust": "cd src-tauri && cargo clean",

@@ -51,6 +51,53 @@ uvx --with httpx python tools/test-mcp/smoke_test.py
 
 ---
 
+## Seeing the app: canvas screenshots (`scripts/capture-canvas.mjs`)
+
+`/query` tells you what the DOM contains. It cannot tell you whether the result
+*looks* right, and for anything drawn into a `<canvas>` it cannot tell you
+anything at all. During the Mastermind 3D audition (2026-09-09) two real defects
+were invisible to every DOM assertion and were caught only by looking at a frame:
+a portfolio camera that framed ten projects into a third of the viewport, and
+per-project outlines that read as noise once repeated ten times. So visual
+verification is part of the loop for canvas work, not a nicety.
+
+```bash
+node scripts/capture-canvas.mjs --name strata-L0 --selector '.mm3d canvas'
+node scripts/capture-canvas.mjs --clean          # wipe the shot directory
+```
+
+Shots land in `tmp/canvas-shots/` (gitignored). **Every run clears that
+directory first**, so one step's frames can never be mistaken for the next
+step's — pass `--keep` when you deliberately want a before/after pair, and
+run `--clean` when you finish a step. The script also exports `captureCanvas()`
+and `clearShots()` for driver scripts that walk a UI and shoot each state.
+
+The capture happens **inside the page** — `toDataURL` in an `/eval`, with the
+base64 pulled back through `/query` in 280-character chunks (that endpoint
+truncates each element's text at 300). A WebGL canvas must be created with
+`preserveDrawingBuffer: true` or it reads back blank.
+
+### Do not reach for an OS screenshot instead
+
+Four OS-level routes were tried first and **every one produced a plausible image
+rather than an error**, which is what makes them expensive:
+
+| Approach | What you actually get |
+|---|---|
+| `PrintWindow(hwnd, hdc, PW_RENDERFULLCONTENT)` | A pure black bitmap of the right size. WebView2 stops compositing while the window is occluded. |
+| `SetForegroundWindow` + `CopyFromScreen` | A screenshot of **the terminal**. Windows refuses foreground activation from a background process; the failure is a return value nobody checks, and the grab then reads whatever is on top. |
+| `POST /screenshot` (this server) | A **whole-monitor** grab. It resolves the window by title substring and silently falls back to the primary monitor — and this window's title can be empty, and its HWND changes between runs. |
+| Any of the above, app on a second virtual desktop | Nothing. There is no on-screen pixel to grab. |
+
+`POST /screenshot` is still the right call when you want the whole window
+*including* the DOM chrome and you know the app is visible and titled. For a
+canvas, or for an app you cannot see, use the script.
+
+> PowerShell footnote, since two of the above were debugged through it:
+> variable names are **case-insensitive**, so a `$H` height parameter and a
+> `$h` window handle are one variable. That produced a 2400x65535 capture
+> before anyone noticed.
+
 ## Available Tools (23)
 
 ### Primitives (low-level)
