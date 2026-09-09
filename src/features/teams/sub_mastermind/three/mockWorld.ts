@@ -165,7 +165,7 @@ const DIM_SHAPE: Record<DimKey, { steps: number; tools: string[]; figure?: (scor
   db: { steps: 2, tools: ['Postgres 16', 'SQLite (WAL)', 'Supabase', 'Turso'], figure: (_s, h) => `${4 + Math.round(h * 30)} tables` },
   monitoring: { steps: 3, tools: ['Sentry', 'Grafana Cloud', 'Axiom', 'Better Stack'], figure: (s, h) => `${s > 0.75 ? Math.round(h * 3) : Math.round(h * 40)} open issues` },
   ci: { steps: 3, tools: ['GitHub Actions', 'GitLab CI', 'Actions + Renovate'], figure: (s) => `${Math.round(s * 12)}/12 green` },
-  tests: { steps: 3, tools: ['Vitest', 'Vitest + Playwright', 'cargo test', 'pytest'], figure: (s) => `${Math.round(20 + s * 65)}% coverage` },
+  tests: { steps: 3, tools: ['Vitest', 'Vitest + Playwright', 'cargo test', 'pytest'], figure: (s) => `${formatNumeric(20 + s * 65, 'percent', { precision: 0 })} coverage` },
   security: { steps: 3, tools: ['Dependabot + review', 'gitleaks + audit', 'Snyk'], figure: (s, h) => `${s > 0.7 ? 0 : 1 + Math.round(h * 3)} open` },
   hosting: { steps: 2, tools: ['Vercel', 'Fly.io', 'Alibaba ECS', 'AWS ECS', 'Cloudflare'], figure: (_s, h) => `v0.${1 + Math.round(h * 8)}` },
   auth: { steps: 0, tools: ['Clerk', 'Supabase Auth', 'OAuth (GitHub)', 'API key only'] },

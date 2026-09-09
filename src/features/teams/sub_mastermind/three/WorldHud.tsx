@@ -144,11 +144,18 @@ function Row({ k, children }: { k: string; children: ReactNode }) {
   );
 }
 
-function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
+/** A labelled score bar. `value` is NULLABLE on purpose: a score nobody has
+ *  measured is a real state, and a tile that cannot express it forces the call
+ *  site to destroy the difference — an unmeasured project would arrive here as
+ *  a 0 and render as a full-width empty bar reading "0%", which is a finding,
+ *  not an absence. Null renders an em dash and no bar at all. */
+function ScoreBar({ label, value, color }: { label: string; value: number | null; color: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-      <Row k={label}><Numeric value={value} unit="percent" precision={0} /></Row>
-      <div className="mm3d-bar" style={{ '--w-bar': color } as React.CSSProperties}><i style={{ width: `${value}%` }} /></div>
+      <Row k={label}>{value == null ? '—' : <Numeric value={value} unit="percent" precision={0} />}</Row>
+      {value != null && (
+        <div className="mm3d-bar" style={{ '--w-bar': color } as React.CSSProperties}><i style={{ width: `${value}%` }} /></div>
+      )}
     </div>
   );
 }

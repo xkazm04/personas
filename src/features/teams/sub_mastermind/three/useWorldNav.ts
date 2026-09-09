@@ -3,6 +3,8 @@
 // command pre-empts a running one.
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+
 import type { DimKey } from '../lib/dimRegistry';
 
 import { athenaScript, type AthenaCommand } from './athenaOps';
@@ -32,13 +34,21 @@ export function useWorldNav(world: World): WorldNav {
   useEffect(() => clearTimers, [clearTimers]);
 
   // Escape walks one layer up — the same key the 2D canvas uses to dismiss.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dispatch({ type: 'up' });
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  //
+  // Registered through the app's keyboard ladder rather than on `window`, so
+  // this handler has a DECLARED POSITION against everything else competing for
+  // Escape. At route priority it sits below every overlay, which is what makes
+  // a BaseModal raised over the world close itself instead of the world
+  // silently walking up a layer behind it. It also declines the key when there
+  // is nothing to leave (level 0), so a lower rung still gets its turn.
+  useAppKeyboard(
+    (e) => {
+      if (e.key !== 'Escape' || state.focus.level === 0) return false;
+      dispatch({ type: 'up' });
+      return true;
+    },
+    { priority: ROUTE_DECISION_PRIORITY },
+  );
 
   const runAthena = useCallback((cmd: AthenaCommand) => {
     clearTimers();
