@@ -537,7 +537,16 @@ async fn supervise(
                         if let Some(u) = CliUsage::from_line(&line) {
                             usage = Some(u);
                         }
+                        // The model's own words are never the provider's
+                        // signal: an App Master that writes "the session limit
+                        // that killed last wake's dispatch" in its decision is
+                        // reporting on a limit, not hitting one. Three real
+                        // dispatch decisions became one-hour pauses on
+                        // 2026-09-09 because this scan read the assistant
+                        // line. Only non-assistant stream lines (result,
+                        // system, bare text) can carry the cap.
                         if limit_line.is_none()
+                            && !is_assistant_line(&line)
                             && personas_engine::parser::is_session_limit_error(&line)
                         {
                             limit_line = Some(line);
@@ -651,7 +660,15 @@ fn detect_usage_limit(
     stderr_text: &str,
     assistant_text: &str,
 ) -> Option<UsageLimitPause> {
-    for source in [stdout_line.unwrap_or(""), stderr_text, assistant_text] {
+    // When the CLI surfaces the cap AS assistant text, that notice is the whole
+    // reply. A reply of any length that merely mentions a limit is the model
+    // talking about one, and pausing on it throws the decision away (G35).
+    let assistant_notice = if assistant_text.trim().chars().count() <= LIMIT_NOTICE_MAX_CHARS {
+        assistant_text
+    } else {
+        ""
+    };
+    for source in [stdout_line.unwrap_or(""), stderr_text, assistant_notice] {
         if source.is_empty() {
             continue;
         }
@@ -664,6 +681,23 @@ fn detect_usage_limit(
         }
     }
     None
+}
+
+/// The longest a provider's limit notice gets when it arrives as the assistant
+/// text. Anything longer is a reply that talks about limits, not a cap.
+const LIMIT_NOTICE_MAX_CHARS: usize = 200;
+
+/// A `type: "assistant"` stream-json line: the model speaking, which no limit
+/// detector may read as the provider speaking.
+fn is_assistant_line(line: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(line)
+        .ok()
+        .and_then(|v| {
+            v.get("type")
+                .and_then(|t| t.as_str())
+                .map(|t| t == "assistant")
+        })
+        .unwrap_or(false)
 }
 
 /// Strip stream-json wrapping and pull text deltas. Matches the
@@ -1026,6 +1060,41 @@ mod tests {
         // and nothing that isn't one
         assert!(detect_usage_limit(None, "rate limit exceeded, retrying", "").is_none());
         assert!(detect_usage_limit(None, "", "").is_none());
+    }
+
+    /// G35, 2026-09-09: three App Masters decided `{"dispatch":[...]}` and one
+    /// reason said "the session limit that killed last wake's dispatch has
+    /// reset". The detector read the model's words as the provider's and turned
+    /// each decision into an hour of silence. A reply that MENTIONS a limit is
+    /// not a limit notice; a limit notice is short and is the whole reply.
+    #[test]
+    fn a_decision_that_talks_about_a_limit_is_not_a_limit() {
+        let decision = format!(
+            "{{\"dispatch\":[{{\"charterId\":\"resp_1\",\"reason\":\"The session limit that              killed last wake's dispatch has reset; the delivery batch is the highest-value              item and the usage limit projection leaves room for it.\"}}],\"asks\":[],\"say\":\"{}\"}}",
+            "x".repeat(120)
+        );
+        assert!(decision.chars().count() > LIMIT_NOTICE_MAX_CHARS);
+        assert!(
+            detect_usage_limit(None, "", &decision).is_none(),
+            "assistant text"
+        );
+        // The same words inside the assistant stream line do not become the
+        // stdout limit line either.
+        let line = serde_json::json!({
+            "type": "assistant",
+            "message": {"role": "assistant", "content": [{"type": "text", "text": decision}]}
+        })
+        .to_string();
+        assert!(is_assistant_line(&line));
+        assert!(
+            personas_engine::parser::is_session_limit_error(&line),
+            "the vocabulary is there"
+        );
+        assert!(!is_assistant_line(
+            r#"{"type":"result","is_error":true,"result":"Claude AI usage limit reached|1736187600"}"#
+        ));
+        // A short notice, arriving as the whole assistant text, still pauses.
+        assert!(detect_usage_limit(None, "", "Claude AI usage limit reached|1736187600").is_some());
     }
 
     #[test]
