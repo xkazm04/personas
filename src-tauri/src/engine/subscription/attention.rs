@@ -3654,11 +3654,11 @@ async fn dispatch_decided_charter(
     item: &attention_decide::DecisionItem,
     ledger_id: &str,
 ) -> Result<serde_json::Value, AppError> {
-    // Which accepted idea (if any) this dispatch is FOR. Resolved before the
-    // spawn so the worker's brief can name it, and re-used after the spawn to
-    // mint the task row that tells the sensor it is in hand.
-    let idea = resolve_decided_idea(&state.db, charter, item);
-    let task = decided_task_text(charter, item, idea.as_deref());
+    // Which accepted ideas (if any) this dispatch is FOR. Resolved before the
+    // spawn so the worker's brief can name them, and re-used after the spawn to
+    // mint the task rows that tell the sensor they are in hand.
+    let ideas = resolve_decided_ideas(&state.db, charter, item);
+    let task = decided_task_text(charter, item, &ideas);
 
     let outcome = if charter.writes_code {
         dispatch_into_worktree(state, app, context, charter, &task).await
@@ -3687,65 +3687,114 @@ async fn dispatch_decided_charter(
         })
     };
 
-    // Only a dispatch that actually STARTED gets a task row. Minting one for a
+    // Only a dispatch that actually STARTED gets task rows. Minting one for a
     // failed spawn would tell the undispatched sensor the idea is in hand while
     // nothing is running — the exact lie the row exists to prevent.
-    match (outcome, idea) {
-        (Ok(mut stats), Some(idea_id)) => {
-            let task_id = mint_dispatch_task(&state.db, charter, &idea_id, &stats);
-            if let Some(id) = task_id {
-                stats["taskId"] = serde_json::Value::String(id);
+    match outcome {
+        Ok(mut stats) if !ideas.is_empty() => {
+            let mut task_ids: Vec<serde_json::Value> = Vec::new();
+            for idea_id in &ideas {
+                if let Some(id) = mint_dispatch_task(&state.db, charter, idea_id, &stats) {
+                    task_ids.push(serde_json::Value::String(id));
+                }
             }
-            stats["ideaId"] = serde_json::Value::String(idea_id);
+            // `ideaId` and `taskId` stay, holding the first of each: every
+            // reader written before a dispatch could carry a batch still finds
+            // the shape it expects, and the plural keys are what a batch-aware
+            // reader uses.
+            if let Some(first) = task_ids.first() {
+                stats["taskId"] = first.clone();
+            }
+            stats["taskIds"] = serde_json::Value::Array(task_ids);
+            stats["ideaId"] = serde_json::Value::String(ideas[0].clone());
+            stats["ideaIds"] = serde_json::Value::Array(
+                ideas
+                    .iter()
+                    .map(|i| serde_json::Value::String(i.clone()))
+                    .collect(),
+            );
             Ok(stats)
         }
-        (other, _) => other,
+        other => other,
     }
 }
 
-/// Resolve the accepted idea a decided dispatch is about, or `None`.
+/// Resolve every accepted idea a decided dispatch is about — empty when none.
 ///
 /// Only for the accepted-idea-delivery charter: every other charter's brief is
 /// about an area, not an item, and a hex-looking word in one of those must not
 /// mint a task row against an unrelated idea. `brief` is read before `reason`
-/// because the brief is where the plan says WHAT to do.
-fn resolve_decided_idea(
+/// because the brief is where the plan says WHAT to do; both are read, because
+/// a batch is usually argued in the reason and listed in the brief.
+///
+/// Several ideas, not one: an App Master batching work of one shape onto one
+/// branch is the case this exists for, and a batch whose extra ids resolve to
+/// nothing in the ledger is a batch the loop keeps re-offering. Bounded by
+/// [`attention_decide::MAX_DISPATCH_IDEAS`]; the surplus is dropped loudly
+/// rather than silently, because a plan that named ten wanted ten.
+fn resolve_decided_ideas(
     pool: &DbPool,
     charter: &attention_decide::DecisionCharter,
     item: &attention_decide::DecisionItem,
-) -> Option<String> {
+) -> Vec<String> {
     if charter.recipe_slug.as_deref() != Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG) {
-        return None;
+        return Vec::new();
     }
-    let project_id = charter
+    let Some(project_id) = charter
         .project_id
         .as_deref()
-        .filter(|p| !p.trim().is_empty())?;
-    let token = attention_decide::extract_idea_id_token(&item.brief)
-        .or_else(|| attention_decide::extract_idea_id_token(&item.reason));
-    let Some(token) = token else {
+        .filter(|p| !p.trim().is_empty())
+    else {
+        return Vec::new();
+    };
+
+    let mut tokens = attention_decide::extract_idea_id_tokens(&item.brief);
+    for t in attention_decide::extract_idea_id_tokens(&item.reason) {
+        if !tokens.contains(&t) {
+            tokens.push(t);
+        }
+    }
+    if tokens.is_empty() {
         tracing::info!(
             charter = %charter.id,
             "persona_attention: delivery dispatch names no idea id — no task row minted"
         );
-        return None;
-    };
-    match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, &token) {
-        Ok(Some(idea)) => Some(idea.id),
-        Ok(None) => {
+        return Vec::new();
+    }
+
+    let mut ideas: Vec<String> = Vec::new();
+    for token in &tokens {
+        if ideas.len() >= attention_decide::MAX_DISPATCH_IDEAS {
             tracing::info!(
-                charter = %charter.id, token = %token,
-                "persona_attention: delivery dispatch named an id that resolves to no idea \
-                 in this project — no task row minted"
+                charter = %charter.id, named = tokens.len(),
+                cap = attention_decide::MAX_DISPATCH_IDEAS,
+                "persona_attention: delivery dispatch named more ideas than one dispatch \
+                 may carry — the surplus keeps no task row and stays on the backlog"
             );
-            None
+            break;
         }
-        Err(e) => {
-            tracing::warn!(charter = %charter.id, token = %token, error = %e,
-                "persona_attention: idea lookup failed — no task row minted");
-            None
+        match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, token) {
+            // A token naming an idea already in the list is the same idea
+            // written twice (its uuid and its prefix, most often).
+            Ok(Some(idea)) => {
+                if !ideas.contains(&idea.id) {
+                    ideas.push(idea.id);
+                }
+            }
+            Ok(None) => {
+                tracing::info!(
+                    charter = %charter.id, token = %token,
+                    "persona_attention: delivery dispatch named an id that resolves to no idea \
+                     in this project — no task row minted"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(charter = %charter.id, token = %token, error = %e,
+                    "persona_attention: idea lookup failed — no task row minted");
+            }
         }
     }
+    ideas
 }
 
 /// Mint the `dev_tasks` row for a dispatch that has just started.
@@ -3985,7 +4034,7 @@ fn dispatch_worker_ended(
 fn decided_task_text(
     charter: &attention_decide::DecisionCharter,
     item: &attention_decide::DecisionItem,
-    idea_id: Option<&str>,
+    idea_ids: &[String],
 ) -> String {
     let mut s = format!(
         "Attention pass — advance your standing charter \"{}\", chosen by your own \
@@ -4015,7 +4064,7 @@ fn decided_task_text(
     {
         s.push_str(
             &crate::commands::infrastructure::app_master_writeback::write_back_brief(
-                project_id, idea_id,
+                project_id, idea_ids,
             ),
         );
     }
@@ -6896,11 +6945,12 @@ mod attention_tests {
             "r-delivery",
             &format!("Deliver idea {} end to end.", &idea_id[..8]),
         );
-        let resolved = resolve_decided_idea(&pool, &charter, &item).expect("the prefix resolves");
-        assert_eq!(resolved, idea_id);
+        let resolved = resolve_decided_ideas(&pool, &charter, &item);
+        assert_eq!(resolved, vec![idea_id.clone()]);
 
         let stats = serde_json::json!({ "charterId": "r-delivery", "sessionId": "sess-1" });
-        let task_id = mint_dispatch_task(&pool, &charter, &resolved, &stats).expect("task minted");
+        let task_id =
+            mint_dispatch_task(&pool, &charter, &resolved[0], &stats).expect("task minted");
 
         let task = crate::db::repos::dev_tools::get_task_by_id(&pool, &task_id).unwrap();
         assert_eq!(task.source_idea_id.as_deref(), Some(idea_id.as_str()));
@@ -6917,6 +6967,106 @@ mod attention_tests {
         );
     }
 
+    /// The defect two projects reported within five minutes on 2026-09-09:
+    /// batching six obligations of one shape onto one branch cleared the work
+    /// and left five of the six reading "accepted, no task" for ever, because
+    /// a dispatch resolved only the FIRST id its brief named. The sensor then
+    /// kept offering work that had already been finished.
+    #[test]
+    fn a_batched_delivery_dispatch_mints_a_row_for_every_idea_it_names() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "batch-app");
+        let ideas: Vec<String> = (0..3)
+            .map(|i| seed_accepted_idea(&pool, &pid, &format!("Contract obligation {i}")))
+            .collect();
+
+        assert_eq!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .len(),
+            3
+        );
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        // Prefixes, one line each, exactly as the prompt printed them — and one
+        // commit sha, which is hex-shaped and belongs to no idea.
+        let item = decide_item(
+            "r-delivery",
+            &format!(
+                "Batch these onto one branch: {}, {}, {}. Base is 1ed7e43c.",
+                &ideas[0][..8],
+                &ideas[1][..8],
+                &ideas[2][..8]
+            ),
+        );
+
+        let resolved = resolve_decided_ideas(&pool, &charter, &item);
+        assert_eq!(
+            resolved, ideas,
+            "every named id resolves, in order, and the sha resolves to nothing"
+        );
+
+        let stats = serde_json::json!({ "charterId": "r-delivery", "sessionId": "sess-b" });
+        for idea_id in &resolved {
+            mint_dispatch_task(&pool, &charter, idea_id, &stats).expect("task minted");
+        }
+
+        // The whole point: none of the three is offered again.
+        assert!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .is_empty(),
+            "a batch must silence the sensor for every idea it carried"
+        );
+
+        // And the worker is told to report each one separately — one verdict
+        // for six would leave five unreported and re-dispatched.
+        let text = decided_task_text(&charter, &item, &resolved);
+        for idea_id in &resolved {
+            assert!(
+                text.contains(&format!("/dev-tools/ideas/{idea_id}/outcome")),
+                "the brief must name every idea's write-back door"
+            );
+        }
+        assert!(text.contains("one call per idea"));
+    }
+
+    /// A plan that names more than one dispatch may carry keeps its cap: the
+    /// surplus stays on the backlog rather than being marked in hand by a
+    /// worker nobody asked to do it.
+    #[test]
+    fn a_batch_larger_than_the_cap_leaves_the_surplus_on_the_backlog() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "cap-app");
+        let n = attention_decide::MAX_DISPATCH_IDEAS + 2;
+        let ideas: Vec<String> = (0..n)
+            .map(|i| seed_accepted_idea(&pool, &pid, &format!("Item {i}")))
+            .collect();
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        let brief = ideas
+            .iter()
+            .map(|i| i[..8].to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let resolved = resolve_decided_ideas(&pool, &charter, &decide_item("r-delivery", &brief));
+
+        assert_eq!(resolved.len(), attention_decide::MAX_DISPATCH_IDEAS);
+        assert_eq!(
+            resolved,
+            ideas[..attention_decide::MAX_DISPATCH_IDEAS].to_vec(),
+            "the cap keeps the first named, not an arbitrary subset"
+        );
+    }
+
     #[test]
     fn only_the_delivery_charter_resolves_an_idea_from_its_brief() {
         let pool = init_test_db().unwrap();
@@ -6927,7 +7077,7 @@ mod attention_tests {
         // Another charter's brief may contain anything; it must not mint a row
         // against an idea it was not dispatched for.
         let other = decide_charter("r-kpi", Some(&pid), Some("project-kpi-stewardship"));
-        assert!(resolve_decided_idea(&pool, &other, &decide_item("r-kpi", &brief)).is_none());
+        assert!(resolve_decided_ideas(&pool, &other, &decide_item("r-kpi", &brief)).is_empty());
 
         // A delivery charter bound to no project has nothing to scope against.
         let unbound = decide_charter(
@@ -6935,7 +7085,7 @@ mod attention_tests {
             None,
             Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
         );
-        assert!(resolve_decided_idea(&pool, &unbound, &decide_item("r-d", &brief)).is_none());
+        assert!(resolve_decided_ideas(&pool, &unbound, &decide_item("r-d", &brief)).is_empty());
 
         // And an id from a DIFFERENT project does not resolve here.
         let other_pid = seed_project(&pool, "other-app");
@@ -6944,7 +7094,7 @@ mod attention_tests {
             Some(&other_pid),
             Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
         );
-        assert!(resolve_decided_idea(&pool, &delivery, &decide_item("r-d2", &brief)).is_none());
+        assert!(resolve_decided_ideas(&pool, &delivery, &decide_item("r-d2", &brief)).is_empty());
     }
 
     #[test]
@@ -6956,7 +7106,7 @@ mod attention_tests {
         );
         let item = decide_item("r-delivery", "Deliver it.");
 
-        let with_idea = decided_task_text(&charter, &item, Some("297f6ba4"));
+        let with_idea = decided_task_text(&charter, &item, &["297f6ba4".to_string()]);
         assert!(with_idea.contains("PERSONAS WRITE-BACK"));
         assert!(with_idea.contains("/dev-tools/ideas/297f6ba4/outcome"));
         assert!(with_idea.contains("proj-77"));
@@ -6968,7 +7118,7 @@ mod attention_tests {
         // A charter bound to no project gets no door (there is nothing to
         // write back TO), and must not be handed a half-formed one.
         let unbound = decide_charter("r-x", None, None);
-        let text = decided_task_text(&unbound, &item, None);
+        let text = decided_task_text(&unbound, &item, &[]);
         assert!(!text.contains("PERSONAS WRITE-BACK"));
     }
 

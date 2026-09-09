@@ -1584,24 +1584,45 @@ pub(crate) fn newest_coverage_note<'a>(
         .map(|(_, n)| n.to_string())
 }
 
-/// The recipe whose runs deliver ONE accepted backlog idea. A dispatch of this
-/// charter is the only one that has an idea to write back about, which is why
-/// it is the only one that mints a `dev_tasks` row at dispatch time.
+/// The recipe whose runs deliver accepted backlog ideas. A dispatch of this
+/// charter is the only one that has ideas to write back about, which is why it
+/// is the only one that mints `dev_tasks` rows at dispatch time.
 pub(crate) const ACCEPTED_IDEA_DELIVERY_SLUG: &str = "accepted-idea-delivery";
 
-/// Pull the idea id a decision's own words name, if any.
+/// How many accepted ideas ONE delivery dispatch may carry.
+///
+/// A brief that names several ids is the App Master batching work of one shape
+/// onto one branch — the case two projects asked for on 2026-09-09. A brief
+/// that names twenty is a plan that has stopped choosing, and minting twenty
+/// task rows against one worker would put the same lie in the ledger from the
+/// other direction: work marked in hand that nobody is on. Six is the largest
+/// batch either project proposed.
+pub(crate) const MAX_DISPATCH_IDEAS: usize = 6;
+
+/// Pull EVERY idea id a decision's own words name: full uuids in the order
+/// they appear, then bare prefixes in the order they appear.
 ///
 /// The decision prompt lists undispatched ideas as `- <id>: <title>`, so a plan
-/// that picked one usually echoes the id — sometimes the full uuid, sometimes
-/// the 8-char prefix the app prints everywhere. Both are accepted; a full uuid
-/// wins over a bare prefix when both appear.
+/// that picked some of them echoes their ids — sometimes the full uuid,
+/// sometimes the 8-char prefix the app prints everywhere.
 ///
-/// Pure and deliberately permissive: this only produces a CANDIDATE. The caller
-/// resolves it against `dev_ideas` scoped to the project, so a hex-looking word
-/// that is not an id simply fails to resolve and costs nothing. Being strict
-/// here instead would mean rejecting the real id whenever the model wrapped it
-/// in punctuation.
-pub(crate) fn extract_idea_id_token(text: &str) -> Option<String> {
+/// The plural form exists because a delivery brief may batch several ideas of
+/// one shape onto one branch. Reading only the first was correct while a
+/// dispatch could carry one idea and became a silent lie the moment it could
+/// carry six: the work would be done and five ideas would still read
+/// "accepted, no task", so the sensor that tells an App Master it is starving
+/// would keep counting work it had already finished.
+///
+/// Full uuids and bare 8..32-char hex prefixes are both accepted, and a full
+/// uuid still wins over a bare prefix — but only over the SAME id's prefix, so
+/// the winner is decided per token rather than for the whole brief. Duplicates
+/// collapse: naming an id twice is emphasis, not two ideas.
+///
+/// Pure and deliberately permissive: these are CANDIDATES. The caller resolves
+/// each against `dev_ideas` scoped to the project, so a hex-looking word that
+/// is not an id — a commit sha, most often — simply fails to resolve and costs
+/// nothing.
+pub(crate) fn extract_idea_id_tokens(text: &str) -> Vec<String> {
     let is_hex = |c: char| c.is_ascii_hexdigit();
     let looks_like_uuid = |t: &str| {
         t.len() == 36
@@ -1614,22 +1635,41 @@ pub(crate) fn extract_idea_id_token(text: &str) -> Option<String> {
             })
     };
 
-    let mut prefix: Option<String> = None;
+    let mut uuids: Vec<String> = Vec::new();
+    let mut prefixes: Vec<String> = Vec::new();
     for raw in text.split(|c: char| !(is_hex(c) || c == '-')) {
         let tok = raw.trim_matches('-');
         if tok.is_empty() {
             continue;
         }
         if looks_like_uuid(tok) {
-            return Some(tok.to_ascii_lowercase());
+            let t = tok.to_ascii_lowercase();
+            if !uuids.contains(&t) {
+                uuids.push(t);
+            }
+            continue;
         }
         // A bare prefix: 8..32 hex chars, no dashes. Shorter than 8 is not
         // something anybody printed, and longer than 32 is not a uuid's hex.
-        if prefix.is_none() && (8..=32).contains(&tok.len()) && tok.chars().all(is_hex) {
-            prefix = Some(tok.to_ascii_lowercase());
+        if (8..=32).contains(&tok.len()) && tok.chars().all(is_hex) {
+            let t = tok.to_ascii_lowercase();
+            if !prefixes.contains(&t) {
+                prefixes.push(t);
+            }
         }
     }
-    prefix
+
+    // A uuid and its own prefix name one idea, so the prefix is dropped. A
+    // prefix of some OTHER id is a second idea and survives — which is the
+    // whole reason the two lists are merged rather than one shadowing the
+    // other.
+    let mut out = uuids;
+    for p in prefixes {
+        if !out.iter().any(|u| u.starts_with(&p)) {
+            out.push(p);
+        }
+    }
+    out
 }
 
 // ── An ask, as a review row ───────────────────────────────────────────────
@@ -2067,8 +2107,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                  (1 documentation or a reversible local change · 2 code behind a test · \
                  3 touches a route, a contract or a schema · 4 touches ledger, settlement \
                  or security semantics · 5 irreversible or external) — risk 1-2 is then \
-                 accepted by the project's rule without a human. The filer scores; you, \
-                 as the owner, group the accepted backlog by your own judgement.\n",
+                 accepted by the project's rule without a human. The filer scores.\n",
             );
         }
         if !p.undispatched_ideas.is_empty() {
@@ -2084,6 +2123,23 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             for (id, title) in &p.undispatched_ideas {
                 s.push_str(&format!("    - {id}: {title}\n"));
             }
+            // Unconditional, and it used to hang off the unrated branch above —
+            // so a project that did the right thing and scored its whole
+            // backlog lost the sentence telling it that the order was its own
+            // to choose, and went back to asking a human which item to deliver.
+            // Two projects did exactly that within five minutes on 2026-09-09.
+            // Authority a persona is only told about while it is behind is not
+            // authority.
+            s.push_str(&format!(
+                "  The order is YOURS: there is no priority key and none is coming — \
+                 you group and drain this backlog by your own judgement of effort, \
+                 impact and risk, and you do not need to ask which to take next. \
+                 A delivery brief may name up to {MAX_DISPATCH_IDEAS} of these ids \
+                 when they are one shape and belong on one branch; each id you name \
+                 gets its own task row and its own outcome to report, so a batch \
+                 leaves nothing behind reading \"accepted, no task\". Name only what \
+                 the run will really finish.\n"
+            ));
         }
         if p.in_flight_tasks.is_empty() {
             s.push_str("  in flight: nothing\n");
@@ -2652,7 +2708,7 @@ mod tests {
         assert_eq!(a.title, "27 ideas are waiting on your triage");
         assert_eq!(a.why, "delivery starves without accepts");
         // Ids are normalised to lower case so the DB prefix match is not
-        // case-dependent — the same rule `extract_idea_id_token` follows.
+        // case-dependent — the same rule `extract_idea_id_tokens` follows.
         assert_eq!(a.idea_ids, vec!["297f6ba4", "deadbeef12"]);
         assert_eq!(a.options, vec!["Accept all", "Let me pick"]);
 
@@ -3025,39 +3081,86 @@ mod tests {
 
     // -- idea-id extraction (pure) ------------------------------------------
 
+    /// The first candidate only. Production reads every id a brief names; these
+    /// cases are about which one comes FIRST, which is the property the
+    /// single-idea era depended on and the batch era must not break.
+    fn first_idea_id_token(text: &str) -> Option<String> {
+        extract_idea_id_tokens(text).into_iter().next()
+    }
+
     #[test]
     fn extract_idea_id_prefers_a_full_uuid_and_accepts_a_printed_prefix() {
         let uuid = "297f6ba4-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
         assert_eq!(
-            extract_idea_id_token(&format!("Deliver idea {uuid} on its own branch.")),
+            first_idea_id_token(&format!("Deliver idea {uuid} on its own branch.")),
             Some(uuid.to_string())
         );
         // The 8-char prefix the app prints everywhere.
         assert_eq!(
-            extract_idea_id_token("Deliver the accepted idea 297f6ba4 (the retry helper)."),
+            first_idea_id_token("Deliver the accepted idea 297f6ba4 (the retry helper)."),
             Some("297f6ba4".into())
         );
         // A full uuid beats a bare prefix even when the prefix comes first.
         assert_eq!(
-            extract_idea_id_token(&format!("deadbeef … but really {uuid}")),
+            first_idea_id_token(&format!("deadbeef … but really {uuid}")),
             Some(uuid.to_string())
         );
         // Case is normalised so the DB prefix match is not case-dependent.
         assert_eq!(
-            extract_idea_id_token("idea 297F6BA4"),
+            first_idea_id_token("idea 297F6BA4"),
             Some("297f6ba4".into())
         );
     }
 
     #[test]
     fn extract_idea_id_returns_nothing_when_the_brief_names_no_id() {
-        assert_eq!(extract_idea_id_token(""), None);
+        assert_eq!(first_idea_id_token(""), None);
         assert_eq!(
-            extract_idea_id_token("Review the overview dashboard and tighten its loading states."),
+            first_idea_id_token("Review the overview dashboard and tighten its loading states."),
             None
         );
         // Too short to be anything anybody printed.
-        assert_eq!(extract_idea_id_token("see face and bad"), None);
+        assert_eq!(first_idea_id_token("see face and bad"), None);
+        assert!(extract_idea_id_tokens("see face and bad").is_empty());
+    }
+
+    #[test]
+    fn extract_idea_id_tokens_reads_a_whole_batch_and_collapses_repeats() {
+        let uuid = "297f6ba4-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
+
+        // The shape an App Master actually writes when it batches.
+        assert_eq!(
+            extract_idea_id_tokens(
+                "Batch c285ef9f, 9b85968e and d394346a onto one branch (base 1ed7e43c)."
+            ),
+            vec!["c285ef9f", "9b85968e", "d394346a", "1ed7e43c"],
+            "every hex-shaped token is a CANDIDATE; the sha is dropped by failing \
+             to resolve, not by being guessed at here"
+        );
+
+        // A uuid and its own prefix are one idea written twice, not two.
+        assert_eq!(
+            extract_idea_id_tokens(&format!("{uuid} — that is 297f6ba4")),
+            vec![uuid.to_string()]
+        );
+
+        // A prefix of a DIFFERENT id survives beside a full uuid.
+        assert_eq!(
+            extract_idea_id_tokens(&format!("{uuid} and also deadbeef")),
+            vec![uuid.to_string(), "deadbeef".to_string()]
+        );
+
+        // Naming one id twice is emphasis.
+        assert_eq!(
+            extract_idea_id_tokens("297f6ba4 … and again 297F6BA4"),
+            vec!["297f6ba4".to_string()]
+        );
+
+        // The singular reader keeps its old answer in every case above.
+        assert_eq!(
+            first_idea_id_token(&format!("deadbeef … but really {uuid}")),
+            Some(uuid.to_string())
+        );
     }
 
     #[test]
@@ -3126,6 +3229,30 @@ mod tests {
         let clean = render_decision_prompt(&ctx_fixture());
         assert!(clean.contains("pending ideas: 4 (unrated: 0)"));
         assert!(!clean.contains("unrated ideas are never auto-accepted"));
+    }
+
+    /// The owner decided on 2026-09-09 that the App Master groups and drains
+    /// its own backlog, and the sentence saying so hung off the UNRATED
+    /// branch — so a project that scored its whole backlog lost the only
+    /// place it was told the order was its own, and went back to asking a
+    /// human which item to take next. Two did, five minutes apart. This is
+    /// the regression test for authority that only appears while a persona
+    /// is behind.
+    #[test]
+    fn prompt_grants_the_backlog_order_whether_or_not_anything_is_unrated() {
+        for unrated in [0_usize, 3] {
+            let mut ctx = ctx_fixture();
+            ctx.projects[0].unrated_pending_idea_count = unrated;
+            let p = render_decision_prompt(&ctx);
+            assert!(
+                p.contains("The order is YOURS"),
+                "unrated={unrated}: the standing grant must not depend on the backlog's state"
+            );
+            assert!(p.contains("you do not need to ask which to take next"));
+            // And the batching allowance travels with it, since a batch is how
+            // the order gets drained faster than one item per wake.
+            assert!(p.contains(&format!("may name up to {MAX_DISPATCH_IDEAS} of these ids")));
+        }
     }
 
     /// The CAPACITY line must show the persona WHERE its missing slots went.

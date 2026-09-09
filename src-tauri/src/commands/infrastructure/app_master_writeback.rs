@@ -591,7 +591,7 @@ pub fn record_kpi_reading(
 /// earn its place. It names the handshake file, the header, the four routes and
 /// the one rule — because a worker that cannot find the door does not write
 /// back, and cycle 1 measured exactly that outcome.
-pub fn write_back_brief(project_id: &str, idea_id: Option<&str>) -> String {
+pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
     let mut s = String::from(
         "\nPERSONAS WRITE-BACK — your run is not finished until the outcome is written back.\n\
          The app publishes a handshake at ~/.personas/local-http.json with `port` and `token`.\n\
@@ -599,7 +599,7 @@ pub fn write_back_brief(project_id: &str, idea_id: Option<&str>) -> String {
          a base of http://127.0.0.1:<port>/dev-tools\n",
     );
     s.push_str(&format!("Your project_id is {project_id}.\n"));
-    if let Some(idea) = idea_id {
+    if let [idea] = idea_ids {
         s.push_str(&format!(
             "Your idea_id is {idea}. Report it EXACTLY once, when you stop:\n\
              - POST /dev-tools/ideas/{idea}/outcome \
@@ -610,6 +610,33 @@ pub fn write_back_brief(project_id: &str, idea_id: Option<&str>) -> String {
              Add \"pr_url\":\"<url>\" to that call when you opened a pull request — \
              it is how the next wake sees the PR at all.\n"
         ));
+    } else if !idea_ids.is_empty() {
+        // A batch. Each idea carries its own row and its own sensor entry, so
+        // each needs its own verdict: one call covering six would leave five
+        // reading "accepted, no task" while the work was done, which is the
+        // exact miscount batching was allowed in order to fix. The verdicts
+        // may differ — delivering four of six and blocking two is a good
+        // outcome honestly reported, and better than one verdict averaged
+        // over six.
+        s.push_str(&format!(
+            "This run carries {} accepted ideas, batched onto one branch. \
+             Report EACH of them EXACTLY once, when you stop — one call per idea, \
+             with its own verdict:\n",
+            idea_ids.len()
+        ));
+        for idea in idea_ids {
+            s.push_str(&format!("- POST /dev-tools/ideas/{idea}/outcome\n"));
+        }
+        s.push_str(
+            "Each call takes {\"outcome\":\"delivered\",\"note\":\"what shipped\",\
+             \"branch\":\"...\",\"commit\":\"...\"} — or \
+             {\"outcome\":\"declined\",\"note\":\"why this should not be built\"} — or \
+             {\"outcome\":\"blocked\",\"note\":\"what stopped you\"}. \
+             Add \"pr_url\":\"<url>\" when you opened a pull request; it is how the \
+             next wake sees the PR at all.\n\
+             Do not report one verdict for the batch. An idea you finished and did \
+             not report stays on the backlog for ever and will be dispatched again.\n",
+        );
     }
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
@@ -674,7 +701,7 @@ mod tests {
 
     #[test]
     fn the_brief_names_every_route_and_the_project() {
-        let s = write_back_brief("proj-42", Some("297f6ba4"));
+        let s = write_back_brief("proj-42", &["297f6ba4".to_string()]);
         for needle in [
             "proj-42",
             "297f6ba4",
@@ -701,10 +728,36 @@ mod tests {
 
     #[test]
     fn a_brief_without_an_idea_omits_the_outcome_route() {
-        let s = write_back_brief("proj-42", None);
+        let s = write_back_brief("proj-42", &[]);
         assert!(!s.contains("/outcome"));
         assert!(s.contains("proj-42"));
         assert!(s.contains("POST /dev-tools/kpis "));
+    }
+
+    /// A batched run carries several ideas and each one owns a task row and a
+    /// sensor entry, so each needs its own verdict. One call covering six
+    /// would leave five reading "accepted, no task" while the work was done —
+    /// the miscount batching was allowed in order to fix.
+    #[test]
+    fn a_batched_brief_names_every_idea_and_asks_for_a_verdict_each() {
+        let ids: Vec<String> = ["c285ef9f", "9b85968e", "d394346a"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let s = write_back_brief("proj-42", &ids);
+        assert!(s.contains("carries 3 accepted ideas"));
+        assert!(s.contains("one call per idea"));
+        for id in &ids {
+            assert!(
+                s.contains(&format!("/dev-tools/ideas/{id}/outcome")),
+                "the batched brief must name `{id}`:
+{s}"
+            );
+        }
+        assert!(
+            s.contains("Do not report one verdict for the batch"),
+            "the failure mode has to be named, not implied"
+        );
     }
 
     // ── Outcomes ──────────────────────────────────────────────────────────
