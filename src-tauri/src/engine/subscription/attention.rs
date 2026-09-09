@@ -2191,7 +2191,19 @@ fn project_snapshot(
 /// caller treats that as "no floor" / "stale", loudly — the sleep_cycle
 /// gauge precedent: a bad timestamp must not wedge the loop forever).
 fn minutes_since_ts(ts: &str) -> Option<i64> {
-    match chrono::DateTime::parse_from_rfc3339(ts) {
+    // Two shapes reach here: the RFC-3339 the Rust side writes, and the
+    // `YYYY-MM-DD HH:MM:SS` that SQLite's `datetime('now')` writes on every
+    // channel message (G36, 2026-09-09). Until the second was accepted, every
+    // channel line in the decision prompt carried no age, so a directive from
+    // three days ago read exactly like one from two minutes ago, and the loop
+    // logged twenty-one warnings a tick about it.
+    let parsed = chrono::DateTime::parse_from_rfc3339(ts)
+        .map(|t| t.with_timezone(&chrono::Utc))
+        .or_else(|_| {
+            chrono::NaiveDateTime::parse_from_str(ts, "%Y-%m-%d %H:%M:%S")
+                .map(|naive| naive.and_utc())
+        });
+    match parsed {
         Ok(t) => Some(
             chrono::Utc::now()
                 .signed_duration_since(t)
@@ -4732,6 +4744,17 @@ mod attention_tests {
         // A future timestamp clamps to 0 rather than going negative.
         let future = (chrono::Utc::now() + chrono::Duration::minutes(10)).to_rfc3339();
         assert_eq!(minutes_since_ts(&future), Some(0));
+    }
+
+    /// G36: channel messages are stamped by SQLite's `datetime('now')`, which
+    /// is UTC without a zone or a `T`. The prompt showed them with no age.
+    #[test]
+    fn minutes_since_reads_sqlite_datetime_now_as_utc() {
+        let sqlite = (chrono::Utc::now() - chrono::Duration::minutes(90))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        let m = minutes_since_ts(&sqlite).unwrap();
+        assert!((89..=91).contains(&m), "{m}");
     }
 
     // -- pure: lane chooser --------------------------------------------------
