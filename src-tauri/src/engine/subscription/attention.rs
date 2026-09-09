@@ -215,6 +215,16 @@ pub struct AttentionSubscription {
     pub state: Arc<crate::AppState>,
 }
 
+/// Whether the quota stop has already been announced.
+///
+/// A stopped loop keeps ticking every five minutes for as long as the window
+/// takes to reset — up to seven days for the weekly one — and a warning per
+/// tick would bury the one line that matters under two thousand copies of
+/// itself. Announced on the way in and once again on the way out, so the log
+/// carries the two events rather than the state.
+static USAGE_STOP_ANNOUNCED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 #[async_trait::async_trait]
 impl ReactiveSubscription for AttentionSubscription {
     fn name(&self) -> &'static str {
@@ -247,6 +257,38 @@ impl ReactiveSubscription for AttentionSubscription {
     }
 
     async fn tick(&self) {
+        // The quota governor runs BEFORE the plan, not after it. A tick that
+        // planned first would mark personas served and write refusal rows for
+        // a pass it then could not dispatch — the wake would be spent on the
+        // ceiling rather than on work. Reading the gauge is a cached HTTP
+        // call, at most one per 45 s across the whole process.
+        let verdict = super::usage_governor::verdict(&self.pool).await;
+        let stop = super::usage_governor::stop_pct(&self.pool);
+        if verdict.blocked {
+            // Once per transition into the stop, not once per tick: a stopped
+            // loop ticks every five minutes for however long the window takes
+            // to reset, and a line each time would bury the one that matters.
+            if !USAGE_STOP_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                tracing::warn!(
+                    window = verdict.worst_key.as_deref().unwrap_or("unknown"),
+                    utilization_pct = verdict.worst_pct,
+                    stop_pct = stop,
+                    resets_in_minutes = verdict.resets_in_minutes,
+                    "persona_attention: quota governor STOPPED dispatch — the subscription \
+                     window is at the stop threshold; the loop resumes on its own when the \
+                     window resets, or sooner if the operator switches accounts"
+                );
+            }
+            return;
+        }
+        if USAGE_STOP_ANNOUNCED.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            tracing::info!(
+                window = verdict.worst_key.as_deref().unwrap_or("unknown"),
+                utilization_pct = verdict.worst_pct,
+                "persona_attention: quota governor released — dispatch resumes"
+            );
+        }
+
         // Plan on the blocking pool (rusqlite is sync — the GoalAdvance
         // idiom; `run_blocking_tick` cannot hand a value back). A panic in
         // the plan re-propagates so run_single's catch_unwind still records
@@ -266,6 +308,8 @@ impl ReactiveSubscription for AttentionSubscription {
         };
         if counts.personas > 0 {
             // One aggregate narration per tick (the ProbationSummary idiom).
+            // `quota` carries the expectation: which window is closest to the
+            // stop, and how long the loop has left at the measured burn rate.
             tracing::info!(
                 personas = counts.personas,
                 refused = counts.refused,
@@ -275,6 +319,7 @@ impl ReactiveSubscription for AttentionSubscription {
                 lane = counts.dispatched.unwrap_or("none"),
                 dispatches = counts.dispatches,
                 budget = counts.budget,
+                quota = %verdict.summary(stop),
                 "persona_attention: tick summary"
             );
         }

@@ -49,6 +49,7 @@ mod builtin;
 mod desktop;
 mod runner;
 mod traits;
+mod usage_governor;
 mod wake;
 mod watchdogs;
 
