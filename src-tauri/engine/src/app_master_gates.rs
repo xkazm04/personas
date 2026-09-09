@@ -1546,6 +1546,49 @@ impl BorrowedEnv {
     }
 }
 
+/// The marker naming the ONE worktree currently borrowing a source
+/// checkout's `target/`. Lives inside that `target/`, so `cargo clean` takes
+/// it with everything else it describes.
+const TARGET_BORROW_MARKER: &str = ".personas-borrowed-by";
+
+/// Claim a source checkout's `target/` for exactly one worktree at a time.
+///
+/// G33, found by an App Master on 2026-09-09 and confirmed in this module.
+/// `target` is the only borrowed directory that is build OUTPUT rather than an
+/// installed input, and cargo keys its artifacts by package, profile and
+/// features — not by source path. So two worktrees of one crate sharing this
+/// directory overwrite each other's binaries: `cargo test` in bank-core
+/// answered 8, then 14, once 19 from an unchanged clean tree, and the 14-test
+/// binary's tests existed on no branch. It failed UPWARD, reporting more tests
+/// passing, which is the direction nobody checks — and it is the instrument a
+/// rung-3 worker's merge decision rests on.
+///
+/// The fast path is kept for the common case: the first worktree borrows and
+/// reuses the whole compile cache. A second, concurrent worktree is refused
+/// and builds into its own `target/` — slower, and correct. A claim whose
+/// worktree no longer exists is stale and is taken over, so a crashed run
+/// never strands the borrow.
+fn claim_shared_target(source_target: &Path, worktree: &Path) -> bool {
+    let marker = source_target.join(TARGET_BORROW_MARKER);
+    let mine = worktree.to_string_lossy().to_string();
+    match std::fs::read_to_string(&marker) {
+        Ok(holder) => {
+            let holder = holder.trim();
+            // Ours already (a re-borrow), or the holder is gone.
+            if holder == mine || holder.is_empty() || !Path::new(holder).exists() {
+                let _ = std::fs::write(&marker, &mine);
+                true
+            } else {
+                false
+            }
+        }
+        // No marker yet — write it and take the borrow. A racing writer at the
+        // same instant loses only the fast path, never correctness: the loser
+        // sees a live holder on its own next read and builds locally.
+        Err(_) => std::fs::write(&marker, &mine).is_ok(),
+    }
+}
+
 /// The dependency directories worth considering for this repository.
 ///
 /// `target` is Rust's and only Rust's: without a `Cargo.toml` a `target/` in
@@ -1646,6 +1689,17 @@ pub fn borrow_installed_deps(source_root: &Path, worktree: &Path) -> BorrowedEnv
         }
         if !src.is_dir() {
             env.absent.push(name.to_string());
+            continue;
+        }
+        // `target` is build output, not an installed input: exactly one
+        // worktree may borrow it (G33). A refused claim is not a failure —
+        // cargo makes this worktree its own `target/`, which is what
+        // correctness requires — so it is neither `linked` nor `absent`.
+        if name == "target" && !claim_shared_target(&src, worktree) {
+            tracing::info!(
+                worktree = %worktree.display(),
+                "app_master_gates: target/ is already borrowed by another worktree; building locally instead"
+            );
             continue;
         }
         match link_dir(&src, &dst) {
@@ -3000,6 +3054,63 @@ mod tests {
         assert!(!dep_dir_candidates(dir.path()).contains(&"target"));
         std::fs::write(dir.path().join("Cargo.toml"), "[package]").unwrap();
         assert!(dep_dir_candidates(dir.path()).contains(&"target"));
+    }
+
+    /// G33: exactly one worktree borrows a source checkout's `target/`.
+    #[test]
+    fn only_one_worktree_borrows_the_shared_cargo_target() {
+        let src = tempfile::tempdir().unwrap();
+        std::fs::write(src.path().join("Cargo.toml"), "[package]\nname=\"x\"\n").unwrap();
+        std::fs::create_dir_all(src.path().join("target")).unwrap();
+        std::fs::create_dir_all(src.path().join("node_modules")).unwrap();
+
+        let a = tempfile::tempdir().unwrap();
+        let first = borrow_installed_deps(src.path(), a.path());
+        assert!(
+            first.linked.iter().any(|d| d == "target"),
+            "the first worktree borrows target: {:?}",
+            first.linked
+        );
+
+        let b = tempfile::tempdir().unwrap();
+        let second = borrow_installed_deps(src.path(), b.path());
+        assert!(
+            !second.linked.iter().any(|d| d == "target"),
+            "a concurrent second worktree does NOT share the build directory: {:?}",
+            second.linked
+        );
+        assert!(
+            !second.absent.iter().any(|d| d == "target"),
+            "and it is not reported missing — cargo will build one here"
+        );
+        assert!(
+            !b.path().join("target").exists(),
+            "nothing was linked into the second worktree"
+        );
+        // Everything that IS an installed input is still borrowed by both.
+        assert!(second.linked.iter().any(|d| d == "node_modules"));
+    }
+
+    /// G33: a claim whose worktree is gone is stale and is taken over, so a
+    /// crashed run never strands the borrow.
+    #[test]
+    fn a_stale_target_claim_is_taken_over_by_the_next_worktree() {
+        let src = tempfile::tempdir().unwrap();
+        std::fs::write(src.path().join("Cargo.toml"), "[package]\nname=\"x\"\n").unwrap();
+        std::fs::create_dir_all(src.path().join("target")).unwrap();
+        std::fs::write(
+            src.path().join("target").join(TARGET_BORROW_MARKER),
+            "C:/nowhere/worktree-that-crashed",
+        )
+        .unwrap();
+
+        let a = tempfile::tempdir().unwrap();
+        let env = borrow_installed_deps(src.path(), a.path());
+        assert!(
+            env.linked.iter().any(|d| d == "target"),
+            "the stale claim was taken over: {:?}",
+            env.linked
+        );
     }
 
     // -- git plumbing, against a real throwaway repository -------------------
