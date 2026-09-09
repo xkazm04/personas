@@ -1,0 +1,188 @@
+/* 3D Mastermind prototypes — HUD + world-label styling.
+   The three worlds set their palette as --w-* custom properties on .mm3d
+   (see palettes.ts → paletteVars), so one stylesheet skins all three: the
+   colour, typography and letter-spacing decisions the brief is auditioning
+   live in the palette, not here. Deliberately NOT the product's tokens — the
+   prototypes are free to look like the future; a middle ground is a later call. */
+
+.mm3d {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--w-bg);
+  color: var(--w-text);
+  font-family: var(--w-font-display);
+  --w-glass: color-mix(in srgb, var(--w-bg) 72%, transparent);
+  --w-line: color-mix(in srgb, var(--w-primary) 38%, transparent);
+  --w-line-soft: color-mix(in srgb, var(--w-primary) 16%, transparent);
+}
+
+.mm3d canvas { display: block; outline: none; }
+
+/* Vignette + scanline film over the canvas — the "projection" feel. */
+.mm3d-film {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(ellipse at center, transparent 45%, color-mix(in srgb, var(--w-bg) 85%, #000) 100%);
+}
+.mm3d-film--scan {
+  background-image:
+    radial-gradient(ellipse at center, transparent 45%, color-mix(in srgb, var(--w-bg) 85%, #000) 100%),
+    repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, #000 18%, transparent) 3px 4px);
+}
+
+/* ── HUD ─────────────────────────────────────────────────────────────────── */
+.mm3d-hud {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 0.75rem;
+  padding: 3.4rem 0.9rem 0.9rem;
+}
+.mm3d-hud > * { pointer-events: auto; }
+
+.mm3d-mono { font-family: var(--w-font-mono); font-variant-numeric: tabular-nums; }
+.mm3d-caps { text-transform: var(--w-caps); letter-spacing: var(--w-tracking); }
+.mm3d-dim { color: var(--w-text-dim); }
+
+.mm3d-crumbs {
+  grid-column: 1; grid-row: 1; justify-self: start;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--w-line); background: var(--w-glass);
+  backdrop-filter: blur(10px);
+  border-radius: 0.35rem;
+  font-size: 0.72rem;
+}
+.mm3d-crumb {
+  border: 0; background: transparent; color: var(--w-text-dim);
+  font: inherit; text-transform: var(--w-caps); letter-spacing: var(--w-tracking);
+  padding: 0.25rem 0.5rem; border-radius: 0.25rem; cursor: pointer;
+}
+.mm3d-crumb:hover, .mm3d-crumb:focus-visible { color: var(--w-text); background: var(--w-line-soft); outline: none; }
+.mm3d-crumb[aria-current="page"] { color: var(--w-primary); cursor: default; }
+.mm3d-crumb-sep { color: var(--w-text-dim); opacity: 0.7; }
+.mm3d-level {
+  margin-left: 0.4rem; padding: 0.15rem 0.45rem;
+  border: 1px solid var(--w-line); border-radius: 999px;
+  color: var(--w-primary); font-size: 0.62rem;
+}
+.mm3d-hint { grid-column: 1; grid-row: 4; align-self: end; justify-self: start; font-size: 0.68rem; color: var(--w-text-dim); }
+
+/* Right dock — the L1 project card / L2 dimension card. */
+.mm3d-card {
+  grid-column: 2; grid-row: 1 / 3; justify-self: end; align-self: start;
+  width: 18rem; max-width: 50%; max-height: calc(100% - 1rem); overflow: auto;
+  border: 1px solid var(--w-line); background: var(--w-glass);
+  backdrop-filter: blur(14px);
+  border-radius: 0.5rem;
+  padding: 0.9rem 1rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--w-primary) 10%, transparent), 0 18px 40px -20px #000;
+  animation: mm3d-in 360ms ease both;
+}
+@keyframes mm3d-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+.mm3d-card-eyebrow { font-size: 0.62rem; color: var(--w-primary); }
+.mm3d-card-title { font-size: 1.15rem; line-height: 1.2; margin: 0; font-weight: 500; }
+.mm3d-card-sub { font-size: 0.74rem; color: var(--w-text-dim); margin: 0; line-height: 1.4; }
+.mm3d-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.72rem; }
+.mm3d-row-k { color: var(--w-text-dim); text-transform: var(--w-caps); letter-spacing: var(--w-tracking); font-size: 0.6rem; }
+.mm3d-row-v { font-family: var(--w-font-mono); font-variant-numeric: tabular-nums; }
+.mm3d-bar { position: relative; height: 3px; background: var(--w-line-soft); border-radius: 2px; overflow: hidden; }
+.mm3d-bar > i { position: absolute; inset: 0 auto 0 0; background: var(--w-bar, var(--w-primary)); box-shadow: 0 0 8px var(--w-bar, var(--w-primary)); }
+.mm3d-pill {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--w-pill) 55%, transparent);
+  color: var(--w-pill); background: color-mix(in srgb, var(--w-pill) 12%, transparent);
+  text-transform: var(--w-caps); letter-spacing: var(--w-tracking);
+}
+.mm3d-dot { width: 0.45rem; height: 0.45rem; border-radius: 999px; background: var(--w-dot); box-shadow: 0 0 6px var(--w-dot); flex: none; }
+.mm3d-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.mm3d-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; }
+.mm3d-rule { height: 1px; background: var(--w-line-soft); margin: 0.1rem 0; }
+.mm3d-dims { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.3rem; }
+.mm3d-dim-chip {
+  border: 1px solid color-mix(in srgb, var(--w-dot) 45%, transparent); background: color-mix(in srgb, var(--w-dot) 9%, transparent);
+  color: var(--w-text); font: inherit; font-size: 0.62rem; cursor: pointer;
+  padding: 0.3rem 0.4rem; border-radius: 0.3rem; text-align: left;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.mm3d-dim-chip:hover, .mm3d-dim-chip:focus-visible { border-color: var(--w-dot); outline: none; }
+
+/* Athena bar — bottom centre. */
+.mm3d-athena {
+  grid-column: 1 / 3; grid-row: 4; justify-self: center; align-self: end;
+  width: min(44rem, 100%);
+  border: 1px solid var(--w-line); background: var(--w-glass);
+  backdrop-filter: blur(14px);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  display: flex; flex-direction: column; gap: 0.45rem;
+}
+.mm3d-athena-head { display: flex; align-items: center; gap: 0.5rem; font-size: 0.62rem; }
+.mm3d-athena-head strong { font-weight: 500; color: var(--w-primary); }
+.mm3d-busy { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--w-accent); box-shadow: 0 0 8px var(--w-accent); animation: mm3d-pulse 900ms ease-in-out infinite; }
+@keyframes mm3d-pulse { 0%, 100% { transform: scale(0.7); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
+.mm3d-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mm3d-chip {
+  border: 1px solid var(--w-line); background: transparent; color: var(--w-text);
+  font: inherit; font-size: 0.68rem; padding: 0.3rem 0.65rem; border-radius: 999px; cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.mm3d-chip:hover:not(:disabled), .mm3d-chip:focus-visible { background: var(--w-line-soft); border-color: var(--w-primary); outline: none; }
+.mm3d-chip:disabled { opacity: 0.45; cursor: default; }
+.mm3d-transcript { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.72rem; line-height: 1.35; max-height: 4.6rem; overflow: hidden; }
+.mm3d-transcript li { display: flex; gap: 0.5rem; list-style: none; }
+.mm3d-transcript li > span:first-child { flex: none; width: 3.4rem; font-size: 0.6rem; color: var(--w-text-dim); text-transform: uppercase; letter-spacing: 0.12em; padding-top: 0.15rem; }
+.mm3d-transcript li[data-who="athena"] > span:first-child { color: var(--w-primary); }
+
+/* Legend — bottom left, six status swatches. */
+.mm3d-legend {
+  grid-column: 1; grid-row: 3; align-self: end; justify-self: start;
+  display: flex; gap: 0.7rem; padding: 0.35rem 0.6rem;
+  border: 1px solid var(--w-line-soft); background: var(--w-glass); border-radius: 0.35rem;
+  font-size: 0.6rem; color: var(--w-text-dim);
+}
+.mm3d-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+/* Variant note — top right, under the tab switcher. */
+.mm3d-note { grid-column: 2; grid-row: 1; justify-self: end; font-size: 0.62rem; color: var(--w-text-dim); max-width: 18rem; text-align: right; }
+.mm3d-note b { color: var(--w-primary); font-weight: 500; }
+
+/* ── World labels (rendered by drei <Html>) ──────────────────────────────── */
+.mm3d-label { white-space: nowrap; user-select: none; text-align: center; }
+.mm3d-label-project {
+  font-size: 0.95rem; font-weight: 500; letter-spacing: var(--w-tracking); text-transform: var(--w-caps);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--w-primary) 60%, transparent), 0 2px 8px #000;
+}
+.mm3d-label-tag { display: block; font-family: var(--w-font-mono); font-size: 0.58rem; color: var(--w-text-dim); letter-spacing: 0.2em; }
+.mm3d-label-dim {
+  font-family: var(--w-font-mono); font-size: 0.6rem; letter-spacing: 0.08em; color: var(--w-text);
+  padding: 0.12rem 0.4rem; border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--w-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--w-dot, var(--w-primary)) 45%, transparent);
+  text-shadow: 0 1px 4px #000;
+}
+.mm3d-label-edge {
+  font-family: var(--w-font-mono); font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--w-primary); padding: 0.1rem 0.45rem; border: 1px solid var(--w-line); border-radius: 999px;
+  background: color-mix(in srgb, var(--w-bg) 78%, transparent);
+}
+.mm3d-label-btn { all: unset; cursor: pointer; display: inline-block; }
+.mm3d-label-btn:focus-visible { outline: 1px solid var(--w-primary); outline-offset: 3px; border-radius: 2px; }
+/* Readout beside an L2 node — a small floating plate of numbers. */
+.mm3d-readout {
+  font-family: var(--w-font-mono); font-size: 0.62rem; line-height: 1.5; text-align: left;
+  padding: 0.45rem 0.6rem; border-left: 2px solid var(--w-dot, var(--w-primary));
+  background: color-mix(in srgb, var(--w-bg) 80%, transparent); backdrop-filter: blur(8px);
+  color: var(--w-text); min-width: 9rem;
+}
+.mm3d-readout b { color: var(--w-dot, var(--w-primary)); font-weight: 500; }
+
+/* Unsupported WebGL fallback. */
+.mm3d-fallback {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  color: var(--w-text-dim); font-size: 0.8rem; padding: 2rem;
+}

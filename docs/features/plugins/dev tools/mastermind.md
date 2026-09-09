@@ -185,6 +185,37 @@ Sizing discipline (why this shape survived where two prototype rounds died): eve
 
 Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, Inverse Grid (+ its `DimTile` renderer and the variant switcher), fleet "Cells", stats Panels/Strip/Gauges.
 
+### 7b. 3D prototypes — the "Jarvis" audition (view switcher, 2026-09-09)
+
+The canvas header carries a **view switcher** (`lib/ViewSwitcher.tsx`, top-centre, `SegmentedTabs`): **Baseline** is the shipped Hex Mosaic above; **Orbit / Strata / Holo** are three 3D worlds auditioning a layered, Iron-Man-style experience. Session-local state (not a preference yet); the 2D-only chrome (mode toolbar, project list, demo notice, bottom stack) hides while a 3D view is up. Everything 3D lives in `three/` and is lazy-loaded, so the baseline never pays for three.js.
+
+**Shared across the three worlds — written once (`three/worldModel.ts`, `three/useWorldNav.ts`, `three/WorldHud.tsx`):**
+
+| Layer | What you see | How you get there |
+|---|---|---|
+| **L0 portfolio** | every project as an abstract shape with its rough state; connectors between related projects | default; `Portfolio` crumb, `Esc` from L1, click on empty sea |
+| **L1 project** | one project with all 15 dimensions exploded into their four categories, labelled; right-dock project card (scores, ship, live work, dimension chips) | click a project (world label or shape) |
+| **L2 dimension** | one dimension only: status, progress, tooling, headline figure; siblings ghosted | click a dimension (world label, shape or card chip) |
+
+The camera **flies** between layer poses (`CameraRig`, 1.1 s ease) and the user owns it between flights (OrbitControls). **Athena operates** from a bar at the bottom: four scripted commands (what is at risk / what ships next / open Brainiac security / wire monitoring on Brainiac) that fly the camera, point at nodes, narrate in a transcript, and in the last case *change the world* (the Monitoring prism/tile/satellite turns healthy). The scripts are plain reducer actions (`three/athenaOps.ts`) — the shape the real companion would drive through `canvasActionStore` later.
+
+**Dataset:** `three/mockWorld.ts` — two hand-authored projects (Personas Desktop: healthy, shipping; Brainiac: warning, with a real security alert and no monitoring) plus one relation. Dimension keys/labels/icons come from the real registry.
+
+**What differs — the variables under test (`three/palettes.ts` holds every colour and font):**
+
+| | **Orbit** | **Strata** | **Holo** |
+|---|---|---|---|
+| Node design | glowing core + 15 satellites on four tilted category rings | stack of four glass decks (one per category) with status tiles; explodes on focus | hex platform (the 2D identity in depth), spire = automation score, 15 hex prisms whose height = progress |
+| World sizing | 16 units between projects, rings to r=6 | 19 units, decks 5.6 wide | 17 units, platforms r=4.6 |
+| Background | deep space, star field, two nebula sprites | graphite + infinite grid + fog | black, dust sparkles, scanning radar ring, scanline film |
+| Colour | cold cyan primary, warm coral accent, saturated status | amber primary, cyan accent (Stark HUD) | monochrome cyan, gold accent, desaturated status |
+| Connector | raised dashed arc with a travelling pulse | ground-level straight beam with pulse | floor trace curved around the platforms |
+| Typography | Segoe UI Variable caps, tracking 0.18em, mono numbers | Bahnschrift wide caps | serif names (Iowan/Palatino, the canvas voice) + mono |
+
+A WebGL failure is caught by a boundary around the canvas (`data-testid="mm3d-failed"` carries the reason) so the switcher stays reachable. Verified live through the test-automation server: all three views drill L0→L1→L2 by click, Athena's wire flow updates the status pill, and switching back to Baseline restores the 2D chrome.
+
+**Gotcha, measured 2026-09-09:** R3F attaches its DOM listeners to the canvas's *parent* div, and drei `<Html>` labels are siblings of the canvas inside it — so a click on a label bubbled into R3F with a ray that hit nothing and fired `onPointerMissed`, undoing the drill-down a frame later. `WorldCanvas` only walks up when `event.target` is the canvas, and `WorldLabel` stops propagation.
+
 ## 8. Interaction model (Figma-like, edit-first)
 
 **Modes** (bottom toolbar, `CanvasToolbar`, keyboard `E`/`G`/`C`/`N`, `Esc` = universal cancel). Each mode's one-line hint — what the mouse does in it — rides on that mode's **own tooltip** rather than a second toolbar row, so the toolbar is a single row at every width and the orientation is readable *before* you commit to a mode instead of only for the active one:

@@ -3744,5 +3744,11 @@
   "es:agents.persona_list.persona_count_one",
   "es:agents.persona_list.persona_count_other",
   "id:agents.persona_list.persona_count_one",
-  "cs:triggers.nl_interval_colon"
+  "cs:triggers.nl_interval_colon",
+  "*:mastermind.view_orbit",
+  "*:mastermind.view_strata",
+  "*:mastermind.view_holo",
+  "cs:mastermind.world_portfolio",
+  "es:mastermind.world_llm_spend",
+  "fr:mastermind.world_prod_score"
 ]
