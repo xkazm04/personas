@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-09 11:58]**
+- **Paths:** `src-tauri/engine/src/app_master_gates.rs`
+- **Status:** started
+
 - **[2026-09-09 10:42]**
 - **Paths:** `src-tauri/src/engine/subscription/attention.rs`
 - **Status:** started
@@ -699,6 +703,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### grande-g33-target-borrow — grande: target is borrowed exclusively, so two workers cannot share one cargo build dir (G33)
 
 ### grande-g32-tick-budget — grande: a tick serves every due persona up to the running cap; maintenance no longer spends the tick (G32)
 
