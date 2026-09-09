@@ -92,6 +92,7 @@ export function StrataScene({ world, nav, recipe, interactive }: { world: World;
   const dense = isDensePortfolio(world.projects.length);
   const span = useMemo(() => worldBounds(world.projects.map((p) => at(pos, p.slug, ORIGIN)), PLINTH).radius, [world, pos]);
   const { ground, light, finish } = recipe;
+  const tileGeometry = useTileGeometry(finish.bevel);
 
   return (
     <>
@@ -143,7 +144,7 @@ export function StrataScene({ world, nav, recipe, interactive }: { world: World;
       <CameraRig pose={pose} flight={nav.state.flight} />
 
       {world.projects.map((p) => (
-        <DeckStack key={p.slug} project={p} center={at(pos, p.slug, ORIGIN)} nav={nav} palette={palette} recipe={recipe} dense={dense} />
+        <DeckStack key={p.slug} project={p} center={at(pos, p.slug, ORIGIN)} nav={nav} palette={palette} recipe={recipe} dense={dense} tileGeometry={tileGeometry} />
       ))}
 
       {world.edges.map((e) => (
@@ -222,7 +223,7 @@ function Beam({ edge, pos, nav, palette }: { edge: WorldEdge; pos: Record<string
   );
 }
 
-function DeckStack({ project, center, nav, palette, recipe, dense }: { project: WorldProject; center: Vec3; nav: WorldNav; palette: WorldPalette; recipe: DesignRecipe; dense: boolean }) {
+function DeckStack({ project, center, nav, palette, recipe, dense, tileGeometry }: { project: WorldProject; center: Vec3; nav: WorldNav; palette: WorldPalette; recipe: DesignRecipe; dense: boolean; tileGeometry: THREE.BufferGeometry }) {
   const { t } = useTranslation();
   const { focus, hover } = nav.state;
   const mine = focus.project === project.slug;
@@ -292,6 +293,7 @@ function DeckStack({ project, center, nav, palette, recipe, dense }: { project: 
             recipe={recipe}
             exploded={exploded}
             label={categoryLabel(t, g.category)}
+            tileGeometry={tileGeometry}
           />
         </group>
       ))}
@@ -299,7 +301,7 @@ function DeckStack({ project, center, nav, palette, recipe, dense }: { project: 
   );
 }
 
-function Deck({ project, category, dims, nav, palette, recipe, exploded, label }: {
+function Deck({ project, category, dims, nav, palette, recipe, exploded, label, tileGeometry }: {
   project: WorldProject;
   category: DimCategory;
   dims: WorldDim[];
@@ -308,6 +310,7 @@ function Deck({ project, category, dims, nav, palette, recipe, exploded, label }
   recipe: DesignRecipe;
   exploded: boolean;
   label: string;
+  tileGeometry: THREE.BufferGeometry;
 }) {
   const { focus } = nav.state;
   const focusedHere = focus.level === 2 && focus.project === project.slug && dims.some((d) => d.key === focus.dim);
@@ -352,6 +355,7 @@ function Deck({ project, category, dims, nav, palette, recipe, exploded, label }
             exploded={exploded}
             emphasis={nodeEmphasis(focus, project.slug, d.key)}
             category={category}
+            geometry={tileGeometry}
           />
         );
       })}
@@ -361,19 +365,24 @@ function Deck({ project, category, dims, nav, palette, recipe, exploded, label }
 
 const TILE_W = 0.82;
 
-/** A tile's geometry under the recipe's bevel — shared per bevel value, since
- *  150 tiles need not each own one. */
-const tileGeometryCache = new Map<number, THREE.BufferGeometry>();
-function tileGeometry(bevel: number): THREE.BufferGeometry {
-  let g = tileGeometryCache.get(bevel);
-  if (!g) {
-    g = bevel > 0 ? new RoundedBoxGeometry(TILE_W, 1, TILE_W, 3, bevel) : new THREE.BoxGeometry(TILE_W, 1, TILE_W);
-    tileGeometryCache.set(bevel, g);
-  }
-  return g;
+/**
+ * ONE tile geometry per mounted scene, owned by the scene and disposed with
+ * it. The first draft kept a module-level Map keyed by bevel so 150 tiles
+ * could share a geometry — which is the right instinct and the wrong owner: a
+ * cache with no cap and no eviction that outlives every scene is what the
+ * shared-fetch-cache golden path exists to stop, and here it was never needed.
+ * The scene already knows the bevel; it can hold the geometry and hand it down.
+ */
+function useTileGeometry(bevel: number): THREE.BufferGeometry {
+  const geometry = useMemo(
+    () => (bevel > 0 ? new RoundedBoxGeometry(TILE_W, 1, TILE_W, 3, bevel) : new THREE.BoxGeometry(TILE_W, 1, TILE_W)),
+    [bevel],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return geometry;
 }
 
-function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis }: {
+function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis, geometry }: {
   project: WorldProject;
   dim: WorldDim;
   x: number;
@@ -383,6 +392,7 @@ function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis }: {
   exploded: boolean;
   emphasis: number;
   category: DimCategory;
+  geometry: THREE.BufferGeometry;
 }) {
   const id = nodeId(project.slug, dim.key);
   const hovered = nav.state.hover === id;
@@ -395,7 +405,6 @@ function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis }: {
   const mesh = useRef<THREE.Mesh>(null);
   const cur = useRef(0.1);
   const Icon = DIM_REGISTRY[dim.key].icon;
-  const geometry = useMemo(() => tileGeometry(recipe.finish.bevel), [recipe.finish.bevel]);
   const outline = edgeColor(recipe, palette, color);
   const opaque = recipe.surface.opaqueTiles;
 
