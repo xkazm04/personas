@@ -141,7 +141,10 @@ impl ExecuteResult {
 // Glob re-exports keep the public path surface identical to the former
 // single-file module: `commands::companion::approvals::<item>` still resolves
 // for lib.rs generate_handler, session.rs, fleet_bridge.rs and tests.
-mod app_master_hire;
+// `pub(crate)` for one export: `ensure_team`, which the Architect's adoption
+// door in `infrastructure::app_master_adopt` calls so both doors that put an
+// App Master on a project file it under the same team the same way.
+pub(crate) mod app_master_hire;
 mod approval_autopilot;
 mod approval_exec_canvas;
 mod approval_exec_core;

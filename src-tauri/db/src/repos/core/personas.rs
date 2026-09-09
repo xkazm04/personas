@@ -1406,6 +1406,31 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 /// target persona (read project_id first), and we only suffix when the
 /// requested name actually collides with a *different* persona — calling
 /// `update_name(id, current_name)` is a no-op.
+/// Point a persona at the team it belongs to.
+///
+/// `home_team_id` is what the Fleet Monitor groups its grid by, and it is a
+/// DIFFERENT fact from a `persona_team_members` row: membership says the
+/// persona works with the team, the home says the team is where it is filed.
+/// Measured 2026-09-09, every persona on this install had a NULL home and the
+/// Monitor had therefore never grouped anything — the whole fleet rendered in
+/// the ungrouped tray, including the personas an adoption door had carefully
+/// added as team members.
+///
+/// Idempotent: setting the home a persona already has is a no-op UPDATE.
+pub fn set_home_team(pool: &DbPool, persona_id: &str, team_id: &str) -> Result<(), AppError> {
+    timed_query!("personas", "personas::set_home_team", {
+        let conn = pool.conn("personas::set_home_team")?;
+        let changed = conn.execute(
+            "UPDATE personas SET home_team_id = ?2, updated_at = ?3 WHERE id = ?1",
+            params![persona_id, team_id, chrono::Utc::now().to_rfc3339()],
+        )?;
+        if changed == 0 {
+            return Err(AppError::NotFound(format!("persona {persona_id}")));
+        }
+        Ok(())
+    })
+}
+
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;

@@ -1009,6 +1009,8 @@ pub(crate) fn adopt_bound(
         &mut notes,
     );
 
+    file_under_a_team(pool, role, binding, &persona.id, &mut notes);
+
     Ok(BoundAdoption {
         persona_id: persona.id,
         persona_name: persona.name,
@@ -1193,6 +1195,102 @@ fn apply_role_grants(
     spec.authority = Some(true);
     if slug == HIRING_RECIPE_SLUG {
         spec.can_hire = Some(true);
+    }
+}
+
+/// The team a workspace-bound persona is filed under.
+///
+/// An Architect holds charters across every project in its workspace, so it
+/// belongs to no project's team and filing it under one would misread it as
+/// that project's App Master. It gets a team of its own instead, named for the
+/// workspace, which is what makes the Monitor's grid answer the operator's
+/// actual question: which agents are app-specific and which are cross-project.
+fn cross_project_team_name(workspace_name: &str) -> String {
+    format!("{workspace_name} — cross-project")
+}
+
+/// Put the adopted persona in the Monitor's grid.
+///
+/// Until 2026-09-09 this door did no team work whatsoever, while the
+/// human-approved hiring door did it carefully — so which door adopted a
+/// persona decided whether the operator could see it grouped, and every
+/// persona the Grand Simulation's Architect adopted landed in the ungrouped
+/// tray. Best-effort by construction, like the manifest above: the persona and
+/// its charters are already real, and a grid that groups badly is not a reason
+/// to fail an adoption that otherwise succeeded.
+fn file_under_a_team(
+    pool: &DbPool,
+    role: AdoptedRole,
+    binding: &Binding,
+    persona_id: &str,
+    notes: &mut Vec<String>,
+) {
+    use crate::db::repos::resources::teams as team_repo;
+
+    match binding {
+        // A project-bound App Master joins its project's team — the same team
+        // the hiring door creates, reached through the same function so the
+        // two doors cannot drift apart again.
+        Binding::Project(p) => {
+            crate::commands::companion::approvals::app_master_hire::ensure_team(
+                pool, &p.id, persona_id, &p.name, notes,
+            );
+        }
+        // A workspace-bound holder (the Architect) gets the cross-project team.
+        Binding::Workspace(w) => {
+            let name = cross_project_team_name(&w.name);
+            let existing = team_repo::get_all(pool)
+                .ok()
+                .and_then(|ts| ts.into_iter().find(|t| t.name == name));
+            let team_id = match existing {
+                Some(t) => t.id,
+                None => match team_repo::create(
+                    pool,
+                    crate::db::models::CreateTeamInput {
+                        name: name.clone(),
+                        // Deliberately no project: this team's whole meaning is
+                        // that its members answer to the workspace instead.
+                        project_id: None,
+                        parent_team_id: None,
+                        description: Some(format!(
+                            "Personas whose charters span every project in the {} workspace.",
+                            w.name
+                        )),
+                        canvas_data: None,
+                        team_config: None,
+                        icon: None,
+                        color: None,
+                        enabled: Some(true),
+                    },
+                ) {
+                    Ok(t) => t.id,
+                    Err(e) => {
+                        notes.push(format!("could not create the cross-project team: {e}"));
+                        return;
+                    }
+                },
+            };
+            if let Err(e) = team_repo::add_member(
+                pool,
+                &team_id,
+                persona_id,
+                Some(role.name_prefix().to_string()),
+                None,
+                None,
+                None,
+            ) {
+                // Already-a-member is a Validation error, not a failure.
+                notes.push(format!("cross-project team membership: {e}"));
+            }
+            if let Err(e) =
+                crate::db::repos::core::personas::set_home_team(pool, persona_id, &team_id)
+            {
+                notes.push(format!(
+                    "cross-project team joined but the home could not be set ({e}) — \
+                     it will render in the Monitor's ungrouped tray"
+                ));
+            }
+        }
     }
 }
 
@@ -1425,6 +1523,58 @@ mod tests {
     }
 
     #[test]
+    /// The Fleet Monitor groups its grid by `personas.home_team_id`, and this
+    /// door set none — so every persona an Architect adopted landed in the
+    /// ungrouped tray beside every other agent, and the operator could not
+    /// tell an app-specific agent from a cross-project one. Measured
+    /// 2026-09-09: 14 personas on the install, 0 with a home team.
+    #[test]
+    fn adopting_an_app_master_files_it_under_its_project_team() {
+        let _home = TestHome::new("app_master_adopt_team");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "accepted-idea-delivery", "Accepted idea delivery");
+
+        let adopted = adopt(
+            &pool,
+            &request(&project.id, &[("accepted-idea-delivery", None)]),
+        )
+        .expect("adoption");
+
+        let persona = crate::db::repos::core::personas::get_by_id(&pool, &adopted.persona_id)
+            .expect("persona");
+        let team_id = persona
+            .home_team_id
+            .expect("the adopted App Master has a home team");
+        let team = crate::db::repos::resources::teams::get_by_id(&pool, &team_id)
+            .expect("the home team exists");
+        assert!(
+            team.name.contains(&project.name),
+            "the team is named for the project, got `{}`",
+            team.name
+        );
+        assert_eq!(
+            team.project_id.as_deref(),
+            Some(project.id.as_str()),
+            "a project team carries its project"
+        );
+
+        // Re-adopting must not strand the persona or mint a second team: the
+        // door is called again every time a rung or a recipe list changes.
+        let again = adopt(
+            &pool,
+            &request(&project.id, &[("accepted-idea-delivery", None)]),
+        )
+        .expect("second adoption");
+        let persona2 =
+            crate::db::repos::core::personas::get_by_id(&pool, &again.persona_id).expect("persona");
+        assert_eq!(
+            persona2.home_team_id.as_deref(),
+            Some(team_id.as_str()),
+            "re-adoption keeps the same home"
+        );
+    }
+
     fn adopting_twice_creates_one_persona_and_no_duplicate_charters() {
         // `adopt` seeds the persona's manifest on disk, and the brain root is
         // a process-global env var — take the one shared lock rather than a

@@ -511,8 +511,24 @@ fn normalize_path(p: &str) -> String {
 // (c) the team
 // ---------------------------------------------------------------------------
 
-/// Create or reuse the team bound to `project_id` and add the persona to it.
-fn ensure_team(
+/// Create or reuse the team bound to `project_id`, add the persona to it, and
+/// make that team the persona's HOME.
+///
+/// Shared with `infrastructure::app_master_adopt` rather than copied: there are
+/// two doors that put an App Master on a project — this one, which a human
+/// approves, and the adoption door an Architect calls — and until 2026-09-09
+/// only this one did any team work at all. A persona adopted through the other
+/// door had no team, no membership and no home, so the Fleet Monitor filed it
+/// in the ungrouped tray with every other agent and the operator could not tell
+/// app-specific agents from cross-project ones.
+///
+/// Setting the home is the part that was missing from BOTH doors. `add_member`
+/// alone was never enough: the Monitor's `groupFleet` keys on
+/// `personas.home_team_id`, so a persona could be a careful member of a
+/// correctly-named project team and still render ungrouped. Measured the same
+/// day: 14 personas, 0 with a home, 1 with a membership — the grid had never
+/// grouped anything.
+pub(crate) fn ensure_team(
     db: &crate::db::DbPool,
     project_id: &str,
     persona_id: &str,
@@ -596,13 +612,22 @@ fn ensure_team(
         None,
         None,
     ) {
-        Ok(_) => Some(team_id),
+        Ok(_) => {}
         Err(e) => {
             // Already-a-member is a Validation error and is not a failure here.
             notes.push(format!("team membership: {e}"));
-            Some(team_id)
         }
     }
+
+    // The home is what the Monitor groups by, and it is set even when the
+    // membership insert reported "already a member" — a persona re-adopted
+    // through either door must end up filed under its project either way.
+    if let Err(e) = crate::db::repos::core::personas::set_home_team(db, persona_id, &team_id) {
+        notes.push(format!(
+            "team {team_id} joined but the persona's home team could not be set ({e}) —              it will render in the Monitor's ungrouped tray"
+        ));
+    }
+    Some(team_id)
 }
 
 // ---------------------------------------------------------------------------
