@@ -2152,6 +2152,19 @@ fn project_snapshot(
     })
     .collect();
 
+    // Best-effort like every other field here: an unreadable count renders as
+    // a flow of zero, which the prompt prints as "not measured this wake"
+    // rather than as a project that filed nothing.
+    let flow = crate::db::repos::dev::attention::backlog_flow(
+        pool,
+        project_id,
+        attention_decide::FLOW_WINDOW_HOURS,
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(project_id, error = %e, "persona_attention: backlog flow read failed");
+        Default::default()
+    });
+
     attention_decide::ProjectSnapshot {
         project_id: project_id.to_string(),
         project_name,
@@ -2164,6 +2177,8 @@ fn project_snapshot(
         in_flight_tasks,
         pending_idea_count,
         unrated_pending_idea_count,
+        filed_recently: flow.filed,
+        delivered_recently: flow.delivered,
         context_count: project_contexts.len(),
         context_newest_at,
         kpi_coverage_gap,

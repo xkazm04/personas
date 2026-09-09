@@ -393,6 +393,11 @@ pub(crate) struct ProjectSnapshot {
     /// triage rule cannot see an unrated row, so this is the share of the
     /// backlog that can only ever move by a human reading it.
     pub unrated_pending_idea_count: usize,
+    /// Ideas filed and tasks completed on this project in the last
+    /// [`FLOW_WINDOW_HOURS`]. The stock above says how deep the backlog is;
+    /// this says which way it is moving, which is the half an owner can act on.
+    pub filed_recently: usize,
+    pub delivered_recently: usize,
     pub context_count: usize,
     /// Newest `dev_contexts.updated_at` — how fresh the context map is.
     pub context_newest_at: Option<String>,
@@ -1584,6 +1589,62 @@ pub(crate) fn newest_coverage_note<'a>(
         .map(|(_, n)| n.to_string())
 }
 
+/// The window the backlog flow is measured over. A day: long enough that one
+/// quiet wake or one long delivery run does not swing the ratio, short enough
+/// that it describes what the project is doing now rather than what it did
+/// last week.
+pub(crate) const FLOW_WINDOW_HOURS: u32 = 24;
+
+/// The fill:drain ratio above which the prompt says the imbalance out loud.
+///
+/// Two is not a crisis — a project that files twice what it delivers is
+/// usually finding real work faster than it can do it, which is what a
+/// certification pass is FOR. It is named at 2 so the owner sees the trend
+/// while it is still cheap to correct, rather than at the 4.4:1 the portfolio
+/// was measured at on 2026-09-09 with 553 accepted ideas carrying no task.
+const FLOW_IMBALANCE_RATIO: f64 = 2.0;
+
+/// One line naming what the project's backlog did over [`FLOW_WINDOW_HOURS`].
+///
+/// The judgement stays the App Master's: this states the measurement and what
+/// it implies, and never refuses a charter or reorders a queue. Balancing
+/// generation against execution is the owner's own responsibility — the
+/// platform's job is to make sure the number is in front of it when it
+/// decides, which until now it was not.
+fn flow_line(p: &ProjectSnapshot) -> String {
+    if p.filed_recently == 0 && p.delivered_recently == 0 {
+        return format!(
+            "  backlog flow (last {FLOW_WINDOW_HOURS}h): nothing filed, nothing delivered\n"
+        );
+    }
+    let mut s = format!(
+        "  backlog flow (last {FLOW_WINDOW_HOURS}h): {} filed · {} delivered",
+        p.filed_recently, p.delivered_recently
+    );
+    if p.delivered_recently == 0 {
+        s.push_str(
+            " — NOTHING DELIVERED. Filing more findings does not move this project; \
+             delivering one does.\n",
+        );
+        return s;
+    }
+    let ratio = p.filed_recently as f64 / p.delivered_recently as f64;
+    s.push_str(&format!(" ({ratio:.1}:1)"));
+    if ratio >= FLOW_IMBALANCE_RATIO {
+        s.push_str(&format!(
+            " — your backlog is growing {ratio:.1}x faster than it drains. \
+             Balancing that is YOUR call and nobody else's: a wave that files more \
+             findings than it can deliver spends the project's capacity on describing \
+             work rather than doing it. Prefer the charter that DELIVERS until the \
+             ratio comes back under {FLOW_IMBALANCE_RATIO:.0}:1, and file only what you \
+             would still file knowing nobody may reach it for a week.\n"
+        ));
+    } else {
+        s.push_str(" — draining as fast as it fills or faster.\n");
+    }
+    s
+}
+
 /// The recipe whose runs deliver accepted backlog ideas. A dispatch of this
 /// charter is the only one that has ideas to write back about, which is why it
 /// is the only one that mints `dev_tasks` rows at dispatch time.
@@ -2100,6 +2161,12 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             "  accepted ideas with no task: {} · pending ideas: {} (unrated: {})\n",
             p.undispatched_idea_count, p.pending_idea_count, p.unrated_pending_idea_count
         ));
+        // The flow, beside the stock. A depth alone tells an owner nothing
+        // about whether it is winning: 60 items draining is a healthy project
+        // and 12 items filling five times faster is a project about to have
+        // 60. This is the number an App Master derived by hand and called its
+        // most useful, so the loop now measures it for every project.
+        s.push_str(&flow_line(p));
         if p.unrated_pending_idea_count > 0 {
             s.push_str(
                 "  unrated ideas are never auto-accepted; re-file them with all three scales, \
@@ -3001,6 +3068,10 @@ mod tests {
                 }],
                 pending_idea_count: 4,
                 unrated_pending_idea_count: 0,
+                // A quiet project by default, so each flow test states the
+                // numbers it is actually about.
+                filed_recently: 0,
+                delivered_recently: 0,
                 context_count: 208,
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
@@ -3229,6 +3300,64 @@ mod tests {
         let clean = render_decision_prompt(&ctx_fixture());
         assert!(clean.contains("pending ideas: 4 (unrated: 0)"));
         assert!(!clean.contains("unrated ideas are never auto-accepted"));
+    }
+
+    /// The stock said how deep the pile was and nothing said which way it was
+    /// moving. Measured 2026-09-09 across the six bank projects: 386 ideas
+    /// filed in a day against 88 tasks completed, 553 accepted with no task —
+    /// and every App Master could see its depth while none could see its rate.
+    #[test]
+    fn the_prompt_states_the_backlog_flow_and_names_the_imbalance() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].filed_recently = 40;
+        ctx.projects[0].delivered_recently = 8;
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("backlog flow (last 24h): 40 filed · 8 delivered (5.0:1)"),
+            "{p}"
+        );
+        assert!(p.contains("growing 5.0x faster than it drains"));
+        // The duty is named as the owner's, not enforced by the platform.
+        assert!(p.contains("YOUR call and nobody else's"));
+        assert!(p.contains("Prefer the charter that DELIVERS"));
+    }
+
+    /// A project that keeps up is told so, without advice it does not need.
+    #[test]
+    fn a_balanced_project_is_not_lectured() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].filed_recently = 6;
+        ctx.projects[0].delivered_recently = 9;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("6 filed · 9 delivered (0.7:1)"), "{p}");
+        assert!(p.contains("draining as fast as it fills or faster"));
+        assert!(!p.contains("YOUR call and nobody else's"));
+    }
+
+    /// Delivering nothing is not a ratio — dividing by it would be — and it is
+    /// the one case that most needs saying plainly.
+    #[test]
+    fn delivering_nothing_is_said_plainly_rather_than_divided_by() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].filed_recently = 17;
+        ctx.projects[0].delivered_recently = 0;
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("17 filed · 0 delivered — NOTHING DELIVERED"),
+            "{p}"
+        );
+        assert!(
+            !p.contains(":1)"),
+            "no ratio is printed when the divisor is zero"
+        );
+    }
+
+    /// A silent project reads as silent, not as a project that filed nothing
+    /// against a delivery it also did not make.
+    #[test]
+    fn a_project_with_no_movement_says_so() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(p.contains("nothing filed, nothing delivered"), "{p}");
     }
 
     /// The owner decided on 2026-09-09 that the App Master groups and drains

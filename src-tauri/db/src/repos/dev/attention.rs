@@ -591,6 +591,59 @@ pub fn attention_queue(
 /// `limit` caps the result (default 200, so a backlog with thousands of
 /// accepted ideas cannot blow up a panel); rows come back OLDEST FIRST because
 /// the most-forgotten decision is the one worth surfacing.
+/// How much backlog a project GREW and how much it DRAINED over a window.
+///
+/// The undispatched count beside this one is a stock: how deep the pile is.
+/// This is the flow, and the flow is what an owner can actually act on — a
+/// pile of 60 that drains faster than it fills needs nothing, and a pile of 12
+/// that fills five times faster than it drains is about to become a pile of
+/// 60. Measured 2026-09-09 across the six bank projects: 386 ideas filed in a
+/// day against 88 tasks completed, and 553 accepted ideas carrying no task at
+/// all. Every App Master could see its own depth and none could see its rate,
+/// so one of them derived the ratio by hand and reported it as its most useful
+/// number.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BacklogFlow {
+    /// Ideas filed on this project inside the window, whatever their status.
+    pub filed: usize,
+    /// Tasks that reached `completed` inside the window.
+    pub delivered: usize,
+}
+
+/// Count [`BacklogFlow`] over the last `hours`.
+///
+/// Both halves are counted from the same clock and the same window so the pair
+/// is comparable; a filed idea and a completed task are the two ends of the
+/// same pipe. Filing is counted by `created_at` (when the item appeared) and
+/// delivery by `completed_at` (when it actually landed), which is why a
+/// re-filed idea does not read as new work and a task started yesterday counts
+/// on the day it finished.
+pub fn backlog_flow(pool: &DbPool, project_id: &str, hours: u32) -> Result<BacklogFlow, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::backlog_flow", {
+        let conn = pool.get()?;
+        let since =
+            (chrono::Utc::now() - chrono::Duration::hours(hours.max(1) as i64)).to_rfc3339();
+        // Named rather than positional even for a scalar count: this repo's
+        // rule is that no row is read by index, and one exception is how the
+        // habit comes back.
+        let filed: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_ideas WHERE project_id = ?1 AND created_at >= ?2",
+            rusqlite::params![project_id, since],
+            |r| r.get("n"),
+        )?;
+        let delivered: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_tasks
+              WHERE project_id = ?1 AND status = 'completed' AND completed_at >= ?2",
+            rusqlite::params![project_id, since],
+            |r| r.get("n"),
+        )?;
+        Ok(BacklogFlow {
+            filed: filed.max(0) as usize,
+            delivered: delivered.max(0) as usize,
+        })
+    })
+}
+
 pub fn list_undispatched_ideas(
     pool: &DbPool,
     project_id: Option<&str>,
