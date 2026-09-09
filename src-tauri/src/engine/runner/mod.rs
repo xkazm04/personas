@@ -1741,6 +1741,10 @@ pub async fn run_execution(
     // to `primary_engine` is a constant `false`, and the within-provider model
     // ladder (`CLAUDE_MODEL_CHAIN`, opus -> sonnet -> haiku) is invisible to it.
     // The audit trail's `was_failover` must observe the substitution it reports.
+    // Both of these are set again for every candidate the failover ladder
+    // tries; the initial values exist so the bindings are in scope, and
+    // neither is read before the first candidate assigns it.
+    #[allow(unused_assignments)]
     let mut active_candidate_idx: usize = 0;
     #[allow(unused_assignments)]
     let mut cli_provider: Box<dyn provider::CliProvider> =

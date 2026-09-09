@@ -1053,7 +1053,10 @@ pub fn recap_from_lines(
             .and_then(|x| x.as_str())
             .map(str::to_string);
         if let Some(ts) = ts.clone() {
-            if r.last_timestamp.as_deref().is_none_or(|l| ts.as_str() > l) {
+            if r.last_timestamp
+                .as_deref()
+                .map_or(true, |l| ts.as_str() > l)
+            {
                 r.last_timestamp = Some(ts);
             }
         }

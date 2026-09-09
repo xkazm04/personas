@@ -74,6 +74,13 @@ pub struct Fact {
     pub contradicts_id: Option<String>,
     pub updated_at: String,
     /// Last calendar date (YYYY-MM-DD) this claim still holds, if it named one.
+    ///
+    /// Written by [`write_fact`], selected into every assembled `Fact`, and
+    /// compared by the expiry sweep — but that comparison happens in SQL
+    /// (`consolidation.rs`: `WHERE expires_at IS NOT NULL AND expires_at < ?`),
+    /// so no Rust caller reads the field today. It stays because a `Fact` that
+    /// omitted its own expiry would not be the row it claims to assemble.
+    #[allow(dead_code)]
     pub expires_at: Option<String>,
 }
 
