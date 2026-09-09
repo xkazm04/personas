@@ -261,7 +261,7 @@ impl ReactiveSubscription for AttentionSubscription {
                 return;
             }
         };
-        let Some((counts, dispatch)) = planned else {
+        let Some((counts, dispatches)) = planned else {
             return; // gated off / cooling down / plan failed (already logged)
         };
         if counts.personas > 0 {
@@ -273,18 +273,21 @@ impl ReactiveSubscription for AttentionSubscription {
                 stale_open = counts.stale_open,
                 idle = counts.idle,
                 lane = counts.dispatched.unwrap_or("none"),
+                dispatches = counts.dispatches,
+                budget = counts.budget,
                 "persona_attention: tick summary"
             );
         }
         let woke = counts.woke;
-        if let Some(plan) = dispatch {
+        for plan in dispatches {
             execute_dispatch(self.state.clone(), self.app.clone(), plan);
         }
-        // A tick serves one persona. When this tick spent a wake and other
-        // wake requests are still queued, re-arm the signal so the next persona
-        // is served on the next loop iteration instead of a poll later. Gated
-        // on progress: a wake-holder refused in-flight leaves its request
-        // queued, and re-arming on that would spin the loop.
+        // A tick serves every due persona up to its budget (G32). When this
+        // tick spent a wake and other wake requests are still queued, re-arm
+        // the signal so the next persona is served on the next loop iteration
+        // instead of a poll later. Gated on progress: a wake-holder refused
+        // in-flight leaves its request queued, and re-arming on that would
+        // spin the loop.
         if woke > 0 {
             let pool = self.pool.clone();
             let pending = tokio::task::spawn_blocking(move || read_wake_requests(&pool))
@@ -312,10 +315,45 @@ pub(crate) struct TickCounts {
     pub stale_open: usize,
     /// Admitted personas with no pending work in any lane (no rows written).
     pub idle: usize,
-    /// The lane dispatched this tick, if any (one per tick).
+    /// The FIRST lane dispatched this tick, if any — kept as the one-word
+    /// narration and for the tests that read a single-dispatch tick.
     pub dispatched: Option<&'static str>,
+    /// Worker dispatches planned this tick (maintenance is DB-only and does
+    /// not count); at most [`TickCounts::budget`].
+    pub dispatches: usize,
+    /// How many worker dispatches this tick was allowed: the running-work
+    /// headroom (`max_active_personas` minus personas already running),
+    /// clamped to [`MAX_DISPATCHES_PER_TICK`], never below one.
+    pub budget: usize,
     /// Wake requests consumed at admission this tick.
     pub woke: usize,
+}
+
+/// The most worker dispatches one tick may start, whatever the headroom says.
+///
+/// G32, measured 2026-09-09 07:59-08:40 in the Grand Simulation: the tick
+/// served ONE persona, so seven personas each asking for a 20-minute wake
+/// could not decide more often than every 35 minutes, and in those 41 minutes
+/// four personas decided twice while three decided not at all. The running
+/// cap (`max_active_personas`) is the ceiling the operator chose for how much
+/// work runs at once, so the tick now serves every due persona up to that
+/// headroom. This constant is the ramp under the ceiling: a cap of 10 on a
+/// machine that has to stay under 60 % memory must not start ten workers in
+/// one tick after an outage. Three per tick reaches the cap within four ticks.
+pub(crate) const MAX_DISPATCHES_PER_TICK: usize = 3;
+
+/// The tick's worker-dispatch budget from the running-work headroom.
+///
+/// Admission re-reads the headroom per persona, but the dispatches planned in
+/// THIS tick have not started running yet when the next persona is admitted,
+/// so without this budget one tick could plan past the cap. At least one:
+/// a cap already full is refused per persona by the admission ladder, which
+/// says why, rather than silently planning nothing.
+pub(crate) fn tick_dispatch_budget(pool: &DbPool) -> usize {
+    let headroom = personas_engine::active_persona_cap::active_persona_headroom(pool)
+        .map(|h| h.cap.saturating_sub(h.running))
+        .unwrap_or(1);
+    headroom.clamp(1, MAX_DISPATCHES_PER_TICK)
 }
 
 /// What the executor must spawn. Maintenance is absent by design: its whole
@@ -363,7 +401,7 @@ pub(crate) struct PlannedDispatch {
 /// Gates 1–2 plus the plan, as one blocking body. `None` = the tick is over
 /// (disabled / quota cooldown / plan error, already logged) — zero rows,
 /// zero spend.
-pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Option<PlannedDispatch>)> {
+pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Vec<PlannedDispatch>)> {
     use crate::engine::autonomy::{self, Action};
     // 1. Default-OFF opt-in — the ONE autonomy front door.
     if !autonomy::global_enabled(pool, Action::AttentionLoop) {
@@ -375,6 +413,27 @@ pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Option<Plann
     }
     match plan_tick(pool) {
         Ok(v) => Some(v),
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: plan failed");
+            None
+        }
+    }
+}
+
+/// [`plan_tick_gated`] with a budget of ONE — the tick as it was before G32,
+/// which is what the single-dispatch tests describe. Production ticks take
+/// the budget from the running-work headroom.
+#[cfg(test)]
+pub(crate) fn plan_tick_gated_one(pool: &DbPool) -> Option<(TickCounts, Option<PlannedDispatch>)> {
+    use crate::engine::autonomy::{self, Action};
+    if !autonomy::global_enabled(pool, Action::AttentionLoop) {
+        return None;
+    }
+    if quota_cooldown_active(pool) {
+        return None;
+    }
+    match plan_tick_with_budget(pool, 1) {
+        Ok((counts, mut v)) => Some((counts, v.drain(..).next())),
         Err(e) => {
             tracing::warn!(error = %e, "persona_attention: plan failed");
             None
@@ -439,12 +498,28 @@ pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
 /// The decision half: roster → admission ladder per persona → lane choice for
 /// the first admitted persona → ledger `started` row + built payload.
 /// Maintenance executes fully here (enqueue is DB-only).
-pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDispatch>), AppError> {
-    let mut counts = TickCounts::default();
+pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
+    let budget = tick_dispatch_budget(pool);
+    plan_tick_with_budget(pool, budget)
+}
+
+/// [`plan_tick`] with an explicit worker-dispatch budget: the ordered roster
+/// is walked and every admitted persona with work is served until `budget`
+/// worker dispatches are planned. Maintenance (DB-only) is done in place and
+/// does not spend the budget, so a sleep cycle never costs anyone a decision.
+pub(crate) fn plan_tick_with_budget(
+    pool: &DbPool,
+    budget: usize,
+) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
+    let mut counts = TickCounts {
+        budget: budget.max(1),
+        ..TickCounts::default()
+    };
+    let mut planned: Vec<PlannedDispatch> = Vec::new();
     // 3. The work list — free when unused.
     let charters = responsibilities::list_active_with_attention(pool)?;
     if charters.is_empty() {
-        return Ok((counts, None));
+        return Ok((counts, planned));
     }
 
     // 4. Group per persona (charters arrive created ASC, so a group's first
@@ -526,7 +601,7 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
         // 6. Ledger discipline: the DECISION row opens BEFORE any spawn.
         match work {
             LaneWork::Maintenance => {
-                counts.dispatched = Some(LANE_MAINTENANCE);
+                counts.dispatched.get_or_insert(LANE_MAINTENANCE);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -552,13 +627,14 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     ),
                     Err(e) => record_dispatch_outcome_with(pool, &ledger_id, "enqueued", Err(e)),
                 }
-                return Ok((counts, None));
+                // DB-only, already done: the next persona still gets its turn.
+                continue;
             }
             LaneWork::Arrivals {
                 message_id,
                 content,
             } => {
-                counts.dispatched = Some(LANE_ARRIVALS);
+                counts.dispatched.get_or_insert(LANE_ARRIVALS);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -566,21 +642,18 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_ARRIVALS),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Arrivals {
-                            message_id,
-                            content,
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Arrivals {
+                        message_id,
+                        content,
+                    },
+                });
             }
             LaneWork::Advance { responsibility_id } => {
-                counts.dispatched = Some(LANE_ADVANCE);
+                counts.dispatched.get_or_insert(LANE_ADVANCE);
                 let charter = persona_charters
                     .iter()
                     .find(|c| c.id == responsibility_id)
@@ -593,21 +666,18 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_ADVANCE),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Advance {
-                            responsibility_id,
-                            task,
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Advance {
+                        responsibility_id,
+                        task,
+                    },
+                });
             }
             LaneWork::Decide => {
-                counts.dispatched = Some(LANE_DECIDE);
+                counts.dispatched.get_or_insert(LANE_DECIDE);
                 // BEFORE the gather, not after: a task whose worker died is a
                 // claim on an idea that nothing is honouring, and the context
                 // built below reads both the in-flight list and the
@@ -640,18 +710,15 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_DECIDE),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Decide { context, fallback },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Decide { context, fallback },
+                });
             }
             LaneWork::Improve => {
-                counts.dispatched = Some(LANE_IMPROVE);
+                counts.dispatched.get_or_insert(LANE_IMPROVE);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -659,21 +726,23 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_IMPROVE),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Improve {
-                            task: build_improve_task(),
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Improve {
+                        task: build_improve_task(),
+                    },
+                });
             }
         }
+        counts.dispatches = planned.len();
+        if planned.len() >= counts.budget {
+            break;
+        }
     }
-    Ok((counts, None))
+    counts.dispatches = planned.len();
+    Ok((counts, planned))
 }
 
 // ── Admission ladder ───────────────────────────────────────────────────────
@@ -4558,6 +4627,73 @@ mod attention_tests {
 
     // -- pure: lane chooser --------------------------------------------------
 
+    /// G32: a tick serves every due persona up to its budget. Three overdue
+    /// personas, budget two: two served in ONE tick, the third on the next.
+    #[test]
+    fn a_tick_serves_every_due_persona_up_to_its_budget() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_a", "p_b", "p_c"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        seed_prior_pass(&pool, "p_a", 3120)?;
+        seed_prior_pass(&pool, "p_b", 3000)?;
+        seed_prior_pass(&pool, "p_c", 2880)?;
+
+        let (counts, plans) = plan_tick_with_budget(&pool, 2)?;
+        let served: Vec<&str> = plans.iter().map(|p| p.persona_id.as_str()).collect();
+        assert_eq!(counts.budget, 2);
+        assert_eq!(counts.dispatches, 2, "{served:?}");
+        assert_eq!(served, vec!["p_a", "p_b"], "need order, two per tick");
+        assert!(counts.dispatched.is_some());
+
+        // The two served rows are open (in flight); the next tick serves the
+        // one persona still waiting, and nobody twice.
+        let (counts2, plans2) = plan_tick_with_budget(&pool, 2)?;
+        assert_eq!(counts2.dispatches, 1);
+        assert_eq!(plans2[0].persona_id, "p_c");
+        for pid in ["p_a", "p_b", "p_c"] {
+            let started = ledger_rows(&pool, pid)
+                .into_iter()
+                .filter(|r| r.verdict == "started")
+                .count();
+            assert_eq!(started, 1, "{pid} was dispatched exactly once");
+        }
+        Ok(())
+    }
+
+    /// G32: the budget-one tick is the one-persona tick as it was — the
+    /// second due persona waits for the next tick.
+    #[test]
+    fn a_budget_of_one_serves_exactly_one_persona() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_a", "p_b"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+            seed_prior_pass(&pool, pid, 3000)?;
+        }
+        let (counts, plans) = plan_tick_with_budget(&pool, 1)?;
+        assert_eq!(counts.dispatches, 1);
+        assert_eq!(plans.len(), 1);
+        Ok(())
+    }
+
+    /// G32: the production budget is the running-work headroom clamped to the
+    /// per-tick ramp, never below one.
+    #[test]
+    fn the_tick_budget_is_the_headroom_under_the_ramp() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        // Default cap, nothing running: the ramp, not the cap.
+        assert_eq!(tick_dispatch_budget(&pool), MAX_DISPATCHES_PER_TICK);
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "2")?;
+        assert_eq!(tick_dispatch_budget(&pool), 2);
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+        assert_eq!(tick_dispatch_budget(&pool), 1);
+        Ok(())
+    }
+
     #[test]
     fn lane_priority_is_arrivals_maintenance_improve_advance() {
         let arrival = Some(("m1".to_string(), "hello".to_string()));
@@ -5065,7 +5201,7 @@ mod attention_tests {
         seed_prior_pass(&pool, "p_new", 3120)?; // longest ago = most overdue
 
         // Tick 1 — the most overdue persona, which is also the newest.
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.personas, 3, "all three are on the roster");
         assert_eq!(counts.refused, 0, "all three are eligible — nobody refused");
         let first = dispatch.expect("a dispatch");
@@ -5076,11 +5212,11 @@ mod attention_tests {
 
         // Tick 2 — p_new now holds an open row (in-flight), so the next most
         // overdue goes. Ordering picked the queue, the ladder still gates it.
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(dispatch.expect("a dispatch").persona_id, "p_mid");
 
         // Tick 3 — the senior persona, last, because it was served last.
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(dispatch.expect("a dispatch").persona_id, "p_old");
 
         // Exactly one new pass each: still ONE dispatch per tick.
@@ -5108,7 +5244,7 @@ mod attention_tests {
         seed_prior_pass(&pool, "p_woken", 2880)?;
         request_wake(&pool, "p_woken");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(dispatch.expect("a dispatch").persona_id, "p_woken");
         assert_eq!(
             counts.woke, 1,
@@ -5127,7 +5263,7 @@ mod attention_tests {
         seed_persona(&pool, "p1")?;
         seed_charter(&pool, "p1", "Charter", &one_outcome());
         // The key is absent → the gate answers None before any roster read.
-        assert!(plan_tick_gated(&pool).is_none());
+        assert!(plan_tick_gated_one(&pool).is_none());
         assert!(ledger_rows(&pool, "p1").is_empty(), "zero ledger rows");
         assert_eq!(
             pool.get()?
@@ -5142,7 +5278,7 @@ mod attention_tests {
     fn empty_roster_is_free_even_when_enabled() {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.personas, 0);
         assert!(dispatch.is_none());
     }
@@ -5157,7 +5293,7 @@ mod attention_tests {
         // this test exercises the advance path directly.
         consume_improve_for_today(&pool, "p1");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.personas, 1);
         assert_eq!(counts.dispatched, Some(LANE_ADVANCE));
         let plan = dispatch.expect("advance dispatch planned");
@@ -5195,7 +5331,7 @@ mod attention_tests {
 
         // A second tick is refused by the interval floor (30m default), and
         // — since real work still pends — writes exactly ONE refusal row…
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts2.refused, 1);
         assert_eq!(counts2.refusal_rows, 1);
@@ -5205,7 +5341,7 @@ mod attention_tests {
         let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
         assert_eq!(reason["kind"], "interval_floor");
         // …and a third tick dedupes the identical refusal (no third row).
-        let (counts3, _) = plan_tick_gated(&pool).expect("enabled");
+        let (counts3, _) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts3.refused, 1);
         assert_eq!(counts3.refusal_rows, 0);
         assert_eq!(ledger_rows(&pool, "p1").len(), 3);
@@ -5220,7 +5356,7 @@ mod attention_tests {
 
         // Tick 1: advance HAS a candidate, but the day's first slot goes to
         // the self-review.
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_IMPROVE));
         let plan = dispatch.expect("improve dispatch planned");
         match &plan.work {
@@ -5237,7 +5373,7 @@ mod attention_tests {
         backdate_completed(&pool, &plan.ledger_id, 60).unwrap(); // clear the floor, keep today
 
         // Tick 2: improve is spent for the day → advance takes over.
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts2.dispatched, Some(LANE_ADVANCE));
         let plan2 = dispatch2.expect("advance dispatch planned");
         match &plan2.work {
@@ -5250,7 +5386,7 @@ mod attention_tests {
         backdate_completed(&pool, &plan2.ledger_id, 60).unwrap();
 
         // Tick 3: still the same day → advance again, never a second review.
-        let (counts3, dispatch3) = plan_tick_gated(&pool).expect("enabled");
+        let (counts3, dispatch3) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts3.dispatched, Some(LANE_ADVANCE));
         let plan3 = dispatch3.expect("advance again");
         assert!(matches!(plan3.work, DispatchWork::Advance { .. }));
@@ -5268,10 +5404,10 @@ mod attention_tests {
         seed_persona(&pool, "p1").unwrap();
         seed_charter(&pool, "p1", "Charter", &one_outcome());
 
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let plan = dispatch.expect("advance planned");
         // While the row is open, a new tick refuses with in_flight.
-        let (counts, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts.refused, 1);
         let rows = ledger_rows(&pool, "p1");
@@ -5308,7 +5444,7 @@ mod attention_tests {
                 stale
             ],
         )?;
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.stale_open, 1);
         assert!(dispatch.is_some(), "stale open row must not wedge the loop");
         Ok(())
@@ -5335,7 +5471,7 @@ mod attention_tests {
             )?;
         }
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_MAINTENANCE));
         assert!(
             dispatch.is_none(),
@@ -5364,7 +5500,7 @@ mod attention_tests {
 
         // Second tick: refused by the interval floor (the enqueued row
         // completed just now) — no second job.
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert!(counts2.refused == 1, "floor refusal, not a second enqueue");
         let job_count2: i64 = pool.get()?.query_row(
@@ -5536,10 +5672,10 @@ mod attention_tests {
         consume_improve_for_today(&pool, "p1");
 
         // A completed pass just now: the floor refuses everything.
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let plan = dispatch.expect("first pass");
         record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none(), "floor refuses");
         assert_eq!(counts.refused, 1);
 
@@ -5548,7 +5684,7 @@ mod attention_tests {
         assert_eq!(read_wake_requests(&pool), vec!["p1".to_string()]);
 
         // …which buys exactly one pass through the floor…
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.refused, 0, "the wake spent the floor");
         let plan = dispatch.expect("the wake bought a pass");
         record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
@@ -5558,7 +5694,7 @@ mod attention_tests {
         );
 
         // …and the very next tick is refused by the floor again.
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none());
         assert_eq!(counts.refused, 1, "one bypass, not a standing exemption");
         Ok(())
@@ -5580,7 +5716,7 @@ mod attention_tests {
         // Improve is deliberately NOT consumed: without the wake it would win.
         request_wake(&pool, "am");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.woke, 1, "the wake was consumed at admission");
         assert_eq!(counts.dispatched, Some(LANE_DECIDE), "a wake means decide");
         let plan = dispatch.expect("decide dispatch planned");
@@ -5593,7 +5729,7 @@ mod attention_tests {
 
         // Without a wake the plain precedence stands again: the next admitted
         // pass (after the floor, simulated by clearing history) is improve's.
-        let (counts, _) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, _) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.woke, 0, "no standing exemption");
         Ok(())
     }
@@ -5620,7 +5756,7 @@ mod attention_tests {
         crate::db::repos::execution::executions::create(&pool, "busy", None, None, None, None)?;
         crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none(), "a full machine starts nothing");
         assert_eq!(counts.refused, 1);
         let refusal = ledger_rows(&pool, "waiting")
@@ -5647,7 +5783,7 @@ mod attention_tests {
                  SET completed_at = ?1 WHERE completed_at IS NOT NULL",
             params![(chrono::Utc::now() - chrono::Duration::hours(4)).to_rfc3339()],
         )?;
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.refused, 0);
         assert!(dispatch.is_some(), "the freed slot is this persona's");
         Ok(())
@@ -5668,7 +5804,7 @@ mod attention_tests {
         request_wake(&pool, "waiting");
         assert_eq!(read_wake_requests(&pool), vec!["waiting".to_string()]);
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none());
         assert_eq!(counts.woke, 0, "no wake was spent on a machine deferral");
         assert_eq!(
@@ -5697,7 +5833,7 @@ mod attention_tests {
             0,
             "twenty enabled personas doing nothing occupy no slot"
         );
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.refused, 0, "nobody is deferred on an idle machine");
         assert!(dispatch.is_some());
         Ok(())
@@ -5730,11 +5866,11 @@ mod attention_tests {
         let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
 
         // One completed pass, backdated 12 minutes: the 30m default refuses.
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let first = dispatch.expect("first pass");
         record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
         backdate_completed(&pool, &first.ledger_id, 12)?;
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none(), "the default floor still stands");
         assert_eq!(counts.refused, 1);
 
@@ -5748,7 +5884,7 @@ mod attention_tests {
 
         // The persona's own last decision: wake me in ten minutes.
         record_wake_choice(&pool, &charter, 10);
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.refused, 0, "12 minutes clears a 10-minute choice");
         assert!(dispatch.is_some(), "the persona paced itself back in");
 
@@ -5765,14 +5901,14 @@ mod attention_tests {
         seed_persona(&pool, "am")?;
         let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
 
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let first = dispatch.expect("first pass");
         record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
         // 40 minutes: past the 30m default, short of a 120m choice.
         backdate_completed(&pool, &first.ledger_id, 40)?;
         record_wake_choice(&pool, &charter, 120);
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none(), "everything it owns is still in flight");
         assert_eq!(counts.refused, 1);
         let rows = ledger_rows(&pool, "am");
@@ -5796,13 +5932,13 @@ mod attention_tests {
         seed_persona(&pool, "p1")?;
         let charter = seed_charter(&pool, "p1", "Charter A", &one_outcome());
 
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let first = dispatch.expect("first pass");
         record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
         backdate_completed(&pool, &first.ledger_id, 12)?;
 
         record_wake_choice(&pool, &charter, 10);
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(
             dispatch.is_none(),
             "12 minutes is still inside the 30-minute default"
@@ -5839,7 +5975,7 @@ mod attention_tests {
         .unwrap();
 
         request_wake(&pool, "p1");
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch.is_none(), "the cap still refuses a woken persona");
         assert_eq!(counts.refused, 1);
         let rows = ledger_rows(&pool, "p1");
@@ -6235,7 +6371,7 @@ mod attention_tests {
         let resp = seed_charter(&pool, "p1", "Charter A", &one_outcome());
         consume_improve_for_today(&pool, "p1");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_ADVANCE), "not the decide lane");
         let plan = dispatch.expect("advance dispatch");
         assert!(matches!(
@@ -6258,7 +6394,7 @@ mod attention_tests {
         let resp = seed_project_charter(&pool, "p1", "Own the codebase", "proj_1");
         consume_improve_for_today(&pool, "p1");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_DECIDE));
         let plan = dispatch.expect("decide dispatch planned");
         let DispatchWork::Decide { context, fallback } = &plan.work else {
@@ -6375,7 +6511,7 @@ mod attention_tests {
             params![msg_id],
         )?;
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_ARRIVALS));
         let plan = dispatch.expect("arrivals dispatch");
         match &plan.work {
@@ -6413,7 +6549,7 @@ mod attention_tests {
             params![(chrono::Utc::now() - chrono::Duration::minutes(10)).to_rfc3339()],
         )?;
 
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts2.refused, 1);
         let rows = ledger_rows(&pool, "p1");
