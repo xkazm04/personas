@@ -124,7 +124,8 @@ pub struct AdoptAppMasterInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub max_concurrent: Option<i32>,
-    /// Mandate rung, clamped to the grantable ceiling (2). Defaults to 2.
+    /// Mandate rung, clamped to the grantable ceiling (3, merge). Defaults to 2:
+    /// a holder merges only by an explicit grant.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub scope_rung: Option<u8>,
@@ -488,15 +489,22 @@ fn render_mandate_law(app_name: &str, mandate: &Mandate) -> String {
             "- Rung 1 (retry). You may re-run existing work (a failed job, a flaky gate). \
              You may NOT author a new change.\n"
         }
-        _ => {
+        RUNG_BRANCH => {
             "- Rung 2 (open branch/PR). You may author a change and propose it on a \
              branch. You may NOT merge, deploy, or push to the default branch — a human \
              merges. Never commit to main/master.\n"
         }
+        _ => {
+            "- Rung 3 (merge). You may author a change, run the project's own gates on \
+             the result, and merge it to the project's default branch yourself, with the \
+             certification on record. Merge authority on this project is yours: do not \
+             ask who merges. What the gates refuse stays unmerged until the gate is \
+             green; you may NOT change a gate you run, and you may NOT deploy.\n"
+        }
     });
     out.push_str(
-        "- Rung 3 (deploy/merge) and rung 4 (change the gates) are never granted to anyone \
-         in this version. Do not ask for them and do not route around them.\n",
+        "- Rung 4 (change the gates) is never granted to anyone in this version. Do not \
+         ask for it and do not route around it.\n",
     );
     if !mandate.forbidden_classes.is_empty() {
         out.push_str(
@@ -584,15 +592,22 @@ fn render_architect_mandate_law(workspace_name: &str, mandate: &Mandate) -> Stri
             "- Rung 1 (retry). You may re-run existing work (a failed job, a flaky gate). \
              You may NOT author a new change.\n"
         }
-        _ => {
+        RUNG_BRANCH => {
             "- Rung 2 (open branch/PR). You may author a change and propose it on a \
              branch. You may NOT merge, deploy, or push to the default branch — a human \
              merges. Never commit to main/master.\n"
         }
+        _ => {
+            "- Rung 3 (merge). You may author a change, run the project's own gates on \
+             the result, and merge it to the project's default branch yourself, with the \
+             certification on record. Merge authority on this project is yours: do not \
+             ask who merges. What the gates refuse stays unmerged until the gate is \
+             green; you may NOT change a gate you run, and you may NOT deploy.\n"
+        }
     });
     out.push_str(
-        "- Rung 3 (deploy/merge) and rung 4 (change the gates) are never granted to anyone \
-         in this version. Do not ask for them and do not route around them.\n",
+        "- Rung 4 (change the gates) is never granted to anyone in this version. Do not \
+         ask for it and do not route around it.\n",
     );
     if !mandate.forbidden_classes.is_empty() {
         out.push_str(
@@ -1586,6 +1601,52 @@ mod tests {
         assert!(
             mandate_permits_for(&pool, &project.id, Action::AttentionLoop).is_err(),
             "the attention loop is refused at rung 0"
+        );
+    }
+
+    /// The owner's decision of 2026-09-09: the App Master merges. Rung 3 is
+    /// grantable, the manifest law says so in the holder's own words, and rung
+    /// 4 still clamps to the ceiling with the clamp on record.
+    #[test]
+    fn rung_three_is_grantable_and_the_law_names_it_while_rung_four_clamps() {
+        let _home = TestHome::new("app_master_adopt");
+        let pool = init_test_db().expect("test db");
+        let project = seed_project(&pool);
+        seed_recipe(&pool, "codebase-architecture-review", "Architecture review");
+
+        let mut body = request(&project.id, &[("codebase-architecture-review", None)]);
+        body.scope_rung = Some(personas_engine::app_master::RUNG_MERGE);
+        let done = adopt(&pool, &body).expect("rung-3 adoption");
+        assert!(
+            !done.notes.iter().any(|n| n.contains("clamped")),
+            "a rung-3 grant is not clamped: {:?}",
+            done.notes
+        );
+        // The mandate lives on the charters, read through the same door the
+        // autonomy gate uses — not a settings row of its own.
+        let stored =
+            personas_engine::responsibility::mandate_for_project_or_none(&pool, &project.id)
+                .expect("the project holds a mandate after adoption");
+        assert_eq!(
+            stored.mandate.scope_rung,
+            personas_engine::app_master::RUNG_MERGE,
+            "the mandate carries rung 3"
+        );
+        let law = render_mandate_law("demo-app", &stored.mandate);
+        assert!(law.contains("Rung 3 (merge)"), "{law}");
+        assert!(law.contains("do not ask who merges"), "{law}");
+        assert!(!law.contains("a human merges"), "{law}");
+        assert!(
+            law.contains("Rung 4 (change the gates) is never granted"),
+            "{law}"
+        );
+
+        body.scope_rung = Some(4);
+        let clamped = adopt(&pool, &body).expect("rung-4 request");
+        assert!(
+            clamped.notes.iter().any(|n| n.contains("clamped to 3")),
+            "rung 4 clamps to the ceiling, on record: {:?}",
+            clamped.notes
         );
     }
 

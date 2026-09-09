@@ -2062,11 +2062,13 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ));
         if p.unrated_pending_idea_count > 0 {
             s.push_str(
-                "  unrated ideas are never auto-accepted; re-file them with a risk score \
+                "  unrated ideas are never auto-accepted; re-file them with all three scales, \
+                 effort, impact and a risk score \
                  (1 documentation or a reversible local change · 2 code behind a test · \
                  3 touches a route, a contract or a schema · 4 touches ledger, settlement \
                  or security semantics · 5 irreversible or external) — risk 1-2 is then \
-                 accepted by the project's rule without a human.\n",
+                 accepted by the project's rule without a human. The filer scores; you, \
+                 as the owner, group the accepted backlog by your own judgement.\n",
             );
         }
         if !p.undispatched_ideas.is_empty() {
@@ -3116,7 +3118,7 @@ mod tests {
         let p = render_decision_prompt(&ctx);
         assert!(p.contains("pending ideas: 4 (unrated: 3)"), "{p}");
         assert!(
-            p.contains("unrated ideas are never auto-accepted; re-file them with a risk score"),
+            p.contains("unrated ideas are never auto-accepted; re-file them with all three scales"),
             "{p}"
         );
 

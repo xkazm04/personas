@@ -885,12 +885,18 @@ mod tests {
     }
 
     #[test]
-    fn validate_refuses_rung_3_blank_titles_bad_status_and_unknown_classes() {
+    fn validate_refuses_rung_4_blank_titles_bad_status_and_unknown_classes() {
         let mut resp = from_mandate_record(&record("p1", "proj-1"), "p1");
         validate(&resp).expect("a hire-shaped charter is valid");
 
+        // Rung 3 (merge) is grantable since 2026-09-09 (the App Master merges);
+        // rung 4 (change the gates) is still refused at intake.
+        let mut merge = resp.clone();
+        merge.scope_rung = 3;
+        validate(&merge).expect("a rung-3 charter is valid");
+
         let mut high = resp.clone();
-        high.scope_rung = 3;
+        high.scope_rung = 4;
         let err = validate(&high).unwrap_err();
         assert!(matches!(err, AppError::Validation(_)), "{err}");
         assert!(err.to_string().contains("rung"), "{err}");

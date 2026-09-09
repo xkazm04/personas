@@ -196,15 +196,22 @@ pub(crate) fn app_master_intent(
             "- Rung 1 (retry). You may re-run existing work (a failed job, a flaky gate). \
              You may NOT author a new change.\n",
         ),
-        _ => out.push_str(
+        2 => out.push_str(
             "- Rung 2 (open branch/PR). You may author a change and propose it on a \
              branch. You may NOT merge, deploy, or push to the default branch — a human \
              merges. Never commit to main/master.\n",
         ),
+        _ => out.push_str(
+            "- Rung 3 (merge). You may author a change, run the project's own gates on \
+             the result, and merge it to the project's default branch yourself, with the \
+             certification on record. Do not ask who merges. What the gates refuse stays \
+             unmerged until the gate is green; you may NOT change a gate you run, and you \
+             may NOT deploy.\n",
+        ),
     }
     out.push_str(
-        "- Rung 3 (deploy/merge) and rung 4 (change the gates) are never granted to anyone \
-         in this version. Do not ask for them and do not route around them.\n",
+        "- Rung 4 (change the gates) is never granted to anyone in this version. Do not \
+         ask for it and do not route around it.\n",
     );
 
     let classes: Vec<String> = am

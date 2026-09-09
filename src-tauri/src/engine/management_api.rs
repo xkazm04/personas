@@ -2898,8 +2898,8 @@ fn validate_kp_app_master(am: &KpAppMasterSpec) -> Result<(), String> {
     // -- mandate: the two checks that carry the enforcement contract ---------
     if !(0..=personas_engine::app_master::MAX_GRANTABLE_RUNG).contains(&am.mandate.scope_rung) {
         return Err(format!(
-            "`appMaster.mandate.scopeRung` must be 0 (read), 1 (retry) or 2 (open branch/PR); \
-             got {}. Rung 3 (deploy/merge) and rung 4 (change gates) are never granted in v1.",
+            "`appMaster.mandate.scopeRung` must be 0 (read), 1 (retry), 2 (open branch/PR) \
+             or 3 (merge); got {}. Rung 4 (change gates) is never granted in this version.",
             am.mandate.scope_rung
         ));
     }
@@ -4477,8 +4477,9 @@ mod tests {
     }
 
     #[test]
-    fn app_master_rejects_a_rung_v1_never_grants() {
-        for rung in [3u8, 4, 9] {
+    fn app_master_rejects_a_rung_this_version_never_grants() {
+        // Rung 3 (merge) is grantable since 2026-09-09; 4 and above are not.
+        for rung in [4u8, 5, 9] {
             let mut v = serde_json::to_value(kp_body()).unwrap();
             let mut spec = kp_app_master_json();
             spec["mandate"]["scopeRung"] = serde_json::json!(rung);
@@ -4488,8 +4489,8 @@ mod tests {
             assert!(err.contains("scopeRung"), "{err}");
             assert!(err.contains("never granted"), "{err}");
         }
-        // 0, 1 and 2 are all grantable.
-        for rung in [0u8, 1, 2] {
+        // 0, 1, 2 and 3 are all grantable.
+        for rung in [0u8, 1, 2, 3] {
             let mut v = serde_json::to_value(kp_body()).unwrap();
             let mut spec = kp_app_master_json();
             spec["mandate"]["scopeRung"] = serde_json::json!(rung);

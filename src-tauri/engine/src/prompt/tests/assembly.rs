@@ -735,7 +735,7 @@ fn propose_backlog_documents_risk_as_required_and_names_the_scale() {
 
     assert!(prompt.contains("### propose_backlog"));
     assert!(
-        prompt.contains("`risk` is REQUIRED."),
+        prompt.contains("`risk`, `effort` and `impact` are ALL REQUIRED"),
         "the field must be stated as required, not optional"
     );
     assert!(
@@ -757,4 +757,6 @@ fn propose_backlog_documents_risk_as_required_and_names_the_scale() {
         assert!(prompt.contains(rung), "scale rung missing: {rung}");
     }
     assert!(prompt.contains("\"risk\": 1-5 (REQUIRED)"));
+    assert!(prompt.contains("\"effort\": 1-5 (REQUIRED)"));
+    assert!(prompt.contains("\"impact\": 1-5 (REQUIRED)"));
 }

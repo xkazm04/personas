@@ -1313,10 +1313,30 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     // accept. A rated row is exactly the question the rule
                     // exists to answer, so it answers in the same dispatch.
                     // Unrated rows are untouched: the rule cannot see them.
+                    // The owner's rule (2026-09-09): the one who files an idea
+                    // scores it — effort, impact and risk — and the project's
+                    // owner groups the accepted backlog by its own judgement.
+                    // A filing short of the three scales is kept (dropping it
+                    // would lose the finding) and named as incomplete, so the
+                    // filer's next run sees what it owes.
+                    let missing: Vec<&str> = [
+                        ("effort", effort.is_none()),
+                        ("impact", impact.is_none()),
+                        ("risk", risk.is_none()),
+                    ]
+                    .into_iter()
+                    .filter_map(|(k, gone)| gone.then_some(k))
+                    .collect();
                     let rated_now = match outcome {
                         Ok(Some(idea)) => {
                             ctx.logger
                                 .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id));
+                            if !missing.is_empty() {
+                                ctx.logger.log(&format!(
+                                    "[BACKLOG] Incomplete filing '{title}': no {} — the filer scores effort, impact and risk; re-file with all three",
+                                    missing.join(", ")
+                                ));
+                            }
                             risk.is_some()
                         }
                         // A re-proposal is not always a no-op. The row already

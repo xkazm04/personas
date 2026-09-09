@@ -813,7 +813,7 @@ would produce a mandate that reads stricter than it is enforced
 
 | Refused | Why |
 | --- | --- |
-| `mandate.scopeRung` outside `0..=2` | Rung 3 (deploy/merge) and 4 (change gates) are never grantable in v1. Refusing at the door beats storing a rung the enforcement layer must remember to ignore. |
+| `mandate.scopeRung` outside `0..=3` | Rung 4 (change gates) is never grantable; rung 3 (merge) is grantable since 2026-09-09 by explicit grant only (the App Master merges). Refusing at the door beats storing a rung the enforcement layer must remember to ignore. |
 | `mandate.forbiddenClasses` outside the closed vocabulary | A class this build cannot **detect** is a class it cannot **block**. |
 
 Also bounded/validated: the repo binding (a `url` or a `rootPath` must be
