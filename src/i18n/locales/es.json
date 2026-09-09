@@ -5871,7 +5871,16 @@
     "world_prod_score": "Producción",
     "world_progress": "Progreso",
     "world_tooling": "Herramientas",
-    "world_unsupported": "Este dispositivo no pudo iniciar la vista 3D. Vuelve a Referencia."
+    "world_unsupported": "Este dispositivo no pudo iniciar la vista 3D. Vuelve a Referencia.",
+    "board_level_l0": "L0 cartera",
+    "board_level_l1": "L1 proyecto",
+    "board_live": "En vivo",
+    "board_no_picks": "Haz clic en una celda para verla en vivo. Marca una columna con una estrella para elegirla y luego pega las selecciones en el chat.",
+    "board_picks": "Selecciones",
+    "board_rendering": "Renderizando {done} de {total}…",
+    "board_rerender": "Volver a renderizar todo",
+    "board_sheet_hint": "Hoja de contacto de cada celda — capturada por scripts/capture-canvas.mjs, o haz clic derecho para guardar.",
+    "view_board": "Tablero"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Agregar capacidad",

@@ -77,6 +77,9 @@ import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChu
 // The 3D prototypes carry three.js — lazy so the baseline canvas never pays
 // for them. lazyRetry, not React.lazy (see PersonasPage for why).
 const WorldCanvas = lazyRetry(() => import('./three/WorldCanvas'));
+// The design board is dev-only and heavier still (it renders every recipe in
+// turn); its own chunk, loaded only when its tab is chosen.
+const DesignBoard = lazyRetry(() => import('./three/board/DesignBoard'));
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
@@ -877,7 +880,11 @@ function MastermindInner() {
           it would let islands paint at their spiral fallback positions and then
           JUMP when the persisted layout arrives. */}
       <ViewPanel view={view}>
-      {is3d ? (
+      {view === 'board' ? (
+        <Suspense fallback={<RouteChunkSkeleton />}>
+          <DesignBoard />
+        </Suspense>
+      ) : is3d ? (
         <Suspense fallback={<RouteChunkSkeleton />}>
           <WorldCanvas variant={view} />
         </Suspense>

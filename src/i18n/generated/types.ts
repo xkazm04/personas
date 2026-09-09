@@ -21646,6 +21646,15 @@ export type Translations = {
     athena_say_focus: string;
     athena_say_wire_start: string;
     athena_say_wire_done: string;
+    view_board: string;
+    board_rendering: string;
+    board_rerender: string;
+    board_picks: string;
+    board_no_picks: string;
+    board_live: string;
+    board_level_l0: string;
+    board_level_l1: string;
+    board_sheet_hint: string;
   };
   ship: {
     tab_ship: string;

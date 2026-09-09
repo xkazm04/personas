@@ -5871,7 +5871,16 @@
     "world_prod_score": "本番環境",
     "world_progress": "進捗",
     "world_tooling": "ツール",
-    "world_unsupported": "このデバイスでは3Dビューを起動できませんでした。基準ビューに切り替えてください。"
+    "world_unsupported": "このデバイスでは3Dビューを起動できませんでした。基準ビューに切り替えてください。",
+    "board_level_l0": "L0 ポートフォリオ",
+    "board_level_l1": "L1 プロジェクト",
+    "board_live": "ライブ",
+    "board_no_picks": "セルをクリックするとライブ表示されます。列にスターを付けて選択し、選択内容をチャットに貼り付けてください。",
+    "board_picks": "選択",
+    "board_rendering": "レンダリング中 {done}/{total}…",
+    "board_rerender": "すべて再レンダリング",
+    "board_sheet_hint": "全セルのコンタクトシート — scripts/capture-canvas.mjs で取得、または右クリックで保存。",
+    "view_board": "ボード"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",

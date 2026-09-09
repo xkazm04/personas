@@ -9,9 +9,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { WorldVariant } from '../three/palettes';
 
-export type MastermindView = 'baseline' | WorldVariant;
+/** `board` is the Strata design board — a dev-only contact sheet of look
+ *  recipes (three/board). It never appears in a production build. */
+export type MastermindView = 'baseline' | WorldVariant | 'board';
 
-export const MASTERMIND_VIEWS: MastermindView[] = ['baseline', 'strata', 'holo'];
+export const MASTERMIND_VIEWS: MastermindView[] = ['baseline', 'strata', 'holo', ...(import.meta.env.DEV ? (['board'] as const) : [])];
 
 /** Shared by the strip and its panel so every tab's aria-controls resolves. */
 const ID_PREFIX = 'mm-view';
@@ -22,6 +24,7 @@ export function ViewSwitcher({ view, onChange }: { view: MastermindView; onChang
     { id: 'baseline' as const, label: t.mastermind.view_baseline },
     { id: 'strata' as const, label: t.mastermind.view_strata },
     { id: 'holo' as const, label: t.mastermind.view_holo },
+    ...(import.meta.env.DEV ? [{ id: 'board' as const, label: t.mastermind.view_board }] : []),
   ];
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 p-1 rounded-interactive mm-chrome surface-blur-tooltip" data-testid="mm-view-switcher">

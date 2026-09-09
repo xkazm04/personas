@@ -5871,7 +5871,16 @@
     "world_prod_score": "প্রোডাকশন",
     "world_progress": "অগ্রগতি",
     "world_tooling": "টুলিং",
-    "world_unsupported": "এই ডিভাইসে 3D ভিউ চালু করা যায়নি। বেসলাইনে ফিরে যান।"
+    "world_unsupported": "এই ডিভাইসে 3D ভিউ চালু করা যায়নি। বেসলাইনে ফিরে যান।",
+    "board_level_l0": "L0 পোর্টফোলিও",
+    "board_level_l1": "L1 প্রজেক্ট",
+    "board_live": "লাইভ",
+    "board_no_picks": "সরাসরি দেখতে একটি সেল ক্লিক করুন। কলাম বেছে নিতে স্টার দিন, তারপর পিকগুলো চ্যাটে পেস্ট করুন।",
+    "board_picks": "পিকস",
+    "board_rendering": "রেন্ডার হচ্ছে {done}/{total}…",
+    "board_rerender": "সব পুনরায় রেন্ডার করুন",
+    "board_sheet_hint": "প্রতিটি সেলের কন্ট্যাক্ট শিট — scripts/capture-canvas.mjs দ্বারা ক্যাপচার করা, অথবা সেভ করতে রাইট-ক্লিক করুন।",
+    "view_board": "বোর্ড"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "সক্ষমতা যোগ করুন",

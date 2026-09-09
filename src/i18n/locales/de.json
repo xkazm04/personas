@@ -5871,7 +5871,16 @@
     "world_prod_score": "Produktion",
     "world_progress": "Fortschritt",
     "world_tooling": "Werkzeuge",
-    "world_unsupported": "Dieses Gerät konnte die 3D-Ansicht nicht starten. Zurück zur Referenzansicht wechseln."
+    "world_unsupported": "Dieses Gerät konnte die 3D-Ansicht nicht starten. Zurück zur Referenzansicht wechseln.",
+    "board_level_l0": "L0-Portfolio",
+    "board_level_l1": "L1-Projekt",
+    "board_live": "Live-Ansicht",
+    "board_no_picks": "Klicke auf eine Zelle, um sie live anzusehen. Markiere eine Spalte mit einem Stern, um sie auszuwählen, und füge die Auswahl dann in den Chat ein.",
+    "board_picks": "Auswahl",
+    "board_rendering": "Rendert {done} von {total}…",
+    "board_rerender": "Alle neu rendern",
+    "board_sheet_hint": "Kontaktabzug aller Zellen — erfasst von scripts/capture-canvas.mjs, oder per Rechtsklick speichern.",
+    "view_board": "Tafel"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",

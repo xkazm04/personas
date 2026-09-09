@@ -21639,7 +21639,16 @@
     "athena_say_ship_late": "{project} ships {milestone} next — {shipped} of {total} done, and it is running late.",
     "athena_say_focus": "Opening {dim} on {project}.",
     "athena_say_wire_start": "Binding Sentry to {project}…",
-    "athena_say_wire_done": "Done — Monitoring on {project} is wired. The world updated."
+    "athena_say_wire_done": "Done — Monitoring on {project} is wired. The world updated.",
+    "view_board": "Board",
+    "board_rendering": "Rendering {done} of {total}…",
+    "board_rerender": "Re-render all",
+    "board_picks": "Picks",
+    "board_no_picks": "Click a cell to view it live. Star a column to pick it, then paste the picks into chat.",
+    "board_live": "Live",
+    "board_level_l0": "L0 portfolio",
+    "board_level_l1": "L1 project",
+    "board_sheet_hint": "Contact sheet of every cell — captured by scripts/capture-canvas.mjs, or right-click to save."
   },
   "ship": {
     "tab_ship": "Ship",

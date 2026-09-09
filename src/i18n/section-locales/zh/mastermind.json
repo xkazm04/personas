@@ -202,5 +202,14 @@
   "world_prod_score": "生产环境",
   "world_progress": "进度",
   "world_tooling": "工具链",
-  "world_unsupported": "此设备无法启动 3D 视图。请切换回基线视图。"
+  "world_unsupported": "此设备无法启动 3D 视图。请切换回基线视图。",
+  "board_level_l0": "L0 组合",
+  "board_level_l1": "L1 项目",
+  "board_live": "实时",
+  "board_no_picks": "点击单元格以实时查看。为列加星以选中它,然后将所选内容粘贴到聊天中。",
+  "board_picks": "已选",
+  "board_rendering": "正在渲染 {done}/{total}…",
+  "board_rerender": "全部重新渲染",
+  "board_sheet_hint": "每个单元格的联系表 — 由 scripts/capture-canvas.mjs 捕获,或右键另存为。",
+  "view_board": "看板"
 }

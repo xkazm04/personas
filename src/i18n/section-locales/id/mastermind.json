@@ -202,5 +202,14 @@
   "world_prod_score": "Produksi",
   "world_progress": "Progres",
   "world_tooling": "Perkakas",
-  "world_unsupported": "Perangkat ini tidak dapat memulai tampilan 3D. Beralihlah kembali ke Dasar."
+  "world_unsupported": "Perangkat ini tidak dapat memulai tampilan 3D. Beralihlah kembali ke Dasar.",
+  "board_level_l0": "Portofolio L0",
+  "board_level_l1": "Proyek L1",
+  "board_live": "Langsung",
+  "board_no_picks": "Klik sel untuk melihatnya secara langsung. Beri bintang pada kolom untuk memilihnya, lalu tempel pilihan ke obrolan.",
+  "board_picks": "Pilihan",
+  "board_rendering": "Merender {done} dari {total}…",
+  "board_rerender": "Render ulang semua",
+  "board_sheet_hint": "Lembar kontak setiap sel — diambil oleh scripts/capture-canvas.mjs, atau klik kanan untuk menyimpan.",
+  "view_board": "Papan"
 }

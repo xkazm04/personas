@@ -1,0 +1,60 @@
+/* Strata design board — a dev tool, so it wears a plain neutral skin of its
+   own rather than either the product tokens or a recipe: the board must not
+   colour the cells it is asking you to judge. */
+
+.mm-board {
+  position: absolute; inset: 0; overflow: auto;
+  background: #0d0e11; color: #e6e2da;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  padding: 3.4rem 1rem 2rem;
+  display: flex; flex-direction: column; gap: 0.9rem;
+}
+.mm-board-mono { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+.mm-board-head {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 0.5rem 0.75rem; border: 1px solid #23262d; border-radius: 0.4rem; background: #111317;
+}
+.mm-board-title { display: flex; align-items: baseline; gap: 0.6rem; }
+.mm-board-title .mm-board-mono { font-size: 0.8rem; color: #c9a67a; letter-spacing: 0.12em; text-transform: uppercase; }
+.mm-board-axes { font-size: 0.8rem; color: #9a9186; }
+.mm-board-status { flex: 1; font-size: 0.8rem; color: #e6e2da; }
+.mm-board-btn {
+  border: 1px solid #2c3038; background: transparent; color: #e6e2da; font: inherit; font-size: 0.78rem;
+  padding: 0.35rem 0.7rem; border-radius: 0.3rem; cursor: pointer;
+}
+.mm-board-btn:hover:not(:disabled) { background: #1a1d23; }
+.mm-board-btn:disabled { opacity: 0.4; cursor: default; }
+
+.mm-board-stage {
+  position: relative; flex: none; max-width: 100%;
+  border: 1px solid #23262d; border-radius: 0.4rem; overflow: hidden; background: #000;
+}
+.mm-board-stage canvas { display: block; }
+.mm-board-stage-label {
+  position: absolute; left: 0.6rem; bottom: 0.5rem; font-size: 0.72rem; color: #e6e2da;
+  padding: 0.2rem 0.5rem; background: rgba(0, 0, 0, 0.55); border-radius: 0.25rem; pointer-events: none;
+}
+
+.mm-board-grid { display: grid; gap: 0.6rem; align-items: start; }
+.mm-board-col { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.4rem; border: 1px solid #1c1f25; border-radius: 0.4rem; background: #0f1114; }
+.mm-board-col--picked { border-color: #c9a67a; box-shadow: 0 0 0 1px rgba(201, 166, 122, 0.35); }
+.mm-board-col-head { display: flex; align-items: center; gap: 0.4rem; min-height: 1.6rem; }
+.mm-board-pick { border: 0; background: transparent; color: #c9a67a; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }
+.mm-board-id { font-size: 0.8rem; font-weight: 600; }
+.mm-board-name { font-size: 0.7rem; color: #9a9186; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mm-board-cell {
+  position: relative; display: block; width: 100%; aspect-ratio: 16 / 10; padding: 0; margin: 0;
+  border: 1px solid #23262d; border-radius: 0.3rem; overflow: hidden; background: #000; cursor: pointer;
+}
+.mm-board-cell:disabled { cursor: default; }
+.mm-board-cell:hover:not(:disabled) { border-color: #6b6f78; }
+.mm-board-cell--live { border-color: #c9a67a; }
+.mm-board-cell img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mm-board-cell-ghost { position: absolute; inset: 0; background: linear-gradient(135deg, #111317, #0b0c0f); }
+.mm-board-cell-tag { position: absolute; left: 0.35rem; top: 0.3rem; font-size: 0.62rem; color: #e6e2da; padding: 0.05rem 0.35rem; background: rgba(0, 0, 0, 0.55); border-radius: 0.2rem; }
+
+.mm-board-sheet { display: flex; flex-direction: column; gap: 0.4rem; }
+.mm-board-hint { margin: 0; font-size: 0.72rem; color: #9a9186; }
+.mm-board-sheet canvas { max-width: 100%; height: auto; border: 1px solid #23262d; border-radius: 0.4rem; }

@@ -202,5 +202,14 @@
   "world_prod_score": "الإنتاج",
   "world_progress": "التقدم",
   "world_tooling": "الأدوات",
-  "world_unsupported": "تعذر على هذا الجهاز تشغيل العرض ثلاثي الأبعاد. عد إلى الخط الأساسي."
+  "world_unsupported": "تعذر على هذا الجهاز تشغيل العرض ثلاثي الأبعاد. عد إلى الخط الأساسي.",
+  "board_level_l0": "L0 المحفظة",
+  "board_level_l1": "L1 المشروع",
+  "board_live": "مباشر",
+  "board_no_picks": "انقر على خلية لعرضها مباشرة. ضع نجمة على عمود لاختياره، ثم الصق الاختيارات في الدردشة.",
+  "board_picks": "الاختيارات",
+  "board_rendering": "جارٍ العرض {done} من {total}…",
+  "board_rerender": "إعادة عرض الكل",
+  "board_sheet_hint": "لوحة مصغرة لكل خلية — تُلتقط بواسطة scripts/capture-canvas.mjs، أو انقر بزر الماوس الأيمن للحفظ.",
+  "view_board": "اللوحة"
 }

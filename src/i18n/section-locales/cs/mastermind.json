@@ -202,5 +202,14 @@
   "world_prod_score": "Produkce",
   "world_progress": "Postup",
   "world_tooling": "Nástroje",
-  "world_unsupported": "Toto zařízení nedokázalo spustit 3D zobrazení. Přepněte zpět na Základní zobrazení."
+  "world_unsupported": "Toto zařízení nedokázalo spustit 3D zobrazení. Přepněte zpět na Základní zobrazení.",
+  "board_level_l0": "Portfolio L0",
+  "board_level_l1": "Projekt L1",
+  "board_live": "Živě",
+  "board_no_picks": "Kliknutím na buňku ji zobrazíte živě. Hvězdičkou označte sloupec pro výběr a poté výběry vložte do chatu.",
+  "board_picks": "Výběry",
+  "board_rendering": "Vykreslování {done} z {total}…",
+  "board_rerender": "Překreslit vše",
+  "board_sheet_hint": "Kontaktní list všech buněk — zachyceno pomocí scripts/capture-canvas.mjs, nebo uložte pravým kliknutím.",
+  "view_board": "Nástěnka"
 }

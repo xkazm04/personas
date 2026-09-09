@@ -202,5 +202,14 @@
   "world_prod_score": "Sản xuất",
   "world_progress": "Tiến độ",
   "world_tooling": "Công cụ",
-  "world_unsupported": "Thiết bị này không thể khởi động chế độ xem 3D. Hãy chuyển về Cơ bản."
+  "world_unsupported": "Thiết bị này không thể khởi động chế độ xem 3D. Hãy chuyển về Cơ bản.",
+  "board_level_l0": "Danh mục L0",
+  "board_level_l1": "Dự án L1",
+  "board_live": "Trực tiếp",
+  "board_no_picks": "Nhấp vào một ô để xem trực tiếp. Đánh dấu sao một cột để chọn nó, sau đó dán các lựa chọn vào khung chat.",
+  "board_picks": "Lựa chọn",
+  "board_rendering": "Đang kết xuất {done}/{total}…",
+  "board_rerender": "Kết xuất lại tất cả",
+  "board_sheet_hint": "Bảng tổng hợp mọi ô — được chụp bởi scripts/capture-canvas.mjs, hoặc nhấp chuột phải để lưu.",
+  "view_board": "Bảng"
 }
