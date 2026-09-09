@@ -1304,10 +1304,21 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         )
                         .map(Some),
                     };
-                    match outcome {
-                        Ok(Some(idea)) => ctx
-                            .logger
-                            .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
+                    // G30 — the project's mechanical triage rule used to run
+                    // only from the scanner and the overnight tick, so an idea
+                    // a persona FILED with a risk score, or RATED on a re-file,
+                    // sat pending until a human clicked: on 2026-09-09 all six
+                    // bank projects held 0 accepted ideas beside 184 rated
+                    // risk-1/2 ones, and every App Master asked which to
+                    // accept. A rated row is exactly the question the rule
+                    // exists to answer, so it answers in the same dispatch.
+                    // Unrated rows are untouched: the rule cannot see them.
+                    let rated_now = match outcome {
+                        Ok(Some(idea)) => {
+                            ctx.logger
+                                .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id));
+                            risk.is_some()
+                        }
                         // A re-proposal is not always a no-op. The row already
                         // in the backlog may have been filed WITHOUT scales,
                         // and an unrated idea is one the project's mechanical
@@ -1335,16 +1346,40 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                     ctx.logger.log(&format!(
                                         "[BACKLOG] Rated '{title}' — scales filled in on the item already filed ({})",
                                         idea.id
-                                    ))
+                                    ));
+                                    true
                                 }
-                                _ => ctx.logger.log(&format!(
-                                    "[BACKLOG] Skipped '{title}' — already in the backlog"
-                                )),
+                                _ => {
+                                    ctx.logger.log(&format!(
+                                        "[BACKLOG] Skipped '{title}' — already in the backlog"
+                                    ));
+                                    false
+                                }
                             }
                         }
-                        Err(e) => ctx
-                            .logger
-                            .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                        Err(e) => {
+                            ctx.logger
+                                .log(&format!("[BACKLOG] Failed to propose '{title}': {e}"));
+                            false
+                        }
+                    };
+                    if rated_now {
+                        if let Some(pid) = project_id.as_deref() {
+                            match crate::commands::infrastructure::dev_tools::run_triage_rules_core(
+                                ctx.pool, pid,
+                            ) {
+                                Ok(o) if o.ideas_affected > 0 => ctx.logger.log(&format!(
+                                    "[BACKLOG] Triage rules answered {} rated idea(s): {} accepted, {} rejected",
+                                    o.ideas_affected,
+                                    o.accepted_idea_ids.len(),
+                                    o.rejected_count
+                                )),
+                                Ok(_) => {}
+                                Err(e) => ctx
+                                    .logger
+                                    .log(&format!("[BACKLOG] Triage rules failed to run: {e}")),
+                            }
+                        }
                     }
                 }
             }
@@ -2388,6 +2423,101 @@ mod tests {
             },
             other => other,
         }
+    }
+
+    /// The same item carrying a risk score — what the project's mechanical
+    /// triage rule reads.
+    fn backlog_item_rated(title: &str, risk: i32) -> ProtocolMessage {
+        match backlog_item(title) {
+            ProtocolMessage::ProposeBacklog { title, .. } => ProtocolMessage::ProposeBacklog {
+                title,
+                description: None,
+                category: None,
+                impact: None,
+                effort: None,
+                risk: Some(risk),
+                target: None,
+            },
+            other => other,
+        }
+    }
+
+    /// G30: the project's triage rule answers a RATED proposal in the same
+    /// dispatch — on arrival, and on the re-file that rates an unrated row.
+    /// An unrated row stays pending (the rule cannot see it) and a row above
+    /// the rule's ceiling stays pending too: the rule decides, not the door.
+    #[test]
+    fn a_rated_proposal_is_answered_by_the_projects_triage_rule_on_arrival() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-core");
+        crate::db::repos::dev::triage_rules::create_triage_rule(
+            &pool,
+            Some(&owned.id),
+            "sim: accept risk below 3",
+            r#"[{"field":"risk","op":"gte","value":1},{"field":"risk","op":"lt","value":3}]"#,
+            "accept",
+            Some(true),
+        )
+        .unwrap();
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master bank-core",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+        let status_of = |title: &str| -> String {
+            ideas_on(&pool, &owned.id)
+                .into_iter()
+                .find(|i| i.title == title)
+                .map(|i| i.status)
+                .unwrap_or_else(|| panic!("`{title}` never landed"))
+        };
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Add the ledger posting test"),
+        );
+        assert_eq!(
+            status_of("Add the ledger posting test"),
+            "pending",
+            "unrated: invisible to the rule, so untouched"
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Name the fail-closed authz route", 2),
+        );
+        assert_eq!(
+            status_of("Name the fail-closed authz route"),
+            "accepted",
+            "rated within the rule on arrival: accepted in the same dispatch"
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Rewrite the settlement engine", 4),
+        );
+        assert_eq!(
+            status_of("Rewrite the settlement engine"),
+            "pending",
+            "rated above the rule's ceiling: the rule declines, the row waits"
+        );
+
+        // The re-file that RATES the unrated row is new information: the
+        // backfill fills the score in, and the rule answers it right away.
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Add the ledger posting test", 1),
+        );
+        assert_eq!(
+            status_of("Add the ledger posting test"),
+            "accepted",
+            "rated on re-file: backfilled and answered"
+        );
+        assert_eq!(ideas_on(&pool, &owned.id).len(), 3, "no duplicate rows");
     }
 
     /// Register a project at this build's own repo root — what
