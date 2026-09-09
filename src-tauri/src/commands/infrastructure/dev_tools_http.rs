@@ -200,8 +200,36 @@ pub fn dev_tools_bridge_port() -> Option<u16> {
     crate::local_http::port()
 }
 
-fn db(s: &DevToolsHttp) -> DbPool {
-    s.app.state::<Arc<AppState>>().db.clone()
+/// `Arc<AppState>` is not in Tauri's state map for the whole life of this
+/// server. `boot::services::start_local_http` calls `local_http::start()`
+/// — which binds the port and begins accepting — from `boot::setup` line
+/// ~100, and `app.manage(state_arc.clone())` does not run until line ~203.
+/// Everything in between (p2p init, the `ml` vector-KB reconcile, session
+/// keypair generation, `CloudWebhookRelayState::load_from_db`) is real work,
+/// so the gap is a window a request can genuinely land in, not a theoretical
+/// one.
+///
+/// A bare `state::<T>()` there panics `state() called before manage()`. The
+/// bridge has no `CatchPanicLayer`, so that unwinds out of the connection
+/// task: the caller sees a dropped connection rather than a status, and the
+/// boot crash hook writes a crash log for what is really just "too early".
+///
+/// So absence is a handled, retryable answer — 503 — not a panic.
+fn db(s: &DevToolsHttp) -> Result<DbPool, (StatusCode, String)> {
+    s.app
+        .try_state::<Arc<AppState>>()
+        .map(|st| st.db.clone())
+        .ok_or_else(still_booting)
+}
+
+/// The answer a `/dev-tools` route owes a caller that arrived during the boot
+/// window described on [`db`]. 503 rather than 500: nothing is wrong with the
+/// request, and the same call succeeds a moment later.
+fn still_booting() -> (StatusCode, String) {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        "the app is still booting: application state is not published yet — retry".to_string(),
+    )
 }
 fn err(e: AppError) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -248,7 +276,7 @@ fn canonical_project_root(raw: &str) -> Result<String, AppError> {
 async fn list_projects(
     State(s): State<DevToolsHttp>,
 ) -> Result<Json<Vec<DevProject>>, (StatusCode, String)> {
-    let projects = repo::list_projects(&db(&s), None).map_err(err)?;
+    let projects = repo::list_projects(&db(&s)?, None).map_err(err)?;
     Ok(Json(projects))
 }
 
@@ -275,7 +303,7 @@ async fn create_project(
     // Same identity door as the Tauri command: idempotent re-register,
     // marker-proven relocation, clone collision refused.
     let p = crate::db::project_identity::register_project(
-        &db(&s),
+        &db(&s)?,
         &b.name,
         &root_path,
         b.description.as_deref(),
@@ -305,7 +333,7 @@ async fn create_project_repository_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<project_scaffold::CreateProjectRepositoryInput>,
 ) -> Result<Json<project_scaffold::CreatedProjectRepository>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     project_scaffold::create_project_repository_inner(s.app.clone(), pool, b)
         .await
         .map(Json)
@@ -344,7 +372,7 @@ fn workspace_summaries(pool: &DbPool) -> Result<Vec<WorkspaceSummary>, AppError>
 async fn list_workspaces_route(
     State(s): State<DevToolsHttp>,
 ) -> Result<Json<Vec<WorkspaceSummary>>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let handle = tokio::task::spawn_blocking(move || workspace_summaries(&pool));
     handle
         .await
@@ -370,7 +398,7 @@ async fn protect_workspace_route(
     Path(id): Path<String>,
     Json(b): Json<ProtectWorkspaceBody>,
 ) -> Result<Json<crate::db::models::DevWorkspace>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let handle = tokio::task::spawn_blocking(move || {
         crate::db::repos::workspaces::protection::set_workspace_protection(
             &pool,
@@ -409,7 +437,7 @@ async fn scan_codebase(
     State(s): State<DevToolsHttp>,
     Json(b): Json<ScanBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let root = b.root_path.as_deref().unwrap_or("");
     let res = launch_context_scan(
@@ -464,7 +492,7 @@ async fn scan_kpis(
     State(s): State<DevToolsHttp>,
     Json(b): Json<ScanKpisBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let res =
         launch_kpi_scan(s.app.clone(), &pool, &project, b.context_id.as_deref()).map_err(err)?;
@@ -483,7 +511,7 @@ async fn kpi_scan_prompt_route(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,
 ) -> Result<String, (StatusCode, String)> {
-    kpi_scan_prompt(&db(&s), &project_id).map_err(err)
+    kpi_scan_prompt(&db(&s)?, &project_id).map_err(err)
 }
 
 #[derive(Deserialize)]
@@ -498,7 +526,7 @@ async fn scan_use_cases(
     State(s): State<DevToolsHttp>,
     Json(b): Json<ScanUseCasesBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let res = launch_use_case_scan(s.app.clone(), &pool, &project).map_err(err)?;
     Ok(Json(res))
@@ -525,7 +553,7 @@ struct KpiListQuery {
 /// — and a caller acting on that would populate the wrong project, or report an
 /// empty project as scanned. An empty collection must mean empty, not absent.
 fn require_project(s: &DevToolsHttp, project_id: &str) -> Result<DevProject, (StatusCode, String)> {
-    repo::get_project_by_id(&db(s), project_id).map_err(|_| {
+    repo::get_project_by_id(&db(s)?, project_id).map_err(|_| {
         (
             StatusCode::NOT_FOUND,
             format!("No project registered with id {project_id}"),
@@ -539,7 +567,7 @@ async fn list_kpis(
     Query(q): Query<KpiListQuery>,
 ) -> Result<Json<Vec<DevKpi>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    repo::list_kpis(&db(&s), &project_id, q.status.as_deref())
+    repo::list_kpis(&db(&s)?, &project_id, q.status.as_deref())
         .map(Json)
         .map_err(err)
 }
@@ -553,7 +581,7 @@ async fn list_context_groups(
     Path(project_id): Path<String>,
 ) -> Result<Json<Vec<DevContextGroup>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    repo::list_context_groups(&db(&s), &project_id)
+    repo::list_context_groups(&db(&s)?, &project_id)
         .map(Json)
         .map_err(err)
 }
@@ -572,7 +600,7 @@ async fn list_contexts(
     Path(project_id): Path<String>,
 ) -> Result<Json<Vec<Value>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    let pool = db(&s);
+    let pool = db(&s)?;
     let contexts = repo::list_contexts_by_project(&pool, &project_id, None).map_err(err)?;
     // "Found nothing" and "the last look was refused" are different answers,
     // and only one of them is an empty list. A project whose latest context
@@ -637,7 +665,7 @@ async fn declare_contexts(
     require_project(&s, &project_id)?;
     let map = context_declaration::parse_declared_map(&body.to_string()).map_err(bad_request)?;
     let summary =
-        context_declaration::apply_declared_map(&db(&s), &project_id, &map).map_err(err)?;
+        context_declaration::apply_declared_map(&db(&s)?, &project_id, &map).map_err(err)?;
     Ok(Json(serde_json::json!({
         "project_id": project_id,
         "source": "declared",
@@ -687,7 +715,7 @@ async fn export_context_map(
     // caller asked to overwrite the project's own declaration. That is a 400
     // with the reason, not a 500.
     let contexts =
-        write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(status_for)?;
+        write_context_map_artifacts(&db(&s)?, &b.project_id, &root).map_err(status_for)?;
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
     ))
@@ -711,7 +739,7 @@ async fn export_skill_registry(
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let project = require_project(&s, &b.project_id)?;
     let count = crate::commands::infrastructure::skill_registry_export::write_skill_registry(
-        &db(&s),
+        &db(&s)?,
         &b.project_id,
         &project.root_path,
         // No library override on the headless bridge: it has no workspace in
@@ -757,7 +785,7 @@ async fn consolidate_contexts_route(
     Json(b): Json<ConsolidateContextsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let project = require_project(&s, &b.project_id)?;
-    let pool = db(&s);
+    let pool = db(&s)?;
     let mut out = crate::commands::infrastructure::context_consolidate::consolidate_contexts(
         &pool,
         &b.project_id,
@@ -823,7 +851,7 @@ async fn repair_cross_refs_route(
     Json(b): Json<RepairCrossRefsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let project = require_project(&s, &b.project_id)?;
-    let pool = db(&s);
+    let pool = db(&s)?;
     let plan = crate::commands::infrastructure::context_consolidate::repair_cross_refs(
         &pool,
         &b.project_id,
@@ -876,7 +904,7 @@ async fn merge_context_groups(
     State(s): State<DevToolsHttp>,
     Json(b): Json<MergeGroupsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     require_project(&s, &b.project_id)?;
 
     let groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
@@ -946,7 +974,7 @@ async fn prune_nonsource_contexts(
     Json(b): Json<DedupeGroupsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     use crate::commands::infrastructure::context_generation::is_mappable_path;
-    let pool = db(&s);
+    let pool = db(&s)?;
     require_project(&s, &b.project_id)?;
 
     let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
@@ -1016,7 +1044,7 @@ async fn dedupe_contexts(
     State(s): State<DevToolsHttp>,
     Json(b): Json<DedupeGroupsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     require_project(&s, &b.project_id)?;
 
     let mut contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
@@ -1079,7 +1107,7 @@ async fn retire_contexts(
     State(s): State<DevToolsHttp>,
     Json(b): Json<RetireContextsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     require_project(&s, &b.project_id)?;
     if b.context_ids.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "context_ids is empty".into()));
@@ -1125,7 +1153,7 @@ async fn dedupe_context_groups(
     State(s): State<DevToolsHttp>,
     Json(b): Json<DedupeGroupsBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     repo::get_project_by_id(&pool, &b.project_id).map_err(|_| {
         (
             StatusCode::NOT_FOUND,
@@ -1195,7 +1223,7 @@ async fn list_use_cases(
     Query(q): Query<UseCaseListQuery>,
 ) -> Result<Json<Vec<DevUseCase>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    repo::list_use_cases(&db(&s), &project_id, q.status.as_deref())
+    repo::list_use_cases(&db(&s)?, &project_id, q.status.as_deref())
         .map(Json)
         .map_err(err)
 }
@@ -1222,7 +1250,7 @@ async fn use_case_decision(
         ));
     }
     repo::update_use_case(
-        &db(&s),
+        &db(&s)?,
         &b.use_case_id,
         None,
         None,
@@ -1251,7 +1279,7 @@ async fn kpi_sim_prepare(
     State(s): State<DevToolsHttp>,
     Json(b): Json<KpiSimBody>,
 ) -> Result<Json<KpiSimPrepared>, (StatusCode, String)> {
-    prepare_kpi_sim(&db(&s), &b.project_id)
+    prepare_kpi_sim(&db(&s)?, &b.project_id)
         .map(Json)
         .map_err(err)
 }
@@ -1262,7 +1290,7 @@ async fn kpi_sim_ingest(
     State(s): State<DevToolsHttp>,
     Json(b): Json<KpiSimBody>,
 ) -> Result<Json<KpiSimIngestSummary>, (StatusCode, String)> {
-    ingest_kpi_sim(&db(&s), &b.project_id, b.run_dir)
+    ingest_kpi_sim(&db(&s)?, &b.project_id, b.run_dir)
         .map(Json)
         .map_err(err)
 }
@@ -1293,7 +1321,7 @@ async fn kpi_decision(
         ));
     }
     repo::update_kpi(
-        &db(&s),
+        &db(&s)?,
         &b.kpi_id,
         None,
         None,
@@ -1436,7 +1464,7 @@ async fn kpi_update(
     }
 
     repo::update_kpi(
-        &db(&s),
+        &db(&s)?,
         &b.kpi_id,
         b.name.as_deref(),
         b.description.as_deref().map(Some),
@@ -1481,7 +1509,7 @@ async fn kpi_rebind(
     State(s): State<DevToolsHttp>,
     Json(b): Json<KpiRebindBody>,
 ) -> Result<Json<DevKpi>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let kpi =
         repo::get_kpi(&pool, &b.kpi_id).map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
     let ctx = repo::get_context_by_id(&pool, &b.context_id)
@@ -1535,7 +1563,7 @@ async fn app_master_adopt_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<app_master_adopt::AdoptAppMasterInput>,
 ) -> Result<Json<app_master_adopt::AppMasterAdoption>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     // Bound, then awaited: a panic in the blocking task comes back as a
     // `JoinError` and becomes a 500 that says so, rather than a request that
     // never answers.
@@ -1556,7 +1584,7 @@ async fn app_master_state(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,
 ) -> Result<Json<Option<app_master_adopt::AppMasterAdoption>>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let handle = tokio::task::spawn_blocking(move || app_master_adopt::current(&pool, &project_id));
     handle
         .await
@@ -1582,7 +1610,7 @@ async fn architect_adopt_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<architect_adopt::AdoptArchitectInput>,
 ) -> Result<Json<architect_adopt::ArchitectAdoption>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let handle = tokio::task::spawn_blocking(move || architect_adopt::adopt(&pool, &b));
     handle
         .await
@@ -1600,7 +1628,7 @@ async fn architect_state(
     State(s): State<DevToolsHttp>,
     Path(workspace): Path<String>,
 ) -> Result<Json<Option<architect_adopt::ArchitectAdoption>>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     let handle = tokio::task::spawn_blocking(move || architect_adopt::current(&pool, &workspace));
     handle
         .await
@@ -1627,7 +1655,7 @@ async fn hire_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<kp_hire_request::HireRequestInput>,
 ) -> Result<Json<kp_hire_request::HireRequestOutcome>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     kp_hire_request::request_hire(&pool, b.into())
         .await
         .map(Json)
@@ -1668,7 +1696,7 @@ async fn idea_outcome_route(
     Path(idea_id): Path<String>,
     Json(b): Json<app_master_writeback::IdeaOutcomeInput>,
 ) -> Result<Json<app_master_writeback::IdeaOutcomeResult>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("idea outcome", move || {
         app_master_writeback::record_idea_outcome(&pool, &idea_id, &b)
     })
@@ -1679,7 +1707,7 @@ async fn file_idea_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<app_master_writeback::FileIdeaInput>,
 ) -> Result<Json<app_master_writeback::FileIdeaResult>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("file idea", move || {
         app_master_writeback::file_rated_backlog_idea(&pool, &b)
     })
@@ -1691,7 +1719,7 @@ async fn idea_goal_route(
     Path(idea_id): Path<String>,
     Json(b): Json<app_master_writeback::IdeaGoalInput>,
 ) -> Result<Json<app_master_writeback::IdeaGoalResult>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("attribute idea to goal", move || {
         app_master_writeback::attribute_idea_to_goal(&pool, &idea_id, &b)
     })
@@ -1702,7 +1730,7 @@ async fn list_goals_route(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,
 ) -> Result<Json<Vec<app_master_writeback::ProjectGoal>>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("list goals", move || {
         app_master_writeback::list_project_goals(&pool, &project_id)
     })
@@ -1714,7 +1742,7 @@ async fn amend_goal_route(
     Path(goal_id): Path<String>,
     Json(b): Json<app_master_writeback::AmendGoalInput>,
 ) -> Result<Json<crate::db::models::DevGoal>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("amend goal", move || {
         app_master_writeback::amend_project_goal(&pool, &goal_id, &b)
     })
@@ -1726,7 +1754,7 @@ async fn goal_item_route(
     Path((goal_id, item_id)): Path<(String, String)>,
     Json(b): Json<app_master_writeback::GoalItemInput>,
 ) -> Result<Json<app_master_writeback::GoalItemResult>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("goal item", move || {
         app_master_writeback::set_goal_item_done(&pool, &goal_id, &item_id, &b)
     })
@@ -1737,7 +1765,7 @@ async fn create_kpi_route(
     State(s): State<DevToolsHttp>,
     Json(b): Json<app_master_writeback::CreateKpiInput>,
 ) -> Result<Json<DevKpi>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("create kpi", move || {
         app_master_writeback::create_project_kpi(&pool, &b)
     })
@@ -1749,7 +1777,7 @@ async fn measure_kpi_route(
     Path(kpi_id): Path<String>,
     Json(b): Json<app_master_writeback::MeasureKpiInput>,
 ) -> Result<Json<crate::db::models::DevKpiMeasurement>, (StatusCode, String)> {
-    let pool = db(&s);
+    let pool = db(&s)?;
     writeback("measure kpi", move || {
         app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
     })
@@ -1894,5 +1922,58 @@ mod tests {
             .expect("Aside listed");
         assert!(!a.protected);
         assert_eq!(a.project_count, 0);
+    }
+
+    /// The absence branch of [`db`]. `local_http` binds and accepts requests
+    /// ~100 lines of `boot::setup` before `app.manage(state_arc)` runs, so a
+    /// caller CAN arrive before application state is published. That must be
+    /// a status the caller can act on, not a panic that drops the connection.
+    ///
+    /// 503 specifically: the request is fine and the same call succeeds once
+    /// boot finishes, which is what makes it retryable rather than a 500.
+    #[test]
+    fn arriving_before_boot_publishes_state_is_a_retryable_503() {
+        let (status, msg) = still_booting();
+        assert_eq!(
+            status,
+            StatusCode::SERVICE_UNAVAILABLE,
+            "a request that merely arrived early is not a server error"
+        );
+        assert!(
+            msg.contains("retry"),
+            "the body must tell the caller the call is worth repeating: {msg}"
+        );
+    }
+
+    /// Static guarantee, same shape as the `[SIM]` pin in `use_cases.rs` and
+    /// the source guards in `fleet/hooks.rs` and `fleet/stale.rs`.
+    ///
+    /// Every route in this module is served by a router that
+    /// `boot::services::start_local_http` registers BEFORE
+    /// `app.manage(state_arc)` — so a bare `state::<Arc<AppState>>()`
+    /// anywhere here is a panic waiting for a request that lands during
+    /// boot. `try_state` is the only admissible read.
+    ///
+    /// This is a source assertion, not a behavioural one: Tauri's `test`
+    /// feature is not enabled in this crate, so no `AppHandle` without
+    /// managed state can be constructed to drive the miss for real.
+    #[test]
+    fn no_route_in_this_module_reads_app_state_with_a_panicking_accessor() {
+        let src = include_str!("dev_tools_http.rs");
+        let offenders: Vec<_> = src
+            .lines()
+            .enumerate()
+            .filter(|(_, l)| l.contains(".state::<") && !l.contains(".try_state::<"))
+            // The prose above `db` names the panicking accessor to explain
+            // why it is banned; a comment is not a call.
+            .filter(|(_, l)| !l.trim_start().starts_with("///"))
+            .map(|(i, l)| format!("line {}: {}", i + 1, l.trim()))
+            .collect();
+        assert!(
+            offenders.is_empty(),
+            "the /dev-tools bridge serves during the boot window, so every \
+             AppState read here must be `try_state` and degrade to 503:\n{}",
+            offenders.join("\n")
+        );
     }
 }
