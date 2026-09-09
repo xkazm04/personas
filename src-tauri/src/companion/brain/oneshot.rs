@@ -546,7 +546,7 @@ async fn supervise(
                         // line. Only non-assistant stream lines (result,
                         // system, bare text) can carry the cap.
                         if limit_line.is_none()
-                            && !is_assistant_line(&line)
+                            && line_can_carry_the_cap(&line)
                             && personas_engine::parser::is_session_limit_error(&line)
                         {
                             limit_line = Some(line);
@@ -687,17 +687,23 @@ fn detect_usage_limit(
 /// text. Anything longer is a reply that talks about limits, not a cap.
 const LIMIT_NOTICE_MAX_CHARS: usize = 200;
 
-/// A `type: "assistant"` stream-json line: the model speaking, which no limit
-/// detector may read as the provider speaking.
-fn is_assistant_line(line: &str) -> bool {
-    serde_json::from_str::<serde_json::Value>(line)
-        .ok()
-        .and_then(|v| {
-            v.get("type")
-                .and_then(|t| t.as_str())
-                .map(|t| t == "assistant")
-        })
-        .unwrap_or(false)
+/// Whether a stdout line can be the PROVIDER speaking about a cap, as opposed
+/// to the model speaking about one. A bare non-JSON line can (the CLI's
+/// classic `Claude AI usage limit reached|<ts>`). A stream-json event can only
+/// when the CLI itself marks it an error: measured against the captured corpus,
+/// a capped turn arrives as `"is_error":true` with the reason in `result`.
+/// Every other event — the assistant line, and the successful `result` line
+/// that repeats the whole reply under `result` — carries the model's words,
+/// and the second of those is what paused three decisions at 17:15 after the
+/// first fix had covered only the assistant line (G35b).
+fn line_can_carry_the_cap(line: &str) -> bool {
+    match serde_json::from_str::<serde_json::Value>(line) {
+        Err(_) => true,
+        Ok(v) => v
+            .get("is_error")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+    }
 }
 
 /// Strip stream-json wrapping and pull text deltas. Matches the
@@ -1085,13 +1091,25 @@ mod tests {
             "message": {"role": "assistant", "content": [{"type": "text", "text": decision}]}
         })
         .to_string();
-        assert!(is_assistant_line(&line));
+        assert!(!line_can_carry_the_cap(&line));
         assert!(
             personas_engine::parser::is_session_limit_error(&line),
             "the vocabulary is there"
         );
-        assert!(!is_assistant_line(
-            r#"{"type":"result","is_error":true,"result":"Claude AI usage limit reached|1736187600"}"#
+        // G35b: the successful `result` event repeats the reply under `result`
+        // with a different key order; it is still the model's words.
+        let result_line = serde_json::json!({
+            "duration_api_ms": 36069, "stop_reason": "end_turn", "type": "result",
+            "subtype": "success", "is_error": false, "result": decision
+        })
+        .to_string();
+        assert!(!line_can_carry_the_cap(&result_line));
+        // The provider's own verdict does carry it, in both shapes it has used.
+        assert!(line_can_carry_the_cap(
+            r#"{"type":"result","subtype":"success","is_error":true,"result":"You've hit your limit · resets 7pm"}"#
+        ));
+        assert!(line_can_carry_the_cap(
+            "Claude AI usage limit reached|1736187600"
         ));
         // A short notice, arriving as the whole assistant text, still pauses.
         assert!(detect_usage_limit(None, "", "Claude AI usage limit reached|1736187600").is_some());
