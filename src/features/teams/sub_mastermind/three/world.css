@@ -158,6 +158,13 @@
   text-shadow: 0 0 12px color-mix(in srgb, var(--w-primary) 60%, transparent), 0 2px 8px #000;
 }
 .mm3d-label-tag { display: block; font-family: var(--w-font-mono); font-size: 0.58rem; color: var(--w-text-dim); letter-spacing: 0.2em; }
+/* A crowded portfolio: ten names competing is what makes L0 unreadable, so
+   every label that is NOT the open project steps down a size. Keyed on the
+   project COUNT, not on camera distance — the competition exists at every zoom. */
+.mm3d-label-project--dense { font-size: 0.78rem; letter-spacing: calc(var(--w-tracking) * 0.7); }
+.mm3d-label-project--dense .mm3d-label-tag { font-size: 0.52rem; letter-spacing: 0.14em; }
+/* Count of dimensions in alert/risk — the one number worth carrying at L0. */
+.mm3d-label-attn { font-weight: 600; font-style: normal; }
 .mm3d-label-dim {
   font-family: var(--w-font-mono); font-size: 0.6rem; letter-spacing: 0.08em; color: var(--w-text);
   padding: 0.12rem 0.4rem; border-radius: 0.25rem;

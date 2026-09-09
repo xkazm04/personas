@@ -2,19 +2,45 @@ import { describe, expect, it } from 'vitest';
 
 import { athenaScript } from '../three/athenaOps';
 import { attentionDims, dimProgress, dimsByCategory, MOCK_WORLD } from '../three/mockWorld';
+import { fitPortfolio, gridSlots, isDensePortfolio, worldBounds } from '../three/worldLayout';
 import { HOME, initialWorldState, nodeEmphasis, nodeId, worldReducer, type WorldAction, type WorldState } from '../three/worldModel';
 
 const run = (actions: WorldAction[], from: WorldState = initialWorldState()): WorldState =>
   actions.reduce(worldReducer, from);
 
 describe('mock world', () => {
-  it('has two projects, every registry dimension on each, and one relation', () => {
-    expect(MOCK_WORLD.projects.map((p) => p.slug)).toEqual(['personas', 'brainiac']);
+  it('carries ten projects, the two hand-authored ones first', () => {
+    expect(MOCK_WORLD.projects).toHaveLength(10);
+    expect(MOCK_WORLD.projects.slice(0, 2).map((p) => p.slug)).toEqual(['personas', 'brainiac']);
+    expect(new Set(MOCK_WORLD.projects.map((p) => p.slug)).size).toBe(10);
+    expect(new Set(MOCK_WORLD.projects.map((p) => p.tag)).size).toBe(10);
+  });
+
+  it('gives every project all fifteen registry dimensions, grouped into four categories', () => {
     for (const p of MOCK_WORLD.projects) {
       expect(p.dims).toHaveLength(15);
-      expect(dimsByCategory(p).reduce((n, g) => n + g.dims.length, 0)).toBe(15);
+      const groups = dimsByCategory(p);
+      expect(groups).toHaveLength(4);
+      expect(groups.reduce((n, g) => n + g.dims.length, 0)).toBe(15);
     }
-    expect(MOCK_WORLD.edges).toHaveLength(1);
+  });
+
+  it('spans every project state, so L0 has something to distinguish', () => {
+    const states = new Set(MOCK_WORLD.projects.map((p) => p.state));
+    expect(states).toContain('healthy');
+    expect(states).toContain('warning');
+    expect(states).toContain('critical');
+    expect(states).toContain('building');
+  });
+
+  it('every edge names two projects that exist', () => {
+    const slugs = new Set(MOCK_WORLD.projects.map((p) => p.slug));
+    expect(MOCK_WORLD.edges.length).toBeGreaterThan(1);
+    for (const e of MOCK_WORLD.edges) {
+      expect(slugs.has(e.from)).toBe(true);
+      expect(slugs.has(e.to)).toBe(true);
+      expect(e.from).not.toBe(e.to);
+    }
   });
 
   it('progress is 0..1 and boolean dims read from status', () => {
@@ -22,15 +48,81 @@ describe('mock world', () => {
       const v = dimProgress(d);
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(1);
+      if (d.steps > 0) expect(d.reached).toBeLessThanOrEqual(d.steps);
+      // A cell nobody set up names no tool and no number.
+      if (d.status === 'absent') expect(d.detail).toBeNull();
     }
     expect(dimProgress({ key: 'auth', status: 'solid', reached: 0, steps: 0, detail: null, figure: null })).toBe(1);
   });
 
-  it('attention lists alert before risk', () => {
+  it('attention lists alert before risk, and the sketched portfolio has both', () => {
     const brainiac = MOCK_WORLD.projects[1]!;
     const att = attentionDims(brainiac);
     expect(att[0]?.status).toBe('alert');
     expect(att.every((d) => d.status === 'alert' || d.status === 'risk')).toBe(true);
+    const all = MOCK_WORLD.projects.flatMap(attentionDims);
+    expect(all.some((d) => d.status === 'alert')).toBe(true);
+    expect(all.some((d) => d.status === 'risk')).toBe(true);
+  });
+});
+
+describe('portfolio layout', () => {
+  it('centres a grid on the origin and keeps the last row centred too', () => {
+    const slots = gridSlots(10, 10);
+    expect(slots).toHaveLength(10);
+    const xs = slots.map((s) => s[0]);
+    const zs = slots.map((s) => s[2]);
+    // Centred: each axis spans symmetrically about the origin. NOT the mean —
+    // ten projects make a 4/4/2 grid whose last row is partial, so the mass
+    // centre sits off the origin while the FOOTPRINT (what the camera frames)
+    // is centred. Asserting the mean here is what a first draft got wrong.
+    expect(Math.abs(Math.min(...xs) + Math.max(...xs))).toBeLessThan(1e-9);
+    expect(Math.abs(Math.min(...zs) + Math.max(...zs))).toBeLessThan(1e-9);
+    // Every row is centred on its own, so a partial row does not hang off one side.
+    const rows = new Map<number, number[]>();
+    slots.forEach(([x, , z]) => rows.set(z, [...(rows.get(z) ?? []), x]));
+    for (const xsInRow of rows.values()) expect(Math.abs(Math.min(...xsInRow) + Math.max(...xsInRow))).toBeLessThan(1e-9);
+    // Wider than deep — a portfolio reads better across than into the screen.
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...zs) - Math.min(...zs));
+    // No two projects share a slot.
+    expect(new Set(slots.map((s) => `${s[0]},${s[2]}`)).size).toBe(10);
+  });
+
+  it('handles the degenerate counts', () => {
+    expect(gridSlots(0, 10)).toEqual([]);
+    expect(gridSlots(1, 10)).toEqual([[0, 0, 0]]);
+    expect(gridSlots(2, 10).map((s) => s[0])).toEqual([-5, 5]);
+  });
+
+  it('bounds pad the footprint and expose a radius that encloses it', () => {
+    const b = worldBounds(gridSlots(10, 10), 3);
+    expect(b.cx).toBeCloseTo(0);
+    expect(b.cz).toBeCloseTo(0);
+    expect(b.width).toBeGreaterThan(b.depth);
+    expect(b.radius).toBeGreaterThanOrEqual(Math.max(b.width, b.depth) / 2);
+  });
+
+  it('pulls the camera back as the portfolio grows', () => {
+    const opts = { fov: 42, aspect: 1.6, pitch: 40 };
+    const two = fitPortfolio(worldBounds(gridSlots(2, 11.5), 4.7), opts);
+    const ten = fitPortfolio(worldBounds(gridSlots(10, 11.5), 4.7), opts);
+    expect(ten.distance).toBeGreaterThan(two.distance);
+    // and back further again on a narrow canvas, where the horizontal field
+    // is the binding constraint — the bug the two-project version had.
+    const narrow = fitPortfolio(worldBounds(gridSlots(10, 11.5), 4.7), { ...opts, aspect: 0.7 });
+    expect(narrow.distance).toBeGreaterThan(ten.distance);
+  });
+
+  it('always looks at the middle of the portfolio', () => {
+    const fit = fitPortfolio(worldBounds(gridSlots(7, 12), 4), { fov: 42, aspect: 1.4, pitch: 45 });
+    expect(fit.target[0]).toBeCloseTo(0);
+    expect(fit.position[1]).toBeGreaterThan(0);
+    expect(fit.position[2]).toBeGreaterThan(0);
+  });
+
+  it('calls a ten-project portfolio dense and a two-project one not', () => {
+    expect(isDensePortfolio(10)).toBe(true);
+    expect(isDensePortfolio(2)).toBe(false);
   });
 });
 
@@ -105,12 +197,20 @@ describe('Athena scripts', () => {
     }
   });
 
-  it('"risks" points at exactly the alert/risk dimensions', () => {
+  it('"risks" points at exactly the alert/risk dimensions, across the whole portfolio', () => {
     const steps = athenaScript('risks', MOCK_WORLD);
     const hl = steps.flatMap((s) => s.actions).find((a): a is Extract<WorldAction, { type: 'highlight' }> => a.type === 'highlight');
     const expected = MOCK_WORLD.projects.flatMap((p) => attentionDims(p).map((d) => nodeId(p.slug, d.key)));
     expect(hl?.ids).toEqual(expected);
-    expect(expected.length).toBeGreaterThan(0);
+    expect(expected.length).toBeGreaterThan(2);
+    // more than one project contributes, or the tour is not a portfolio tour
+    expect(new Set(hl?.ids.map((id) => id.split(':')[0])).size).toBeGreaterThan(1);
+  });
+
+  it('"ship" visits every project in the world', () => {
+    const steps = athenaScript('ship', MOCK_WORLD);
+    const opened = steps.flatMap((s) => s.actions).filter((a): a is Extract<WorldAction, { type: 'open-project' }> => a.type === 'open-project');
+    expect(opened.map((a) => a.slug)).toEqual(MOCK_WORLD.projects.map((p) => p.slug));
   });
 
   it('"wire" flies to Brainiac monitoring and then changes the world', () => {

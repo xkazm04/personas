@@ -38,7 +38,6 @@ const fleetStateLabel = (t: Translations, s: string): string =>
 
 const variantNote = (t: Translations, v: WorldVariant): { name: string; note: string } =>
   ({
-    orbit: { name: t.mastermind.view_orbit, note: t.mastermind.view_orbit_note },
     strata: { name: t.mastermind.view_strata, note: t.mastermind.view_strata_note },
     holo: { name: t.mastermind.view_holo, note: t.mastermind.view_holo_note },
   })[v];

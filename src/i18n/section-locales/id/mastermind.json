@@ -182,8 +182,6 @@
   "view_baseline": "Dasar",
   "view_holo": "Holo",
   "view_holo_note": "Tabel proyeksi — platform heksagonal, tinggi prisma menunjukkan progres, sian monokrom.",
-  "view_orbit": "Orbit",
-  "view_orbit_note": "Konstelasi — inti dengan satelit dimensi pada cincin kategori, ruang angkasa dalam, sian dingin.",
   "view_strata": "Strata",
   "view_strata_note": "Dek kaca bertumpuk — satu dek per kategori, terurai saat difokuskan, HUD amber di atas grafit.",
   "view_switcher_label": "Tampilan kanvas",

@@ -5851,8 +5851,6 @@
     "view_baseline": "Referencia",
     "view_holo": "Holo",
     "view_holo_note": "Tabla de proyección — plataformas hexagonales, la altura del prisma es el progreso, cian monocromático.",
-    "view_orbit": "Orbit",
-    "view_orbit_note": "Constelación — núcleos con satélites de dimensión en anillos de categoría, espacio profundo, cian frío.",
     "view_strata": "Strata",
     "view_strata_note": "Cubiertas de vidrio apiladas — una cubierta por categoría, explotada al enfocar, HUD ámbar sobre grafito.",
     "view_switcher_label": "Vista del lienzo",

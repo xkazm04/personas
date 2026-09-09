@@ -11,7 +11,7 @@ import type { WorldVariant } from '../three/palettes';
 
 export type MastermindView = 'baseline' | WorldVariant;
 
-export const MASTERMIND_VIEWS: MastermindView[] = ['baseline', 'orbit', 'strata', 'holo'];
+export const MASTERMIND_VIEWS: MastermindView[] = ['baseline', 'strata', 'holo'];
 
 /** Shared by the strip and its panel so every tab's aria-controls resolves. */
 const ID_PREFIX = 'mm-view';
@@ -20,7 +20,6 @@ export function ViewSwitcher({ view, onChange }: { view: MastermindView; onChang
   const { t } = useTranslation();
   const tabs = [
     { id: 'baseline' as const, label: t.mastermind.view_baseline },
-    { id: 'orbit' as const, label: t.mastermind.view_orbit },
     { id: 'strata' as const, label: t.mastermind.view_strata },
     { id: 'holo' as const, label: t.mastermind.view_holo },
   ];

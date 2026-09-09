@@ -182,8 +182,6 @@
   "view_baseline": "基线视图",
   "view_holo": "Holo",
   "view_holo_note": "投影表 —— 六边形平台，棱柱高度代表进度，单色青光。",
-  "view_orbit": "Orbit",
-  "view_orbit_note": "星座图 —— 核心与类别环上的维度卫星，深空背景，冷青色调。",
   "view_strata": "Strata",
   "view_strata_note": "堆叠玻璃层板 —— 每个类别一层，聚焦时展开，石墨底色搭配琥珀色 HUD。",
   "view_switcher_label": "画布视图",

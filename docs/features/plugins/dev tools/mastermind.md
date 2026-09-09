@@ -185,37 +185,47 @@ Sizing discipline (why this shape survived where two prototype rounds died): eve
 
 Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, Inverse Grid (+ its `DimTile` renderer and the variant switcher), fleet "Cells", stats Panels/Strip/Gauges.
 
-### 7b. 3D prototypes — the "Jarvis" audition (view switcher, 2026-09-09)
+### 7b. 3D prototypes - the "Jarvis" audition (view switcher, 2026-09-09)
 
-The canvas header carries a **view switcher** (`lib/ViewSwitcher.tsx`, top-centre, `SegmentedTabs`): **Baseline** is the shipped Hex Mosaic above; **Orbit / Strata / Holo** are three 3D worlds auditioning a layered, Iron-Man-style experience. Session-local state (not a preference yet); the 2D-only chrome (mode toolbar, project list, demo notice, bottom stack) hides while a 3D view is up. Everything 3D lives in `three/` and is lazy-loaded, so the baseline never pays for three.js.
+The canvas header carries a **view switcher** (`lib/ViewSwitcher.tsx`, top-centre, `SegmentedTabs` plus its declared `ViewPanel`): **Baseline** is the shipped Hex Mosaic above; **Strata** and **Holo** are two 3D worlds auditioning a layered, Iron-Man-style experience. Session-local state (not a preference yet); the 2D-only chrome (mode toolbar, project list, demo notice, bottom stack) hides while a 3D view is up. Everything 3D lives in `three/` and is lazy-loaded, so the baseline never pays for three.js.
 
-**Shared across the three worlds — written once (`three/worldModel.ts`, `three/useWorldNav.ts`, `three/WorldHud.tsx`):**
+> **Round 1 shipped a third variant, ORBIT** - a constellation with each project a glowing core and its fifteen dimensions as satellites on four category rings. Descoped by the operator on 2026-09-09 and deleted (it is in git history at `958b47ebb`): the planetary metaphor was the most spectacular of the three from orbit and the worst to orient inside, because a satellite position carries no stable meaning. It drifts, and which ring a dimension belongs to is not recoverable from where it happens to be.
+
+**Shared across both worlds - written once (`three/worldModel.ts`, `three/useWorldNav.ts`, `three/worldLayout.ts`, `three/WorldHud.tsx`):**
 
 | Layer | What you see | How you get there |
 |---|---|---|
-| **L0 portfolio** | every project as an abstract shape with its rough state; connectors between related projects | default; `Portfolio` crumb, `Esc` from L1, click on empty sea |
+| **L0 portfolio** | every project as an abstract shape with its rough state; relation and similarity edges between them | default; `Portfolio` crumb, `Esc` from L1, click on empty sea |
 | **L1 project** | one project with all 15 dimensions exploded into their four categories, labelled; right-dock project card (scores, ship, live work, dimension chips) | click a project (world label or shape) |
 | **L2 dimension** | one dimension only: status, progress, tooling, headline figure; siblings ghosted | click a dimension (world label, shape or card chip) |
 
-The camera **flies** between layer poses (`CameraRig`, 1.1 s ease) and the user owns it between flights (OrbitControls). **Athena operates** from a bar at the bottom: four scripted commands (what is at risk / what ships next / open Brainiac security / wire monitoring on Brainiac) that fly the camera, point at nodes, narrate in a transcript, and in the last case *change the world* (the Monitoring prism/tile/satellite turns healthy). The scripts are plain reducer actions (`three/athenaOps.ts`) — the shape the real companion would drive through `canvasActionStore` later.
+The camera **flies** between layer poses (`CameraRig`, 1.1 s ease) and the user owns it between flights (OrbitControls). **Athena operates** from a bar at the bottom: four scripted commands (what is at risk / what ships next / open Brainiac security / wire monitoring on Brainiac) that fly the camera, point at nodes, narrate in a transcript, and in the last case *change the world* (the Monitoring tile or prism turns healthy). The scripts are plain reducer actions (`three/athenaOps.ts`) - the shape the real companion would drive through `canvasActionStore` later.
 
-**Dataset:** `three/mockWorld.ts` — two hand-authored projects (Personas Desktop: healthy, shipping; Brainiac: warning, with a real security alert and no monitoring) plus one relation. Dimension keys/labels/icons come from the real registry.
+**Dataset:** `three/mockWorld.ts` - **ten projects**. Two are hand-authored cell by cell (Personas Desktop: healthy, shipping; Brainiac: warning, a real security alert, no monitoring) because they are what L1 and L2 are read against. The other eight are *sketched*: a maturity profile plus named exceptions (`broken` / `weak` / `missing` / `strong`), expanded deterministically into the same fifteen registry dimensions. 150 hand-written cells would be a wall nobody could keep coherent, and what L0 is judged on is whether ten projects stay legible and distinguishable, which needs variety rather than authored detail.
 
-**What differs — the variables under test (`three/palettes.ts` holds every colour and font):**
+**Portfolio layout and camera fit (`three/worldLayout.ts`).** Projects sit on a centred grid, near-square and wider than deep, with the last row centred on the ones above it. The L0 camera is DERIVED from that grid bounds, so an eleventh project reframes the shot by itself. `fitPortfolio` fits the footprint RECTANGLE - width horizontally, depth foreshortened by the pitch plus the stack height vertically, whichever needs more distance winning. The first implementation fitted the bounding SPHERE, which cannot under-shoot and consequently used about a third of the frame for ten projects.
 
-| | **Orbit** | **Strata** | **Holo** |
-|---|---|---|---|
-| Node design | glowing core + 15 satellites on four tilted category rings | stack of four glass decks (one per category) with status tiles; explodes on focus | hex platform (the 2D identity in depth), spire = automation score, 15 hex prisms whose height = progress |
-| World sizing | 16 units between projects, rings to r=6 | 19 units, decks 5.6 wide | 17 units, platforms r=4.6 |
-| Background | deep space, star field, two nebula sprites | graphite + infinite grid + fog | black, dust sparkles, scanning radar ring, scanline film |
-| Colour | cold cyan primary, warm coral accent, saturated status | amber primary, cyan accent (Stark HUD) | monochrome cyan, gold accent, desaturated status |
-| Connector | raised dashed arc with a travelling pulse | ground-level straight beam with pulse | floor trace curved around the platforms |
-| Typography | Segoe UI Variable caps, tracking 0.18em, mono numbers | Bahnschrift wide caps | serif names (Iowan/Palatino, the canvas voice) + mono |
+**Density discipline.** `isDensePortfolio` (count-based, not distance-based) shrinks every project label that is not the open one, and each label carries a count of dimensions in alert or risk so the portfolio layer answers "where is the trouble" without drilling. Per-dimension labels **mount only on the opened project**: they are drei `<Html>` portals, one React root each, and ten projects would otherwise put 150 of them in the DOM to render at opacity 0. Edge labels appear only when one of their endpoints is hovered or open.
 
-A WebGL failure is caught by a boundary around the canvas (`data-testid="mm3d-failed"` carries the reason) so the switcher stays reachable. Verified live through the test-automation server: all three views drill L0→L1→L2 by click, Athena's wire flow updates the status pill, and switching back to Baseline restores the 2D chrome.
+**What differs - the variables under test (`three/palettes.ts` holds every colour, font and the surface profile):**
 
-**Gotcha, measured 2026-09-09:** R3F attaches its DOM listeners to the canvas's *parent* div, and drei `<Html>` labels are siblings of the canvas inside it — so a click on a label bubbled into R3F with a ray that hit nothing and fired `onPointerMissed`, undoing the drill-down a frame later. `WorldCanvas` only walks up when `event.target` is the canvas, and `WorldLabel` stops propagation.
+| | **Strata** | **Holo** |
+|---|---|---|
+| Node design | stack of four glass decks (one per category) with status tiles; explodes on focus, tile height = progress | hex platform (the 2D identity in depth), spire = automation score, 15 hex prisms whose height = progress |
+| World sizing | 11.5 units between projects, decks 5.6 wide | 12.6 units, platforms r=4.6 |
+| Background | graphite plus infinite grid plus fog | slate, dust sparkles, scanning radar ring, scanline film |
+| Colour | sand primary, dusty teal accent | frosted ice cyan, pale gold accent |
+| Connector | ground-level beam with a travelling pulse | floor trace bowed sideways so parallel edges stay tellable apart |
+| Typography | Bahnschrift wide caps | serif names (Iowan/Palatino, the canvas voice) plus mono |
 
+**Frosted, not neon (round 2).** The first pass lit every surface with an emissive material and stacked additive glow sprites on top. Desaturating the palette alone would not have fixed that: *a surface that emits its own light has no shading, so it cannot read as a material at all.* Both halves of the fix live in `palettes.ts` - chalky ramps on grounds lifted off pure black, and a `frost` profile (high roughness, near-zero emissive, a little clearcoat, low slab opacity, quiet halos) that both worlds pass straight into their materials. Each world also carries a small local `Environment` of `Lightformer`s for the clearcoat to catch; no remote HDRI is fetched, which matters under this app CSP.
+
+A WebGL failure is caught by a boundary around the canvas (`data-testid="mm3d-failed"` carries the reason) so the switcher stays reachable. Verified live through the test-automation server: both views drill L0 to L1 to L2 by click on the ten-project world, the Athena risks tour spans seven projects, and switching back to Baseline restores the 2D chrome.
+
+**Two gotchas, both measured, both of which produced plausible-looking wrong output rather than an error:**
+
+1. **R3F attaches its DOM listeners to the canvas PARENT div**, and drei `<Html>` labels are siblings of the canvas inside it - so a click on a label bubbled into R3F with a ray that hit nothing and fired `onPointerMissed`, undoing the drill-down a frame later. `WorldCanvas` only walks up when `event.target` is the canvas, and `WorldLabel` stops propagation.
+2. **Screenshotting this app can silently capture the wrong thing.** `PrintWindow(PW_RENDERFULLCONTENT)` returns pure black (WebView2 stops compositing while occluded); `SetForegroundWindow` plus a screen grab captures THE TERMINAL (Windows refuses foreground activation from a background process, and that failure is a return value nobody checks); the test-automation `/screenshot` endpoint matches on window title and **silently falls back to a whole-monitor grab** when it misses, which it does because this window title can be empty. And when the app sits on another virtual desktop, no OS-level grab can see it at all. The route that always works is to read the frame back from inside the page: `preserveDrawingBuffer: true` on the Canvas, `toDataURL` in an `/eval`, and the base64 pulled out through `/query` in 280-character chunks.
 ## 8. Interaction model (Figma-like, edit-first)
 
 **Modes** (bottom toolbar, `CanvasToolbar`, keyboard `E`/`G`/`C`/`N`, `Esc` = universal cancel). Each mode's one-line hint — what the mouse does in it — rides on that mode's **own tooltip** rather than a second toolbar row, so the toolbar is a single row at every width and the orientation is readable *before* you commit to a mode instead of only for the active one:

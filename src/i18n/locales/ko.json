@@ -5851,8 +5851,6 @@
     "view_baseline": "기준",
     "view_holo": "Holo",
     "view_holo_note": "투영 테이블 — 육각 플랫폼, 프리즘 높이는 진행도, 단색 청록.",
-    "view_orbit": "Orbit",
-    "view_orbit_note": "성좌도 — 범주 궤도 위에 영역 위성을 가진 코어들, 깊은 우주, 차가운 청록.",
     "view_strata": "Strata",
     "view_strata_note": "적층 유리 갑판 — 범주마다 한 갑판, 포커스 시 분해, 흑연 위 호박색 HUD.",
     "view_switcher_label": "캔버스 보기",

@@ -5851,8 +5851,6 @@
     "view_baseline": "Référence",
     "view_holo": "Holo",
     "view_holo_note": "Table de projection — plateformes hexagonales, la hauteur du prisme indique la progression, cyan monochrome.",
-    "view_orbit": "Orbit",
-    "view_orbit_note": "Constellation — noyaux avec satellites de dimension sur des anneaux de catégorie, espace profond, cyan froid.",
     "view_strata": "Strata",
     "view_strata_note": "Plateaux de verre empilés — un plateau par catégorie, éclaté au focus, HUD ambre sur graphite.",
     "view_switcher_label": "Vue du canevas",

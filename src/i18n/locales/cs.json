@@ -5851,8 +5851,6 @@
     "view_baseline": "Základní zobrazení",
     "view_holo": "Holo",
     "view_holo_note": "Projekční tabulka — hex platformy, výška hranolu je postup, monochromatická azurová.",
-    "view_orbit": "Orbit",
-    "view_orbit_note": "Konstelace — jádra se satelity dimenzí na kategoriálních prstencích, hluboký vesmír, chladná azurová.",
     "view_strata": "Strata",
     "view_strata_note": "Vrstvené skleněné paluby — jedna paluba na kategorii, rozložená při zaostření, jantarový HUD na grafitu.",
     "view_switcher_label": "Zobrazení plátna",

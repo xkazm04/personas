@@ -21611,10 +21611,8 @@ export type Translations = {
     cover_all_shipped: string;
     view_switcher_label: string;
     view_baseline: string;
-    view_orbit: string;
     view_strata: string;
     view_holo: string;
-    view_orbit_note: string;
     view_strata_note: string;
     view_holo_note: string;
     world_layers: string;

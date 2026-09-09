@@ -182,8 +182,6 @@
   "view_baseline": "Referenzansicht",
   "view_holo": "Holo",
   "view_holo_note": "Projektionstisch — Sechseckplattformen, Prismenhöhe zeigt Fortschritt, monochromes Cyan.",
-  "view_orbit": "Orbit",
-  "view_orbit_note": "Konstellation — Kerne mit Dimensions-Satelliten auf Kategorieringen, Weltraum, kaltes Cyan.",
   "view_strata": "Strata",
   "view_strata_note": "Gestapelte Glasdecks — ein Deck pro Kategorie, bei Fokus aufgefächert, Bernstein-HUD auf Graphit.",
   "view_switcher_label": "Ansicht wechseln",

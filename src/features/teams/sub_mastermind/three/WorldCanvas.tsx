@@ -10,7 +10,6 @@ import { silentCatch } from '@/lib/silentCatch';
 
 import { HoloWorld } from './HoloWorld';
 import { MOCK_WORLD } from './mockWorld';
-import { OrbitWorld } from './OrbitWorld';
 import { PALETTES, paletteVars, type WorldVariant } from './palettes';
 import { StrataWorld } from './StrataWorld';
 import { useWorldNav } from './useWorldNav';
@@ -30,7 +29,7 @@ class WorldBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   }
 }
 
-const WORLDS = { orbit: OrbitWorld, strata: StrataWorld, holo: HoloWorld } as const;
+const WORLDS = { strata: StrataWorld, holo: HoloWorld } as const;
 
 export default function WorldCanvas({ variant }: { variant: WorldVariant }) {
   const { t } = useTranslation();
@@ -43,7 +42,12 @@ export default function WorldCanvas({ variant }: { variant: WorldVariant }) {
         <Canvas
           dpr={[1, 1.75]}
           camera={{ fov: 42, near: 0.1, far: 400, position: [0, 12, 24] }}
-          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+          // preserveDrawingBuffer lets the page read its own frame back with
+          // canvas.toDataURL(), which is how these prototypes are screenshotted:
+          // the app runs on the operator's second virtual desktop, where no
+          // OS-level window grab can see it. Costs one extra buffer; the
+          // prototypes are not the place to optimise that away.
+          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
           // A click on the empty sea walks one layer up — but ONLY a click that
           // actually landed on the canvas. R3F's listener sits on the canvas's
           // parent, so a click on a DOM label (drei <Html>, a sibling of the
