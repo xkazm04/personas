@@ -21604,11 +21604,6 @@ export type Translations = {
     milestone_bar_forecast: string;
     milestone_bar_tooltip: string;
     ship_panel_title: string;
-  };
-  ship: {
-    tab_ship: string;
-    cover_next: string;
-    cover_all_shipped: string;
     view_switcher_label: string;
     view_baseline: string;
     view_strata: string;
@@ -21651,6 +21646,11 @@ export type Translations = {
     athena_say_focus: string;
     athena_say_wire_start: string;
     athena_say_wire_done: string;
+  };
+  ship: {
+    tab_ship: string;
+    cover_next: string;
+    cover_all_shipped: string;
     cover_empty: string;
     cover_shipped_count: string;
     cover_open_aria: string;
