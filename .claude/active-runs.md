@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-09 10:17]**
+- **Paths:** `src-tauri/engine/src/unattended.rs`
+- **Status:** started
+
 - **[2026-09-09 09:36]**
 - **Paths:** `src-tauri/engine/src/app_master.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `src-tauri/src/commands/companion/approvals/app_master_hire.rs` · `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/prompt/assemble.rs` · `src-tauri/src/engine/dispatch.rs` · `src-tauri/src/engine/execution.rs`
 - **Status:** started
@@ -691,6 +695,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### grande-rung3-worker-rule — grande: a rung-3 worker merges its verified branch to the local default branch (G26b)
 
 ### grande-rung3-scales — grande: rung 3 grantable (App Master merges), filers score effort/risk/impact, two sibling fixes merged
 
