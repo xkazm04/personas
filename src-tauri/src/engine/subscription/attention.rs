@@ -1586,14 +1586,34 @@ fn build_workspace_view(
             "persona_attention: workspace goal read failed");
         Vec::new()
     });
+    // G41 — the work attached to each goal, one read per member project.
+    let mut work: std::collections::HashMap<String, crate::db::repos::dev_tools::GoalWork> =
+        std::collections::HashMap::new();
+    for p in &members {
+        match crate::db::repos::dev_tools::goal_work_by_project(pool, &p.id) {
+            Ok(rows) => {
+                for w in rows {
+                    work.insert(w.goal_id.clone(), w);
+                }
+            }
+            Err(e) => tracing::warn!(project_id = %p.id, error = %e,
+                "persona_attention: goal work read failed"),
+        }
+    }
     let mut goals: Vec<WorkspaceGoal> = all_goals
         .into_iter()
         .filter(|g| member_ids.contains(g.project_id.as_str()))
-        .map(|g| WorkspaceGoal {
-            project_id: g.project_id,
-            title: g.title,
-            status: g.status,
-            progress: g.progress,
+        .map(|g| {
+            let w = work.get(&g.id);
+            WorkspaceGoal {
+                id: g.id,
+                project_id: g.project_id,
+                title: g.title,
+                status: g.status,
+                progress: g.progress,
+                tasks: w.map_or(0, |w| w.tasks),
+                completed_tasks: w.map_or(0, |w| w.completed_tasks),
+            }
         })
         .collect();
     let goal_count = goals.len();
@@ -2179,10 +2199,43 @@ fn project_snapshot(
         unrated_pending_idea_count,
         filed_recently: flow.filed,
         delivered_recently: flow.delivered,
+        failed_recently: flow.failed,
         context_count: project_contexts.len(),
         context_newest_at,
         kpi_coverage_gap,
+        goals: project_goal_lines(pool, project_id),
     }
+}
+
+/// The project's goals with the work naming each (G41). Best-effort like the
+/// rest of the snapshot: an unreadable goal table renders as "(none set)",
+/// which is what the decision saw before this existed.
+fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::ProjectGoalLine> {
+    let goals = crate::db::repos::dev_tools::list_goals_by_project(pool, project_id, None)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: goal read failed");
+            Vec::new()
+        });
+    let work =
+        crate::db::repos::dev_tools::goal_work_by_project(pool, project_id).unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: goal work read failed");
+            Vec::new()
+        });
+    goals
+        .into_iter()
+        .take(attention_decide::MAX_PROJECT_GOALS)
+        .map(|g| {
+            let w = work.iter().find(|w| w.goal_id == g.id);
+            attention_decide::ProjectGoalLine {
+                id: g.id,
+                title: g.title,
+                status: g.status,
+                ideas: w.map_or(0, |w| w.ideas),
+                tasks: w.map_or(0, |w| w.tasks),
+                completed_tasks: w.map_or(0, |w| w.completed_tasks),
+            }
+        })
+        .collect()
 }
 
 // ── Time math (pure) ───────────────────────────────────────────────────────
@@ -3386,6 +3439,12 @@ fn run_plan_goals(
 ) -> Vec<serde_json::Value> {
     let mut out = Vec::new();
     for g in wanted {
+        // G41 — an amendment names an existing goal; it is resolved across
+        // every project the workspace holds and refused outside them.
+        if let Some(reference) = g.id.as_deref() {
+            out.push(amend_goal(pool, context, g, reference, portfolio));
+            continue;
+        }
         let Some(project_id) = portfolio.resolve(&g.project) else {
             let error = portfolio.no_such_project(&g.project);
             tracing::info!(persona_id = %context.persona_id, project = %g.project, %error,
@@ -3428,6 +3487,101 @@ fn run_plan_goals(
         }
     }
     out
+}
+
+/// Amend one goal in place (G41): new wording, description or status, on a
+/// goal that lives in one of the workspace's projects.
+///
+/// Until 2026-09-10 the `goals` verb could only CREATE, so an owner-approved
+/// amendment to a goal that contradicted a live gate stood three passes
+/// unapplied while the Architect reported it each time. A goal traced to a
+/// design that moved is amended here, never re-created beside the old one.
+fn amend_goal(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    g: &attention_decide::NewGoal,
+    reference: &str,
+    portfolio: &WorkspaceProjects,
+) -> serde_json::Value {
+    if portfolio.workspace_id.is_none() {
+        return serde_json::json!({
+            "ok": false, "goal": reference,
+            "error": "this persona holds no workspace-bound charter, so it amends no goal",
+        });
+    }
+    // Ids are unique app-wide, so the first project that resolves the
+    // reference is the only one that can.
+    let mut found: Option<personas_core::models::DevGoal> = None;
+    for (pid, _) in &portfolio.known {
+        match crate::db::repos::dev_tools::resolve_goal_ref(pool, pid, reference) {
+            Ok(Some(goal)) => {
+                found = Some(goal);
+                break;
+            }
+            Ok(None) => {}
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %pid, error = %e,
+                    "persona_attention: goal lookup failed during an amendment");
+            }
+        }
+    }
+    let Some(goal) = found else {
+        let error = format!(
+            "no single goal `{reference}` in this workspace (a goal id or its first eight \
+             characters; the ids are in your brief's goal list)"
+        );
+        tracing::info!(persona_id = %context.persona_id, goal = reference, %error,
+            "persona_attention: an amendment named no goal of the workspace");
+        return serde_json::json!({ "ok": false, "goal": reference, "error": error });
+    };
+    let title = (!g.title.trim().is_empty()).then_some(g.title.as_str());
+    let description = g.description.as_deref().map(Some);
+    let status = g.status.as_deref();
+    let mut amended: Vec<&str> = Vec::new();
+    if title.is_some() {
+        amended.push("title");
+    }
+    if description.is_some() {
+        amended.push("description");
+    }
+    if status.is_some() {
+        amended.push("status");
+    }
+    match crate::db::repos::dev_tools::update_goal(
+        pool,
+        &goal.id,
+        title,
+        description,
+        status,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ) {
+        Ok(updated) => {
+            tracing::info!(persona_id = %context.persona_id, goal_id = %goal.id,
+                project_id = %goal.project_id, amended = ?amended,
+                "persona_attention: the decision amended a goal");
+            serde_json::json!({
+                "ok": true,
+                "amended": true,
+                "projectId": goal.project_id,
+                "goalId": goal.id,
+                "title": updated.title,
+                "status": updated.status,
+                "fields": amended,
+            })
+        }
+        Err(e) => {
+            tracing::warn!(persona_id = %context.persona_id, goal_id = %goal.id, error = %e,
+                "persona_attention: the decision's amendment was refused");
+            serde_json::json!({
+                "ok": false, "goal": reference, "goalId": goal.id, "error": e.to_string(),
+            })
+        }
+    }
 }
 
 /// Post the plan's `say` list into the persona's team channel, and report the
@@ -3901,7 +4055,8 @@ fn mint_dispatch_task(
         &idea.title,
         idea.description.as_deref(),
         Some(&idea.id),
-        None,
+        // G41 — the task inherits the goal the idea serves.
+        idea.goal_id.as_deref(),
         Some("queued"),
         None,
     ) {
@@ -7068,6 +7223,38 @@ mod attention_tests {
         let task = crate::db::repos::dev_tools::get_task_by_id(&pool, &task_id).unwrap();
         assert_eq!(task.source_idea_id.as_deref(), Some(idea_id.as_str()));
         assert_eq!(task.status, "running");
+        assert!(
+            task.goal_id.is_none(),
+            "an idea serving no goal mints a task serving none"
+        );
+
+        // G41: an idea bound to a goal mints a task carrying it, so the goal's
+        // progress can be read from the work attached to it.
+        let goal = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &pid,
+            "Every movement reconciles",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let served = seed_accepted_idea(&pool, &pid, "Reconcile the nightly run");
+        assert!(
+            crate::db::repos::dev_tools::set_idea_goal(&pool, &served, Some(&goal.id)).unwrap()
+        );
+        let served_task =
+            mint_dispatch_task(&pool, &charter, &served, &stats).expect("task minted");
+        let served_task = crate::db::repos::dev_tools::get_task_by_id(&pool, &served_task).unwrap();
+        assert_eq!(served_task.goal_id.as_deref(), Some(goal.id.as_str()));
+        let work = crate::db::repos::dev_tools::goal_work_by_project(&pool, &pid).unwrap();
+        assert_eq!(work.len(), 1);
+        assert_eq!(
+            (work[0].ideas, work[0].tasks, work[0].completed_tasks),
+            (1, 1, 0)
+        );
         assert_eq!(task.session_id.as_deref(), Some("sess-1"));
         assert!(task.started_at.is_some());
 
@@ -7851,12 +8038,26 @@ mod attention_tests {
         );
         // One of the three was written back by the worker before it died.
         tasks::update_task(
-            &pool, &task_c, None, None, Some("completed"), None, None, None, None, None, None,
+            &pool,
+            &task_c,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )?;
 
         fleet_sessions::upsert(
             &pool,
-            &fleet_row("sess-multi", "finished", Some("Task complete: a and b half done")),
+            &fleet_row(
+                "sess-multi",
+                "finished",
+                Some("Task complete: a and b half done"),
+            ),
         )?;
         assert_eq!(
             close_abandoned_dispatch_tasks(&pool, "p1"),
@@ -8871,11 +9072,15 @@ mod attention_tests {
             &ctx,
             &[
                 attention_decide::NewGoal {
+                    id: None,
+                    status: None,
                     project: "bank-platform".into(),
                     title: "Every movement reconciles to the cent, nightly.".into(),
                     description: Some("No unexplained delta survives a run.".into()),
                 },
                 attention_decide::NewGoal {
+                    id: None,
+                    status: None,
                     project: outsider.name.clone(),
                     title: "Not yours to set".into(),
                     description: None,
@@ -8920,6 +9125,114 @@ mod attention_tests {
         );
     }
 
+    /// G41: an amendment names a goal by id (or its prefix) and rewrites it
+    /// in place — wording, description, status — and refuses a goal that
+    /// lives outside the workspace. Until 2026-09-10 the verb could only
+    /// create, and an owner-approved amendment stood three passes unapplied.
+    #[test]
+    fn the_goals_verb_amends_a_goal_in_place_and_refuses_one_outside_the_workspace() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("amend");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        let outsider = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "not-the-bank",
+            &root.0.join("elsewhere").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let stale = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &platform.id,
+            "A gate manifest declares the twelve gates of design §11",
+            Some("Plan §5 platform goal 2."),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let foreign = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &outsider.id,
+            "Not yours to touch",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let amend = |id: &str, title: &str, status: Option<&str>| attention_decide::NewGoal {
+            id: Some(id.to_string()),
+            status: status.map(String::from),
+            project: String::new(),
+            title: title.to_string(),
+            description: None,
+        };
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[
+                // By an eight-character prefix, new wording, status untouched.
+                amend(
+                    &stale.id[..8],
+                    "A gate manifest declares every gate of design §11",
+                    None,
+                ),
+                // Status only, by full id.
+                amend(&stale.id, "", Some("blocked")),
+                // A goal of a project the workspace does not hold.
+                amend(&foreign.id, "Rewritten from outside", None),
+                // A reference that names nothing.
+                amend("ffffffff", "Nothing", None),
+            ],
+            &portfolio,
+        );
+
+        assert_eq!(out[0]["ok"], serde_json::json!(true), "{:?}", out[0]);
+        assert_eq!(out[0]["amended"], serde_json::json!(true));
+        assert_eq!(out[0]["goalId"], serde_json::json!(stale.id));
+        assert_eq!(out[1]["ok"], serde_json::json!(true), "{:?}", out[1]);
+        let after = crate::db::repos::dev_tools::get_goal_by_id(&pool, &stale.id).unwrap();
+        assert_eq!(
+            after.title,
+            "A gate manifest declares every gate of design §11"
+        );
+        assert_eq!(after.status, "blocked");
+        assert_eq!(
+            after.description.as_deref(),
+            Some("Plan §5 platform goal 2."),
+            "a field the amendment did not name is untouched"
+        );
+        assert_eq!(
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &platform.id, None)
+                .unwrap()
+                .len(),
+            1,
+            "amended in place, not re-created beside the old one"
+        );
+
+        assert_eq!(out[2]["ok"], serde_json::json!(false), "{:?}", out[2]);
+        let untouched = crate::db::repos::dev_tools::get_goal_by_id(&pool, &foreign.id).unwrap();
+        assert_eq!(untouched.title, "Not yours to touch");
+        assert_eq!(out[3]["ok"], serde_json::json!(false));
+        assert!(
+            out[3]["error"].as_str().unwrap().contains("ffffffff"),
+            "the refusal names the reference: {:?}",
+            out[3]
+        );
+    }
+
     /// A persona holding no workspace charter cannot reach any of the three
     /// verbs, and says which of the two reasons applies.
     #[test]
@@ -8934,6 +9247,8 @@ mod attention_tests {
             &pool,
             &ctx,
             &[attention_decide::NewGoal {
+                id: None,
+                status: None,
                 project: "anything".into(),
                 title: "t".into(),
                 description: None,

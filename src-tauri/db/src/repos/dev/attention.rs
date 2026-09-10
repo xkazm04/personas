@@ -608,6 +608,12 @@ pub struct BacklogFlow {
     pub filed: usize,
     /// Tasks that reached `completed` inside the window.
     pub delivered: usize,
+    /// Tasks that reached `failed` inside the window. Measured 2026-09-10:
+    /// bank-platform completed 7 and failed 21 in one day, and the ratio
+    /// above could not see it — a project failing three tasks in four is not
+    /// short of delivery intent, and telling it to deliver harder is the
+    /// wrong finding.
+    pub failed: usize,
 }
 
 /// Count [`BacklogFlow`] over the last `hours`.
@@ -637,9 +643,16 @@ pub fn backlog_flow(pool: &DbPool, project_id: &str, hours: u32) -> Result<Backl
             rusqlite::params![project_id, since],
             |r| r.get("n"),
         )?;
+        let failed: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_tasks
+              WHERE project_id = ?1 AND status = 'failed' AND updated_at >= ?2",
+            rusqlite::params![project_id, since],
+            |r| r.get("n"),
+        )?;
         Ok(BacklogFlow {
             filed: filed.max(0) as usize,
             delivered: delivered.max(0) as usize,
+            failed: failed.max(0) as usize,
         })
     })
 }

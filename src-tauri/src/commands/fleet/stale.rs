@@ -1945,8 +1945,18 @@ mod tests {
         let hour = OVERNIGHT_FINISHED_REAP_SECS * 1000;
         let now = 10 * hour;
         let label = Some("overnight: bank-edge");
-        assert!(overnight_worker_done_for_good(label, S::Finished, now - hour, now));
-        assert!(overnight_worker_done_for_good(label, S::Exited, now - 2 * hour, now));
+        assert!(overnight_worker_done_for_good(
+            label,
+            S::Finished,
+            now - hour,
+            now
+        ));
+        assert!(overnight_worker_done_for_good(
+            label,
+            S::Exited,
+            now - 2 * hour,
+            now
+        ));
         assert!(
             !overnight_worker_done_for_good(label, S::Finished, now - hour + 1, now),
             "a minute short of the hour is not the hour"
@@ -1963,7 +1973,12 @@ mod tests {
             !overnight_worker_done_for_good(Some("app-master:x"), S::Finished, now - hour, now),
             "the one-shot lane has its own rule"
         );
-        assert!(!overnight_worker_done_for_good(None, S::Finished, now - hour, now));
+        assert!(!overnight_worker_done_for_good(
+            None,
+            S::Finished,
+            now - hour,
+            now
+        ));
     }
 
     use super::*;

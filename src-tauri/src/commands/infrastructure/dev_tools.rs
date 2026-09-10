@@ -1366,7 +1366,7 @@ pub async fn dispatch_ideas_core(
             &idea.title,
             Some(&prompt),
             Some(&idea.id),
-            None,
+            idea.goal_id.as_deref(),
             None,
             depth,
         ) {

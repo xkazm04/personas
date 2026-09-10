@@ -204,7 +204,7 @@ pub fn record_idea_outcome(
                 &idea.title,
                 idea.description.as_deref(),
                 Some(&idea.id),
-                None,
+                idea.goal_id.as_deref(),
                 Some("queued"),
                 None,
             )?,

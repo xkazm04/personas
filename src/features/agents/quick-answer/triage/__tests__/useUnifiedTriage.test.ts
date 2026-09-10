@@ -200,6 +200,7 @@ function practice(overrides: Partial<WorkspaceKnowledge> = {}): WorkspaceKnowled
     provenance: null,
     confidence: 0.8,
     dedup_key: null,
+    goal_id: null,
     superseded_by: null,
     valid_from: null,
     valid_to: null,

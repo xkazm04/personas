@@ -122,6 +122,10 @@ pub(crate) const MAX_ADOPTION_RECIPES: usize = 10;
 pub(crate) const MAX_GOAL_TITLE_CHARS: usize = 160;
 /// Hard bound on a goal's description.
 pub(crate) const MAX_GOAL_DESCRIPTION_CHARS: usize = 600;
+/// A goal reference in an amendment: a uuid is 36 characters; anything much
+/// longer is a title pasted into the wrong field.
+pub(crate) const MAX_GOAL_ID_CHARS: usize = 64;
+pub(crate) const MAX_GOAL_STATUS_CHARS: usize = 32;
 
 /// The model every App Master this loop adopts runs on.
 ///
@@ -398,13 +402,44 @@ pub(crate) struct ProjectSnapshot {
     /// this says which way it is moving, which is the half an owner can act on.
     pub filed_recently: usize,
     pub delivered_recently: usize,
+    /// Tasks that reached `failed` in the same window (G41, AC-FLOW-2). A
+    /// project failing more tasks than it completes has a pipeline finding
+    /// to make before any filing-versus-delivery ratio means anything.
+    pub failed_recently: usize,
     pub context_count: usize,
     /// Newest `dev_contexts.updated_at` — how fresh the context map is.
     pub context_newest_at: Option<String>,
     /// Contexts carrying zero ACTIVE KPI. `None` = not measured (say so in
     /// the prompt rather than printing a 0 nobody computed).
     pub kpi_coverage_gap: Option<usize>,
+    /// The project's goals with the work attached to each (G41), up to
+    /// [`MAX_PROJECT_GOALS`]. Empty = no goal is set on the project.
+    pub goals: Vec<ProjectGoalLine>,
 }
+
+/// One goal of a project, with the work that names it (G41).
+///
+/// Measured 2026-09-10: 0 of 432 tasks in the Bank workspace carried a
+/// `goal_id`, so every goal sat at 0–20 % for a reason no App Master could
+/// see — nothing could reach it. The counts here are read from the rows that
+/// name the goal, never typed by anyone.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ProjectGoalLine {
+    pub id: String,
+    pub title: String,
+    pub status: String,
+    /// Ideas naming this goal, in any status.
+    pub ideas: usize,
+    /// Tasks naming this goal, in any status.
+    pub tasks: usize,
+    /// Of those, the tasks that reached `completed`.
+    pub completed_tasks: usize,
+}
+
+/// How many of a project's goals the prompt names. A project with more has
+/// them counted, not listed — the Architect's workspace view already caps
+/// at [`MAX_WORKSPACE_GOALS`] for the same reason.
+pub(crate) const MAX_PROJECT_GOALS: usize = 12;
 
 // ── The workspace the Architect holds ──────────────────────────────────────
 //
@@ -453,10 +488,16 @@ pub(crate) struct WorkspaceAppMaster {
 /// One goal anywhere in the workspace.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct WorkspaceGoal {
+    /// The goal's id — printed so the plan's `goals[].id` can name it (G41).
+    pub id: String,
     pub project_id: String,
     pub title: String,
     pub status: String,
     pub progress: i32,
+    /// Work naming this goal (G41): tasks in any status, and of those the
+    /// completed ones. Both zero = nothing has ever been attached.
+    pub tasks: usize,
+    pub completed_tasks: usize,
 }
 
 /// How many personas the machine is RUNNING right now, against the ceiling on
@@ -748,10 +789,18 @@ pub(crate) struct AdoptionRecipe {
 /// One goal the plan wants set on a project in its workspace.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct NewGoal {
+    /// Set to AMEND an existing goal (G41): a goal id or an id prefix of at
+    /// least eight characters, resolved across the workspace's projects.
+    /// `None` creates. An amendment leaves `project` empty and `title` empty
+    /// when the wording does not change.
+    pub id: Option<String>,
     /// A project id or name, resolved the same way [`NewAppMaster::project`] is.
     pub project: String,
     pub title: String,
     pub description: Option<String>,
+    /// For an amendment only: a new status, one of the canonical goal
+    /// statuses. Anything else is refused by the repo with the list.
+    pub status: Option<String>,
 }
 
 /// One message the plan posts into its channel.
@@ -959,12 +1008,16 @@ struct WireAdoptAppMaster {
 
 #[derive(serde::Deserialize)]
 struct WireNewGoal {
+    #[serde(default, alias = "goalId", alias = "goal_id")]
+    id: Option<String>,
     #[serde(default)]
     project: Option<String>,
     #[serde(default)]
     title: Option<String>,
     #[serde(default)]
     description: Option<String>,
+    #[serde(default)]
+    status: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -1323,6 +1376,29 @@ fn parse_goals(wire: Vec<WireNewGoal>) -> Vec<NewGoal> {
         }
         let project = bound(g.project.unwrap_or_default().trim(), MAX_PROJECT_REF_CHARS);
         let title = bound(g.title.unwrap_or_default().trim(), MAX_GOAL_TITLE_CHARS);
+        let description = bounded_option(g.description, MAX_GOAL_DESCRIPTION_CHARS);
+        // An AMENDMENT (G41): names an existing goal by id. It needs no
+        // project (the goal already lives somewhere) and no title (the
+        // wording may stand), but it must change SOMETHING — an amendment
+        // that touches nothing is dropped rather than written as a no-op
+        // the ledger would read as an act.
+        if let Some(id) = bounded_option(g.id, MAX_GOAL_ID_CHARS) {
+            let status = bounded_option(g.status, MAX_GOAL_STATUS_CHARS);
+            if title.is_empty() && description.is_none() && status.is_none() {
+                continue;
+            }
+            if out.iter().any(|x| x.id.as_deref() == Some(id.as_str())) {
+                continue;
+            }
+            out.push(NewGoal {
+                id: Some(id),
+                project,
+                title,
+                description,
+                status,
+            });
+            continue;
+        }
         if project.is_empty() || title.is_empty() {
             continue;
         }
@@ -1334,9 +1410,11 @@ fn parse_goals(wire: Vec<WireNewGoal>) -> Vec<NewGoal> {
             continue;
         }
         out.push(NewGoal {
+            id: None,
             project,
             title,
-            description: bounded_option(g.description, MAX_GOAL_DESCRIPTION_CHARS),
+            description,
+            status: None,
         });
     }
     out
@@ -1612,15 +1690,30 @@ const FLOW_IMBALANCE_RATIO: f64 = 2.0;
 /// platform's job is to make sure the number is in front of it when it
 /// decides, which until now it was not.
 fn flow_line(p: &ProjectSnapshot) -> String {
-    if p.filed_recently == 0 && p.delivered_recently == 0 {
+    if p.filed_recently == 0 && p.delivered_recently == 0 && p.failed_recently == 0 {
         return format!(
             "  backlog flow (last {FLOW_WINDOW_HOURS}h): nothing filed, nothing delivered\n"
         );
     }
     let mut s = format!(
-        "  backlog flow (last {FLOW_WINDOW_HOURS}h): {} filed · {} delivered",
-        p.filed_recently, p.delivered_recently
+        "  backlog flow (last {FLOW_WINDOW_HOURS}h): {} filed · {} delivered · {} failed",
+        p.filed_recently, p.delivered_recently, p.failed_recently
     );
+    // AC-FLOW-2 (the Architect, 2026-09-10): a wave that produces a failed
+    // task has not delivered, and a project failing more tasks than it
+    // completes owes the failure cause BEFORE the ratio below means anything.
+    // bank-platform sat at 7 completed / 21 failed and the ratio alone would
+    // have told it to deliver harder into a pipeline failing three in four.
+    if p.failed_recently > p.delivered_recently {
+        s.push_str(&format!(
+            " — MORE TASKS FAILED THAN COMPLETED in the window ({} of {}). That is the \
+             finding you owe first: read the failed task rows by id and say whether \
+             the cause is the pipeline, the briefs or the worktree. A project failing \
+             three tasks in four is not short of delivery intent.",
+            p.failed_recently,
+            p.failed_recently + p.delivered_recently
+        ));
+    }
     if p.delivered_recently == 0 {
         s.push_str(
             " — NOTHING DELIVERED. Filing more findings does not move this project; \
@@ -1641,6 +1734,39 @@ fn flow_line(p: &ProjectSnapshot) -> String {
         ));
     } else {
         s.push_str(" — draining as fast as it fills or faster.\n");
+    }
+    s
+}
+
+/// The project's goals, each with the work that names it (G41).
+///
+/// A goal with nothing attached is printed as exactly that. Until 2026-09-10
+/// no idea could name a goal and no task ever did, so every goal read as a
+/// percentage of an edge that did not exist; the counts here are the edge.
+fn goal_lines(p: &ProjectSnapshot) -> String {
+    if p.goals.is_empty() {
+        return "  goals: (none set on this project)\n".to_string();
+    }
+    let mut s = format!(
+        "  goals ({}) — when a finding you file serves one, name it in \
+         `propose_backlog.goal` by the id in brackets; the task delivered from it \
+         inherits the goal, and a goal's progress is read from the work attached to \
+         it. A goal with no work attached is a document, not a target:\n",
+        p.goals.len()
+    );
+    for g in &p.goals {
+        let short = &g.id[..g.id.len().min(8)];
+        if g.ideas == 0 && g.tasks == 0 {
+            s.push_str(&format!(
+                "    - [{short}] {} — {} · no work attached\n",
+                g.title, g.status
+            ));
+        } else {
+            s.push_str(&format!(
+                "    - [{short}] {} — {} · {} idea(s), {} task(s), {} completed\n",
+                g.title, g.status, g.ideas, g.tasks, g.completed_tasks
+            ));
+        }
     }
     s
 }
@@ -2167,6 +2293,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         // 60. This is the number an App Master derived by hand and called its
         // most useful, so the loop now measures it for every project.
         s.push_str(&flow_line(p));
+        s.push_str(&goal_lines(p));
         if p.unrated_pending_idea_count > 0 {
             s.push_str(
                 "  unrated ideas are never auto-accepted; re-file them with all three scales, \
@@ -2348,8 +2475,14 @@ fn render_workspace_section(
             ));
         }
         for g in &w.goals {
+            let short = &g.id[..g.id.len().min(8)];
+            let work = if g.tasks == 0 {
+                "no work attached".to_string()
+            } else {
+                format!("{} task(s), {} completed", g.tasks, g.completed_tasks)
+            };
             s.push_str(&format!(
-                "    - [{}] {} — {} ({}%)\n",
+                "    - [{short}] [{}] {} — {} ({}%) · {work}\n",
                 g.project_id, g.title, g.status, g.progress
             ));
         }
@@ -2406,6 +2539,12 @@ fn render_workspace_section(
              `\"goals\":[{{\"project\":\"<an id or a name from the list above>\",\
              \"title\":\"<what is to be true, at most {MAX_GOAL_TITLE_CHARS} characters>\",\
              \"description\":\"<optional>\"}}]`. At most {MAX_SET_GOALS} per wake.\n\
+             - AMEND A GOAL: `\"goals\":[{{\"id\":\"<a goal id from the list above, or its \
+             first eight or more characters>\",\"title\":\"<new wording, optional>\",\
+             \"description\":\"<optional>\",\"status\":\"<optional: open · in-progress · \
+             awaiting_acceptance · blocked · done>\"}}]`. A goal whose design moved is amended \
+             in place, never re-created beside the old one; a goal whose work is done is set \
+             `done`. An amendment needs no `project`. Counts against the same {MAX_SET_GOALS}.\n\
              Every `project` is resolved inside THIS workspace, by id or by name, including a \
              project you create in this same answer. A project you cannot name here is one you \
              do not hold.\n",
@@ -3072,9 +3211,11 @@ mod tests {
                 // numbers it is actually about.
                 filed_recently: 0,
                 delivered_recently: 0,
+                failed_recently: 0,
                 context_count: 208,
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
+                goals: Vec::new(),
             }],
             open_asks: Vec::new(),
             // The channel is empty in the base fixture on purpose: every
@@ -3313,7 +3454,7 @@ mod tests {
         ctx.projects[0].delivered_recently = 8;
         let p = render_decision_prompt(&ctx);
         assert!(
-            p.contains("backlog flow (last 24h): 40 filed · 8 delivered (5.0:1)"),
+            p.contains("backlog flow (last 24h): 40 filed · 8 delivered · 0 failed (5.0:1)"),
             "{p}"
         );
         assert!(p.contains("growing 5.0x faster than it drains"));
@@ -3329,9 +3470,112 @@ mod tests {
         ctx.projects[0].filed_recently = 6;
         ctx.projects[0].delivered_recently = 9;
         let p = render_decision_prompt(&ctx);
-        assert!(p.contains("6 filed · 9 delivered (0.7:1)"), "{p}");
+        assert!(
+            p.contains("6 filed · 9 delivered · 0 failed (0.7:1)"),
+            "{p}"
+        );
         assert!(p.contains("draining as fast as it fills or faster"));
         assert!(!p.contains("YOUR call and nobody else's"));
+    }
+
+    /// AC-FLOW-2 (G41): a project failing more tasks than it completes is
+    /// told the failure cause is the finding it owes, BEFORE the ratio.
+    /// bank-platform sat at 7 completed / 21 failed on 2026-09-10 and the
+    /// ratio alone would have told it to deliver harder.
+    #[test]
+    fn a_project_failing_more_than_it_completes_is_told_so_before_the_ratio() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].filed_recently = 35;
+        ctx.projects[0].delivered_recently = 7;
+        ctx.projects[0].failed_recently = 21;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("35 filed · 7 delivered · 21 failed"), "{p}");
+        let failed_at = p
+            .find("MORE TASKS FAILED THAN COMPLETED")
+            .expect("the sentence");
+        let ratio_at = p
+            .find("growing 5.0x faster")
+            .expect("the ratio still prints");
+        assert!(failed_at < ratio_at, "the failure finding comes first");
+        assert!(p.contains("(21 of 28)"), "{p}");
+
+        // Fewer failed than completed: no such sentence.
+        ctx.projects[0].failed_recently = 3;
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("MORE TASKS FAILED"), "{p}");
+    }
+
+    /// G41: the project's goals print with the work naming each, and a goal
+    /// nothing names says so — the state the Architect measured on
+    /// 2026-09-10 (0 of 432 tasks carrying a goal) is printed as a fact.
+    #[test]
+    fn the_prompt_prints_each_goal_with_the_work_attached_to_it() {
+        let mut ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("goals: (none set on this project)"), "{p}");
+
+        ctx.projects[0].goals = vec![
+            ProjectGoalLine {
+                id: "4a585854-2f5f-44ed-9072-be60f1cdf7b1".into(),
+                title: "A signature is an AdES over the contract digest".into(),
+                status: "in-progress".into(),
+                ideas: 0,
+                tasks: 0,
+                completed_tasks: 0,
+            },
+            ProjectGoalLine {
+                id: "2a05a351-b801-4be4-b770-5b2d5fe97804".into(),
+                title: "A gate manifest declares every gate".into(),
+                status: "open".into(),
+                ideas: 4,
+                tasks: 3,
+                completed_tasks: 1,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("goals (2)"), "{p}");
+        assert!(
+            p.contains("[4a585854] A signature is an AdES over the contract digest — in-progress · no work attached"),
+            "{p}"
+        );
+        assert!(
+            p.contains("[2a05a351] A gate manifest declares every gate — open · 4 idea(s), 3 task(s), 1 completed"),
+            "{p}"
+        );
+        assert!(
+            p.contains("propose_backlog.goal"),
+            "the filer is told how to name one"
+        );
+    }
+
+    /// G41: the `goals` verb reads an amendment — a goal id with any of a
+    /// new title, description or status — beside the create form, and drops
+    /// an amendment that changes nothing.
+    #[test]
+    fn parse_reads_a_goal_amendment_beside_a_creation() {
+        let reply = serde_json::json!({
+            "goals": [
+                { "id": "4a585854", "status": "done" },
+                { "goalId": "2a05a351-b801", "title": "A gate manifest declares every gate" },
+                { "id": "deadbeef" },
+                { "project": "ledger-service", "title": "Every movement reconciles" },
+                { "id": "4a585854", "description": "twice in one wake is once" },
+            ],
+        })
+        .to_string();
+        let plan = parse_decision(&reply, &authority_roster(), 3).expect("parses");
+        assert_eq!(plan.goals.len(), 3, "{:?}", plan.goals);
+        assert_eq!(plan.goals[0].id.as_deref(), Some("4a585854"));
+        assert_eq!(plan.goals[0].status.as_deref(), Some("done"));
+        assert!(plan.goals[0].title.is_empty(), "the wording stands");
+        assert_eq!(
+            plan.goals[1].id.as_deref(),
+            Some("2a05a351-b801"),
+            "goalId is accepted"
+        );
+        assert_eq!(plan.goals[1].title, "A gate manifest declares every gate");
+        assert!(plan.goals[2].id.is_none(), "the create form is untouched");
+        assert_eq!(plan.goals[2].project, "ledger-service");
     }
 
     /// Delivering nothing is not a ratio — dividing by it would be — and it is

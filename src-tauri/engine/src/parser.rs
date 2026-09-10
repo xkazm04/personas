@@ -692,6 +692,12 @@ fn parse_propose_backlog(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         // than the persona's own repo. Absent is `project`, so nothing an
         // older model emits changes meaning.
         target: str_field(msg, "target"),
+        // G41 — the goal this finding serves. `goal` is the documented key;
+        // `goalId` / `goal_id` are accepted because a model that has just read
+        // a goal list printed with ids will reach for either.
+        goal: str_field(msg, "goal")
+            .or_else(|| str_field(msg, "goalId"))
+            .or_else(|| str_field(msg, "goal_id")),
     })
 }
 

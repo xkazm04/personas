@@ -1115,6 +1115,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             effort,
             risk,
             target,
+            goal,
         } => {
             // Surface a future-work item into the project's backlog (dev_ideas),
             // scoped to the persona's pinned repo so it lands in that project's
@@ -1336,6 +1337,42 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                     "[BACKLOG] Incomplete filing '{title}': no {} — the filer scores effort, impact and risk; re-file with all three",
                                     missing.join(", ")
                                 ));
+                            }
+                            // G41 — bind the idea to the goal it serves. The
+                            // reference is resolved against the project the
+                            // idea landed on (an id, an id prefix, or the
+                            // title); nothing resolves silently to "some goal",
+                            // and a bad reference never loses the filing.
+                            if let (Some(goal_ref), Some(pid)) = (
+                                goal.as_deref().map(str::trim).filter(|g| !g.is_empty()),
+                                idea.project_id.as_deref(),
+                            ) {
+                                match crate::db::repos::dev_tools::resolve_goal_ref(
+                                    ctx.pool, pid, goal_ref,
+                                ) {
+                                    Ok(Some(g)) => {
+                                        match crate::db::repos::dev_tools::set_idea_goal(
+                                            ctx.pool,
+                                            &idea.id,
+                                            Some(&g.id),
+                                        ) {
+                                            Ok(_) => ctx.logger.log(&format!(
+                                                "[BACKLOG] Serves goal {}: {}",
+                                                &g.id[..g.id.len().min(8)],
+                                                g.title
+                                            )),
+                                            Err(e) => ctx.logger.log(&format!(
+                                                "[BACKLOG] Could not bind goal {goal_ref}: {e}"
+                                            )),
+                                        }
+                                    }
+                                    Ok(None) => ctx.logger.log(&format!(
+                                        "[BACKLOG] Goal {goal_ref:?} names no single goal of this project — filed unbound; use a goal id from the prompt's goal list"
+                                    )),
+                                    Err(e) => ctx.logger.log(&format!(
+                                        "[BACKLOG] Goal lookup failed for {goal_ref:?}: {e}"
+                                    )),
+                                }
                             }
                             risk.is_some()
                         }
@@ -2426,6 +2463,7 @@ mod tests {
             effort: None,
             risk: None,
             target: None,
+            goal: None,
         }
     }
 
@@ -2440,6 +2478,7 @@ mod tests {
                 effort: None,
                 risk: None,
                 target: Some(target.to_string()),
+                goal: None,
             },
             other => other,
         }
@@ -2457,6 +2496,7 @@ mod tests {
                 effort: None,
                 risk: Some(risk),
                 target: None,
+                goal: None,
             },
             other => other,
         }

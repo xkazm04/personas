@@ -44,6 +44,7 @@ describe('viewFromRow', () => {
     provenance: null,
     confidence: null,
     dedup_key: null,
+    goal_id: null,
     superseded_by: null,
     valid_from: null,
     valid_to: null,

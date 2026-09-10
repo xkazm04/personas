@@ -1267,6 +1267,11 @@ pub struct DevIdea {
     /// Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
     /// re-raises a finding already present in ANY status, `rejected` included.
     pub dedup_key: Option<String>,
+    /// The goal this finding serves (G41). Named by the filer
+    /// (`propose_backlog.goal`), inherited by the task minted from the idea,
+    /// so a goal's progress can be read from the work attached to it. No FK:
+    /// a goal deleted later leaves its ideas standing.
+    pub goal_id: Option<String>,
     /// Did shipping this actually move the signal? One of `VERIFY_STATES`.
     /// `None`/`pending` = not judged yet. `unchanged` / `regressed` are real
     /// outcomes, not errors — "merged" is not the same as "fixed".

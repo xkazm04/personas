@@ -46,6 +46,7 @@ pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         use_case_id: row.get("use_case_id").unwrap_or(None),
         evidence: row.get("evidence").unwrap_or(None),
         dedup_key: row.get("dedup_key").unwrap_or(None),
+        goal_id: row.get("goal_id").unwrap_or(None),
         verify_state: row.get("verify_state").unwrap_or(None),
         verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
         verify_evidence: row.get("verify_evidence").unwrap_or(None),
@@ -318,8 +319,27 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
 /// converting the old ones is its own change.
 const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
      reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
-     origin, use_case_id, evidence, dedup_key, verify_state, verify_checked_at, \
+     origin, use_case_id, evidence, dedup_key, goal_id, verify_state, verify_checked_at, \
      verify_evidence, created_at, updated_at";
+
+/// Bind an idea to the goal it serves (G41). `None` clears the binding.
+/// Returns whether a row was touched; binding an idea that does not exist is
+/// `Ok(false)`, never an invented row.
+pub fn set_idea_goal(
+    pool: &DbPool,
+    idea_id: &str,
+    goal_id: Option<&str>,
+) -> Result<bool, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::set_idea_goal", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let n = conn.execute(
+            "UPDATE dev_ideas SET goal_id = ?1, updated_at = ?2 WHERE id = ?3",
+            params![goal_id, now, idea_id],
+        )?;
+        Ok(n > 0)
+    })
+}
 
 /// The idea holding `dedup_key` in this project, in ANY status.
 ///
