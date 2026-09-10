@@ -31,8 +31,7 @@ function deckMaterial(r: DesignRecipe): 'metal' | 'glass' | 'matte' {
   return 'matte';
 }
 
-const GROUP_A = BOARD_3.recipes.slice(0, 3);
-const GROUP_B = BOARD_3.recipes.slice(3, 6);
+const GROUP_A = BOARD_3.recipes;
 
 describe('design recipes', () => {
   it('every recipe carries a complete colour ramp of real hex colours and sane numbers', () => {
@@ -64,14 +63,13 @@ describe('design recipes', () => {
   });
 });
 
-describe('board 3 — realistic materials in Strata hues, and new L0 bodies in the Strata palette', () => {
-  it('is the current board, judged at both layers, six unique recipes in two groups of three', () => {
+describe('board 3 — the two realistic materials in Strata hues the operator kept', () => {
+  it('is the current board, judged at both layers, two unique recipes', () => {
     expect(CURRENT_BOARD).toBe(BOARD_3);
     expect(BOARD_3.frames).toEqual([0, 1]);
-    expect(BOARD_3.recipes).toHaveLength(6);
-    expect(new Set(BOARD_3.recipes.map((r) => r.id)).size).toBe(6);
+    expect(BOARD_3.recipes).toHaveLength(2);
+    expect(new Set(BOARD_3.recipes.map((r) => r.id)).size).toBe(2);
     for (const r of GROUP_A) expect(r.note.startsWith('A ·'), r.id).toBe(true);
-    for (const r of GROUP_B) expect(r.note.startsWith('B ·'), r.id).toBe(true);
   });
 
   it('group A keeps the shipped STRUCTURE and changes only the material', () => {
@@ -83,9 +81,9 @@ describe('board 3 — realistic materials in Strata hues, and new L0 bodies in t
       // and sit on the floor
       expect(r.finish.contactShadow, r.id).toBeGreaterThan(0);
     }
-    // three genuinely different materials, not one retuned
+    // two genuinely different materials, not one retuned
     const decks = GROUP_A.map(deckMaterial);
-    expect(new Set(decks)).toEqual(new Set(['metal', 'glass', 'matte']));
+    expect(new Set(decks)).toEqual(new Set(['metal', 'glass']));
   });
 
   it("group A's status hues stay within Strata's, toned DOWN — not pastel, not neon", () => {
@@ -103,21 +101,6 @@ describe('board 3 — realistic materials in Strata hues, and new L0 bodies in t
       expect(r.ramp.primary).toBe(STRATA.primary);
       expect(r.ramp.accent).toBe(STRATA.accent);
     }
-  });
-
-  it('group B keeps the shipped PALETTE and materials and changes only the L0 body and lanes', () => {
-    for (const r of GROUP_B) {
-      expect(r.ramp, r.id).toEqual(STRATA_RECIPE.ramp);
-      expect(r.surface, r.id).toEqual(STRATA_RECIPE.surface);
-      expect(r.deck, r.id).toEqual(STRATA_RECIPE.deck);
-      expect(r.light, r.id).toEqual(STRATA_RECIPE.light);
-      expect(r.ground, r.id).toEqual(STRATA_RECIPE.ground);
-      expect(r.edges, r.id).toEqual(STRATA_RECIPE.edges);
-      // and the body is NOT the shipped stack — dimensions hide until L1
-      expect(r.node.l0, r.id).not.toBe('stack');
-      expect(r.node.lanes, r.id).not.toBe('dash');
-    }
-    expect(new Set(GROUP_B.map((r) => r.node.l0)).size).toBe(3);
   });
 });
 

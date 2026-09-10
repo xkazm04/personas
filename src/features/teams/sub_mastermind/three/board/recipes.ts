@@ -160,14 +160,6 @@ const RAMP_STONE: DesignRecipe['ramp'] = {
   state: { healthy: '#7fa78c', building: '#7f97ad', warning: '#c2a06a', critical: '#b57676' },
   structure: '#23262b',
 };
-/** Strata's hues pulled toward brass — same hue family, metal value. */
-const RAMP_BRASS: DesignRecipe['ramp'] = {
-  ...STRATA_RAMP,
-  status: { solid: '#7c9a7e', partial: '#7e8fa1', risk: '#c9a468', alert: '#b07068', unknown: '#75706a', absent: '#383b41' },
-  state: { healthy: '#7c9a7e', building: '#7e8fa1', warning: '#c9a468', critical: '#b07068' },
-  structure: '#2a2724',
-};
-
 const NO_EDGES: DesignRecipe['edges'] = { tint: 'off', weight: 0, neutral: '#000000' };
 
 /** A1. ANODISED GRAPHITE — dark anodised aluminium decks, matte painted-metal
@@ -202,55 +194,14 @@ const FROSTED_GLASS: DesignRecipe = {
   finish: { contactShadow: 0.55, shadowBlur: 2.4, bevel: 0.06, statusAs: 'fill' },
 };
 
-/** A3. CONCRETE & BRASS — matte concrete decks and plinths, brushed-brass
- *  tiles, a low warm key throwing long shadows. */
-const CONCRETE: DesignRecipe = {
-  id: 'b3-3',
-  name: 'concrete & brass',
-  note: 'A · matte concrete decks, brushed-brass tiles, low warm key',
-  ground: { bg: '#1a1816', fog: true, floor: 'plane', grid: '#232019', section: '#232019', mirror: 0 },
-  light: { ambient: 0.3, key: 1.8, keyColor: '#ffd9ae', keyFrom: [-14, 9, 16], fill: 0.45, fillColor: '#8fa3b6', env: 'soft', tone: 'aces', exposure: 1.1 },
-  surface: { roughness: 0.45, metalness: 0.7, clearcoat: 0.1, clearcoatRoughness: 0.6, emissive: 0, emissiveMuted: 0, slab: 1, halo: 0, mode: 'physical', opaqueTiles: true, bodyColor: '#ffffff', attentionGlow: 0 },
-  deck: { style: 'solid', color: '#55524d', opacity: 1, transmission: 0, roughness: 0.96, metalness: 0 },
-  node: { l0: 'stack', lanes: 'dash' },
-  edges: NO_EDGES,
-  ramp: RAMP_BRASS,
-  finish: { contactShadow: 0.65, shadowBlur: 1.8, bevel: 0.03, statusAs: 'fill' },
-};
-
-// ── Group B: the shipped palette, a different project at L0 ─────────────────
-//
-// Held: everything the Strata tab ships — ground, light, frost, ramp, edges.
-// Varied: the L0 body and the lanes. Dimensions are not in sight until the
-// node opens into the stack on the way to L1.
-
-const asStrata = (id: string, name: string, note: string, node: DesignRecipe['node']): DesignRecipe => ({
-  ...STRATA_RECIPE,
-  id,
-  name,
-  note,
-  node,
-  // Grounded, so the closed bodies sit rather than float — the one finish
-  // change the whole group carries.
-  finish: { ...STRATA_RECIPE.finish, contactShadow: 0.45, shadowBlur: 2.2 },
-});
-
-/** B1. MONOLITH — a project is one closed block with its name on top; ribbon
- *  lanes on the floor; the block splits into the four decks on L1. */
-const MONOLITH = asStrata('b3-4', 'monolith', 'B · one closed block per project, ribbon lanes; splits into decks on L1', { l0: 'slab', lanes: 'ribbon' });
-
-/** B2. MEDALLION — a project is a flat disc with a state ring; lanes arc
- *  between discs; the stack rises out of the disc on L1. */
-const MEDALLION = asStrata('b3-5', 'medallion', 'B · flat disc with a state ring, arcing lanes; the stack rises out of it on L1', { l0: 'disc', lanes: 'arc' });
-
-/** B3. CARD — a project is an upright plate with its name and state bar;
- *  ribbon lanes; the card lays down and the decks explode on L1. */
-const CARD = asStrata('b3-6', 'card', 'B · upright name card per project, ribbon lanes; lays down into the stack on L1', { l0: 'card', lanes: 'ribbon' });
-
+// The operator kept these two and parked the rest (concrete & brass, and the
+// three closed L0 bodies) on 2026-09-10: "we are not getting close to the
+// point I would wish". The scene still renders every NodeShape and LaneStyle,
+// so a body can come back as data when the next direction is known.
 export const BOARD_3: Board = {
   id: 'b3',
   frames: [0, 1],
-  recipes: [ANODISED, FROSTED_GLASS, CONCRETE, MONOLITH, MEDALLION, CARD],
+  recipes: [ANODISED, FROSTED_GLASS],
 };
 
 /** The board the app renders. Swap this when breeding the next round. */
