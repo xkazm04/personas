@@ -4001,51 +4001,81 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
             continue;
         };
         let str_field = |key: &str| stats.get(key).and_then(|v| v.as_str());
-        // No task id means this dispatch minted no row — nothing of ours to close.
-        let Some(task_id) = str_field("taskId") else {
+        // Every row this dispatch minted. A delivery dispatch carries several
+        // ideas since G34, and stamps them all under `taskIds` with the first
+        // repeated under `taskId` for older readers. Reading only `taskId`
+        // closed one row per dispatch and left the rest `running` forever
+        // (measured 2026-09-10: 46 bank rows, 11 of them behind a session that
+        // had been `finished` for eleven hours). No task id at all means this
+        // dispatch minted no row — nothing of ours to close.
+        let task_ids = minted_task_ids(&stats);
+        if task_ids.is_empty() {
             continue;
-        };
-        let Ok(task) = crate::db::repos::dev::tasks::get_task_by_id(pool, task_id) else {
-            continue; // pruned or never written; not ours to resurrect
-        };
-        if !NON_TERMINAL_TASK_STATUSES.contains(&task.status.as_str()) {
-            continue; // already settled — by the write-back door or by a human
         }
-
-        let Some(ended) =
-            dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId"))
-        else {
-            continue; // still alive, or we could not tell — never guess a death
-        };
-
-        let error = format!("{ABANDONED_DISPATCH_ERROR_PREFIX}{ended}");
-        let now = chrono::Utc::now().to_rfc3339();
-        match crate::db::repos::dev::tasks::update_task(
-            pool,
-            &task.id,
-            None,
-            None,
-            Some("failed"),
-            None,
-            None,
-            None,
-            Some(Some(error.as_str())),
-            None,
-            Some(Some(now.as_str())),
-        ) {
-            Ok(_) => {
-                closed += 1;
-                tracing::info!(
-                    persona_id, task_id = %task.id, reason = %error,
-                    "persona_attention: closed a dispatch task whose worker ended \
-                     without writing back"
-                );
+        // The worker is one per dispatch, so its end is decided once per row
+        // and only when a task still needs it.
+        let mut ended: Option<Option<String>> = None;
+        for task_id in task_ids {
+            let Ok(task) = crate::db::repos::dev::tasks::get_task_by_id(pool, task_id) else {
+                continue; // pruned or never written; not ours to resurrect
+            };
+            if !NON_TERMINAL_TASK_STATUSES.contains(&task.status.as_str()) {
+                continue; // already settled — by the write-back door or by a human
             }
-            Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
-                "persona_attention: could not close an abandoned dispatch task"),
+            let end = ended.get_or_insert_with(|| {
+                dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId"))
+            });
+            let Some(end) = end.as_deref() else {
+                break; // still alive, or we could not tell — never guess a death
+            };
+
+            let error = format!("{ABANDONED_DISPATCH_ERROR_PREFIX}{end}");
+            let now = chrono::Utc::now().to_rfc3339();
+            match crate::db::repos::dev::tasks::update_task(
+                pool,
+                &task.id,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(error.as_str())),
+                None,
+                Some(Some(now.as_str())),
+            ) {
+                Ok(_) => {
+                    closed += 1;
+                    tracing::info!(
+                        persona_id, task_id = %task.id, reason = %error,
+                        "persona_attention: closed a dispatch task whose worker ended \
+                         without writing back"
+                    );
+                }
+                Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
+                    "persona_attention: could not close an abandoned dispatch task"),
+            }
         }
     }
     closed
+}
+
+/// The task ids a decide row's `stats_json` says its dispatch minted: the
+/// `taskIds` array first, then `taskId` (the first of them, kept for older
+/// readers — and the only field a single-idea dispatch wrote before G34).
+/// Order preserved, duplicates dropped, so a task is closed once.
+fn minted_task_ids(stats: &serde_json::Value) -> Vec<&str> {
+    let mut ids: Vec<&str> = stats
+        .get("taskIds")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
+        .unwrap_or_default();
+    if let Some(first) = stats.get("taskId").and_then(|v| v.as_str()) {
+        if !ids.contains(&first) {
+            ids.push(first);
+        }
+    }
+    ids
 }
 
 /// `Some("<end kind>: <reason>")` when this dispatch's worker has stopped, or
@@ -7782,6 +7812,72 @@ mod attention_tests {
         // Idempotent: a second sweep has nothing left to close.
         assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
         Ok(())
+    }
+
+    /// A delivery dispatch carries several ideas (G34) and mints one task row
+    /// each, all stamped under `taskIds`. The sweep closes every one of them,
+    /// not only the first — measured 2026-09-10: 11 bank rows left `running`
+    /// behind sessions `finished` for eleven hours, because only `taskId` was
+    /// read.
+    #[test]
+    fn every_task_a_multi_idea_dispatch_minted_is_closed_when_its_worker_ends(
+    ) -> Result<(), AppError> {
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "multi");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver accepted ideas", &pid);
+        let idea_a = seed_accepted_idea(&pool, &pid, "First");
+        let idea_b = seed_accepted_idea(&pool, &pid, "Second");
+        let idea_c = seed_accepted_idea(&pool, &pid, "Third");
+
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({ "charterId": charter_id, "sessionId": "sess-multi" });
+        let task_a = mint_dispatch_task(&pool, &charter, &idea_a, &stats).expect("task a");
+        let task_b = mint_dispatch_task(&pool, &charter, &idea_b, &stats).expect("task b");
+        let task_c = mint_dispatch_task(&pool, &charter, &idea_c, &stats).expect("task c");
+        // Exactly what `dispatch_decided_charter` stamps: the array, and the
+        // first id repeated under the old key.
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-multi",
+                "taskId": task_a, "taskIds": [task_a, task_b, task_c],
+            }),
+        );
+        // One of the three was written back by the worker before it died.
+        tasks::update_task(
+            &pool, &task_c, None, None, Some("completed"), None, None, None, None, None, None,
+        )?;
+
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-multi", "finished", Some("Task complete: a and b half done")),
+        )?;
+        assert_eq!(
+            close_abandoned_dispatch_tasks(&pool, "p1"),
+            2,
+            "both unsettled rows close; the written-back one is left alone"
+        );
+        assert_eq!(tasks::get_task_by_id(&pool, &task_a)?.status, "failed");
+        assert_eq!(tasks::get_task_by_id(&pool, &task_b)?.status, "failed");
+        assert_eq!(tasks::get_task_by_id(&pool, &task_c)?.status, "completed");
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0, "idempotent");
+        Ok(())
+    }
+
+    #[test]
+    fn minted_task_ids_reads_the_array_first_and_the_old_key_once() {
+        let both = serde_json::json!({ "taskId": "a", "taskIds": ["a", "b"] });
+        assert_eq!(minted_task_ids(&both), vec!["a", "b"]);
+        let old_only = serde_json::json!({ "taskId": "a" });
+        assert_eq!(minted_task_ids(&old_only), vec!["a"]);
+        let none = serde_json::json!({ "sessionId": "s" });
+        assert!(minted_task_ids(&none).is_empty());
     }
 
     /// The sweep is bounded by the dispatch's own bookkeeping: no `taskId` in

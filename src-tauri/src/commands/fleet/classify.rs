@@ -552,6 +552,10 @@ mod tests {
     fn the_session_limit_banner_is_read_through_the_stale_lane_predicate() {
         for reason in [
             "You've hit your session limit · resets 7:50pm (Europe/Prague)",
+            // The seven-day window's wording, as nine overnight workers left
+            // it on 2026-09-09 — behind a "Task complete:" prefix, which must
+            // not win over the limit.
+            "Task complete: You've hit your weekly limit · resets Sep 13, 6pm (Europe/Prague)",
             "usage limit reached",
             "/usage-credits to finish what you're working on",
             "API Error: overloaded_error",

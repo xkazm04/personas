@@ -287,6 +287,7 @@ fn derive_claude_session_id(path: &Path) -> Option<String> {
 fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
     let mut matched = false;
     let mut maybe_emit: Option<(String, FleetSessionState, String)> = None;
+    let mut persist_id: Option<String> = None;
     {
         let mut map = registry()
             .sessions
@@ -297,7 +298,18 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
                 continue;
             }
             matched = true;
-            session.last_activity_ms = now_ms();
+            let now = now_ms();
+            // The durable row learns about activity too, at most once a
+            // minute per session. Before this, `last_activity_ms` reached the
+            // database only on a lifecycle transition, so a worker that wrote
+            // for nine hours inside one turn read as "running, last active at
+            // spawn" to every reader of the row — the App Master's in-flight
+            // sensor, the G37 "no heartbeat" reading of 2026-09-09, and the
+            // orchestrator who killed three live workers on it on 2026-09-10.
+            if now - session.last_activity_ms >= ACTIVITY_PERSIST_INTERVAL_MS {
+                persist_id = Some(session.id.clone());
+            }
+            session.last_activity_ms = now;
             // If we'd promoted this to Stale, the JSONL append proves it's
             // not — drop back to Idle (hooks will refine to AwaitingInput /
             // Running on the next event).
@@ -323,5 +335,15 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
     if let Some((sid, _state, reason)) = maybe_emit {
         super::pty::emit_session_state(app, &sid, None, "idle", Some(reason));
     }
+    if let Some(sid) = persist_id {
+        // Outside the registry lock: `note_changed` takes it itself.
+        super::persist::note_changed(app, &sid);
+    }
     matched
 }
+
+/// How often transcript growth is written through to the durable fleet row.
+/// One minute: a reader of `fleet_sessions.last_activity_ms` sees a working
+/// session as active to the minute, and a worker appending every few seconds
+/// costs one upsert a minute instead of one per line.
+const ACTIVITY_PERSIST_INTERVAL_MS: i64 = 60_000;

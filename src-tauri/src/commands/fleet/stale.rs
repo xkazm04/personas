@@ -1004,6 +1004,33 @@ fn unattended_awaiting_pass(app: &AppHandle, now: i64) {
 /// here changes that sweep for anybody.
 const ONE_SHOT_IDLE_REAP_SECS: i64 = 10 * 60;
 
+/// How long a **finished** overnight worker keeps its process before the reap
+/// pass ends it. The overnight lane is deliberately not one-shot (its
+/// dispatcher may drive several turns), so a finished session is given an hour
+/// for a further turn to arrive; a night that has not spoken to a finished
+/// worker for an hour is not going to. Measured 2026-09-09 20:02Z: nine
+/// overnight workers declared complete on a weekly-limit line and held their
+/// processes for eleven hours, 144 MB each, because nothing reaped a finished
+/// session outside the app-master label.
+const OVERNIGHT_FINISHED_REAP_SECS: i64 = 60 * 60;
+
+/// True when an overnight session has declared itself done (`Finished` /
+/// `Exited`) and has been silent for [`OVERNIGHT_FINISHED_REAP_SECS`]. Pure,
+/// so the rule can be tested without a registry.
+fn overnight_worker_done_for_good(
+    run_label: Option<&str>,
+    state: FleetSessionState,
+    last_activity_ms: i64,
+    now: i64,
+) -> bool {
+    personas_engine::unattended::is_overnight_run(run_label)
+        && matches!(
+            state,
+            FleetSessionState::Finished | FleetSessionState::Exited
+        )
+        && now - last_activity_ms >= OVERNIGHT_FINISHED_REAP_SECS * 1000
+}
+
 /// Backstop for one-shot charter workers (**G21 + G25**), in two shapes:
 ///
 ///   • a worker still `Idle` past [`ONE_SHOT_IDLE_REAP_SECS`] is finished as an
@@ -1030,7 +1057,13 @@ fn one_shot_worker_reap_pass(app: &AppHandle, now: i64) {
             .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
-                is_one_shot_worker_label(s.run_label.as_deref())
+                (is_one_shot_worker_label(s.run_label.as_deref())
+                    || overnight_worker_done_for_good(
+                        s.run_label.as_deref(),
+                        s.state,
+                        s.last_activity_ms,
+                        now,
+                    ))
                     && s.child_pid.is_some()
                     && !s.reaped
                     && !s.dozing
@@ -1318,6 +1351,13 @@ pub(super) fn screen_shows_limit_error(screen: &str) -> bool {
     let s = screen.to_lowercase();
     s.contains("usage limit")
         || s.contains("session limit")
+        // "You've hit your weekly limit · resets Sep 13" — the CLI's wording for
+        // the seven-day window. Measured 2026-09-09 20:02Z: nine overnight
+        // workers ended on that line, were filed `finished` ("Task complete:
+        // You've hit your weekly limit…") and held their processes for eleven
+        // hours, because "weekly limit · resets" matched none of the phrases
+        // below.
+        || (s.contains("hit your") && s.contains("limit"))
         || s.contains("usage-credits")
         || s.contains("limit will reset")
         || s.contains("limit resets")
@@ -1896,6 +1936,36 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
+    /// The overnight reap rule: label, declared end, and an hour of silence —
+    /// all three, or the process stays (a night may still send a turn).
+    #[test]
+    fn a_finished_overnight_worker_is_reaped_only_after_an_hour_of_silence() {
+        use super::{overnight_worker_done_for_good, OVERNIGHT_FINISHED_REAP_SECS};
+        use crate::commands::fleet::types::FleetSessionState as S;
+        let hour = OVERNIGHT_FINISHED_REAP_SECS * 1000;
+        let now = 10 * hour;
+        let label = Some("overnight: bank-edge");
+        assert!(overnight_worker_done_for_good(label, S::Finished, now - hour, now));
+        assert!(overnight_worker_done_for_good(label, S::Exited, now - 2 * hour, now));
+        assert!(
+            !overnight_worker_done_for_good(label, S::Finished, now - hour + 1, now),
+            "a minute short of the hour is not the hour"
+        );
+        assert!(
+            !overnight_worker_done_for_good(label, S::Running, now - 3 * hour, now),
+            "a running night is never reaped by this rule"
+        );
+        assert!(
+            !overnight_worker_done_for_good(label, S::Idle, now - 3 * hour, now),
+            "idle between turns is the overnight lane's normal state"
+        );
+        assert!(
+            !overnight_worker_done_for_good(Some("app-master:x"), S::Finished, now - hour, now),
+            "the one-shot lane has its own rule"
+        );
+        assert!(!overnight_worker_done_for_good(None, S::Finished, now - hour, now));
+    }
+
     use super::*;
 
     /// The sweeper must reach the registry's state door for EVERY verdict.
