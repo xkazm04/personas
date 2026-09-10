@@ -50,6 +50,12 @@
   font-size: 0.72rem; color: #e6e2da; padding: 0.2rem 0.5rem; background: rgba(0, 0, 0, 0.55); border-radius: 0.25rem; pointer-events: none;
 }
 
+/* Layer toggle on the stage: L0 / L1, and the switch is a real flight. */
+.mm-board-layers { position: absolute; left: 50%; top: 0.5rem; transform: translateX(-50%); display: flex; gap: 0.2rem; padding: 0.15rem; border: 1px solid #2c3038; border-radius: 999px; background: rgba(13, 14, 17, 0.75); }
+.mm-board-layer { border: 0; background: transparent; color: #9a9186; font: inherit; font-size: 0.72rem; font-family: ui-monospace, Consolas, monospace; padding: 0.2rem 0.6rem; border-radius: 999px; cursor: pointer; }
+.mm-board-layer:hover { color: #e6e2da; }
+.mm-board-layer--on { background: #c9a67a; color: #0d0e11; }
+
 /* Recipe strip: one chip per recipe, the current one lit, picked ones starred. */
 .mm-board-strip { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .mm-board-chip {

@@ -212,9 +212,9 @@
   "board_sheet_hint": "Bảng tổng hợp mọi ô — được chụp bởi scripts/capture-canvas.mjs, hoặc nhấp chuột phải để lưu.",
   "view_board": "Bảng",
   "board_counter": "{n} / {total}",
-  "board_keys_hint": "← → chuyển công thức · 1–9 nhảy nhanh · Render sheet để so sánh cạnh nhau",
   "board_next": "Công thức tiếp theo",
   "board_prev": "Công thức trước",
   "board_recipes": "Công thức",
-  "board_render_sheet": "Xuất bảng so sánh"
+  "board_render_sheet": "Xuất bảng so sánh",
+  "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau"
 }

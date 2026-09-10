@@ -212,9 +212,9 @@
   "board_sheet_hint": "每个单元格的联系表 — 由 scripts/capture-canvas.mjs 捕获,或右键另存为。",
   "view_board": "看板",
   "board_counter": "{n} / {total}",
-  "board_keys_hint": "← → 切换配方 · 1–9 跳转 · 渲染表格以并排比较",
   "board_next": "下一个配方",
   "board_prev": "上一个配方",
   "board_recipes": "配方",
-  "board_render_sheet": "渲染表格"
+  "board_render_sheet": "渲染表格",
+  "board_hint": "← → 配方 · ↑ ↓ 图层 · 1–9 跳转 · 渲染表并排比较"
 }

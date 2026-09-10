@@ -5881,11 +5881,11 @@
     "board_sheet_hint": "لوحة مصغرة لكل خلية — تُلتقط بواسطة scripts/capture-canvas.mjs، أو انقر بزر الماوس الأيمن للحفظ.",
     "view_board": "اللوحة",
     "board_counter": "{n} من {total}",
-    "board_keys_hint": "← → للتنقل بين الوصفات · 1–9 للانتقال المباشر · اعرض الورقة للمقارنة جنبًا إلى جنب",
     "board_next": "الوصفة التالية",
     "board_prev": "الوصفة السابقة",
     "board_recipes": "الوصفات",
-    "board_render_sheet": "اعرض الورقة"
+    "board_render_sheet": "اعرض الورقة",
+    "board_hint": "← → وصفة · ↑ ↓ طبقة · 1–9 قفز · ورقة العرض تقارن بينها جنبًا إلى جنب"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "إضافة قدرة",

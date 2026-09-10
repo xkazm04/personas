@@ -212,9 +212,9 @@
   "board_sheet_hint": "Kontaktní list všech buněk — zachyceno pomocí scripts/capture-canvas.mjs, nebo uložte pravým kliknutím.",
   "view_board": "Nástěnka",
   "board_counter": "{n} z {total}",
-  "board_keys_hint": "← → procházení receptů · 1–9 skok · Vykreslit přehled pro porovnání vedle sebe",
   "board_next": "Další recept",
   "board_prev": "Předchozí recept",
   "board_recipes": "Recepty",
-  "board_render_sheet": "Vykreslit přehled"
+  "board_render_sheet": "Vykreslit přehled",
+  "board_hint": "← → recept · ↑ ↓ vrstva · 1–9 skok · Přehledový list je porovná vedle sebe"
 }

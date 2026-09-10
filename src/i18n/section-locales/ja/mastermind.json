@@ -212,9 +212,9 @@
   "board_sheet_hint": "全セルのコンタクトシート — scripts/capture-canvas.mjs で取得、または右クリックで保存。",
   "view_board": "ボード",
   "board_counter": "{n} / {total}",
-  "board_keys_hint": "← → でレシピを切替 · 1–9 でジャンプ · 見比べるにはRender sheet",
   "board_next": "次のレシピ",
   "board_prev": "前のレシピ",
   "board_recipes": "レシピ",
-  "board_render_sheet": "シートを生成"
+  "board_render_sheet": "シートを生成",
+  "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較"
 }

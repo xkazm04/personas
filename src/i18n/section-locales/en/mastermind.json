@@ -216,5 +216,5 @@
   "board_render_sheet": "Render sheet",
   "board_recipes": "Recipes",
   "board_counter": "{n} of {total}",
-  "board_keys_hint": "← → step through recipes · 1–9 jump · Render sheet to compare them side by side"
+  "board_hint": "← → recipe · ↑ ↓ layer · 1–9 jump · Render sheet compares them side by side"
 }

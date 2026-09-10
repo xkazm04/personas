@@ -212,9 +212,9 @@
   "board_sheet_hint": "Planche contact de chaque cellule — capturée par scripts/capture-canvas.mjs, ou clic droit pour enregistrer.",
   "view_board": "Planche",
   "board_counter": "{n} sur {total}",
-  "board_keys_hint": "← → parcourir les recettes · 1–9 aller directement · Feuille de rendu pour les comparer côte à côte",
   "board_next": "Recette suivante",
   "board_prev": "Recette précédente",
   "board_recipes": "Recettes",
-  "board_render_sheet": "Feuille de rendu"
+  "board_render_sheet": "Feuille de rendu",
+  "board_hint": "← → recette · ↑ ↓ calque · 1–9 saut · La planche de rendu les compare côte à côte"
 }

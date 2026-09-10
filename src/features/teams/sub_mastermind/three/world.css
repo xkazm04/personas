@@ -163,6 +163,10 @@
    project COUNT, not on camera distance — the competition exists at every zoom. */
 .mm3d-label-project--dense { font-size: 0.78rem; letter-spacing: calc(var(--w-tracking) * 0.7); }
 .mm3d-label-project--dense .mm3d-label-tag { font-size: 0.52rem; letter-spacing: 0.14em; }
+/* A closed L0 body (slab / disc / card) shows nothing but the project, so its
+   name is the whole reading and steps UP a size instead of down. */
+.mm3d-label-project--hero { font-size: 1.1rem; letter-spacing: var(--w-tracking); }
+.mm3d-label-project--hero .mm3d-label-tag { font-size: 0.62rem; }
 /* Count of dimensions in alert/risk — the one number worth carrying at L0. */
 .mm3d-label-attn { font-weight: 600; font-style: normal; }
 .mm3d-label-dim {

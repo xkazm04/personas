@@ -212,9 +212,9 @@
   "board_sheet_hint": "Hoja de contacto de cada celda — capturada por scripts/capture-canvas.mjs, o haz clic derecho para guardar.",
   "view_board": "Tablero",
   "board_counter": "{n} de {total}",
-  "board_keys_hint": "← → recorre las recetas · 1–9 salta · Hoja de render para compararlas lado a lado",
   "board_next": "Receta siguiente",
   "board_prev": "Receta anterior",
   "board_recipes": "Recetas",
-  "board_render_sheet": "Hoja de render"
+  "board_render_sheet": "Hoja de render",
+  "board_hint": "← → receta · ↑ ↓ capa · 1–9 salto · La hoja de renderizado las compara una junto a otra"
 }

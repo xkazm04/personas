@@ -1,12 +1,12 @@
 // The Strata design board — recipes to step through, at the operator's pace.
 //
-// ROUND 2 of the board changed who drives. The first version rendered every
-// cell on mount and only then let you look; the operator asked to switch
-// through in their own time. So the stage is LIVE from the first frame,
-// showing one recipe with orbit controls, and the arrow keys, the number keys
-// and the Previous / Next buttons step through the board. The camera is kept
-// across recipe switches on purpose — comparing six looks from the same angle
-// is the whole point — and only re-flies when the FRAME changes.
+// The stage is LIVE from the first frame: one recipe, orbit controls. Arrow
+// keys ← → step through recipes, digit keys jump, ↑ ↓ switch LAYER (L0 the
+// portfolio, L1 one project open) — and the layer switch is a real flight:
+// the camera flies and the project opens in front of you, because board 3 is
+// judged on that transition, not on two still frames. The camera is kept
+// across recipe switches on purpose; comparing six looks from the same angle
+// is the whole point.
 //
 // The contact sheet is on demand: Render sheet walks the queue — mount,
 // wait ~40 frames for the decks to settle, read the buffer back as JPEG,
@@ -14,9 +14,6 @@
 // to open it live, star a column to pick it; the picks line is what to paste
 // into chat) and a 2D canvas composes them into one sheet that
 // `scripts/capture-canvas.mjs` can grab.
-//
-// One live canvas rather than a grid of them: a ten-project scene is a few
-// thousand draw calls, and a board is static until you orbit it.
 //
 // Dev-only. It lives behind the switcher only in dev builds, and it reads the
 // same mock world the prototypes do.
@@ -38,7 +35,7 @@ const STAGE_W = 960;
 const STAGE_H = 600;
 /** Frames to wait before reading the buffer: the camera flight is instant on
  *  first mount, but the decks damp into place over ~30 frames. */
-const SETTLE_FRAMES = 40;
+const SETTLE_FRAMES = 45;
 /** Recipes per band on the contact sheet. */
 const SHEET_PER_ROW = 3;
 
@@ -69,7 +66,10 @@ export default function DesignBoard() {
   const cells = useMemo<Cell[]>(() => recipes.flatMap((recipe) => frames.map((level) => ({ recipe, level, focus: frameFocus(level) }))), [recipes, frames]);
 
   const [index, setIndex] = useState(0);
-  const [level, setLevel] = useState<0 | 1>(frames[0] ?? 1);
+  const [level, setLevelState] = useState<0 | 1>(frames[0] ?? 1);
+  // Bumped on every layer switch so the frozen nav's flight counter changes
+  // and the CameraRig flies instead of snapping.
+  const [flight, setFlight] = useState(0);
   const [shots, setShots] = useState<Record<string, string>>({});
   const [queue, setQueue] = useState<Cell[]>([]);
   const [picks, setPicks] = useState<string[]>([]);
@@ -80,20 +80,29 @@ export default function DesignBoard() {
   const stage: Cell | null = rendering ?? (chosen ? { recipe: chosen, level, focus: frameFocus(level) } : null);
   const done = cells.length - queue.length;
   const sheetReady = queue.length === 0 && Object.keys(shots).length > 0;
+  const canLayer = frames.length > 1;
 
   const step = useCallback((delta: number) => {
     setIndex((i) => (recipes.length === 0 ? 0 : (i + delta + recipes.length) % recipes.length));
   }, [recipes.length]);
+  const setLevel = useCallback((lvl: 0 | 1) => {
+    setLevelState((cur) => {
+      if (cur === lvl) return cur;
+      setFlight((f) => f + 1);
+      return lvl;
+    });
+  }, []);
 
-  // Arrow keys step, digits jump. Registered on the app's keyboard ladder at
-  // route priority so a modal over the board still wins its keys, and
-  // declined while a sheet is rendering so the stage cannot be pulled away
-  // from under the snapshot.
+  // Registered on the app's keyboard ladder at route priority so a modal over
+  // the board still wins its keys, and declined while a sheet is rendering so
+  // the stage cannot be pulled away from under the snapshot.
   useAppKeyboard(
     (e) => {
       if (rendering) return false;
       if (e.key === 'ArrowRight') { step(1); return true; }
       if (e.key === 'ArrowLeft') { step(-1); return true; }
+      if (canLayer && e.key === 'ArrowUp') { setLevel(0); return true; }
+      if (canLayer && e.key === 'ArrowDown') { setLevel(1); return true; }
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= recipes.length) { setIndex(n - 1); return true; }
       return false;
@@ -171,7 +180,7 @@ export default function DesignBoard() {
             ? tx(t.mastermind.board_rendering, { done, total: cells.length })
             : picks.length > 0
               ? `${t.mastermind.board_picks}: ${picks.join(', ')}`
-              : t.mastermind.board_keys_hint}
+              : t.mastermind.board_hint}
         </div>
         <button type="button" className="mm-board-btn" onClick={renderSheet} disabled={Boolean(rendering)} data-testid="mm-board-render">
           {t.mastermind.board_render_sheet}
@@ -182,15 +191,16 @@ export default function DesignBoard() {
       <section className="mm-board-stage" style={{ width: STAGE_W, height: STAGE_H }} data-testid="mm-board-stage">
         {stage && (
           <Canvas
-            // Keyed on the frame, not the recipe: switching recipes keeps the
-            // operator's camera; a snapshot remounts so it lands on the pose.
-            key={rendering ? `shot:${shotKey(rendering)}` : `live:${level}`}
+            // Keyed on the render mode only: switching recipe OR layer keeps
+            // the canvas so the camera carries over and the layer switch is a
+            // flight; a snapshot remounts so it lands on the canonical pose.
+            key={rendering ? `shot:${shotKey(rendering)}` : 'live'}
             dpr={1}
             camera={{ fov: 42, near: 0.1, far: 400, position: [0, 12, 24] }}
             gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
           >
             <Suspense fallback={null}>
-              <StrataScene world={MOCK_WORLD} nav={staticNav(stage.focus)} recipe={stage.recipe} interactive={!rendering} />
+              <StrataScene world={MOCK_WORLD} nav={staticNav(stage.focus, rendering ? 0 : flight)} recipe={stage.recipe} interactive={!rendering} />
               {rendering && <Snapshot frames={SETTLE_FRAMES} onShot={onShot} />}
             </Suspense>
           </Canvas>
@@ -205,6 +215,15 @@ export default function DesignBoard() {
           <>
             <button type="button" className="mm-board-arrow mm-board-arrow--prev" onClick={() => step(-1)} aria-label={t.mastermind.board_prev} data-testid="mm-board-prev">‹</button>
             <button type="button" className="mm-board-arrow mm-board-arrow--next" onClick={() => step(1)} aria-label={t.mastermind.board_next} data-testid="mm-board-next">›</button>
+            {canLayer && (
+              <div className="mm-board-layers" role="group" aria-label={t.mastermind.world_layers}>
+                {frames.map((lvl) => (
+                  <button key={lvl} type="button" className={`mm-board-layer${lvl === level ? ' mm-board-layer--on' : ''}`} aria-pressed={lvl === level} onClick={() => setLevel(lvl)} data-testid={`mm-board-layer-${lvl}`}>
+                    L{lvl}
+                  </button>
+                ))}
+              </div>
+            )}
             {stage && <p className="mm-board-note">{stage.recipe.note}</p>}
           </>
         )}

@@ -5881,11 +5881,11 @@
     "board_sheet_hint": "Контактный лист всех ячеек — снят через scripts/capture-canvas.mjs, либо сохраните через правый клик.",
     "view_board": "Доска",
     "board_counter": "{n} из {total}",
-    "board_keys_hint": "← → переключить рецепты · 1–9 переход · «Лист рендера» для сравнения рядом",
     "board_next": "Следующий рецепт",
     "board_prev": "Предыдущий рецепт",
     "board_recipes": "Рецепты",
-    "board_render_sheet": "Лист рендера"
+    "board_render_sheet": "Лист рендера",
+    "board_hint": "← → рецепт · ↑ ↓ слой · 1–9 переход · Лист рендера сравнивает их рядом"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Добавить возможность",

@@ -1,15 +1,20 @@
 // A frozen WorldNav for rendering a scene at ONE fixed layer with nothing
 // wired to react. The board mounts every recipe this way: the camera lands
 // on the pose for `focus` and stays there, and clicks in the scene go nowhere
-// because the board's own cell click is the interaction that matters.
+// because the board's own controls are the interaction that matters.
+//
+// `flight` is the one thing that moves: the board bumps it when the operator
+// switches layer, so the CameraRig flies from L0 to L1 and the node opens
+// into its stack IN FRONT OF THEM — the transition is the thing board 3 is
+// judging, and a remount would skip it.
 import type { WorldNav } from '../useWorldNav';
 import { initialWorldState, type WorldFocus } from '../worldModel';
 
 const noop = () => {};
 
-export function staticNav(focus: WorldFocus): WorldNav {
+export function staticNav(focus: WorldFocus, flight = 0): WorldNav {
   return {
-    state: { ...initialWorldState(), focus },
+    state: { ...initialWorldState(), focus, flight },
     dispatch: noop,
     openProject: noop,
     openDim: noop,
@@ -23,8 +28,7 @@ export function staticNav(focus: WorldFocus): WorldNav {
 /** The project a board's L1 frame opens: Brainiac, because it is the
  *  hand-authored project with the FULL status range — an alert, two risks,
  *  absents and solids. A healthy project shows only green and blue, which
- *  hides exactly the colours a direction has to get right (and made "only
- *  trouble glows" render nothing glowing on board 2's first pass). */
+ *  hides exactly the colours a direction has to get right. */
 export const BOARD_L1_PROJECT = 'brainiac';
 
 /** The focus a board frame is judged at. */

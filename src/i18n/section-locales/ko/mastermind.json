@@ -212,9 +212,9 @@
   "board_sheet_hint": "모든 셀의 컨택트 시트 — scripts/capture-canvas.mjs로 캡처하거나 우클릭하여 저장하세요.",
   "view_board": "보드",
   "board_counter": "{total}개 중 {n}번째",
-  "board_keys_hint": "← → 로 레시피 이동 · 1–9 로 점프 · Render sheet로 나란히 비교",
   "board_next": "다음 레시피",
   "board_prev": "이전 레시피",
   "board_recipes": "레시피",
-  "board_render_sheet": "시트 렌더링"
+  "board_render_sheet": "시트 렌더링",
+  "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교"
 }

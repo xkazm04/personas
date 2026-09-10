@@ -5881,11 +5881,11 @@
     "board_sheet_hint": "Kontaktabzug aller Zellen — erfasst von scripts/capture-canvas.mjs, oder per Rechtsklick speichern.",
     "view_board": "Tafel",
     "board_counter": "{n} von {total}",
-    "board_keys_hint": "← → durch Rezepte blättern · 1–9 springt · Sheet rendern zum Nebeneinander-Vergleich",
     "board_next": "Nächstes Rezept",
     "board_prev": "Vorheriges Rezept",
     "board_recipes": "Rezepte",
-    "board_render_sheet": "Sheet rendern"
+    "board_render_sheet": "Sheet rendern",
+    "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",

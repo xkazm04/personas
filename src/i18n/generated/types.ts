@@ -21659,7 +21659,7 @@ export type Translations = {
     board_render_sheet: string;
     board_recipes: string;
     board_counter: string;
-    board_keys_hint: string;
+    board_hint: string;
   };
   ship: {
     tab_ship: string;
