@@ -740,6 +740,43 @@ pub(crate) fn confine_to_project_root(
 /// (`commands/companion/approvals.rs`). Returns immediately with the scan_id; the
 /// scan runs in a spawned task and emits CONTEXT_GEN_* events + an OS notification
 /// on completion. `root_path` "" / "." falls back to the project's stored root_path.
+/// The `dev_scans.scan_type` a context scan records itself under. The job
+/// registry above is in-process: a scan that failed before an app restart is
+/// simply gone, and a caller reading `GET /dev-tools/contexts/{project}` after
+/// it sees an empty list that looks like a clean, empty project. Measured
+/// 2026-09-10 (bank-invest, scan 61350ccb): a committed `context-map.json`
+/// with one category outside the taxonomy was refused whole, the KPI charter
+/// read "0 contexts" for a day and filed an ask, and nothing in the app said
+/// why. The durable row is what the contexts door consults
+/// ([`crate::commands::infrastructure::dev_tools_http`]) before answering
+/// "nothing".
+pub(crate) const CONTEXT_SCAN_TYPE: &str = "context-scan";
+
+/// Record how a context scan ended, durably, next to the KPI and idea scans.
+/// Best-effort: a scan that finished must never fail on its own bookkeeping.
+fn record_context_scan_outcome(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    status: &str,
+    error: Option<&str>,
+) {
+    use crate::db::repos::dev::scans;
+    match scans::create_scan(pool, Some(project_id), CONTEXT_SCAN_TYPE, Some(status)) {
+        Ok(scan) => {
+            if error.is_some() {
+                if let Err(e) =
+                    scans::update_scan(pool, &scan.id, None, None, None, None, None, Some(error))
+                {
+                    tracing::warn!(error = %e, project_id, "context scan: outcome error not recorded");
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, project_id, status, "context scan: outcome not recorded")
+        }
+    }
+}
+
 pub(crate) fn launch_context_scan(
     app: tauri::AppHandle,
     pool: &crate::db::DbPool,
@@ -866,6 +903,12 @@ pub(crate) fn launch_context_scan(
                         status_str,
                         summary.error.clone(),
                     );
+                    record_context_scan_outcome(
+                        &pool,
+                        &project_id,
+                        status_str,
+                        summary.error.as_deref(),
+                    );
                     let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
                     crate::engine::system_ops::publish_context_scan_event(
                         &pool,
@@ -909,6 +952,7 @@ pub(crate) fn launch_context_scan(
                         "failed",
                         Some(msg.clone()),
                     );
+                    record_context_scan_outcome(&pool, &project_id, "failed", Some(&msg));
                     CONTEXT_GEN_JOBS.emit_line(
                         &app_handle,
                         &scan_id_for_task,
@@ -935,6 +979,12 @@ pub(crate) fn launch_context_scan(
                 &scan_id_for_panic,
                 "failed",
                 Some(msg.clone()),
+            );
+            record_context_scan_outcome(
+                &pool_for_panic,
+                &project_id_for_panic,
+                "failed",
+                Some(&msg),
             );
             CONTEXT_GEN_JOBS.emit_line(
                 &app_handle_for_panic,

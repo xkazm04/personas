@@ -903,6 +903,29 @@ async fn list_contexts(
     require_project(&s, &project_id)?;
     let pool = db(&s);
     let contexts = repo::list_contexts_by_project(&pool, &project_id, None).map_err(err)?;
+    // "Found nothing" and "the last look was refused" are different answers,
+    // and only one of them is an empty list. A project whose latest context
+    // scan failed — a committed map with a category outside the taxonomy, a
+    // root that is not a directory — answers 409 with the reason, so the
+    // worker reading this door reports the refusal instead of "0 contexts"
+    // (bank-invest, 2026-09-10, one day and one ask lost to that reading).
+    if contexts.is_empty() {
+        let scans = crate::db::repos::dev::scans::list_scans(&pool, Some(&project_id), Some(20))
+            .map_err(err)?;
+        if let Some((scan_id, reason)) = refused_context_map(&scans) {
+            return Err((
+                StatusCode::CONFLICT,
+                serde_json::json!({
+                    "error": format!("the last context scan was refused: {reason}"),
+                    "scan_id": scan_id,
+                    "contexts": 0,
+                    "hint": "fix the cause named in `error` and POST /dev-tools/scan-codebase again; \
+                             GET /dev-tools/scans/{project_id} lists the attempts",
+                })
+                .to_string(),
+            ));
+        }
+    }
     let sources = repo::get_context_sources(&pool, &project_id).map_err(err)?;
     Ok(Json(
         contexts
@@ -2015,6 +2038,97 @@ async fn measure_kpi_route(
         app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
     })
     .await
+}
+
+/// `Some((scan_id, reason))` when the project's most recent **context** scan
+/// ended `failed` — the one case in which an empty context list is a refusal
+/// and not an answer. Rows of other scan types (KPI, ideas) are skipped, not
+/// counted, and a later successful context scan clears the verdict. Pure.
+fn refused_context_map(
+    scans_newest_first: &[crate::db::models::DevScan],
+) -> Option<(String, String)> {
+    use crate::commands::infrastructure::context_generation::CONTEXT_SCAN_TYPE;
+    let last = scans_newest_first
+        .iter()
+        .find(|s| s.scan_type == CONTEXT_SCAN_TYPE)?;
+    if last.status != "failed" {
+        return None;
+    }
+    let reason = last
+        .error
+        .as_deref()
+        .map(str::trim)
+        .filter(|e| !e.is_empty())
+        .unwrap_or("no reason recorded")
+        .to_string();
+    Some((last.id.clone(), reason))
+}
+
+#[cfg(test)]
+mod refused_map_tests {
+    use super::refused_context_map;
+    use crate::commands::infrastructure::context_generation::CONTEXT_SCAN_TYPE;
+    use crate::db::models::DevScan;
+
+    fn scan(id: &str, scan_type: &str, status: &str, error: Option<&str>) -> DevScan {
+        DevScan {
+            id: id.into(),
+            project_id: Some("p".into()),
+            scan_type: scan_type.into(),
+            status: status.into(),
+            idea_count: 0,
+            input_tokens: None,
+            output_tokens: None,
+            duration_ms: None,
+            error: error.map(str::to_string),
+            created_at: "2026-09-10T07:20:00Z".into(),
+        }
+    }
+
+    /// The bank-invest shape: a committed map with a category outside the
+    /// taxonomy, refused whole. The door must say so, with the scan id.
+    #[test]
+    fn a_failed_latest_context_scan_is_a_refusal_with_its_reason() {
+        let rows = vec![
+            scan("kpi-newer", "kpi-scan", "complete", None),
+            scan(
+                "ctx-1",
+                CONTEXT_SCAN_TYPE,
+                "failed",
+                Some("Validation error: context-map.json: contexts[22].category \"policy\" is not one of ui|api|lib|data|test|config"),
+            ),
+            scan("ctx-0", CONTEXT_SCAN_TYPE, "completed", None),
+        ];
+        let (id, reason) = refused_context_map(&rows).expect("refused");
+        assert_eq!(id, "ctx-1");
+        assert!(reason.contains("category \"policy\""), "{reason}");
+    }
+
+    #[test]
+    fn a_later_successful_context_scan_clears_the_verdict() {
+        let rows = vec![
+            scan("ctx-2", CONTEXT_SCAN_TYPE, "completed", None),
+            scan("ctx-1", CONTEXT_SCAN_TYPE, "failed", Some("boom")),
+        ];
+        assert!(refused_context_map(&rows).is_none());
+    }
+
+    #[test]
+    fn other_scan_types_and_no_history_are_not_refusals() {
+        assert!(refused_context_map(&[]).is_none());
+        let rows = vec![scan("k", "kpi-scan", "error", Some("kpi fell over"))];
+        assert!(
+            refused_context_map(&rows).is_none(),
+            "a KPI failure says nothing about the map"
+        );
+    }
+
+    #[test]
+    fn a_failure_without_text_still_names_itself() {
+        let rows = vec![scan("ctx-1", CONTEXT_SCAN_TYPE, "failed", Some("  "))];
+        let (_, reason) = refused_context_map(&rows).expect("refused");
+        assert_eq!(reason, "no reason recorded");
+    }
 }
 
 #[cfg(test)]
