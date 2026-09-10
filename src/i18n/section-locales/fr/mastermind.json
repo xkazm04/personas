@@ -206,10 +206,15 @@
   "board_level_l0": "L0 portefeuille",
   "board_level_l1": "L1 projet",
   "board_live": "En direct",
-  "board_no_picks": "Cliquez sur une cellule pour la voir en direct. Étoilez une colonne pour la sélectionner, puis collez les sélections dans le chat.",
   "board_picks": "Sélections",
   "board_rendering": "Rendu de {done} sur {total}…",
   "board_rerender": "Tout régénérer",
   "board_sheet_hint": "Planche contact de chaque cellule — capturée par scripts/capture-canvas.mjs, ou clic droit pour enregistrer.",
-  "view_board": "Planche"
+  "view_board": "Planche",
+  "board_counter": "{n} sur {total}",
+  "board_keys_hint": "← → parcourir les recettes · 1–9 aller directement · Feuille de rendu pour les comparer côte à côte",
+  "board_next": "Recette suivante",
+  "board_prev": "Recette précédente",
+  "board_recipes": "Recettes",
+  "board_render_sheet": "Feuille de rendu"
 }

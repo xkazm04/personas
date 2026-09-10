@@ -1,51 +1,43 @@
 import { describe, expect, it } from 'vitest';
 
 import { DIM_ORDER } from '../lib/dimRegistry';
+import { MOCK_WORLD } from '../three/mockWorld';
 import { STRATA } from '../three/palettes';
-import { BOARD_1, boardAxes, CURRENT_BOARD, recipeToPalette, STRATA_RECIPE } from '../three/board/recipes';
-import { BOARD_FRAMES, staticNav } from '../three/board/staticNav';
+import { BOARD_2, CURRENT_BOARD, recipeToPalette, STRATA_RECIPE, type DesignRecipe } from '../three/board/recipes';
+import { BOARD_L1_PROJECT, frameFocus, staticNav } from '../three/board/staticNav';
 
 const STATUSES = ['absent', 'solid', 'partial', 'risk', 'alert', 'unknown'] as const;
 const STATES = ['healthy', 'building', 'warning', 'critical'] as const;
 const HEX = /^#[0-9a-f]{6}$/i;
 
+/** Perceived lightness of a hex colour, 0..1 — enough to tell a cream table from a black one. */
+const lightness = (hex: string): number => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+};
+
+/** What makes a recipe a different ART DIRECTION rather than a retune: the
+ *  switches, not the numbers. */
+const direction = (r: DesignRecipe) =>
+  `${r.surface.mode}|${r.deck.style}|${r.ground.floor}|${r.finish.statusAs}|${lightness(r.ground.bg) > 0.5 ? 'light' : 'dark'}|${r.edges.tint}`;
+
 describe('design recipes', () => {
-  it('the board has unique ids, one anchor, and every cell names every axis', () => {
-    const ids = CURRENT_BOARD.map((r) => r.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    expect(CURRENT_BOARD[0]).toBe(STRATA_RECIPE);
-    const axes = boardAxes(CURRENT_BOARD);
-    expect(axes.length).toBeGreaterThan(0);
-    for (const r of CURRENT_BOARD) for (const a of axes) expect(r.axes[a], `${r.id} lacks axis ${a}`).toBeTruthy();
-  });
-
-  it('board 1 varies exactly two axes and holds the rest', () => {
-    expect(boardAxes(BOARD_1)).toEqual(['material', 'ground']);
-    const cells = BOARD_1.filter((r) => r !== STRATA_RECIPE);
-    expect(cells).toHaveLength(9);
-    // Held: ramp, light, edges, finish are the SAME object or equal across cells.
-    for (const r of cells) {
-      expect(r.ramp).toEqual(cells[0]!.ramp);
-      expect(r.light).toEqual(cells[0]!.light);
-      expect(r.edges).toEqual(cells[0]!.edges);
-      expect(r.finish).toEqual(cells[0]!.finish);
-    }
-    // Varied: three materials × three grounds, each pairing once.
-    const pairs = new Set(cells.map((r) => `${r.axes.material}|${r.axes.ground}`));
-    expect(pairs.size).toBe(9);
-    expect(new Set(cells.map((r) => r.axes.material)).size).toBe(3);
-    expect(new Set(cells.map((r) => r.axes.ground)).size).toBe(3);
-  });
-
-  it('every recipe carries a complete colour ramp of real hex colours', () => {
-    for (const r of CURRENT_BOARD) {
+  it('every recipe carries a complete colour ramp of real hex colours and sane numbers', () => {
+    for (const r of [STRATA_RECIPE, ...CURRENT_BOARD.recipes]) {
       for (const s of STATUSES) expect(r.ramp.status[s], `${r.id} status ${s}`).toMatch(HEX);
       for (const s of STATES) expect(r.ramp.state[s], `${r.id} state ${s}`).toMatch(HEX);
       expect(r.ground.bg).toMatch(HEX);
+      expect(r.deck.color).toMatch(HEX);
+      expect(r.surface.bodyColor).toMatch(HEX);
       expect(r.surface.roughness).toBeGreaterThanOrEqual(0);
       expect(r.surface.roughness).toBeLessThanOrEqual(1);
+      expect(r.deck.opacity).toBeGreaterThan(0);
+      expect(r.deck.opacity).toBeLessThanOrEqual(1);
       expect(r.finish.contactShadow).toBeGreaterThanOrEqual(0);
       expect(r.finish.contactShadow).toBeLessThanOrEqual(1);
+      // unlit modes must not depend on lights that are off
+      if (r.surface.mode !== 'physical') expect(r.light.ambient).toBeGreaterThan(0);
     }
   });
 
@@ -56,38 +48,84 @@ describe('design recipes', () => {
     expect(p.state).toEqual(STRATA.state);
     expect(p.frost).toEqual(STRATA.frost);
     expect(p.grid).toBe(STRATA.grid);
-    // and it is the WITHOUT for the two hypotheses the board tests
-    expect(STRATA_RECIPE.finish.contactShadow).toBe(0);
-    expect(STRATA_RECIPE.light.tone).toBe('aces');
+    expect(p.glass).toBe(STRATA.glass);
+    expect(STRATA_RECIPE.surface.mode).toBe('physical');
+    expect(STRATA_RECIPE.deck.style).toBe('slab');
   });
 
   it('recipeToPalette keeps the palette shape the scene reads', () => {
-    for (const r of CURRENT_BOARD) {
+    for (const r of CURRENT_BOARD.recipes) {
       const p = recipeToPalette(r);
       expect(p.id).toBe('strata');
       expect(p.fontDisplay).toBe(STRATA.fontDisplay);
       expect(p.fog).toBe(r.ground.fog ? r.ground.bg : null);
+      expect(p.frost.slab).toBe(r.deck.opacity);
       expect(Object.keys(p.frost).sort()).toEqual(['clearcoat', 'clearcoatRoughness', 'emissive', 'emissiveMuted', 'halo', 'metalness', 'roughness', 'slab']);
     }
   });
 });
 
+describe('board 2 — six art directions at L1', () => {
+  it('is the current board, judged at L1 only, with six uniquely-named recipes', () => {
+    expect(CURRENT_BOARD).toBe(BOARD_2);
+    expect(BOARD_2.frames).toEqual([1]);
+    expect(BOARD_2.recipes).toHaveLength(6);
+    expect(new Set(BOARD_2.recipes.map((r) => r.id)).size).toBe(6);
+    expect(new Set(BOARD_2.recipes.map((r) => r.name)).size).toBe(6);
+    for (const r of BOARD_2.recipes) expect(r.note.length).toBeGreaterThan(10);
+  });
+
+  it('every recipe is a DIFFERENT art direction, not a retune of the same one', () => {
+    // The operator's complaint about board 1: "the artstyle, node colouring
+    // and surface is still the same, only reshaped, slightly different tone."
+    // A direction is the set of switches; six recipes must give six sets, and
+    // none may equal the shipped look's.
+    const dirs = BOARD_2.recipes.map(direction);
+    expect(new Set(dirs).size).toBe(6);
+    expect(dirs).not.toContain(direction(STRATA_RECIPE));
+  });
+
+  it('spans the switches that change a picture: light AND dark grounds, lit AND unlit surfaces, a mirror, a cap, a frame', () => {
+    const rs = BOARD_2.recipes;
+    const light = rs.filter((r) => lightness(r.ground.bg) > 0.5).length;
+    expect(light).toBeGreaterThanOrEqual(2);
+    expect(rs.length - light).toBeGreaterThanOrEqual(2);
+    expect(new Set(rs.map((r) => r.surface.mode))).toEqual(new Set(['physical', 'flat', 'wire']));
+    expect(rs.some((r) => r.ground.floor === 'mirror')).toBe(true);
+    expect(rs.some((r) => r.finish.statusAs === 'cap')).toBe(true);
+    expect(rs.some((r) => r.deck.style === 'frame')).toBe(true);
+    expect(rs.some((r) => r.edges.tint === 'off')).toBe(true);
+    expect(rs.some((r) => r.surface.attentionGlow > 0)).toBe(true);
+  });
+
+  it('a light-ground recipe has no additive halos — they wash out on a light background', () => {
+    for (const r of BOARD_2.recipes) {
+      if (lightness(r.ground.bg) > 0.5) expect(r.surface.halo, r.id).toBe(0);
+    }
+  });
+});
+
 describe('board frames', () => {
-  it('judges every recipe at L0 and at L1 on a project that exists', () => {
-    expect(BOARD_FRAMES.map((f) => f.level)).toEqual([0, 1]);
-    expect(BOARD_FRAMES[0]!.focus).toEqual({ level: 0, project: null, dim: null });
-    expect(BOARD_FRAMES[1]!.focus.level).toBe(1);
-    expect(BOARD_FRAMES[1]!.focus.project).toBe('personas');
+  it('L0 is the portfolio and L1 opens the project with the full status range', () => {
+    expect(frameFocus(0)).toEqual({ level: 0, project: null, dim: null });
+    expect(frameFocus(1).level).toBe(1);
+    expect(frameFocus(1).project).toBe(BOARD_L1_PROJECT);
+    const p = MOCK_WORLD.projects.find((x) => x.slug === BOARD_L1_PROJECT)!;
+    const statuses = new Set(p.dims.map((d) => d.status));
+    expect(statuses).toContain('alert');
+    expect(statuses).toContain('risk');
+    expect(statuses).toContain('absent');
+    expect(statuses).toContain('solid');
   });
 
   it('staticNav is frozen: the focus sticks and nothing dispatches', () => {
-    const nav = staticNav({ level: 1, project: 'personas', dim: null });
-    expect(nav.state.focus).toEqual({ level: 1, project: 'personas', dim: null });
+    const nav = staticNav(frameFocus(1));
+    expect(nav.state.focus).toEqual({ level: 1, project: BOARD_L1_PROJECT, dim: null });
     expect(nav.state.flight).toBe(0);
     nav.openProject('brainiac');
     nav.openDim('brainiac', DIM_ORDER[0]!);
     nav.up();
     nav.home();
-    expect(nav.state.focus).toEqual({ level: 1, project: 'personas', dim: null });
+    expect(nav.state.focus).toEqual({ level: 1, project: BOARD_L1_PROJECT, dim: null });
   });
 });

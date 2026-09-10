@@ -5875,12 +5875,17 @@
     "board_level_l0": "L0 ポートフォリオ",
     "board_level_l1": "L1 プロジェクト",
     "board_live": "ライブ",
-    "board_no_picks": "セルをクリックするとライブ表示されます。列にスターを付けて選択し、選択内容をチャットに貼り付けてください。",
     "board_picks": "選択",
     "board_rendering": "レンダリング中 {done}/{total}…",
     "board_rerender": "すべて再レンダリング",
     "board_sheet_hint": "全セルのコンタクトシート — scripts/capture-canvas.mjs で取得、または右クリックで保存。",
-    "view_board": "ボード"
+    "view_board": "ボード",
+    "board_counter": "{n} / {total}",
+    "board_keys_hint": "← → でレシピを切替 · 1–9 でジャンプ · 見比べるにはRender sheet",
+    "board_next": "次のレシピ",
+    "board_prev": "前のレシピ",
+    "board_recipes": "レシピ",
+    "board_render_sheet": "シートを生成"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",

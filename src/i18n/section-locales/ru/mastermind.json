@@ -206,10 +206,15 @@
   "board_level_l0": "L0 портфель",
   "board_level_l1": "L1 проект",
   "board_live": "Вживую",
-  "board_no_picks": "Нажмите на ячейку для просмотра вживую. Отметьте звёздочкой столбец, чтобы выбрать его, затем вставьте выбор в чат.",
   "board_picks": "Выбор",
   "board_rendering": "Рендеринг {done} из {total}…",
   "board_rerender": "Повторить рендеринг всех",
   "board_sheet_hint": "Контактный лист всех ячеек — снят через scripts/capture-canvas.mjs, либо сохраните через правый клик.",
-  "view_board": "Доска"
+  "view_board": "Доска",
+  "board_counter": "{n} из {total}",
+  "board_keys_hint": "← → переключить рецепты · 1–9 переход · «Лист рендера» для сравнения рядом",
+  "board_next": "Следующий рецепт",
+  "board_prev": "Предыдущий рецепт",
+  "board_recipes": "Рецепты",
+  "board_render_sheet": "Лист рендера"
 }

@@ -20,8 +20,14 @@ export function staticNav(focus: WorldFocus): WorldNav {
   };
 }
 
-/** The two frames every recipe is judged in. */
-export const BOARD_FRAMES: Array<{ level: 0 | 1; focus: WorldFocus }> = [
-  { level: 0, focus: { level: 0, project: null, dim: null } },
-  { level: 1, focus: { level: 1, project: 'personas', dim: null } },
-];
+/** The project a board's L1 frame opens: Brainiac, because it is the
+ *  hand-authored project with the FULL status range — an alert, two risks,
+ *  absents and solids. A healthy project shows only green and blue, which
+ *  hides exactly the colours a direction has to get right (and made "only
+ *  trouble glows" render nothing glowing on board 2's first pass). */
+export const BOARD_L1_PROJECT = 'brainiac';
+
+/** The focus a board frame is judged at. */
+export function frameFocus(level: 0 | 1): WorldFocus {
+  return level === 0 ? { level: 0, project: null, dim: null } : { level: 1, project: BOARD_L1_PROJECT, dim: null };
+}

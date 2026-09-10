@@ -206,10 +206,15 @@
   "board_level_l0": "L0 포트폴리오",
   "board_level_l1": "L1 프로젝트",
   "board_live": "실시간",
-  "board_no_picks": "셀을 클릭하면 실시간으로 볼 수 있습니다. 열에 별표를 표시해 선택한 후 채팅에 붙여넣으세요.",
   "board_picks": "선택 항목",
   "board_rendering": "{total}개 중 {done}개 렌더링 중…",
   "board_rerender": "전체 다시 렌더링",
   "board_sheet_hint": "모든 셀의 컨택트 시트 — scripts/capture-canvas.mjs로 캡처하거나 우클릭하여 저장하세요.",
-  "view_board": "보드"
+  "view_board": "보드",
+  "board_counter": "{total}개 중 {n}번째",
+  "board_keys_hint": "← → 로 레시피 이동 · 1–9 로 점프 · Render sheet로 나란히 비교",
+  "board_next": "다음 레시피",
+  "board_prev": "이전 레시피",
+  "board_recipes": "레시피",
+  "board_render_sheet": "시트 렌더링"
 }

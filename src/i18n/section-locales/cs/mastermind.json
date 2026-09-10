@@ -206,10 +206,15 @@
   "board_level_l0": "Portfolio L0",
   "board_level_l1": "Projekt L1",
   "board_live": "Živě",
-  "board_no_picks": "Kliknutím na buňku ji zobrazíte živě. Hvězdičkou označte sloupec pro výběr a poté výběry vložte do chatu.",
   "board_picks": "Výběry",
   "board_rendering": "Vykreslování {done} z {total}…",
   "board_rerender": "Překreslit vše",
   "board_sheet_hint": "Kontaktní list všech buněk — zachyceno pomocí scripts/capture-canvas.mjs, nebo uložte pravým kliknutím.",
-  "view_board": "Nástěnka"
+  "view_board": "Nástěnka",
+  "board_counter": "{n} z {total}",
+  "board_keys_hint": "← → procházení receptů · 1–9 skok · Vykreslit přehled pro porovnání vedle sebe",
+  "board_next": "Další recept",
+  "board_prev": "Předchozí recept",
+  "board_recipes": "Recepty",
+  "board_render_sheet": "Vykreslit přehled"
 }

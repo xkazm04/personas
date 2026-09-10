@@ -206,10 +206,15 @@
   "board_level_l0": "L0 পোর্টফোলিও",
   "board_level_l1": "L1 প্রজেক্ট",
   "board_live": "লাইভ",
-  "board_no_picks": "সরাসরি দেখতে একটি সেল ক্লিক করুন। কলাম বেছে নিতে স্টার দিন, তারপর পিকগুলো চ্যাটে পেস্ট করুন।",
   "board_picks": "পিকস",
   "board_rendering": "রেন্ডার হচ্ছে {done}/{total}…",
   "board_rerender": "সব পুনরায় রেন্ডার করুন",
   "board_sheet_hint": "প্রতিটি সেলের কন্ট্যাক্ট শিট — scripts/capture-canvas.mjs দ্বারা ক্যাপচার করা, অথবা সেভ করতে রাইট-ক্লিক করুন।",
-  "view_board": "বোর্ড"
+  "view_board": "বোর্ড",
+  "board_counter": "{total}-এর মধ্যে {n}",
+  "board_keys_hint": "← → রেসিপি স্ক্রল করুন · 1–9 জাম্প করুন · পাশাপাশি তুলনা করতে রেন্ডার শীট ব্যবহার করুন",
+  "board_next": "পরবর্তী রেসিপি",
+  "board_prev": "আগের রেসিপি",
+  "board_recipes": "রেসিপি",
+  "board_render_sheet": "রেন্ডার শীট"
 }

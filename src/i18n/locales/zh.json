@@ -5875,12 +5875,17 @@
     "board_level_l0": "L0 组合",
     "board_level_l1": "L1 项目",
     "board_live": "实时",
-    "board_no_picks": "点击单元格以实时查看。为列加星以选中它,然后将所选内容粘贴到聊天中。",
     "board_picks": "已选",
     "board_rendering": "正在渲染 {done}/{total}…",
     "board_rerender": "全部重新渲染",
     "board_sheet_hint": "每个单元格的联系表 — 由 scripts/capture-canvas.mjs 捕获,或右键另存为。",
-    "view_board": "看板"
+    "view_board": "看板",
+    "board_counter": "{n} / {total}",
+    "board_keys_hint": "← → 切换配方 · 1–9 跳转 · 渲染表格以并排比较",
+    "board_next": "下一个配方",
+    "board_prev": "上一个配方",
+    "board_recipes": "配方",
+    "board_render_sheet": "渲染表格"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "添加能力",

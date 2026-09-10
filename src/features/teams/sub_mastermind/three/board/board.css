@@ -36,6 +36,32 @@
   padding: 0.2rem 0.5rem; background: rgba(0, 0, 0, 0.55); border-radius: 0.25rem; pointer-events: none;
 }
 
+/* Stage controls: arrows over the canvas, the recipe's note under the label. */
+.mm-board-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 2.2rem; height: 2.8rem; border: 1px solid #2c3038; border-radius: 0.3rem;
+  background: rgba(13, 14, 17, 0.7); color: #e6e2da; font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.mm-board-arrow:hover { background: rgba(28, 31, 37, 0.9); border-color: #6b6f78; }
+.mm-board-arrow--prev { left: 0.6rem; }
+.mm-board-arrow--next { right: 0.6rem; }
+.mm-board-note {
+  position: absolute; right: 0.6rem; bottom: 0.5rem; max-width: 55%; margin: 0; text-align: right;
+  font-size: 0.72rem; color: #e6e2da; padding: 0.2rem 0.5rem; background: rgba(0, 0, 0, 0.55); border-radius: 0.25rem; pointer-events: none;
+}
+
+/* Recipe strip: one chip per recipe, the current one lit, picked ones starred. */
+.mm-board-strip { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.mm-board-chip {
+  border: 1px solid #23262d; background: #0f1114; color: #9a9186; font: inherit; font-size: 0.78rem;
+  padding: 0.35rem 0.7rem; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 0.45rem; align-items: baseline;
+}
+.mm-board-chip .mm-board-mono { font-size: 0.7rem; color: #6b6f78; }
+.mm-board-chip:hover { border-color: #6b6f78; color: #e6e2da; }
+.mm-board-chip--on { border-color: #c9a67a; color: #e6e2da; background: #1a1d23; }
+.mm-board-chip--on .mm-board-mono { color: #c9a67a; }
+.mm-board-chip--picked { box-shadow: 0 0 0 1px rgba(201, 166, 122, 0.35); }
+
 .mm-board-grid { display: grid; gap: 0.6rem; align-items: start; }
 .mm-board-col { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.4rem; border: 1px solid #1c1f25; border-radius: 0.4rem; background: #0f1114; }
 .mm-board-col--picked { border-color: #c9a67a; box-shadow: 0 0 0 1px rgba(201, 166, 122, 0.35); }

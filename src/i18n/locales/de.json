@@ -5875,12 +5875,17 @@
     "board_level_l0": "L0-Portfolio",
     "board_level_l1": "L1-Projekt",
     "board_live": "Live-Ansicht",
-    "board_no_picks": "Klicke auf eine Zelle, um sie live anzusehen. Markiere eine Spalte mit einem Stern, um sie auszuwählen, und füge die Auswahl dann in den Chat ein.",
     "board_picks": "Auswahl",
     "board_rendering": "Rendert {done} von {total}…",
     "board_rerender": "Alle neu rendern",
     "board_sheet_hint": "Kontaktabzug aller Zellen — erfasst von scripts/capture-canvas.mjs, oder per Rechtsklick speichern.",
-    "view_board": "Tafel"
+    "view_board": "Tafel",
+    "board_counter": "{n} von {total}",
+    "board_keys_hint": "← → durch Rezepte blättern · 1–9 springt · Sheet rendern zum Nebeneinander-Vergleich",
+    "board_next": "Nächstes Rezept",
+    "board_prev": "Vorheriges Rezept",
+    "board_recipes": "Rezepte",
+    "board_render_sheet": "Sheet rendern"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",

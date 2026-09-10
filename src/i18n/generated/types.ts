@@ -21650,11 +21650,16 @@ export type Translations = {
     board_rendering: string;
     board_rerender: string;
     board_picks: string;
-    board_no_picks: string;
     board_live: string;
     board_level_l0: string;
     board_level_l1: string;
     board_sheet_hint: string;
+    board_prev: string;
+    board_next: string;
+    board_render_sheet: string;
+    board_recipes: string;
+    board_counter: string;
+    board_keys_hint: string;
   };
   ship: {
     tab_ship: string;

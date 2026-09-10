@@ -21644,11 +21644,16 @@
     "board_rendering": "Rendering {done} of {total}…",
     "board_rerender": "Re-render all",
     "board_picks": "Picks",
-    "board_no_picks": "Click a cell to view it live. Star a column to pick it, then paste the picks into chat.",
     "board_live": "Live",
     "board_level_l0": "L0 portfolio",
     "board_level_l1": "L1 project",
-    "board_sheet_hint": "Contact sheet of every cell — captured by scripts/capture-canvas.mjs, or right-click to save."
+    "board_sheet_hint": "Contact sheet of every cell — captured by scripts/capture-canvas.mjs, or right-click to save.",
+    "board_prev": "Previous recipe",
+    "board_next": "Next recipe",
+    "board_render_sheet": "Render sheet",
+    "board_recipes": "Recipes",
+    "board_counter": "{n} of {total}",
+    "board_keys_hint": "← → step through recipes · 1–9 jump · Render sheet to compare them side by side"
   },
   "ship": {
     "tab_ship": "Ship",

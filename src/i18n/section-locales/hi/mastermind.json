@@ -206,10 +206,15 @@
   "board_level_l0": "L0 पोर्टफोलियो",
   "board_level_l1": "L1 प्रोजेक्ट",
   "board_live": "लाइव",
-  "board_no_picks": "किसी सेल पर क्लिक करके लाइव देखें। कॉलम को स्टार करके चुनें, फिर चुनावों को चैट में पेस्ट करें।",
   "board_picks": "चयन",
   "board_rendering": "{total} में से {done} रेंडर हो रहा है…",
   "board_rerender": "सभी को फिर से रेंडर करें",
   "board_sheet_hint": "हर सेल की कॉन्टैक्ट शीट — scripts/capture-canvas.mjs द्वारा कैप्चर की गई, या सेव करने के लिए राइट-क्लिक करें।",
-  "view_board": "बोर्ड"
+  "view_board": "बोर्ड",
+  "board_counter": "{n} / {total}",
+  "board_keys_hint": "← → रेसिपी बदलें · 1–9 सीधे जाएं · तुलना के लिए शीट रेंडर करें",
+  "board_next": "अगली रेसिपी",
+  "board_prev": "पिछली रेसिपी",
+  "board_recipes": "रेसिपी",
+  "board_render_sheet": "शीट रेंडर करें"
 }

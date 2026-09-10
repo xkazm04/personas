@@ -1,26 +1,29 @@
-// Variant A — STRATA. The Stark table: each project is a stack of four glass
-// decks, one per dimension category, hovering over a graphite floor. Zooming a
-// layer in EXPLODES the stack (the "Google Maps in many layers" ask made
-// literal): L0 keeps the decks collapsed into a compact block, L1 spreads them
-// apart and lights the tiles on each deck, L2 keeps one deck and dims the rest
-// to glass.
+// Variant A — STRATA. The Stark table: each project is a stack of four decks,
+// one per dimension category, over a floor. Zooming a layer in EXPLODES the
+// stack (the "Google Maps in many layers" ask made literal): L0 keeps the
+// decks collapsed into a compact block, L1 spreads them apart and lights the
+// tiles on each deck, L2 keeps one deck and dims the rest.
 //
 // ROUND 2 — ten projects instead of two, frosted instead of neon:
 //   • the portfolio lays itself out on a centred grid (worldLayout) and the L0
-//     camera is DERIVED from that grid's real bounds, so the tenth project
-//     changes the framing by itself;
-//   • every surface is a rough, barely-emissive physical material lit by the
-//     scene, so the stacks read as frosted glass rather than as light sources;
-//   • per-dimension labels MOUNT ONLY on the exploded project. They are drei
-//     <Html> portals — one React root each — and ten projects would otherwise
-//     put 150 of them in the DOM to render at opacity 0.
+//     camera is DERIVED from that grid's real bounds;
+//   • per-dimension labels MOUNT ONLY on the exploded project — drei <Html>
+//     portals are one React root each, and ten projects would otherwise put
+//     150 of them in the DOM to render at opacity 0.
 //
 // ROUND 3 — the look is DATA. Everything that decides how this world looks
-// (ground, light, surface, edges, ramp, finish) now arrives as a DesignRecipe
-// (board/recipes.ts). `StrataWorld` is the product tab and passes the shipped
-// recipe; the design board mounts `StrataScene` directly with each candidate.
-// Nothing about the scene's structure changed — only where its numbers live.
-import { ContactShadows, Edges, Environment, Grid, Lightformer, OrbitControls } from '@react-three/drei';
+// arrives as a DesignRecipe (board/recipes.ts). `StrataWorld` is the product
+// tab and passes the shipped recipe; the design board mounts `StrataScene`
+// with each candidate.
+//
+// ROUND 4 — the recipe chooses a RENDERING MODE, not just numbers. Board 1
+// varied roughness and ground tone inside one physically-lit look and got ten
+// cells that were the same picture in a different key. So a recipe now picks
+// physical / flat (unlit) / wire surfaces, a deck style (slab / solid / frame /
+// none), a floor (grid / plane / mirror), where status colour may live (the
+// whole tile, or a cap on a neutral body), and whether only trouble glows.
+// Those switches change the art direction; the numbers only tune it.
+import { ContactShadows, Edges, Environment, Grid, Lightformer, MeshReflectorMaterial, OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -81,7 +84,7 @@ export function StrataWorld({ world, nav }: { world: World; nav: WorldNav }) {
 /**
  * The scene itself, parameterised by a recipe. `interactive` mounts orbit
  * controls; the board leaves them off while it is rendering a frame to
- * snapshot, and on for the cell the operator has expanded.
+ * snapshot, and on for the cell the operator is looking at.
  */
 export function StrataScene({ world, nav, recipe, interactive }: { world: World; nav: WorldNav; recipe: DesignRecipe; interactive: boolean }) {
   const palette = useMemo(() => recipeToPalette(recipe), [recipe]);
@@ -99,11 +102,11 @@ export function StrataScene({ world, nav, recipe, interactive }: { world: World;
       <color attach="background" args={[ground.bg]} />
       {ground.fog && <fog attach="fog" args={[ground.bg, span * 1.2, span * 4.4]} />}
       <ToneMapping mode={light.tone} exposure={light.exposure} />
-      {/* Frosted surfaces need light to shade, not emission to glow: a key, a
-          fill, and (optionally) a small local environment for clearcoat to catch. */}
+      {/* Lit modes need light to shade; the unlit (flat / wire) modes ignore
+          all of this and read only the ambient term, which the recipe sets to 1. */}
       <ambientLight intensity={light.ambient} />
-      <directionalLight position={[14, 22, 10]} intensity={light.key} color={light.keyColor} />
-      <directionalLight position={[-16, 10, -12]} intensity={light.fill} color={light.fillColor} />
+      {light.key > 0 && <directionalLight position={light.keyFrom} intensity={light.key} color={light.keyColor} />}
+      {light.fill > 0 && <directionalLight position={[-light.keyFrom[0], light.keyFrom[1] * 0.5, -light.keyFrom[2]]} intensity={light.fill} color={light.fillColor} />}
       {light.env !== 'none' && (
         <Environment resolution={64} frames={1}>
           <Lightformer form="rect" intensity={light.env === 'studio' ? 2.2 : 1.4} color={light.keyColor} position={[0, 12, 6]} scale={[18, 8, 1]} rotation={[-Math.PI / 2.4, 0, 0]} />
@@ -113,25 +116,7 @@ export function StrataScene({ world, nav, recipe, interactive }: { world: World;
           )}
         </Environment>
       )}
-      {ground.floor === 'grid' && (
-        <Grid
-          position={[0, -0.02, 0]}
-          args={[80, 80]}
-          cellSize={1.6}
-          sectionSize={8}
-          cellColor={ground.grid}
-          sectionColor={ground.section}
-          fadeDistance={span * 3.2}
-          fadeStrength={1.3}
-          infiniteGrid
-        />
-      )}
-      {ground.floor === 'plane' && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-          <planeGeometry args={[span * 8, span * 8]} />
-          <meshStandardMaterial color={ground.grid} roughness={1} metalness={0} />
-        </mesh>
-      )}
+      <Floor recipe={recipe} span={span} />
       {/* Contact shadows are what ground the stacks: without them a matte,
           desaturated scene reads as flat rather than calm. Re-rendered every
           frame because the exploded decks move. */}
@@ -152,6 +137,58 @@ export function StrataScene({ world, nav, recipe, interactive }: { world: World;
       ))}
     </>
   );
+}
+
+/** The floor under the recipe's floor kind. A mirror is a real reflection
+ *  (drei's reflector), which is a different picture from any grid. */
+function Floor({ recipe, span }: { recipe: DesignRecipe; span: number }) {
+  const { ground } = recipe;
+  if (ground.floor === 'grid') {
+    return (
+      <Grid
+        position={[0, -0.02, 0]}
+        args={[80, 80]}
+        cellSize={1.6}
+        sectionSize={8}
+        cellColor={ground.grid}
+        sectionColor={ground.section}
+        fadeDistance={span * 3.2}
+        fadeStrength={1.3}
+        infiniteGrid
+      />
+    );
+  }
+  if (ground.floor === 'plane') {
+    return (
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <planeGeometry args={[span * 8, span * 8]} />
+        {recipe.surface.mode === 'flat'
+          ? <meshBasicMaterial color={ground.grid} />
+          : <meshStandardMaterial color={ground.grid} roughness={1} metalness={0} />}
+      </mesh>
+    );
+  }
+  if (ground.floor === 'mirror') {
+    return (
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <planeGeometry args={[span * 8, span * 8]} />
+        <MeshReflectorMaterial
+          blur={[400, 120]}
+          resolution={1024}
+          mixBlur={1}
+          mixStrength={45}
+          roughness={0.85}
+          depthScale={1}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.3}
+          color={ground.grid}
+          metalness={0.6}
+          mirror={0.6}
+        />
+      </mesh>
+    );
+  }
+  return null;
 }
 
 /**
@@ -183,6 +220,35 @@ function edgeColor(recipe: DesignRecipe, palette: WorldPalette, own: string): st
     case 'primary': return palette.primary;
     case 'off': return null;
     default: return own;
+  }
+}
+
+/** A surface under the recipe's rendering mode. Physical is lit and shaded;
+ *  flat is unlit colour, the vector-illustration look; wire is a faint fill
+ *  whose real drawing is the outline the caller adds. */
+function Surface({ recipe, color, emissive = 0, opacity = 1 }: { recipe: DesignRecipe; color: string; emissive?: number; opacity?: number }) {
+  const f = recipe.surface;
+  const transparent = opacity < 1;
+  switch (f.mode) {
+    case 'flat':
+      return <meshBasicMaterial color={color} transparent={transparent} opacity={opacity} />;
+    case 'wire':
+      return <meshBasicMaterial color={color} transparent opacity={0.08 * opacity} depthWrite={false} />;
+    default:
+      return (
+        <meshPhysicalMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={emissive}
+          roughness={f.roughness}
+          metalness={f.metalness}
+          clearcoat={f.clearcoat}
+          clearcoatRoughness={f.clearcoatRoughness}
+          transparent={transparent}
+          opacity={opacity}
+          depthWrite={!transparent}
+        />
+      );
   }
 }
 
@@ -257,8 +323,8 @@ function DeckStack({ project, center, nav, palette, recipe, dense, tileGeometry 
         onPointerOut={() => nav.hover(null)}
       >
         <boxGeometry args={[PLINTH, 0.16, PLINTH]} />
-        <meshPhysicalMaterial color={palette.structure} roughness={0.88} metalness={0.12} clearcoat={0.16} clearcoatRoughness={0.8} />
-        {plinthEdge && <Edges color={hovered ? palette.primary : plinthEdge} lineWidth={hovered ? 1.4 : 1} />}
+        <Surface recipe={recipe} color={palette.structure} opacity={recipe.surface.mode === 'wire' ? 0.5 : 1} />
+        {plinthEdge && <Edges color={hovered ? palette.primary : plinthEdge} lineWidth={hovered ? 1.4 : Math.max(0.6, recipe.edges.weight)} />}
       </mesh>
       {/* state light strip on the plinth's front edge — the one place a solid
           colour sits at full strength, because it IS the readout */}
@@ -266,7 +332,7 @@ function DeckStack({ project, center, nav, palette, recipe, dense, tileGeometry 
         <boxGeometry args={[PLINTH - 0.4, 0.03, 0.08]} />
         <meshBasicMaterial color={stateColor} />
       </mesh>
-      <Halo color={stateColor} size={PLINTH * 1.1} opacity={f.halo * em} position={[0, 0.28, 0]} />
+      {f.halo > 0 && <Halo color={stateColor} size={PLINTH * 1.1} opacity={f.halo * em} position={[0, 0.28, 0]} />}
 
       <WorldLabel position={[0, topY, 0]} opacity={em} interactive>
         <button type="button" className="mm3d-label-btn" onClick={() => nav.openProject(project.slug)}>
@@ -315,30 +381,36 @@ function Deck({ project, category, dims, nav, palette, recipe, exploded, label, 
   const { focus } = nav.state;
   const focusedHere = focus.level === 2 && focus.project === project.slug && dims.some((d) => d.key === focus.dim);
   const ghost = focus.level === 2 && focus.project === project.slug && !focusedHere;
-  const f = palette.frost;
-  const slab = ghost ? f.slab * 0.3 : exploded ? f.slab : f.slab * 0.75;
-  const deckEdge = recipe.edges.tint === 'off' ? null : focusedHere ? palette.accent : palette.primary;
+  const { deck } = recipe;
+  const style = recipe.surface.mode === 'wire' && deck.style !== 'none' ? 'frame' : deck.style;
+  const fade = ghost ? 0.3 : exploded ? 1 : 0.75;
+  const deckEdge = style === 'frame'
+    ? (focusedHere ? palette.accent : deck.color)
+    : recipe.edges.tint === 'off' ? null : focusedHere ? palette.accent : palette.primary;
+  const labelInk = deckEdge ?? palette.primary;
   return (
     <group>
-      <mesh onClick={(e) => { e.stopPropagation(); nav.openProject(project.slug); }}>
-        <boxGeometry args={[DECK, 0.06, DECK]} />
-        <meshPhysicalMaterial
-          color={palette.glass}
-          transparent
-          opacity={slab}
-          roughness={f.roughness}
-          metalness={f.metalness}
-          clearcoat={f.clearcoat}
-          clearcoatRoughness={f.clearcoatRoughness}
-          depthWrite={false}
-        />
-        {/* Four outlines per project times ten projects is a lot of repeated
-            rectangle at L0, so the deck edges recede until the stack opens. */}
-        {deckEdge && <Edges color={deckEdge} lineWidth={focusedHere ? 1.5 : recipe.edges.weight + 0.2} transparent opacity={exploded ? 1 : 0.3} />}
-      </mesh>
+      {style !== 'none' && (
+        <mesh onClick={(e) => { e.stopPropagation(); nav.openProject(project.slug); }}>
+          <boxGeometry args={[DECK, 0.06, DECK]} />
+          {/* A solid deck is OPAQUE, full stop. At 0.96 it went transparent,
+              lost depth-write, and the middle decks of a stack rendered as
+              dark grey through the sort order; "solid" must not depend on a
+              number being exactly 1. Only a slab uses deck.opacity. */}
+          {style === 'frame'
+            ? <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            : <Surface recipe={recipe} color={deck.color} opacity={style === 'solid' ? 1 : Math.min(1, deck.opacity * fade)} />}
+          {/* Four outlines per project times ten projects is a lot of repeated
+              rectangle at L0, so slab/solid deck edges recede until the stack
+              opens; a frame deck IS its outline and stays. */}
+          {deckEdge && (
+            <Edges color={deckEdge} lineWidth={focusedHere ? 1.5 : Math.max(0.6, recipe.edges.weight + 0.2)} transparent opacity={style === 'frame' || exploded ? 1 : 0.3} />
+          )}
+        </mesh>
+      )}
       {exploded && !ghost && (
         <WorldLabel position={[-DECK / 2 + 0.2, 0.05, DECK / 2 - 0.2]} opacity={1} offset={[-10, -6]}>
-          <span className="mm3d-label mm3d-label-dim mm3d-caps" style={{ '--w-dot': deckEdge ?? palette.primary, color: deckEdge ?? palette.primary } as React.CSSProperties}>{label}</span>
+          <span className="mm3d-label mm3d-label-dim mm3d-caps" style={{ '--w-dot': labelInk, color: labelInk } as React.CSSProperties}>{label}</span>
         </WorldLabel>
       )}
       {dims.map((raw, i) => {
@@ -367,11 +439,11 @@ const TILE_W = 0.82;
 
 /**
  * ONE tile geometry per mounted scene, owned by the scene and disposed with
- * it. The first draft kept a module-level Map keyed by bevel so 150 tiles
- * could share a geometry — which is the right instinct and the wrong owner: a
- * cache with no cap and no eviction that outlives every scene is what the
- * shared-fetch-cache golden path exists to stop, and here it was never needed.
- * The scene already knows the bevel; it can hold the geometry and hand it down.
+ * it. An earlier draft kept a module-level Map keyed by bevel so 150 tiles
+ * could share a geometry — the right instinct and the wrong owner: a cache
+ * with no cap and no eviction that outlives every scene is what the
+ * shared-fetch-cache golden path exists to stop, and it was never needed. The
+ * scene already knows the bevel; it can hold the geometry and hand it down.
  */
 function useTileGeometry(bevel: number): THREE.BufferGeometry {
   const geometry = useMemo(
@@ -401,12 +473,17 @@ function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis, geome
   useHoverCursor(hovered);
   const color = palette.status[dim.status];
   const f = palette.frost;
+  const s = recipe.surface;
   const h = exploded ? 0.16 + dimProgress(dim) * 0.7 : 0.1;
   const mesh = useRef<THREE.Mesh>(null);
   const cur = useRef(0.1);
   const Icon = DIM_REGISTRY[dim.key].icon;
   const outline = edgeColor(recipe, palette, color);
-  const opaque = recipe.surface.opaqueTiles;
+  const trouble = dim.status === 'risk' || dim.status === 'alert';
+  const cap = recipe.finish.statusAs === 'cap';
+  const bodyColor = cap ? s.bodyColor : color;
+  const emissive = cap ? 0 : trouble && s.attentionGlow > 0 ? s.attentionGlow : dim.status === 'absent' ? f.emissiveMuted : f.emissive;
+  const opacity = s.opaqueTiles || s.mode !== 'physical' ? 1 : 0.4 + emphasis * 0.6;
 
   useFrame((_, dt) => {
     if (!mesh.current) return;
@@ -424,22 +501,20 @@ function Tile({ project, dim, x, nav, palette, recipe, exploded, emphasis, geome
         onPointerOver={(e) => { e.stopPropagation(); nav.hover(id); }}
         onPointerOut={() => nav.hover(null)}
       >
-        <meshPhysicalMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={dim.status === 'absent' ? f.emissiveMuted : f.emissive}
-          roughness={f.roughness}
-          metalness={f.metalness}
-          clearcoat={f.clearcoat}
-          clearcoatRoughness={f.clearcoatRoughness}
-          transmission={recipe.surface.transmission}
-          transparent={!opaque}
-          opacity={opaque ? 1 : 0.4 + emphasis * 0.6}
-        />
+        <Surface recipe={recipe} color={bodyColor} emissive={emissive} opacity={opacity} />
         {outline && <Edges color={outline} lineWidth={recipe.edges.weight} />}
+        {/* Status as a cap: a thin coloured plate on the tile's top face. It is
+            a child of the scaled tile, so it rides the height animation. */}
+        {cap && (
+          <mesh position={[0, 0.5, 0]}>
+            <boxGeometry args={[TILE_W + 0.02, 0.06, TILE_W + 0.02]} />
+            <Surface recipe={recipe} color={color} emissive={trouble ? s.attentionGlow : f.emissive} />
+          </mesh>
+        )}
       </mesh>
-      {pointed && <Halo color={palette.accent} size={2.6} opacity={f.halo * 2.4} position={[0, 0.6, 0]} />}
-      {focused && <Halo color={color} size={2.2} opacity={f.halo * 1.8} position={[0, 0.7, 0]} />}
+      {pointed && <Halo color={palette.accent} size={2.6} opacity={Math.max(f.halo, 0.12) * 2.4} position={[0, 0.6, 0]} />}
+      {focused && f.halo > 0 && <Halo color={color} size={2.2} opacity={f.halo * 1.8} position={[0, 0.7, 0]} />}
+      {trouble && s.attentionGlow > 0 && <Halo color={color} size={1.6 + dimProgress(dim)} opacity={0.35} position={[0, 0.5 + h * 0.5, 0]} />}
       {exploded && (
         <WorldLabel position={[0, 0.2 + h, 0]} opacity={emphasis} interactive offset={[0, -14]}>
           <button type="button" className="mm3d-label-btn" onClick={() => nav.openDim(project.slug, dim.key)} style={{ '--w-dot': color } as React.CSSProperties}>
