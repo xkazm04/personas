@@ -199,6 +199,29 @@ impl ReactiveSubscription for QueueDrainWatchdog {
     }
 
     async fn tick(&self) {
+        // G43 — the tracker is compared with the database's live rows BEFORE
+        // the drain reads capacity from it. A slot leaked by a task that never
+        // reached its cleanup (measured 2026-09-10: two usage-limit failures,
+        // then eight executions queued behind a count that never fell, nothing
+        // running for 25 minutes) is evicted on the second consecutive miss and
+        // logged with both ids. The drain below then sees the real capacity.
+        match crate::db::repos::execution::executions::get_running_lean(&self.pool) {
+            Ok(rows) => {
+                let live: std::collections::HashSet<String> =
+                    rows.into_iter().map(|r| r.id).collect();
+                let evicted = self.engine.tracker().lock().await.reconcile_running(&live);
+                for (persona_id, execution_id) in evicted {
+                    tracing::warn!(
+                        persona_id = %persona_id,
+                        execution_id = %execution_id,
+                        "queue_drain_watchdog: tracker held a running slot for an execution \
+                         with no live row — evicted (G43 leaked-slot reconciliation)"
+                    );
+                }
+            }
+            Err(e) => tracing::warn!(error = %e,
+                "queue_drain_watchdog: could not read live executions — tracker not reconciled"),
+        }
         // Promote up to a bounded number of queued executions per tick so a
         // post-cooldown queue fills its free slots promptly. Stop early when:
         // the quota is still in cooldown, there's no global capacity, the queue

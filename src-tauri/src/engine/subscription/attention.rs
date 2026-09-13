@@ -4357,6 +4357,26 @@ async fn dispatch_into_worktree(
             charter.id
         ))
     })?;
+    // G42 — the gauge is read HERE, at the moment a worker would start, not
+    // only at the top of the tick. A headless worker is a multi-turn CLI
+    // session; started with the worst window inside the margin it stalls
+    // mid-turn when the window fills under it and is reaped stale six minutes
+    // later (bank-core, 2026-09-10 08:34 and 09:25). The refusal names the
+    // window, the line and the reset; the charter is untouched, so the next
+    // wake retries it once the window has moved.
+    let (gauge, line) = super::usage_governor::fleet_worker_verdict(&state.db).await;
+    if gauge.blocked {
+        return Err(AppError::Validation(format!(
+            "usage gauge: {} — a fleet worker is not started within {:.0} points of the stop \
+             (attention.fleet_start_margin_pct); resets in {}",
+            gauge.summary(line),
+            super::usage_governor::fleet_start_margin_pct(&state.db),
+            gauge
+                .resets_in_minutes
+                .map(|m| format!("{m}m"))
+                .unwrap_or_else(|| "an unstated time".to_string()),
+        )));
+    }
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
     // The shared vocabulary, not a hand-written sentence: this keeps the
     // {field, rule} identity a refusal carries (command-input-validation).

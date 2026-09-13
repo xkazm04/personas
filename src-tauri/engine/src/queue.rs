@@ -180,6 +180,12 @@ pub struct ConcurrencyTracker {
     /// that holds it (which would wedge that persona's trigger silently and
     /// forever). Keeping the key anywhere else would reintroduce that failure.
     running_keys: HashMap<String, String>,
+    /// Execution ids seen ONCE in `running` with no live row in the database
+    /// (`persona_executions.status IN ('queued','running')`). An id must be
+    /// missed by two consecutive reconciliations before it is evicted, so an
+    /// execution admitted a moment before its row is written is never
+    /// mistaken for a leak. See [`ConcurrencyTracker::reconcile_running`].
+    reconcile_suspects: HashSet<String>,
     /// Per-persona waiting queues, ordered by priority then FIFO.
     queues: HashMap<String, VecDeque<QueuedExecution>>,
     /// Maximum queue depth per persona (backpressure threshold).
@@ -212,6 +218,7 @@ impl ConcurrencyTracker {
         Self {
             running: HashMap::new(),
             running_keys: HashMap::new(),
+            reconcile_suspects: HashSet::new(),
             queues: HashMap::new(),
             max_queue_depth: DEFAULT_MAX_QUEUE_DEPTH,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
@@ -226,6 +233,7 @@ impl ConcurrencyTracker {
         Self {
             running: HashMap::new(),
             running_keys: HashMap::new(),
+            reconcile_suspects: HashSet::new(),
             queues: HashMap::new(),
             max_queue_depth: max_depth,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
@@ -530,6 +538,46 @@ impl ConcurrencyTracker {
         self.running_keys.retain(|_, held| held != execution_id);
     }
 
+    /// Reconcile the in-memory running set against the database's live rows.
+    ///
+    /// `live` is every execution id whose row is `queued` or `running`. A
+    /// tracked id absent from it is a SLOT THE PROCESS WILL NEVER RELEASE on
+    /// its own: the task that held it panicked past its cleanup, or a sweeper
+    /// closed the row behind the tracker's back. Measured 2026-09-10 (G43):
+    /// after two usage-limit failures at 10:39 one persona's count never fell,
+    /// every later execution of that persona queued behind `max_concurrent`,
+    /// and eight executions sat queued with NOTHING running for 25 minutes
+    /// until a restart. Nothing compared the tracker with the rows until then.
+    ///
+    /// Two-strike rule: an id is only evicted when it was already a suspect at
+    /// the previous call and is still absent — admission writes the tracker
+    /// before the row in some paths, so a single miss is not evidence.
+    /// Returns the evicted `(persona_id, execution_id)` pairs for the log.
+    pub fn reconcile_running(&mut self, live: &HashSet<String>) -> Vec<(String, String)> {
+        let mut missing: Vec<(String, String)> = Vec::new();
+        for (persona_id, set) in &self.running {
+            for exec_id in set {
+                if !live.contains(exec_id) {
+                    missing.push((persona_id.clone(), exec_id.clone()));
+                }
+            }
+        }
+        let missing_ids: HashSet<&str> = missing.iter().map(|(_, e)| e.as_str()).collect();
+        // A suspect that reappeared in the rows (or was released normally) is cleared.
+        self.reconcile_suspects
+            .retain(|id| missing_ids.contains(id.as_str()));
+        let mut evicted = Vec::new();
+        for (persona_id, exec_id) in missing {
+            if self.reconcile_suspects.remove(&exec_id) {
+                self.remove_running(&persona_id, &exec_id);
+                evicted.push((persona_id, exec_id));
+            } else {
+                self.reconcile_suspects.insert(exec_id);
+            }
+        }
+        evicted
+    }
+
     /// Remove a queued execution (e.g., on cancellation).
     /// Returns true if the execution was found and removed.
     pub fn remove_queued(&mut self, persona_id: &str, execution_id: &str) -> bool {
@@ -727,6 +775,46 @@ impl Default for ConcurrencyTracker {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// G43: a tracked id with no live row is evicted on the SECOND consecutive
+    /// miss, never the first; an id that reappears is forgiven.
+    #[test]
+    fn reconcile_evicts_a_missing_id_on_the_second_miss_only() {
+        let mut t = ConcurrencyTracker::new();
+        t.add_running("p1", "e-live", Some("key-live"));
+        t.add_running("p1", "e-leaked", None);
+        t.add_running("p2", "e-other-leaked", None);
+        let live: HashSet<String> = ["e-live".to_string()].into_iter().collect();
+
+        // First pass: both misses become suspects, nothing evicted.
+        assert!(t.reconcile_running(&live).is_empty());
+        assert_eq!(t.running_count("p1"), 2);
+        assert_eq!(t.running_count("p2"), 1);
+
+        // Second pass: still missing → evicted, per persona, slot and key freed.
+        let mut evicted = t.reconcile_running(&live);
+        evicted.sort();
+        assert_eq!(
+            evicted,
+            vec![
+                ("p1".to_string(), "e-leaked".to_string()),
+                ("p2".to_string(), "e-other-leaked".to_string())
+            ]
+        );
+        assert_eq!(t.running_count("p1"), 1);
+        assert_eq!(t.running_count("p2"), 0);
+        assert_eq!(t.total_running(), 1);
+
+        // A suspect that reappears in the rows is cleared: miss once, reappear, miss once → still held.
+        t.add_running("p1", "e-flicker", None);
+        assert!(t.reconcile_running(&live).is_empty());
+        let live2: HashSet<String> = ["e-live".to_string(), "e-flicker".to_string()]
+            .into_iter()
+            .collect();
+        assert!(t.reconcile_running(&live2).is_empty());
+        assert!(t.reconcile_running(&live).is_empty());
+        assert_eq!(t.running_count("p1"), 2);
+    }
 
     #[test]
     fn test_new_tracker_empty() {

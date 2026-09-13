@@ -53,7 +53,16 @@ use crate::db::DbPool;
 /// Percent utilisation at which the loop stops dispatching. One setting, so
 /// the operator can lower it for a shared account or raise it when they are
 /// watching.
-pub const SETTING_STOP_PCT: &str = "attention.usage_stop_pct";
+pub const SETTING_STOP_PCT: &str = crate::db::settings_keys::ATTENTION_USAGE_STOP_PCT;
+
+/// Points below the stop at which a headless FLEET WORKER is not started
+/// (G42). The decide lane is a bounded call; a worker is a multi-turn CLI
+/// session that keeps burning after the window has filled under it.
+pub const SETTING_FLEET_START_MARGIN_PCT: &str =
+    crate::db::settings_keys::ATTENTION_FLEET_START_MARGIN_PCT;
+pub const DEFAULT_FLEET_START_MARGIN_PCT: f64 = 10.0;
+const MIN_FLEET_START_MARGIN_PCT: f64 = 0.0;
+const MAX_FLEET_START_MARGIN_PCT: f64 = 40.0;
 
 /// 97 %, not 100: the last few percent belong to the work already in flight
 /// and to the operator's own session, and the endpoint's number is a snapshot
@@ -127,6 +136,17 @@ pub(crate) fn stop_pct(pool: &DbPool) -> f64 {
         .unwrap_or(DEFAULT_STOP_PCT)
 }
 
+/// The fleet-worker margin, read from settings and clamped.
+pub(crate) fn fleet_start_margin_pct(pool: &DbPool) -> f64 {
+    settings::get(pool, SETTING_FLEET_START_MARGIN_PCT)
+        .ok()
+        .flatten()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(MIN_FLEET_START_MARGIN_PCT, MAX_FLEET_START_MARGIN_PCT))
+        .unwrap_or(DEFAULT_FLEET_START_MARGIN_PCT)
+}
+
 /// One utilisation reading of one window.
 #[derive(Debug, Clone, Copy)]
 struct Sample {
@@ -188,6 +208,16 @@ pub(crate) async fn verdict(pool: &DbPool) -> UsageVerdict {
     let stop = stop_pct(pool);
     let snap = cached_snapshot().await;
     verdict_from(&snap, stop, Instant::now())
+}
+
+/// Read the live gauge and decide whether a headless FLEET WORKER may be
+/// started now (G42). Same gauge, same worst-window rule, a stricter line:
+/// `stop - margin`. Returns the verdict and the effective line so the
+/// refusal can name both numbers.
+pub(crate) async fn fleet_worker_verdict(pool: &DbPool) -> (UsageVerdict, f64) {
+    let line = stop_pct(pool) - fleet_start_margin_pct(pool);
+    let snap = cached_snapshot().await;
+    (verdict_from(&snap, line, Instant::now()), line)
 }
 
 /// The pure half, so the thresholds and the projection are testable without a

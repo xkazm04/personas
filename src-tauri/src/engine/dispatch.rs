@@ -373,6 +373,39 @@ fn has_structural_markdown(content: &str) -> bool {
 /// the fan-out into noise. A persona that wants a note delivered externally
 /// gives it a title (or sets `"channel": "report"`) and it becomes a report,
 /// which is exactly the affordance that already exists.
+/// G44: when the filing persona holds an active charter, make `context_data`
+/// a JSON object carrying the decide lane's `source` marker. Free text is
+/// preserved under `context_text`, the key the review UI already reads.
+fn stamp_charter_ask_source(
+    ctx: &DispatchContext<'_>,
+    context_data: Option<String>,
+) -> Option<String> {
+    let holds_charter =
+        crate::db::repos::core::responsibilities::list_by_persona(ctx.pool, ctx.persona_id, false)
+            .map(|rows| rows.iter().any(|r| r.status == "active"))
+            .unwrap_or(false);
+    if !holds_charter {
+        return context_data;
+    }
+    let parsed = context_data
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .filter(|v| v.is_object());
+    let mut obj = parsed.unwrap_or_else(|| serde_json::json!({}));
+    if let Some(map) = obj.as_object_mut() {
+        if let Some(cd) = context_data.as_deref() {
+            if serde_json::from_str::<serde_json::Value>(cd).is_err()
+                && !map.contains_key("context_text")
+            {
+                map.insert("context_text".to_string(), serde_json::json!(cd));
+            }
+        }
+        map.entry("source".to_string())
+            .or_insert_with(|| serde_json::json!(crate::engine::subscription::ASK_SOURCE));
+    }
+    Some(obj.to_string())
+}
+
 fn dispatch_chat_note(ctx: &mut DispatchContext<'_>, content: &str) {
     // A persona-channel follow-up already writes the persona's reply row when
     // the run finishes. Writing here too would double-post the same reply.
@@ -832,6 +865,18 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             } else {
                 context_data.clone()
             };
+
+            // G44 — an ask filed by a persona that HOLDS AN ACTIVE CHARTER is the
+            // organisation's question to its owner, whatever the free text in
+            // `context_data` says. The decide lane stamps `source` so the
+            // unattended review policy (`autonomy_reviews::is_operator_ask`)
+            // leaves the ask alone; a charter RUN files through this protocol
+            // path with free text and carried no marker, so the policy approved
+            // it with a generic note one hour after filing. Measured 2026-09-13:
+            // 20 of 123 asks in one workspace — among them "Two portfolio
+            // decisions I will not settle alone" — and each asker read that
+            // note as the owner's decision.
+            let effective_context_data = stamp_charter_ask_source(ctx, effective_context_data);
 
             // Pre-serialise suggested_actions once — used both by the row insert
             // and (when auto_triage) by the spawned evaluator's payload.

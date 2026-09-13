@@ -436,6 +436,19 @@ pub const ATTENTION_WAKE_REQUESTS: &str = "attention_wake_requests";
 /// another instance, the feature switched off) cannot grow the row unbounded.
 /// Oldest requests are dropped first — a wake is a nudge, not a promise.
 pub const ATTENTION_WAKE_REQUESTS_MAX: usize = 64;
+/// Percent utilisation of the worst Anthropic usage window at which the
+/// attention loop stops dispatching (the quota governor). Read on every tick
+/// through `settings::get`; it was read UNREGISTERED from 2026-09-09 until
+/// 2026-09-13, which logged an "unknown settings key" warning per tick and
+/// made the key impossible to set. Default 97, clamped 50..=99.5 by the reader.
+pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
+/// Points BELOW [`ATTENTION_USAGE_STOP_PCT`] at which a headless fleet worker
+/// is no longer started (G42). A worker started with the five-hour window at
+/// 87-97 % stalled mid-turn and was reaped stale six minutes later, twice on
+/// 2026-09-10 — the window filled under it. The decide lane itself still runs
+/// up to the stop; only the long-running worker needs the margin. Default 10,
+/// clamped 0..=40 by the reader.
+pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
 
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
@@ -933,6 +946,8 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
     ATTENTION_WAKE_REQUESTS,
+    ATTENTION_USAGE_STOP_PCT,
+    ATTENTION_FLEET_START_MARGIN_PCT,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
