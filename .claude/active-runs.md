@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-13 23:14]**
+- **Paths:** `src-tauri/db/src/repos/dev/tasks.rs` · `src-tauri/src/engine/background/**` · `src-tauri/src/engine/subscription/builtin.rs`
+- **Status:** started
+
 - **[2026-09-13 22:32]**
 - **Paths:** `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/background/**` · `src-tauri/src/engine/fleet/**`
 - **Status:** started
@@ -723,6 +727,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### sim-g45-task-sweep — grande: G45 running dev_tasks with no live worker are swept to failed
 
 ### sim-g43-g44 — grande: G43 tracker reconciliation, G42 gauge before fleet worker, G44 charter asks never auto-triaged
 
