@@ -3587,7 +3587,7 @@ mod tests {
         ctx.projects[0].delivered_recently = 0;
         let p = render_decision_prompt(&ctx);
         assert!(
-            p.contains("17 filed · 0 delivered — NOTHING DELIVERED"),
+            p.contains("17 filed · 0 delivered · 0 failed — NOTHING DELIVERED"),
             "{p}"
         );
         assert!(

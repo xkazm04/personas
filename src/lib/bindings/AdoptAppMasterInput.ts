@@ -24,7 +24,8 @@ model?: string,
  */
 maxConcurrent?: number, 
 /**
- * Mandate rung, clamped to the grantable ceiling (2). Defaults to 2.
+ * Mandate rung, clamped to the grantable ceiling (3, merge). Defaults to 2:
+ * a holder merges only by an explicit grant.
  */
 scopeRung?: number, 
 /**
