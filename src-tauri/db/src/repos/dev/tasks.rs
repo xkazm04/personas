@@ -476,6 +476,120 @@ pub fn count_live_fleet_tasks(
     })
 }
 
+/// A `running` task row whose worker is gone, as the sweep found it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrphanedTask {
+    pub id: String,
+    pub project_id: Option<String>,
+    pub session_id: Option<String>,
+    /// Why the row is an orphan, in the words written into `error`.
+    pub reason: String,
+}
+
+/// G45 — release every `running` task whose worker is gone.
+///
+/// A fleet dispatch stamps its task `running` when the spawn returns a session
+/// id and nothing ever stamps it back (see [`count_live_fleet_tasks`], which
+/// works around exactly this for the cap). The row then holds its idea for
+/// ever: the App Master cannot re-dispatch it, the "accepted, no task" sensor
+/// stays quiet, and the finding it carries reaches nobody. Measured
+/// 2026-09-13 across one install: **65 rows read `running`, 0 with a live
+/// worker** — 32 named a session that does not exist, 21 a session that had
+/// finished without a verdict written back, 12 a session reaped stale; three of
+/// them had locked bank-contracts' CI-evidence cluster for four days.
+///
+/// `live_states` is the fleet registry's vocabulary of a worker that may still
+/// deliver (`spawning` | `running` | `awaiting_input` | `idle`), passed the
+/// way [`count_live_fleet_tasks`] takes it. A row is swept when it has no
+/// session id, its session row is missing, or its session is in any other
+/// state — but only once it has been untouched for `min_age_minutes`, so a
+/// spawn that has returned an id and not yet stamped the row is left alone.
+/// Swept rows go to `failed` with an `error` naming what was gone; the idea is
+/// then re-dispatchable and the ledger tells the truth about the wave.
+pub fn sweep_orphaned_running_tasks(
+    pool: &DbPool,
+    live_states: &[&str],
+    min_age_minutes: i64,
+) -> Result<Vec<OrphanedTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::sweep_orphaned_running_tasks", {
+        let conn = pool.get()?;
+        let placeholders = if live_states.is_empty() {
+            "''".to_string()
+        } else {
+            (0..live_states.len())
+                .map(|i| format!("?{}", i + 1))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let sql = format!(
+            "SELECT t.id, t.project_id, t.session_id, s.state,                     COALESCE(t.updated_at, t.started_at, t.created_at) AS touched_at              FROM dev_tasks t LEFT JOIN fleet_sessions s ON s.id = t.session_id              WHERE t.status = 'running'                AND (t.session_id IS NULL OR s.id IS NULL OR s.state NOT IN ({placeholders}))"
+        );
+        let args: Vec<&dyn rusqlite::ToSql> = live_states
+            .iter()
+            .map(|s| s as &dyn rusqlite::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let candidates = stmt
+            .query_map(args.as_slice(), |r| {
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("project_id")?,
+                    r.get::<_, Option<String>>("session_id")?,
+                    r.get::<_, Option<String>>("state")?,
+                    r.get::<_, Option<String>>("touched_at")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+
+        let now = chrono::Utc::now();
+        let cutoff = now - chrono::Duration::minutes(min_age_minutes.max(0));
+        let now_s = now.to_rfc3339();
+        let mut swept = Vec::new();
+        for (id, project_id, session_id, state, touched_at) in candidates {
+            // Untouched for less than the grace: a spawn may still be stamping it.
+            if let Some(t) = touched_at.as_deref().and_then(parse_task_timestamp) {
+                if t > cutoff {
+                    continue;
+                }
+            }
+            let reason = match (&session_id, &state) {
+                (None, _) => {
+                    "worker gone: no fleet session was ever recorded on this row".to_string()
+                }
+                (Some(sid), None) => format!("worker gone: fleet session {sid} does not exist"),
+                (Some(sid), Some(st)) => {
+                    format!("worker gone: fleet session {sid} is '{st}' and wrote no verdict back")
+                }
+            };
+            let error = format!("{reason} (swept by the orphaned-task sweep at {now_s})");
+            conn.execute(
+                "UPDATE dev_tasks SET status = 'failed', error = ?1, completed_at = ?2,                  updated_at = ?2 WHERE id = ?3 AND status = 'running'",
+                params![error, now_s, id],
+            )?;
+            swept.push(OrphanedTask {
+                id,
+                project_id,
+                session_id,
+                reason,
+            });
+        }
+        Ok(swept)
+    })
+}
+
+/// Task timestamps are RFC 3339 (written by `create_task` / `update_task`);
+/// older rows and hand edits may carry SQLite's `YYYY-MM-DD HH:MM:SS`. Both
+/// parse; anything else reads as "unknown age" and the caller sweeps it.
+fn parse_task_timestamp(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    if let Ok(t) = chrono::DateTime::parse_from_rfc3339(s) {
+        return Some(t.with_timezone(&chrono::Utc));
+    }
+    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .ok()
+        .map(|n| n.and_utc())
+}
+
 pub fn delete_task(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_tasks", "dev_tasks::delete_task", {
         let conn = pool.get()?;
@@ -739,6 +853,97 @@ mod live_fleet_task_tests {
             |r| r.get("n"),
         )
         .unwrap()
+    }
+
+    /// G45: a running row whose worker is gone is released to `failed` with the
+    /// reason in `error`; a row whose worker is live is untouched; a row younger
+    /// than the grace is left for the spawn to finish stamping it.
+    #[test]
+    fn the_sweep_releases_rows_whose_worker_is_gone_and_keeps_live_ones() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "sweep");
+        dispatched(&pool, &p, 1, "running", "running"); // live
+        dispatched(&pool, &p, 2, "finished", "running"); // finished, no verdict
+        dispatched(&pool, &p, 3, "stale", "running"); // reaped
+                                                      // No session at all.
+        let orphan =
+            create_task(&pool, Some(&p), "no session", None, None, None, None, None).unwrap();
+        update_task(
+            &pool,
+            &orphan.id,
+            None,
+            None,
+            Some("running"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        // A session id that no row carries.
+        let ghost = create_task(
+            &pool,
+            Some(&p),
+            "ghost session",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &ghost.id,
+            None,
+            None,
+            Some("running"),
+            Some(Some("sess-nowhere")),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(running_tasks(&pool, &p), 5);
+
+        // Within the grace nothing moves: every row was touched a moment ago.
+        let none = sweep_orphaned_running_tasks(&pool, &LIVE, 15).unwrap();
+        assert!(none.is_empty(), "{none:?}");
+        assert_eq!(running_tasks(&pool, &p), 5);
+
+        // Past the grace, four are released and the live one stays.
+        let swept = sweep_orphaned_running_tasks(&pool, &LIVE, 0).unwrap();
+        assert_eq!(swept.len(), 4, "{swept:?}");
+        assert_eq!(running_tasks(&pool, &p), 1);
+        let by_id: HashMap<String, OrphanedTask> =
+            swept.into_iter().map(|o| (o.id.clone(), o)).collect();
+        assert!(by_id[&orphan.id]
+            .reason
+            .contains("no fleet session was ever recorded"));
+        assert!(by_id[&ghost.id]
+            .reason
+            .contains("sess-nowhere does not exist"));
+        let finished_id = by_id
+            .values()
+            .find(|o| o.reason.contains("is 'finished'"))
+            .map(|o| o.id.clone())
+            .unwrap();
+        let finished = get_task_by_id(&pool, &finished_id).unwrap();
+        assert_eq!(finished.status, "failed");
+        assert!(finished
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("'finished' and wrote no verdict back"));
+        assert!(finished.completed_at.is_some());
+        // Idempotent: a second pass finds nothing.
+        assert!(sweep_orphaned_running_tasks(&pool, &LIVE, 0)
+            .unwrap()
+            .is_empty());
     }
 
     #[test]

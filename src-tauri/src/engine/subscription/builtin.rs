@@ -409,6 +409,7 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
         run_blocking_tick(move || {
             crate::engine::background::zombie_execution_tick(&pool, &app);
             crate::engine::background::silent_execution_tick(&pool, &app);
+            crate::engine::background::orphaned_task_tick(&pool);
         })
         .await;
     }
