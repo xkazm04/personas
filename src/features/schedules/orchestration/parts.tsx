@@ -186,7 +186,7 @@ export function ReorderButtons({
   id, first, last, onMove,
 }: { id: string; first: boolean; last: boolean; onMove: (id: string, delta: -1 | 1) => void }) {
   const { t } = useTranslation();
-  const btn = 'focus-ring rounded-interactive p-0.5 text-foreground opacity-60 hover:opacity-100 disabled:opacity-20';
+  const btn = 'focus-ring rounded-interactive p-0.5 text-foreground opacity-60 hover:opacity-100 disabled:is-disabled';
   return (
     <span className="inline-flex flex-col">
       <button type="button" className={btn} disabled={first} onClick={() => onMove(id, -1)} aria-label={t.schedules.orch_move_up}>

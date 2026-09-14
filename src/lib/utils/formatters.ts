@@ -57,7 +57,8 @@ export function formatTimestamp(
   return parsed.toLocaleString(opts?.language ?? activeLanguage());
 }
 
-const relativeTimeFormatCache = new Map<string, Intl.RelativeTimeFormat>();
+// Shared module cache rather than a bare Map: the container names its cap.
+const relativeTimeFormatCache = createModuleCache<string, Intl.RelativeTimeFormat>({ maxSize: 32 });
 
 function getRelativeTimeFormat(locale: string): Intl.RelativeTimeFormat {
   let fmt = relativeTimeFormatCache.get(locale);
@@ -126,7 +127,7 @@ export function formatRelativeTime(
   return rtf.format(-diffDays, 'day');
 }
 
-const elapsedUnitFormatCache = new Map<string, Intl.NumberFormat>();
+const elapsedUnitFormatCache = createModuleCache<string, Intl.NumberFormat>({ maxSize: 64 });
 
 function elapsedUnitFormat(locale: string, unit: 'minute' | 'hour' | 'day'): Intl.NumberFormat {
   const key = `${locale}|${unit}`;

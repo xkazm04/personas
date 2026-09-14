@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, ChevronDown, FolderGit2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { matchesQuery } from '@/lib/text/search';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { scopeProjects, useWorkspaces } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -52,7 +53,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
   const rows = useMemo<Row[]>(() => {
     const q = query.trim().toLowerCase();
     const matches = scoped
-      .filter((p) => !q || p.name.toLowerCase().includes(q))
+      .filter((p) => !q || matchesQuery(p.name, q))
       .map((p) => ({ id: p.id, label: p.name, path: p.root_path }));
     return q ? matches : [{ id: null, label: t.notepad.project_none }, ...matches];
   }, [scoped, query, t]);
@@ -121,7 +122,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
                   index === focusIndex ? 'bg-primary/10' : 'hover:bg-secondary/50'
                 }`}
               >
-                <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-foreground/70' : 'text-foreground/40'}`} aria-hidden />
+                <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-foreground opacity-70' : 'text-foreground opacity-40'}`} aria-hidden />
                 <span className="flex-1 min-w-0 flex flex-col">
                   <span className="typo-body text-foreground truncate">{row.label}</span>
                   {row.path && <span className="typo-caption text-foreground/60 truncate">{row.path}</span>}

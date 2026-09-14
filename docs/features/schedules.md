@@ -97,18 +97,17 @@ running-persona headroom), *Waits for a slot*, *Sleep consolidation only*,
 the loop's own sentence. A drop persists the whole order and refetches, so
 every verdict is re-derived by the loop rather than guessed by the UI.
 
-**Three prototype variants** sit behind a switcher (a dated
-`TODO(prototype, 2026-09-14)` marks it for consolidation once one wins):
+**The layout is the Ledger** — an engineering table where every input of the
+admission ladder is a column (rank, persona, charters, interval, last served,
+wake, lane) and the verdict is the last one, with four counters above (starts
+this tick, would start, waiting, held). It won the 2026-09-14 prototype round
+over a departure-board layout (Runway: outcome bands first) and a control-room
+layout (Slots: one tile per affordable start), both deleted at consolidation.
+The header carries only the budget band and the "Order by need" reset.
 
-| Variant | Metaphor | What it makes primary |
-|---|---|---|
-| Runway | departure board | the OUTCOME: one ordered column cut into bands — starting next tick, waiting, held, nothing to do — with the inputs on the second line |
-| Ledger | engineering table | the CAUSES: every ladder input as a column (rank, charters, interval, last served, wake, lane) with the verdict last, three counters above |
-| Slots | control room | the CAPACITY: one tile per start the tick can afford, filled by the persona taking it, and the queue as draggable cards beneath |
-
-All three share `useDispatchOrder` (poll, local reorder, persist, refetch) and
-`parts.tsx` (verdict and lane chips, rank mark, persona identity, budget band,
-keyboard reorder buttons). Drag uses framer-motion `Reorder` behind the shared
+`useDispatchOrder` (poll, local reorder, persist, refetch) and `parts.tsx`
+(verdict and lane chips, rank mark, persona identity, budget band, keyboard
+reorder buttons) back it. Drag uses framer-motion `Reorder` behind the shared
 `DragHandle`; ↑/↓ buttons are the keyboard alternative.
 
 ## Failure-rate auto-pause

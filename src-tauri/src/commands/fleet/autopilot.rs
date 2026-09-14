@@ -258,28 +258,42 @@ pub async fn fleet_dispatch_order_set(
     persona_ids: Vec<String>,
 ) -> Result<Vec<String>, AppError> {
     require_auth(&state).await?;
+    // The size guard runs on the RAW list, before dedupe: a caller sending
+    // ten thousand copies of one id is refused, not quietly collapsed.
+    if persona_ids.len() > MAX_DISPATCH_ORDER_LEN {
+        return Err(AppError::Validation(format!(
+            "dispatch order: at most {MAX_DISPATCH_ORDER_LEN} personas"
+        )));
+    }
     let mut seen = std::collections::HashSet::new();
     let ids: Vec<String> = persona_ids
         .into_iter()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty() && seen.insert(s.clone()))
         .collect();
-    if ids.len() > 500 {
-        return Err(AppError::Validation(
-            "dispatch order: at most 500 personas".into(),
-        ));
-    }
     let json = serde_json::to_string(&ids)
         .map_err(|e| AppError::Internal(format!("dispatch order encode: {e}")))?;
     let pool = state.db.clone();
-    tokio::task::spawn_blocking(move || {
+    let written = tokio::task::spawn_blocking(move || {
         crate::db::repos::core::settings::set(
             &pool,
             crate::db::settings_keys::FLEET_DISPATCH_ORDER,
             &json,
         )
     })
-    .await
-    .map_err(|e| AppError::Internal(format!("fleet_dispatch_order_set: {e}")))??;
+    .await;
+    match written {
+        Ok(r) => r?,
+        Err(e) if e.is_panic() => {
+            return Err(AppError::Internal(
+                "fleet_dispatch_order_set: the settings write panicked".into(),
+            ))
+        }
+        Err(e) => return Err(AppError::Internal(format!("fleet_dispatch_order_set: {e}"))),
+    }
     Ok(ids)
 }
+
+/// Upper bound on a dispatch order — well above any roster this app holds
+/// (`MAX_PERSONAS` is 200), low enough that a runaway caller is refused.
+const MAX_DISPATCH_ORDER_LEN: usize = 500;

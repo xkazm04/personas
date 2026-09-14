@@ -92,7 +92,7 @@ export function NoteOverview({
             data-testid="notepad-overview-capture"
             className="flex-1 min-w-0 h-12 bg-transparent typo-body-lg text-foreground placeholder:text-foreground/50 outline-none disabled:is-disabled"
           />
-          <CornerDownLeft className="w-4 h-4 text-foreground/40" aria-hidden />
+          <CornerDownLeft className="w-4 h-4 text-foreground opacity-40" aria-hidden />
         </form>
 
         {!loading && tabs.length > 2 && (
@@ -104,13 +104,14 @@ export function NoteOverview({
             fullWidth={false}
             ariaLabel={t.notepad.project_label}
             layoutId="notepad-desk-filter"
+            idPrefix="notepad-desk-filter"
           />
         )}
 
         {loading ? (
           <OverviewGhost />
         ) : (
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4" role="tabpanel" id={`notepad-desk-filter-panel-${active}`} aria-labelledby={`notepad-desk-filter-tab-${active}`}>
             {visible.map((note, index) => (
               <NoteDeskCard
                 key={note.id}

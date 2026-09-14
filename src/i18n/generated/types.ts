@@ -13372,13 +13372,8 @@ export type Translations = {
     view_timeline: string;
     view_calendar: string;
     view_orchestration: string;
-    orch_intro: string;
     orch_unavailable: string;
     orch_reset: string;
-    orch_variant_aria: string;
-    orch_variant_runway: string;
-    orch_variant_ledger: string;
-    orch_variant_slots: string;
     orch_autopilot_off: string;
     orch_budget_starts: string;
     orch_would_start: string;
@@ -13414,10 +13409,7 @@ export type Translations = {
     orch_lane_improve: string;
     orch_lane_decide: string;
     orch_lane_maintenance: string;
-    orch_band_starting: string;
-    orch_band_waiting: string;
     orch_band_held: string;
-    orch_band_idle: string;
     orch_col_rank: string;
     orch_col_persona: string;
     orch_col_charters: string;
@@ -13426,13 +13418,6 @@ export type Translations = {
     orch_col_wake: string;
     orch_col_lane: string;
     orch_col_next_tick: string;
-    orch_slots_title: string;
-    orch_slots_hint: string;
-    orch_slots_none: string;
-    orch_slot_n: string;
-    orch_slot_open: string;
-    orch_queue_title: string;
-    orch_queue_hint: string;
     orch_empty_title: string;
     orch_empty_hint: string;
     loading_schedules: string;
