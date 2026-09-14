@@ -2208,6 +2208,10 @@ pub fn run() {
             // Kill any running Bun dev servers when the app exits so a closing
             // app never orphans a `bun`/`next` process tree (web-build runtime).
             if matches!(event, tauri::RunEvent::Exit) {
+                // The loopback bridge's `{port, token, pid}` handshake must not
+                // outlive the process that wrote it: a stale one reads to a
+                // terminal caller as a live server refusing its token.
+                local_http::clear_handshake();
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.stop_all();
 
