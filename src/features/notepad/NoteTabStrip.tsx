@@ -9,14 +9,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 
 import { noteStatusMeta } from './noteStatusMeta';
 import type { NoteSaveState } from './notepadStore';
-
-/** Dot colour per save state. `clean` renders nothing — a saved document is
- *  the resting state and does not need a light to say so. */
-const SAVE_DOT: Record<Exclude<NoteSaveState, 'clean'>, string> = {
-  dirty: 'bg-status-warning/70',
-  saving: 'bg-status-info/80 animate-pulse motion-reduce:animate-none',
-  error: 'bg-status-error',
-};
+import { SaveDot } from './parts/SaveDot';
 
 export interface NoteTabStripProps {
   notes: DevNote[];
@@ -206,19 +199,7 @@ export function NoteTabStrip({
                 ) : (
                   <span className="typo-caption truncate">{note.title}</span>
                 )}
-                {save !== 'clean' && (
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${SAVE_DOT[save]}`}
-                    data-testid={`notepad-save-${save}`}
-                    aria-label={
-                      save === 'dirty'
-                        ? t.notepad.save_dirty
-                        : save === 'saving'
-                          ? t.notepad.save_saving
-                          : t.notepad.save_error
-                    }
-                  />
-                )}
+                <SaveDot state={save} />
               </div>
             );
           })}

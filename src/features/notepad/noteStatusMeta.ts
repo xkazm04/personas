@@ -13,12 +13,26 @@ import type { Translations } from '@/i18n/generated/types';
  * translations rather than stored as text: a table of English strings is a
  * table that ships English to every locale.
  */
+/** A status as COLOUR, for surfaces that carry it on geometry (a card outline,
+ *  a rail, a lifecycle tick) rather than in a badge. Literal class strings so
+ *  Tailwind can see them; every one resolves to a `primary` / `status-*` token. */
+export interface NoteStatusTone {
+  /** Outline at rest. */
+  border: string;
+  /** Solid fill — rails, dots, ticks. */
+  fill: string;
+  text: string;
+  /** Faint ground wash. */
+  wash: string;
+}
+
 export interface NoteStatusMeta {
   status: NoteStatus;
   /** Resolver against the translation tree — never a literal string. */
   labelKey: (t: Translations) => string;
   badgeVariant: BadgeVariant;
   Icon: LucideIcon;
+  tone: NoteStatusTone;
 }
 
 export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
@@ -27,30 +41,37 @@ export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
     labelKey: (t) => t.notepad.status_draft,
     badgeVariant: 'neutral',
     Icon: FileText,
+    // The theme accent, not grey: a draft is the one state you can still write
+    // into, and it should look alive rather than inert.
+    tone: { border: 'border-primary/35', fill: 'bg-primary', text: 'text-primary', wash: 'bg-primary/5' },
   },
   published: {
     status: 'published',
     labelKey: (t) => t.notepad.status_published,
     badgeVariant: 'blue',
     Icon: Rocket,
+    tone: { border: 'border-status-info/40', fill: 'bg-status-info', text: 'text-status-info', wash: 'bg-status-info/5' },
   },
   in_progress: {
     status: 'in_progress',
     labelKey: (t) => t.notepad.status_in_progress,
     badgeVariant: 'cyan',
     Icon: Loader,
+    tone: { border: 'border-status-pending/40', fill: 'bg-status-pending', text: 'text-status-pending', wash: 'bg-status-pending/5' },
   },
   completed: {
     status: 'completed',
     labelKey: (t) => t.notepad.status_completed,
     badgeVariant: 'emerald',
     Icon: CircleCheck,
+    tone: { border: 'border-status-success/40', fill: 'bg-status-success', text: 'text-status-success', wash: 'bg-status-success/5' },
   },
   archived: {
     status: 'archived',
     labelKey: (t) => t.notepad.status_archived,
     badgeVariant: 'neutral',
     Icon: Archive,
+    tone: { border: 'border-status-neutral/30', fill: 'bg-status-neutral', text: 'text-status-neutral', wash: 'bg-status-neutral/5' },
   },
 };
 
@@ -62,6 +83,7 @@ const UNKNOWN_META: Omit<NoteStatusMeta, 'status'> & { status: NoteStatus } = {
   labelKey: (t) => t.notepad.status_unknown,
   badgeVariant: 'amber',
   Icon: CircleHelp,
+  tone: { border: 'border-status-warning/40', fill: 'bg-status-warning', text: 'text-status-warning', wash: 'bg-status-warning/5' },
 };
 
 /**

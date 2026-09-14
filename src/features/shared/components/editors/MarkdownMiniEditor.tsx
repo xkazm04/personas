@@ -83,6 +83,11 @@ export interface MarkdownMiniEditorProps {
   containerClassName?: string;
   /** Classes for the rendered preview pane. */
   previewClassName?: string;
+  /** Restrict the toolbar to these operations (default: all of them) — a
+   *  narrow host such as a card has room for a few, not ten. */
+  toolbarOps?: readonly MarkdownToolbarOpId[];
+  /** Classes for the toolbar row, e.g. to reveal it only while focused. */
+  toolbarClassName?: string;
 }
 
 /**
@@ -136,6 +141,18 @@ export function applyOp(op: MarkdownEditOp, value: string, start: number, end: n
   }
 }
 
+export type MarkdownToolbarOpId =
+  | 'bold'
+  | 'italic'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'bullet'
+  | 'numbered'
+  | 'checklist'
+  | 'code'
+  | 'quote';
+
 export interface MarkdownToolbarProps {
   /** Runs the op against the live selection. The editor supplies this; a host
    *  placing the toolbar elsewhere gets the same contract. */
@@ -144,16 +161,18 @@ export interface MarkdownToolbarProps {
   className?: string;
   /** Extra controls rendered at the trailing edge (e.g. a preview toggle). */
   trailing?: ReactNode;
+  /** Subset of operations to show, in the toolbar's own order. Default: all. */
+  ops?: readonly MarkdownToolbarOpId[];
 }
 
 /**
  * The formatting strip. Deliberately flat and unlabelled beyond its tooltips —
  * it is a hint that markdown is available, not the primary way to write it.
  */
-export function MarkdownToolbar({ onOp, disabled, className, trailing }: MarkdownToolbarProps) {
+export function MarkdownToolbar({ onOp, disabled, className, trailing, ops }: MarkdownToolbarProps) {
   const { t } = useTranslation();
 
-  const buttons: { id: string; title: string; icon: ReactNode; op: MarkdownEditOp }[] = [
+  const allButtons: { id: MarkdownToolbarOpId; title: string; icon: ReactNode; op: MarkdownEditOp }[] = [
     { id: 'bold', title: t.common.md_bold, icon: <Bold className="w-3.5 h-3.5" />, op: { kind: 'wrap', marker: '**' } },
     { id: 'italic', title: t.common.md_italic, icon: <Italic className="w-3.5 h-3.5" />, op: { kind: 'wrap', marker: '_' } },
     { id: 'h1', title: t.common.md_h1, icon: <Heading1 className="w-3.5 h-3.5" />, op: { kind: 'heading', level: 1 } },
@@ -165,6 +184,7 @@ export function MarkdownToolbar({ onOp, disabled, className, trailing }: Markdow
     { id: 'code', title: t.common.md_code, icon: <Code className="w-3.5 h-3.5" />, op: { kind: 'wrap', marker: '`' } },
     { id: 'quote', title: t.common.md_quote, icon: <Quote className="w-3.5 h-3.5" />, op: { kind: 'list', list: 'quote' } },
   ];
+  const buttons = ops ? allButtons.filter((b) => ops.includes(b.id)) : allButtons;
 
   return (
     <div
@@ -214,6 +234,8 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
       readOnly = false,
       containerClassName,
       previewClassName,
+      toolbarOps,
+      toolbarClassName,
     },
     ref,
   ) {
@@ -322,6 +344,8 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
         {toolbar && (
           <MarkdownToolbar
             onOp={runOp}
+            ops={toolbarOps}
+            className={toolbarClassName}
             trailing={
               preview === 'toggle' ? (
                 <button

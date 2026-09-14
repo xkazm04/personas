@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { NotepadText, X } from 'lucide-react';
+import { ArrowLeft, NotepadText, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { NOTEPAD_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
@@ -46,6 +46,13 @@ import {
 } from './notepadStore';
 import { useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes } from './useNotepad';
 import NoteBody from './NoteBody';
+import { titleFromText } from './noteText';
+import { NoteOverview } from './overview/NoteOverview';
+import { OVERVIEW_COPY } from './overview/prototypeCopy';
+import type { NoteSeed } from './overview/types';
+
+/** Layer 1 is every note as a card; layer 2 is one note in the full editor. */
+type PadView = 'overview' | 'editor';
 
 /** Ghost tab strip — shown UNDER the permanent chrome while the first fetch is
  *  in flight and there is nothing to draw. Never a spinner: this is a surface
@@ -93,6 +100,10 @@ export default function NotepadOverlayHost() {
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  // The pad always opens on the overview: a summoned surface should show
+  // everything first, not drop you into whichever note you last touched.
+  const [view, setView] = useState<PadView>('overview');
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // First open fetches; later opens paint the notes already in memory and
@@ -125,9 +136,28 @@ export default function NotepadOverlayHost() {
 
   // Escape closes; Tab cycles inside the layer. Registered at a priority BELOW
   // BaseModal's 80 so a confirm dialog opened from here takes Escape first.
+  const backToOverview = useCallback(() => {
+    void flush(activeId ?? undefined);
+    setView('overview');
+  }, [activeId]);
+
   useAppKeyboard(
     (event) => {
       if (event.key === 'Escape') {
+        // One layer at a time: the editor steps back to the overview, a card's
+        // caret leaves the card, and only a resting overview closes the pad.
+        if (view === 'editor') {
+          backToOverview();
+          return true;
+        }
+        const focused = document.activeElement;
+        if (
+          (focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement) &&
+          rootRef.current?.contains(focused)
+        ) {
+          focused.blur();
+          return true;
+        }
         close();
         return true;
       }
@@ -191,6 +221,33 @@ export default function NotepadOverlayHost() {
     if (created) setActiveNote(created.id);
   }, [setActiveNote, t.notepad.new_note_title]);
 
+  const openNote = useCallback(
+    (id: string) => {
+      void flush();
+      setActiveNote(id);
+      setView('editor');
+    },
+    [setActiveNote],
+  );
+
+  // Creating from the overview stays ON the overview: a seeded capture lands
+  // as a finished card, an empty one takes the caret in its own card.
+  const handleOverviewCreate = useCallback(
+    async (seed?: NoteSeed) => {
+      const title = seed?.bodyMd ? titleFromText(seed.bodyMd, t.notepad.new_note_title) : t.notepad.new_note_title;
+      const created = await createNote(title, seed?.projectId ?? null);
+      if (!created) return;
+      if (seed?.bodyMd) patchNote(created.id, { bodyMd: seed.bodyMd });
+      else setFocusNoteId(created.id);
+    },
+    [t.notepad.new_note_title],
+  );
+
+  // A note deleted or archived out from under the editor has nothing to show.
+  useEffect(() => {
+    if (view === 'editor' && loaded && !active) setView('overview');
+  }, [view, loaded, active]);
+
   const handleDelete = useCallback((note: DevNote, permanent: boolean) => {
     setPendingDelete({ note, permanent });
   }, []);
@@ -223,10 +280,23 @@ export default function NotepadOverlayHost() {
       className="fixed inset-x-0 bottom-8 top-[var(--titlebar-height,40px)] z-[200] flex flex-col bg-background"
     >
       <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
-        <span className="flex items-center gap-2 typo-caption text-foreground/60">
-          <NotepadText className="w-4 h-4" aria-hidden />
-          {t.notepad.title}
-        </span>
+        <div className="flex items-center gap-3 min-w-0">
+          {view === 'editor' && (
+            <button
+              type="button"
+              onClick={backToOverview}
+              data-testid="notepad-back-overview"
+              className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 typo-caption text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+            >
+              <ArrowLeft className="w-4 h-4" aria-hidden />
+              {OVERVIEW_COPY.back}
+            </button>
+          )}
+          <span className="flex items-center gap-2 typo-caption text-foreground/60">
+            <NotepadText className="w-4 h-4" aria-hidden />
+            {t.notepad.title}
+          </span>
+        </div>
 
         <button
           type="button"
@@ -239,7 +309,30 @@ export default function NotepadOverlayHost() {
         </button>
       </div>
 
-      {showGhost ? (
+      {view === 'overview' ? (
+        showEmpty ? (
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              icon={NotepadText}
+              title={t.notepad.empty_title}
+              subtitle={t.notepad.empty_subtitle}
+              action={{ label: t.notepad.empty_action, onClick: () => void handleOverviewCreate() }}
+            />
+          </div>
+        ) : (
+          <NoteOverview
+            loading={showGhost}
+            notes={notes}
+            projects={projects}
+            saveStates={saveStates}
+            atCap={atCap}
+            focusNoteId={focusNoteId}
+            onOpen={openNote}
+            onPatch={patchNote}
+            onCreate={(seed) => void handleOverviewCreate(seed)}
+          />
+        )
+      ) : showGhost ? (
         <TabStripGhost />
       ) : (
         <NoteTabStrip
@@ -286,7 +379,7 @@ export default function NotepadOverlayHost() {
         />
       )}
 
-      {showEmpty ? (
+      {view === 'overview' ? null : showEmpty ? (
         <div className="flex-1 flex items-center justify-center">
           <EmptyState
             icon={NotepadText}

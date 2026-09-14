@@ -6,23 +6,8 @@ import { MarkdownMiniEditor } from '@/features/shared/components/editors/Markdow
 import { NoteHeader } from './parts/NoteHeader';
 import { NoteStatusTimeline } from './parts/NoteStatusTimeline';
 import { SuggestionSlot } from './parts/SuggestionSlot';
+import { resultSummary } from './noteText';
 import type { NoteBodyProps } from './types';
-
-/** Parse the sweeper's `result_json` for a human-readable summary. */
-function resultSummary(resultJson: string | null): string | null {
-  if (!resultJson) return null;
-  try {
-    const parsed: unknown = JSON.parse(resultJson);
-    // INVARIANT for the narrowing: this string is a run artifact written by a
-    // skill on disk and passed through SQLite, so its real type is `unknown` —
-    // the contract's shape is what we HOPE for, never what we assume.
-    if (!parsed || typeof parsed !== 'object') return null;
-    const summary = (parsed as { summary?: unknown }).summary;
-    return typeof summary === 'string' ? summary : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * DIRECTION B — "Workbench".
