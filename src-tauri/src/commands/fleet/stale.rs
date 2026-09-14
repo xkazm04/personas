@@ -17,7 +17,7 @@ use tauri::AppHandle;
 
 use super::registry::{now_ms, registry};
 use super::screen_activity::{ScreenActivity, ScreenDelta};
-use super::transcript_read::transcript_size;
+use super::transcript_read::transcript_size_and_mtime;
 use super::types::FleetSessionState;
 
 /// Per-session transcript growth tracking: `(last_size_bytes, last_grew_ms)`.
@@ -270,6 +270,17 @@ pub fn spawn_ticker(app: AppHandle) {
     });
 }
 
+/// The "last grew" instant a session's growth clock starts from the first
+/// tick it is seen: the transcript's mtime when that is a real past instant,
+/// otherwise `now`. Pure.
+fn seed_grew_ms(mtime_ms: i64, now: i64) -> i64 {
+    if mtime_ms > 0 && mtime_ms <= now {
+        mtime_ms
+    } else {
+        now
+    }
+}
+
 /// Pure staleness decision for one session, given whether its transcript grew
 /// this tick and how long since it last grew. Returns the new state to apply,
 /// or `None` to leave it unchanged. Extracted so the rules are unit-tested.
@@ -506,11 +517,18 @@ fn tick_once(app: &AppHandle) {
         let mut g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
         for (id, csid) in &snaps {
             let Some(csid) = csid else { continue };
-            let Some(size) = transcript_size(csid) else {
+            let Some((size, mtime_ms)) = transcript_size_and_mtime(csid) else {
                 continue;
             };
             sizes.insert(id.clone(), size);
-            let entry = g.entry(id.clone()).or_insert((size, now));
+            // First sight seeds the growth clock from the transcript's
+            // mtime, not from `now`: silence must age in wall-clock across an
+            // app restart, not restart its fuse with every boot (see
+            // `transcript_size_and_mtime`). A future or unreadable mtime
+            // falls back to `now`, which is the pre-existing behaviour.
+            let entry = g
+                .entry(id.clone())
+                .or_insert((size, seed_grew_ms(mtime_ms, now)));
             if size > entry.0 {
                 entry.0 = size;
                 entry.1 = now;
@@ -1936,6 +1954,23 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
+    /// A session first seen by the ticker starts its silence clock at the
+    /// transcript's last write, so a restart does not hand it a fresh fuse.
+    #[test]
+    fn the_growth_clock_seeds_from_the_transcripts_mtime_not_from_boot() {
+        use super::seed_grew_ms;
+        const NOW: i64 = 1_700_000_000_000;
+        // Three days of silence stay three days of silence across a restart.
+        assert_eq!(
+            seed_grew_ms(NOW - 3 * 24 * 3_600_000, NOW),
+            NOW - 3 * 24 * 3_600_000
+        );
+        // Unreadable or future mtimes fall back to `now` (the old behaviour).
+        assert_eq!(seed_grew_ms(0, NOW), NOW);
+        assert_eq!(seed_grew_ms(NOW + 60_000, NOW), NOW);
+        assert_eq!(seed_grew_ms(NOW, NOW), NOW);
+    }
+
     /// The overnight reap rule: label, declared end, and an hour of silence —
     /// all three, or the process stays (a night may still send a turn).
     #[test]

@@ -1654,6 +1654,42 @@ impl FleetRegistry {
         .then_some(prev)
     }
 
+    /// Settle a row RESTORED AFTER A RESTART from what its transcript says it
+    /// was doing when the app went down (`persist::recover_after_restart`).
+    ///
+    /// Guarded to a pid-less, dozing row: a live process is settled by its
+    /// own lifecycle lanes, and this door must never overrule one. `to` is
+    /// `Finished` for a turn that had already ended (trailing assistant text,
+    /// nothing outstanding) or `Stale` for a turn killed inside a tool call
+    /// — both parked verdicts, so `last_activity_ms` is left alone. Returns
+    /// the previous state token on success.
+    pub fn settle_restored(
+        &self,
+        session_id: &str,
+        to: FleetSessionState,
+        reason: &str,
+    ) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if session.child_pid.is_some() || !session.dozing {
+            return None;
+        }
+        if !matches!(
+            session.state,
+            FleetSessionState::Running
+                | FleetSessionState::Idle
+                | FleetSessionState::AwaitingInput
+                | FleetSessionState::Stale
+        ) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        apply_transition_parked(session, to, reason, "boot:settled-from-transcript")
+            .accepted()
+            .then_some(prev)
+    }
+
     /// Replace a session's `state_reason` WITHOUT touching its state — for a
     /// lane that has something to say about a session it is not moving (the
     /// limit-retry pass reporting a keystroke the PTY refused). Returns `false`

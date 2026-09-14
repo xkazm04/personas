@@ -423,13 +423,30 @@ fn tail_lines_of(path: &Path, max_bytes: u64) -> Option<(Vec<String>, bool)> {
     Some((lines, from > 0))
 }
 
-/// File size (bytes) of a session's transcript, or `None` if no transcript
-/// exists yet. The staleness ticker polls this to detect *real* log growth
-/// (a more reliable "is it actually working" signal than hook timing or
-/// mtime touches).
-pub fn transcript_size(claude_session_id: &str) -> Option<u64> {
+/// File size (bytes) of a session's transcript plus the file's last-modified
+/// time in unix ms (`0` when the filesystem cannot say), or `None` if no
+/// transcript exists yet. The staleness ticker polls the size to detect
+/// *real* log growth (a more reliable "is it actually working" signal than
+/// hook timing alone).
+///
+/// The mtime is the WALL-CLOCK answer to "when did this session last write"
+/// — the one reading that survives an app restart. The ticker's own growth
+/// clock starts at the first tick it sees a session, so a row restored after
+/// a restart used to begin every app lifetime with a fresh six-minute fuse:
+/// restart inside the window and the fuse never burns down. Measured
+/// 2026-09-13: a six-minute staleness rule took 78 h 18 min to fire on a
+/// session restored three times. Seeding the clock from the mtime makes
+/// silence age in wall-clock, whatever the app was doing meanwhile.
+pub fn transcript_size_and_mtime(claude_session_id: &str) -> Option<(u64, i64)> {
     let path = find_transcript(claude_session_id)?;
-    std::fs::metadata(&path).ok().map(|m| m.len())
+    let meta = std::fs::metadata(&path).ok()?;
+    let mtime_ms = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    Some((meta.len(), mtime_ms))
 }
 
 /// Read and summarize a session's transcript. `claude_session_id` is the

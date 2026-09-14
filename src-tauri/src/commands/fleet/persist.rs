@@ -213,6 +213,16 @@ pub fn rehydrate(app: &AppHandle) -> usize {
         return 0;
     }
 
+    // Queued write-backs first — before any restored row can be read as
+    // abandoned by anything downstream of this boot. Best-effort, idempotent.
+    let drained = crate::commands::infrastructure::replay_queue::drain(&pool);
+    if drained.wrote_anything() {
+        tracing::info!(
+            applied = drained.applied,
+            "fleet: replay queue drained at boot"
+        );
+    }
+
     match fleet_sessions::prune_exited_before(&pool, now_ms() - EXITED_RETENTION_MS) {
         Ok(n) if n > 0 => tracing::info!(pruned = n, "fleet_sessions: aged out exited rows"),
         Err(err) => tracing::warn!(error = %err, "fleet_sessions: prune failed"),
@@ -273,8 +283,8 @@ pub fn recover_after_restart(app: &AppHandle) {
     if RECOVERED.load(Ordering::SeqCst) {
         return;
     }
-    // Snapshot Athena-owned mid-task orphan ids under the lock; act outside it.
-    let strays: Vec<String> = {
+    // Snapshot mid-task orphans under the lock; act outside it.
+    let strays: Vec<(String, Option<String>, Option<String>)> = {
         let map = registry()
             .sessions
             .lock()
@@ -289,14 +299,34 @@ pub fn recover_after_restart(app: &AppHandle) {
                 s.child_pid.is_none()
                     && matches!(
                         s.state,
-                        FleetSessionState::Running | FleetSessionState::AwaitingInput
+                        FleetSessionState::Running
+                            | FleetSessionState::Idle
+                            | FleetSessionState::AwaitingInput
                     )
             })
-            .map(|s| s.id.clone())
+            .map(|s| {
+                (
+                    s.id.clone(),
+                    s.run_label.clone(),
+                    s.claude_session_id.clone(),
+                )
+            })
             .collect()
     };
     RECOVERED.store(true, Ordering::SeqCst);
-    for sid in strays {
+    for (sid, run_label, claude_session_id) in strays {
+        // A one-shot worker restored mid-task is settled from its transcript,
+        // never from a timer: the CLI wrote what it was doing when the app
+        // went down, and that record says whether the turn had ENDED or was
+        // KILLED. Left to the ticker, both read "No log growth for 6 min" —
+        // and the abandoned-dispatch sweep then released a merged, finished
+        // delivery as "worker ended without write-back" (bank-contracts
+        // 672ce81d, 2026-09-10 → 09-13, three restarts).
+        if super::classify::is_one_shot_worker_label(run_label.as_deref())
+            && settle_restored_worker(app, &sid, claude_session_id.as_deref())
+        {
+            continue;
+        }
         if !registry().is_athena_owned(&sid) {
             continue;
         }
@@ -309,10 +339,192 @@ pub fn recover_after_restart(app: &AppHandle) {
     }
 }
 
+/// What a restored one-shot worker's transcript says should become of it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum RestoredSettlement {
+    /// The turn had ended: trailing assistant text, no tool call outstanding.
+    /// `reason` is the same reason the live `result`-event path would have
+    /// parked it with (`Task complete: …` for a declared completion, the
+    /// unmarked-finish reason otherwise), so every later reader — the
+    /// abandoned-dispatch sweep included — sees a finished worker, not a
+    /// silent one.
+    Finished { reason: String },
+    /// The turn was killed inside a tool call: a `tool_use` with no
+    /// `tool_result` ever written. Parked `Stale` with a reason that says so,
+    /// which is what tells "killed" apart from "went quiet".
+    Killed { reason: String },
+    /// The worker declared itself blocked. Parked `AwaitingInput` with the
+    /// declaration, as the live path does.
+    Blocked { reason: String },
+    /// Nothing the transcript can settle (no transcript, a question on the
+    /// screen, a limit banner, or an unreadable tail) — the caller keeps the
+    /// pre-existing behaviour.
+    Leave,
+}
+
+/// Classify a restored worker's transcript tail. Pure; unit-tested below.
+///
+/// Reuses the parked-state classifier the ticker already trusts
+/// (`classify::classify_parked`) and the turn-end reader the live headless
+/// path uses (`classify::worker_turn_end`), so a restart reaches the SAME
+/// verdict the app would have reached had it been up when the turn ended.
+pub(super) fn restored_settlement(tail: &[String]) -> RestoredSettlement {
+    use super::classify::{
+        classify_parked, worker_turn_end, HungKind, ParkedVerdict, WorkerTurnEnd,
+    };
+    // `grew_recently = false`: the app was down, so nothing about the
+    // transcript is "recent" and a flat tail is exactly what we are reading.
+    match classify_parked(tail, None, false) {
+        ParkedVerdict::Done { summary } => match worker_turn_end(Some(&summary)) {
+            WorkerTurnEnd::Declared { summary } => RestoredSettlement::Finished {
+                reason: format!("Task complete: {summary}"),
+            },
+            WorkerTurnEnd::Unmarked { reason } => RestoredSettlement::Finished { reason },
+            WorkerTurnEnd::Blocked { reason } => RestoredSettlement::Blocked { reason },
+            // A limit banner as the final text: the limit-retry lane owns
+            // that shape and needs a process to act on. Nothing to settle.
+            WorkerTurnEnd::Limit { .. } => RestoredSettlement::Leave,
+        },
+        ParkedVerdict::Hung(HungKind::MidTool) => RestoredSettlement::Killed {
+            reason: "Killed inside a tool call before the app restarted — the transcript \
+                     ends on a tool call that never returned. Its worktree may hold \
+                     unfinished work; nothing was declared."
+                .to_string(),
+        },
+        _ => RestoredSettlement::Leave,
+    }
+}
+
+/// Apply [`restored_settlement`] to one restored one-shot worker. Returns
+/// `true` when the row was settled (and persisted), `false` when the caller
+/// should fall through to the pre-existing recovery rules.
+fn settle_restored_worker(
+    app: &AppHandle,
+    session_id: &str,
+    claude_session_id: Option<&str>,
+) -> bool {
+    let Some(csid) = claude_session_id else {
+        return false;
+    };
+    let Some(tail) = super::transcript_read::tail_lines(csid) else {
+        return false;
+    };
+    let (to, reason) = match restored_settlement(&tail) {
+        RestoredSettlement::Finished { reason } => (FleetSessionState::Finished, reason),
+        RestoredSettlement::Killed { reason } => (FleetSessionState::Stale, reason),
+        RestoredSettlement::Blocked { reason } => (FleetSessionState::AwaitingInput, reason),
+        RestoredSettlement::Leave => return false,
+    };
+    let Some(prev) = registry().settle_restored(session_id, to, &reason) else {
+        return false;
+    };
+    tracing::info!(
+        session_id,
+        from = prev,
+        to = state_to_token(to),
+        reason = %reason,
+        "fleet: restored one-shot worker settled from its transcript"
+    );
+    super::pty::emit_registry_changed(app, "updated", session_id);
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::types::FleetSessionMode;
     use super::*;
+
+    fn assistant_text(text: &str) -> String {
+        serde_json::json!({
+            "type": "assistant",
+            "message": { "content": [ { "type": "text", "text": text } ] }
+        })
+        .to_string()
+    }
+
+    fn assistant_tool_use(id: &str, name: &str) -> String {
+        serde_json::json!({
+            "type": "assistant",
+            "message": { "content": [ { "type": "tool_use", "id": id, "name": name, "input": {} } ] }
+        })
+        .to_string()
+    }
+
+    fn tool_result(id: &str) -> String {
+        serde_json::json!({
+            "type": "user",
+            "message": { "content": [ { "type": "tool_result", "tool_use_id": id, "content": "ok" } ] }
+        })
+        .to_string()
+    }
+
+    /// bank-contracts 672ce81d: the tail is a green `git status` result and a
+    /// closing summary. That is a FINISHED worker, whatever a silence timer
+    /// says three restarts later.
+    #[test]
+    fn a_trailing_summary_with_nothing_outstanding_is_a_finished_worker() {
+        let tail = vec![
+            assistant_tool_use("t1", "Bash"),
+            tool_result("t1"),
+            assistant_text("Done. Delivery branch is clean, main fast-forwards onto it."),
+        ];
+        match restored_settlement(&tail) {
+            RestoredSettlement::Finished { reason } => {
+                assert!(
+                    reason.starts_with(super::super::classify::UNMARKED_END_PREFIX),
+                    "no completion line was declared, so none is forged: {reason}"
+                );
+                assert!(reason.contains("Delivery branch is clean"));
+            }
+            other => panic!("expected Finished, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_declared_completion_keeps_its_task_complete_prefix() {
+        let tail = vec![assistant_text(
+            "FLEET:DONE — shipped the parser and its tests",
+        )];
+        match restored_settlement(&tail) {
+            RestoredSettlement::Finished { reason } => {
+                assert!(reason.starts_with("Task complete: "), "{reason}");
+                assert!(reason.contains("shipped the parser"));
+            }
+            other => panic!("expected Finished, got {other:?}"),
+        }
+    }
+
+    /// bank-contracts c24eb093: a Bash `tool_use` resolving a merge conflict,
+    /// no `tool_result` ever written. KILLED, and the reason says so.
+    #[test]
+    fn a_dangling_tool_call_is_a_killed_worker() {
+        let tail = vec![
+            assistant_text("Resolving the conflict in context-map.json."),
+            assistant_tool_use("t9", "Bash"),
+        ];
+        match restored_settlement(&tail) {
+            RestoredSettlement::Killed { reason } => {
+                assert!(reason.contains("Killed inside a tool call"), "{reason}");
+            }
+            other => panic!("expected Killed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_blocked_declaration_parks_awaiting_and_a_limit_banner_is_left_alone() {
+        let blocked = vec![assistant_text(
+            "FLEET:BLOCKED — the vault has no GitHub token",
+        )];
+        assert!(matches!(
+            restored_settlement(&blocked),
+            RestoredSettlement::Blocked { .. }
+        ));
+        let limit = vec![assistant_text(
+            "You've reached your Fable limit. Switch to another model, or manage usage.",
+        )];
+        assert_eq!(restored_settlement(&limit), RestoredSettlement::Leave);
+        assert_eq!(restored_settlement(&[]), RestoredSettlement::Leave);
+    }
 
     fn sample_inner() -> FleetSessionInner {
         FleetSessionInner {
