@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2, CloudUpload } from 'lucide-react';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -9,7 +10,6 @@ import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoU
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 import { applyTelemetrySink } from '@/lib/analytics';
-import { getUpdateHistory, clearUpdateHistory, type UpdateHistoryEntry } from '@/lib/updateHistory';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -26,13 +26,11 @@ export default function AccountSettings() {
   const logout = useAuthStore((s) => s.logout);
 
   const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
-  const [telemetryChanged, setTelemetryChanged] = useState(false);
   const { isChecking, lastChecked, checkForUpdate } = useAutoUpdater();
   const [appVersion, setAppVersion] = useState<string | null>(null);
   // Last manual-check result, surfaced inline in the card so the result
   // persists after the toast auto-dismisses. Cleared after 6s.
   const [lastOutcome, setLastOutcome] = useState<CheckOutcome | null>(null);
-  const [history, setHistory] = useState<UpdateHistoryEntry[]>([]);
   const outcomeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearError = () => useAuthStore.setState({ error: null });
   const { t } = useTranslation();
@@ -40,18 +38,15 @@ export default function AccountSettings() {
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(silentCatch('AccountSettings:getVersion'));
-    setHistory(getUpdateHistory());
     return () => { if (outcomeTimer.current) clearTimeout(outcomeTimer.current); };
   }, []);
 
   const handleTelemetryToggle = () => {
     const next = !telemetryOn;
     setTelemetryEnabled(next);
-    // Stop/resume usage tracking immediately (no restart). Error reporting
-    // still needs a restart — hence the note below stays.
+    // Stop/resume usage tracking immediately (no restart).
     applyTelemetrySink(next);
     setTelemetryOn(next);
-    setTelemetryChanged(true);
   };
 
   const handleCheckForUpdate = async () => {
@@ -77,24 +72,18 @@ export default function AccountSettings() {
     {
       id: 'telemetry',
       label: s.telemetry_title,
-      icon: <Activity className="w-4 h-4 text-rose-400" />,
+      // A single title + toggle row: no card header, the row IS the section.
+      card: false,
       content: (
-        <div className="space-y-3">
-          <p className="typo-body text-foreground leading-relaxed">{s.telemetry_description}</p>
+        <SectionCard>
           <SettingRow
             variant="card"
+            icon={<Activity className="w-4 h-4 text-rose-400" />}
             label={s.telemetry_toggle}
-            description={telemetryOn ? s.telemetry_on : s.telemetry_off}
             checked={telemetryOn}
             onChange={handleTelemetryToggle}
           />
-          {telemetryChanged && (
-            <p className="typo-caption text-amber-400/80 flex items-center gap-1.5 px-1">
-              <RefreshCw className="w-3 h-3" />
-              {s.telemetry_restart}
-            </p>
-          )}
-        </div>
+        </SectionCard>
       ),
     },
     {
@@ -146,36 +135,6 @@ export default function AccountSettings() {
               </span>
             )}
           </div>
-
-          {history.length > 0 && (
-            <div className="border-t border-primary/10 pt-4 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
-                  {s.updates_history_title}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { clearUpdateHistory(); setHistory([]); }}
-                  className="typo-caption text-foreground hover:text-primary transition-colors"
-                >
-                  {t.common.clear}
-                </button>
-              </div>
-              <ul className="space-y-1.5">
-                {history.map((entry) => (
-                  <li
-                    key={`${entry.version}-${entry.at}`}
-                    className="flex items-center justify-between gap-3 typo-caption"
-                  >
-                    <span className="font-mono text-foreground">v{entry.version}</span>
-                    <span className="text-foreground">
-                      {formatRelativeTime(new Date(entry.at).toISOString())}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       ),
     },
@@ -284,7 +243,8 @@ export default function AccountSettings() {
       />
 
       <ContentBody centered>
-        <SettingsScaffold sections={sections} navAriaLabel={s.title} />
+        {/* Four short sections — no quick-nav rail needed. */}
+        <SettingsScaffold sections={sections} navAriaLabel={s.title} showNav={false} maxWidth="max-w-3xl" />
       </ContentBody>
     </ContentBox>
   );
