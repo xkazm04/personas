@@ -24,6 +24,7 @@ pub mod dev_workspaces;
 pub mod feed_impact;
 /// The `/note-task` skill's one gated door back into the app (the Notepad).
 pub mod notepad_ingest;
+pub mod replay_queue;
 pub mod schema_vocabulary;
 pub mod workspace_divergence;
 pub mod workspace_harvest;

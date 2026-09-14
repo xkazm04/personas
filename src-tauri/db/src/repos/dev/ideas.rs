@@ -309,6 +309,34 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
     })
 }
 
+/// [`find_idea_by_id_prefix`] without a project: the replay queue applies
+/// outcomes workers wrote to disk, and an `outcome-2e06b79c.json` names no
+/// project. Same contract otherwise — at least 8 characters, `None` for no
+/// match AND for an ambiguous prefix (never a coin-flip), an exact full id
+/// always wins. The reference is restricted to uuid characters so it can sit
+/// in a `LIKE` pattern with nothing to escape.
+pub fn find_idea_by_id_or_prefix(pool: &DbPool, id_ref: &str) -> Result<Option<DevIdea>, AppError> {
+    let id_ref = id_ref.trim();
+    if id_ref.len() < 8 || !id_ref.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+        return Ok(None);
+    }
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_id_or_prefix", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE id LIKE ?1 || '%' ORDER BY id ASC LIMIT 2"
+        ))?;
+        let mut rows = stmt
+            .query_map(params![id_ref], row_to_idea)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        match rows.len() {
+            0 => Ok(None),
+            1 => Ok(rows.pop()),
+            _ => Ok(rows.into_iter().find(|i| i.id == id_ref)),
+        }
+    })
+}
+
 /// The projection [`row_to_idea`] actually consumes, named beside the mapper
 /// that reads it so the two cannot drift.
 ///

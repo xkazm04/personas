@@ -4133,6 +4133,20 @@ const NON_TERMINAL_TASK_STATUSES: &[&str] = &["running", "queued"];
 fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
     use crate::db::repos::dev::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
 
+    // FIRST, before any row is read: a worker whose bridge was unreachable
+    // when it finished queued its outcome under `~/.personas/replay/`. Applying
+    // that queue here is what stops the sweep below reading a queued write-back
+    // as a missing one (seven outcomes sat there four days, 2026-09-10 → 14,
+    // while their rows were released as abandoned and their ideas re-dispatched).
+    let drained = crate::commands::infrastructure::replay_queue::drain(pool);
+    if drained.wrote_anything() {
+        tracing::info!(
+            persona_id,
+            applied = drained.applied,
+            "persona_attention: queued write-backs applied before the dispatch sweep"
+        );
+    }
+
     let rows = match attention_ledger::list_by_persona(pool, persona_id, DISPATCH_SWEEP_LEDGER_ROWS)
     {
         Ok(r) => r,
@@ -4184,6 +4198,52 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
                 break; // still alive, or we could not tell — never guess a death
             };
 
+            // The worker is gone and wrote nothing back — but its BRANCH may
+            // still testify. A dispatch branch that has moved since the
+            // dispatch and is now an ancestor of the project's main is
+            // delivered work by any reading; writing `failed` over it hands
+            // the idea back to the backlog, and the next worker spends a run
+            // re-validating what is already on main (bank-contracts …-17,
+            // -18, -19: all merged, all released "worker ended without
+            // write-back"). So the verdict is `delivered`, through the same
+            // door the worker would have used, with a note that says it was
+            // inferred and from what.
+            if let Some(idea_id) = task.source_idea_id.as_deref() {
+                if let Some(evidence) =
+                    merged_delivery_evidence(pool, &task, &stats, &row.started_at)
+                {
+                    let input =
+                        crate::commands::infrastructure::app_master_writeback::IdeaOutcomeInput {
+                            outcome: "delivered".to_string(),
+                            note: Some(format!(
+                                "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             moved after the dispatch and is merged into `{}` (tip {}).",
+                                evidence.branch, evidence.main, evidence.tip
+                            )),
+                            branch: Some(evidence.branch.clone()),
+                            commit: Some(evidence.tip.clone()),
+                            pr_url: None,
+                        };
+                    match crate::commands::infrastructure::app_master_writeback::record_idea_outcome(
+                        pool, idea_id, &input,
+                    ) {
+                        Ok(_) => {
+                            closed += 1;
+                            tracing::info!(
+                                persona_id, task_id = %task.id, branch = %evidence.branch,
+                                tip = %evidence.tip,
+                                "persona_attention: worker ended without write-back but its \
+                                 branch is merged — recorded as delivered"
+                            );
+                        }
+                        Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
+                            "persona_attention: could not record the inferred delivery"),
+                    }
+                    continue;
+                }
+            }
+
             let error = format!("{ABANDONED_DISPATCH_ERROR_PREFIX}{end}");
             let now = chrono::Utc::now().to_rfc3339();
             match crate::db::repos::dev::tasks::update_task(
@@ -4213,6 +4273,113 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
         }
     }
     closed
+}
+
+/// What a dispatch branch says about a worker that never wrote back.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct MergeEvidence {
+    pub branch: String,
+    pub main: String,
+    /// The branch tip that is now reachable from `main`.
+    pub tip: String,
+}
+
+/// Merge evidence for one swept task: the dispatch's own `branch` (stamped by
+/// `dispatch_into_worktree`) against the task's project's main branch, moved
+/// since the ledger row's `started_at`. `None` whenever any link is missing
+/// — a dispatch that recorded no branch, a task on no project, an unreadable
+/// root — because absence of evidence is the existing verdict, not this one.
+fn merged_delivery_evidence(
+    pool: &DbPool,
+    task: &crate::db::models::DevTask,
+    stats: &serde_json::Value,
+    dispatched_at: &str,
+) -> Option<MergeEvidence> {
+    let branch = stats.get("branch").and_then(|v| v.as_str())?.trim();
+    if branch.is_empty() {
+        return None;
+    }
+    let project_id = task.project_id.as_deref()?;
+    let project = crate::db::repos::dev_tools::get_project_by_id(pool, project_id).ok()?;
+    let since = chrono::DateTime::parse_from_rfc3339(dispatched_at)
+        .ok()?
+        .timestamp();
+    git_merged_since(
+        Path::new(&project.root_path),
+        branch,
+        project.main_branch.as_deref(),
+        since,
+    )
+}
+
+/// `Some` when `branch` exists in the repository at `root`, its tip was
+/// committed at or after `since_unix`, and that tip is an ancestor of the
+/// main branch. Pure over the repository; every git failure is `None`.
+///
+/// The "moved since the dispatch" clause is load-bearing: a branch freshly
+/// forked off main is trivially an ancestor of main, so ancestry alone would
+/// certify a worker that did nothing. Residual false positive, stated: a
+/// worker that fast-forwarded main into its untouched branch and then died
+/// reads as merged. That worker also left main exactly as it found it, so
+/// the wrong verdict costs one idea marked delivered with a note naming the
+/// inference — and the note is there to be read.
+pub(crate) fn git_merged_since(
+    root: &Path,
+    branch: &str,
+    main: Option<&str>,
+    since_unix: i64,
+) -> Option<MergeEvidence> {
+    if !root.is_dir() {
+        return None;
+    }
+    let git = |args: &[&str]| -> Option<String> {
+        let out = std::process::Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .ok()?;
+        out.status
+            .success()
+            .then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
+    };
+    let tip = git(&[
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        &format!("{branch}^{{commit}}"),
+    ])?;
+    if tip.is_empty() {
+        return None;
+    }
+    let main = match main.map(str::trim).filter(|m| !m.is_empty()) {
+        Some(m) => m.to_string(),
+        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+            .map(|r| r.trim_start_matches("origin/").to_string())
+            .or_else(|| {
+                ["main", "master"]
+                    .into_iter()
+                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
+                    .map(str::to_string)
+            })?,
+    };
+    let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
+    if committed_at < since_unix {
+        return None;
+    }
+    // `merge-base --is-ancestor` answers with its exit status only.
+    let is_ancestor = std::process::Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["merge-base", "--is-ancestor", &tip, &main])
+        .status()
+        .ok()?
+        .success();
+    is_ancestor.then(|| MergeEvidence {
+        branch: branch.to_string(),
+        main,
+        tip,
+    })
 }
 
 /// The task ids a decide row's `stats_json` says its dispatch minted: the
@@ -7943,6 +8110,180 @@ mod attention_tests {
                 .state,
             "finished"
         );
+    }
+
+    /// A throwaway repository for the merge-evidence tests: `main` with one
+    /// base commit. Returns the directory and the base commit's unix time.
+    fn scratch_repo() -> (tempfile::TempDir, i64) {
+        let dir = tempfile::tempdir().unwrap();
+        let git = |args: &[&str]| {
+            let out = std::process::Command::new("git")
+                .arg("-C")
+                .arg(dir.path())
+                .args(args)
+                .output()
+                .expect("git runs");
+            assert!(
+                out.status.success(),
+                "git {args:?}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+            String::from_utf8_lossy(&out.stdout).trim().to_string()
+        };
+        git(&["init", "-q", "-b", "main"]);
+        git(&["config", "user.email", "t@example.com"]);
+        git(&["config", "user.name", "t"]);
+        git(&["config", "commit.gpgsign", "false"]);
+        std::fs::write(dir.path().join("a.txt"), "base\n").unwrap();
+        git(&["add", "a.txt"]);
+        git(&["commit", "-q", "-m", "base"]);
+        let base_at: i64 = git(&["log", "-1", "--format=%ct"]).parse().unwrap();
+        (dir, base_at)
+    }
+
+    fn git_in(dir: &Path, args: &[&str]) {
+        let out = std::process::Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args(args)
+            .output()
+            .expect("git runs");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    /// Commit one file change on `branch` (creating it off HEAD if needed).
+    fn commit_on(dir: &Path, branch: &str, file: &str) {
+        let out = std::process::Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args(["checkout", "-q", branch])
+            .output()
+            .unwrap();
+        if !out.status.success() {
+            git_in(dir, &["checkout", "-q", "-b", branch]);
+        }
+        std::fs::write(dir.path_join(file), format!("{branch}\n")).unwrap();
+        git_in(dir, &["add", file]);
+        git_in(dir, &["commit", "-q", "-m", &format!("work on {branch}")]);
+    }
+
+    trait PathJoin {
+        fn path_join(&self, file: &str) -> PathBuf;
+    }
+    impl PathJoin for Path {
+        fn path_join(&self, file: &str) -> PathBuf {
+            self.join(file)
+        }
+    }
+
+    #[test]
+    fn merge_evidence_needs_a_branch_that_moved_and_is_reachable_from_main() {
+        let (dir, base_at) = scratch_repo();
+        // A branch forked off main and never touched is an ancestor of main,
+        // and it is NOT evidence: its tip predates the dispatch.
+        git_in(dir.path(), &["branch", "autopilot/untouched"]);
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/untouched", None, base_at + 1),
+            None
+        );
+        // Work on a branch that is not merged: not evidence either.
+        commit_on(dir.path(), "autopilot/stranded", "b.txt");
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/stranded", Some("main"), 0),
+            None
+        );
+        // Work on a branch that main fast-forwarded onto: evidence, naming
+        // the tip that is now on main.
+        commit_on(dir.path(), "autopilot/shipped", "c.txt");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/shipped"]);
+        let evidence = git_merged_since(dir.path(), "autopilot/shipped", None, 0)
+            .expect("a merged, moved branch is evidence");
+        assert_eq!(evidence.branch, "autopilot/shipped");
+        assert_eq!(evidence.main, "main", "resolved without origin/HEAD");
+        assert_eq!(evidence.tip.len(), 40);
+        // Unknown branch, unknown root: nothing.
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/nope", None, 0),
+            None
+        );
+        assert_eq!(
+            git_merged_since(Path::new("/definitely/not/a/repo"), "main", None, 0),
+            None
+        );
+    }
+
+    /// bank-contracts …-19: the worker finished, its branch is on main, and it
+    /// never wrote back. The sweep records `delivered` through the write-back
+    /// door instead of `failed`, and the idea does NOT return to the backlog.
+    #[test]
+    fn a_merged_branch_turns_an_abandoned_dispatch_into_a_delivery() -> Result<(), AppError> {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let (dir, _) = scratch_repo();
+        let pid = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "merged",
+            &dir.path().to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?
+        .id;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({
+            "charterId": charter_id, "sessionId": "sess-merged", "branch": "autopilot/parser",
+        });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-merged", "taskId": task_id,
+                "branch": "autopilot/parser",
+            }),
+        );
+        // The worker's work lands on main AFTER the dispatch row was opened…
+        commit_on(dir.path(), "autopilot/parser", "parser.rs");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/parser"]);
+        // …and the worker ends without ever calling the door.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-merged",
+                "stale",
+                Some("No log growth for 6 min · restored after restart"),
+            ),
+        )?;
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+        let task = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(task.status, "completed", "delivered, not failed: {task:?}");
+        let desc = task.description.as_deref().unwrap_or("");
+        assert!(desc.contains("App Master outcome: delivered"), "{desc}");
+        assert!(desc.contains("Inferred by the dispatch sweep"), "{desc}");
+        assert!(desc.contains("autopilot/parser"), "{desc}");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "a delivered idea is not offered again"
+        );
+        // Idempotent: the row is settled, the next wake has nothing to close.
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        Ok(())
     }
 
     /// The whole P3 loop over a real database: a dispatch mints a task, its

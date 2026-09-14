@@ -179,6 +179,23 @@ fn outcome_block(outcome: &str, input: &IdeaOutcomeInput) -> String {
     s
 }
 
+/// True when the idea's latest task already carries `outcome` — the replay
+/// queue asks this before applying a queued outcome, so an outcome a human
+/// replayed by hand (or an earlier drain whose file move failed) is filed
+/// rather than appended a second time.
+pub fn outcome_already_recorded(
+    db: &DbPool,
+    idea_id: &str,
+    outcome: &str,
+) -> Result<bool, AppError> {
+    let Some(task) = repo::latest_task_for_idea(db, idea_id)? else {
+        return Ok(false);
+    };
+    let marker = format!("--- App Master outcome: {outcome} ---");
+    Ok(task.status == task_status_for(outcome)
+        && task.description.as_deref().unwrap_or("").contains(&marker))
+}
+
 /// Write a delivery run's outcome back onto the idea it was given.
 ///
 /// Blocking (rusqlite throughout) — call it on the blocking pool.
