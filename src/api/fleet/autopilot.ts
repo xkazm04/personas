@@ -11,6 +11,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { setAppSetting } from '@/api/system/settings';
 import type { AutopilotStatus } from '@/lib/bindings/AutopilotStatus';
+import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 
 /** `settings_keys::AUTONOMOUS_ATTENTION_LOOP` — boolean-validated, default off. */
 export const AUTOPILOT_SWITCH_KEY = 'autonomous_attention_loop';
@@ -22,3 +23,13 @@ export const fleetAutopilotStatus = () => invoke<AutopilotStatus>('fleet_autopil
  *  setting and plans against the live pacing. */
 export const setFleetAutopilot = (enabled: boolean) =>
   setAppSetting(AUTOPILOT_SWITCH_KEY, enabled ? 'true' : 'false');
+
+/** The next tick as the loop would plan it now — nothing spent, opened or
+ *  enqueued. Rows arrive in the order the loop will walk. */
+export const fleetDispatchPreview = () => invoke<DispatchPreviewView>('fleet_dispatch_preview');
+
+/** Write the operator's global dispatch order, first to last. The next tick
+ *  walks ranked personas in this order before any unranked one. An empty list
+ *  ranks nobody (pure least-recently-served). Returns the list as stored. */
+export const setFleetDispatchOrder = (personaIds: readonly string[]) =>
+  invoke<string[]>('fleet_dispatch_order_set', { personaIds: [...personaIds] });

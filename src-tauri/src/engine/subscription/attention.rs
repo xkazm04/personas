@@ -547,9 +547,14 @@ pub(crate) struct AttentionOrderRow<'a> {
     pub created_at: &'a str,
     /// The operator switched this persona on and it is owed a pass NOW.
     pub wake_pending: bool,
+    /// The persona's position in the operator's GLOBAL dispatch order
+    /// (`fleet_autopilot.dispatch_order`, 0 = first), or `None` when the
+    /// operator never ranked it. See [`order_least_recently_served`].
+    pub rank: Option<usize>,
 }
 
-/// Order the tick's personas by NEED, not by age.
+/// Order the tick's personas by the operator's rank, then by NEED, never by
+/// age.
 ///
 /// The loop dispatches ONE persona per tick and used to iterate the roster in
 /// creation order, so a persona was reached only when every older persona was
@@ -558,28 +563,282 @@ pub(crate) struct AttentionOrderRow<'a> {
 /// newest took two and ran 45 minutes past its own `nextWakeMinutes: 30`.
 /// With a growing roster that is seniority starvation, not scheduling.
 ///
+/// Least-recently-served alone has its own collision (2026-09-14): two
+/// personas the operator considers unequal — an App Master stewarding a live
+/// product and a nightly sweep — trade places on every tick purely by who was
+/// served last, so no persona can be told "you go first when a slot opens".
+/// Under Autopilot, where a tick has `slots` starts to give out and the
+/// five-hour window may allow only one, WHICH persona takes that one start
+/// must be the operator's call, and a global order is the only structure that
+/// preserves a position for certain: a per-persona number can tie or collide,
+/// a list position cannot.
+///
 /// The total order, most-deserving first:
 /// 1. **a pending wake request** — the operator is asking now, and a wake is
 ///    already privileged at the interval-floor rung (`admit_persona`);
-/// 2. **least recently served** — ascending by the newest non-refusal ledger
+/// 2. **the operator's rank** — ascending position in the dispatch order;
+///    an unranked persona sorts after every ranked one;
+/// 3. **least recently served** — ascending by the newest non-refusal ledger
 ///    `started_at`; a persona never served has `None`, which sorts first;
-/// 3. **roster age** — ascending `created_at`, the old behaviour, kept as the
+/// 4. **roster age** — ascending `created_at`, the old behaviour, kept as the
 ///    tiebreak so a tie is broken the way it always was;
-/// 4. **persona id** — so the order is total and reproducible even when two
+/// 5. **persona id** — so the order is total and reproducible even when two
 ///    personas were created in the same millisecond.
 ///
-/// This changes only WHICH persona is considered first. The one-dispatch-per-
-/// tick rule, the lane priority, the interval floors and the whole admission
-/// ladder are untouched: a persona reached first still has to clear them.
+/// This changes only WHICH persona is considered first. The lane priority,
+/// the interval floors and the whole admission ladder are untouched: a
+/// persona reached first still has to clear them — which is also what keeps
+/// a rank from starving the rest: the top persona is refused by its own
+/// interval floor between passes, and the slot goes to the next in order.
 pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
     rows.sort_by(|a, b| {
         // `true` must come first, so compare b→a on this key only.
         b.wake_pending
             .cmp(&a.wake_pending)
+            .then_with(|| rank_key(a.rank).cmp(&rank_key(b.rank)))
             .then_with(|| a.last_served_at.cmp(&b.last_served_at))
             .then_with(|| a.created_at.cmp(b.created_at))
             .then_with(|| a.persona_id.cmp(b.persona_id))
     });
+}
+
+/// `Some(n)` sorts before `None`: `(0, n)` for ranked, `(1, 0)` for unranked.
+fn rank_key(rank: Option<usize>) -> (u8, usize) {
+    match rank {
+        Some(n) => (0, n),
+        None => (1, 0),
+    }
+}
+
+/// The operator's global dispatch order — persona ids, first to last — as
+/// written by the Orchestration tab. Absent, empty or unparseable = nobody is
+/// ranked, and the order falls through to need.
+pub(crate) fn read_dispatch_order(pool: &DbPool) -> Vec<String> {
+    settings::get(pool, settings_keys::FLEET_DISPATCH_ORDER)
+        .ok()
+        .flatten()
+        .and_then(|v| serde_json::from_str::<Vec<String>>(&v).ok())
+        .unwrap_or_default()
+}
+
+// ── Next-tick preview (the Orchestration tab) ──────────────────────────────
+
+/// What the next tick would do with one persona, by the same ladder.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum DispatchVerdict {
+    /// Admitted, has work, and there is a start left for it: it would be the
+    /// `slot`-th (1-based) persona started this tick.
+    Dispatch { slot: u32 },
+    /// Admitted with work, but every start of this tick is taken by a persona
+    /// ranked above it. It waits for a later tick or a freed slot.
+    WaitsForSlot,
+    /// Admitted, but the plan would only enqueue a DB-side sleep
+    /// consolidation — no worker, no slot spent.
+    Maintenance,
+    /// Admitted, nothing pending in any lane.
+    Idle,
+    /// Refused by one rung of the ladder; `kind` is
+    /// `AttentionRefusal::kind`, `reason` its `describe`.
+    Refused { refusal: String, reason: String },
+}
+
+/// One persona in the order the loop will walk, with what the next tick
+/// would do to it. Every field the Orchestration tab renders.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchPreviewRow {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+    /// 1-based position in the walk.
+    pub position: u32,
+    /// The operator's rank (1-based) when ranked; `None` = unranked, sorted
+    /// after every ranked persona by need.
+    pub rank: Option<u32>,
+    pub wake_pending: bool,
+    pub last_served_at: Option<String>,
+    /// The interval floor the persona is owed between passes, in minutes —
+    /// an App Master's own `nextWakeMinutes`, else the most conservative
+    /// charter interval.
+    #[ts(type = "number")]
+    pub interval_minutes: i64,
+    pub self_paced: bool,
+    pub app_master: bool,
+    /// Active attention charters.
+    pub charters: u32,
+    pub verdict: DispatchVerdict,
+    /// The lane the tick would take (`arrivals` / `advance` / `improve` /
+    /// `decide` / `maintenance`), when admitted with work.
+    pub lane: Option<String>,
+}
+
+/// The next tick as the loop would plan it right now, without planning it.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchPreview {
+    /// Starts this tick may make: the pacing slots capped by the running-work
+    /// headroom and `MAX_DISPATCHES_PER_TICK` — zero while the pacing holds.
+    pub budget: u32,
+    /// Personas that would be started (`Dispatch` verdicts).
+    pub would_start: u32,
+    /// Personas admitted with work but out of budget (`WaitsForSlot`).
+    pub waiting: u32,
+    pub rows: Vec<DispatchPreviewRow>,
+}
+
+/// Walk the next tick's roster with a PROBING admission ladder and report
+/// what each persona would get. Reads only: the wake request is looked at,
+/// not spent; no ledger row is opened; no job is enqueued. `pacing_slots` is
+/// the Autopilot pacing's answer (0 = holding), so the preview shows the
+/// same starts the tick would hand out.
+///
+/// `find_work` is the tick's own lane measurement (channel arrivals, the
+/// sleep cycle's dry admission, the charter due for advancement, the daily
+/// self-review) and is read-only by construction; it is what makes the
+/// preview say *which lane*, not only *whether*.
+pub(crate) fn preview_tick(
+    pool: &DbPool,
+    pacing_slots: usize,
+) -> Result<DispatchPreview, AppError> {
+    let budget = if pacing_slots == 0 {
+        0
+    } else {
+        tick_dispatch_budget(pool).min(pacing_slots)
+    };
+    let charters = responsibilities::list_active_with_attention(pool)?;
+    let mut roster: Vec<&str> = Vec::new();
+    let mut grouped: HashMap<&str, Vec<&PersonaResponsibility>> = HashMap::new();
+    for c in &charters {
+        let entry = grouped.entry(c.persona_id.as_str()).or_default();
+        if entry.is_empty() {
+            roster.push(c.persona_id.as_str());
+        }
+        entry.push(c);
+    }
+    let served: HashMap<String, String> =
+        attention_ledger::latest_started_per_persona(pool, KIND_ATTENTION)?
+            .into_iter()
+            .collect();
+    let wake_requests = read_wake_requests(pool);
+    let dispatch_order = read_dispatch_order(pool);
+    let order = ordered_roster(&roster, &grouped, &served, &wake_requests, &dispatch_order);
+
+    let ids: Vec<String> = roster.iter().map(|s| s.to_string()).collect();
+    let names: HashMap<String, Persona> = persona_repo::get_by_ids(pool, &ids)?
+        .into_iter()
+        .map(|p| (p.id.clone(), p))
+        .collect();
+
+    let mut rows = Vec::with_capacity(order.len());
+    let mut scratch = TickCounts::default();
+    let mut started: u32 = 0;
+    let mut waiting: u32 = 0;
+    for (i, row) in order.iter().enumerate() {
+        let pid = row.persona_id;
+        let persona_charters = &grouped[pid];
+        let (interval_minutes, self_paced) = admission_interval(persona_charters);
+        let app_master = is_app_master(persona_charters);
+        let mut lane = None;
+        let verdict = match admit_persona(pool, pid, persona_charters, &mut scratch, true)? {
+            Admission::Refused(reason) => DispatchVerdict::Refused {
+                refusal: reason.kind().to_string(),
+                reason: reason.describe(),
+            },
+            Admission::Admitted { woke, .. } => {
+                let work = if woke && app_master {
+                    Some(LaneWork::Decide)
+                } else {
+                    find_work(pool, pid, persona_charters)?
+                };
+                match work {
+                    None => DispatchVerdict::Idle,
+                    Some(LaneWork::Maintenance) => {
+                        lane = Some(LANE_MAINTENANCE.to_string());
+                        DispatchVerdict::Maintenance
+                    }
+                    Some(w) => {
+                        lane = Some(
+                            match w {
+                                LaneWork::Arrivals { .. } => LANE_ARRIVALS,
+                                LaneWork::Advance { .. } => LANE_ADVANCE,
+                                LaneWork::Improve => LANE_IMPROVE,
+                                LaneWork::Decide => LANE_DECIDE,
+                                LaneWork::Maintenance => LANE_MAINTENANCE,
+                            }
+                            .to_string(),
+                        );
+                        if started < budget as u32 {
+                            started += 1;
+                            DispatchVerdict::Dispatch { slot: started }
+                        } else {
+                            waiting += 1;
+                            DispatchVerdict::WaitsForSlot
+                        }
+                    }
+                }
+            }
+        };
+        let persona = names.get(pid);
+        rows.push(DispatchPreviewRow {
+            persona_id: pid.to_string(),
+            persona_name: persona
+                .map(|p| p.name.clone())
+                .unwrap_or_else(|| pid.to_string()),
+            persona_icon: persona.and_then(|p| p.icon.clone()),
+            persona_color: persona.and_then(|p| p.color.clone()),
+            position: i as u32 + 1,
+            rank: row.rank.map(|r| r as u32 + 1),
+            wake_pending: row.wake_pending,
+            last_served_at: row.last_served_at.map(str::to_string),
+            interval_minutes,
+            self_paced: self_paced.is_some(),
+            app_master,
+            charters: persona_charters.len() as u32,
+            verdict,
+            lane,
+        });
+    }
+    Ok(DispatchPreview {
+        budget: budget as u32,
+        would_start: started,
+        waiting,
+        rows,
+    })
+}
+
+/// The tick's roster in dispatch order: one row per persona holding an
+/// attention charter, ordered by [`order_least_recently_served`]. Three reads
+/// for the whole tick (last served, wake requests, the operator's order), not
+/// per persona. `read_wake_requests` only LOOKS: a request is spent inside
+/// `admit_persona`, exactly once. Shared by the plan and by
+/// [`preview_tick`], so the board shows the order the loop will walk.
+fn ordered_roster<'a>(
+    roster: &[&'a str],
+    grouped: &HashMap<&'a str, Vec<&'a PersonaResponsibility>>,
+    served: &'a HashMap<String, String>,
+    wake_requests: &[String],
+    dispatch_order: &[String],
+) -> Vec<AttentionOrderRow<'a>> {
+    let mut order: Vec<AttentionOrderRow<'a>> = roster
+        .iter()
+        .map(|pid| AttentionOrderRow {
+            persona_id: pid,
+            last_served_at: served.get(*pid).map(String::as_str),
+            created_at: grouped[pid]
+                .first()
+                .map(|c| c.created_at.as_str())
+                .unwrap_or(""),
+            wake_pending: wake_requests.iter().any(|w| w == pid),
+            rank: dispatch_order.iter().position(|r| r == pid),
+        })
+        .collect();
+    order_least_recently_served(&mut order);
+    order
 }
 
 /// The decision half: roster → admission ladder per persona → lane choice for
@@ -617,32 +876,19 @@ pub(crate) fn plan_tick_with_budget(
     }
     counts.personas = roster.len();
 
-    // 4b. …then order by NEED. Two reads for the whole tick, not per persona.
-    //     `read_wake_requests` only LOOKS: the request is spent inside
-    //     `admit_persona`, exactly once, as before.
+    // 4b. …then order by the operator's rank and by NEED (`ordered_roster`).
     let served: HashMap<String, String> =
         attention_ledger::latest_started_per_persona(pool, KIND_ATTENTION)?
             .into_iter()
             .collect();
     let wake_requests = read_wake_requests(pool);
-    let mut order: Vec<AttentionOrderRow<'_>> = roster
-        .iter()
-        .map(|pid| AttentionOrderRow {
-            persona_id: pid,
-            last_served_at: served.get(*pid).map(String::as_str),
-            created_at: grouped[pid]
-                .first()
-                .map(|c| c.created_at.as_str())
-                .unwrap_or(""),
-            wake_pending: wake_requests.iter().any(|w| w == pid),
-        })
-        .collect();
-    order_least_recently_served(&mut order);
+    let dispatch_order = read_dispatch_order(pool);
+    let order = ordered_roster(&roster, &grouped, &served, &wake_requests, &dispatch_order);
 
     for row in order {
         let pid = row.persona_id;
         let persona_charters = &grouped[pid];
-        let admission = match admit_persona(pool, pid, persona_charters, &mut counts) {
+        let admission = match admit_persona(pool, pid, persona_charters, &mut counts, false) {
             Ok(a) => a,
             Err(e) => {
                 tracing::warn!(persona_id = %pid, error = %e,
@@ -840,11 +1086,17 @@ enum Admission {
 }
 
 /// The six checks IN ORDER; the first refusal wins.
+///
+/// `probe`: answer without spending anything. The one write on this ladder is
+/// the wake request consumed at rung (c); a probe only LOOKS at it, so the
+/// Orchestration tab's next-tick preview ([`preview_tick`]) can run the same
+/// ladder the tick runs and leave the persona exactly as owed as it found it.
 fn admit_persona(
     pool: &DbPool,
     persona_id: &str,
     charters: &[&PersonaResponsibility],
     counts: &mut TickCounts,
+    probe: bool,
 ) -> Result<Admission, AppError> {
     // (a) in-flight: a young open row refuses; stale open rows are noted.
     for row in attention_ledger::list_open(pool, persona_id, KIND_ATTENTION)? {
@@ -902,7 +1154,11 @@ fn admit_persona(
     // wake that lingered until its first refusal was the reason cycle 1's
     // App Masters never reached their decision.
     let (interval, self_paced) = admission_interval(charters);
-    let woke = consume_wake_request(pool, persona_id);
+    let woke = if probe {
+        read_wake_requests(pool).iter().any(|w| w == persona_id)
+    } else {
+        consume_wake_request(pool, persona_id)
+    };
     if woke {
         tracing::info!(
             persona_id,
@@ -5481,6 +5737,7 @@ mod attention_tests {
             last_served_at: last_served,
             created_at: created,
             wake_pending: false,
+            rank: None,
         }
     }
 
@@ -5551,6 +5808,48 @@ mod attention_tests {
             order_row("zz", same, created),
         ];
         assert_eq!(ordered(rows), vec!["aa", "zz"], "input order is irrelevant");
+    }
+
+    /// The operator's GLOBAL rank outranks need — a ranked persona is served
+    /// before an unranked one however overdue the latter is — but never a
+    /// wake, and among unranked personas need still decides.
+    #[test]
+    fn the_operators_rank_outranks_need_but_not_a_wake() {
+        let mut second = order_row(
+            "second",
+            Some("2026-09-08T12:00:00+00:00"),
+            "2026-09-06T09:00:00+00:00",
+        );
+        second.rank = Some(1);
+        let mut first = order_row(
+            "first",
+            Some("2026-09-08T12:59:00+00:00"), // served most recently of all
+            "2026-09-08T12:12:00+00:00",
+        );
+        first.rank = Some(0);
+        let starved = order_row("starved", None, "2026-09-01T09:00:00+00:00");
+        let overdue = order_row(
+            "overdue",
+            Some("2026-09-07T00:00:00+00:00"),
+            "2026-09-05T09:00:00+00:00",
+        );
+        assert_eq!(
+            ordered(vec![overdue, starved, second, first]),
+            vec!["first", "second", "starved", "overdue"],
+            "rank first, then the unranked by need"
+        );
+
+        let mut woken = order_row(
+            "woken",
+            Some("2026-09-08T13:00:00+00:00"),
+            "2026-09-08T12:12:00+00:00",
+        );
+        woken.wake_pending = true;
+        assert_eq!(
+            ordered(vec![first, woken]),
+            vec!["woken", "first"],
+            "a wake is the operator asking now and still outranks their standing order"
+        );
     }
 
     /// A pending WAKE REQUEST outranks the overdue ordering — a wake is the
@@ -6574,7 +6873,7 @@ mod attention_tests {
 
         let cap_refusal = |pool: &DbPool| -> Option<(i64, i64)> {
             let mut counts = TickCounts::default();
-            match admit_persona(pool, "p1", &charters, &mut counts).unwrap() {
+            match admit_persona(pool, "p1", &charters, &mut counts, false).unwrap() {
                 Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
                     Some((runs_today, cap))
                 }
@@ -6800,7 +7099,7 @@ mod attention_tests {
         // A lane row that names no charter still counts for a plain persona.
         ledger_pass(&pool, "p1", None, LANE_IMPROVE, "dispatched")?;
         let mut counts = TickCounts::default();
-        match admit_persona(&pool, "p1", &charters, &mut counts)? {
+        match admit_persona(&pool, "p1", &charters, &mut counts, false)? {
             Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
                 assert_eq!((runs_today, cap), (1, 1));
             }
@@ -6829,7 +7128,7 @@ mod attention_tests {
         }
         let refusal = |pid: &str, charters: &[&PersonaResponsibility]| {
             let mut counts = TickCounts::default();
-            match admit_persona(&pool, pid, charters, &mut counts).unwrap() {
+            match admit_persona(&pool, pid, charters, &mut counts, false).unwrap() {
                 Admission::Refused(AttentionRefusal::DailyCapReached { cap, .. }) => Some(cap),
                 _ => None,
             }

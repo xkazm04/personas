@@ -204,3 +204,82 @@ pub async fn fleet_autopilot_status(
         dispatched_today,
     })
 }
+
+/// The Orchestration tab's read: the next tick as the loop would plan it,
+/// with the pacing verdict that sets its budget. Nothing is spent, opened or
+/// enqueued (see `attention::preview_tick`).
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchPreviewView {
+    /// `autonomous_attention_loop`.
+    pub enabled: bool,
+    pub pacing: AutopilotPacing,
+    pub headroom: ActivePersonaHeadroom,
+    pub preview: crate::engine::subscription::DispatchPreview,
+    /// The operator's order as stored — ids that no longer hold a charter
+    /// are kept here so a persona that regains one keeps its place.
+    pub dispatch_order: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn fleet_dispatch_preview(
+    state: State<'_, Arc<AppState>>,
+) -> Result<DispatchPreviewView, AppError> {
+    require_auth(&state).await?;
+    let pacing = usage_pacing::verdict(&state.db, &state).await;
+    let slots = pacing.slots;
+    let pool = state.db.clone();
+    let (enabled, headroom, preview, dispatch_order) = tokio::task::spawn_blocking(move || {
+        let enabled = autonomy::global_enabled(&pool, autonomy::Action::AttentionLoop);
+        let headroom = active_persona_cap::active_persona_headroom(&pool)?;
+        let preview = crate::engine::subscription::preview_tick(&pool, slots)?;
+        let order = crate::engine::subscription::read_dispatch_order(&pool);
+        Ok::<_, AppError>((enabled, headroom, preview, order))
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("fleet_dispatch_preview: {e}")))??;
+    Ok(DispatchPreviewView {
+        enabled,
+        pacing,
+        headroom,
+        preview,
+        dispatch_order,
+    })
+}
+
+/// Write the operator's global dispatch order — the whole list, first to
+/// last. The next tick walks it. Ids are not checked against the roster on
+/// purpose: an order may name a persona that is disabled today and back
+/// tomorrow, and its place should survive the gap.
+#[tauri::command]
+pub async fn fleet_dispatch_order_set(
+    state: State<'_, Arc<AppState>>,
+    persona_ids: Vec<String>,
+) -> Result<Vec<String>, AppError> {
+    require_auth(&state).await?;
+    let mut seen = std::collections::HashSet::new();
+    let ids: Vec<String> = persona_ids
+        .into_iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty() && seen.insert(s.clone()))
+        .collect();
+    if ids.len() > 500 {
+        return Err(AppError::Validation(
+            "dispatch order: at most 500 personas".into(),
+        ));
+    }
+    let json = serde_json::to_string(&ids)
+        .map_err(|e| AppError::Internal(format!("dispatch order encode: {e}")))?;
+    let pool = state.db.clone();
+    tokio::task::spawn_blocking(move || {
+        crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::FLEET_DISPATCH_ORDER,
+            &json,
+        )
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("fleet_dispatch_order_set: {e}")))??;
+    Ok(ids)
+}

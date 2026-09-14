@@ -130,6 +130,8 @@ export const SCHEDULE_VIEW_MODES = {
   TIMELINE: 'timeline',
   GROUPED: 'grouped',
   CALENDAR: 'calendar',
+  /** The autonomous-agent layer: dispatch order + next-tick preview. */
+  ORCHESTRATION: 'orchestration',
 } as const;
 
 export type ScheduleViewMode = (typeof SCHEDULE_VIEW_MODES)[keyof typeof SCHEDULE_VIEW_MODES];

@@ -1,6 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { EventName, typedListen } from '@/lib/eventRegistry';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
   CalendarClock, RefreshCw, Pause, Calendar, Filter, Zap,
@@ -24,6 +25,9 @@ import ScheduleRecentRuns from './ScheduleRecentRuns';
 import ScheduleGroupedList from './ScheduleGroupedList';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
+// The autonomous-agent layer: dispatch order + next-tick preview. Its own
+// chunk — it carries framer-motion Reorder and three prototype variants.
+const OrchestrationView = lazyRetry(() => import('../orchestration/OrchestrationView'));
 
 import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
@@ -328,7 +332,14 @@ export default function ScheduleTimeline() {
           </div>
         )}
 
-        {loading && cronAgents.length === 0 ? (
+        {viewMode === 'orchestration' ? (
+          // The orchestration layer has its own population (attention-loop
+          // personas, not cron triggers), so it sits outside the cron-empty
+          // guard below: a fleet with no schedules can still have an order.
+          <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
+            <OrchestrationView />
+          </Suspense>
+        ) : loading && cronAgents.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-foreground">
             <LoadingSpinner size="lg" className="mr-2" />
             {t.schedules.loading_schedules}
@@ -382,6 +393,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
   const VIEW_OPTIONS: { value: ViewMode; label: string; icon?: true }[] = [
     { value: 'grouped', label: t.schedules.view_grouped },
     { value: 'calendar', label: t.schedules.view_calendar, icon: true },
+    { value: 'orchestration', label: t.schedules.view_orchestration },
   ];
   const tablistRef = useRef<HTMLDivElement>(null);
 

@@ -62,6 +62,55 @@ The preview and calendar are engineered to show the minute the engine will *actu
 
 `ScheduleTimeline` listens via `typedListen` (`@/lib/eventRegistry`) for execution and trigger events that should refresh the visible data; the calendar re-derives via `useCalendarEvents` whenever the visible range or entries change.
 
+## Orchestration — the autonomous-agent layer (prototype, 2026-09-14)
+
+The schedule module was designed for time-triggered personas: a trigger fires
+at a moment and the calendar shows the moments. Autopilot adds a population
+with no moment at all — personas the attention loop wakes on its own tick, as
+many per tick as the pacing allows (`docs/features/monitor.md` § Autopilot) —
+and for them the question is not *when* but *in what order*. The
+**Orchestration** view (third tab in `ScheduleViewTabs`, `src/features/schedules/orchestration/`)
+answers it.
+
+**The priority redesign.** The loop ordered its roster by need alone (a
+pending wake, then least recently served, then roster age). Two personas the
+operator considers unequal traded places on every tick purely by who was
+served last, and nothing could say "you go first when a slot opens" — which
+matters under Autopilot, where a tick may have one start to hand out. The
+loop now walks a **global dispatch order** (`fleet_autopilot.dispatch_order`,
+a JSON array of persona ids written whole by the tab's drag-and-drop) ahead of
+need: a wake request still outranks everything, then the operator's rank,
+then the unranked by least-recently-served. A list position is the only
+structure that preserves a place for certain — a per-persona number can tie or
+collide. The rank does not starve the rest: the top persona is refused by its
+own interval floor between passes, and the slot goes to the next in order
+(`attention.rs` `order_least_recently_served`).
+
+**The next-tick preview.** `fleet_dispatch_preview` walks the same ordered
+roster with the same admission ladder in PROBE mode (`admit_persona(…,
+probe)` — the wake request is looked at, not spent; no ledger row, no job) and
+reports per persona: position and rank, interval floor and self-pacing, last
+served, wake, the lane the tick would take (`find_work`, read-only), and the
+verdict — *Starts #k* (within the tick's budget = pacing slots capped by the
+running-persona headroom), *Waits for a slot*, *Sleep consolidation only*,
+*Nothing pending*, or *Refused* with the rung (`AttentionRefusal::kind`) and
+the loop's own sentence. A drop persists the whole order and refetches, so
+every verdict is re-derived by the loop rather than guessed by the UI.
+
+**Three prototype variants** sit behind a switcher (a dated
+`TODO(prototype, 2026-09-14)` marks it for consolidation once one wins):
+
+| Variant | Metaphor | What it makes primary |
+|---|---|---|
+| Runway | departure board | the OUTCOME: one ordered column cut into bands — starting next tick, waiting, held, nothing to do — with the inputs on the second line |
+| Ledger | engineering table | the CAUSES: every ladder input as a column (rank, charters, interval, last served, wake, lane) with the verdict last, three counters above |
+| Slots | control room | the CAPACITY: one tile per start the tick can afford, filled by the persona taking it, and the queue as draggable cards beneath |
+
+All three share `useDispatchOrder` (poll, local reorder, persist, refetch) and
+`parts.tsx` (verdict and lane chips, rank mark, persona identity, budget band,
+keyboard reorder buttons). Drag uses framer-motion `Reorder` behind the shared
+`DragHandle`; ↑/↓ buttons are the keyboard alternative.
+
 ## Failure-rate auto-pause
 
 A schedule whose runs keep failing is a hot loop nobody chose. Since 2026-09-05 the
