@@ -789,6 +789,195 @@ pub fn gate_runs_for_branch(
 }
 
 // ---------------------------------------------------------------------------
+// Audits run outside this process (the bridge's write door)
+// ---------------------------------------------------------------------------
+//
+// [`run_declared_gates`] is the *reconciler's* way into this ledger: it fires
+// on `autopilot/*` branches the reconciler discovers, in a throwaway worktree,
+// on a 30-minute tick. That covers proposals and nothing else.
+//
+// A gate monitor that runs the same suite from outside the app — a persona, a
+// scheduled sweep, a CI-shaped audit of the checkout as it stands — had **no
+// way to record what it saw**. There was no route, no command and no repo
+// function it could reach, so its readings were dropped and
+// `gate_pass_rate_since` answered `None` for windows in which gates demonstrably
+// ran. That is the gap this function closes: the same three-valued rows, the
+// same table, the same pass-rate contract, written from a report instead of
+// from a spawn.
+//
+// It is deliberately **not** a SQL door. The caller names gate outcomes; it
+// does not name a statement, a table or a column, so no external client can
+// write anywhere else in the database through it.
+
+/// Bound on how many gate outcomes one audit may report in a single call.
+///
+/// Distinct from [`MAX_GATES_PER_PROPOSAL`], which bounds how many commands
+/// *this process* will spawn per proposal. Nothing is spawned here — the work
+/// already happened — so the budget only has to stop an unbounded write, and it
+/// sits well above any real suite (the audit that motivated it declares 8).
+pub const MAX_GATE_RUNS_PER_AUDIT: usize = 64;
+
+/// Branch label recorded for an audit that names no branch — a sweep of the
+/// checkout as it stands rather than of a proposal.
+///
+/// Contains a space, which a git refname cannot, so it can never collide with a
+/// real branch and be mistaken for one by [`gate_runs_for_branch`].
+pub const UNBRANCHED_AUDIT_LABEL: &str = "(working tree)";
+
+/// One externally-observed gate outcome, as it arrives on the wire.
+///
+/// `outcome` is the wire string rather than a [`GateOutcome`] so that an
+/// unrecognised value is a *reported* validation error naming the three legal
+/// values, not a deserialization failure the caller has to guess at.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GateRunReport {
+    pub command: String,
+    /// `passed` | `failed` | `did_not_run`.
+    pub outcome: String,
+    #[serde(default)]
+    pub exit_code: Option<i32>,
+    #[serde(default)]
+    pub duration_ms: Option<i64>,
+    #[serde(default)]
+    pub first_error: Option<String>,
+}
+
+/// What one recorded audit produced — returned to the caller so it can see the
+/// reading it just created rather than a bare "ok".
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GateAuditReceipt {
+    /// Rows written.
+    pub recorded: usize,
+    /// Rows in the pass-rate denominator — `did_not_run` excluded.
+    pub counted: usize,
+    pub did_not_run: usize,
+    /// The rate over *this audit*. `None` when nothing counted, never `0.0` —
+    /// the same contract as [`pass_rate`].
+    pub pass_rate: Option<f64>,
+    /// The branch label the rows were filed under, after the
+    /// [`UNBRANCHED_AUDIT_LABEL`] fallback.
+    pub branch: String,
+    /// The persona the rows were attributed to, after the mandate fallback.
+    /// Empty when the project carries no mandate and the caller named none.
+    pub persona_id: String,
+}
+
+/// Record an audit run outside this process into the gate ledger.
+///
+/// Normalises two invariants the rest of this module depends on, rather than
+/// trusting the caller with them: a **pass carries no error line**, and a
+/// **`did_not_run` carries no exit code** (there was no code to read). A client
+/// that sends either is corrected, not rejected — the reading is still true.
+///
+/// `persona_id` falls back to the project's mandate holder, so an audit that
+/// knows the project but not the App master still attributes correctly.
+pub fn record_gate_audit(
+    pool: &DbPool,
+    project_id: &str,
+    persona_id: Option<&str>,
+    branch: Option<&str>,
+    reports: &[GateRunReport],
+) -> Result<GateAuditReceipt, AppError> {
+    let project_id = project_id.trim();
+    if project_id.is_empty() {
+        return Err(AppError::Validation("projectId is required".into()));
+    }
+    // A typo'd project id would otherwise write rows no trend read ever visits
+    // — present in the table, invisible in every window. Refuse instead.
+    personas_db::repos::dev::projects::get_project_by_id(pool, project_id)?;
+
+    if reports.is_empty() {
+        return Err(AppError::Validation(
+            "runs must name at least one gate outcome — an audit that recorded nothing is not a \
+             reading"
+                .into(),
+        ));
+    }
+    if reports.len() > MAX_GATE_RUNS_PER_AUDIT {
+        return Err(AppError::Validation(format!(
+            "runs carries {} outcomes, over the {MAX_GATE_RUNS_PER_AUDIT} allowed in one audit",
+            reports.len()
+        )));
+    }
+
+    let branch = branch
+        .map(str::trim)
+        .filter(|b| !b.is_empty())
+        .unwrap_or(UNBRANCHED_AUDIT_LABEL)
+        .to_string();
+
+    let persona_id = persona_id
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            crate::responsibility::mandate_for_project_or_none(pool, project_id)
+                .map(|r| r.persona_id)
+        })
+        .unwrap_or_default();
+
+    // Validate the whole batch BEFORE writing any of it: a half-recorded audit
+    // is a worse reading than a refused one, because the pass rate it produces
+    // looks complete.
+    let mut runs: Vec<GateRun> = Vec::with_capacity(reports.len());
+    for (i, report) in reports.iter().enumerate() {
+        let command = report.command.trim();
+        if command.is_empty() {
+            return Err(AppError::Validation(format!(
+                "runs[{i}].command is empty — a gate with no command is not a gate"
+            )));
+        }
+        let outcome = GateOutcome::parse(report.outcome.trim()).ok_or_else(|| {
+            AppError::Validation(format!(
+                "runs[{i}].outcome '{}' is not one of passed / failed / did_not_run",
+                report.outcome
+            ))
+        })?;
+        let exit_code = match outcome {
+            // There was no exit code to read; a client that sent one is
+            // describing something other than what `did_not_run` means.
+            GateOutcome::DidNotRun => None,
+            _ => report.exit_code,
+        };
+        let first_error = match outcome {
+            GateOutcome::Passed => None,
+            _ => report
+                .first_error
+                .as_deref()
+                .map(str::trim)
+                .filter(|e| !e.is_empty())
+                .map(str::to_string),
+        };
+        runs.push(GateRun::new(
+            project_id,
+            &persona_id,
+            &branch,
+            command,
+            outcome,
+            exit_code,
+            report.duration_ms.unwrap_or(0).max(0),
+            first_error,
+        ));
+    }
+
+    for run in &runs {
+        record_gate_run(pool, run)?;
+    }
+
+    let outcomes: Vec<GateOutcome> = runs.iter().map(|r| r.outcome).collect();
+    Ok(GateAuditReceipt {
+        recorded: runs.len(),
+        counted: outcomes.iter().filter(|o| o.counts_toward_rate()).count(),
+        did_not_run: outcomes.iter().filter(|o| !o.counts_toward_rate()).count(),
+        pass_rate: pass_rate(&outcomes),
+        branch,
+        persona_id,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Bounded, agent-readable failure extraction
 // ---------------------------------------------------------------------------
 
@@ -4262,5 +4451,231 @@ mod tests {
             Some(1.0)
         );
         assert_eq!(GateKind::parse("something-new"), GateKind::Proposal);
+    }
+
+    // -- externally-run audits (the bridge write door) -----------------------
+
+    fn seed_project(pool: &DbPool) -> String {
+        personas_db::repos::dev::projects::create_project(
+            pool,
+            "gate audit fixture",
+            "/tmp/gate-audit-fixture",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id
+    }
+
+    fn report(command: &str, outcome: &str) -> GateRunReport {
+        GateRunReport {
+            command: command.into(),
+            outcome: outcome.into(),
+            exit_code: None,
+            duration_ms: None,
+            first_error: None,
+        }
+    }
+
+    /// The defect this door exists for: an 8-gate audit ran outside the app,
+    /// had nowhere to write, and the window read `None` as if no gate had run.
+    #[test]
+    fn an_eight_gate_audit_lands_in_the_trend_window() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+        let since = "2000-01-01T00:00:00+00:00";
+        assert_eq!(gate_pass_rate_since(&pool, &project_id, None, since), None);
+
+        let mut reports: Vec<GateRunReport> = (0..7)
+            .map(|i| report(&format!("npm run check:{i}"), "passed"))
+            .collect();
+        reports.push(GateRunReport {
+            command: "npm run test".into(),
+            outcome: "failed".into(),
+            exit_code: Some(1),
+            duration_ms: Some(4_200),
+            first_error: Some("error: 2 tests failed".into()),
+        });
+
+        let receipt =
+            record_gate_audit(&pool, &project_id, Some("persona-gate"), None, &reports).unwrap();
+
+        assert_eq!(receipt.recorded, 8);
+        assert_eq!(receipt.counted, 8);
+        assert_eq!(receipt.did_not_run, 0);
+        assert_eq!(receipt.pass_rate, Some(7.0 / 8.0));
+        assert_eq!(receipt.branch, UNBRANCHED_AUDIT_LABEL);
+        assert_eq!(receipt.persona_id, "persona-gate");
+
+        // The gap is closed: the same window now reports a real rate.
+        assert_eq!(
+            gate_pass_rate_since(&pool, &project_id, None, since),
+            Some(7.0 / 8.0)
+        );
+        let rows = gate_runs_for_branch(&pool, &project_id, UNBRANCHED_AUDIT_LABEL).unwrap();
+        assert_eq!(rows.len(), 8);
+    }
+
+    #[test]
+    fn a_branch_audit_files_under_that_branch_and_the_mandate_names_the_persona() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+        // `seed_mandate` writes persona_id `p1`; an audit that names no persona
+        // takes it rather than filing the rows unattributed.
+        seed_mandate(&pool, &project_id, &["npm run check"]);
+
+        let receipt = record_gate_audit(
+            &pool,
+            &project_id,
+            None,
+            Some("autopilot/gate-monitor"),
+            &[report("npm run check", "passed")],
+        )
+        .unwrap();
+
+        assert_eq!(receipt.persona_id, "p1");
+        assert_eq!(receipt.branch, "autopilot/gate-monitor");
+        assert_eq!(
+            gate_runs_for_branch(&pool, &project_id, "autopilot/gate-monitor")
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn did_not_run_is_normalised_and_stays_out_of_the_rate() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+
+        let receipt = record_gate_audit(
+            &pool,
+            &project_id,
+            Some("persona-gate"),
+            None,
+            &[
+                report("npm run lint", "passed"),
+                GateRunReport {
+                    command: "npm run e2e".into(),
+                    outcome: "did_not_run".into(),
+                    // A client that reports an exit code for a command that
+                    // never ran is describing something else. Corrected, not
+                    // rejected — the reading is still true.
+                    exit_code: Some(0),
+                    duration_ms: Some(-5),
+                    first_error: Some("timed out".into()),
+                },
+                GateRunReport {
+                    command: "npm run build".into(),
+                    outcome: "passed".into(),
+                    exit_code: Some(0),
+                    duration_ms: Some(10),
+                    // A pass carries no error line.
+                    first_error: Some("ignore me".into()),
+                },
+            ],
+        )
+        .unwrap();
+
+        assert_eq!(receipt.counted, 2);
+        assert_eq!(receipt.did_not_run, 1);
+        assert_eq!(receipt.pass_rate, Some(1.0));
+
+        let rows = gate_runs_for_branch(&pool, &project_id, UNBRANCHED_AUDIT_LABEL).unwrap();
+        let skipped = rows.iter().find(|r| r.command == "npm run e2e").unwrap();
+        assert!(skipped.exit_code.is_none());
+        assert_eq!(skipped.duration_ms, 0);
+        let passed = rows.iter().find(|r| r.command == "npm run build").unwrap();
+        assert!(passed.first_error.is_none());
+    }
+
+    #[test]
+    fn an_all_did_not_run_audit_has_no_rate_it_is_not_zero() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+        let receipt = record_gate_audit(
+            &pool,
+            &project_id,
+            Some("persona-gate"),
+            None,
+            &[
+                report("npm run lint", "did_not_run"),
+                report("npm run test", "did_not_run"),
+            ],
+        )
+        .unwrap();
+        assert_eq!(receipt.recorded, 2);
+        assert_eq!(receipt.pass_rate, None);
+        assert_eq!(
+            gate_pass_rate_since(&pool, &project_id, None, "2000-01-01T00:00:00+00:00"),
+            None
+        );
+    }
+
+    /// A rejected audit writes nothing at all — a half-recorded sweep produces a
+    /// pass rate that looks complete and is not.
+    #[test]
+    fn a_bad_outcome_rejects_the_whole_batch_before_any_row_lands() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+        let err = record_gate_audit(
+            &pool,
+            &project_id,
+            Some("persona-gate"),
+            None,
+            &[
+                report("npm run lint", "passed"),
+                report("npm run test", "skipped"),
+            ],
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+        assert!(err.to_string().contains("did_not_run"));
+        assert_eq!(
+            gate_pass_rate_since(&pool, &project_id, None, "2000-01-01T00:00:00+00:00"),
+            None,
+            "a refused audit must leave the ledger untouched"
+        );
+    }
+
+    #[test]
+    fn an_unknown_project_is_refused_rather_than_written_where_nothing_reads() {
+        let pool = init_test_db().unwrap();
+        let err = record_gate_audit(
+            &pool,
+            "proj-that-does-not-exist",
+            None,
+            None,
+            &[report("npm run check", "passed")],
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn an_empty_or_oversized_audit_is_refused() {
+        let pool = init_test_db().unwrap();
+        let project_id = seed_project(&pool);
+        assert!(matches!(
+            record_gate_audit(&pool, &project_id, None, None, &[]).unwrap_err(),
+            AppError::Validation(_)
+        ));
+
+        let too_many: Vec<GateRunReport> = (0..MAX_GATE_RUNS_PER_AUDIT + 1)
+            .map(|i| report(&format!("cmd {i}"), "passed"))
+            .collect();
+        assert!(matches!(
+            record_gate_audit(&pool, &project_id, None, None, &too_many).unwrap_err(),
+            AppError::Validation(_)
+        ));
+
+        assert!(matches!(
+            record_gate_audit(&pool, &project_id, None, None, &[report("  ", "passed")])
+                .unwrap_err(),
+            AppError::Validation(_)
+        ));
     }
 }
