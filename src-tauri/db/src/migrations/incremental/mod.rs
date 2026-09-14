@@ -50,6 +50,7 @@ mod e24_workspace_protection;
 mod e25_workspace_charters;
 mod e26_runner_task_worktree;
 mod e27_idea_goal;
+mod e28_retire_workspace_knowledge;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -95,6 +96,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e25_workspace_charters::run(conn)?;
     e26_runner_task_worktree::run(conn)?;
     e27_idea_goal::run(conn)?;
+    e28_retire_workspace_knowledge::run(conn)?;
 
     Ok(())
 }

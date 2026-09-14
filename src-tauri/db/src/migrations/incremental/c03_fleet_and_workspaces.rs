@@ -6,7 +6,7 @@
 //! body, moved verbatim. The driver calls these modules in the same order
 //! the statements appeared in, so the executed step sequence is unchanged.
 
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::Connection;
 
 use personas_core::error::AppError;
 
@@ -344,7 +344,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         conn,
         IncrementalMigration {
             id: "workspace_center_tables",
-            description: "Workspace Knowledge Center (docs/plans/workspace-knowledge-center.md): dev_workspaces promotes the sub_workspaces localStorage prototype to SQLite; workspace_knowledge is the governed cross-project practice store (observed→proposed→adopted ladder, provenance, applicability, rejection kept for miner dedup); workspace_practice_adoption tracks per-project adoption state (the scaling surface).",
+            description: "Workspaces: dev_workspaces promotes the sub_workspaces localStorage prototype to SQLite. (This step also created the Workspace Knowledge Center's workspace_knowledge and workspace_practice_adoption tables until e28 retired them — a CREATE left here would re-create them on every boot.)",
             already_applied: |conn| has_table(conn, "dev_workspaces"),
             apply: |conn| {
                 ddl_step(
@@ -356,47 +356,6 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                         description TEXT,
                         created_at  TEXT NOT NULL,
                         updated_at  TEXT NOT NULL
-                    );
-                    CREATE TABLE IF NOT EXISTS workspace_knowledge (
-                        id                TEXT PRIMARY KEY,
-                        workspace_id      TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
-                        kind              TEXT NOT NULL CHECK(kind IN ('pattern','pitfall','decision','howto','fact')),
-                        title             TEXT NOT NULL,
-                        statement         TEXT NOT NULL,
-                        detail_md         TEXT,
-                        topic             TEXT,
-                        abstraction       TEXT,
-                        ftype             TEXT,
-                        durability        TEXT,
-                        governing_id      TEXT,
-                        evidence_count    INTEGER,
-                        applicability     TEXT,
-                        status            TEXT NOT NULL DEFAULT 'observed'
-                                          CHECK(status IN ('observed','proposed','adopted','deprecated','rejected')),
-                        origin_project_id TEXT,
-                        provenance        TEXT,
-                        confidence        REAL,
-                        dedup_key         TEXT,
-                        superseded_by     TEXT,
-                        valid_from        TEXT,
-                        valid_to          TEXT,
-                        decided_at        TEXT,
-                        created_at        TEXT NOT NULL,
-                        updated_at        TEXT NOT NULL
-                    );
-                    CREATE INDEX IF NOT EXISTS idx_workspace_knowledge_ws_status
-                        ON workspace_knowledge(workspace_id, status);
-                    CREATE INDEX IF NOT EXISTS idx_workspace_knowledge_dedup
-                        ON workspace_knowledge(workspace_id, dedup_key);
-                    CREATE TABLE IF NOT EXISTS workspace_practice_adoption (
-                        practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
-                        fleet_key        TEXT,
-                        note             TEXT,
-                        last_verified_at TEXT,
-                        updated_at       TEXT NOT NULL,
-                        PRIMARY KEY (practice_id, project_id)
                     );",
                 )?;
                 Ok(())
@@ -420,35 +379,8 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "workspace_knowledge.topic",
-            description: "Free-form slash-path taxonomy node for a practice (e.g. 'ui/motion/reveals'), authored by harvest agents. The library derives its arbitrary-depth topic tree from this column; nullable = uncategorized. Added as a separate ALTER so DBs that created workspace_knowledge before this column pick it up.",
-            already_applied: |conn| has_column(conn, "workspace_knowledge", "topic"),
-            apply: |conn| {
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN topic TEXT;")?;
-                Ok(())
-            },
-        },
-    )?;
-
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "workspace_knowledge.categorization_axes",
-            description: "Categorization axes orthogonal to the topic tree, for ranking + filtering the library (docs/plans/workspace-knowledge-center.md, divergence-scan synthesis): `abstraction` (macro|meso|micro — the altitude of the practice), `ftype` (finding-type taxonomy: architecture|module-boundary|data-flow|extensibility|api-design|state-mgmt|error-strategy|concurrency-reliability|perf-strategy|testing-strategy|micro-technique), `durability` (durable|situational|mechanical — whether it's worth being knowledge vs a lint rule), `governing_id` (roll a micro-instance up under a macro doctrine), `evidence_count` (prevalence). All nullable; validation lives in Rust, not a DB CHECK.",
-            already_applied: |conn| has_column(conn, "workspace_knowledge", "abstraction"),
-            apply: |conn| {
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN abstraction TEXT;")?;
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN ftype TEXT;")?;
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN durability TEXT;")?;
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN governing_id TEXT;")?;
-                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN evidence_count INTEGER;")?;
-                Ok(())
-            },
-        },
-    )?;
+    // Two steps that ALTERed `workspace_knowledge` (topic, categorization axes)
+    // stood here. The table was retired by `e28_retire_workspace_knowledge`.
 
     // -- dev_memories: the development loop's project-scoped memory ----------
     // docs/plans/backlog-memory-loop.md Phase 2. Decisions used to land only in
@@ -480,60 +412,8 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             WHERE source_id IS NOT NULL;",
     )?;
 
-    // -- workspace_practice_adoption: the `to_process` execution queue -------
-    // Adopting a practice used to seed every applicable member repo at
-    // `proposed` regardless of what the practice ASKS FOR, so an adopted
-    // pitfall ("stop doing X") looked identical to an adopted fact and nothing
-    // downstream could tell which cells owed work. Actionable kinds now seed
-    // `to_process` (see repos::dev_workspaces::initial_adoption_state) — the
-    // queue a future executor drains. SQLite cannot widen a CHECK in place, so
-    // the table is rebuilt.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "workspace_practice_adoption.to_process",
-            description: "Widen workspace_practice_adoption.state CHECK with 'to_process' — the per-repo execution queue seeded when an ACTIONABLE practice (pitfall/pattern) is adopted, distinct from 'proposed' (reference material, distributed not executed).",
-            already_applied: |conn| {
-                let sql: Option<String> = conn
-                    .query_row(
-                        "SELECT sql FROM sqlite_master WHERE type='table' AND name='workspace_practice_adoption'",
-                        [],
-                        |r| r.get(0),
-                    )
-                    .optional()
-                    .map_err(AppError::Database)?;
-                // A missing table is "applied": the CREATE above already ships
-                // the widened CHECK on fresh databases.
-                Ok(sql.map(|s| s.contains("to_process")).unwrap_or(true))
-            },
-            apply: |conn| {
-                // FKs off for the drop/rename: the guard must live OUTSIDE the
-                // ddl_step transaction — `PRAGMA foreign_keys` is a no-op once
-                // a transaction is open.
-                let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
-                ddl_step(
-                    conn,
-                    "DROP TABLE IF EXISTS workspace_practice_adoption_new;
-                    CREATE TABLE workspace_practice_adoption_new (
-                        practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
-                        fleet_key        TEXT,
-                        note             TEXT,
-                        last_verified_at TEXT,
-                        updated_at       TEXT NOT NULL,
-                        PRIMARY KEY (practice_id, project_id)
-                    );
-                    INSERT INTO workspace_practice_adoption_new
-                        SELECT practice_id, project_id, state, fleet_key, note, last_verified_at, updated_at
-                        FROM workspace_practice_adoption;
-                    DROP TABLE workspace_practice_adoption;
-                    ALTER TABLE workspace_practice_adoption_new RENAME TO workspace_practice_adoption;",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // A step that rebuilt `workspace_practice_adoption` to widen its state CHECK
+    // stood here. The table was retired by `e28_retire_workspace_knowledge`.
 
     // ---------------------------------------------------------------------
     // Ship layer: milestones (Factory L2 → Ship tab)
