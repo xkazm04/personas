@@ -131,11 +131,19 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         settings_keys::EXECUTION_RETENTION_DAYS_DEFAULT,
     );
     match exec_repo::cleanup_old_executions(pool, exec_retention_days, 50) {
-        Ok(n) if n > 0 => tracing::info!(
-            "Cleaned up {} old execution records (retention={}d, min_keep=50/persona)",
-            n,
-            exec_retention_days
-        ),
+        Ok(n) if n > 0 => {
+            tracing::info!(
+                "Cleaned up {} old execution records (retention={}d, min_keep=50/persona)",
+                n,
+                exec_retention_days
+            );
+            // The FTS delete trigger only tombstones the removed rows; their
+            // postings stay on disk until a merge. Merge now, while the sweep
+            // that produced the tombstones is the one paying for it.
+            if let Err(e) = exec_repo::optimize_search_index(pool) {
+                tracing::warn!(error = %e, "executions_fts optimize after retention failed");
+            }
+        }
         Ok(_) => {}
         Err(e) => tracing::error!("Execution log cleanup error: {}", e),
     }

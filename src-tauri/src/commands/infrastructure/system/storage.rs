@@ -187,6 +187,15 @@ pub fn prune_executions(
         tx.rollback()?;
     } else {
         tx.commit()?;
+        // The FTS delete trigger only tombstones the pruned rows; merge the
+        // index so the prune actually gives their postings back. A failed
+        // merge costs space, never correctness, so it does not fail the prune.
+        if pruned_executions > 0 {
+            if let Err(e) = crate::db::repos::execution::executions::optimize_search_index_on(conn)
+            {
+                tracing::warn!(error = %e, "executions_fts optimize after prune failed");
+            }
+        }
     }
     let mut casualties: Vec<TableImpact> = before
         .iter()
