@@ -934,6 +934,7 @@ fn tick_once(app: &AppHandle) {
     auto_hibernate_pass(app);
     live_slot_pass(app);
     auto_forget_pass(app);
+    machine_worker_retire_pass(app, now);
 }
 
 /// Unanswered-question sweep: an UNATTENDED worker that ends its turn asking
@@ -1162,6 +1163,80 @@ fn auto_forget_pass(app: &AppHandle) {
         if registry().forget_dead(&sid) {
             super::persist::note_removed(app, &sid);
             super::pty::emit_registry_changed(app, "removed", &sid);
+        }
+    }
+}
+
+/// How long a machine-dispatched worker that has ended stays on the grid.
+///
+/// An hour, matching [`OVERNIGHT_FINISHED_REAP_SECS`]: long enough for the
+/// operator to read what a burst delivered, short enough that the fleet does not
+/// become an archive. Measured 2026-09-14: 184 `finished` and 78 `stale` App
+/// Master workers sat in the footer, some five days old, because
+/// `auto_forget_pass` only ever forgot Athena-named sessions and every restart
+/// rehydrated the rest.
+pub(crate) const MACHINE_WORKER_RETIRE_MS: i64 = 60 * 60 * 1000;
+
+/// How long a retired machine worker's DURABLE row is kept. The App Master's
+/// dispatch sweep and the last-dispatch reader decide a task's fate from this
+/// row, so it outlives the tile by far; a dispatch still unsettled after two
+/// weeks belongs to the orphaned-task sweep, not to this row.
+pub(crate) const MACHINE_WORKER_ROW_RETENTION_MS: i64 = 14 * 24 * 60 * 60 * 1000;
+
+/// True when a session is a machine dispatch (App Master or overnight: the run
+/// label says so, never a name) that has ENDED and been silent for `after_ms`.
+/// Pure, so the ticker, rehydrate and the prune share one rule.
+///
+/// `Stale` counts as ended here even though it is not terminal for an
+/// operator's session: a machine worker has nobody coming back to it, and the
+/// dispatch sweep already reads `stale` as an end. `Hibernated` does not; it is
+/// a resumable sleep.
+pub(crate) fn machine_worker_ended_for(
+    run_label: Option<&str>,
+    state: FleetSessionState,
+    last_activity_ms: i64,
+    now: i64,
+    after_ms: i64,
+) -> bool {
+    personas_engine::unattended::is_unattended_run(run_label)
+        && matches!(
+            state,
+            FleetSessionState::Finished | FleetSessionState::Stale | FleetSessionState::Exited
+        )
+        && now - last_activity_ms >= after_ms
+}
+
+/// Take ended machine workers off the grid (see [`MACHINE_WORKER_RETIRE_MS`]).
+///
+/// The counterpart of `auto_forget_pass` for the lanes Athena does not own, with
+/// one deliberate difference: the durable row is KEPT (`emit_registry_retired`,
+/// not `note_removed`), because the dispatch sweep closes a task from it; a
+/// deleted row reads as "could not tell" and the task would stay open.
+/// `forget_dead` is the liveness gate: a worker whose process is still resident
+/// is left to the reap passes and retired on a later tick.
+fn machine_worker_retire_pass(app: &AppHandle, now: i64) {
+    let candidates: Vec<String> = {
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                machine_worker_ended_for(
+                    s.run_label.as_deref(),
+                    s.state,
+                    s.last_activity_ms,
+                    now,
+                    MACHINE_WORKER_RETIRE_MS,
+                )
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+    for sid in candidates {
+        if registry().forget_dead(&sid) {
+            super::debug_log::lifecycle(&sid, "retired", "machine worker ended an hour ago");
+            super::pty::emit_registry_retired(app, &sid);
         }
     }
 }
@@ -1954,6 +2029,54 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
+    /// Only machine dispatches that ENDED leave the grid, and only once silent
+    /// past the window; an operator's session and a live state never do.
+    #[test]
+    fn an_ended_machine_worker_retires_after_its_window_and_nothing_else_does() {
+        use super::{machine_worker_ended_for, MACHINE_WORKER_RETIRE_MS as W};
+        use crate::commands::fleet::types::FleetSessionState as S;
+        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        const NOW: i64 = 1_700_000_000_000;
+        let am = app_master_run_label("p1");
+        let night = overnight_run_label("bank");
+        for state in [S::Finished, S::Stale, S::Exited] {
+            assert!(machine_worker_ended_for(Some(&am), state, NOW - W, NOW, W));
+            assert!(machine_worker_ended_for(
+                Some(&night),
+                state,
+                NOW - W,
+                NOW,
+                W
+            ));
+            // Inside the window it stays.
+            assert!(!machine_worker_ended_for(
+                Some(&am),
+                state,
+                NOW - W + 1,
+                NOW,
+                W
+            ));
+            // An operator's run, named or not, is never retired by this rule.
+            assert!(!machine_worker_ended_for(None, state, 0, NOW, W));
+            assert!(!machine_worker_ended_for(
+                Some("app master notes"),
+                state,
+                0,
+                NOW,
+                W
+            ));
+        }
+        for state in [
+            S::Running,
+            S::AwaitingInput,
+            S::Idle,
+            S::Spawning,
+            S::Hibernated,
+        ] {
+            assert!(!machine_worker_ended_for(Some(&am), state, 0, NOW, W));
+        }
+    }
+
     /// A session first seen by the ticker starts its silence clock at the
     /// transcript's last write, so a restart does not hand it a fresh fuse.
     #[test]

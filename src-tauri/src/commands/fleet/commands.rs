@@ -66,10 +66,30 @@ pub async fn fleet_spawn_headless_session(
     task: String,
     args: Option<Vec<String>>,
 ) -> Result<String, String> {
+    spawn_headless_session_in_run(app, cwd, task, args, None).await
+}
+
+/// [`fleet_spawn_headless_session`] for a machine dispatcher that owns its run
+/// label: the label is stamped on the session directly instead of being read
+/// back from the process-global active run, which another lane may have
+/// replaced or closed while this dispatcher awaited its worktree.
+pub async fn spawn_headless_session_in_run(
+    app: AppHandle,
+    cwd: String,
+    task: String,
+    args: Option<Vec<String>>,
+    run_label: Option<&str>,
+) -> Result<String, String> {
     let cwd = PathBuf::from(cwd);
     // Headless spawns consume a live slot like any other session.
     super::stale::free_slot_for_spawn(&app);
-    let id = super::headless::spawn_headless_session(app, cwd, task, args.unwrap_or_default())?;
+    let id = super::headless::spawn_headless_session(
+        app,
+        cwd,
+        task,
+        args.unwrap_or_default(),
+        run_label,
+    )?;
     super::debug_log::lifecycle(&id, "spawned", "headless · with task");
     Ok(id)
 }

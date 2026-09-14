@@ -4596,11 +4596,17 @@ async fn dispatch_into_worktree(
     // subscription limit). `charter.dispatch_model` is the same chain the
     // execution arm walks, resolved at gather time and never empty.
     let model = charter.dispatch_model.clone();
-    let session_id = crate::commands::fleet::commands::fleet_spawn_headless_session(
+    // The label goes in with the spawn, not through the process-global run the
+    // wake opened: the worktree and `gh` awaits above are exactly the window in
+    // which another lane can replace or close that run, and a worker spawned
+    // into it lost its `app-master:` label and every sweep that reads it.
+    let run_label = personas_engine::unattended::app_master_run_label(&context.persona_id);
+    let session_id = crate::commands::fleet::commands::spawn_headless_session_in_run(
         app,
         worktree_path.clone(),
         text,
         Some(vec!["--model".to_string(), model.clone()]),
+        Some(&run_label),
     )
     .await
     .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
