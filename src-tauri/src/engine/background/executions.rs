@@ -72,7 +72,7 @@ pub(crate) fn orphaned_task_tick(pool: &DbPool) {
                 );
             }
         }
-        Err(e) => tracing::error!("Orphaned task sweep failed: {}", e),
+        Err(e) => tracing::error!(error = %e, "Orphaned task sweep failed"),
     }
 }
 

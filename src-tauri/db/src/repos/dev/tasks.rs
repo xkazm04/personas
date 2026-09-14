@@ -563,10 +563,18 @@ pub fn sweep_orphaned_running_tasks(
                 }
             };
             let error = format!("{reason} (swept by the orphaned-task sweep at {now_s})");
-            conn.execute(
+            // The `status = 'running'` guard is a compare-and-set: a worker
+            // that wrote its verdict between the candidate read and this
+            // write wins, and the row it settled must not be reported as
+            // swept. The affected-row count is the only evidence of which
+            // happened, so it decides whether this row joins the report.
+            let changed = conn.execute(
                 "UPDATE dev_tasks SET status = 'failed', error = ?1, completed_at = ?2,                  updated_at = ?2 WHERE id = ?3 AND status = 'running'",
                 params![error, now_s, id],
             )?;
+            if changed == 0 {
+                continue; // settled by its worker in the race window — not ours
+            }
             swept.push(OrphanedTask {
                 id,
                 project_id,
