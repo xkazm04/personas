@@ -15,7 +15,7 @@ evidence:
   - src-tauri/engine/src/design.rs                           # extract_json_by_key strategy ladder: fenced block first, then bare balanced span, discriminant keys to pick the right candidate
   - src/features/plugins/research-lab/sub_reports/parseSynthesis.ts  # tolerant ladder with a schema-declared prose fallback (markdown headings), null only when nothing usable
   - src-tauri/engine/src/safe_json.rs                        # bounded parse: size + nesting-depth caps enforced before deserialization
-  - src-tauri/src/commands/infrastructure/workspace_harvest.rs  # one ingest door for agent-produced candidates: validated at the door, idempotent, size-capped, path-confined
+  - src-tauri/src/commands/infrastructure/kpi_sim.rs           # one ingest door for an agent-produced result.json: validated at the door, idempotent, size-capped, path-confined (workspace_harvest.rs, the first such door, was retired 2026-09-14)
 counter_evidence:
   - src-tauri/src/engine/deliberation.rs                     # parse_decision(&blob).unwrap_or_default() (:516, :1372) — parse failure spelled as a default-valued, fully legal artifact; downstream cannot distinguish "the team stalled" from "the parser failed"
 deviations:

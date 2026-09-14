@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} 个凭据",
     "import_failed": "导入失败",
     "import_groups": "{count} 个组",
-    "import_knowledge": "{count} 个知识条目",
-    "import_knowledge_skipped": "已跳过 {count} 个重复知识条目",
     "import_kpis": "{count} 个 KPI",
     "import_label": "导入",
     "import_personas": "{count} 个人格",
@@ -871,7 +869,6 @@
     "tools": "工具",
     "twins": "Twin",
     "warnings": "警告：",
-    "workspace_knowledge": "工作区知识",
     "workspace_overview": "工作区概览"
   },
   "quality_gates": {

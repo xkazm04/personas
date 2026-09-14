@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} 件の認証情報",
     "import_failed": "インポートに失敗しました",
     "import_groups": "{count} 件のグループ",
-    "import_knowledge": "ナレッジ項目 {count} 件",
-    "import_knowledge_skipped": "重複ナレッジ項目 {count} 件をスキップ",
     "import_kpis": "{count} 件の KPI",
     "import_label": "インポート",
     "import_personas": "{count} 件のペルソナ",
@@ -871,7 +869,6 @@
     "tools": "ツール",
     "twins": "Twin",
     "warnings": "警告:",
-    "workspace_knowledge": "ワークスペースナレッジ",
     "workspace_overview": "ワークスペース概要"
   },
   "quality_gates": {

@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} kredensial",
     "import_failed": "Impor gagal",
     "import_groups": "{count} grup",
-    "import_knowledge": "{count} item pengetahuan",
-    "import_knowledge_skipped": "{count} item pengetahuan duplikat dilewati",
     "import_kpis": "{count} KPI",
     "import_label": "Impor",
     "import_personas": "{count} persona",
@@ -871,7 +869,6 @@
     "tools": "Alat",
     "twins": "Twins",
     "warnings": "Peringatan:",
-    "workspace_knowledge": "Pengetahuan workspace",
     "workspace_overview": "Ikhtisar ruang kerja"
   },
   "quality_gates": {

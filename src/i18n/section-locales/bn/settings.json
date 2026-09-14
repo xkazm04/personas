@@ -729,8 +729,6 @@
     "import_credentials_count": "{count}টি ক্রেডেনশিয়াল",
     "import_failed": "আমদানি ব্যর্থ হয়েছে",
     "import_groups": "{count}টি গ্রুপ",
-    "import_knowledge": "{count}টি জ্ঞান আইটেম",
-    "import_knowledge_skipped": "{count}টি সদৃশ জ্ঞান আইটেম এড়ানো হয়েছে",
     "import_kpis": "{count}টি KPI",
     "import_label": "আমদানি",
     "import_personas": "{count}টি পার্সোনা",
@@ -871,7 +869,6 @@
     "tools": "টুল",
     "twins": "Twin",
     "warnings": "সতর্কতা:",
-    "workspace_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার",
     "workspace_overview": "ওয়ার্কস্পেস সারসংক্ষেপ"
   },
   "quality_gates": {

@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} क्रेडेंशियल",
     "import_failed": "आयात विफल",
     "import_groups": "{count} group",
-    "import_knowledge": "{count} नॉलेज आइटम",
-    "import_knowledge_skipped": "{count} डुप्लिकेट नॉलेज आइटम छोड़े गए",
     "import_kpis": "{count} KPI",
     "import_label": "आयात करें",
     "import_personas": "{count} पर्सोना",
@@ -871,7 +869,6 @@
     "tools": "टूल",
     "twins": "Twins",
     "warnings": "चेतावनियाँ:",
-    "workspace_knowledge": "वर्कस्पेस नॉलेज",
     "workspace_overview": "वर्कस्पेस अवलोकन"
   },
   "quality_gates": {

@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} Zugangsdaten",
     "import_failed": "Import fehlgeschlagen",
     "import_groups": "{count} Gruppe(n)",
-    "import_knowledge": "{count} Wissenseinträge",
-    "import_knowledge_skipped": "{count} doppelte Wissenseinträge übersprungen",
     "import_kpis": "{count} KPI(s)",
     "import_label": "Importieren",
     "import_personas": "{count} Persona(s)",
@@ -871,7 +869,6 @@
     "tools": "Tools",
     "twins": "Twins",
     "warnings": "Warnungen:",
-    "workspace_knowledge": "Workspace-Wissen",
     "workspace_overview": "Arbeitsbereichsübersicht"
   },
   "quality_gates": {

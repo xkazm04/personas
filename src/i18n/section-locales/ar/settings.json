@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} بيانات اعتماد",
     "import_failed": "فشل الاستيراد",
     "import_groups": "{count} مجموعة",
-    "import_knowledge": "{count} عنصر معرفة",
-    "import_knowledge_skipped": "تم تخطي {count} عنصر معرفة مكرر",
     "import_kpis": "{count} مؤشر(ات)",
     "import_label": "استيراد",
     "import_personas": "{count} شخصية",
@@ -871,7 +869,6 @@
     "tools": "الأدوات",
     "twins": "التوائم",
     "warnings": "تحذيرات:",
-    "workspace_knowledge": "معرفة مساحة العمل",
     "workspace_overview": "نظرة عامة على مساحة العمل"
   },
   "quality_gates": {

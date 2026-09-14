@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} identifiant(s)",
     "import_failed": "Échec de l’import",
     "import_groups": "{count} groupe(s)",
-    "import_knowledge": "{count} éléments de connaissances",
-    "import_knowledge_skipped": "{count} éléments de connaissances en double ignorés",
     "import_kpis": "{count} KPI(s)",
     "import_label": "Importer",
     "import_personas": "{count} persona(s)",
@@ -871,7 +869,6 @@
     "tools": "Outils",
     "twins": "Twins",
     "warnings": "Avertissements :",
-    "workspace_knowledge": "Connaissances de l’espace de travail",
     "workspace_overview": "Vue d’ensemble de l’espace de travail"
   },
   "quality_gates": {

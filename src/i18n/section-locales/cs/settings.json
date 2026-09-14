@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} přihlašovacích údajů",
     "import_failed": "Import selhal",
     "import_groups": "{count} skupin",
-    "import_knowledge": "{count} znalostních položek",
-    "import_knowledge_skipped": "{count} duplicitních znalostních položek přeskočeno",
     "import_kpis": "{count} KPI",
     "import_label": "Importovat",
     "import_personas": "{count} person",
@@ -871,7 +869,6 @@
     "tools": "Nástroje",
     "twins": "Dvojníci",
     "warnings": "Varování:",
-    "workspace_knowledge": "Znalosti workspace",
     "workspace_overview": "Přehled pracovního prostoru"
   },
   "quality_gates": {

@@ -729,8 +729,6 @@
     "import_credentials_count": "{count} учётных данных",
     "import_failed": "Импорт не выполнен",
     "import_groups": "Групп: {count}",
-    "import_knowledge": "Элементов знаний: {count}",
-    "import_knowledge_skipped": "Пропущено дублирующихся элементов знаний: {count}",
     "import_kpis": "{count} KPI",
     "import_label": "Импорт",
     "import_personas": "Персон: {count}",
@@ -871,7 +869,6 @@
     "tools": "Инструменты",
     "twins": "Двойники",
     "warnings": "Предупреждения:",
-    "workspace_knowledge": "Знания рабочего пространства",
     "workspace_overview": "Обзор рабочего пространства"
   },
   "quality_gates": {

@@ -729,8 +729,6 @@
     "import_credentials_count": "자격 증명 {count}개",
     "import_failed": "가져오기 실패",
     "import_groups": "그룹 {count}개",
-    "import_knowledge": "지식 항목 {count}개",
-    "import_knowledge_skipped": "중복 지식 항목 {count}개 건너뜀",
     "import_kpis": "{count}개의 KPI",
     "import_label": "가져오기",
     "import_personas": "페르소나 {count}개",
@@ -871,7 +869,6 @@
     "tools": "도구",
     "twins": "트윈",
     "warnings": "경고:",
-    "workspace_knowledge": "워크스페이스 지식",
     "workspace_overview": "워크스페이스 개요"
   },
   "quality_gates": {
