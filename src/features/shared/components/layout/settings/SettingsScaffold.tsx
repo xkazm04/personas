@@ -33,6 +33,9 @@ interface SettingsScaffoldProps {
   className?: string;
   /** Tailwind max-width cap for the whole nav+content group (centered). Default `max-w-5xl`. */
   maxWidth?: string;
+  /** Render the quick-nav rail. Default `true`; pass `false` for short surfaces
+   *  whose few sections need no navigation (content then spans the full width). */
+  showNav?: boolean;
 }
 
 /**
@@ -50,6 +53,7 @@ export function SettingsScaffold({
   navAriaLabel,
   className,
   maxWidth = 'max-w-5xl',
+  showNav = true,
 }: SettingsScaffoldProps) {
   const ids = sections.map((s) => s.id);
   const { activeId, register, jumpTo } = useSectionScrollSpy(ids);
@@ -57,7 +61,7 @@ export function SettingsScaffold({
 
   return (
     <div className={`flex gap-6 items-start mx-auto ${maxWidth} ${className ?? ''}`.trim()}>
-      <nav
+      {showNav && <nav
         aria-label={navAriaLabel}
         className="hidden md:block sticky top-1 self-start w-[30%] flex-shrink-0"
       >
@@ -88,7 +92,7 @@ export function SettingsScaffold({
             );
           })}
         </ul>
-      </nav>
+      </nav>}
 
       <div className="flex-1 min-w-0 space-y-4">
         {sections.map((s) => (

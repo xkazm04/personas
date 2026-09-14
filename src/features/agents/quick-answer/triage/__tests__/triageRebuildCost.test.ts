@@ -6,20 +6,18 @@
  * pins what producing it is allowed to cost, and that the cheap version produces
  * the identical order.
  *
- * Three costs, three `describe`s:
+ * Two costs, two `describe`s:
  *  • the comparator dereferenced the skip ledger twice and re-tested the focus
  *    pin on every one of the O(n log n) pairs, and collated two ISO timestamps
  *    through ICU while it was there. The pin has since gone entirely — a jump
  *    moves a CURSOR, not a row — so what used to be the pin's tests now guard
  *    that the reviewer's position cannot touch the order at all;
- *  • `adoptReach` re-parsed the same applicability JSON once per member project;
  *  • the session record was serialised three times on mount, writing back byte
  *    for byte what had just been read out of it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { projectQueue, withSkip, type SkipLedger } from '../triageQueue';
-import { adoptReach, applicabilityMatches } from '../triageReach';
 import {
   clearTriageSession,
   loadTriageSession,
@@ -218,43 +216,6 @@ describe('the sort is precomputed and still the same order', () => {
 });
 
 /* -------------------------------------------------------------------------- */
-
-describe('applicability is parsed once per practice, not once per member', () => {
-  const applicability = JSON.stringify({
-    languages: ['TypeScript'],
-    frameworks: ['React'],
-    layers: ['ui'],
-    conditions: ['always'],
-  });
-  const stacks = Array.from({ length: 12 }, (_, i) =>
-    i % 3 === 0 ? 'React + TypeScript + Tauri' : 'Go + Postgres',
-  );
-
-  it('parses the blob exactly once for a whole workspace', () => {
-    const parse = vi.spyOn(JSON, 'parse');
-    try {
-      adoptReach(applicability, stacks);
-      // Was one parse PER MEMBER — P practices × M members per rebuild, and the
-      // deck rebuilds its queue on every 30-second poll.
-      expect(parse).toHaveBeenCalledTimes(1);
-    } finally {
-      parse.mockRestore();
-    }
-  });
-
-  it('gives the same answer it always did', () => {
-    expect(adoptReach(applicability, stacks)).toEqual({ members: 12, applicable: 4 });
-    // And the single-project door is unchanged for its own callers.
-    expect(applicabilityMatches(applicability, 'React + TypeScript')).toBe(true);
-    expect(applicabilityMatches(applicability, 'Go + Postgres')).toBe(false);
-    expect(applicabilityMatches(null, 'anything')).toBe(true);
-    expect(applicabilityMatches('{not json', 'anything')).toBe(true);
-  });
-
-  it('costs nothing extra for an unconstrained practice', () => {
-    expect(adoptReach(null, stacks)).toEqual({ members: 12, applicable: 12 });
-  });
-});
 
 /* -------------------------------------------------------------------------- */
 

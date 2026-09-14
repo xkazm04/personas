@@ -7,8 +7,6 @@
  *    the popover's existing data layer (local + cloud reviews, live build
  *    sessions), so this surface inherits its polling rather than adding more.
  *  • backlog ideas — the real cross-project keyset query (`dev_tools_triage_ideas`).
- *  • workspace practices — the pending half (observed + proposed) of every
- *    workspace's knowledge library.
  *  • policy proposals — the Self-Tuning Fabric's pending routing/budget diffs.
  *  • evolution promotions — Darwin Mode's pending "this challenger beat the
  *    incumbent, install it?" proposals.
@@ -49,14 +47,10 @@ import { policyTuningList } from '@/api/system/policyTuning';
 import {
   decideEvolutionProposalRow,
   decidePolicyProposalRow,
-  decidePracticeRow,
   isDecisionConflict,
   reopenIdeaRow,
-  reopenPracticeRow,
 } from '@/lib/decisions/rowWrites';
 import { toBacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
-import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
-import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { extractMessage, toastCatch } from '@/lib/silentCatch';
@@ -66,7 +60,6 @@ import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
-import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 import { usePendingInteractions } from '../usePendingInteractions';
 import {
@@ -75,7 +68,6 @@ import {
   goalToTriage,
   ideaToTriage,
   policyProposalToTriage,
-  practiceToTriage,
   questionGroupToTriage,
   reviewToTriage,
   type TriageCopy,
@@ -97,7 +89,6 @@ import {
   type TriageSessionSummary,
 } from './triageJournal';
 import { projectQueue, withoutSkip, withSkip, type SkipLedger } from './triageQueue';
-import { adoptReach } from './triageReach';
 import { clearTriageSession, loadTriageSession, saveTriageSession } from './triageSession';
 import {
   TRIAGE_KINDS,
@@ -107,31 +98,9 @@ import {
   type TriageKind,
 } from './triageTypes';
 
-/** Statuses that still owe a human decision. */
-const PENDING_PRACTICE_STATUSES = new Set(['observed', 'proposed']);
-
-/**
- * The same two statuses, pushed into the QUERY rather than applied after it.
- *
- * `useWorkspaceCenter` fetched every status and this hook then discarded
- * everything but these two — in a mature workspace `adopted` is the largest
- * bucket, so most of the payload was read and thrown away on every refresh. The
- * client-side filter below stays as a correctness backstop: this hook must
- * behave identically for a caller that (or a future centre that) hands it
- * unfiltered rows.
- */
-const PRACTICE_FETCH_STATUSES = ['observed', 'proposed'] as const;
-
-/** Module constant so the hook argument keeps a stable identity. */
-const PRACTICE_CENTER_OPTIONS = { statuses: PRACTICE_FETCH_STATUSES } as const;
-
 /** One page of pending ideas is plenty for a triage session; the queue is a
  *  working set, not an archive. */
 const IDEA_PAGE_SIZE = 60;
-
-/** More successor options than this and the reason strip stops being one glance
- *  and one keypress. Digits only go to 9 anyway. */
-const MAX_SUCCESSORS = 5;
 
 /**
  * Both proposal ledgers are small by construction — the Fabric supersedes an
@@ -154,36 +123,13 @@ const PROPOSAL_PAGE_SIZE = 50;
 const UNDO_WINDOW_MS = 30_000;
 
 /**
- * Candidate replacements for a practice being deprecated.
- *
- * Same workspace, same topic, not itself — the realistic shape of "we deprecate
- * the old take because THIS is the one we're adopting", which is exactly the
- * moment a harvest review produces two rulings on the same topic in a row.
- *
- * Scoped to the pending set the deck already holds rather than fetching the
- * adopted library: a second query per card to populate an optional field on an
- * optional branch is not a trade this surface should make, and offering the
- * sibling you are about to adopt is the case that actually comes up.
- */
-function successorsFor(
-  row: WorkspaceKnowledge,
-  siblings: readonly WorkspaceKnowledge[],
-): { id: string; title: string }[] {
-  if (!row.topic) return [];
-  return siblings
-    .filter((s) => s.id !== row.id && s.topic === row.topic)
-    .slice(0, MAX_SUCCESSORS)
-    .map((s) => ({ id: s.id, title: s.title }));
-}
-
-/**
- * The seven queues this deck fuses, named so a failure can say WHICH one.
+ * The queues this deck fuses, named so a failure can say WHICH one.
  *
  * `question` is absent deliberately: build questions are read out of the agent
  * store, which the event bridge keeps live — there is no fetch here that can
  * fail, so there is no failure to report.
  */
-export type TriageSource = 'reviews' | 'ideas' | 'practices' | 'policy' | 'evolution' | 'goals';
+export type TriageSource = 'reviews' | 'ideas' | 'policy' | 'evolution' | 'goals';
 
 /** One source that did not answer, and what it said. */
 export interface TriageSourceFailure {
@@ -363,10 +309,9 @@ export interface UnifiedTriageHosts {
  * has no persisted cursor): the cache exists to kill the reopen ghost, not to
  * preserve a paged working set whose later pages may have shifted under it.
  *
- * The two borrowed sources (reviews via `usePendingInteractions`, practices via
- * `useWorkspaceCenter`) still cold-load — their hooks own that state — but with
- * the owned four seeded the stack is non-empty on first paint, which is what
- * gates the ghost.
+ * The borrowed source (reviews via `usePendingInteractions`) still cold-loads —
+ * its hook owns that state — but with the owned four seeded the stack is
+ * non-empty on first paint, which is what gates the ghost.
  */
 interface TriageWarmCache {
   ideas: DevIdea[];
@@ -394,21 +339,19 @@ export function useUnifiedTriage(
   hosts: UnifiedTriageHosts = {},
 ): UnifiedTriageQueue {
   const { onOpenBuilder, onOpenRun, onOpenGoalBoard } = hosts;
-  // The two BORROWED sources, deferred. Their hooks own their fetch state, so
-  // this hook cannot mark those landings as transitions the way it does for the
-  // four sources it owns below — `useDeferredValue` is the consumer-side
-  // equivalent: when a poll or the cold load replaces `reviews`/`knowledge`,
-  // the urgent re-render keeps the previous value (every memo under it holds)
-  // and the tree that actually mounts three markdown cards and the queue rail
-  // is built at deferred priority, off the urgent frame. On MOUNT the deferred
-  // value IS the current value, so a warm reopen pays no extra render and never
-  // shows a stale frame. The one-frame lag on later updates is nothing this
-  // surface can notice: both sources are already 15–30s polls, and every write
-  // is id-addressed with a compare-and-swap conflict path behind it.
+  // The BORROWED source, deferred. Its hook owns its fetch state, so this hook
+  // cannot mark those landings as transitions the way it does for the four
+  // sources it owns below — `useDeferredValue` is the consumer-side
+  // equivalent: when a poll or the cold load replaces `reviews`, the urgent
+  // re-render keeps the previous value (every memo under it holds) and the tree
+  // that actually mounts three markdown cards and the queue rail is built at
+  // deferred priority, off the urgent frame. On MOUNT the deferred value IS the
+  // current value, so a warm reopen pays no extra render and never shows a
+  // stale frame. The one-frame lag on later updates is nothing this surface can
+  // notice: the source is already a 15–30s poll, and every write is
+  // id-addressed with a compare-and-swap conflict path behind it.
   const liveInteractions = usePendingInteractions();
   const interactions = useDeferredValue(liveInteractions);
-  const liveCenter = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
-  const center = useDeferredValue(liveCenter);
   const projects = useSystemStore((s) => s.projects);
   // Promotion proposals carry a persona id and nothing human-readable; the
   // roster the app already holds is what turns it into a name and a colour.
@@ -702,7 +645,7 @@ export function useUnifiedTriage(
 
   // Goals get their own effect for the same reason the two proposal ledgers do:
   // an install whose goals command errors must still be dealt its reviews, its
-  // ideas and its practices. One `Promise.all` over unrelated subsystems is how
+  // ideas and its proposals. One `Promise.all` over unrelated subsystems is how
   // one unavailable source takes the whole queue down with it.
   useEffect(() => {
     let cancelled = false;
@@ -731,15 +674,12 @@ export function useUnifiedTriage(
     };
   }, [goalGen, noteFailure]);
 
-  // The two sources this hook does NOT own the fetch for report their failure
-  // as a value rather than a rejection, so they are mirrored into the same
-  // ledger instead of being a second thing the deck has to ask about.
+  // The source this hook does NOT own the fetch for reports its failure as a
+  // value rather than a rejection, so it is mirrored into the same ledger
+  // instead of being a second thing the deck has to ask about.
   useEffect(() => {
     noteFailure('reviews', interactions.reviewsError);
   }, [interactions.reviewsError, noteFailure]);
-  useEffect(() => {
-    noteFailure('practices', center.knowledgeError);
-  }, [center.knowledgeError, noteFailure]);
   // The review read is bounded (see `usePendingInteractions`), so it joins the
   // capped set the same way the two fixed-limit ledgers do.
   useEffect(() => {
@@ -800,28 +740,6 @@ export function useUnifiedTriage(
       out.push(ideaToTriage(toBacklogIdea(idea, projectName), copy));
     }
 
-    for (const workspace of center.workspaces) {
-      const rows = center.knowledge[workspace.id] ?? [];
-      if (rows.length === 0) continue;
-      // Adopting fans the practice out to every APPLICABLE member repo, so the
-      // blast radius is a property of the workspace's membership, not of the
-      // practice row. Resolved once per workspace rather than per practice.
-      const stacks = workspace.projectIds.map((id) => center.projectById.get(id)?.tech_stack ?? null);
-      const pending = rows.filter((row) => PENDING_PRACTICE_STATUSES.has(row.status));
-      for (const row of pending) {
-        out.push(
-          practiceToTriage(
-            viewFromRow(row),
-            workspace.name,
-            row.detail_md,
-            copy,
-            adoptReach(row.applicability, stacks),
-            successorsFor(row, pending),
-          ),
-        );
-      }
-    }
-
     for (const proposal of policyProposals) {
       // `policyTuningList(true, …)` already asks for pending only; the guard
       // keeps the deck honest for a backend that starts returning history.
@@ -863,9 +781,6 @@ export function useUnifiedTriage(
     interactions.reviews,
     interactions.questionGroups,
     ideas,
-    center.workspaces,
-    center.knowledge,
-    center.projectById,
     policyProposals,
     promotions,
     goals,
@@ -1015,8 +930,7 @@ export function useUnifiedTriage(
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
     setGoalGen((g) => g + 1);
-    center.refreshKnowledge();
-  }, [center]);
+  }, []);
 
   /**
    * Deal the next page instead of starting over.
@@ -1045,11 +959,10 @@ export function useUnifiedTriage(
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
     setGoalGen((g) => g + 1);
-    center.refreshKnowledge();
     // Whatever moved these sources moved the title-bar badge with them — a
     // verdict lost to someone else, or an undo that put a row back.
     void refreshPendingCounts();
-  }, [center, refreshPendingCounts]);
+  }, [refreshPendingCounts]);
 
   /** Re-read only the two proposal ledgers — what a proposal verdict invalidates. */
   const refreshProposals = useCallback(() => setProposalGen((g) => g + 1), []);
@@ -1073,9 +986,6 @@ export function useUnifiedTriage(
       // rejects on failure so the restore below can fire.
       acceptIdea: (id, seenStatus) => acceptIdeaViaStore(id, seenStatus),
       rejectIdea: (id, reason, seenStatus) => rejectIdeaViaStore(id, reason, seenStatus),
-      decideKnowledge: (id, verdict, supersededBy, seenStatus) =>
-        decidePracticeRow(id, verdict, { supersededBy, seenStatus }),
-      refreshKnowledge: () => center.refreshKnowledge(),
       submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
       // Both proposal ledgers go through `rowWrites` for the same reason the
       // other three do: it is the module that owns the expectation contract and
@@ -1106,13 +1016,11 @@ export function useUnifiedTriage(
         refreshGoals();
       },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
-      reopenPractice: (id, seenStatus) => reopenPracticeRow(id, { seenStatus }),
       openBuilder: onOpenBuilder,
       openGoalBoard: onOpenGoalBoard,
     }),
     [
       interactions,
-      center,
       onOpenBuilder,
       onOpenGoalBoard,
       acceptIdeaViaStore,

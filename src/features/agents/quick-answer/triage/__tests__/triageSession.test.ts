@@ -47,7 +47,7 @@ describe('triageSession — the round trip', () => {
   it('restores skips, kinds, drafts and resolved ids across a close', () => {
     saveTriageSession({
       skips: new Map([['idea:1', 2]]),
-      kinds: new Set(['practice'] as const),
+      kinds: new Set(['policy'] as const),
       drafts: { 'sess-1::tools': 'gmail' },
       resolved: new Set(['idea:9']),
     });
@@ -55,7 +55,7 @@ describe('triageSession — the round trip', () => {
 
     const session = loadTriageSession();
     expect(session.skips.get('idea:1')).toBe(2);
-    expect([...(session.kinds ?? [])]).toEqual(['practice']);
+    expect([...(session.kinds ?? [])]).toEqual(['policy']);
     expect(session.drafts).toEqual({ 'sess-1::tools': 'gmail' });
     expect(session.resolved.has('idea:9')).toBe(true);
   });

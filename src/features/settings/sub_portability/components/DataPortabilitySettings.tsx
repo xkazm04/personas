@@ -1,4 +1,4 @@
-import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, Target, FolderGit2, BookOpen, Fingerprint, Sparkles, Library, type LucideIcon } from 'lucide-react';
+import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, Target, FolderGit2, Fingerprint, Sparkles, Library, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -57,7 +57,6 @@ export default function DataPortabilitySettings() {
               <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.testSuiteCount} accent="text-rose-400" />
               <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpiCount} accent="text-pink-400" />
               <StatBadge icon={FolderGit2} label={s.dev_projects} value={dp.stats.devProjectCount} accent="text-lime-400" />
-              <StatBadge icon={BookOpen} label={s.workspace_knowledge} value={dp.stats.workspaceKnowledgeCount} accent="text-indigo-400" />
               <StatBadge icon={Fingerprint} label={s.twins} value={dp.stats.twinCount} accent="text-rose-300" />
               <StatBadge icon={Sparkles} label={s.athena_core} value={dp.stats.athenaCoreCount} accent="text-fuchsia-400" />
               <StatBadge icon={Library} label={s.athena_learned} value={dp.stats.athenaLearnedCount} accent="text-fuchsia-300" />

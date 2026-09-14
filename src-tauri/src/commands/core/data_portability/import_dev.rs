@@ -5,7 +5,7 @@
 use super::*;
 
 // ============================================================================
-// Dev-tools project + workspace-knowledge import helpers (WP2)
+// Dev-tools project import helpers (WP2)
 // ============================================================================
 
 /// How a bundled dev project lands in this database.
@@ -25,7 +25,7 @@ pub(crate) enum ProjectImportMode {
 /// re-insert. Explicit (no reliance on FK cascades) and intentionally NOT
 /// touching telemetry / scan-cache tables (dev_llm_spend, dev_auto_runs,
 /// dev_scans, dev_run_checkpoints, skill_registry, dev_context_file_hashes,
-/// context_health_snapshots, workspace_harvest_coverage).
+/// context_health_snapshots).
 pub(crate) fn delete_project_children(
     tx: &rusqlite::Transaction<'_>,
     project_id: &str,

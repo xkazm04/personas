@@ -25,7 +25,7 @@ function Section({ heading, children }: { heading: string; children: React.React
 export function CoverageDetailDrawer({ view, onClose }: { view: TileView; onClose: () => void }) {
   const { t, tx } = useTranslation();
   const tc = t.overview.registry_coverage;
-  const { tile, harvest, practices } = view;
+  const { tile } = view;
   const map = tile.applied.registryMap;
 
   return (
@@ -65,27 +65,14 @@ export function CoverageDetailDrawer({ view, onClose }: { view: TileView; onClos
           )}
         </Section>
 
-        {/* (b) Extraction — registry half (forged) + app half (harvest ledger) */}
+        {/* (b) Extraction — the registry's forged-from signal */}
         <Section heading={tc.dim_extracted}>
           <div className="flex flex-col gap-1 typo-body text-foreground">
-            {tile.presence.forgedFrom && <span>{tc.forged_detail}</span>}
-            {harvest === null ? (
-              <span>{tc.state_no_signal}</span>
-            ) : harvest.scopesHarvested > 0 ? (
-              <span className="inline-flex flex-wrap items-center gap-1.5">
-                {tx(tc.harvest_detail, {
-                  items: harvest.itemsFound,
-                  scopes: harvest.scopesHarvested,
-                })}
-                <RelativeTime timestamp={harvest.lastHarvestedAt} fallback={tc.state_never} />
-              </span>
-            ) : (
-              <span>{tc.never_harvested}</span>
-            )}
+            <span>{tile.presence.forgedFrom ? tc.forged_detail : tc.state_no_signal}</span>
           </div>
         </Section>
 
-        {/* (c) Applied — skills table, registry-map breakdown, practices rollup */}
+        {/* (c) Applied — skills table and registry-map breakdown */}
         <Section heading={tc.dim_applied}>
           <h4 className="typo-caption font-medium text-foreground">{tc.drawer_skills_heading}</h4>
           {tile.applied.skillsDetail.length === 0 ? (
@@ -145,24 +132,6 @@ export function CoverageDetailDrawer({ view, onClose }: { view: TileView; onClos
                   })}
             {map?.exists === true && map.digestStale && (
               <span className="text-status-warning"> · {tc.map_digest_stale}</span>
-            )}
-          </div>
-
-          <div className="typo-body text-foreground">
-            {practices === null ? (
-              tc.practices_no_signal
-            ) : (
-              <span className="inline-flex flex-wrap items-center gap-x-2">
-                <span>
-                  {tx(tc.practices_detail, {
-                    adopted: practices.adopted,
-                    diverged: practices.diverged,
-                  })}
-                </span>
-                {practices.dispatched > 0 && (
-                  <span>{tx(tc.practices_dispatched, { count: practices.dispatched })}</span>
-                )}
-              </span>
             )}
           </div>
         </Section>

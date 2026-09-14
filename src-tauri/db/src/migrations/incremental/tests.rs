@@ -280,8 +280,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "dev_milestones",
         "dev_milestone_items",
         "dev_workspaces",
-        "workspace_knowledge",
-        "workspace_practice_adoption",
         "dev_context_fingerprints",
         // P5a — the App master proposal + gate ledgers. Without these two the
         // rollup's proposalsMerged / proposalsReverted / gatePassRate go back
@@ -326,9 +324,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ("persona_memory_review_proposal", "team_id"),
         ("dev_kpi_measurements", "env"),
         ("dev_projects", "workspace_id"),
-        ("workspace_knowledge", "topic"),
-        ("workspace_knowledge", "abstraction"),
-        ("workspace_knowledge", "durability"),
         // Bench sweep #24 — a gate run answers for one branch TIP, not for
         // "the branch". Without this column every moved tip re-gates (or,
         // worse, never gates) and the sweep-#24 race stays unfixable.
@@ -359,8 +354,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "idx_dev_kpis_context",
         "idx_dev_kpis_use_case",
         "idx_dev_use_cases_project",
-        "idx_workspace_knowledge_ws_status",
-        "idx_workspace_knowledge_dedup",
         "idx_dev_context_fingerprints_hash",
         "idx_app_master_gate_runs_branch_tip",
         "idx_app_master_gate_runs_kind_tip",
@@ -1349,4 +1342,131 @@ fn every_dev_project_owns_a_team_named_after_it_after_the_backfill() {
         })
         .unwrap();
     assert_eq!(teams, 3, "three replays must mint exactly three teams");
+}
+
+/// e28 — the retired Workspace Knowledge tables never appear on a fresh
+/// database, and a LEGACY database that still carries them, with data, loses
+/// all nine on the next boot without touching the workspace and project they
+/// hung off. The chain is then replayed twice more: it runs on every launch,
+/// and a CREATE surviving in an older era would show up here as a table that
+/// comes back.
+#[test]
+fn retire_workspace_knowledge_drops_the_library_and_keeps_workspaces() {
+    use super::e28_retire_workspace_knowledge::RETIRED_KNOWLEDGE_TABLES;
+
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "a fresh database still creates the retired table `{table}`"
+        );
+    }
+
+    // Reconstruct the legacy shape: the DDL the retired steps used to run
+    // (trimmed to the columns these rows need), plus the index that made
+    // context_state the biggest table on the operator's machine.
+    conn.execute_batch(
+        "INSERT INTO dev_workspaces (id, name, created_at, updated_at)
+            VALUES ('ws1', 'Bank', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         UPDATE dev_projects SET workspace_id = 'ws1' WHERE id = 'p1';
+         CREATE TABLE workspace_knowledge (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
+            title TEXT NOT NULL
+         );
+         CREATE INDEX idx_workspace_knowledge_ws_status ON workspace_knowledge(workspace_id);
+         CREATE TABLE workspace_practice_adoption (
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            PRIMARY KEY (practice_id, project_id)
+         );
+         CREATE TABLE workspace_practice_context_state (
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            context_id  TEXT NOT NULL
+         );
+         CREATE INDEX idx_wpcs_project ON workspace_practice_context_state(project_id, practice_id);
+         CREATE TABLE workspace_pattern_edges (
+            from_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            to_id   TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_playbooks (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_playbook_patterns (
+            playbook_id TEXT NOT NULL REFERENCES workspace_playbooks(id) ON DELETE CASCADE,
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_knowledge_evidence (
+            id TEXT PRIMARY KEY,
+            knowledge_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_consult_log (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_harvest_coverage (
+            project_id TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            scope_id   TEXT NOT NULL,
+            PRIMARY KEY (project_id, scope_id)
+         );
+         INSERT INTO workspace_knowledge (id, workspace_id, title) VALUES ('k1', 'ws1', 'T');
+         INSERT INTO workspace_practice_adoption (practice_id, project_id) VALUES ('k1', 'p1');
+         INSERT INTO workspace_practice_context_state (practice_id, project_id, context_id)
+            VALUES ('k1', 'p1', 'c1');
+         INSERT INTO workspace_pattern_edges (from_id, to_id) VALUES ('k1', 'k1');
+         INSERT INTO workspace_playbooks (id, workspace_id) VALUES ('pb1', 'ws1');
+         INSERT INTO workspace_playbook_patterns (playbook_id, practice_id) VALUES ('pb1', 'k1');
+         INSERT INTO workspace_knowledge_evidence (id, knowledge_id) VALUES ('e1', 'k1');
+         INSERT INTO workspace_consult_log (id, workspace_id) VALUES ('cl1', 'ws1');
+         INSERT INTO workspace_harvest_coverage (project_id, scope_id) VALUES ('p1', 'repo-global');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).expect("retirement must not abort boot");
+
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "`{table}` survived the retirement"
+        );
+    }
+    for index in ["idx_wpcs_project", "idx_workspace_knowledge_ws_status"] {
+        assert!(
+            !has_index(&conn, index).unwrap(),
+            "index `{index}` survived"
+        );
+    }
+    // What the library hung off is untouched.
+    let workspace: String = conn
+        .query_row(
+            "SELECT name FROM dev_workspaces WHERE id = 'ws1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(workspace, "Bank");
+    let member_of: Option<String> = conn
+        .query_row(
+            "SELECT workspace_id FROM dev_projects WHERE id = 'p1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(member_of.as_deref(), Some("ws1"));
+
+    // Replay the whole boot chain twice: nothing may bring a table back.
+    for _ in 0..2 {
+        ensure_composite_fires_table(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+    }
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "`{table}` came back on replay"
+        );
+    }
 }
