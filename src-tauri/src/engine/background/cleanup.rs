@@ -7,6 +7,7 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::settings_keys;
 use crate::db::DbPool;
+use std::path::Path;
 
 /// Read a numeric retention setting from `app_settings`, falling back to
 /// `default` if the row is absent OR unparseable. Unparseable values emit a
@@ -238,5 +239,49 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
             Ok(_) => {}
             Err(e) => tracing::error!("Stuck build-session GC error: {}", e),
         }
+    }
+}
+
+/// Delete execution logs (`<logs>/<execution-uuid>.log`) whose execution row no
+/// longer exists and which have sat untouched past
+/// [`crate::logging::EXECUTION_LOG_ORPHAN_GRACE`].
+///
+/// Execution retention and the Storage prune delete rows; nothing deleted the
+/// row's log, so `logs/` grew one file per run forever (~2,995 files, ~400 MB
+/// on the operator's install). Sweeping by "row is gone" rather than by age
+/// keeps the log of every execution the app can still show, and follows any
+/// retention setting without a second one.
+pub(crate) fn execution_log_retention_tick(pool: &DbPool, log_dir: &Path) {
+    let logs = crate::logging::list_execution_logs(log_dir);
+    if logs.is_empty() {
+        return;
+    }
+    let ids: Vec<String> = logs.iter().map(|l| l.execution_id.clone()).collect();
+    let live = match exec_repo::existing_ids(pool, &ids) {
+        Ok(live) => live,
+        Err(e) => {
+            // Without the live set every file would look orphaned — skip.
+            tracing::error!(error = %e, "Execution log retention skipped: execution ids unreadable");
+            return;
+        }
+    };
+    let (removed, bytes) = crate::logging::prune_orphan_execution_logs(
+        &logs,
+        &live,
+        crate::logging::EXECUTION_LOG_ORPHAN_GRACE,
+        std::time::SystemTime::now(),
+    );
+    if removed > 0 {
+        tracing::info!(
+            examined = logs.len(),
+            removed,
+            bytes,
+            "Execution log retention: removed logs of executions that no longer exist"
+        );
+    } else {
+        tracing::debug!(
+            examined = logs.len(),
+            "Execution log retention: nothing orphaned"
+        );
     }
 }

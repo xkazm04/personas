@@ -1,6 +1,8 @@
+use std::collections::HashSet;
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use std::time::{Duration, SystemTime};
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_appender::rolling;
 use tracing_subscriber::fmt::MakeWriter;
@@ -221,6 +223,101 @@ fn prune_orphan_personas_logs(log_dir: &std::path::Path, keep: usize) {
             tracing::warn!("Failed to prune old log {}: {}", path.display(), e);
         }
     }
+}
+
+/// How long an execution log must sit untouched before it can be judged an
+/// orphan. A run writes its first line within seconds of its row existing and
+/// keeps touching the file while it runs, so a day is far past any race
+/// between the row and the file.
+pub const EXECUTION_LOG_ORPHAN_GRACE: Duration = Duration::from_secs(24 * 60 * 60);
+
+/// One per-execution log: `<logs>/<execution-uuid>.log`, written by
+/// `personas_engine::logger::ExecutionLogger`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExecutionLogFile {
+    pub execution_id: String,
+    pub path: PathBuf,
+    pub bytes: u64,
+    pub modified: Option<SystemTime>,
+}
+
+/// The execution id in an execution log's file name, or `None` for anything
+/// else in the directory (`personas.*.log`, `last_boot.log`, freeze dumps).
+/// UUID-shaped only, so no other file can ever be taken for one.
+fn execution_id_from_log_name(name: &str) -> Option<&str> {
+    let stem = name.strip_suffix(".log")?;
+    let bytes = stem.as_bytes();
+    let shaped = bytes.len() == 36
+        && bytes.iter().enumerate().all(|(i, b)| match i {
+            8 | 13 | 18 | 23 => *b == b'-',
+            _ => b.is_ascii_hexdigit(),
+        });
+    shaped.then_some(stem)
+}
+
+/// Every execution log in `log_dir` (flat, one level).
+pub fn list_execution_logs(log_dir: &Path) -> Vec<ExecutionLogFile> {
+    let Ok(entries) = std::fs::read_dir(log_dir) else {
+        return Vec::new();
+    };
+    entries
+        .flatten()
+        .filter_map(|entry| {
+            let name = entry.file_name();
+            let execution_id = execution_id_from_log_name(name.to_str()?)?.to_string();
+            let meta = entry.metadata().ok().filter(|m| m.is_file())?;
+            Some(ExecutionLogFile {
+                execution_id,
+                path: entry.path(),
+                bytes: meta.len(),
+                modified: meta.modified().ok(),
+            })
+        })
+        .collect()
+}
+
+/// Delete the execution logs whose execution no longer exists.
+///
+/// `prune_orphan_personas_logs` bounds the rolling tracing files and
+/// deliberately leaves UUID logs alone, and nothing else ever deleted one: an
+/// execution's row went with retention or a prune while its log stayed. The
+/// operator's `logs/` held ~2,995 of them (~400 MB) back to June, and the
+/// 2026-08-15 audit found GitHub-PAT- and Google-key-shaped tokens in some.
+///
+/// A log is removed only when its execution id is absent from `live_ids` AND
+/// it has been untouched for longer than `grace`. An unreadable mtime keeps
+/// the file. Returns `(files_removed, bytes_removed)`.
+pub fn prune_orphan_execution_logs(
+    logs: &[ExecutionLogFile],
+    live_ids: &HashSet<String>,
+    grace: Duration,
+    now: SystemTime,
+) -> (usize, u64) {
+    let mut removed = 0usize;
+    let mut bytes = 0u64;
+    for log in logs {
+        if live_ids.contains(&log.execution_id) {
+            continue;
+        }
+        let Some(age) = log.modified.and_then(|m| now.duration_since(m).ok()) else {
+            continue;
+        };
+        if age <= grace {
+            continue;
+        }
+        match std::fs::remove_file(&log.path) {
+            Ok(()) => {
+                removed += 1;
+                bytes = bytes.saturating_add(log.bytes);
+            }
+            Err(e) => tracing::warn!(
+                path = %log.path.display(),
+                error = %e,
+                "Failed to prune orphaned execution log"
+            ),
+        }
+    }
+    (removed, bytes)
 }
 
 /// Install a panic hook that writes crash details to a file before aborting.
@@ -528,6 +625,64 @@ mod tests {
         assert!(names
             .iter()
             .any(|n| n == "00000000-0000-0000-0000-000000000001.log"));
+    }
+
+    /// Only a UUID-named log whose execution is gone AND which is past the
+    /// grace window is removed; a live execution's log, a fresh orphan and
+    /// every non-execution file stay.
+    #[test]
+    fn prune_orphan_execution_logs_removes_only_old_logs_of_missing_executions() {
+        let dir = tempdir().unwrap();
+        let live = "11111111-1111-4111-8111-111111111111";
+        let orphan_old = "22222222-2222-4222-8222-222222222222";
+        let orphan_fresh = "33333333-3333-4333-8333-333333333333";
+        let week_ago = SystemTime::now() - Duration::from_secs(7 * 24 * 60 * 60);
+        for (id, body, old) in [
+            (live, "live", true),
+            (orphan_old, "orphan-old", true),
+            (orphan_fresh, "fresh", false),
+        ] {
+            let path = dir.path().join(format!("{id}.log"));
+            std::fs::write(&path, body).unwrap();
+            if old {
+                std::fs::File::options()
+                    .write(true)
+                    .open(&path)
+                    .unwrap()
+                    .set_modified(week_ago)
+                    .unwrap();
+            }
+        }
+        std::fs::write(dir.path().join("personas.2026-01-01.log"), b"rolling").unwrap();
+        std::fs::write(dir.path().join("last_boot.log"), b"boot").unwrap();
+
+        let logs = list_execution_logs(dir.path());
+        assert_eq!(logs.len(), 3, "only UUID-named logs are execution logs");
+
+        let live_ids: HashSet<String> = [live.to_string()].into_iter().collect();
+        let (removed, bytes) = prune_orphan_execution_logs(
+            &logs,
+            &live_ids,
+            EXECUTION_LOG_ORPHAN_GRACE,
+            SystemTime::now(),
+        );
+        assert_eq!((removed, bytes), (1, "orphan-old".len() as u64));
+
+        let mut names: Vec<String> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        assert_eq!(
+            names,
+            vec![
+                format!("{live}.log"),
+                format!("{orphan_fresh}.log"),
+                "last_boot.log".to_string(),
+                "personas.2026-01-01.log".to_string(),
+            ]
+        );
     }
 
     #[test]

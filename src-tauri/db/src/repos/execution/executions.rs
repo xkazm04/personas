@@ -1904,6 +1904,34 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Which of `ids` still name an execution row. For satellite sweeps that hold
+/// ids from outside the database (execution log files) and must never delete
+/// a live execution's satellite. Queried in chunks well under SQLite's
+/// bound-parameter limit.
+pub fn existing_ids(
+    pool: &DbPool,
+    ids: &[String],
+) -> Result<std::collections::HashSet<String>, AppError> {
+    const CHUNK: usize = 500;
+    timed_query!("persona_executions", "persona_executions::existing_ids", {
+        let conn = pool.conn("executions::existing_ids")?;
+        let mut found = std::collections::HashSet::with_capacity(ids.len());
+        for chunk in ids.chunks(CHUNK) {
+            let placeholders = vec!["?"; chunk.len()].join(",");
+            let mut stmt = conn.prepare(&format!(
+                "SELECT id FROM persona_executions WHERE id IN ({placeholders})"
+            ))?;
+            let rows = stmt.query_map(rusqlite::params_from_iter(chunk.iter()), |r| {
+                r.get::<_, String>("id")
+            })?;
+            for row in rows {
+                found.insert(row?);
+            }
+        }
+        Ok(found)
+    })
+}
+
 /// Merge the executions search index after a bulk delete, on a pooled
 /// connection, timed. The merge itself — and why a delete needs one — is
 /// [`crate::reclaim::optimize_search_index_on`].
@@ -3396,6 +3424,18 @@ mod tests {
             0,
             "a deleted execution returns no phantom hit"
         );
+    }
+
+    #[test]
+    fn existing_ids_names_only_the_executions_that_still_exist() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Existing Ids Agent");
+        let row = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let asked = vec![row.id.clone(), "no-such-execution".to_string()];
+        let found = existing_ids(&pool, &asked).unwrap();
+        assert_eq!(found.len(), 1);
+        assert!(found.contains(&row.id));
+        assert!(existing_ids(&pool, &[]).unwrap().is_empty());
     }
 
     fn make_persona(pool: &DbPool, name: &str) -> String {
