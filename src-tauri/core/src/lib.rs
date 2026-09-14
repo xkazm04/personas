@@ -48,7 +48,6 @@ pub mod error_taxonomy;
 pub mod events;
 pub mod evolution_status;
 pub mod fs_private;
-pub mod harvest_scopes;
 pub mod healing;
 pub mod healthcheck_ledger;
 pub mod http_clients;

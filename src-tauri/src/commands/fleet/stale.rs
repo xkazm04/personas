@@ -455,14 +455,10 @@ fn is_never_attached(
 /// Sessions with no transcript yet (unbound `Spawning`) fall back to the
 /// hook-driven `last_activity_ms` cutoff.
 fn tick_once(app: &AppHandle) {
-    // Companion harvest watcher — ingest finished `run_pattern_harvest`
-    // dispatches without the Workspaces UI open. No-op unless the companion
-    // executor registered a pending harvest; rides this ticker because the
-    // 30s cadence and the AppHandle are already here.
-    crate::commands::infrastructure::workspace_harvest::sweep_pending_harvest_ingests(app);
-    // Feed-impact watcher — same contract for `feed_impact_dispatch` waves:
-    // ingest finished impact runs + raise the wave-complete notification
-    // without any UI open. No-op unless the op registered a pending wave.
+    // Feed-impact watcher — ingest finished `feed_impact_dispatch` waves and
+    // raise the wave-complete notification without any UI open. No-op unless
+    // the op registered a pending wave; rides this ticker because the 30s
+    // cadence and the AppHandle are already here.
     crate::commands::infrastructure::feed_impact::sweep_pending_feed_impact_ingests(app);
     // Notepad watcher — the `/note-task` runs' one gated door. Reads each
     // published note's `runs/<note_id>/` for `started.json` / `result.json` and

@@ -15,7 +15,7 @@ mod tests {
             credentials: Vec::new(),
             kpis: Vec::new(),
             dev_projects: Vec::new(),
-            workspace_knowledge: Vec::new(),
+            workspaces: Vec::new(),
             twins: Vec::new(),
             athena: None,
             export_warnings: Vec::new(),
@@ -318,17 +318,11 @@ mod tests {
         .unwrap();
     }
 
-    fn seed_workspace_with_knowledge(pool: &DbPool, wid: &str) {
+    fn seed_workspace(pool: &DbPool, wid: &str) {
         let conn = pool.get().unwrap();
         conn.execute_batch(&format!(
             "INSERT INTO dev_workspaces (id, name, color, created_at, updated_at)
-                VALUES ('{wid}', 'Shared WS', '#fff', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
-             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, dedup_key, confidence, created_at, updated_at)
-                VALUES ('kn-obs-{wid}', '{wid}', 'pattern', 'Observed one', 'Do X', 'observed', 'dk1', 0.7, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
-             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, created_at, updated_at)
-                VALUES ('kn-ado-{wid}', '{wid}', 'pitfall', 'Adopted one', 'Never Y', 'adopted', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
-             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, created_at, updated_at)
-                VALUES ('kn-rej-{wid}', '{wid}', 'fact', 'Rejected one', 'Z is true', 'rejected', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');"
+                VALUES ('{wid}', 'Shared WS', '#fff', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');"
         ))
         .unwrap();
     }
@@ -428,7 +422,7 @@ mod tests {
         )
         .unwrap();
         assert!(legacy.dev_projects.is_empty());
-        assert!(legacy.workspace_knowledge.is_empty());
+        assert!(legacy.workspaces.is_empty());
     }
 
     #[test]
@@ -436,7 +430,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         seed_dev_project(&pool, "p1", "/tmp/portability-p1");
         seed_dev_project(&pool, "p2", "/tmp/portability-p2");
-        seed_workspace_with_knowledge(&pool, "w1");
+        seed_workspace(&pool, "w1");
 
         let scope = ExportScope::Selective {
             persona_ids: Vec::new(),
@@ -453,7 +447,7 @@ mod tests {
         assert_eq!(bundle.dev_projects.len(), 1);
         assert_eq!(bundle.dev_projects[0].id, "p1");
         // Empty workspace selection means none travel.
-        assert!(bundle.workspace_knowledge.is_empty());
+        assert!(bundle.workspaces.is_empty());
 
         let scope = ExportScope::Selective {
             persona_ids: Vec::new(),
@@ -468,70 +462,19 @@ mod tests {
             build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
                 .unwrap();
         assert!(bundle.dev_projects.is_empty());
-        assert_eq!(bundle.workspace_knowledge.len(), 1);
-        assert_eq!(bundle.workspace_knowledge[0].id, "w1");
+        assert_eq!(bundle.workspaces.len(), 1);
+        assert_eq!(bundle.workspaces[0].id, "w1");
     }
 
     #[test]
-    fn workspace_knowledge_keeps_statuses_and_filters_adoption_to_bundled_projects() {
-        let pool = init_test_db().unwrap();
-        seed_dev_project(&pool, "p1", "/tmp/portability-wp1");
-        seed_dev_project(&pool, "p2", "/tmp/portability-wp2");
-        seed_workspace_with_knowledge(&pool, "w1");
-        {
-            let conn = pool.get().unwrap();
-            conn.execute_batch(
-                "INSERT INTO workspace_practice_adoption (practice_id, project_id, state, note, updated_at)
-                    VALUES ('kn-ado-w1', 'p1', 'adopted', 'in use', '2026-01-01T00:00:00Z');
-                 INSERT INTO workspace_practice_adoption (practice_id, project_id, state, updated_at)
-                    VALUES ('kn-ado-w1', 'p2', 'proposed', '2026-01-01T00:00:00Z');",
-            )
-            .unwrap();
-        }
-
-        // Only p1 travels — the p2 adoption cell must be filtered out.
-        let scope = ExportScope::Selective {
-            persona_ids: Vec::new(),
-            team_ids: Vec::new(),
-            credential_ids: Vec::new(),
-            project_ids: vec!["p1".into()],
-            workspace_ids: vec!["w1".into()],
-            twin_ids: Vec::new(),
-            athena_tiers: Vec::new(),
-        };
-        let bundle =
-            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
-                .unwrap();
-        assert_eq!(bundle.workspace_knowledge.len(), 1);
-        let w = &bundle.workspace_knowledge[0];
-        assert_eq!(w.knowledge.len(), 3);
-        let statuses: std::collections::HashSet<&str> =
-            w.knowledge.iter().map(|k| k.status.as_str()).collect();
-        assert_eq!(
-            statuses,
-            ["observed", "adopted", "rejected"].into_iter().collect()
-        );
-        // Lifecycle columns survive.
-        let observed = w.knowledge.iter().find(|k| k.status == "observed").unwrap();
-        assert_eq!(observed.dedup_key.as_deref(), Some("dk1"));
-        assert_eq!(observed.confidence, Some(0.7));
-
-        assert_eq!(w.adoption.len(), 1);
-        assert_eq!(w.adoption[0].project_id, "p1");
-        assert_eq!(w.adoption[0].state, "adopted");
-        assert_eq!(w.adoption[0].note.as_deref(), Some("in use"));
-    }
-
-    #[test]
-    fn compute_export_stats_counts_dev_projects_and_knowledge() {
+    fn compute_export_stats_counts_dev_projects() {
         let pool = init_test_db().unwrap();
         seed_dev_project(&pool, "p1", "/tmp/portability-sp1");
         seed_dev_project(&pool, "p2", "/tmp/portability-sp2");
-        seed_workspace_with_knowledge(&pool, "w1");
+        seed_workspace(&pool, "w1");
 
         let stats = compute_export_stats(&pool, None).unwrap();
         assert_eq!(stats.dev_project_count, 2);
-        assert_eq!(stats.workspace_knowledge_count, 3);
     }
 
     fn minimal_dev_project(id: &str) -> DevProjectExport {
@@ -609,8 +552,6 @@ mod tests {
             kpis_created: 0,
             projects_imported: 0,
             projects_skipped: 0,
-            knowledge_imported: 0,
-            knowledge_skipped_duplicates: 0,
             skills_written: 0,
             skills_deferred: 0,
             twins_imported: 0,
@@ -627,21 +568,13 @@ mod tests {
         }
     }
 
-    /// Export a seeded source DB (project graph + workspace + adoption) into a
+    /// Export a seeded source DB (project graph + workspace) into a
     /// bundle for the import tests.
     fn source_bundle(root_path: &str) -> PortabilityBundle {
         let source = init_test_db().unwrap();
         seed_dev_project(&source, "p1", root_path);
         seed_dev_project_graph(&source, "p1");
-        seed_workspace_with_knowledge(&source, "w1");
-        {
-            let conn = source.get().unwrap();
-            conn.execute_batch(
-                "INSERT INTO workspace_practice_adoption (practice_id, project_id, state, note, updated_at)
-                    VALUES ('kn-ado-w1', 'p1', 'adopted', 'in use', '2026-01-01T00:00:00Z');",
-            )
-            .unwrap();
-        }
+        seed_workspace(&source, "w1");
         build_export_bundle(
             &source,
             None,
@@ -654,7 +587,7 @@ mod tests {
     }
 
     #[test]
-    fn import_bundle_round_trips_projects_and_knowledge_with_original_uuids() {
+    fn import_bundle_round_trips_projects_and_workspaces_with_original_uuids() {
         let bundle = source_bundle("/tmp/portability-rt-p1");
         let target = init_test_db().unwrap();
 
@@ -662,8 +595,6 @@ mod tests {
         assert_eq!(result.projects_imported, 1);
         assert!(result.import_conflicts.is_empty());
         assert_eq!(result.projects_skipped, 0);
-        assert_eq!(result.knowledge_imported, 3);
-        assert_eq!(result.knowledge_skipped_duplicates, 0);
 
         let conn = target.get().unwrap();
         // Original uuids preserved across the graph.
@@ -735,24 +666,15 @@ mod tests {
             .iter()
             .any(|w| w.contains("Project Manager")));
 
-        // Knowledge statuses survive faithfully, including rejected.
-        let rejected: i32 = conn
+        // The workspace row travels with its original uuid.
+        let workspaces: i32 = conn
             .query_row(
-                "SELECT COUNT(*) FROM workspace_knowledge WHERE status = 'rejected'",
+                "SELECT COUNT(*) FROM dev_workspaces WHERE id = 'w1'",
                 [],
                 |r| r.get(0),
             )
             .unwrap();
-        assert_eq!(rejected, 1);
-        // Adoption cell landed because both the practice and project exist.
-        let adoption: i32 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM workspace_practice_adoption WHERE practice_id = 'kn-ado-w1' AND project_id = 'p1'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(adoption, 1);
+        assert_eq!(workspaces, 1);
     }
 
     #[test]
@@ -770,9 +692,6 @@ mod tests {
         assert_eq!(c.bundle_id, "p1");
         assert_eq!(c.existing_id, "p1");
         assert_eq!(c.matched_by, "root_path");
-        // Re-run of the knowledge phase skipped everything as duplicates.
-        assert_eq!(second.knowledge_imported, 0);
-        assert_eq!(second.knowledge_skipped_duplicates, 3);
 
         // Pass 2 with skip: nothing imported, nothing duplicated.
         let mut res = HashMap::new();
@@ -955,50 +874,40 @@ mod tests {
         assert_eq!(child_parent.as_deref(), Some(new_parent.as_str()));
     }
 
+    /// A bundle written while workspaces still carried a knowledge library has
+    /// `knowledge` and `adoption` arrays under every workspace. Those rows have
+    /// nowhere to land any more, but the bundle must still parse and its
+    /// workspaces must still import.
     #[test]
-    fn knowledge_dedups_by_dedup_key_and_kind_title_across_fresh_ids() {
-        let bundle = source_bundle("/tmp/portability-kn-p1");
+    fn a_legacy_bundle_with_knowledge_arrays_still_imports_its_workspaces() {
+        let mut value = serde_json::to_value(empty_bundle()).unwrap();
+        value["workspace_knowledge"] = serde_json::json!([{
+            "id": "w-legacy",
+            "name": "Legacy WS",
+            "color": null,
+            "description": null,
+            "knowledge": [{
+                "id": "k1", "kind": "pattern", "title": "T", "statement": "S",
+                "status": "adopted", "created_at": "2026-01-01T00:00:00Z",
+                "updated_at": "2026-01-01T00:00:00Z"
+            }],
+            "adoption": [{ "practice_id": "k1", "project_id": "p1", "state": "adopted" }]
+        }]);
+        let bundle: PortabilityBundle =
+            serde_json::from_value(value).expect("legacy bundle parses");
+        assert_eq!(bundle.workspaces.len(), 1);
+
         let target = init_test_db().unwrap();
-        let first = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
-        assert_eq!(first.knowledge_imported, 3);
-
-        // Same entries under FRESH ids: dedup_key catches dk1, (kind, title)
-        // catches the NULL-key rows.
-        let mut rekeyed = source_bundle("/tmp/portability-kn2-p1");
-        for k in &mut rekeyed.workspace_knowledge[0].knowledge {
-            k.id = format!("fresh-{}", k.id);
-        }
-        rekeyed.dev_projects.clear();
-        let second = import_bundle(&target, None, &rekeyed, &HashMap::new()).unwrap();
-        assert_eq!(second.knowledge_imported, 0);
-        assert_eq!(second.knowledge_skipped_duplicates, 3);
-
+        import_bundle(&target, None, &bundle, &HashMap::new()).expect("import");
         let conn = target.get().unwrap();
-        let count: i32 = conn
-            .query_row("SELECT COUNT(*) FROM workspace_knowledge", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(count, 3);
-    }
-
-    #[test]
-    fn adoption_cells_skip_pairs_whose_project_is_absent() {
-        let mut bundle = source_bundle("/tmp/portability-ad-p1");
-        // The adoption cell references p1 — which never lands because the
-        // projects section is emptied out.
-        bundle.dev_projects.clear();
-        let target = init_test_db().unwrap();
-        let result = import_bundle(&target, None, &bundle, &HashMap::new()).unwrap();
-        assert_eq!(result.knowledge_imported, 3);
-
-        let conn = target.get().unwrap();
-        let adoption: i32 = conn
+        let name: String = conn
             .query_row(
-                "SELECT COUNT(*) FROM workspace_practice_adoption",
+                "SELECT name FROM dev_workspaces WHERE id = 'w-legacy'",
                 [],
                 |r| r.get(0),
             )
             .unwrap();
-        assert_eq!(adoption, 0);
+        assert_eq!(name, "Legacy WS");
     }
 
     #[test]

@@ -327,15 +327,9 @@ struct FinalizeOpts<'a> {
 ///
 /// Completion write-back to the SOURCE IDEA of a finished task (plan 1D).
 ///
-/// Two things are owed once work ships:
+/// One thing is owed once work ships:
 ///
-/// 1. **Workspace adoption truth.** A `workspace_practice` idea exists because
-///    a member repo owed work. Success means the repo now follows the practice
-///    → its adoption cell becomes `adopted`. Failure puts it back in the
-///    `to_process` queue with the error on the note, so the matrix never shows
-///    a practice as adopted on the strength of a run that crashed.
-///
-/// 2. **A re-check is owed.** Any idea carrying a `dedup_key` is a sensor
+/// **A re-check is owed.** Any idea carrying a `dedup_key` is a sensor
 ///    finding whose signal was measured; shipping a fix does not prove the
 ///    number moved. Arming `verify_state = 'pending'` is the "work shipped,
 ///    verdict not in yet" marker.
@@ -373,34 +367,10 @@ pub(crate) fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str,
         }
     };
 
-    if success {
-        crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
-            pool,
-            &idea,
-            "adopted",
-            &format!("task:{task_id} completed"),
-        );
-        if idea.dedup_key.is_some() {
-            if let Err(e) = repo::set_finding_verify_state(pool, &idea.id, "pending", None) {
-                tracing::warn!(task_id, idea_id, error = %e, "completion write-back: failed to arm verification");
-            }
+    if success && idea.dedup_key.is_some() {
+        if let Err(e) = repo::set_finding_verify_state(pool, &idea.id, "pending", None) {
+            tracing::warn!(task_id, idea_id, error = %e, "completion write-back: failed to arm verification");
         }
-    } else {
-        let note = match task
-            .error
-            .as_deref()
-            .map(str::trim)
-            .filter(|e| !e.is_empty())
-        {
-            Some(err) => format!("task:{task_id} failed: {err}"),
-            None => format!("task:{task_id} failed"),
-        };
-        crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
-            pool,
-            &idea,
-            "to_process",
-            &note,
-        );
     }
 }
 
