@@ -68,6 +68,42 @@ impl PersonaEventStatus {
         }
     }
 
+    /// The statuses a retention sweep must never delete, whatever their age:
+    /// rows still in flight, and the dead-letter queue (a DLQ row is a failure
+    /// waiting for a human, and its age is not a verdict on it).
+    ///
+    /// Retention is expressed as what it PROTECTS, never as what it may delete.
+    /// The sweep it replaced named `('completed','skipped','failed','discarded')`
+    /// and so silently granted immortality to `Delivered` — the success state
+    /// production actually writes — leaving 4,941 of 4,948 rows on the
+    /// operator's database 20-73 days past a 30-day policy. With a protect-list
+    /// a status added later, or a string no variant parses (the live table
+    /// holds `processed`), is swept by default rather than kept forever.
+    pub const RETENTION_PROTECTED: &'static [PersonaEventStatus] =
+        &[Self::Pending, Self::Processing, Self::DeadLetter];
+
+    /// Whether retention must keep a row in this status. An exhaustive match,
+    /// so a new variant does not compile until someone classifies it.
+    pub fn is_retention_protected(&self) -> bool {
+        match self {
+            Self::Pending | Self::Processing | Self::DeadLetter => true,
+            Self::Delivered | Self::Completed | Self::Skipped | Self::Failed | Self::Discarded => {
+                false
+            }
+        }
+    }
+
+    /// [`Self::RETENTION_PROTECTED`] as a SQL list literal
+    /// (`'pending','processing','dead_letter'`), derived from the variants so
+    /// no retention predicate types a status set by hand.
+    pub fn retention_protected_sql_list() -> String {
+        Self::RETENTION_PROTECTED
+            .iter()
+            .map(|s| format!("'{}'", s.as_str()))
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
     /// Whether this status can legally transition to `target`.
     pub fn can_transition_to(&self, target: &Self) -> bool {
         matches!(
@@ -191,4 +227,60 @@ pub struct UpdateEventSubscriptionInput {
     pub event_type: Option<String>,
     pub source_filter: Option<String>,
     pub enabled: Option<bool>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PersonaEventStatus as S;
+
+    /// Every variant. The match makes adding a variant a compile error here
+    /// until it is listed, which is what keeps the set test below complete.
+    fn all() -> Vec<S> {
+        let all = vec![
+            S::Pending,
+            S::Processing,
+            S::Delivered,
+            S::Completed,
+            S::Skipped,
+            S::Failed,
+            S::DeadLetter,
+            S::Discarded,
+        ];
+        for s in &all {
+            match s {
+                S::Pending
+                | S::Processing
+                | S::Delivered
+                | S::Completed
+                | S::Skipped
+                | S::Failed
+                | S::DeadLetter
+                | S::Discarded => {}
+            }
+        }
+        all
+    }
+
+    #[test]
+    fn retention_protected_const_matches_the_classifier() {
+        let from_classifier: Vec<S> = all()
+            .into_iter()
+            .filter(|s| s.is_retention_protected())
+            .collect();
+        assert_eq!(from_classifier, S::RETENTION_PROTECTED.to_vec());
+    }
+
+    /// The production success state is sweepable; in-flight rows and the DLQ
+    /// are not. This is the exact omission that kept 99.4% of a table forever.
+    #[test]
+    fn delivered_is_retention_eligible_and_in_flight_and_dlq_are_protected() {
+        assert!(!S::Delivered.is_retention_protected());
+        assert!(S::Pending.is_retention_protected());
+        assert!(S::Processing.is_retention_protected());
+        assert!(S::DeadLetter.is_retention_protected());
+        assert_eq!(
+            S::retention_protected_sql_list(),
+            "'pending','processing','dead_letter'"
+        );
+    }
 }
