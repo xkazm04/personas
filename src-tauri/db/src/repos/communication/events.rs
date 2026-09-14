@@ -2228,7 +2228,7 @@ mod tests {
 
     fn backdate(pool: &DbPool, id: &str, days: i64) {
         let at = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
-        pool.get()
+        pool.conn("events::retention_tests")
             .unwrap()
             .execute(
                 "UPDATE persona_events SET created_at = ?1 WHERE id = ?2",
@@ -2238,7 +2238,7 @@ mod tests {
     }
 
     fn event_exists(pool: &DbPool, id: &str) -> bool {
-        pool.get()
+        pool.conn("events::retention_tests")
             .unwrap()
             .query_row(
                 "SELECT COUNT(*) AS n FROM persona_events WHERE id = ?1",
@@ -2257,7 +2257,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let delivered_old = publish_terminal(&pool, "old", PersonaEventStatus::Delivered);
         let unknown_old = publish_terminal(&pool, "old", PersonaEventStatus::Completed);
-        pool.get()
+        pool.conn("events::retention_tests")
             .unwrap()
             .execute(
                 "UPDATE persona_events SET status = 'processed' WHERE id = ?1",

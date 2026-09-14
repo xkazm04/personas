@@ -72,12 +72,14 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
 mod tests {
     use super::*;
     use crate::repos::execution::traces;
+    use crate::PoolExt;
     use personas_core::trace::ExecutionTrace;
 
     fn seed_execution(conn: &Connection, id: &str) {
         conn.execute(
-            "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
-             VALUES ('p-trace', 'Trace Test', 'sp', datetime('now'), datetime('now'))",
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p-trace', 'Trace Test', 'sp', datetime('now'), datetime('now'))
+             ON CONFLICT(id) DO NOTHING",
             [],
         )
         .unwrap();
@@ -117,7 +119,7 @@ mod tests {
     #[test]
     fn deleting_an_execution_deletes_its_traces_even_with_foreign_keys_off() {
         let pool = crate::init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("e28::tests").unwrap();
         seed_execution(&conn, "e-gone");
         seed_execution(&conn, "e-live");
         traces::save(&pool, &trace_for("e-gone")).unwrap();
@@ -145,7 +147,7 @@ mod tests {
     #[test]
     fn the_step_scrubs_orphans_left_before_the_trigger_existed() {
         let pool = crate::init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("e28::tests").unwrap();
         conn.execute_batch("DROP TRIGGER IF EXISTS execution_traces_ad;")
             .unwrap();
         seed_execution(&conn, "e-live");

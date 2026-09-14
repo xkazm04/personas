@@ -45,7 +45,54 @@ use rusqlite::Connection;
 
 use personas_core::error::AppError;
 
-use crate::repos::execution::executions;
+/// Block and document counts of the `executions_fts` index, read from its
+/// shadow tables: `(data_blocks, indexed_docs)`. `None` when the shadow tables
+/// cannot be read (no FTS5, or a detached index).
+pub fn search_index_stats(conn: &Connection) -> Option<(i64, i64)> {
+    let blocks: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM executions_fts_data", [], |r| {
+            r.get("n")
+        })
+        .ok()?;
+    let docs: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM executions_fts_docsize",
+            [],
+            |r| r.get("n"),
+        )
+        .ok()?;
+    Some((blocks, docs))
+}
+
+/// Merge the executions search index down and drop the postings of deleted rows.
+///
+/// `executions_fts` is an external-content FTS5 index kept in step by the
+/// `executions_fts_a{i,d,u}` triggers, and those triggers are correct — but an
+/// FTS5 delete only appends a tombstone to a new segment. The deleted rows'
+/// postings stay on disk until a merge happens to reach their segment, and a
+/// bulk delete (a retention sweep, the Storage prune) never triggers one. On the
+/// operator's install the index still held **17.9 MB in 4,411 blocks for five
+/// documents** after executions went from 2,188 to 5. `optimize` merges every
+/// segment into one and discards tombstoned postings: measured 17.9 MB → 32 KB
+/// in 635 ms on a copy of that database.
+///
+/// Returns `Ok(false)` without touching the index when it is detached
+/// (`executions_fts_stale` set): the boot rebuild owns a detached index, and a
+/// merge is a write against a derived structure already known to be damaged.
+pub fn optimize_search_index_on(conn: &Connection) -> Result<bool, AppError> {
+    let stale: bool = conn
+        .query_row(
+            "SELECT 1 FROM app_settings WHERE key = ?1",
+            [crate::settings_keys::EXECUTIONS_FTS_STALE],
+            |_| Ok(true),
+        )
+        .unwrap_or(false);
+    if stale {
+        return Ok(false);
+    }
+    conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('optimize');")?;
+    Ok(true)
+}
 
 /// When a boot-time reclaim is worth its pause.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -123,8 +170,7 @@ pub fn estimate(conn: &Connection) -> Result<SpaceEstimate, AppError> {
     let page_size = pragma_u64(conn, "page_size")?;
     let page_count = pragma_u64(conn, "page_count")?;
     let freelist = pragma_u64(conn, "freelist_count")?;
-    let (search_index_blocks, search_index_docs) =
-        executions::search_index_stats(conn).unwrap_or((0, 0));
+    let (search_index_blocks, search_index_docs) = search_index_stats(conn).unwrap_or((0, 0));
     Ok(SpaceEstimate {
         page_size,
         database_bytes: page_count.saturating_mul(page_size),
@@ -174,7 +220,7 @@ pub fn reclaim(conn: &Connection) -> Result<ReclaimOutcome, AppError> {
     let started = Instant::now();
     let before = estimate(conn)?;
     let optimized_search_index = if before.search_index_bloated() {
-        executions::optimize_search_index_on(conn)?
+        optimize_search_index_on(conn)?
     } else {
         false
     };
@@ -214,7 +260,7 @@ pub(crate) fn reclaim_at_boot(conn: &Connection, policy: &ReclaimPolicy) -> Opti
     let mut current = before;
     let mut optimized_search_index = false;
     if before.search_index_bloated() {
-        match executions::optimize_search_index_on(conn) {
+        match optimize_search_index_on(conn) {
             Ok(ran) => {
                 optimized_search_index = ran;
                 if let Ok(e) = estimate(conn) {
@@ -277,6 +323,7 @@ pub(crate) fn reclaim_at_boot(conn: &Connection, policy: &ReclaimPolicy) -> Opti
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PoolExt;
 
     const MIB: u64 = 1024 * 1024;
 
@@ -301,7 +348,7 @@ mod tests {
     #[test]
     fn boot_reclaim_vacuums_past_the_threshold_and_leaves_the_file_alone_below_it() {
         let pool = crate::init_test_db().unwrap();
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("reclaim::tests").unwrap();
         churn(&conn);
         let before = estimate(&conn).unwrap();
         assert!(

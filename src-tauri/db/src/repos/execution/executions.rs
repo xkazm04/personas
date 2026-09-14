@@ -1904,63 +1904,16 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
-/// Block and document counts of the `executions_fts` index, read from its
-/// shadow tables: `(data_blocks, indexed_docs)`. `None` when the shadow tables
-/// cannot be read (no FTS5, or a detached index).
-pub fn search_index_stats(conn: &rusqlite::Connection) -> Option<(i64, i64)> {
-    let blocks: i64 = conn
-        .query_row("SELECT COUNT(*) AS n FROM executions_fts_data", [], |r| {
-            r.get("n")
-        })
-        .ok()?;
-    let docs: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) AS n FROM executions_fts_docsize",
-            [],
-            |r| r.get("n"),
-        )
-        .ok()?;
-    Some((blocks, docs))
-}
-
-/// Merge the executions search index down and drop the postings of deleted rows.
-///
-/// `executions_fts` is an external-content FTS5 index kept in step by the
-/// `executions_fts_a{i,d,u}` triggers, and those triggers are correct — but an
-/// FTS5 delete only appends a tombstone to a new segment. The deleted rows'
-/// postings stay on disk until a merge happens to reach their segment, and a
-/// bulk delete (a retention sweep, the Storage prune) never triggers one. On the
-/// operator's install the index still held **17.9 MB in 4,411 blocks for five
-/// documents** after executions went from 2,188 to 5. `optimize` merges every
-/// segment into one and discards tombstoned postings: measured 17.9 MB → 32 KB
-/// in 635 ms on a copy of that database.
-///
-/// Returns `Ok(false)` without touching the index when it is detached
-/// (`executions_fts_stale` set): the boot rebuild owns a detached index, and a
-/// merge is a write against a derived structure already known to be damaged.
-pub fn optimize_search_index_on(conn: &rusqlite::Connection) -> Result<bool, AppError> {
-    let stale: bool = conn
-        .query_row(
-            "SELECT 1 FROM app_settings WHERE key = ?1",
-            params![crate::settings_keys::EXECUTIONS_FTS_STALE],
-            |_| Ok(true),
-        )
-        .unwrap_or(false);
-    if stale {
-        return Ok(false);
-    }
-    conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('optimize');")?;
-    Ok(true)
-}
-
-/// Pool form of [`optimize_search_index_on`], for the retention sweep.
+/// Merge the executions search index after a bulk delete, on a pooled
+/// connection, timed. The merge itself — and why a delete needs one — is
+/// [`crate::reclaim::optimize_search_index_on`].
 pub fn optimize_search_index(pool: &DbPool) -> Result<bool, AppError> {
     timed_query!(
         "executions_fts",
         "persona_executions::optimize_search_index",
         {
             let conn = pool.conn("executions::optimize_search_index")?;
-            optimize_search_index_on(&conn)
+            crate::reclaim::optimize_search_index_on(&conn)
         }
     )
 }
@@ -3394,7 +3347,7 @@ mod tests {
     fn optimize_search_index_drops_postings_of_deleted_executions() {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "FTS Bloat Agent");
-        let conn = pool.get().unwrap();
+        let conn = pool.conn("executions::fts_bloat_test").unwrap();
         let mut ids = Vec::new();
         for i in 0..40 {
             let row = create(&pool, &persona_id, None, None, None, None).unwrap();
@@ -3410,7 +3363,8 @@ mod tests {
             conn.execute("DELETE FROM persona_executions WHERE id = ?1", params![id])
                 .unwrap();
         }
-        let (blocks_before, docs_before) = search_index_stats(&conn).expect("fts shadow tables");
+        let (blocks_before, docs_before) =
+            crate::reclaim::search_index_stats(&conn).expect("fts shadow tables");
         assert_eq!(
             docs_before, 2,
             "the delete trigger kept the doc count honest"
@@ -3421,7 +3375,8 @@ mod tests {
             "a healthy index is optimised"
         );
 
-        let (blocks_after, docs_after) = search_index_stats(&conn).expect("fts shadow tables");
+        let (blocks_after, docs_after) =
+            crate::reclaim::search_index_stats(&conn).expect("fts shadow tables");
         assert_eq!(docs_after, 2);
         assert!(
             blocks_after * 4 < blocks_before,
