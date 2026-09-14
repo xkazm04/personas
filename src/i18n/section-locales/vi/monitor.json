@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "Quên gói này — không đọc được mức dùng của nó",
   "usage_not_stored": "chưa lưu",
   "usage_refresh": "Làm mới mức dùng ngay",
-  "usage_refresh_wait": "Mức dùng được lưu đệm trong năm phút; làm mới lại sau {time}"
+  "usage_refresh_wait": "Mức dùng được lưu đệm trong năm phút; làm mới lại sau {time}",
+  "usage_projected_hint": "Ước tính: không thể kết nối gói, nên lần đọc cuối lúc {time} được kéo dài. Các cửa sổ đã qua mốc đặt lại hiển thị trống; các cửa sổ còn lại không thể giảm.",
+  "usage_projected_short": "Ước tính",
+  "grid_simulation": "Mô phỏng",
+  "grid_simulation_off": "Lấp đầy bảng bằng đội hình mô phỏng: 20 dự án, mỗi dự án 3 tác nhân, 5 gói Claude. Chỉ trong bản dựng thử nghiệm.",
+  "grid_simulation_on": "Đội hình mô phỏng đang bật — mọi con số trên bảng này đều là hư cấu. Nhấp để quay lại đội hình thật."
 }

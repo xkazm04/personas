@@ -6805,7 +6805,12 @@
     "usage_accounts_remove_hint": "Oublier ce forfait — aucune utilisation n'a pu être lue pour lui",
     "usage_not_stored": "non enregistré",
     "usage_refresh": "Actualiser l'utilisation maintenant",
-    "usage_refresh_wait": "L'utilisation est mise en cache pendant cinq minutes ; nouvelle actualisation dans {time}"
+    "usage_refresh_wait": "L'utilisation est mise en cache pendant cinq minutes ; nouvelle actualisation dans {time}",
+    "usage_projected_hint": "Estimation : le forfait était injoignable, la dernière lecture de {time} est donc reportée. Les fenêtres dont la réinitialisation est passée s'affichent vides ; les autres n'ont pas pu baisser.",
+    "usage_projected_short": "Estimation",
+    "grid_simulation": "Simulation",
+    "grid_simulation_off": "Remplit le tableau avec une flotte simulée : 20 projets, 3 agents chacun, 5 forfaits Claude. Builds de test uniquement.",
+    "grid_simulation_on": "La flotte simulée est active — tous les chiffres de ce tableau sont inventés. Cliquez pour revenir à votre vraie flotte."
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

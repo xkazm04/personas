@@ -3749,5 +3749,7 @@
   "*:mastermind.view_holo",
   "cs:mastermind.world_portfolio",
   "es:mastermind.world_llm_spend",
-  "fr:mastermind.world_prod_score"
+  "fr:mastermind.world_prod_score",
+  "de:monitor.grid_simulation",
+  "fr:monitor.grid_simulation"
 ]

@@ -6805,7 +6805,12 @@
     "usage_accounts_remove_hint": "Olvidar este plan: no se pudo leer ningún uso para él",
     "usage_not_stored": "no guardado",
     "usage_refresh": "Actualizar el uso ahora",
-    "usage_refresh_wait": "El uso se guarda en caché durante cinco minutos; vuelve a actualizar en {time}"
+    "usage_refresh_wait": "El uso se guarda en caché durante cinco minutos; vuelve a actualizar en {time}",
+    "usage_projected_hint": "Estimación: no se pudo contactar con el plan, así que se arrastra la última lectura de {time}. Las ventanas cuyo reinicio ya pasó se muestran vacías; las demás no pueden haber bajado.",
+    "usage_projected_short": "Estimación",
+    "grid_simulation": "Simulación",
+    "grid_simulation_off": "Llena el tablero con una flota simulada: 20 proyectos, 3 agentes cada uno, 5 planes de Claude. Solo en compilaciones de prueba.",
+    "grid_simulation_on": "La flota simulada está activa: todos los números de este tablero son inventados. Haz clic para volver a tu flota real."
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

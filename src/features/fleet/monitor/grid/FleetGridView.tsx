@@ -1,159 +1,72 @@
 // FleetGridView — the "Activity" monitor surface, and the Monitor's baseline.
 //
 // A control-panel read on the whole fleet: every persona is a state-coloured
-// TILE carrying its name, grouped by team into one-per-team columns. The column
-// scrolls with the board, its header pinned. Teamless personas live in an
-// "Ungrouped" tray below, wrapped into rows.
+// TILE carrying its name, grouped by team into one-per-team columns. Under each
+// team's roster a divider separates the personas from the LIVE CLAUDE SESSIONS
+// dispatched into that team's projects (cwd → DevProject → team_id). Teamless
+// personas, and sessions the board cannot place, live in a tray below.
 //
-// Under each team's roster, a divider separates the personas from the LIVE
-// CLAUDE SESSIONS dispatched into that team's projects (cwd → DevProject →
-// team_id). Those are temporary processes, not fleet members, so they are
-// shorter, hollow, and coloured on the border by session state — see
-// fleetSessionModel. A column with no sessions shows no divider.
+// State + grouping logic is shared (`fleetGridModel`) with the rest of the
+// Monitor so a tile's colour always agrees with the other views. Clicking a
+// tile selects the persona and opens the Monitor drawer.
 //
-// State + grouping logic is shared (fleetGridModel) with the rest of the Monitor
-// so a tile's colour always agrees with the other views. Clicking a tile selects
-// the persona and opens the Monitor drawer.
+// THIS FILE IS THE COMPOSITION AND NOTHING ELSE. Each part of the surface owns
+// its own module and its own reasoning:
 //
-// ---------------------------------------------------------------------------
-// THE CONSOLIDATION (this pass)
+//   • `board/GridHeader`   — the title strip, the state key, the simulation
+//                            toggle. Why the key is a row of pills.
+//   • `UsageStrip`         — the subscription's five plan slots.
+//   • `board/GridBoard`    — the columns, the tray, the empty and ghost states,
+//                            and the two tile kinds. Why they differ in shape.
+//   • `board/TeamColumn`   — one column; its header IS the rail's scope control.
+//   • `board/RailSlot`     — the rail's footprint and its lazy chunk.
+//   • `board/SessionModals`— terminal + recap, mounted on click only.
+//   • `useBoardModel`      — grouping, tallies, per-column rows.
+//   • `useRailScope`       — what a column header can honestly match a feed on.
+//   • `useFocusFlash`      — Athena's pointer at a node.
+//   • `useStagedMount`     — chrome in frame one, tiles in two, rail in three.
+//   • `simulation/`        — the mock fleet, in test builds only.
 //
-// Activity was a board and nothing else: a bare grid of 38px squares floating on
-// the Monitor's background, with a corner legend and no way to act on anything
-// it showed. Every affordance the operator needed while looking at it lived
-// somewhere else — reviews in Conversations' rail, accepted-but-unsent work in
-// the triage deck, recent chatter in the Timeline, dispatching a session in an
-// overlay that covered the board. Activity is now the room those things happen
-// in, borrowing Conversations' geometry wholesale because Conversations is where
-// this app's visual argument was already won:
-//
-//   • the CARD — `rounded-card border border-border` on a near-flat tint, with
-//     `hud-corners` / `hud-bloom`, so the surface has an edge instead of
-//     bleeding into the page;
-//   • the HEADER — one 44px strip, round icon chip, one semibold title. The
-//     floating corner legend is gone; the state key lives in the header as
-//     count pills, which is where a key belongs when it also carries numbers;
-//   • the RAIL — `ActivityRail`, the same column with the same tab styling,
-//     carrying Reviews / Dispatch / Messages over one row model and one
-//     virtualized, infinite-loading scroller. Since 2026-09-01 it is
-//     resizable, and a CLICK ON A COLUMN HEADER scopes all three of its tabs
-//     to that project — see `rail/railFilter` for what each tab can honestly
-//     match a project on, which is not the same handle in all three;
-//   • the COMPOSER — `QuickDispatchDock`, which now sits in the MONITOR's
-//     footer rather than inside this card, so the Timeline, Conversations and
-//     the Map can dispatch too. It replaced a legend + count strip that only
-//     restated things already on screen.
-//
-// And the tiles: 4× the width at the same height, so a persona is named rather
-// than initialled (see `PersonaTile` for why the state colour moved from the
-// fill to a leading rail at that aspect).
-//
-// TWO KINDS OF NODE, and the difference is carried by shape as well as colour.
-// A PERSONA tile is solid, states its state on a full-height leading rail, and
-// carries the one pending operation that wants the operator on its trailing
-// edge (human gate, unread report, ready draft, failed run — `actionBadges`).
-// A FLEET tile is shorter, hollow and dashed, coloured on its border from the
-// canonical `FLEET_STATE_META` the rest of the app reads, and — since this pass
-// — CLICKABLE: it opens the session's live terminal. That asymmetry is the
-// point. A persona is a permanent member you inspect; a fleet session is a
-// process you talk to, and it dies when its task lands.
-//
-// ---------------------------------------------------------------------------
-// THREE THINGS THIS PASS ADDED
-//
-// THE COLD OPEN IS STAGED. Nothing ever enforced a delay on this board; the
-// delay was the first commit itself — the card, every tile, and the rail's
-// three feeds, all in one render behind a lazy chunk. `useStagedMount` now
-// paints the chrome in frame one (header, usage strip, column headers,
-// geometry-matched ghost rows, an empty rail of the persisted width), the
-// tiles in frame two, the rail in frame three — once per app session, since
-// every later mount is warm and would only be slowed by it. The two modals
-// are lazy: a terminal pane is not part of opening a board. And a Monitor
-// that opens before the roster exists gets the same chrome over `BoardGhost`
-// rather than a header-only skeleton in its place.
-//
-// THE USAGE STRIP sits between the header and the columns: the subscription's
-// 5-hour and 7-day windows, with reset countdowns and a pace verdict, read
-// from Anthropic's OAuth usage endpoint (`UsageStrip`).
-//
-// TILES SPEAK. A persona's channel line pops on its tile as a bubble for ten
-// seconds and leaves an unread mark behind (`useChannelBubbles`, fed by the
-// same channel cache the rail's Messages tab holds open — no extra IPC).
+// THE COLD OPEN IS STAGED. `useStagedMount` paints the chrome in frame one
+// (header, usage strip, column headers, geometry-matched ghost rows, an empty
+// rail of the persisted width), the tiles in frame two, the rail in frame
+// three — once per app session, since every later mount is warm and would only
+// be slowed by it. A Monitor that opens before the roster exists gets the same
+// chrome over `BoardGhost` rather than a header-only skeleton in its place.
 
-import { memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { memo, useCallback, useMemo, useState, Suspense } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { LayoutGrid, Users } from 'lucide-react';
+import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import { useTranslation } from '@/i18n/useTranslation';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
-import type { DevProject } from '@/lib/bindings/DevProject';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useSystemStore } from '@/stores/systemStore';
 import type { DrawerSection, PersonaCardModel } from '../monitorModel';
 import type { FeedTeam } from '../channels/types';
-import {
-  groupFleet, tallyStates, SQUARE_VISUAL, SQUARE_STATE_ORDER, cleanName, type SquareState,
-} from './fleetGridModel';
-import { normalizeName, type RailProjectFilter } from './rail/railFilter';
-import { PersonaTile } from './PersonaTile';
-import { SessionTile } from './SessionTile';
-import { useSystemStore } from '@/stores/systemStore';
-import { useFleetSessions } from './useFleetSessions';
-import { ColumnBody } from './ColumnBody';
-import { UngroupedTray } from './UngroupedTray';
 import { UsageStripFallback } from './UsageStripShell';
-import { BoardGhost, ColumnGhost } from './BoardGhost';
 import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
-import { useRailWidth } from './rail/useRailWidth';
-import {
-  TILE_W, TILE_H, SESSION_TILE_H, columnRows, type ColumnRow,
-} from './gridGeometry';
+import { useFleetSessions } from './useFleetSessions';
+import { useBoardModel } from './useBoardModel';
+import { useRailScope } from './useRailScope';
+import { useFocusFlash } from './useFocusFlash';
+import { useSimulatedBoard, useSimulationEnabled } from './simulation';
+import { useSimulatedRail } from './useSimulatedRail';
+import { GridHeader } from './board/GridHeader';
+import { GridBoard } from './board/GridBoard';
+import { RailSlot } from './board/RailSlot';
+import { SessionModals } from './board/SessionModals';
 
-// Both modals mount only when a session tile is clicked, and the terminal one
-// drags xterm along with it — neither belongs in the board's opening commit.
-// `lazyRetry`, not raw `lazy`: a chunk fetch that fails once (a dev server
-// restart, a flaky disk) must not cache its rejection forever.
-const FleetTerminalModal = lazyRetry(() => import('./FleetTerminalModal'));
-const SessionRecapModal = lazyRetry(() => import('./SessionRecapModal'));
-// The rail (its three feeds reach the unified triage queue, the dispatch
-// backlog and the channel modals — ~230 modules beyond the app shell) and the
-// usage strip (confirm dialog, toggle, async buttons) are chunks of their own:
-// the board's opening commit holds the tiles and the ghost frames only, and
-// each of these lands into a fallback that already occupies its footprint.
-const ActivityRail = lazyRetry(() => import('./ActivityRail'));
+// The usage strip carries a confirm dialog, a toggle and async buttons — a
+// chunk of its own, landing into a fallback that already occupies its footprint.
 const UsageStrip = lazyRetry(() => import('./UsageStrip'));
 
 /** Stage at which the tiles mount; the rail follows one frame later. */
 const TILES_STAGE = 1;
 
-/**
- * The rail's footprint while the rail itself waits a frame: the persisted
- * width, so the columns do not shift when the real one lands.
- */
-function RailPlaceholder() {
-  const rail = useRailWidth();
-  return (
-    <div
-      aria-hidden
-      className="flex min-h-0 flex-shrink-0 border-l border-border"
-      style={{ width: rail.width }}
-      data-testid="fleet-grid-rail-placeholder"
-    />
-  );
-}
-
-/** Stable empty list so a session-less column never rebuilds its rows. */
-const EMPTY_SESSIONS: FleetSession[] = [];
-
 /** Stable empty list for the project lookup while the store is cold. */
 const NO_PROJECTS: DevProject[] = [];
-
-/** How long a node Athena pointed at stays ringed. Long enough to find with the
- *  eye once the scroll settles, short enough that it never becomes chrome. */
-const FOCUS_FLASH_MS = 2600;
 
 interface Props {
   cards: PersonaCardModel[];
@@ -174,61 +87,33 @@ interface Props {
   isLoading?: boolean;
 }
 
-/**
- * The state key, in the header. It was a `pointer-events-none absolute` box in
- * the board's bottom-right corner — out of the way of the squares, and out of
- * the way of being read. At header width it is a row of count pills, which is
- * the same information without a floating overlay on top of the board.
- */
-function StateTally({ totals, labels }: { totals: Record<SquareState, number>; labels: Record<SquareState, string> }) {
-  return (
-    <div className="ml-auto flex flex-shrink-0 items-center gap-1.5" data-testid="fleet-grid-tally">
-      {SQUARE_STATE_ORDER.map((s) => (
-        <span
-          key={s}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/20 px-2 py-0.5 typo-caption text-foreground"
-        >
-          <span className={`h-2 w-2 flex-shrink-0 rounded-full ${SQUARE_VISUAL[s].accent} ${SQUARE_VISUAL[s].pulse ? 'animate-pulse' : ''}`} />
-          <span className="opacity-70">{labels[s]}</span>
-          <span className="tabular-nums">{totals[s]}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/**
- * The divider between a column's roster and its live sessions. It is a ROW of
- * the column now rather than a wrapper around the sessions — see
- * `gridGeometry.columnRows` for why. It is emitted only when the column HAS
- * sessions: an empty divider would read as "this team has a session lane and it
- * is empty", which is a different claim.
- */
-function SessionDivider({ label }: { label: string }) {
-  return (
-    <span
-      className="flex h-full items-end gap-1.5 pb-1 typo-caption text-foreground opacity-50"
-      data-testid="fleet-grid-session-strip"
-    >
-      <span aria-hidden className="h-px flex-1 bg-border" />
-      {label}
-      <span aria-hidden className="h-px flex-1 bg-border" />
-    </span>
-  );
-}
-
 function FleetGridViewImpl({
   cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker, isLoading = false,
 }: Props) {
-  const { t, tx } = useTranslation();
   const stage = useStagedMount();
   const reducedMotion = useReducedMotion() ?? false;
+  const focusKey = useFocusFlash();
 
-  // Channel bubbles for the personas on this board. The roster set is keyed
-  // by the cards' ids so a roster change re-diffs, and nothing else does.
+  // Channel bubbles for the personas on this board. The roster set is keyed by
+  // the cards' ids, so a roster change re-diffs and nothing else does.
   const personaIds = useMemo(() => new Set(cards.map((c) => c.personaId)), [cards]);
-  const { bubbles, unseen, acknowledge } = useChannelBubbles(feedTeams, personaIds);
+  const liveBubbles = useChannelBubbles(feedTeams, personaIds);
+  const liveSessions = useFleetSessions();
+  const liveProjects = useSystemStore((st) => st.projects) ?? NO_PROJECTS;
+
+  // THE ONE SEAM. Everything below this line reads `board`, never the props.
+  const simulating = useSimulationEnabled();
+  const board = useSimulatedBoard(simulating, {
+    cards, personas, teams,
+    projects: liveProjects,
+    sessions: liveSessions,
+    unseen: liveBubbles.unseen,
+    isLoading,
+  });
+  const simulatedRail = useSimulatedRail(simulating);
+
   // Opening a persona is the operator looking at it: its unread mark clears.
+  const { acknowledge } = liveBubbles;
   const handleSelect = useCallback(
     (personaId: string, section: DrawerSection) => {
       acknowledge(personaId);
@@ -236,311 +121,58 @@ function FleetGridViewImpl({
     },
     [acknowledge, onSelect],
   );
-  // The session whose terminal is open. Held as the SESSION rather than its id:
-  // the registry patches rows underneath an open modal on every state event, and
-  // an id re-resolved per render would swap the pane's subject mid-read. The
-  // terminal itself is keyed on `session.id`, which does not change.
-  // ATHENA'S POINTER. She names a node in her caption over this board; the orb
-  // writes its key here and this is the end that acts on it. Consumed and then
-  // cleared, like every other transient Monitor signal — a focus that persisted
-  // would re-scroll the board every time the operator came back to it.
-  //
-  // The ring outlives the scroll deliberately: a scroll that lands with no mark
-  // leaves the operator looking at a column, guessing which tile was meant.
-  const focusNode = useSystemStore((s) => s.monitorFocusNode);
-  const setFocusNode = useSystemStore((s) => s.setMonitorFocusNode);
-  useEffect(() => {
-    if (!focusNode) return;
-    const id = setTimeout(() => setFocusNode(null), FOCUS_FLASH_MS);
-    return () => clearTimeout(id);
-  }, [focusNode, setFocusNode]);
 
-  // THE RAIL'S PROJECT SCOPE, owned here because the board is the only thing
-  // that knows what its own columns are made of. Clicking the header that is
-  // already scoping clears it — a toggle, so the gesture that applied a scope
-  // is also the one that removes it and there is nothing to hunt for.
-  const [scope, setScope] = useState<RailProjectFilter | null>(null);
-  const projects = useSystemStore((st) => st.projects) ?? NO_PROJECTS;
-  const clearScope = useCallback(() => setScope(null), []);
+  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions);
+  const { scope, toggleScope, clearScope } = useRailScope(board.projects);
 
-  const [openSession, setOpenSession] = useState<FleetSession | null>(null);
-  const closeSession = useCallback(() => setOpenSession(null), []);
-  // The recap is the CHEAP read of a session — it mounts no xterm, so it can be
-  // opened on any tile of a 200-session board without costing a subscription.
-  // Held as the session for the same reason the terminal is (see above).
-  const [recapSession, setRecapSession] = useState<FleetSession | null>(null);
-  const closeRecap = useCallback(() => setRecapSession(null), []);
-  const grouped = useMemo(() => groupFleet(cards, personas, teams), [cards, personas, teams]);
-  const totals = useMemo(() => tallyStates(cards), [cards]);
-
-  // Live Claude sessions, already grouped by team. Sessions bound to a team
-  // that has no rendered column (every one of its personas is missing from the
-  // fleet) would otherwise vanish, so they fall back into the Ungrouped tray
-  // rather than being silently dropped.
-  const sessionGroups = useFleetSessions();
-  const traySessions = useMemo(() => {
-    const rendered = new Set(grouped.teams.map((g) => g.teamId));
-    const orphans: FleetSession[] = [];
-    for (const [teamId, list] of sessionGroups.byTeam) {
-      if (!rendered.has(teamId)) orphans.push(...list);
-    }
-    return orphans.length > 0 ? [...sessionGroups.ungrouped, ...orphans] : sessionGroups.ungrouped;
-  }, [sessionGroups, grouped.teams]);
-
-  const stateLabels: Record<SquareState, string> = {
-    running: t.monitor.grid_state_running,
-    attention: t.monitor.grid_state_attention,
-    failed: t.monitor.grid_state_failed,
-    idle: t.monitor.grid_state_idle,
-  };
-
-  const empty =
-    grouped.teams.length === 0 && grouped.ungrouped.length === 0 && traySessions.length === 0;
-
-  // Each column's rows, with every height already decided (gridGeometry). Built
-  // here rather than inside the column so a state event that changes ONE team's
-  // sessions does not rebuild the row list of every other team.
-  const columns = useMemo(
-    () => grouped.teams.map((g) => ({
-      ...g,
-      rows: columnRows(g.cards, sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS),
-    })),
-    [grouped.teams, sessionGroups.byTeam],
-  );
-
-  /**
-   * Everything the three feeds can match this column on, gathered in one
-   * place: the team's id, the ids of the `dev_projects` bound to it, and the
-   * names — team, projects, personas — that a triage item's source label
-   * could carry, since that queue has no project id to match instead.
-   *
-   * BOTH the raw and the cleaned form of every name go in. The board prints
-   * `cleanName(teamName)` and the backend stores the raw one; matching on
-   * either alone silently drops whichever half of the queue used the other.
-   */
-  const scopeFor = useCallback(
-    (teamId: string, teamName: string, roster: PersonaCardModel[]): RailProjectFilter => {
-      const names = new Set<string>();
-      const add = (raw: string | null | undefined) => {
-        if (!raw) return;
-        names.add(normalizeName(raw));
-        names.add(normalizeName(cleanName(raw)));
-      };
-      add(teamName);
-      for (const card of roster) add(card.personaName);
-      const projectIds = new Set<string>();
-      for (const project of projects) {
-        if (project.team_id !== teamId) continue;
-        projectIds.add(project.id);
-        add(project.name);
-      }
-      return { teamId, label: cleanName(teamName), projectIds, names };
-    },
-    [projects],
-  );
-
-  const toggleScope = useCallback(
-    (teamId: string, teamName: string, roster: PersonaCardModel[]) =>
-      setScope((prev) => (prev?.teamId === teamId ? null : scopeFor(teamId, teamName, roster))),
-    [scopeFor],
-  );
-
-  const renderTile = useCallback(
-    (c: PersonaCardModel) => (
-      <PersonaTile
-        key={c.personaId}
-        card={c}
-        selected={c.personaId === selectedPersonaId}
-        onSelect={handleSelect}
-        width={TILE_W}
-        height={TILE_H}
-        flash={focusNode === `p:${c.personaId}`}
-        bubble={bubbles.get(c.personaId) ?? null}
-        unseenChat={unseen.get(c.personaId) ?? 0}
-      />
-    ),
-    [selectedPersonaId, handleSelect, focusNode, bubbles, unseen],
-  );
-
-  const renderSessionTile = useCallback(
-    (s: FleetSession) => (
-      <SessionTile
-        key={s.id}
-        session={s}
-        width={TILE_W}
-        height={SESSION_TILE_H}
-        onOpen={setOpenSession}
-        onRecap={setRecapSession}
-        flash={focusNode === `s:${s.id}`}
-      />
-    ),
-    [focusNode],
-  );
-
-  const renderColumnRow = useCallback(
-    (row: ColumnRow) => {
-      if (row.kind === 'persona') return renderTile(row.card);
-      if (row.kind === 'session') return renderSessionTile(row.session);
-      return <SessionDivider label={t.monitor.grid_sessions} />;
-    },
-    [renderTile, renderSessionTile, t.monitor.grid_sessions],
-  );
+  const [terminal, setTerminal] = useState<FleetSession | null>(null);
+  const [recap, setRecap] = useState<FleetSession | null>(null);
+  const closeTerminal = useCallback(() => setTerminal(null), []);
+  const closeRecap = useCallback(() => setRecap(null), []);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border bg-foreground/[0.01] hud-corners hud-bloom">
-      <div className="flex h-11 flex-shrink-0 items-center gap-2.5 border-b border-border bg-foreground/[0.015] px-3">
-        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/15">
-          <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
-        </div>
-        <span className="typo-title">{t.monitor.activity_mode}</span>
-        {/* Zeros before the first read would be a tally of nothing. */}
-        {!(isLoading && cards.length === 0) && <StateTally totals={totals} labels={stateLabels} />}
-      </div>
+      <GridHeader totals={model.totals} showTally={!(board.isLoading && board.cards.length === 0)} />
 
       <Suspense fallback={<UsageStripFallback />}>
-        <UsageStrip />
+        <UsageStrip simulated={simulating} />
       </Suspense>
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {isLoading && empty ? (
-            <BoardGhost />
-          ) : empty ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-              <div className="relative">
-                <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
-                <Users className="relative h-8 w-8 text-foreground opacity-70" />
-              </div>
-              <p className="typo-body text-foreground">{t.monitor.channels_combined_quiet}</p>
-            </div>
-          ) : (
-            <>
-              {/* The board — one column per team, scrolling horizontally. The
-                  VERTICAL scroll is now per column rather than shared (see
-                  ColumnBody's header for the geometry decision), so this
-                  container scrolls on one axis only. */}
-              <div
-                className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-3"
-                aria-label={t.monitor.grid_board_aria}
-              >
-                <div className="flex h-full gap-3">
-                  {columns.map((g) => (
-                    <section
-                      key={g.teamId}
-                      className="flex h-full min-h-0 flex-shrink-0 flex-col gap-1.5"
-                      style={{ width: TILE_W }}
-                      data-testid="fleet-grid-column"
-                    >
-                      {/* Pinned team header. At square width this was an
-                          initials chip with no roster count, "kept deliberately
-                          minimal" because 38px had room for nothing else. The
-                          constraint that motivated that is gone: the column is
-                          a tile wide, so the team gets its real name and its
-                          headcount. It now sits ABOVE the column's own scroller
-                          rather than `sticky` against a shared one — the same
-                          property, held structurally. */}
-                      <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
-                        {/* THE HEADER IS THE SCOPE CONTROL. The tooltip carries
-                            what the click does as well as the full name — the
-                            name is the one thing here that can truncate, and a
-                            control whose only affordance is a hover colour has
-                            to say what it does somewhere. Shared Tooltip, not
-                            `title=`, so it is reachable by keyboard and touch. */}
-                        <Tooltip content={tx(t.monitor.grid_column_scope, { project: cleanName(g.teamName) })}>
-                          <button
-                            type="button"
-                            onClick={() => toggleScope(g.teamId, g.teamName, g.cards)}
-                            aria-pressed={scope?.teamId === g.teamId}
-                            data-testid="fleet-grid-column-header"
-                            className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
-                              scope?.teamId === g.teamId
-                                ? 'bg-primary/15 text-foreground'
-                                : 'text-foreground hover:bg-secondary/40'
-                            }`}
-                          >
-                            <span className="min-w-0 flex-1 truncate typo-label">
-                              {cleanName(g.teamName)}
-                            </span>
-                            <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
-                              {g.cards.length}
-                            </span>
-                          </button>
-                        </Tooltip>
-                        <span
-                          aria-hidden
-                          className="h-0.5 w-full rounded-full"
-                          style={{ backgroundColor: colorWithAlpha(g.teamColor, 0.55) }}
-                        />
-                      </div>
-                      {/* Roster + sessions — one windowed stack of rows. On
-                          the session's first paint the rows wait one frame
-                          behind their own geometry-matched ghost. */}
-                      {stage >= TILES_STAGE ? (
-                        // The tiles arrive with a short rise — data landing
-                        // reads as data landing, not as a ghost being swapped
-                        // for a board. Once per mount; reduced motion opts out.
-                        <motion.div
-                          className="flex min-h-0 flex-1 flex-col"
-                          initial={reducedMotion ? false : { opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.28, ease: 'easeOut' }}
-                        >
-                          <ColumnBody rows={g.rows} renderRow={renderColumnRow} focusKey={focusNode} />
-                        </motion.div>
-                      ) : (
-                        <ColumnGhost rows={g.rows.length} />
-                      )}
-                    </section>
-                  ))}
-                </div>
-              </div>
-
-              {/* Ungrouped tray — wrapped rows, windowed above 30 tiles. */}
-              {(grouped.ungrouped.length > 0 || traySessions.length > 0) && (
-                <div className="flex max-h-[32%] flex-shrink-0 flex-col gap-2 border-t border-border px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-3 w-3 text-foreground opacity-40" />
-                    <span className="typo-label text-foreground opacity-50">{t.monitor.grid_ungrouped}</span>
-                  </div>
-                  <UngroupedTray
-                    cards={grouped.ungrouped}
-                    sessions={traySessions}
-                    renderPersona={renderTile}
-                    renderSession={renderSessionTile}
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <GridBoard
+            model={model}
+            isLoading={board.isLoading}
+            staged={stage >= TILES_STAGE}
+            reducedMotion={reducedMotion}
+            focusKey={focusKey}
+            selectedPersonaId={selectedPersonaId}
+            onSelect={handleSelect}
+            bubbles={liveBubbles.bubbles}
+            unseen={board.unseen}
+            onOpenSession={setTerminal}
+            onRecapSession={setRecap}
+            scopedTeamId={scope?.teamId ?? null}
+            onToggleScope={toggleScope}
+          />
         </div>
 
-        {stage >= FINAL_STAGE ? (
-          <Suspense fallback={<RailPlaceholder />}>
-            <ActivityRail
-              feedTeams={feedTeams ?? []}
-              onOpenSpeaker={onOpenSpeaker}
-              filter={scope}
-              onClearFilter={clearScope}
-            />
-          </Suspense>
-        ) : (
-          <RailPlaceholder />
-        )}
+        <RailSlot
+          ready={stage >= FINAL_STAGE}
+          feedTeams={feedTeams ?? []}
+          onOpenSpeaker={onOpenSpeaker}
+          filter={scope}
+          onClearFilter={clearScope}
+          simulated={simulatedRail}
+        />
       </div>
 
-      {/* Modals: chunk-loaded on first open. A null fallback is right here —
-          the trigger was a click on a tile, the modal's own shell paints as
-          soon as the chunk lands, and there is no chrome to hold in between. */}
-      {openSession && (
-        <Suspense fallback={null}>
-          <FleetTerminalModal session={openSession} onClose={closeSession} />
-        </Suspense>
-      )}
-      {recapSession && (
-        <Suspense fallback={null}>
-          <SessionRecapModal session={recapSession} onClose={closeRecap} />
-        </Suspense>
-      )}
+      <SessionModals
+        terminal={terminal}
+        recap={recap}
+        onCloseTerminal={closeTerminal}
+        onCloseRecap={closeRecap}
+      />
     </div>
   );
 }

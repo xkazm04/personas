@@ -85,6 +85,31 @@ Cargo features in `src-tauri/Cargo.toml`:
 gaps in four backend modules — see the comment on the `daemon` feature in
 `Cargo.toml` for the cleanup plan.
 
+### What a test build gives the frontend
+
+`boot::test_bridge` opens the automation HTTP server on **two** independent
+conditions: `PERSONAS_TEST_PORT` naming a port (any debug build), or the
+`test-automation` compile feature (`npm run tauri:dev:test`, where nothing sets
+that env var). `lib.rs` injects `window.__PERSONAS_TEST_MODE__ = true` before
+page JS on the same two conditions — it followed only the first until
+2026-09-07, so the build made *for* driving the UI was the one whose frontend
+could not tell it was bridged.
+
+Two things read that flag:
+
+- `src/test/automation/perfInstrument.ts` — the perf bridge (also loaded in any
+  `import.meta.env.DEV` build).
+- **The Activity board's Simulation toggle** — a gold button in the Monitor's
+  Activity header that fills the whole surface with a deterministic mock fleet:
+  20 projects × 3 agents, live sessions under half the columns plus two the
+  board cannot place, five Claude plans covering every usage-strip card branch,
+  and rail rows on all three tabs. Click again to return to the real fleet.
+  The fixtures live in `src/features/fleet/monitor/grid/simulation/`; they
+  substitute at the board's *input* boundary, so grouping, scoping, paging and
+  virtualization all run their real code against them.
+  `setSimulation` refuses to turn on when the flag is absent, and the button
+  renders `null` there — a shipped installer has no path to either.
+
 ## Codegen pipeline
 
 `predev` and `prebuild` run codegen before Vite. Both go through

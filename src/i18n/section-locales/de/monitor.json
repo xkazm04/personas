@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "Diesen Plan vergessen — für ihn konnte keine Nutzung gelesen werden",
   "usage_not_stored": "nicht gespeichert",
   "usage_refresh": "Nutzung jetzt aktualisieren",
-  "usage_refresh_wait": "Die Nutzung wird fünf Minuten zwischengespeichert; erneut aktualisieren in {time}"
+  "usage_refresh_wait": "Die Nutzung wird fünf Minuten zwischengespeichert; erneut aktualisieren in {time}",
+  "usage_projected_hint": "Schätzung: Der Plan war nicht erreichbar, daher wird die letzte Messung von {time} fortgeschrieben. Fenster, deren Reset vorbei ist, werden leer angezeigt; die übrigen können nicht gesunken sein.",
+  "usage_projected_short": "Schätzung",
+  "grid_simulation": "Simulation",
+  "grid_simulation_off": "Füllt das Board mit einer simulierten Flotte: 20 Projekte, je 3 Agenten, 5 Claude-Pläne. Nur in Test-Builds.",
+  "grid_simulation_on": "Simulierte Flotte ist aktiv — jede Zahl auf diesem Board ist erfunden. Klicken, um zur echten Flotte zurückzukehren."
 }

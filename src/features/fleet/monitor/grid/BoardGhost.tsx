@@ -33,14 +33,21 @@ function GhostRow() {
   );
 }
 
-/** The rows of one column, for the staged first paint. */
-export function ColumnGhost({ rows }: { rows: number }) {
+/**
+ * The rows of one column, for the staged first paint.
+ *
+ * `maxHeight` mirrors `ColumnBody`'s: since the board wraps into rows the
+ * column is content-sized rather than `h-full`, and a ghost that sized itself
+ * differently from the body it stands in for would move the board on the swap
+ * — which is the one thing a geometry-matched ghost exists not to do.
+ */
+export function ColumnGhost({ rows, maxHeight }: { rows: number; maxHeight?: number }) {
   const n = Math.max(1, Math.min(GHOST_ROW_CAP, rows));
   return (
     <div
       aria-hidden
-      className="min-h-0 flex-1 overflow-hidden animate-fade-in"
-      style={{ animationDelay: '150ms' }}
+      className={`min-h-0 overflow-hidden animate-fade-in ${maxHeight === undefined ? 'flex-1' : ''}`}
+      style={{ animationDelay: '150ms', maxHeight }}
       data-testid="fleet-grid-column-ghost"
     >
       {Array.from({ length: n }, (_, i) => <GhostRow key={i} />)}

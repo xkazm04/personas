@@ -33,12 +33,22 @@ export const SESSION_TILE_H = 30;
 export const ROW_GAP = 4;
 /** Gap between tiles in the wrapped tray (was `gap-1.5`). */
 export const TRAY_GAP = 6;
+/** Gap between columns, and between the board's rows of columns (`gap-3`). */
+export const BOARD_GAP = 12;
 
 /** Row heights = tile + its trailing gap. See the header for why the gap lives here. */
 export const PERSONA_ROW_H = TILE_H + ROW_GAP;
 export const SESSION_ROW_H = SESSION_TILE_H + ROW_GAP;
-/** The "Sessions" divider: caption line + its own leading margin. */
-export const DIVIDER_ROW_H = 24;
+/**
+ * The rule between a column's roster and its live sessions.
+ *
+ * It carried the words "Live Claude Sessions" until 2026-09-07 and is now a
+ * hairline: the two tile kinds already differ in height, fill and border
+ * treatment, so the label was naming a distinction the eye had already made —
+ * once per column, twenty times over, on the board's scarcest axis. The word
+ * survives for assistive tech, where the shape argument does not reach.
+ */
+export const DIVIDER_ROW_H = 12;
 /** Tray rows are uniform: a session tile is shorter and rides centred, exactly
  *  as it did under the old `flex-wrap items-center`. */
 export const TRAY_ROW_H = TILE_H + TRAY_GAP;
@@ -50,6 +60,56 @@ export const TRAY_ROW_H = TILE_H + TRAY_GAP;
  * scale valve, not a new baseline.
  */
 export const VIRTUALIZE_ABOVE = 30;
+
+// ---------------------------------------------------------------------------
+// The board's own wrap
+//
+// The board was ONE unbounded row of columns scrolling sideways, which put the
+// twentieth project four screens to the right of the first and made "how is the
+// fleet doing" a question you answered by dragging. It now wraps, so the fleet
+// grows DOWN — the axis a display has more of, and the axis a scroll wheel is
+// already on.
+//
+// Two consequences that had to be paid for rather than assumed:
+//
+//  • A column can no longer be `h-full`, because a row's height is now its
+//    tallest column. Each column's body is content-sized and capped
+//    (`COLUMN_BODY_MAX_H`), so one 200-persona team scrolls inside its own
+//    column instead of making its row taller than the display.
+//  • The wrap point is a COUNT, not a CSS `flex-wrap`. Flexbox can wrap on
+//    width but cannot be told "at most five", and five is the number that keeps
+//    a row readable as a unit. The width still matters when the board is too
+//    narrow to hold five — hence `boardPerRow`, which takes the smaller of the
+//    two, exactly as `trayPerRow` does one axis over.
+// ---------------------------------------------------------------------------
+
+/** The board wraps after this many columns, however wide the display is. */
+export const COLUMNS_PER_ROW = 5;
+
+/**
+ * A column's scrolling body is capped here so a row's height stays bounded by
+ * the design rather than by whichever team has the most personas. Ten persona
+ * rows: deep enough that the common case (a handful of agents) never scrolls,
+ * shallow enough that five such columns still fit a laptop display.
+ */
+export const COLUMN_BODY_MAX_H = 10 * PERSONA_ROW_H;
+
+/** How many columns go on one board row at `width`: five, or fewer if narrow. */
+export function boardPerRow(width: number): number {
+  // Before the first measurement, assume the full count — a one-column first
+  // paint that reflows to five is a worse opening than a brief overflow.
+  if (width <= 0) return COLUMNS_PER_ROW;
+  const fit = Math.floor((width + BOARD_GAP) / (TILE_W + BOARD_GAP));
+  return Math.max(1, Math.min(COLUMNS_PER_ROW, fit));
+}
+
+/** Split an ordered column list into rows of at most `perRow`. */
+export function chunkRows<T>(items: readonly T[], perRow: number): T[][] {
+  const size = Math.max(1, perRow);
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
 
 /** One addressable row of a team column, with its height already decided. */
 export type ColumnRow =

@@ -541,6 +541,9 @@
   "triage_accepted_deleted_gone": "{count} were already gone",
   "triage_accepted_row_aria": "Select {title}",
   "grid_board_aria": "Fleet board",
+  "grid_simulation": "Simulation",
+  "grid_simulation_on": "Simulated fleet is on — every number on this board is invented. Click to go back to your real fleet.",
+  "grid_simulation_off": "Fill the board with a simulated fleet: 20 projects, 3 agents each, 5 Claude plans. Test builds only.",
   "grid_rail_tab_dispatch": "Dispatch",
   "grid_rail_tab_messages": "Messages",
   "grid_rail_tabs_aria": "Activity panel",
@@ -646,5 +649,7 @@
   "usage_not_stored": "not stored",
   "usage_refresh": "Refresh usage now",
   "usage_refresh_wait": "Usage is cached for five minutes; refresh again in {time}",
-  "usage_accounts_remove_hint": "Forget this plan — no usage could be read for it"
+  "usage_accounts_remove_hint": "Forget this plan — no usage could be read for it",
+  "usage_projected_hint": "Estimated: the plan could not be reached, so its last read from {time} is carried forward. Windows whose reset has passed are shown empty; the rest cannot have gone down.",
+  "usage_projected_short": "Estimated"
 }

@@ -11,7 +11,7 @@
 // rejects). A plan that reads fine is not clutter, it is a plan.
 
 import { useCallback, useState } from 'react';
-import { Check, ShieldOff, Trash2 } from 'lucide-react';
+import { Check, History, ShieldOff, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -33,11 +33,13 @@ interface Props {
 type Pending = { kind: 'switch' | 'remove'; account: ClaudeAccountView } | null;
 
 /** One meter row inside a plan card. */
-export function CardMeter({ w, now, t }: { w: ClaudeUsageWindow; now: number; t: Translations }) {
+export function CardMeter({
+  w, now, t, approx = false,
+}: { w: ClaudeUsageWindow; now: number; t: Translations; approx?: boolean }) {
   return (
     <div className={`${METER_GRID} h-4`} data-testid="fleet-usage-window" data-window={w.key}>
       <RemainingLabel w={w} now={now} t={t} />
-      <MeterBar w={w} now={now} t={t} showTone={false} />
+      <MeterBar w={w} now={now} t={t} showTone={false} approx={approx} />
       <PaceGlyph w={w} now={now} t={t} />
     </div>
   );
@@ -47,6 +49,11 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
   const { t, tx } = useTranslation();
   const [pending, setPending] = useState<Pending>(null);
   const cancel = useCallback(() => setPending(null), []);
+  // Receding exists to make the LIVE plan stand out. On an install where the
+  // CLI never wrote an account uuid there is no live plan to know, so nothing
+  // recedes — dimming all five would be contrast against nothing, and would
+  // read as "every plan is stale" rather than "we cannot tell which is live".
+  const hasActive = accounts.some((a) => a.isActive);
 
   const confirm = useCallback(async () => {
     if (!pending) return;
@@ -66,25 +73,49 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
         const five = windows.find((w) => w.key === 'five_hour');
         const seven = windows.find((w) => w.key === 'seven_day');
         const quarantined = a.quarantineReason !== null;
-        const unreadable = quarantined || a.usageReason !== null;
+        // A plan the endpoint could not be asked about, with NOTHING remembered
+        // to project — the only case that renders no meters, and the only case
+        // where forgetting the plan is offered. A failed read with a remembered
+        // last state renders projected meters instead (`usageProjectedFromMs`).
+        const projected = a.usageProjectedFromMs !== null && a.usage.length > 0;
+        const unreadable = (quarantined || a.usageReason !== null) && !projected;
         const aria = [
           a.email,
+          projected ? t.monitor.usage_projected_short : null,
           five ? windowAria(t, tx, five, now) : null,
           seven ? windowAria(t, tx, seven, now) : null,
-          quarantined ? t.monitor.usage_accounts_quarantined : a.usageReason ? reasonLabel(t, a.usageReason) : null,
+          unreadable
+            ? quarantined ? t.monitor.usage_accounts_quarantined : reasonLabel(t, a.usageReason)
+            : null,
         ].filter(Boolean).join(' · ');
         return (
           <PlanCard
             key={a.id}
             active={a.isActive}
-            dim={quarantined}
+            // Every plan that is not the live login recedes — see `PlanCard`.
+            // Quarantine is no longer what dims a card; it is said in words on
+            // the card itself, which is the honest channel for it.
+            recede={hasActive && !a.isActive}
             data-testid="fleet-usage-account"
             data-account={a.id}
             data-active={a.isActive}
             data-quarantined={quarantined}
+            data-projected={projected || undefined}
             aria-label={aria}
             header={
               <>
+                {projected && (
+                  <Tooltip
+                    content={tx(t.monitor.usage_projected_hint, {
+                      time: new Date(a.usageProjectedFromMs ?? 0).toLocaleString(),
+                    })}
+                  >
+                    <span className="inline-flex flex-shrink-0 items-center text-status-warning" data-testid="fleet-usage-projected">
+                      <History className="h-3 w-3" aria-hidden />
+                      <span className="sr-only">{t.monitor.usage_projected_short}</span>
+                    </span>
+                  </Tooltip>
+                )}
                 {a.isActive ? (
                   <span className="inline-flex flex-shrink-0 items-center text-primary" aria-label={t.monitor.usage_accounts_active}>
                     <Check className="h-3 w-3" aria-hidden />
@@ -135,8 +166,8 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
               </Tooltip>
             ) : (
               <>
-                {five ? <CardMeter w={five} now={now} t={t} /> : <div className="h-4" />}
-                {seven ? <CardMeter w={seven} now={now} t={t} /> : <div className="h-4" />}
+                {five ? <CardMeter w={five} now={now} t={t} approx={projected} /> : <div className="h-4" />}
+                {seven ? <CardMeter w={seven} now={now} t={t} approx={projected} /> : <div className="h-4" />}
               </>
             )}
           </PlanCard>

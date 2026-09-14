@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "このプランを削除 — 使用量を読み取れませんでした",
   "usage_not_stored": "未保存",
   "usage_refresh": "使用量を今すぐ更新",
-  "usage_refresh_wait": "使用量は5分間キャッシュされます。{time}後に再度更新できます"
+  "usage_refresh_wait": "使用量は5分間キャッシュされます。{time}後に再度更新できます",
+  "usage_projected_hint": "推定値：プランに接続できなかったため、{time} の最後の読み取りを引き継いでいます。リセット済みのウィンドウは空として表示され、それ以外は減ることはありません。",
+  "usage_projected_short": "推定",
+  "grid_simulation": "シミュレーション",
+  "grid_simulation_off": "ボードを模擬フリートで埋めます: 20 プロジェクト、各 3 エージェント、5 つの Claude プラン。テストビルド限定です。",
+  "grid_simulation_on": "模擬フリートが有効です — このボードの数値はすべて架空のものです。クリックすると実際のフリートに戻ります。"
 }

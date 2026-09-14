@@ -157,6 +157,15 @@ pub const PERFORMANCE_DIGEST: &str = "performance_digest";
 /// ISO 8601 timestamp of the last performance digest delivery.
 pub const PERFORMANCE_DIGEST_LAST: &str = "performance_digest_last";
 
+/// Multi-plan Claude login auto-rotate policy (JSON-encoded ClaudeAutoRotateConfig:
+/// `{"enabled":false,"thresholdPct":80,"cooldownSecs":300}`). Read by the
+/// `claude_account_rotate` subscription once a minute.
+pub const CLAUDE_ACCOUNTS_AUTO_ROTATE: &str = "claude_accounts.auto_rotate";
+
+/// The last automatic Claude login rotation (JSON-encoded ClaudeRotationEvent),
+/// shown in the Monitor's usage strip and toasted when it changes.
+pub const CLAUDE_ACCOUNTS_LAST_ROTATION: &str = "claude_accounts.last_rotation";
+
 /// Quality-gate configuration (JSON-encoded QualityGateConfig).
 /// Controls which substring patterns cause AgentMemory and ManualReview
 /// messages to be rejected, tagged, or warned during dispatch.
@@ -808,6 +817,8 @@ const ALLOWED_KEYS: &[&str] = &[
     FILE_WATCHER_DEBOUNCE_MS,
     PERFORMANCE_DIGEST,
     PERFORMANCE_DIGEST_LAST,
+    CLAUDE_ACCOUNTS_AUTO_ROTATE,
+    CLAUDE_ACCOUNTS_LAST_ROTATION,
     CREDENTIAL_HEALTHCHECK_LAST,
     QUALITY_GATE_CONFIG,
     SMART_SEARCH_MODEL,
@@ -969,6 +980,13 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // mandate that fails to parse is read as ABSENT, and an absent mandate
     // enforces nothing.
     if key.starts_with(APP_MASTER_MANDATE_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
+    // Multi-plan Claude login policy + last rotation: JSON blobs whose structs
+    // live in app_lib (`commands::fleet::claude_accounts::rotate`), so only
+    // well-formedness can be checked here -- a truncated policy read as absent
+    // would silently switch auto-rotate off.
+    if key == CLAUDE_ACCOUNTS_AUTO_ROTATE || key == CLAUDE_ACCOUNTS_LAST_ROTATION {
         return validate_json_wellformed(key, value);
     }
     match key {
@@ -1200,6 +1218,7 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     COMPANION_MSG_TRIAGE_CURSOR,
     // "last ran / last fired" timestamps.
     PERFORMANCE_DIGEST_LAST,
+    CLAUDE_ACCOUNTS_LAST_ROTATION,
     HEALTH_DIGEST_LAST_RUN,
     CREDENTIAL_HEALTHCHECK_LAST,
     COMPANION_DAILY_ROLLUP_LAST,

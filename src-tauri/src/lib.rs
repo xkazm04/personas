@@ -159,15 +159,24 @@ pub fn run() {
     let ipc_auth_script = ipc_auth::generate_ipc_auth_script(&ipc_token);
     tracing::info!("IPC session token initialised (privileged commands protected)");
 
-    // If PERSONAS_TEST_PORT is set, inject a flag before page JS so the
-    // frontend knows to load the test automation bridge.
+    // Inject a flag before page JS so the frontend knows this build's
+    // automation bridge is open — it loads the perf instrument off it, and the
+    // Activity board shows its Simulation toggle only when it is set.
+    //
+    // TWO WAYS THE BRIDGE OPENS, and this only checked one until 2026-09-07.
+    // `PERSONAS_TEST_PORT` names a port (launch-isolated, e2e), and
+    // `--features test-automation` starts the server on :17320 with no env var
+    // at all — see `boot::test_bridge`, which has always honoured both. That
+    // second case is exactly what `npm run tauri:dev:test` builds, so the build
+    // made FOR driving the UI was the one whose frontend could not tell.
     let test_port = test_automation::env_test_port();
+    let bridge_open = test_port.is_some() || cfg!(feature = "test-automation");
     let mut final_builder = builder.plugin(
         tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
             .js_init_script(ipc_auth_script)
             .build(),
     );
-    if test_port.is_some() {
+    if bridge_open {
         final_builder = final_builder.plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("test-mode-flag")
                 .js_init_script(String::from("window.__PERSONAS_TEST_MODE__ = true;"))

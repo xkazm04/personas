@@ -74,12 +74,24 @@ The whole fleet as state-coloured persona squares grouped by team into slim
 columns (running / attention / failed / idle, corner legend). Each square
 additionally wears its **dominant pending operation** as a corner icon+count
 badge — failed > review > input-required > draft > message — with the full
-breakdown in the tooltip. Below each team's personas, a divider introduces the
+breakdown in the tooltip. Below each team's personas, a hairline introduces the
 **fleet-session lane**: one small hollow square per live Fleet session
 dispatched under that team's dev project (session → project by working
 directory, project → team by `team_id`), border-coloured by the canonical
 fleet state palette. Teamless sessions and personas share the Ungrouped tray.
 The System band (persona-less app-level processes) sits above the board.
+
+**The board wraps at five columns (2026-09-07).** Columns ran in one unbounded
+horizontal row, which put the twentieth project several screens right of the
+first. They now run five to a row — or fewer when the board is narrower than
+five columns, measured live against the resizable rail — with a subtle rule
+between rows, and the board scrolls vertically. A column is therefore
+content-sized rather than full-height (a row is as tall as its tallest column),
+with its roster capped at ten rows and scrolling inside itself beyond that. The
+session lane's **"Live Claude Sessions"** caption was removed in the same pass:
+a session tile is already shorter, hollow and dashed against a solid persona
+tile, so the word restated the shape below it once per column. It remains as
+`sr-only` text for assistive tech.
 
 > The former per-project columns view (MonitorProjectColumns) was descoped
 > 2026-08-26; its operation badges migrated onto the Activity squares. Its
@@ -134,8 +146,46 @@ plan fills a slot — the active one on a highlighted ground, each with its
 every non-active card has a **Switch** button on its header behind a
 confirm. The auto-rotate toggle, threshold and last rotation sit in a
 controls row under the slots. A plan is only offered for forgetting when no usage could
-be read for it (a dead login, a rejected token); a plan that reads fine is
-not clutter. A switch refreshes
+be read for it and nothing is remembered; a plan that reads fine is not
+clutter.
+
+**Only the live plan is at full strength (2026-09-07).** The strip answers one
+question at a glance — how much of the plan being billed to right now is left —
+and five equally-bright cards made the eye hunt for which card that was. Only a
+quarantined plan was dimmed, so the four cards competing hardest with the answer
+were the four in perfect health. Every card that is not the live login now sits
+at half opacity and comes to full on hover **or keyboard focus** (its Switch and
+Forget controls are tab-reachable). The last rotation, being history rather than
+state, recedes the same way.
+
+**Fixed: *Store this login* could never appear on some installs (2026-09-07).**
+The button keyed on the snapshot's `activeAccountId`, which is read from
+`~/.claude.json`'s `oauthAccount.accountUuid` — a key some installs never write.
+On such a machine the operator was logged in and `fleet_claude_account_capture`
+would have succeeded (it resolves the account from the profile endpoint first
+and only falls back to that file), but the affordance that runs it never
+rendered. The snapshot now carries `livePresent` — whether there is a login on
+this machine to store at all — and the button keys on that instead, so its
+precondition is what the command needs rather than a stricter nearby fact.
+
+**An unreachable plan is projected, not blanked (2026-09-06).** Every
+successful usage read is remembered per plan. When the next read fails (the
+endpoint rate-limits, the network drops, a token is mid-refresh) the last
+read is carried forward to now: a window whose reset is still ahead keeps its
+utilisation — this machine did not use the plan, so the figure is a floor —
+and a window whose reset has passed shows empty, with the weekly window's
+next reset advanced by whole weeks and the 5-hour window's left unknown. Such
+a card wears a history mark on its header, its meters are hatched and their
+percentages carry an approximation sign, and the tooltip says which read it
+was projected from. Not precise, and never claimed to be.
+
+> **Two defects fixed the same day.** The snapshot only reported a live
+> account id when that account was already stored, so on an empty table the
+> *Store this login* button could never appear — nothing could ever be
+> stored, and the strip stayed in single-login mode for good. And the two
+> auto-rotate settings keys were not on the settings allowlist, so saving the
+> policy was rejected as a validation error. Both are corrected; the keys are
+> registered as JSON-validated settings. A switch refreshes
 the stored token if it is about to expire, takes Claude Code's own credential
 lock directories (`<config>/.oauth_refresh.lock`, `~/.claude.lock`), replaces
 `~/.claude/.credentials.json` atomically, and patches `oauthAccount` in

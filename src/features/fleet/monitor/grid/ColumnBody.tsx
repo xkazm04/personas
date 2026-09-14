@@ -50,9 +50,20 @@ export interface ColumnBodyProps {
    * caller could do with a ref from outside.
    */
   focusKey?: string | null;
+  /**
+   * Cap on the scroller's height, in px.
+   *
+   * The column used to be `h-full` inside a full-height board, so its body
+   * simply took the space left over. Since the board wraps into rows
+   * (`gridGeometry`'s "board's own wrap"), a row's height is its tallest
+   * column — so a column has to be content-sized with a ceiling, or one large
+   * team makes its row taller than the display. Omitted = the old behaviour,
+   * `flex-1` inside a bounded parent.
+   */
+  maxHeight?: number;
 }
 
-export function ColumnBody({ rows, renderRow, focusKey }: ColumnBodyProps) {
+export function ColumnBody({ rows, renderRow, focusKey, maxHeight }: ColumnBodyProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   // Heights are known constants per row kind (see gridGeometry), so the
   // virtualizer is handed exact sizes and never measures the DOM.
@@ -88,9 +99,15 @@ export function ColumnBody({ rows, renderRow, focusKey }: ColumnBodyProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey, rows, virtualize]);
 
+  // Content-sized up to `maxHeight`, or the old `flex-1` fill without one.
+  const scrollerClass = `min-h-0 overflow-y-auto overscroll-contain pb-2 ${
+    maxHeight === undefined ? 'flex-1' : ''
+  }`;
+  const scrollerStyle = maxHeight === undefined ? undefined : { maxHeight };
+
   if (!virtualize) {
     return (
-      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
+      <div ref={parentRef} className={scrollerClass} style={scrollerStyle}>
         {rows.map((row) => (
           <div key={row.key} data-row-key={row.key} style={{ height: row.height }}>
             {renderRow(row)}
@@ -101,7 +118,7 @@ export function ColumnBody({ rows, renderRow, focusKey }: ColumnBodyProps) {
   }
 
   return (
-    <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
+    <div ref={parentRef} className={scrollerClass} style={scrollerStyle}>
       <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((v) => {
           const row = rows[v.index];

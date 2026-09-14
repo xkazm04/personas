@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "Lupakan paket ini — tidak ada penggunaan yang dapat dibaca untuknya",
   "usage_not_stored": "belum disimpan",
   "usage_refresh": "Segarkan penggunaan sekarang",
-  "usage_refresh_wait": "Penggunaan disimpan dalam cache selama lima menit; segarkan lagi dalam {time}"
+  "usage_refresh_wait": "Penggunaan disimpan dalam cache selama lima menit; segarkan lagi dalam {time}",
+  "usage_projected_hint": "Perkiraan: paket tidak dapat dijangkau, jadi pembacaan terakhir dari {time} diteruskan. Jendela yang resetnya sudah lewat ditampilkan kosong; sisanya tidak mungkin turun.",
+  "usage_projected_short": "Perkiraan",
+  "grid_simulation": "Simulasi",
+  "grid_simulation_off": "Isi papan dengan armada simulasi: 20 proyek, masing-masing 3 agen, 5 paket Claude. Hanya di build uji.",
+  "grid_simulation_on": "Armada simulasi aktif — setiap angka di papan ini dikarang. Klik untuk kembali ke armada asli Anda."
 }

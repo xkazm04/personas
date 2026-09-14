@@ -27,7 +27,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::State;
 use ts_rs::TS;
@@ -60,8 +60,9 @@ const WINDOW_KEYS: [(&str, i64); 4] = [
     ("seven_day_sonnet", SEVEN_DAY_MS),
 ];
 
-/// One rolling rate-limit window.
-#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+/// One rolling rate-limit window. `Deserialize` because the multi-plan store
+/// remembers the last read per plan as JSON and reads it back to project it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ClaudeUsageWindow {

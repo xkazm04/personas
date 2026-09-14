@@ -10,8 +10,9 @@ import { describe, it, expect } from 'vitest';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../../monitorModel';
 import {
-  columnRows, trayPerRow, PERSONA_ROW_H, SESSION_ROW_H, DIVIDER_ROW_H,
-  TILE_W, TRAY_GAP,
+  columnRows, trayPerRow, boardPerRow, chunkRows,
+  PERSONA_ROW_H, SESSION_ROW_H, DIVIDER_ROW_H,
+  TILE_W, TRAY_GAP, BOARD_GAP, COLUMNS_PER_ROW,
 } from '../gridGeometry';
 
 const card = (id: string) => ({ personaId: id, personaName: id } as unknown as PersonaCardModel);
@@ -59,5 +60,46 @@ describe('trayPerRow', () => {
     expect(trayPerRow(0)).toBe(1);
     expect(trayPerRow(-100)).toBe(1);
     expect(trayPerRow(10)).toBe(1);
+  });
+});
+
+describe('boardPerRow', () => {
+  it('caps at five however wide the board is', () => {
+    expect(boardPerRow(TILE_W * 20)).toBe(COLUMNS_PER_ROW);
+    expect(boardPerRow(100_000)).toBe(COLUMNS_PER_ROW);
+  });
+
+  it('takes the smaller of five and what actually fits', () => {
+    expect(boardPerRow(TILE_W * 3 + BOARD_GAP * 2)).toBe(3);
+    // One pixel short of a fourth column is still three.
+    expect(boardPerRow(TILE_W * 4 + BOARD_GAP * 3 - 1)).toBe(3);
+    expect(boardPerRow(TILE_W * 4 + BOARD_GAP * 3)).toBe(4);
+  });
+
+  it('assumes the full count before the first measurement', () => {
+    // A one-column first paint that reflows to five is a worse opening than a
+    // brief overflow, so an unmeasured board is optimistic, not pessimistic.
+    expect(boardPerRow(0)).toBe(COLUMNS_PER_ROW);
+    expect(boardPerRow(-24)).toBe(COLUMNS_PER_ROW);
+  });
+
+  it('never returns zero, however narrow', () => {
+    expect(boardPerRow(10)).toBe(1);
+    expect(boardPerRow(TILE_W - 1)).toBe(1);
+  });
+});
+
+describe('chunkRows', () => {
+  it('fills each row before starting the next, and keeps the order', () => {
+    expect(chunkRows([1, 2, 3, 4, 5, 6, 7], 5)).toEqual([[1, 2, 3, 4, 5], [6, 7]]);
+  });
+
+  it('is one row when everything fits, and none when there is nothing', () => {
+    expect(chunkRows([1, 2, 3], 5)).toEqual([[1, 2, 3]]);
+    expect(chunkRows([], 5)).toEqual([]);
+  });
+
+  it('cannot be made to loop forever by a zero row size', () => {
+    expect(chunkRows([1, 2], 0)).toEqual([[1], [2]]);
   });
 });

@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "이 플랜 삭제 — 사용량을 읽을 수 없습니다",
   "usage_not_stored": "저장되지 않음",
   "usage_refresh": "지금 사용량 새로고침",
-  "usage_refresh_wait": "사용량은 5분간 캐시됩니다. {time} 후 다시 새로고침할 수 있습니다"
+  "usage_refresh_wait": "사용량은 5분간 캐시됩니다. {time} 후 다시 새로고침할 수 있습니다",
+  "usage_projected_hint": "추정치: 플랜에 연결할 수 없어 {time}의 마지막 읽기 값을 이어서 표시합니다. 초기화가 지난 창은 비어 있게 표시되고, 나머지는 줄어들 수 없습니다.",
+  "usage_projected_short": "추정",
+  "grid_simulation": "시뮬레이션",
+  "grid_simulation_off": "보드를 모의 플릿으로 채웁니다: 프로젝트 20개, 각 3개 에이전트, Claude 플랜 5개. 테스트 빌드 전용입니다.",
+  "grid_simulation_on": "모의 플릿이 켜져 있습니다 — 이 보드의 모든 숫자는 가상입니다. 클릭하면 실제 플릿으로 돌아갑니다."
 }

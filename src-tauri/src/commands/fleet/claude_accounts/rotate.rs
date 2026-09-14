@@ -19,8 +19,8 @@ use crate::engine::subscription::ReactiveSubscription;
 
 use super::{build_snapshot, switch_inner, ClaudeAccountView};
 
-pub const SETTING_CONFIG: &str = "claude_accounts.auto_rotate";
-pub const SETTING_LAST: &str = "claude_accounts.last_rotation";
+pub const SETTING_CONFIG: &str = crate::db::settings_keys::CLAUDE_ACCOUNTS_AUTO_ROTATE;
+pub const SETTING_LAST: &str = crate::db::settings_keys::CLAUDE_ACCOUNTS_LAST_ROTATION;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -223,6 +223,7 @@ mod tests {
             usage: vec![w("five_hour", five), w("seven_day", seven)],
             usage_reason: None,
             usage_fetched_at_ms: None,
+            usage_projected_from_ms: None,
             last_switched_at_ms: None,
         }
     }

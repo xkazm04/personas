@@ -28,16 +28,22 @@ pub struct ClaudeAccountRow {
     pub added_at_ms: i64,
     pub updated_at_ms: i64,
     pub last_switched_at_ms: Option<i64>,
+    /// The last successful usage read (JSON `Vec<ClaudeUsageWindow>`), kept
+    /// so an unreachable plan can be projected forward instead of blanked.
+    pub last_usage_json: Option<String>,
+    pub last_usage_at_ms: Option<i64>,
 }
 
 const COLUMNS: &str = "id, email, display_name, organization_uuid, organization_name,
     rate_limit_tier, subscription_type, slot, creds_ciphertext, creds_nonce,
-    quarantine_reason, added_at_ms, updated_at_ms, last_switched_at_ms";
+    quarantine_reason, added_at_ms, updated_at_ms, last_switched_at_ms,
+    last_usage_json, last_usage_at_ms";
 
 row_mapper!(map_row -> ClaudeAccountRow {
     id, email, display_name, organization_uuid, organization_name,
     rate_limit_tier, subscription_type, slot, creds_ciphertext, creds_nonce,
     quarantine_reason, added_at_ms, updated_at_ms, last_switched_at_ms,
+    last_usage_json, last_usage_at_ms,
 });
 
 /// Insert or refresh an account. Identity + credentials are replaced; the
@@ -132,6 +138,21 @@ pub fn set_creds(pool: &DbPool, id: &str, ciphertext: &str, nonce: &str) -> Resu
     })
 }
 
+/// Remember a successful usage read. Identity, slot and credentials untouched.
+pub fn set_last_usage(pool: &DbPool, id: &str, json: &str, at_ms: i64) -> Result<(), AppError> {
+    timed_query!("claude_accounts", "claude_accounts::set_last_usage", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE claude_accounts SET last_usage_json = ?2, last_usage_at_ms = ?3 WHERE id = ?1",
+            params![id, json, at_ms],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("claude account {id}")));
+        }
+        Ok(())
+    })
+}
+
 pub fn set_quarantine(pool: &DbPool, id: &str, reason: Option<&str>) -> Result<(), AppError> {
     timed_query!("claude_accounts", "claude_accounts::set_quarantine", {
         let conn = pool.get()?;
@@ -195,6 +216,8 @@ mod tests {
             added_at_ms: 1,
             updated_at_ms: 1,
             last_switched_at_ms: None,
+            last_usage_json: None,
+            last_usage_at_ms: None,
         }
     }
 
@@ -227,6 +250,14 @@ mod tests {
 
         set_creds(&pool, "b", "ct3", "n3").unwrap();
         assert_eq!(get(&pool, "b").unwrap().unwrap().creds_nonce, "n3");
+        set_last_usage(&pool, "b", "[]", 42).unwrap();
+        let b = get(&pool, "b").unwrap().unwrap();
+        assert_eq!(b.last_usage_json.as_deref(), Some("[]"));
+        assert_eq!(b.last_usage_at_ms, Some(42));
+        assert!(
+            set_last_usage(&pool, "zz", "[]", 1).is_err(),
+            "unknown id is an error, not a no-op"
+        );
         mark_switched(&pool, "b").unwrap();
         assert!(get(&pool, "b")
             .unwrap()

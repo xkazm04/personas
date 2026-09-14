@@ -646,5 +646,10 @@
   "usage_accounts_remove_hint": "忘记此计划——无法读取其用量",
   "usage_not_stored": "未保存",
   "usage_refresh": "立即刷新用量",
-  "usage_refresh_wait": "用量缓存五分钟；{time}后可再次刷新"
+  "usage_refresh_wait": "用量缓存五分钟；{time}后可再次刷新",
+  "usage_projected_hint": "估算值：无法连接该计划，因此沿用 {time} 的上次读数。重置已过的窗口显示为空；其余窗口不会低于该值。",
+  "usage_projected_short": "估算",
+  "grid_simulation": "模拟",
+  "grid_simulation_off": "用模拟舰队填充看板：20 个项目，每个 3 个代理，5 个 Claude 计划。仅限测试构建。",
+  "grid_simulation_on": "模拟舰队已开启 — 看板上的所有数字都是虚构的。点击可返回真实舰队。"
 }

@@ -20,4 +20,9 @@ usage: Array<ClaudeUsageWindow>,
 /**
  * Machine reason in the `fleet_claude_usage` vocabulary, or null.
  */
-usageReason: string | null, usageFetchedAtMs: number | null, lastSwitchedAtMs: number | null, };
+usageReason: string | null, usageFetchedAtMs: number | null, 
+/**
+ * Set when `usage` is not a live read but the last successful one
+ * carried forward (`projection.rs`): the stamp it was projected from.
+ */
+usageProjectedFromMs: number | null, lastSwitchedAtMs: number | null, };

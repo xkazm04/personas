@@ -18,4 +18,19 @@ liveEmail: string | null,
 /**
  * Whether the live login is one of the stored accounts.
  */
-liveCaptured: boolean, accounts: Array<ClaudeAccountView>, autoRotate: ClaudeAutoRotateConfig, lastRotation: ClaudeRotationEvent | null, };
+liveCaptured: boolean, 
+/**
+ * Whether a usable Claude Code login exists on this machine at all —
+ * i.e. whether `fleet_claude_account_capture` has something to store.
+ *
+ * SEPARATE FROM `active_account_id` ON PURPOSE, and the reason is a real
+ * defect this closes: that id comes from `~/.claude.json`'s
+ * `oauthAccount.accountUuid`, which some installs simply do not write, so
+ * it is `None` on a machine that is perfectly well logged in. The Store
+ * affordance keyed on it, and therefore never appeared there — while
+ * `capture` itself would have succeeded, because it resolves the uuid
+ * from the profile endpoint first and only falls back to that file. The
+ * button's precondition must be what the command needs, not a stricter
+ * fact that happens to be nearby.
+ */
+livePresent: boolean, accounts: Array<ClaudeAccountView>, autoRotate: ClaudeAutoRotateConfig, lastRotation: ClaudeRotationEvent | null, };

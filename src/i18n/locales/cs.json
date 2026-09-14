@@ -6805,7 +6805,12 @@
     "usage_accounts_remove_hint": "Zapomenout tento plán — nepodařilo se pro něj načíst žádné využití",
     "usage_not_stored": "neuloženo",
     "usage_refresh": "Obnovit využití nyní",
-    "usage_refresh_wait": "Využití se ukládá do mezipaměti na pět minut; další obnovení za {time}"
+    "usage_refresh_wait": "Využití se ukládá do mezipaměti na pět minut; další obnovení za {time}",
+    "usage_projected_hint": "Odhad: plán byl nedostupný, proto se přenáší poslední načtení z {time}. Okna, jejichž reset už proběhl, se zobrazují prázdná; ostatní nemohla klesnout.",
+    "usage_projected_short": "Odhad",
+    "grid_simulation": "Simulace",
+    "grid_simulation_off": "Naplní přehled simulovanou flotilou: 20 projektů, 3 agenti v každém, 5 plánů Claude. Jen v testovacích buildech.",
+    "grid_simulation_on": "Simulovaná flotila je zapnutá — každé číslo v tomto přehledu je vymyšlené. Kliknutím se vrátíte ke skutečné flotile."
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

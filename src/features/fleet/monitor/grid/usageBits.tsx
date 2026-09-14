@@ -139,12 +139,15 @@ export function useUsageClock(): number {
  * the warning/error icon and label. Renders two or three grid cells.
  */
 export function MeterBar({
-  w, now, t, showTone = true,
+  w, now, t, showTone = true, approx = false,
 }: {
   w: ClaudeUsageWindow;
   now: number;
   t: Translations;
   showTone?: boolean;
+  /** The figure is a projection, not a read: the fill hatches and the
+   *  percent wears an approximation sign. */
+  approx?: boolean;
 }) {
   const tone = meterTone(w.utilizationPct);
   const pct = Math.round(w.utilizationPct);
@@ -158,9 +161,10 @@ export function MeterBar({
         className="relative h-2 w-full overflow-hidden rounded-full bg-foreground/10"
         data-testid="fleet-usage-meter"
         data-marker={warmth ?? 'none'}
+        data-approx={approx || undefined}
       >
         <span
-          className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${FILL[tone]}`}
+          className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${FILL[tone]} ${approx ? 'opacity-50' : ''}`}
           style={{ width: `${pct}%` }}
         />
         {elapsedFrac !== null && warmth && (
@@ -170,7 +174,9 @@ export function MeterBar({
           />
         )}
       </span>
-      <span className="typo-caption tabular-nums text-foreground text-right">{pct}%</span>
+      <span className={`typo-caption tabular-nums text-right text-foreground ${approx ? 'opacity-70' : ''}`}>
+        {approx ? '≈' : ''}{pct}%
+      </span>
       {showTone && tone !== 'ok' && (
         <span className={`inline-flex flex-shrink-0 items-center gap-0.5 typo-caption ${TONE_TEXT[tone]}`}>
           <AlertTriangle className="h-3 w-3" aria-hidden />

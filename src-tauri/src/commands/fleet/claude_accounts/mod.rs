@@ -18,6 +18,7 @@
 
 pub mod live;
 pub mod oauth;
+pub mod projection;
 pub mod rotate;
 
 use std::collections::HashMap;
@@ -73,6 +74,10 @@ pub struct ClaudeAccountView {
     pub usage_reason: Option<String>,
     #[ts(type = "number | null")]
     pub usage_fetched_at_ms: Option<i64>,
+    /// Set when `usage` is not a live read but the last successful one
+    /// carried forward (`projection.rs`): the stamp it was projected from.
+    #[ts(type = "number | null")]
+    pub usage_projected_from_ms: Option<i64>,
     #[ts(type = "number | null")]
     pub last_switched_at_ms: Option<i64>,
 }
@@ -88,6 +93,19 @@ pub struct ClaudeAccountsSnapshot {
     pub live_email: Option<String>,
     /// Whether the live login is one of the stored accounts.
     pub live_captured: bool,
+    /// Whether a usable Claude Code login exists on this machine at all —
+    /// i.e. whether `fleet_claude_account_capture` has something to store.
+    ///
+    /// SEPARATE FROM `active_account_id` ON PURPOSE, and the reason is a real
+    /// defect this closes: that id comes from `~/.claude.json`'s
+    /// `oauthAccount.accountUuid`, which some installs simply do not write, so
+    /// it is `None` on a machine that is perfectly well logged in. The Store
+    /// affordance keyed on it, and therefore never appeared there — while
+    /// `capture` itself would have succeeded, because it resolves the uuid
+    /// from the profile endpoint first and only falls back to that file. The
+    /// button's precondition must be what the command needs, not a stricter
+    /// fact that happens to be nearby.
+    pub live_present: bool,
     pub accounts: Vec<ClaudeAccountView>,
     pub auto_rotate: ClaudeAutoRotateConfig,
     pub last_rotation: Option<ClaudeRotationEvent>,
@@ -129,8 +147,12 @@ fn stash_live(
     identity: &LiveIdentity,
 ) -> Option<String> {
     let active_id = identity.account_uuid.clone()?;
-    let live = live?;
-    let row = rows.iter().find(|r| r.id == active_id)?;
+    // The live login's id is the answer whether or not it is stored -- that
+    // is exactly what the "Store this login" affordance keys on. Only the
+    // sync below needs a stored row.
+    let (Some(live), Some(row)) = (live, rows.iter().find(|r| r.id == active_id)) else {
+        return Some(active_id);
+    };
     let stored_token = decrypt_raw(row)
         .ok()
         .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
@@ -240,7 +262,7 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
                 Err(_) => None,
             }
         };
-        let (usage, usage_reason, fetched) = match token {
+        let (mut usage, usage_reason, fetched) = match token {
             Some(t) => match usage_cached(&row.id, &t).await {
                 (Ok(w), at) => (w, None, Some(at)),
                 (Err(reason), at) => (Vec::new(), Some(reason), Some(at)),
@@ -258,6 +280,25 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
                 None,
             ),
         };
+        let mut projected_from = None;
+        if usage_reason.is_none() {
+            // A fresh read: remember it, once per distinct fetch.
+            if let Some(at) = fetched {
+                if !row.last_usage_at_ms.is_some_and(|prev| at <= prev) {
+                    if let Ok(json) = serde_json::to_string(&usage) {
+                        if let Err(e) = repo::set_last_usage(pool, &row.id, &json, at) {
+                            tracing::debug!(error = %e, "claude accounts: last-usage write failed");
+                        }
+                    }
+                }
+            }
+        } else if let (Some(json), Some(at)) = (&row.last_usage_json, row.last_usage_at_ms) {
+            // Unreachable: carry the last read forward rather than blank it.
+            if let Ok(last) = serde_json::from_str::<Vec<ClaudeUsageWindow>>(json) {
+                usage = projection::project_usage(&last, now_ms());
+                projected_from = Some(at);
+            }
+        }
         accounts.push(ClaudeAccountView {
             id: row.id.clone(),
             email: row.email.clone(),
@@ -271,6 +312,7 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
             usage,
             usage_reason,
             usage_fetched_at_ms: fetched,
+            usage_projected_from_ms: projected_from,
             last_switched_at_ms: row.last_switched_at_ms,
         });
     }
@@ -282,6 +324,7 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
         active_account_id: active_id,
         live_email: identity.email,
         live_captured,
+        live_present: live.is_some(),
         accounts,
         auto_rotate: rotate::read_config(pool),
         last_rotation: rotate::read_last(pool),
@@ -414,6 +457,8 @@ pub async fn fleet_claude_account_capture(
                 .unwrap_or_else(now_ms),
             updated_at_ms: now_ms(),
             last_switched_at_ms: existing.as_ref().and_then(|r| r.last_switched_at_ms),
+            last_usage_json: existing.as_ref().and_then(|r| r.last_usage_json.clone()),
+            last_usage_at_ms: existing.as_ref().and_then(|r| r.last_usage_at_ms),
         },
     )?;
     clear_usage_cache();

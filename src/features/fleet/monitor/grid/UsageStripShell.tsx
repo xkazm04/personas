@@ -65,20 +65,35 @@ export function StripFrame({
   );
 }
 
-/** One slot's chrome: the card border, an optional header line, the rows. */
+/**
+ * One slot's chrome: the card border, an optional header line, the rows.
+ *
+ * A RECEDED CARD IS THE DEFAULT, not the exception. The strip answers one
+ * question at a glance — *how much of the plan I am billing to right now is
+ * left* — and five equally-bright cards make the eye do the work of finding
+ * which one that is. So every card that is not the live login sits back at half
+ * opacity and comes to full on hover or on keyboard focus; the active card
+ * never recedes. This used to dim only a quarantined plan, which meant the four
+ * cards competing hardest with the answer were the four in perfect health.
+ *
+ * `focus-within`, not just `hover`: a card's Switch and Forget controls are
+ * reachable by tab, and a control that is only legible under a pointer is not
+ * a smaller feature — it is an inoperable one for anyone not using one.
+ */
 export function PlanCard({
-  header, active = false, dim = false, children, ...rest
+  header, active = false, recede = false, children, ...rest
 }: {
   header: ReactNode;
   active?: boolean;
-  dim?: boolean;
+  /** Not the live login — sit back until looked at. */
+  recede?: boolean;
   children: ReactNode;
 } & Record<`data-${string}`, string | boolean | undefined>) {
   return (
     <div
-      className={`flex min-w-0 flex-col gap-1 rounded-input border px-2 py-1 ${
+      className={`flex min-w-0 flex-col gap-1 rounded-input border px-2 py-1 transition-opacity ${
         active ? 'border-primary/40 bg-primary/10' : 'border-border/60 bg-foreground/[0.015]'
-      } ${dim ? 'opacity-60' : ''}`}
+      } ${recede ? 'opacity-50 hover:opacity-100 focus-within:opacity-100' : ''}`}
       {...rest}
     >
       <div className="flex h-4 min-w-0 items-center gap-1 typo-caption">{header}</div>

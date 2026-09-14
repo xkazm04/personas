@@ -45,5 +45,26 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            // The last successful usage read per plan, so an unreachable plan
+            // can be PROJECTED rather than blanked (claude_accounts/projection.rs).
+            id: "claude_accounts.last_usage",
+            description: "claude_accounts: remember the last usage read per plan",
+            already_applied: |conn| {
+                Ok(!has_table(conn, "claude_accounts")?
+                    || has_column(conn, "claude_accounts", "last_usage_json")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE claude_accounts ADD COLUMN last_usage_json TEXT;
+                     ALTER TABLE claude_accounts ADD COLUMN last_usage_at_ms INTEGER;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }

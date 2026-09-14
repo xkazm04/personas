@@ -548,6 +548,9 @@ export type Translations = {
     triage_accepted_deleted_gone: string;
     triage_accepted_row_aria: string;
     grid_board_aria: string;
+    grid_simulation: string;
+    grid_simulation_on: string;
+    grid_simulation_off: string;
     grid_rail_tab_dispatch: string;
     grid_rail_tab_messages: string;
     grid_rail_tabs_aria: string;
@@ -654,6 +657,8 @@ export type Translations = {
     usage_refresh: string;
     usage_refresh_wait: string;
     usage_accounts_remove_hint: string;
+    usage_projected_hint: string;
+    usage_projected_short: string;
   };
   common: {
     unknown_error: string;
